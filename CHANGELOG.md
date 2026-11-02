@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- New per-game setting for Steam games: "Let Steam start this game". Use it when an anti-cheat such as FACEIT AC blocks the game when PlaySwap starts it. PlaySwap takes itself out of the game's launch options, and its own Play button loads the player's files before asking Steam to start the game.
+- When Windows refuses to let PlaySwap start a game ("Access is denied"), the error now says an anti-cheat is the likely cause and how to fix it.
+
 ## 1.2.0
 
 - Scans the PC for games: Steam, Epic, GOG, game folders on every drive, and desktop and Start menu shortcuts. Results appear under "Found on this PC" with Add, Add all and Hide.

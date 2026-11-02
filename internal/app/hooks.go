@@ -65,7 +65,7 @@ func planHooks(cfg *core.Config, text, userDir, exe string, install bool) ([]hoo
 		}
 		now := cur(g.Launch.AppID)
 		has := core.HasWrapper(now, g.Launch.AppID)
-		if install {
+		if install && g.UsesSteamWrapper() {
 			if has && strings.Contains(strings.ToLower(now), strings.ToLower(exe)) {
 				continue // already pointing at this PlaySwap
 			}
@@ -211,7 +211,15 @@ func (a *App) applyHooks(allowRestart, restoresOnly bool) (hookResult, error) {
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
 	if restoresOnly {
-		cfg.Games = nil
+		// Keep only games that Steam starts by itself: for those, planHooks
+		// takes PlaySwap back out and adds nothing.
+		var direct []core.Game
+		for _, g := range cfg.Games {
+			if g.Launch.Type == "steam" && g.SteamDirect {
+				direct = append(direct, g)
+			}
+		}
+		cfg.Games = direct
 	}
 	res, err := syncSteamHooks(cfg, a.env, a.exePath, true, allowRestart, a.logf)
 	if err == nil && res.Changed > 0 {

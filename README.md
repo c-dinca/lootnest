@@ -49,6 +49,12 @@ PlaySwap swaps files on your PC. Anything that belongs to the Steam account stay
 
 For Steam, PlaySwap sets each managed game's launch options to `"…\PlaySwap.exe" --steam <app id> -- %command%`. It edits Steam's `localconfig.vdf` only while Steam is closed, changes only `LaunchOptions`, and keeps a backup. Any options you already had are kept, and they're put back when you remove the game or uninstall PlaySwap.
 
+### Anti-cheats (FACEIT AC)
+
+Some anti-cheats only let Steam start the game. With FACEIT AC running, CS2 fails to start through the launch option with "Access is denied". For those games, open **Edit game** and turn on **Let Steam start this game**. PlaySwap then takes itself out of the game's launch options, and you use PlaySwap's **Play** button: it loads the chosen player's files, then asks Steam to start the game. Pressing Play in Steam starts the game without asking, with whoever's files are loaded.
+
+PlaySwap never injects into, hooks, or reads the memory of a game. It copies files while the game is closed and checks which programs are running by name.
+
 Data lives in `%LOCALAPPDATA%\PlaySwap`: `profiles\<player>\<game>`, `backups\<game>\<date-time>`, `config.json` and `playswap.log`.
 
 ## Adding a game by hand

@@ -4,6 +4,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -117,6 +118,7 @@ type SteamHook struct {
 	Option   string `json:"option"`
 	Current  string `json:"current"`
 	Detected bool   `json:"detected"`
+	Direct   bool   `json:"direct"` // Steam starts the game itself (Game.SteamDirect)
 }
 
 type SteamSetup struct {
@@ -139,7 +141,7 @@ func (a *App) apiSteamSetup() SteamSetup {
 		if g.Launch.Type != "steam" {
 			continue
 		}
-		h := SteamHook{GameID: g.ID, Name: g.Name, AppID: g.Launch.AppID}
+		h := SteamHook{GameID: g.ID, Name: g.Name, AppID: g.Launch.AppID, Direct: g.SteamDirect}
 		if userDir != "" {
 			h.Current, _ = core.SteamLaunchOptions(userDir, g.Launch.AppID)
 		}
@@ -231,7 +233,13 @@ func runSteamCommand(appID int, command []string, logf func(string, ...any)) int
 	}
 	if err := cmd.Start(); err != nil {
 		logf("Steam wrapper: couldn't start %s: %v", command[0], err)
-		win.MessageBox(0, "Couldn't start the game:\n"+err.Error(), Name, win.MB_ICONERROR)
+		msg := "Couldn't start the game:\n" + err.Error()
+		if errors.Is(err, os.ErrPermission) {
+			// Anti-cheats such as FACEIT AC only let Steam start the game.
+			msg = "Windows wouldn't let PlaySwap start the game (access denied). This usually means an anti-cheat, such as FACEIT AC, only lets Steam start it.\n\n" +
+				"To fix it, open PlaySwap, choose Edit game for this game and turn on \"Let Steam start this game\". Then use PlaySwap's Play button to choose who's playing."
+		}
+		win.MessageBox(0, msg, Name, win.MB_ICONERROR)
 		return 1
 	}
 	_ = cmd.Wait()
