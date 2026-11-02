@@ -68,6 +68,10 @@ type Settings struct {
 	StartTimeoutSeconds  int    `json:"startTimeoutSeconds"`
 	SteamAccountID       string `json:"steamAccountId"`
 	AutoSteamHooks       bool   `json:"autoSteamHooks"`
+	// DownloadCovers lets Lootnest look games outside Steam up on the Steam
+	// store by name and save their cover. Off by default: the only network
+	// access Lootnest has, and only when the user turns it on.
+	DownloadCovers bool `json:"downloadCovers"`
 }
 
 type Config struct {

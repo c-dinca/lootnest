@@ -34,7 +34,7 @@
     addFound: (keys) => call("ps_addFound", keys),
     foundGame: (k) => call("ps_foundGame", k),
     applyHooks: (restart) => call("ps_applyHooks", restart),
-    cover: (appId) => call("ps_cover", appId),
+    cover: (appId, name, key) => call("ps_cover", appId, name, key),
     launchFound: (key) => call("ps_launchFound", key),
     fixBlocked: (gameId, playerId) => call("ps_fixBlocked", gameId, playerId || ""),
   };
@@ -45,7 +45,7 @@
     view: "library",
     q: "",             // library search
     filter: "all",     // library filter chip
-    covers: {},        // Steam app id -> data: URL, or "" when Steam has none
+    covers: {},        // cover key -> data: URL, or "" when there is none (yet)
     animateCards: true, // stagger the cards in on the next library render
     animateView: true,  // fade the page in on the next render
     menuFor: null,
@@ -135,6 +135,11 @@
         else toast(`Starting ${g ? g.name : "the game"} for ${pname(ev.playerId)}. Next time, start it from the ${g ? g.name : "game"} (Lootnest) shortcut on your desktop to choose who's playing.`);
         break;
       }
+      case "cover":
+        pendingCovers.delete(ev.key);
+        S.covers[ev.key] = ev.url;
+        showCover(ev.key);
+        break;
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
@@ -245,7 +250,16 @@
     return `<div class="page wide">${head}${hookBanner()}
       <div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
       ${scanning ? `<div class="scanning"><span class="spinner"></span>Looking for games on this PC</div>` : ""}
+      ${coverHint(all)}
       <div class="grid" id="grid">${gridHTML()}</div></div>`;
+  }
+
+  function coverHint(all) {
+    if (cfg().settings.downloadCovers || S.hideCoverHint) return "";
+    const n = all.filter((it) => !it.appId).length;
+    if (!n) return "";
+    return `<div class="cover-hint"><span>${n === 1 ? "1 game outside Steam has" : n + " games outside Steam have"} no cover. Lootnest can look them up on the Steam store by name; only the name is sent.</span>
+      <button class="btn small" data-action="covers-on">Download covers</button><button class="btn small quiet" data-action="covers-later">Not now</button></div>`;
   }
 
   function gridHTML() {
@@ -256,9 +270,14 @@
     return items.map((it, i) => cardHTML(it, animate ? Math.min(i, 14) : -1)).join("");
   }
 
+  // Steam games have a cover in Steam's cache; other games only when the
+  // user turned on "Download covers".
+  const coverKey = (it) => (it.appId ? "a" + it.appId : "n:" + it.name.toLowerCase());
   function coverHTML(it) {
-    const c = it.appId ? S.covers[it.appId] : "";
-    const img = it.appId && c !== "" ? `<img alt="" data-cover="${it.appId}"${c ? ` src="${c}" class="ready"` : ""}>` : "";
+    const key = coverKey(it);
+    const c = S.covers[key];
+    const can = it.appId || cfg().settings.downloadCovers;
+    const img = can && c !== "" ? `<img alt="" data-cover="${esc(key)}" data-app="${it.appId || 0}" data-name="${esc(it.name)}"${c ? ` src="${c}" class="ready"` : ""}>` : "";
     return `<div class="nocover"${c ? " hidden" : ""}>${esc(it.name)}</div>${img}`;
   }
 
@@ -288,16 +307,26 @@
     document.querySelectorAll("img[data-cover]:not(.ready)").forEach((img) => coverObserver.observe(img));
   }
 
+  const pendingCovers = new Set(); // downloads Go is doing; a "cover" event ends them
   async function fetchCover(img) {
-    const id = +img.dataset.cover;
-    if (!(id in S.covers)) {
-      try { S.covers[id] = (await api.cover(id)) || ""; } catch (e) { S.covers[id] = ""; }
+    const key = img.dataset.cover;
+    if (!(key in S.covers) && !pendingCovers.has(key)) {
+      let url = "";
+      try { url = (await api.cover(+img.dataset.app, img.dataset.name, key)) || ""; } catch (e) { /* no cover */ }
+      if (url) S.covers[key] = url;
+      else if (cfg().settings.downloadCovers) pendingCovers.add(key); // may still arrive
+      else S.covers[key] = "";
     }
-    document.querySelectorAll(`img[data-cover="${id}"]`).forEach((el) => {
+    showCover(key);
+  }
+
+  function showCover(key) {
+    if (!(key in S.covers)) return;
+    document.querySelectorAll(`img[data-cover="${CSS.escape(key)}"]`).forEach((el) => {
       const tile = el.previousElementSibling;
-      if (!S.covers[id]) { el.remove(); return; }
+      if (!S.covers[key]) { el.remove(); return; }
       el.onload = () => { el.classList.add("ready"); if (tile) tile.hidden = true; };
-      el.src = S.covers[id];
+      el.src = S.covers[key];
     });
   }
 
@@ -305,7 +334,7 @@
   function openSheet(kind, id) {
     S.dialog = { kind: "sheet", item: kind, id };
     renderOverlay();
-    loadCovers();
+    document.querySelectorAll(".sheet img[data-cover]:not(.ready)").forEach(fetchCover);
     setTimeout(() => { const b = $(".sheet .btn.primary"); if (b) b.focus(); }, 30);
   }
 
@@ -819,6 +848,7 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
+          ${sw("downloadCovers", "Download covers for games outside Steam", "Looks each game up on the Steam store by its name and saves the cover on this PC. Only the game's name is sent. Off: those games show their name instead.", s.downloadCovers)}
         </div></section>
         <section class="section"><div class="numbers">
           <div class="field"><label for="s-backups">Backups kept per game</label><input id="s-backups" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}"></div>
@@ -850,6 +880,7 @@
     else s[f] = el.value;
     try {
       await api.saveSettings({ settings: s, autostart });
+      if (f === "downloadCovers") { S.covers = {}; pendingCovers.clear(); }
       await refresh();
     } catch (e) { toast(errText(e), "error"); await refresh(); }
   }
@@ -874,6 +905,12 @@
       try { await api.launchFound(el.dataset.key); toast(`Starting ${f ? f.name : "the game"}`); } catch (e) { toast(errText(e), "error"); }
     },
     filter(el) { S.filter = el.dataset.filter; S.animateCards = true; render(); },
+    async "covers-on"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.downloadCovers = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
+    },
+    "covers-later"() { S.hideCoverHint = true; render(); },
     "load-only": (el) => openPicker(el.dataset.game, "load"),
     menu(el) { S.menuFor = S.menuFor === el.dataset.game ? null : el.dataset.game; render(); const m = $(".menu button"); if (m) m.focus(); },
     "edit-game": (el) => { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; editGame(el.dataset.game); },

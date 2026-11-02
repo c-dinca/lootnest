@@ -6,9 +6,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"lootnest/internal/core"
 	"lootnest/internal/win"
@@ -21,33 +25,97 @@ import (
 // ---------------------------------------------------------------------------
 
 var (
-	coverMu    sync.Mutex
-	coverCache = map[int]string{}
+	coverMu     sync.Mutex
+	coverCache  = map[int]string{}  // Steam app id -> data: URL from Steam's own cache, or ""
+	coverFlight = map[string]bool{} // downloads in progress, by key
 )
 
-// apiCover returns a Steam game's cached portrait cover as a data: URL, or ""
-// when Steam has none for it.
-func (a *App) apiCover(appID int) string {
-	coverMu.Lock()
-	if c, ok := coverCache[appID]; ok {
-		coverMu.Unlock()
-		return c
+func dataURL(p string) string {
+	b, err := os.ReadFile(p)
+	if err != nil || len(b) >= 4<<20 {
+		return ""
 	}
-	coverMu.Unlock()
-	url := ""
-	if p := core.SteamCover(a.env.SteamPath, appID); p != "" {
-		if b, err := os.ReadFile(p); err == nil && len(b) < 4<<20 {
-			mime := "image/jpeg"
-			if strings.HasSuffix(strings.ToLower(p), ".png") {
-				mime = "image/png"
+	mime := "image/jpeg"
+	if strings.HasSuffix(strings.ToLower(p), ".png") {
+		mime = "image/png"
+	}
+	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(b)
+}
+
+func coversDir() string { return filepath.Join(DataDir(), "covers") }
+
+var coverHTTP = &http.Client{Timeout: 15 * time.Second}
+
+func fetchURL(u string) ([]byte, error) {
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", Name+"/"+Version)
+	resp, err := coverHTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil // no such image: treated as "no cover"
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s answered %s", req.URL.Host, resp.Status)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+}
+
+// apiCover returns a game's cover as a data: URL, or "" for none yet.
+// A Steam game's cover comes from Steam's cache on this PC. Only when the
+// user turned on "Download covers", a missing cover is downloaded in the
+// background (never on the UI thread) and arrives as a "cover" event for key.
+func (a *App) apiCover(appID int, name, key string) string {
+	if appID > 0 {
+		coverMu.Lock()
+		c, ok := coverCache[appID]
+		coverMu.Unlock()
+		if !ok {
+			if p := core.SteamCover(a.env.SteamPath, appID); p != "" {
+				c = dataURL(p)
 			}
-			url = "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(b)
+			coverMu.Lock()
+			coverCache[appID] = c
+			coverMu.Unlock()
+		}
+		if c != "" {
+			return c
 		}
 	}
+	a.mu.Lock()
+	on := a.cfg.Settings.DownloadCovers
+	a.mu.Unlock()
+	if !on {
+		return ""
+	}
+	dir := coversDir()
+	if p := core.SavedCover(dir, name, appID); p != "" {
+		return dataURL(p)
+	}
 	coverMu.Lock()
-	coverCache[appID] = url
+	busy := coverFlight[key]
+	coverFlight[key] = true
 	coverMu.Unlock()
-	return url
+	if !busy {
+		go func() {
+			defer func() { coverMu.Lock(); delete(coverFlight, key); coverMu.Unlock() }()
+			p, err := core.DownloadedCover(fetchURL, dir, name, appID)
+			if err != nil {
+				a.logf("Couldn't download the cover for %s: %v", name, err)
+				return
+			}
+			if p != "" {
+				a.logf("Downloaded the cover for %s", name)
+				a.emit("cover", map[string]any{"key": key, "url": dataURL(p)})
+			}
+		}()
+	}
+	return ""
 }
 
 // apiLaunchFound starts a game that isn't set up for profiles: Steam games
