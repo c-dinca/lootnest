@@ -36,6 +36,8 @@
     applyHooks: (restart) => call("ps_applyHooks", restart),
     cover: (appId, name, key) => call("ps_cover", appId, name, key),
     launchFound: (key) => call("ps_launchFound", key),
+    checkUpdate: () => call("ps_checkUpdate"),
+    installUpdate: () => call("ps_installUpdate"),
     fixBlocked: (gameId, playerId) => call("ps_fixBlocked", gameId, playerId || ""),
   };
 
@@ -46,6 +48,7 @@
     q: "",             // library search
     filter: "all",     // library filter chip
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
+    update: {},        // {available, version, page, upToDate, checking, error, step}
     animateCards: true, // stagger the cards in on the next library render
     animateView: true,  // fade the page in on the next render
     menuFor: null,
@@ -135,6 +138,16 @@
         else toast(`Starting ${g ? g.name : "the game"} for ${pname(ev.playerId)}. Next time, start it from the ${g ? g.name : "game"} (Lootnest) shortcut on your desktop to choose who's playing.`);
         break;
       }
+      case "update":
+        S.update = Object.assign({}, ev, { checking: false });
+        if (ev.manual && ev.upToDate) toast(`Lootnest ${S.d.version} is the latest version.`);
+        if (ev.error) toast(ev.error, "error");
+        render();
+        break;
+      case "updateStep":
+        if (ev.error) { S.update.step = ""; toast(ev.error, "error"); } else S.update.step = ev.step;
+        render();
+        break;
       case "cover":
         pendingCovers.delete(ev.key);
         S.covers[ev.key] = ev.url;
@@ -247,11 +260,22 @@
         <p class="sub">Lootnest looks in Steam, Epic, GOG, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
         <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button></div></div>`;
     }
-    return `<div class="page wide">${head}${hookBanner()}
+    return `<div class="page wide">${head}${updateBanner()}${hookBanner()}
       <div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
       ${scanning ? `<div class="scanning"><span class="spinner"></span>Looking for games on this PC</div>` : ""}
       ${coverHint(all)}
       <div class="grid" id="grid">${gridHTML()}</div></div>`;
+  }
+
+  function updateBanner() {
+    const U = S.update;
+    if (!U.available) return "";
+    if (U.step) {
+      return `<div class="banner"><div><b>${U.step === "installing" ? `Installing Lootnest ${esc(U.version)}` : `Downloading Lootnest ${esc(U.version)}`}</b>
+        <p>${U.step === "installing" ? "Lootnest closes and opens again in a few seconds." : "Your players, games and profiles stay as they are."}</p></div><div class="bar" aria-hidden="true"></div></div>`;
+    }
+    return `<div class="banner"><div><b>Lootnest ${esc(U.version)} is ready to install</b><p>You have ${esc(S.d.version)}. Updating keeps your players, games and profiles.</p></div>
+      <div class="row">${U.page ? `<button class="btn quiet" data-action="update-notes">What's new</button>` : ""}<button class="btn primary" data-action="update-now">Update now</button></div></div>`;
   }
 
   function coverHint(all) {
@@ -848,6 +872,7 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
+          ${sw("checkUpdates", "Check for updates automatically", "Once a day, Lootnest asks GitHub for its latest version number. Nothing about you or your games is sent.", s.checkUpdates)}
           ${sw("downloadCovers", "Download covers for games outside Steam", "Looks each game up on the Steam store by its name and saves the cover on this PC. Only the game's name is sent. Off: those games show their name instead.", s.downloadCovers)}
         </div></section>
         <section class="section"><div class="numbers">
@@ -865,7 +890,10 @@
         </section>
         <section class="section">
           <div class="section-head"><h2>About</h2><p>Lootnest ${esc(S.d.version)}. Uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows.</p></div>
-          <div class="row"><button class="btn quiet danger" data-action="quit">Quit Lootnest</button></div>
+          <div class="row">${S.update.available
+            ? `<button class="btn primary" data-action="update-now" ${S.update.step ? "disabled" : ""}>${S.update.step ? "Updating" : `Update to ${esc(S.update.version)}`}</button>`
+            : `<button class="btn" data-action="update-check" ${S.update.checking ? "disabled" : ""}>${S.update.checking ? "Checking" : "Check for updates"}</button>`}
+            <button class="btn quiet danger" data-action="quit">Quit Lootnest</button></div>
         </section>
       </div></div>`;
   }
@@ -911,6 +939,11 @@
       try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     "covers-later"() { S.hideCoverHint = true; render(); },
+    "update-check"() { S.update = { checking: true }; render(); api.checkUpdate().catch((e) => { S.update = {}; toast(errText(e), "error"); render(); }); },
+    async "update-now"() {
+      try { await api.installUpdate(); } catch (e) { toast(errText(e), "error"); }
+    },
+    "update-notes"() { api.open("release").catch((e) => toast(errText(e), "error")); },
     "load-only": (el) => openPicker(el.dataset.game, "load"),
     menu(el) { S.menuFor = S.menuFor === el.dataset.game ? null : el.dataset.game; render(); const m = $(".menu button"); if (m) m.focus(); },
     "edit-game": (el) => { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; editGame(el.dataset.game); },

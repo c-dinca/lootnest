@@ -191,6 +191,7 @@ func Run(opt Options) error {
 		time.Sleep(2 * time.Second)
 		a.startScan()
 		a.autoHooks()
+		go a.watchUpdates()
 		go a.cleanupLegacy()
 	}()
 	go func() {

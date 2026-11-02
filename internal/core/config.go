@@ -72,6 +72,9 @@ type Settings struct {
 	// store by name and save their cover. Off by default: the only network
 	// access Lootnest has, and only when the user turns it on.
 	DownloadCovers bool `json:"downloadCovers"`
+	// CheckUpdates asks GitHub once a day whether a newer Lootnest exists.
+	// Off by default; "Check now" in Settings works either way.
+	CheckUpdates bool `json:"checkUpdates"`
 }
 
 type Config struct {

@@ -53,6 +53,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_fixBlocked", a.apiFixBlocked))
 	must(a.w.Bind("ps_cover", a.apiCover))
 	must(a.w.Bind("ps_launchFound", a.apiLaunchFound))
+	must(a.w.Bind("ps_checkUpdate", a.apiCheckUpdate))
+	must(a.w.Bind("ps_installUpdate", a.apiInstallUpdate))
 	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
@@ -341,9 +343,13 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
+	checkNow := s.CheckUpdates && !cfg.Settings.CheckUpdates
 	cfg.Settings = s
 	if err := a.saveConfig(cfg); err != nil {
 		return err
+	}
+	if checkNow {
+		go a.checkUpdate(false)
 	}
 	if err := win.SetAutostart(Name, fmt.Sprintf(`"%s" --tray`, a.exePath), p.Autostart); err != nil {
 		return fmt.Errorf("couldn't change the startup setting: %w", err)
@@ -606,6 +612,14 @@ func (a *App) apiOpen(kind, arg string) error {
 	case "pcgw":
 		target = "https://www.pcgamingwiki.com/w/index.php?search=" + url.QueryEscape(arg)
 		return win.ShellOpen(target)
+	case "release": // the newer release's page ("What's new"); only Lootnest's own
+		updateMu.Lock()
+		page := updateFound.Page
+		updateMu.Unlock()
+		if !strings.HasPrefix(page, "https://github.com/c-dinca/lootnest/releases/") {
+			return errors.New("Check for updates first.")
+		}
+		return win.ShellOpen(page)
 	case "log":
 		target = a.store.LogPath()
 	default:
