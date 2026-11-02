@@ -27,7 +27,8 @@ const (
 	WindowClass = "LootnestMainWindow"
 	MutexName   = `Local\Lootnest.SingleInstance.v1`
 	UninstallID = "Lootnest"
-	bgColor     = 0x151A24
+	bgColor     = 0x141312 // --ink in ui/app.css: the title bar blends into the window
+	borderColor = 0x2F2C28 // --line
 )
 
 // Version is set at build time with -ldflags "-X lootnest/internal/app.Version=..."
@@ -160,7 +161,7 @@ func Run(opt Options) error {
 			ClassName:   WindowClass,
 			Hidden:      opt.StartHidden && opt.LaunchGame == "",
 			Background:  bgColor,
-			OnCreate:    func(hwnd uintptr) { win.StyleTitleBar(hwnd, bgColor); win.SetWindowIcons(hwnd, dpi) },
+			OnCreate:    func(hwnd uintptr) { win.StyleTitleBar(hwnd, bgColor, borderColor); win.SetWindowIcons(hwnd, dpi) },
 			MessageHook: a.hook,
 		},
 	})

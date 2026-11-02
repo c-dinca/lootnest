@@ -174,7 +174,8 @@ func Center(hwnd uintptr, w, h int) {
 
 // StyleTitleBar asks DWM for a dark title bar and, on Windows 11, paints the
 // caption in the app's own background colour (0xRRGGBB).
-func StyleTitleBar(hwnd uintptr, rgb uint32) {
+// The window border takes border (0xRRGGBB) instead of the accent colour.
+func StyleTitleBar(hwnd uintptr, rgb, border uint32) {
 	if procDwmSetWindowAttribute.Find() != nil {
 		return
 	}
@@ -182,8 +183,10 @@ func StyleTitleBar(hwnd uintptr, rgb uint32) {
 	procDwmSetWindowAttribute.Call(hwnd, 20, uintptr(unsafe.Pointer(&on)), 4) // DWMWA_USE_IMMERSIVE_DARK_MODE
 	colorref := uint32((rgb&0xFF)<<16 | (rgb & 0xFF00) | (rgb>>16)&0xFF)
 	procDwmSetWindowAttribute.Call(hwnd, 35, uintptr(unsafe.Pointer(&colorref)), 4) // DWMWA_CAPTION_COLOR
-	text := uint32(0x00F2EDEA)
-	procDwmSetWindowAttribute.Call(hwnd, 36, uintptr(unsafe.Pointer(&text)), 4) // DWMWA_TEXT_COLOR
+	text := uint32(0x00E1E8EC)                                                      // #ECE8E1 as COLORREF
+	procDwmSetWindowAttribute.Call(hwnd, 36, uintptr(unsafe.Pointer(&text)), 4)     // DWMWA_TEXT_COLOR
+	edge := uint32((border&0xFF)<<16 | (border & 0xFF00) | (border>>16)&0xFF)
+	procDwmSetWindowAttribute.Call(hwnd, 34, uintptr(unsafe.Pointer(&edge)), 4) // DWMWA_BORDER_COLOR
 }
 
 // LoadAppIcon loads icon resource 1 from the exe at the given pixel size.

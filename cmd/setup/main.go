@@ -31,7 +31,10 @@ var page string
 // Version is set at build time.
 var Version = "1.0.0"
 
-const bg = 0x151A24
+const (
+	bg     = 0x141312 // matches the page background
+	border = 0x2F2C28
+)
 
 func init() { runtime.LockOSThread() }
 
@@ -116,7 +119,7 @@ func main() {
 		WindowOptions: webview2.WindowOptions{
 			Title: "Lootnest setup", Width: uint(scale(600)), Height: uint(scale(510)), IconId: 1, Center: true,
 			ClassName: "LootnestSetupWindow", Background: bg,
-			OnCreate: func(hwnd uintptr) { win.StyleTitleBar(hwnd, bg); win.SetWindowIcons(hwnd, dpi) },
+			OnCreate: func(hwnd uintptr) { win.StyleTitleBar(hwnd, bg, border); win.SetWindowIcons(hwnd, dpi) },
 		},
 	})
 	if w == nil {
