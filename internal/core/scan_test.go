@@ -96,3 +96,58 @@ func TestProposePaths(t *testing.T) {
 	}
 	_ = os.Remove
 }
+
+func TestScanSkipsAppsAndLaunchers(t *testing.T) {
+	root := t.TempDir()
+	// Electron app (Discord, FACEIT, CurseForge, Hone...): .pak files next to icudtl.dat.
+	discord := filepath.Join(root, "Discord")
+	write(t, filepath.Join(discord, "Discord.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(discord, "resources.pak"), "x")
+	write(t, filepath.Join(discord, "chrome_100_percent.pak"), "x")
+	write(t, filepath.Join(discord, "icudtl.dat"), "x")
+	write(t, filepath.Join(discord, "locales", "en-US.pak"), "x")
+	// Browser with the Chromium build one level down (Chrome, Edge).
+	edge := filepath.Join(root, "Edge")
+	write(t, filepath.Join(edge, "msedge.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(edge, "120.0.1", "msedge_100_percent.pak"), "x")
+	write(t, filepath.Join(edge, "120.0.1", "icudtl.dat"), "x")
+	// CEF launcher (Ubisoft Connect, MoBro).
+	cef := filepath.Join(root, "Ubisoft Connect")
+	write(t, filepath.Join(cef, "UbisoftConnect.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(cef, "libcef.dll"), "x")
+	write(t, filepath.Join(cef, "cef.pak"), "x")
+	for _, d := range []string{discord, edge, cef} {
+		if LooksLikeGame(d) {
+			t.Errorf("%s isn't a game", filepath.Base(d))
+		}
+	}
+
+	// A game that ships CEF still counts, through its own markers.
+	game := filepath.Join(root, "Some Game")
+	write(t, filepath.Join(game, "Game.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(game, "libcef.dll"), "x")
+	write(t, filepath.Join(game, "steam_api64.dll"), "x")
+	// An Unreal game's .pak files still count.
+	ue := filepath.Join(root, "UE Game")
+	write(t, filepath.Join(ue, "UEGame.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(ue, "Content", "Paks", "pakchunk0-Windows.pak"), "x")
+	for _, d := range []string{game, ue} {
+		if !LooksLikeGame(d) {
+			t.Errorf("%s is a game", filepath.Base(d))
+		}
+	}
+
+	// Launcher, runtime and versioned install folders are skipped by name,
+	// even when they carry game-engine files (Epic Online Services ships the EOS SDK).
+	progs := filepath.Join(root, "Programs")
+	for _, n := range []string{"Battle.net.17709", "app-1.0.9187", "Launcher", "Epic Online Services", "Social Club", "DirectX Redist"} {
+		write(t, filepath.Join(progs, n, "x.exe"), strings.Repeat("x", 5000))
+		write(t, filepath.Join(progs, n, "EOSSDK-Win64-Shipping.dll"), "x")
+	}
+	write(t, filepath.Join(progs, "Cyberpunk 2077", "Cyberpunk2077.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(progs, "Cyberpunk 2077", "bink2w64.dll"), "x")
+	found := ScanFolders([]string{progs}, []string{progs})
+	if len(found) != 1 || found[0].Name != "Cyberpunk 2077" {
+		t.Fatalf("want only Cyberpunk 2077, got %+v", found)
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -36,6 +37,19 @@ var gameMarkerExt = map[string]bool{
 	".rpf": true, ".wad": true, ".pck": true, ".assets": true, ".big": true, ".gpk": true, ".upk": true, ".ucas": true,
 }
 
+// isChromiumDir reports a folder holding a Chromium, Electron or CEF build
+// (icudtl.dat or libcef.dll next to it). Apps built on them (browsers,
+// Discord, launchers, hardware tools) ship .pak files too, so in such a
+// folder .pak files don't count as a game marker.
+func isChromiumDir(ents []os.DirEntry) bool {
+	for _, e := range ents {
+		if n := strings.ToLower(e.Name()); n == "icudtl.dat" || n == "libcef.dll" {
+			return true
+		}
+	}
+	return false
+}
+
 // LooksLikeGame checks a folder (and two levels below) for files that game
 // engines and game stores leave behind.
 func LooksLikeGame(dir string) bool {
@@ -46,6 +60,7 @@ func LooksLikeGame(dir string) bool {
 			return false
 		}
 		hasExe, hasEngine := false, false
+		chromium := isChromiumDir(ents)
 		for _, e := range ents {
 			n := strings.ToLower(e.Name())
 			if e.IsDir() {
@@ -57,7 +72,7 @@ func LooksLikeGame(dir string) bool {
 				}
 				continue
 			}
-			if gameMarkerFiles[n] || gameMarkerExt[filepath.Ext(n)] {
+			if gameMarkerFiles[n] || (gameMarkerExt[filepath.Ext(n)] && !(chromium && filepath.Ext(n) == ".pak")) {
 				return true
 			}
 			if strings.HasSuffix(n, ".exe") {
@@ -73,7 +88,7 @@ func LooksLikeGame(dir string) bool {
 		for _, e := range ents {
 			if e.IsDir() {
 				n := strings.ToLower(e.Name())
-				if n == "redist" || n == "_commonredist" || n == "directx" || strings.HasPrefix(n, "$") {
+				if n == "redist" || n == "_commonredist" || n == "directx" || n == "locales" || n == "swiftshader" || strings.HasPrefix(n, "$") {
 					continue
 				}
 				if walk(filepath.Join(d, e.Name()), depth+1) {
@@ -254,6 +269,25 @@ func EpicGames(manifestDir string) []FoundGame {
 	return out
 }
 
+// versionedDir matches app install folders named after a version, such as
+// "Battle.net.17709" or Discord's "app-1.0.9187".
+var versionedDir = regexp.MustCompile(`(^app-\d)|([.-]\d{3,}$)`)
+
+// notGameDir reports folder names that hold launchers, runtimes or
+// installers rather than a game.
+func notGameDir(name string) bool {
+	n := strings.ToLower(name)
+	if versionedDir.MatchString(n) {
+		return true
+	}
+	for _, w := range []string{"launcher", "online services", "social club", "redist", "installer", "setup"} {
+		if strings.Contains(n, w) {
+			return true
+		}
+	}
+	return false
+}
+
 // ScanFolders looks one level inside each root (and inside known game
 // folders like D:\Games) for folders that look like games.
 func ScanFolders(roots []string, containers []string) []FoundGame {
@@ -275,7 +309,7 @@ func ScanFolders(roots []string, containers []string) []FoundGame {
 				continue
 			}
 			dir := filepath.Join(root, e.Name())
-			if isContainer(dir, containers) || seen[strings.ToLower(dir)] {
+			if notGameDir(e.Name()) || isContainer(dir, containers) || seen[strings.ToLower(dir)] {
 				continue
 			}
 			seen[strings.ToLower(dir)] = true
