@@ -54,6 +54,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_cover", a.apiCover))
 	must(a.w.Bind("ps_launchFound", a.apiLaunchFound))
 	must(a.w.Bind("ps_checkUpdate", a.apiCheckUpdate))
+	must(a.w.Bind("ps_cloudStatus", a.apiCloudStatus))
 	must(a.w.Bind("ps_installUpdate", a.apiInstallUpdate))
 	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
