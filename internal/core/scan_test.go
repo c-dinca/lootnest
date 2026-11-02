@@ -150,4 +150,33 @@ func TestScanSkipsAppsAndLaunchers(t *testing.T) {
 	if len(found) != 1 || found[0].Name != "Cyberpunk 2077" {
 		t.Fatalf("want only Cyberpunk 2077, got %+v", found)
 	}
+
+	// Chromium build one level below the .pak files (Qt WebEngine, CEF in a
+	// subfolder), as AMD Software ships it.
+	amd := filepath.Join(root, "CNext")
+	write(t, filepath.Join(amd, "RadeonSoftware.exe"), strings.Repeat("x", 5000))
+	write(t, filepath.Join(amd, "qtwebengine_resources.pak"), "x")
+	write(t, filepath.Join(amd, "resources", "icudtl.dat"), "x")
+	if LooksLikeGame(amd) {
+		t.Error("CNext isn't a game")
+	}
+}
+
+func TestSkipShortcut(t *testing.T) {
+	sep := string(filepath.Separator)
+	pf := sep + filepath.Join("Program Files")
+	for _, c := range []struct {
+		target, root string
+		skip         bool
+	}{
+		{filepath.Join(pf, "AMD", "CNext", "CNext", "RadeonSoftware.exe"), filepath.Join(pf, "AMD", "CNext", "CNext"), true},
+		{filepath.Join(pf, "LGHUB", "lghub.exe"), filepath.Join(pf, "LGHUB"), true},
+		{filepath.Join(pf, "Ubisoft", "Ubisoft Game Launcher", "UbisoftConnect.exe"), filepath.Join(pf, "Ubisoft", "Ubisoft Game Launcher"), true},
+		{filepath.Join(pf, "Hades", "x64", "Hades.exe"), filepath.Join(pf, "Hades"), false},
+		{filepath.Join(sep+"Games", "Amdroid Wars", "game.exe"), filepath.Join(sep+"Games", "Amdroid Wars"), false},
+	} {
+		if got := SkipShortcut(c.target, c.root); got != c.skip {
+			t.Errorf("SkipShortcut(%s) = %v", c.target, got)
+		}
+	}
 }

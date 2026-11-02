@@ -97,7 +97,7 @@ func (a *App) scanPC() []core.FoundGame {
 				break
 			}
 		}
-		if skip || !core.LooksLikeGame(root) {
+		if skip || core.SkipShortcut(target, root) || !core.LooksLikeGame(root) {
 			continue
 		}
 		name := strings.TrimSuffix(filepath.Base(lnk), filepath.Ext(lnk))

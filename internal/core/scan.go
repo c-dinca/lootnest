@@ -37,22 +37,40 @@ var gameMarkerExt = map[string]bool{
 	".rpf": true, ".wad": true, ".pck": true, ".assets": true, ".big": true, ".gpk": true, ".upk": true, ".ucas": true,
 }
 
-// isChromiumDir reports a folder holding a Chromium, Electron or CEF build
-// (icudtl.dat or libcef.dll next to it). Apps built on them (browsers,
-// Discord, launchers, hardware tools) ship .pak files too, so in such a
-// folder .pak files don't count as a game marker.
-func isChromiumDir(ents []os.DirEntry) bool {
-	for _, e := range ents {
-		if n := strings.ToLower(e.Name()); n == "icudtl.dat" || n == "libcef.dll" {
-			return true
+// hasChromium reports a folder that holds a Chromium, Electron, CEF or Qt
+// WebEngine build (icudtl.dat or libcef.dll) in it or up to two levels
+// below. Apps built on them (browsers, Discord, launchers, hardware tools)
+// ship .pak files too, so in such a folder .pak files don't count as a game
+// marker.
+func hasChromium(dir string) bool {
+	var walk func(d string, depth int) bool
+	walk = func(d string, depth int) bool {
+		ents, err := os.ReadDir(d)
+		if err != nil || len(ents) > 3000 {
+			return false
 		}
+		for _, e := range ents {
+			if n := strings.ToLower(e.Name()); !e.IsDir() && (n == "icudtl.dat" || n == "libcef.dll") {
+				return true
+			}
+		}
+		if depth >= 2 {
+			return false
+		}
+		for _, e := range ents {
+			if e.IsDir() && walk(filepath.Join(d, e.Name()), depth+1) {
+				return true
+			}
+		}
+		return false
 	}
-	return false
+	return walk(dir, 0)
 }
 
 // LooksLikeGame checks a folder (and two levels below) for files that game
 // engines and game stores leave behind.
 func LooksLikeGame(dir string) bool {
+	chromium := hasChromium(dir)
 	var walk func(d string, depth int) bool
 	walk = func(d string, depth int) bool {
 		ents, err := os.ReadDir(d)
@@ -60,7 +78,6 @@ func LooksLikeGame(dir string) bool {
 			return false
 		}
 		hasExe, hasEngine := false, false
-		chromium := isChromiumDir(ents)
 		for _, e := range ents {
 			n := strings.ToLower(e.Name())
 			if e.IsDir() {
@@ -282,6 +299,29 @@ func notGameDir(name string) bool {
 	}
 	for _, w := range []string{"launcher", "online services", "social club", "redist", "installer", "setup"} {
 		if strings.Contains(n, w) {
+			return true
+		}
+	}
+	return false
+}
+
+// vendorDirs are hardware and driver makers' install folders: their tools
+// (AMD Software, G HUB, iCUE...) are never games.
+var vendorDirs = map[string]bool{
+	"amd": true, "ati technologies": true, "nvidia": true, "nvidia corporation": true, "intel": true, "realtek": true,
+	"logitech": true, "logishrd": true, "lghub": true, "razer": true, "corsair": true, "steelseries": true,
+	"asus": true, "msi": true, "gigabyte": true, "nzxt": true,
+}
+
+// SkipShortcut reports shortcuts that point at a launcher, installer or
+// hardware tool rather than a game: root is the game folder GameRoot found
+// for the target exe.
+func SkipShortcut(target, root string) bool {
+	if notGameDir(filepath.Base(root)) {
+		return true // e.g. Ubisoft Game Launcher, which has the games inside it
+	}
+	for _, part := range strings.Split(filepath.ToSlash(filepath.Dir(target)), "/") {
+		if vendorDirs[strings.ToLower(part)] {
 			return true
 		}
 	}
