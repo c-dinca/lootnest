@@ -1,15 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.4.0
 
+- PlaySwap is now **Lootnest**, with a new name and icon. Installing Lootnest over PlaySwap moves everything over: the data folder (players, games, profiles, backups, log) moves to `%LOCALAPPDATA%\Lootnest`, PlaySwap's Start menu, desktop, "Start with Windows" and Apps & features entries are replaced, and Steam launch options and "(PlaySwap)" game shortcuts keep working until Lootnest switches them to its own exe.
+- New **Library**: every game on the PC in one place, as a grid of covers with search and filters. Covers come from Steam's own cache on your PC, so nothing is downloaded. Any game can be played from the library; profiles are now something you turn on per game, not something every game needs.
+- A calmer look: flat warm colours with one gold accent, no gradients, a sidebar, a side panel for each game, and short animations that turn off when Windows' animation effects are off. Player colours are softer; existing players move to the matching new colour. New flat gold icon.
+- The title bar and window border use Lootnest's own colours, scrollbars are thin and rounded, and the window no longer acts like a web page (no browser right-click menu, no Ctrl+wheel zoom).
 - Update from inside Lootnest: **Settings > Check for updates** (or the opt-in daily check) finds a newer release, and **Update now** downloads, verifies and installs it, then reopens Lootnest with everything kept.
 - New setting, off by default: **Download covers for games outside Steam**. Epic, GOG and other games get their cover from the Steam store, looked up by name; only the name is sent. The Library offers it when games are missing covers.
-- The title bar and window border now use Lootnest's own colours instead of the old blue, scrollbars are thin and rounded, and the window no longer acts like a web page (no browser right-click menu, no Ctrl+wheel zoom).
 - Fixed: the Library showed covers for only a few Steam games. Lootnest now finds the cover in Steam's cache whatever Steam named the file.
-- New **Library**: every game on the PC in one place, as a grid of covers with search and filters. Covers come from Steam's own cache on your PC, so nothing is downloaded. Any game can be played from the library; profiles are now something you turn on per game, not something every game needs.
-- A calmer look: flat warm colours with one gold accent, no gradients, a sidebar, a side panel for each game, and short animations that turn off when Windows' animation effects are off. Player colours are softer; existing players move to the matching new colour.
-- New flat gold icon.
-- PlaySwap is now **Lootnest**, with a new name and icon. Installing Lootnest over PlaySwap moves everything over: the data folder (players, games, profiles, backups, log) moves to `%LOCALAPPDATA%\Lootnest`, PlaySwap's Start menu, desktop, "Start with Windows" and Apps & features entries are replaced, and Steam launch options and "(PlaySwap)" game shortcuts keep working until Lootnest switches them to its own exe.
 
 ## 1.3.0
 
