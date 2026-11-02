@@ -241,8 +241,45 @@ func SteamAccounts(steamPath string) []string {
 	return out
 }
 
+// steamID64Base turns a SteamID64 into the account id used for userdata folders.
+const steamID64Base = 76561197960265728
+
+// MostRecentSteamAccount reads Steam\config\loginusers.vdf and returns the
+// userdata folder name of the account Steam signs in to next (MostRecent,
+// else the newest Timestamp). Steam keeps this file while it is closed or
+// still signing in, when the registry's ActiveUser is 0.
+func MostRecentSteamAccount(steamPath string) string {
+	b, err := os.ReadFile(filepath.Join(steamPath, "config", "loginusers.vdf"))
+	if err != nil {
+		return ""
+	}
+	m, err := ParseVDF(string(b))
+	if err != nil {
+		return ""
+	}
+	users := vdfMap(m, "users")
+	best, bestTime, bestRecent := "", int64(-1), false
+	for id64, v := range users {
+		u, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		n, err := strconv.ParseUint(id64, 10, 64)
+		if err != nil || n <= steamID64Base {
+			continue
+		}
+		recent := vdfStr(u, "MostRecent") == "1"
+		ts, _ := strconv.ParseInt(vdfStr(u, "Timestamp"), 10, 64)
+		if (recent && !bestRecent) || (recent == bestRecent && ts > bestTime) {
+			best, bestTime, bestRecent = strconv.FormatUint(n-steamID64Base, 10), ts, recent
+		}
+	}
+	return best
+}
+
 // SteamUserDir picks Steam\userdata\<id>: the configured account, else the
-// logged-in one, else the only one, else the most recently used.
+// logged-in one, else the only one, else the one Steam signs in to next,
+// else the one whose settings changed last.
 func SteamUserDir(steamPath, configured string, activeUser uint32) (string, error) {
 	if steamPath == "" {
 		return "", errors.New("Steam isn't installed (or wasn't found)")
@@ -268,9 +305,12 @@ func SteamUserDir(steamPath, configured string, activeUser uint32) (string, erro
 	case 1:
 		return filepath.Join(ud, accts[0]), nil
 	}
-	best, bestT := "", int64(0)
+	if a := MostRecentSteamAccount(steamPath); a != "" && exists(filepath.Join(ud, a)) {
+		return filepath.Join(ud, a), nil
+	}
+	best, bestT := accts[0], int64(0)
 	for _, a := range accts {
-		if st, err := os.Stat(filepath.Join(ud, a)); err == nil && st.ModTime().Unix() > bestT {
+		if st, err := os.Stat(filepath.Join(ud, a, "config", "localconfig.vdf")); err == nil && st.ModTime().Unix() > bestT {
 			best, bestT = a, st.ModTime().Unix()
 		}
 	}
