@@ -92,9 +92,9 @@ p { margin: 0; }
 .games { display: flex; flex-direction: column; gap: 10px; }
 .game {
   display: grid; grid-template-columns: 4px 1fr auto; align-items: stretch;
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-m); overflow: hidden;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-m);
 }
-.game-owner { background: var(--line); }
+.game-owner { background: var(--line); border-radius: var(--radius-m) 0 0 var(--radius-m); }
 .game-body { padding: 16px 20px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
 .game-name { font: 600 18px/1.25 var(--font-display); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .game-meta { color: var(--muted); font-size: 13px; display: flex; gap: 14px; flex-wrap: wrap; }

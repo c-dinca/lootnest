@@ -50,6 +50,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_addFound", a.apiAddFound))
 	must(a.w.Bind("ps_foundGame", a.apiFoundGame))
 	must(a.w.Bind("ps_applyHooks", a.apiApplyHooks))
+	must(a.w.Bind("ps_fixBlocked", a.apiFixBlocked))
 	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
@@ -214,6 +215,9 @@ func (a *App) apiSaveGame(g core.Game) (core.Game, error) {
 	saved, err := a.apiSaveGameQuiet(g)
 	if err != nil || saved.Launch.Type != "steam" {
 		return saved, err
+	}
+	if saved.SteamDirect && (isNew || !wasDirect) {
+		a.directShortcut(saved.ID)
 	}
 	if !isNew && saved.SteamDirect != wasDirect {
 		// Taking PlaySwap out of Steam isn't optional; putting it back follows

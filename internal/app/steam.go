@@ -174,7 +174,25 @@ func SteamWrapper(appID int, command []string) int {
 			f.Close()
 		}
 	}
-	run := func() int { return runSteamCommand(appID, command, logf) }
+	run := func() int {
+		code, err := runSteamCommand(appID, command, logf)
+		if err == nil {
+			return code
+		}
+		logf("Steam wrapper: couldn't start %s: %v", command[0], err)
+		if errors.Is(err, os.ErrPermission) {
+			// Anti-cheats such as FACEIT AC only let Steam start the game.
+			// The PlaySwap window offers to fix that in one click.
+			if h := win.FindWindow(WindowClass); h != 0 && win.SendCommand(h, fmt.Sprintf("blocked:%d", appID)) {
+				return 1
+			}
+			win.MessageBox(0, "An anti-cheat, such as FACEIT AC, stopped PlaySwap from starting the game. It only lets Steam start it.\n\n"+
+				"Open PlaySwap, choose Edit game for this game and turn on \"Let Steam start this game\".", Name, win.MB_ICONWARNING)
+			return 1
+		}
+		win.MessageBox(0, "Couldn't start the game:\n"+err.Error(), Name, win.MB_ICONERROR)
+		return 1
+	}
 
 	h := win.FindWindow(WindowClass)
 	if h == 0 {
@@ -225,22 +243,15 @@ func SteamWrapper(appID int, command []string) int {
 
 // runSteamCommand starts the game exactly as Steam asked and waits until it
 // (and the game's main process, if it relaunches itself) has closed, so
-// Steam keeps showing the game as running.
-func runSteamCommand(appID int, command []string, logf func(string, ...any)) int {
+// Steam keeps showing the game as running. err is set when the game
+// couldn't be started at all.
+func runSteamCommand(appID int, command []string, logf func(string, ...any)) (int, error) {
 	cmd := exec.Command(command[0], command[1:]...)
 	if wd, err := os.Getwd(); err == nil {
 		cmd.Dir = wd
 	}
 	if err := cmd.Start(); err != nil {
-		logf("Steam wrapper: couldn't start %s: %v", command[0], err)
-		msg := "Couldn't start the game:\n" + err.Error()
-		if errors.Is(err, os.ErrPermission) {
-			// Anti-cheats such as FACEIT AC only let Steam start the game.
-			msg = "Windows wouldn't let PlaySwap start the game (access denied). This usually means an anti-cheat, such as FACEIT AC, only lets Steam start it.\n\n" +
-				"To fix it, open PlaySwap, choose Edit game for this game and turn on \"Let Steam start this game\". Then use PlaySwap's Play button to choose who's playing."
-		}
-		win.MessageBox(0, msg, Name, win.MB_ICONERROR)
-		return 1
+		return 1, err
 	}
 	_ = cmd.Wait()
 	code := 0
@@ -264,7 +275,100 @@ func runSteamCommand(appID int, command []string, logf func(string, ...any)) int
 			}
 		}
 	}
-	return code
+	return code, nil
+}
+
+// handleSteamBlocked runs when an anti-cheat stopped the Steam wrapper from
+// starting a game: end the stuck launch and offer the one-click fix.
+func (a *App) handleSteamBlocked(appID int) {
+	a.mu.Lock()
+	gameID := findSteamGameID(a.cfg, appID)
+	playerID := ""
+	if s := a.sessions[gameID]; gameID != "" && s != nil && s.Phase == "launching" {
+		playerID = s.PlayerID
+		delete(a.sessions, gameID) // the player's files stay loaded
+	}
+	a.mu.Unlock()
+	if gameID == "" {
+		return
+	}
+	a.logf("An anti-cheat blocked %s from starting through PlaySwap", a.gameName(gameID))
+	a.emitSessions()
+	a.show()
+	a.emit("blocked", map[string]any{"gameId": gameID, "playerId": playerID})
+}
+
+// apiFixBlocked runs fixBlocked in the background (closing Steam can take a
+// while, and bound calls run on the UI thread). The result arrives as a
+// "blockedDone" event.
+func (a *App) apiFixBlocked(gameID, playerID string) error {
+	go func() {
+		need, err := a.fixBlocked(gameID, playerID)
+		ev := map[string]any{"gameId": gameID, "playerId": playerID, "need": need.Need}
+		if err != nil {
+			a.logf("ERROR letting Steam start %s: %v", a.gameName(gameID), err)
+			ev["error"] = err.Error()
+		}
+		a.emit("blockedDone", ev)
+	}()
+	return nil
+}
+
+// fixBlocked lets Steam start the game from now on (taking PlaySwap out of
+// its launch options, restarting Steam if needed), then starts it for the
+// player. Need "picker" means the UI should ask who's playing.
+func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	g := cfg.Game(gameID)
+	if g == nil || g.Launch.Type != "steam" {
+		return Need{}, errors.New("That game isn't in PlaySwap anymore.")
+	}
+	if !g.SteamDirect {
+		g.SteamDirect = true
+		if _, err := a.apiSaveGameQuiet(*g); err != nil {
+			return Need{}, err
+		}
+		a.directShortcut(g.ID)
+	}
+	a.mu.Lock()
+	restoresOnly := !a.cfg.Settings.AutoSteamHooks
+	a.mu.Unlock()
+	// Close Steam and leave it closed: "steam.exe -applaunch" below starts it
+	// again and only launches the game once Steam has signed in. Launching
+	// into a Steam that is still starting can leave the game hanging.
+	if steamRunning() {
+		a.logf("Closing Steam so it starts %s by itself", g.Name)
+		if err := shutdownSteam(a.env.SteamPath); err != nil {
+			return Need{}, err
+		}
+	}
+	if _, err := a.applyHooks(false, restoresOnly); err != nil {
+		if errors.Is(err, ErrSteamRunning) {
+			return Need{}, errors.New("Steam opened again before PlaySwap could update it. Close Steam (Steam menu, Exit), then try again.")
+		}
+		return Need{}, err
+	}
+	if playerID == "" {
+		return Need{Need: "picker"}, nil
+	}
+	need, err := a.apiPlay(swapRequest{GameID: gameID, PlayerID: playerID})
+	if err == nil && need.Need != "" {
+		return Need{Need: "picker"}, nil
+	}
+	return need, err
+}
+
+// directShortcut puts a "<game> (PlaySwap)" shortcut on the desktop for a
+// game Steam starts by itself: Steam's Play button can't ask who's playing,
+// the shortcut can.
+func (a *App) directShortcut(gameID string) {
+	if lnk, err := a.apiShortcut(gameID); err != nil {
+		a.logf("Couldn't create the desktop shortcut for %s: %v", a.gameName(gameID), err)
+	} else {
+		a.logf("Desktop shortcut created: %s", lnk)
+	}
 }
 
 // ParseSteamArgs pulls "--steam <appid> -- <command...>" out of the arguments.

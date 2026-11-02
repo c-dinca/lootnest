@@ -307,6 +307,10 @@ func (a *App) handleCommand(cmd string) {
 				a.handleSteamRequest(id, parts[1])
 			}
 		}
+	case strings.HasPrefix(cmd, "blocked:"):
+		if id, err := strconv.Atoi(strings.TrimPrefix(cmd, "blocked:")); err == nil {
+			a.handleSteamBlocked(id)
+		}
 	case cmd == "quit-now":
 		a.quit(true)
 	}

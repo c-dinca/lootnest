@@ -276,8 +276,14 @@ func (a *App) tick() {
 			a.sessions[g.ID] = &Session{GameID: g.ID, PlayerID: owner, Phase: "playing", Outside: true, Since: time.Now()}
 			changed = true
 			a.logf("%s started outside PlaySwap; %s's files are loaded", g.Name, cfg.PlayerName(owner))
-			notes = append(notes, [2]string{g.Name + " started",
-				fmt.Sprintf("It's using %s's settings and saves. Progress will be saved to %s when the game closes.", cfg.PlayerName(owner), cfg.PlayerName(owner))})
+			who := cfg.PlayerName(owner)
+			if g.Launch.Type == "steam" && g.SteamDirect {
+				notes = append(notes, [2]string{fmt.Sprintf("%s started with %s's settings", g.Name, who),
+					fmt.Sprintf("Not %s? Quit the game and start it from the %s (PlaySwap) shortcut to choose who's playing.", who, g.Name)})
+			} else {
+				notes = append(notes, [2]string{g.Name + " started",
+					fmt.Sprintf("It's using %s's settings and saves. Progress will be saved to %s when the game closes.", who, who)})
+			}
 		case s != nil && s.Phase == "launching":
 			if running {
 				s.Phase = "playing"
