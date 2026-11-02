@@ -38,6 +38,7 @@
     launchFound: (key) => call("ps_launchFound", key),
     checkUpdate: () => call("ps_checkUpdate"),
     installUpdate: () => call("ps_installUpdate"),
+    cloudStatus: (id) => call("ps_cloudStatus", id),
     fixBlocked: (gameId, playerId) => call("ps_fixBlocked", gameId, playerId || ""),
   };
 
@@ -358,6 +359,11 @@
   function openSheet(kind, id) {
     S.dialog = { kind: "sheet", item: kind, id };
     renderOverlay();
+    const g = kind === "game" && game(id);
+    if (g && g.launch.type === "steam") {
+      const D = S.dialog;
+      api.cloudStatus(id).then((st) => { if (S.dialog === D) { D.cloud = st; renderOverlay(); } }).catch(() => {});
+    }
     document.querySelectorAll(".sheet img[data-cover]:not(.ready)").forEach(fetchCover);
     setTimeout(() => { const b = $(".sheet .btn.primary"); if (b) b.focus(); }, 30);
   }
@@ -383,6 +389,11 @@
     const g = it.g;
     const owner = S.d.active[g.id];
     const s = session(g.id);
+    const cloud = D.cloud && {
+      none: "Steam Cloud doesn't sync these files.",
+      elsewhere: "Steam Cloud syncs other files of this game, not the ones profiles swap.",
+      overlap: `Steam Cloud syncs ${D.cloud.count === 1 ? "1 of these files" : D.cloud.count + " of these files"}. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.`,
+    }[D.cloud.state];
     const meta = `<span>${esc(sourceLabel(it.source))} · Profiles on</span>
       ${s ? `<span class="status"><span class="dot" style="background:${esc(color(s.playerId))}"></span>${esc(sessionText(s))}</span>`
         : owner && player(owner) ? `<span class="who"><span class="dot" style="background:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files are loaded</span>`
@@ -391,6 +402,7 @@
       ${top(meta)}
       <div class="sheet-actions"><button class="btn primary" data-action="play" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Play</button>
         <button class="btn" data-action="load-only" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Load someone's files without playing</button></div>
+      ${cloud ? `<p class="hint sheet-note">${esc(cloud)}</p>` : ""}
       <div class="sheet-list">
         <button data-action="edit-game" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Edit game</button>
         ${g.launch.type === "steam" && !g.steamDirect ? `<button data-action="steam-setup" data-game="${esc(g.id)}">Ask who's playing when started from Steam</button>` : ""}
@@ -775,7 +787,6 @@
           <div class="row"><button class="btn" data-action="add-path" data-kind="folder">${icon.plus}Add folder</button><button class="btn" data-action="add-path" data-kind="file">${icon.plus}Add file</button>
             <button class="btn quiet" data-action="pcgw">Look up where ${esc(g.name || "this game")} saves</button></div>
           ${sugg.length ? `<div class="suggest"><span class="label">Found on this PC</span>${sugg.map((s) => `<div class="suggest-item"><div class="grow"><code title="${esc(s.resolved)}">${esc(s.path)}</code><span class="hint">${esc(s.reason)}, ${fmtSize(s.size)}</span></div><button class="btn small" data-action="add-sugg" data-path="${esc(s.path)}">Add</button></div>`).join("")}</div>` : ""}
-          ${g.launch.type === "steam" ? `<div class="note"><b>Turn off Steam Cloud for this game.</b> In Steam, open the game's Properties and switch off Steam Cloud under General. Otherwise Steam can sync one person's files over another's.</div>` : ""}
         </section>
 
         <section class="section">

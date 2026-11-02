@@ -157,6 +157,9 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest) {
 		fail(err)
 		return
 	}
+	if req.ReqID != "" || req.Launch {
+		a.armCloudWatch(g)
+	}
 	if req.ReqID != "" {
 		// Steam's wrapper starts the game; the watcher follows it from here.
 		a.mu.Lock()
@@ -289,6 +292,8 @@ func (a *App) tick() {
 				s.Phase = "playing"
 				s.Since = time.Now()
 				changed = true
+				c := cfg.Clone()
+				go a.checkCloudWatch(c, c.Game(g.ID), s.PlayerID)
 			} else if time.Now().After(s.deadline) {
 				delete(a.sessions, g.ID)
 				changed = true
@@ -324,11 +329,28 @@ func (a *App) tick() {
 
 func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
 	time.Sleep(3 * time.Second) // let the game and Steam finish writing
+	who := cfg.PlayerName(playerID)
+	if takeCloudReplaced(g.ID) {
+		// Steam Cloud's copy, not this player's files: keep it as a backup and
+		// put the player's own profile back, instead of saving over it.
+		dir, err := a.eng.RevertSession(cfg, g.ID, playerID, cfg.Settings.BackupsToKeep)
+		a.mu.Lock()
+		delete(a.sessions, g.ID)
+		a.mu.Unlock()
+		if err != nil {
+			a.logf("ERROR putting %s's files back for %s: %v", who, g.Name, err)
+			a.notify("Couldn't put "+who+"'s files back", err.Error())
+		} else {
+			a.logf("Kept %s's profile for %s; this session's files (from Steam Cloud) are in %s", who, g.Name, dir)
+			a.notify("Kept "+who+"'s "+g.Name+" profile", "This session used Steam Cloud's copy, so it was saved as a backup instead. "+who+"'s own files are loaded again.")
+		}
+		a.emitSessions()
+		return
+	}
 	err := a.eng.FinishSession(cfg, g.ID, playerID)
 	a.mu.Lock()
 	delete(a.sessions, g.ID)
 	a.mu.Unlock()
-	who := cfg.PlayerName(playerID)
 	if err != nil {
 		a.logf("ERROR saving %s for %s: %v", g.Name, who, err)
 		a.notify("Couldn't save "+g.Name, err.Error())

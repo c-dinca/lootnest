@@ -36,7 +36,7 @@ It's made for couples, siblings and housemates who share a gaming PC and keep ov
 
 You need Windows 10 or 11 (64-bit) with the Microsoft Edge WebView2 Runtime, which is built into Windows 11 and current Windows 10. No administrator rights are needed. To uninstall, use **Settings > Apps > Installed apps**.
 
-**Turn off Steam Cloud** for each Steam game you manage (game **Properties > General**). Otherwise Steam can sync one person's files over another's.
+**Steam Cloud can stay on.** Each game's panel says whether Steam Cloud syncs any of the files profiles swap. For those that it does, Lootnest checks the files each time the game starts: if Steam replaced a player's files with the cloud's copy (for example from the same Steam account on another PC), Lootnest tells you, keeps that player's profile as it was, and saves the session as a backup instead.
 
 ## What it can't separate
 
