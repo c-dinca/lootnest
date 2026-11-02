@@ -84,7 +84,11 @@ type Config struct {
 }
 
 // PlayerColors is the palette offered in the UI. The first two are the defaults.
-var PlayerColors = []string{"#4F8CFF", "#FF5D8F", "#2EC4A0", "#FFB020", "#A77BFF", "#FF7A45"}
+var PlayerColors = []string{"#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"}
+
+// oldPlayerColors are the brighter colours versions up to 1.3 offered; each
+// maps to the calmer colour at the same place in PlayerColors.
+var oldPlayerColors = []string{"#4F8CFF", "#FF5D8F", "#2EC4A0", "#FFB020", "#A77BFF", "#FF7A45"}
 
 func DefaultConfig() *Config {
 	return &Config{
@@ -108,6 +112,13 @@ func DefaultConfig() *Config {
 }
 
 func (c *Config) normalize() {
+	for i := range c.Players {
+		for j, old := range oldPlayerColors {
+			if strings.EqualFold(c.Players[i].Color, old) {
+				c.Players[i].Color = PlayerColors[j]
+			}
+		}
+	}
 	if c.Version == 0 {
 		c.Version = ConfigVersion
 	}

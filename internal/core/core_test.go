@@ -453,3 +453,36 @@ func TestSteamUserDirMostRecent(t *testing.T) {
 		t.Fatalf("fallback should pick the newest localconfig.vdf, got %s", p)
 	}
 }
+
+func TestSteamCover(t *testing.T) {
+	steam := t.TempDir()
+	cache := filepath.Join(steam, "appcache", "librarycache")
+	write(t, filepath.Join(cache, "730_library_600x900.jpg"), "old layout")
+	write(t, filepath.Join(cache, "381210", "library_600x900.jpg"), "new layout")
+	write(t, filepath.Join(cache, "1091500", "8a1f2c", "library_600x900.jpg"), "hashed")
+	write(t, filepath.Join(cache, "570", "header.jpg"), "no portrait")
+	for id, want := range map[int]string{
+		730:     filepath.Join(cache, "730_library_600x900.jpg"),
+		381210:  filepath.Join(cache, "381210", "library_600x900.jpg"),
+		1091500: filepath.Join(cache, "1091500", "8a1f2c", "library_600x900.jpg"),
+		570:     "",
+		42:      "",
+	} {
+		if got := SteamCover(steam, id); got != want {
+			t.Errorf("SteamCover(%d) = %q, want %q", id, got, want)
+		}
+	}
+}
+
+func TestOldPlayerColorsMapped(t *testing.T) {
+	store := &Store{Dir: t.TempDir()}
+	cfg := DefaultConfig()
+	cfg.Players[0].Color, cfg.Players[1].Color = "#4F8CFF", "#ff5d8f"
+	if err := store.SaveConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+	got, _, _ := store.LoadConfig()
+	if got.Players[0].Color != PlayerColors[0] || got.Players[1].Color != PlayerColors[1] {
+		t.Fatalf("colours not mapped: %+v", got.Players)
+	}
+}

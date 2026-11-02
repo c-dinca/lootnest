@@ -8,18 +8,22 @@
 </head>
 <body>
 <div id="app" class="app">
-  <header class="topbar">
+  <aside class="side">
     <div class="brand" aria-label="Lootnest">
-      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="ln-mark" x1="0" x2="1"><stop offset="0" style="stop-color:var(--p1)"/><stop offset="1" style="stop-color:var(--p2)"/></linearGradient></defs><path d="M5.5 15.5a10.5 9.5 0 0 0 21 0" fill="none" stroke="url(#ln-mark)" stroke-width="3.4"/><path d="M10 9.5 13 5h6l3 4.5L16 18z" fill="url(#ln-mark)" opacity=".85"/><path d="M10 9.5 13 5h6l3 4.5z" fill="#fff" opacity=".45"/></svg>
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--raised)"/><path d="M7 17a9 8 0 0 0 18 0" fill="none" stroke="var(--gold)" stroke-width="3.2" stroke-linecap="round"/><path d="M11.5 10.5 14 7h4l2.5 3.5L16 17z" fill="var(--gold)"/></svg>
       <span>Lootnest</span>
     </div>
-    <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" data-action="nav" data-view="games">Games</button>
-      <button class="tab" role="tab" data-action="nav" data-view="players">Players</button>
-      <button class="tab" role="tab" data-action="nav" data-view="settings">Settings</button>
+    <nav class="nav-list" aria-label="Sections">
+      <button class="nav" data-action="nav" data-view="library"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>Library<span class="count" id="lib-count"></span></button>
+      <button class="nav" data-action="nav" data-view="players"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.8-3.5 3.2-5.5 6-5.5s5.2 2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5c2.6.3 4.3 2.2 5 5"/></svg>Players</button>
+      <div class="nav soon" aria-disabled="true"><svg viewBox="0 0 24 24"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg>Game Mover<span class="tag">soon</span></div>
+      <div class="nav soon" aria-disabled="true"><svg viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0zM6 5H4a3 3 0 0 0 4 3M18 5h2a3 3 0 0 1-4 3M12 12v4M9 20h6"/></svg>Achievements<span class="tag">soon</span></div>
     </nav>
-    <div id="now" class="now" aria-live="polite"></div>
-  </header>
+    <div class="side-sep"></div>
+    <div class="side-label">Who's here</div>
+    <div id="who" class="who-list" aria-live="polite"></div>
+    <button class="nav nav-bottom" data-action="nav" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</button>
+  </aside>
   <main id="view" class="view" tabindex="-1"></main>
 </div>
 <div id="overlay"></div>
