@@ -2,6 +2,8 @@ package core
 
 import (
 	"errors"
+	"image"
+	"image/jpeg"
 	"os"
 	"path/filepath"
 	"strings"
@@ -454,17 +456,38 @@ func TestSteamUserDirMostRecent(t *testing.T) {
 	}
 }
 
+func writeJPEG(t *testing.T, path string, w, h int) {
+	t.Helper()
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := jpeg.Encode(f, image.NewGray(image.Rect(0, 0, w, h)), nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSteamCover(t *testing.T) {
 	steam := t.TempDir()
 	cache := filepath.Join(steam, "appcache", "librarycache")
-	write(t, filepath.Join(cache, "730_library_600x900.jpg"), "old layout")
-	write(t, filepath.Join(cache, "381210", "library_600x900.jpg"), "new layout")
-	write(t, filepath.Join(cache, "1091500", "8a1f2c", "library_600x900.jpg"), "hashed")
-	write(t, filepath.Join(cache, "570", "header.jpg"), "no portrait")
+	// Old flat layout.
+	writeJPEG(t, filepath.Join(cache, "730_library_600x900.jpg"), 600, 900)
+	writeJPEG(t, filepath.Join(cache, "730_header.jpg"), 460, 215)
+	// Per-app folder with the classic name.
+	writeJPEG(t, filepath.Join(cache, "381210", "library_600x900.jpg"), 600, 900)
+	// Recent clients: hashed names in a hashed subfolder, next to wide art.
+	writeJPEG(t, filepath.Join(cache, "1091500", "8a1f2c", "3f9e0b77c1.jpg"), 600, 900)
+	writeJPEG(t, filepath.Join(cache, "1091500", "8a1f2c", "small.jpg"), 300, 450)
+	writeJPEG(t, filepath.Join(cache, "1091500", "library_hero.jpg"), 1920, 620)
+	// Only wide images: no cover.
+	writeJPEG(t, filepath.Join(cache, "570", "header.jpg"), 460, 215)
+	writeJPEG(t, filepath.Join(cache, "570", "library_hero.jpg"), 1920, 620)
 	for id, want := range map[int]string{
 		730:     filepath.Join(cache, "730_library_600x900.jpg"),
 		381210:  filepath.Join(cache, "381210", "library_600x900.jpg"),
-		1091500: filepath.Join(cache, "1091500", "8a1f2c", "library_600x900.jpg"),
+		1091500: filepath.Join(cache, "1091500", "8a1f2c", "3f9e0b77c1.jpg"),
 		570:     "",
 		42:      "",
 	} {
