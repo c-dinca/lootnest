@@ -24,7 +24,7 @@ func launchOpt(t *testing.T, text string, app int) string {
 }
 
 func TestSetVDFReplace(t *testing.T) {
-	v := `"C:\Users\me\AppData\Local\Programs\PlaySwap\PlaySwap.exe" --steam 730 -- %command% -novid`
+	v := `"C:\Users\me\AppData\Local\Programs\Lootnest\Lootnest.exe" --steam 730 -- %command% -novid`
 	out, err := SetVDFValue(sampleLocalConfig, SteamAppsPath(730), "LaunchOptions", v)
 	if err != nil {
 		t.Fatal(err)
@@ -84,5 +84,18 @@ func TestSetVDFMissingTree(t *testing.T) {
 	}
 	if _, err := SetVDFValue("\"a\" { \"b\" ", SteamAppsPath(730), "LaunchOptions", "q"); err == nil {
 		t.Fatal("broken file should error")
+	}
+}
+
+func TestHasWrapperOldName(t *testing.T) {
+	for opts, want := range map[string]bool{
+		`"C:\Users\me\AppData\Local\Programs\Lootnest\Lootnest.exe" --steam 730 -- %command%`:        true,
+		`"C:\Users\me\AppData\Local\Programs\PlaySwap\PlaySwap.exe" --steam 730 -- %command% -novid`: true,  // written by PlaySwap 1.3
+		`"C:\Users\me\AppData\Local\Programs\Lootnest\Lootnest.exe" --steam 570 -- %command%`:        false, // another game
+		`-novid -high`: false,
+	} {
+		if got := HasWrapper(opts, 730); got != want {
+			t.Errorf("HasWrapper(%q) = %v", opts, got)
+		}
 	}
 }

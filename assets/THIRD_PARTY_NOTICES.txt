@@ -1,4 +1,4 @@
-PlaySwap includes the following third-party software.
+Lootnest includes the following third-party software.
 
 ================================================================
 github.com/jchv/go-webview2
@@ -71,7 +71,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ================================================================
 Microsoft Edge WebView2 Runtime
 ================================================================
-PlaySwap displays its interface with the Microsoft Edge WebView2 Runtime, which is installed and licensed separately by Microsoft.
+Lootnest displays its interface with the Microsoft Edge WebView2 Runtime, which is installed and licensed separately by Microsoft.
 ================================================================
 Microsoft Edge WebView2 SDK (WebView2Loader.dll, embedded)
 ================================================================

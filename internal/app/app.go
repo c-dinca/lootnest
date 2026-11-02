@@ -1,6 +1,6 @@
 //go:build windows
 
-// Package app is the PlaySwap desktop application: window, tray, watcher
+// Package app is the Lootnest desktop application: window, tray, watcher
 // and the API the interface talks to.
 package app
 
@@ -18,19 +18,19 @@ import (
 
 	webview2 "github.com/jchv/go-webview2"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 const (
-	Name        = "PlaySwap"
-	WindowClass = "PlaySwapMainWindow"
-	MutexName   = `Local\PlaySwap.SingleInstance.v1`
-	UninstallID = "PlaySwap"
+	Name        = "Lootnest"
+	WindowClass = "LootnestMainWindow"
+	MutexName   = `Local\Lootnest.SingleInstance.v1`
+	UninstallID = "Lootnest"
 	bgColor     = 0x151A24
 )
 
-// Version is set at build time with -ldflags "-X playswap/internal/app.Version=..."
+// Version is set at build time with -ldflags "-X lootnest/internal/app.Version=..."
 var Version = "1.0.0"
 
 //go:embed ui/index.html
@@ -82,14 +82,7 @@ type App struct {
 type Options struct {
 	StartHidden bool
 	LaunchGame  string
-}
-
-func DataDir() string {
-	base := os.Getenv("LOCALAPPDATA")
-	if base == "" {
-		base = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local")
-	}
-	return filepath.Join(base, Name)
+	MigrateErr  error // moving PlaySwap's data folder failed; it's used where it is
 }
 
 func newEnv(a *App) *core.Env {
@@ -126,7 +119,7 @@ func newEnv(a *App) *core.Env {
 // Run starts the app and blocks until it quits.
 func Run(opt Options) error {
 	a := &App{sessions: map[string]*Session{}, requests: map[string]string{}}
-	a.exePath, _ = os.Executable()
+	a.exePath = AppExe()
 	a.store = &core.Store{Dir: DataDir()}
 	if err := os.MkdirAll(a.store.Dir, 0o755); err != nil {
 		return err
@@ -145,7 +138,10 @@ func Run(opt Options) error {
 	}
 	a.cfg, a.firstRun = cfg, first
 	a.pending = opt.LaunchGame
-	a.logf("PlaySwap %s started (steam: %q)", Version, a.env.SteamPath)
+	a.logf("Lootnest %s started (steam: %q)", Version, a.env.SteamPath)
+	if opt.MigrateErr != nil {
+		a.logf("Couldn't move PlaySwap's data to the Lootnest folder yet (%v); using %s for now", opt.MigrateErr, DataDir())
+	}
 
 	win.EnableDPIAwareness()
 	win.AllowDarkMenus()
@@ -169,7 +165,7 @@ func Run(opt Options) error {
 		},
 	})
 	if a.w == nil {
-		r := win.MessageBox(0, "PlaySwap needs the Microsoft Edge WebView2 Runtime, which isn't installed on this PC.\n\nOpen the download page now?",
+		r := win.MessageBox(0, "Lootnest needs the Microsoft Edge WebView2 Runtime, which isn't installed on this PC.\n\nOpen the download page now?",
 			Name, win.MB_YESNO|win.MB_ICONWARNING)
 		if r == win.IDYES {
 			_ = win.ShellOpen("https://developer.microsoft.com/microsoft-edge/webview2/")
@@ -194,6 +190,7 @@ func Run(opt Options) error {
 		time.Sleep(2 * time.Second)
 		a.startScan()
 		a.autoHooks()
+		go a.cleanupLegacy()
 	}()
 	go func() {
 		time.Sleep(20 * time.Second)
@@ -206,7 +203,7 @@ func Run(opt Options) error {
 	}()
 	a.w.Run()
 	a.tray.Remove()
-	a.logf("PlaySwap quit")
+	a.logf("Lootnest quit")
 	return nil
 }
 
@@ -226,7 +223,7 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 			win.ShowWindow(hwnd, win.SW_HIDE)
 			if !a.trayHintShown && a.tray != nil {
 				a.trayHintShown = true
-				a.tray.Notify("PlaySwap is still running", "It keeps watching your games from the tray. Right-click the icon to quit.")
+				a.tray.Notify("Lootnest is still running", "It keeps watching your games from the tray. Right-click the icon to quit.")
 			}
 			return 0, true
 		}
@@ -266,7 +263,7 @@ func (a *App) trayMenu() {
 			items = append(items, win.MenuItem{Text: fmt.Sprintf("%s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID)), Disabled: true, ID: 9999})
 		}
 	}
-	items = append(items, win.MenuItem{ID: 1, Text: "Open PlaySwap"}, win.MenuItem{Sep: true})
+	items = append(items, win.MenuItem{ID: 1, Text: "Open Lootnest"}, win.MenuItem{Sep: true})
 	games := a.cfg.Games
 	for i, g := range games {
 		if i >= 15 {
@@ -277,7 +274,7 @@ func (a *App) trayMenu() {
 	if len(games) > 0 {
 		items = append(items, win.MenuItem{Sep: true})
 	}
-	items = append(items, win.MenuItem{ID: 2, Text: "Quit PlaySwap"})
+	items = append(items, win.MenuItem{ID: 2, Text: "Quit Lootnest"})
 	ids := make([]string, len(games))
 	for i, g := range games {
 		ids[i] = g.ID
@@ -342,7 +339,7 @@ func (a *App) quit(force bool) {
 		}
 		a.mu.Unlock()
 		if len(playing) > 0 {
-			msg := "Still playing: " + strings.Join(playing, ", ") + ".\n\nIf PlaySwap quits now, that progress is saved the next time you pick a player for the game in PlaySwap. Quit anyway?"
+			msg := "Still playing: " + strings.Join(playing, ", ") + ".\n\nIf Lootnest quits now, that progress is saved the next time you pick a player for the game in Lootnest. Quit anyway?"
 			if win.MessageBox(a.hwnd, msg, Name, win.MB_YESNO|win.MB_ICONQUESTION|win.MB_DEFBUTTON2) != win.IDYES {
 				return
 			}

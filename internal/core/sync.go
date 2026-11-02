@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	tmpSuffix = ".playswap-tmp"
-	oldSuffix = ".playswap-old"
+	tmpSuffix = ".lootnest-tmp"
+	oldSuffix = ".lootnest-old"
 )
 
 func exists(p string) bool {

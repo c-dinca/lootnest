@@ -1,4 +1,4 @@
-// Package core holds PlaySwap's platform-neutral logic: configuration,
+// Package core holds Lootnest's platform-neutral logic: configuration,
 // path resolution, profile storage and file swapping.
 package core
 
@@ -44,16 +44,16 @@ type Game struct {
 	PlayerArgs  map[string]string `json:"playerArgs,omitempty"`
 	Paths       []PathEntry       `json:"paths"`
 	// SteamPrevOptions are the Steam launch options the game had before
-	// PlaySwap added itself; they're put back when PlaySwap lets go.
+	// Lootnest added itself; they're put back when Lootnest lets go.
 	SteamPrevOptions string `json:"steamPrevOptions,omitempty"`
-	// SteamDirect keeps PlaySwap out of the game's Steam launch options, so
+	// SteamDirect keeps Lootnest out of the game's Steam launch options, so
 	// Steam starts the game itself. Needed when an anti-cheat (FACEIT AC)
 	// refuses to let any other program start the game.
 	SteamDirect bool `json:"steamDirect,omitempty"`
 }
 
 // UsesSteamWrapper reports whether Steam's Play button should go through
-// PlaySwap for this game.
+// Lootnest for this game.
 func (g *Game) UsesSteamWrapper() bool {
 	return g.Launch.Type == "steam" && !g.SteamDirect
 }
@@ -75,9 +75,9 @@ type Config struct {
 	Players   []Player `json:"players"`
 	Games     []Game   `json:"games"`
 	Settings  Settings `json:"settings"`
-	Shortcuts []string `json:"shortcuts,omitempty"` // desktop shortcuts PlaySwap created, removed on uninstall
+	Shortcuts []string `json:"shortcuts,omitempty"` // desktop shortcuts Lootnest created, removed on uninstall
 	// SteamRestores: launch options to put back for Steam games removed from
-	// PlaySwap (app id -> original options), applied when Steam is closed.
+	// Lootnest (app id -> original options), applied when Steam is closed.
 	SteamRestores map[string]string `json:"steamRestores,omitempty"`
 	// IgnoredFound: scan results the user chose to hide.
 	IgnoredFound []string `json:"ignoredFound,omitempty"`
@@ -230,7 +230,7 @@ func ValidatePlayers(ps []Player) error {
 		return errors.New("Keep at least one player.")
 	}
 	if len(ps) > 8 {
-		return errors.New("PlaySwap supports up to 8 players.")
+		return errors.New("Lootnest supports up to 8 players.")
 	}
 	names := map[string]bool{}
 	ids := map[string]bool{}
@@ -269,7 +269,7 @@ func ValidatePlayers(ps []Player) error {
 //	<dir>/state.json            gameID -> playerID whose files are live
 //	<dir>/profiles/<player>/<game>/<pathID>
 //	<dir>/backups/<game>/<timestamp>/<pathID>
-//	<dir>/playswap.log
+//	<dir>/lootnest.log
 type Store struct {
 	Dir string
 	mu  sync.Mutex
@@ -279,7 +279,7 @@ func (s *Store) ConfigPath() string  { return filepath.Join(s.Dir, "config.json"
 func (s *Store) StatePath() string   { return filepath.Join(s.Dir, "state.json") }
 func (s *Store) ProfilesDir() string { return filepath.Join(s.Dir, "profiles") }
 func (s *Store) BackupsDir() string  { return filepath.Join(s.Dir, "backups") }
-func (s *Store) LogPath() string     { return filepath.Join(s.Dir, "playswap.log") }
+func (s *Store) LogPath() string     { return filepath.Join(s.Dir, "lootnest.log") }
 func (s *Store) ProfileDir(playerID, gameID string) string {
 	return filepath.Join(s.ProfilesDir(), playerID, gameID)
 }

@@ -21,7 +21,7 @@ type Env struct {
 	SteamPath  string
 	// SteamUser returns Steam\userdata\<accountID> for the account in use.
 	SteamUser func() (string, error)
-	// DataDir is PlaySwap's own data folder; game paths may never point into it.
+	// DataDir is Lootnest's own data folder; game paths may never point into it.
 	DataDir string
 	// ExtraProtected are more folders that may never be (or contain) a game path,
 	// e.g. Program Files, Windows, Desktop.
@@ -195,7 +195,7 @@ func isWithin(child, parent string) bool {
 
 // CheckSafe refuses paths that are too broad to be wiped and replaced:
 // drive roots, the user folder, AppData itself, Steam's own folders, and
-// anything inside PlaySwap's data folder.
+// anything inside Lootnest's data folder.
 func (e *Env) CheckSafe(p string) error {
 	p = filepath.Clean(p)
 	if filepath.Dir(p) == p {
@@ -208,7 +208,7 @@ func (e *Env) CheckSafe(p string) error {
 		return fmt.Errorf("%s is too broad; pick the game's own folder", p)
 	}
 	if e.DataDir != "" && isWithin(p, e.DataDir) {
-		return errors.New("that folder is inside PlaySwap's own data folder")
+		return errors.New("that folder is inside Lootnest's own data folder")
 	}
 	for _, prot := range e.protected() {
 		if isWithin(prot, p) {

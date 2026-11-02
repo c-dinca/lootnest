@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // ErrSteamRunning means Steam must close before its launch options can be
@@ -67,7 +67,7 @@ func planHooks(cfg *core.Config, text, userDir, exe string, install bool) ([]hoo
 		has := core.HasWrapper(now, g.Launch.AppID)
 		if install && g.UsesSteamWrapper() {
 			if has && strings.Contains(strings.ToLower(now), strings.ToLower(exe)) {
-				continue // already pointing at this PlaySwap
+				continue // already pointing at this Lootnest
 			}
 			prev := now
 			if has {
@@ -111,7 +111,7 @@ type hookResult struct {
 	Message      string `json:"message,omitempty"`
 }
 
-// syncSteamHooks writes (install) or removes (uninstall) PlaySwap's Steam
+// syncSteamHooks writes (install) or removes (uninstall) Lootnest's Steam
 // launch options. With allowRestart it closes Steam, edits, and reopens it;
 // without, it returns NeedsRestart when Steam is running. cfg is updated
 // (original options, finished restores); the caller saves it.
@@ -172,15 +172,15 @@ func syncSteamHooks(cfg *core.Config, env *core.Env, exe string, install, allowR
 	}
 	if out != text {
 		if text != "" {
-			_ = os.WriteFile(path+".playswap-backup", []byte(text), 0o644)
+			_ = os.WriteFile(path+".lootnest-backup", []byte(text), 0o644)
 		}
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return res, err
 		}
-		if err := os.WriteFile(path+".playswap-tmp", []byte(out), 0o644); err != nil {
+		if err := os.WriteFile(path+".lootnest-tmp", []byte(out), 0o644); err != nil {
 			return res, err
 		}
-		if err := os.Rename(path+".playswap-tmp", path); err != nil {
+		if err := os.Rename(path+".lootnest-tmp", path); err != nil {
 			return res, err
 		}
 	}
@@ -203,7 +203,7 @@ func syncSteamHooks(cfg *core.Config, env *core.Env, exe string, install, allowR
 }
 
 // applyHooks is the app-side wrapper: serialises runs and saves config.
-// restoresOnly skips adding PlaySwap to games (used when the automatic
+// restoresOnly skips adding Lootnest to games (used when the automatic
 // setting is off but a removed game's options still need putting back).
 func (a *App) applyHooks(allowRestart, restoresOnly bool) (hookResult, error) {
 	a.hookMu.Lock()
@@ -213,7 +213,7 @@ func (a *App) applyHooks(allowRestart, restoresOnly bool) (hookResult, error) {
 	a.mu.Unlock()
 	if restoresOnly {
 		// Keep only games that Steam starts by itself: for those, planHooks
-		// takes PlaySwap back out and adds nothing.
+		// takes Lootnest back out and adds nothing.
 		var direct []core.Game
 		for _, g := range cfg.Games {
 			if g.Launch.Type == "steam" && g.SteamDirect {
@@ -243,6 +243,7 @@ func (a *App) applyHooks(allowRestart, restoresOnly bool) (hookResult, error) {
 	a.mu.Unlock()
 	if res.Changed > 0 && err == nil {
 		a.emit("hooks", nil)
+		go a.cleanupLegacy() // PlaySwap's old folder may no longer be in use
 	}
 	return res, err
 }
@@ -267,7 +268,7 @@ func (a *App) autoHooks() {
 	}()
 }
 
-// autoHooksAlways is used when removing a game: taking PlaySwap back out of
+// autoHooksAlways is used when removing a game: taking Lootnest back out of
 // Steam isn't optional, whatever the auto setting says.
 func (a *App) autoHooksAlways() {
 	a.mu.Lock()
@@ -307,7 +308,7 @@ func restoreHooksForUninstall(quiet bool) {
 	logf := func(string, ...any) {}
 	_, err = syncSteamHooks(cfg, env, exe, false, false, logf)
 	if errors.Is(err, ErrSteamRunning) {
-		ok := quiet || win.MessageBox(0, "PlaySwap needs to close Steam for a few seconds to take its launch options back out of your games. Steam reopens afterwards.\n\nClose Steam now?",
+		ok := quiet || win.MessageBox(0, "Lootnest needs to close Steam for a few seconds to take its launch options back out of your games. Steam reopens afterwards.\n\nClose Steam now?",
 			Name+" uninstall", win.MB_YESNO|win.MB_ICONQUESTION) == win.IDYES
 		if ok {
 			_, err = syncSteamHooks(cfg, env, exe, false, true, logf)
@@ -320,7 +321,7 @@ func restoreHooksForUninstall(quiet bool) {
 				names = append(names, g.Name)
 			}
 		}
-		win.MessageBox(0, "Couldn't remove PlaySwap from Steam's launch options automatically.\n\nIn Steam, open Properties for these games and clear their Launch options:\n"+strings.Join(names, "\n"),
+		win.MessageBox(0, "Couldn't remove Lootnest from Steam's launch options automatically.\n\nIn Steam, open Properties for these games and clear their Launch options:\n"+strings.Join(names, "\n"),
 			Name+" uninstall", win.MB_ICONWARNING)
 	}
 }

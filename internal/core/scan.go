@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// FoundGame is a game discovered on the PC that PlaySwap could manage.
+// FoundGame is a game discovered on the PC that Lootnest could manage.
 type FoundGame struct {
 	Key         string       `json:"key"` // stable id: "steam:730", "dir:d:\games\x"
 	Name        string       `json:"name"`

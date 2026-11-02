@@ -364,7 +364,7 @@ func LaunchOptionsFromText(text string, appID int) (string, error) {
 }
 
 // WrapperLaunchOption is what goes in a Steam game's launch options so that
-// Steam starts PlaySwap first. Options the user already had are kept after it.
+// Steam starts Lootnest first. Options the user already had are kept after it.
 func WrapperLaunchOption(exe string, appID int, existing string) string {
 	opt := fmt.Sprintf(`"%s" --steam %d -- %%command%%`, exe, appID)
 	existing = strings.TrimSpace(existing)
@@ -374,8 +374,10 @@ func WrapperLaunchOption(exe string, appID int, existing string) string {
 	return opt
 }
 
-// HasWrapper reports whether launch options already route through PlaySwap.
+// HasWrapper reports whether launch options already route through Lootnest,
+// or through PlaySwap (its old name, written by versions up to 1.3).
 func HasWrapper(opts string, appID int) bool {
 	l := strings.ToLower(opts)
-	return strings.Contains(l, "playswap") && strings.Contains(l, fmt.Sprintf("--steam %d", appID)) && strings.Contains(l, "%command%")
+	return (strings.Contains(l, "lootnest") || strings.Contains(l, "playswap")) &&
+		strings.Contains(l, fmt.Sprintf("--steam %d", appID)) && strings.Contains(l, "%command%")
 }

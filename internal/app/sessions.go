@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // Session tracks one game being played.
@@ -21,7 +21,7 @@ type Session struct {
 	Since    time.Time `json:"since"`
 	deadline time.Time
 	missed   int
-	viaPlay  bool // started from PlaySwap's own Play button
+	viaPlay  bool // started from Lootnest's own Play button
 }
 
 func (a *App) sessionsSnapshot() []Session {
@@ -44,10 +44,10 @@ func (a *App) updateTrayTip() {
 		return
 	}
 	a.mu.Lock()
-	tip := "PlaySwap"
+	tip := "Lootnest"
 	for _, s := range a.sessions {
 		if s.Phase == "playing" {
-			tip = fmt.Sprintf("PlaySwap: %s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID))
+			tip = fmt.Sprintf("Lootnest: %s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID))
 			break
 		}
 	}
@@ -224,7 +224,7 @@ func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error 
 }
 
 // watch runs forever: it follows every managed game's process, finishes
-// sessions when games close, and picks up games launched outside PlaySwap.
+// sessions when games close, and picks up games launched outside Lootnest.
 func (a *App) watch() {
 	t := time.NewTicker(2 * time.Second)
 	defer t.Stop()
@@ -275,11 +275,11 @@ func (a *App) tick() {
 			}
 			a.sessions[g.ID] = &Session{GameID: g.ID, PlayerID: owner, Phase: "playing", Outside: true, Since: time.Now()}
 			changed = true
-			a.logf("%s started outside PlaySwap; %s's files are loaded", g.Name, cfg.PlayerName(owner))
+			a.logf("%s started outside Lootnest; %s's files are loaded", g.Name, cfg.PlayerName(owner))
 			who := cfg.PlayerName(owner)
 			if g.Launch.Type == "steam" && g.SteamDirect {
 				notes = append(notes, [2]string{fmt.Sprintf("%s started with %s's settings", g.Name, who),
-					fmt.Sprintf("Not %s? Quit the game and start it from the %s (PlaySwap) shortcut to choose who's playing.", who, g.Name)})
+					fmt.Sprintf("Not %s? Quit the game and start it from the %s (Lootnest) shortcut to choose who's playing.", who, g.Name)})
 			} else {
 				notes = append(notes, [2]string{g.Name + " started",
 					fmt.Sprintf("It's using %s's settings and saves. Progress will be saved to %s when the game closes.", who, who)})
@@ -293,7 +293,7 @@ func (a *App) tick() {
 				delete(a.sessions, g.ID)
 				changed = true
 				notes = append(notes, [2]string{g.Name + " didn't start",
-					fmt.Sprintf("%s's files stay loaded. If it starts later, PlaySwap will still save it.", cfg.PlayerName(s.PlayerID))})
+					fmt.Sprintf("%s's files stay loaded. If it starts later, Lootnest will still save it.", cfg.PlayerName(s.PlayerID))})
 			}
 		case s != nil && s.Phase == "playing":
 			if running {

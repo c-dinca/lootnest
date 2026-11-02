@@ -8,28 +8,31 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
-// StopRunning asks a running PlaySwap to quit and waits for it to go away.
+// StopRunning asks a running Lootnest to quit and waits for it to go away.
+// It also stops PlaySwap, Lootnest's old name, when that is still running.
 func StopRunning() bool {
-	h := win.FindWindow(WindowClass)
-	if h == 0 {
-		return true
-	}
-	win.SendCommand(h, "quit-now")
-	for i := 0; i < 50; i++ {
-		if win.FindWindow(WindowClass) == 0 {
-			time.Sleep(300 * time.Millisecond) // let the process exit fully
-			return true
+	for _, class := range []string{WindowClass, LegacyWindowClass} {
+		h := win.FindWindow(class)
+		if h == 0 {
+			continue
 		}
-		time.Sleep(100 * time.Millisecond)
+		win.SendCommand(h, "quit-now")
+		for i := 0; i < 50 && win.FindWindow(class) != 0; i++ {
+			time.Sleep(100 * time.Millisecond)
+		}
+		if win.FindWindow(class) != 0 {
+			return false
+		}
+		time.Sleep(300 * time.Millisecond) // let the process exit fully
 	}
-	return win.FindWindow(WindowClass) == 0
+	return true
 }
 
-// StartMenuShortcut is where the installer puts PlaySwap's Start menu entry.
+// StartMenuShortcut is where the installer puts Lootnest's Start menu entry.
 func StartMenuShortcut() string {
 	return filepath.Join(win.StartMenuPrograms(), Name+".lnk")
 }
@@ -38,35 +41,39 @@ func DesktopShortcut() string {
 	return filepath.Join(win.Desktop(), Name+".lnk")
 }
 
-// Uninstall removes PlaySwap from this PC (run as "PlaySwap.exe --uninstall").
+// Uninstall removes Lootnest from this PC (run as "Lootnest.exe --uninstall").
 func Uninstall(quiet bool) {
-	if !quiet && win.MessageBox(0, "Remove PlaySwap from this PC?", Name+" uninstall", win.MB_YESNO|win.MB_ICONQUESTION) != win.IDYES {
+	if !quiet && win.MessageBox(0, "Remove Lootnest from this PC?", Name+" uninstall", win.MB_YESNO|win.MB_ICONQUESTION) != win.IDYES {
 		return
 	}
 	if !StopRunning() {
-		win.MessageBox(0, "PlaySwap is still running and didn't close. Quit it from the tray icon, then try again.", Name+" uninstall", win.MB_ICONWARNING)
+		win.MessageBox(0, "Lootnest is still running and didn't close. Quit it from the tray icon, then try again.", Name+" uninstall", win.MB_ICONWARNING)
 		return
 	}
 
 	deleteData := false
 	if !quiet {
 		msg := "Also delete everyone's saved profiles and backups?\n\n" +
-			"Yes: delete them.\nNo: keep them in " + DataDir() + " (PlaySwap picks them up again if you reinstall).\n\n" +
+			"Yes: delete them.\nNo: keep them in " + DataDir() + " (Lootnest picks them up again if you reinstall).\n\n" +
 			"Either way, each game's folders keep the files of whoever played last."
 		deleteData = win.MessageBox(0, msg, Name+" uninstall", win.MB_YESNO|win.MB_ICONQUESTION|win.MB_DEFBUTTON2) == win.IDYES
 	}
 
-	// Take PlaySwap back out of Steam's launch options, or games wouldn't start.
+	// Take Lootnest back out of Steam's launch options, or games wouldn't start.
 	restoreHooksForUninstall(quiet)
 
-	// Shortcuts PlaySwap created on the desktop for games.
+	// Shortcuts Lootnest created on the desktop for games.
 	store := &core.Store{Dir: DataDir()}
 	if cfg, first, err := store.LoadConfig(); err == nil && !first {
 		for _, s := range cfg.Shortcuts {
-			if strings.HasSuffix(strings.ToLower(s), " (playswap).lnk") {
+			if l := strings.ToLower(s); strings.HasSuffix(l, " (lootnest).lnk") || strings.HasSuffix(l, " (playswap).lnk") {
 				_ = os.Remove(s)
 			}
 		}
+	}
+	removeLegacyInstall()
+	if old := LegacyInstallDir(); dirExists(old) {
+		_ = os.RemoveAll(old) // the PlaySwap.exe copy left for old launch options
 	}
 	_ = os.Remove(StartMenuShortcut())
 	_ = os.Remove(DesktopShortcut())
@@ -80,7 +87,7 @@ func Uninstall(quiet bool) {
 	}
 
 	if !quiet {
-		win.MessageBox(0, "PlaySwap was removed.", Name+" uninstall", win.MB_ICONINFORMATION)
+		win.MessageBox(0, "Lootnest was removed.", Name+" uninstall", win.MB_ICONINFORMATION)
 	}
 	// Remove the program folder right after this process exits.
 	exe, _ := os.Executable()

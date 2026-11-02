@@ -1,6 +1,6 @@
 //go:build windows
 
-// Package win wraps the Win32 / COM calls PlaySwap needs.
+// Package win wraps the Win32 / COM calls Lootnest needs.
 package win
 
 import (
@@ -228,7 +228,7 @@ func RegisterWindowMessage(name string) uint32 {
 
 // ------------------------------------------------------- single instance --
 
-// AcquireSingleInstance returns false if another PlaySwap is already running.
+// AcquireSingleInstance returns false if another Lootnest is already running.
 func AcquireSingleInstance(name string) bool {
 	p, err := windows.UTF16PtrFromString(name)
 	if err != nil {
