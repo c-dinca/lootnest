@@ -24,7 +24,7 @@ It's made for couples, siblings and housemates who share a gaming PC and keep ov
 - **Asks from Steam too**: Steam's own Play button opens the "Who's playing?" picker, after a one-time automatic setup.
 - **Safe by design**: a backup before every swap, no half-written files, and refuses folders too broad to swap.
 - **Lives in the tray**: notices games started outside Lootnest and saves their progress to whoever's files are loaded.
-- **No account, no telemetry, works offline.**
+- **No account, no telemetry, works offline.** The only network access is opt-in: **Download covers for games outside Steam** (Settings, off by default) looks those games up on the Steam store by name and saves their covers on your PC. Only the game's name is sent, to `store.steampowered.com`, and the image comes from Steam's image server.
 
 ![The picker that opens when Steam starts a game](docs/screenshots/steam-picker.png)
 
