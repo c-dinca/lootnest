@@ -1100,8 +1100,13 @@
 
   // block browser shortcuts that make no sense in an app window
   document.addEventListener("keydown", (ev) => {
-    if ((ev.ctrlKey && ["p", "f", "g", "r", "u", "s"].includes(ev.key.toLowerCase())) || ev.key === "F5" || ev.key === "F3") ev.preventDefault();
+    if ((ev.ctrlKey && ["p", "f", "g", "r", "u", "s", "+", "-", "=", "0"].includes(ev.key.toLowerCase())) || ev.key === "F5" || ev.key === "F3") ev.preventDefault();
   }, true);
+  // No page zoom (Ctrl+wheel, pinch) and no browser menu outside text fields.
+  document.addEventListener("wheel", (ev) => { if (ev.ctrlKey) ev.preventDefault(); }, { passive: false });
+  document.addEventListener("contextmenu", (ev) => {
+    if (!ev.target.closest("input, textarea, .selectable")) ev.preventDefault();
+  });
   document.addEventListener("dragover", (ev) => ev.preventDefault());
   document.addEventListener("drop", (ev) => ev.preventDefault());
 
