@@ -141,6 +141,35 @@ type SteamGame struct {
 	InstallDir string `json:"installDir"`
 }
 
+// SteamCover finds the portrait cover Steam keeps for a game in its local
+// cache (Steam\appcache\librarycache), or "" when there is none. Older
+// Steam clients store "<appid>_library_600x900.jpg"; newer ones a
+// "<appid>" folder, sometimes with a hashed subfolder, holding
+// "library_600x900.jpg".
+func SteamCover(steamPath string, appID int) string {
+	if steamPath == "" || appID <= 0 {
+		return ""
+	}
+	cache := filepath.Join(steamPath, "appcache", "librarycache")
+	id := strconv.Itoa(appID)
+	if p := filepath.Join(cache, id+"_library_600x900.jpg"); exists(p) {
+		return p
+	}
+	dir := filepath.Join(cache, id)
+	if p := filepath.Join(dir, "library_600x900.jpg"); exists(p) {
+		return p
+	}
+	ents, _ := os.ReadDir(dir)
+	for _, e := range ents {
+		if e.IsDir() {
+			if p := filepath.Join(dir, e.Name(), "library_600x900.jpg"); exists(p) {
+				return p
+			}
+		}
+	}
+	return ""
+}
+
 // SteamLibraries lists every steamapps library folder (including the main one).
 func SteamLibraries(steamPath string) []string {
 	if steamPath == "" {

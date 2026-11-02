@@ -34,13 +34,20 @@
     addFound: (keys) => call("ps_addFound", keys),
     foundGame: (k) => call("ps_foundGame", k),
     applyHooks: (restart) => call("ps_applyHooks", restart),
+    cover: (appId) => call("ps_cover", appId),
+    launchFound: (key) => call("ps_launchFound", key),
     fixBlocked: (gameId, playerId) => call("ps_fixBlocked", gameId, playerId || ""),
   };
 
   // ---------------------------------------------------------------- state --
   const S = {
     d: null,          // AppState from Go
-    view: "games",
+    view: "library",
+    q: "",             // library search
+    filter: "all",     // library filter chip
+    covers: {},        // Steam app id -> data: URL, or "" when Steam has none
+    animateCards: true, // stagger the cards in on the next library render
+    animateView: true,  // fade the page in on the next render
     menuFor: null,
     picker: null,     // {gameId, mode, ask, playerId, owner, newMode, working}
     dialog: null,     // {kind, ...}
@@ -158,58 +165,190 @@
   // ---------------------------------------------------------------- render --
   function render() {
     if (!S.d) return;
-    document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#4F8CFF");
-    document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#FF5D8F");
-    const top = S.view === "edit" ? "games" : S.view;
-    document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.view === top)));
-    renderNow();
+    document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#6C9BD2");
+    document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#D9738E");
+    const top = S.view === "edit" ? "library" : S.view;
+    document.querySelectorAll(".nav[data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
+    const n = libraryItems().length;
+    $("#lib-count").textContent = n ? n : "";
+    renderWho();
     const v = $("#view");
     const keepScroll = v.scrollTop;
-    if (S.view === "games") v.innerHTML = viewGames();
+    const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
+    if (S.view === "library") v.innerHTML = viewLibrary();
     else if (S.view === "edit") v.innerHTML = viewEdit();
     else if (S.view === "players") v.innerHTML = viewPlayers();
     else if (S.view === "settings") v.innerHTML = viewSettings();
+    if (S.animateView && v.firstElementChild) v.firstElementChild.classList.add("enter");
+    S.animateView = false;
     v.scrollTop = keepScroll;
+    if (typing >= 0) { const q = $("#lib-q"); if (q) { q.focus(); q.setSelectionRange(typing, typing); } }
     renderOverlay();
+    loadCovers();
   }
 
-  function renderNow() {
-    const playing = (S.d.sessions || []).filter((s) => s.phase === "playing");
-    $("#now").innerHTML = playing
-      .map((s) => `<span class="now-pill"><span class="dot" style="background:${esc(color(s.playerId))}"></span><span><b>${esc(pname(s.playerId))}</b> is playing ${esc(short((game(s.gameId) || {}).name || ""))}</span></span>`)
-      .join("");
+  function renderWho() {
+    const playing = {};
+    (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = s; });
+    $("#who").innerHTML = cfg().players.map((p) => {
+      const s = playing[p.id];
+      const g = s && game(s.gameId);
+      return `<div class="who-item${s ? " playing" : ""}"><span class="dot" style="background:${esc(p.color)}"></span><span>${esc(p.name)}</span>
+        ${g ? `<span class="what">playing ${esc(g.name)}</span>` : ""}</div>`;
+    }).join("");
   }
 
-  // ----------------------------------------------------------------- games --
-  function launchLabel(g) {
-    if (g.launch.type === "steam") return "Steam";
-    const p = g.launch.exe || "";
-    return p.split(/[\\/]/).pop();
-  }
-
+  // --------------------------------------------------------------- library --
   function sessionText(s) {
     const n = pname(s.playerId);
     return { loading: `Loading ${possessive(n)} files`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${possessive(n)} progress` }[s.phase] || "";
   }
 
-  function viewGames() {
-    const games = cfg().games;
-    const head = `<div class="page-head"><div><h1>Games</h1><p class="sub">Choose who's playing before a game starts. Everyone keeps their own settings and saves.</p></div>
-      ${games.length ? `<button class="btn" data-action="add-game">${icon.plus}Add game</button>` : ""}</div>`;
-    if (!games.length) {
-      const cs2 = S.d.steam.found;
-      if ((S.found.games || []).length || S.found.scanning) return `<div class="page">${head}${foundSection(true)}
-        <div class="row" style="margin-top:18px"><button class="btn" data-action="add-game">${icon.plus}Add a game by hand</button></div></div>`;
-      return `<div class="page">${head}<div class="empty">
-        <div><h2>Add the first game you share</h2><p class="sub">Lootnest needs to know where the game keeps its settings and saves. For Steam games it can find most of that for you.</p></div>
-        <div class="quick">
-          <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button>
-          ${cs2 ? `<button class="btn" data-action="add-steam" data-app="730">Add Counter-Strike 2</button>` : ""}
-        </div></div></div>`;
-    }
-    return `<div class="page">${head}${hookBanner()}<div class="games">${games.map(gameRow).join("")}</div>${foundSection(false)}</div>`;
+  const sourceLabel = (src) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", shortcut: "Shortcut", folder: "Folder" }[src] || "Other");
+  const filterOf = (src) => (src === "steam" || src === "epic" || src === "gog" ? src : "other");
+
+  // Every game on the PC: the ones with profiles, then everything the scan found.
+  function libraryItems() {
+    const items = cfg().games.map((g) => ({
+      kind: "game", id: g.id, name: g.name, appId: g.launch.type === "steam" ? g.launch.appId : 0,
+      source: g.launch.type === "steam" ? "steam" : "other", g,
+    }));
+    (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, f }));
+    return items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
   }
 
+  function shownItems() {
+    const q = S.q.trim().toLowerCase();
+    return libraryItems().filter((it) => {
+      if (q && !it.name.toLowerCase().includes(q)) return false;
+      if (S.filter === "profiles") return it.kind === "game";
+      if (S.filter !== "all") return filterOf(it.source) === S.filter;
+      return true;
+    });
+  }
+
+  function viewLibrary() {
+    const all = libraryItems();
+    const withProfiles = cfg().games.length;
+    const scanning = S.found.scanning;
+    const chips = [["all", "All"], ["profiles", "With profiles"], ["steam", "Steam"], ["epic", "Epic"], ["gog", "GOG"], ["other", "Other"]];
+    const head = `<div class="lib-head"><div class="grow"><h1>Library</h1>
+        <p class="sub">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC · ${withProfiles === 1 ? "1 with profiles" : withProfiles + " with profiles"}` : "Every game on this PC, in one place."}</p></div>
+        <input type="search" id="lib-q" class="search" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games">
+        <button class="btn" data-action="add-game">${icon.plus}Add game</button>
+        <button class="btn quiet" data-action="rescan" ${scanning ? "disabled" : ""}>${scanning ? "Scanning" : "Scan again"}</button></div>`;
+    if (!all.length && !scanning) {
+      return `<div class="page wide">${head}<div class="empty"><div><h2>No games found yet</h2>
+        <p class="sub">Lootnest looks in Steam, Epic, GOG, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
+        <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button></div></div>`;
+    }
+    return `<div class="page wide">${head}${hookBanner()}
+      <div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
+      ${scanning ? `<div class="scanning"><span class="spinner"></span>Looking for games on this PC</div>` : ""}
+      <div class="grid" id="grid">${gridHTML()}</div></div>`;
+  }
+
+  function gridHTML() {
+    const items = shownItems();
+    if (!items.length) return `<p class="hint">${S.q ? `No game matches “${esc(S.q)}”.` : "No games here."}</p>`;
+    const animate = S.animateCards;
+    S.animateCards = false;
+    return items.map((it, i) => cardHTML(it, animate ? Math.min(i, 14) : -1)).join("");
+  }
+
+  function coverHTML(it) {
+    const c = it.appId ? S.covers[it.appId] : "";
+    const img = it.appId && c !== "" ? `<img alt="" data-cover="${it.appId}"${c ? ` src="${c}" class="ready"` : ""}>` : "";
+    return `<div class="nocover"${c ? " hidden" : ""}>${esc(it.name)}</div>${img}`;
+  }
+
+  function cardHTML(it, delay) {
+    const g = it.g;
+    const owner = g && S.d.active[g.id];
+    const s = g && session(g.id);
+    const badge = s
+      ? `<span class="badge"><span class="dot" style="background:${esc(color(s.playerId))}"></span>${esc(sessionText(s))}</span>`
+      : owner && player(owner) ? `<span class="badge"><span class="dot" style="background:${esc(color(owner))}"></span>${esc(pname(owner))}</span>` : "";
+    const meta = sourceLabel(it.source) + (g ? " · Profiles on" : "");
+    const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
+    return `<div class="card${s ? " busy" : ""}${delay >= 0 ? " in" : ""}"${delay > 0 ? ` style="animation-delay:${delay * 22}ms"` : ""}>
+      <button class="cover-btn" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}"><div class="cover">${coverHTML(it)}${badge}</div></button>
+      ${s ? "" : `<button class="quick-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}">Play</button>`}
+      <div class="card-title">${esc(it.name)}</div><div class="card-meta">${esc(meta)}</div></div>`;
+  }
+
+  // Covers load lazily as cards scroll into view; Steam keeps them on this PC.
+  let coverObserver = null;
+  function loadCovers() {
+    if (!coverObserver) {
+      coverObserver = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { coverObserver.unobserve(e.target); fetchCover(e.target); } });
+      }, { root: $("#view"), rootMargin: "300px" });
+    }
+    document.querySelectorAll("img[data-cover]:not(.ready)").forEach((img) => coverObserver.observe(img));
+  }
+
+  async function fetchCover(img) {
+    const id = +img.dataset.cover;
+    if (!(id in S.covers)) {
+      try { S.covers[id] = (await api.cover(id)) || ""; } catch (e) { S.covers[id] = ""; }
+    }
+    document.querySelectorAll(`img[data-cover="${id}"]`).forEach((el) => {
+      const tile = el.previousElementSibling;
+      if (!S.covers[id]) { el.remove(); return; }
+      el.onload = () => { el.classList.add("ready"); if (tile) tile.hidden = true; };
+      el.src = S.covers[id];
+    });
+  }
+
+  // ------------------------------------------------------------ game sheet --
+  function openSheet(kind, id) {
+    S.dialog = { kind: "sheet", item: kind, id };
+    renderOverlay();
+    loadCovers();
+    setTimeout(() => { const b = $(".sheet .btn.primary"); if (b) b.focus(); }, 30);
+  }
+
+  function viewSheet() {
+    const D = S.dialog;
+    const it = libraryItems().find((x) => x.kind === D.item && x.id === D.id);
+    if (!it) return "";
+    const top = (meta) => `<div class="sheet-top"><div class="cover">${coverHTML(it)}</div>
+      <div><h2>${esc(it.name)}</h2><div class="sheet-meta">${meta}</div></div></div>`;
+    const close = `<button class="btn quiet icon sheet-close" data-action="dialog-cancel" aria-label="Close">${icon.x}</button>`;
+    if (it.kind === "found") {
+      const f = it.f;
+      return `<div class="sheet-scrim" data-action="scrim"></div><aside class="sheet" role="dialog" aria-modal="true" aria-label="${esc(it.name)}">${close}
+        ${top(`<span>${esc(sourceLabel(f.source))}</span><span>Profiles off</span>`)}
+        <div class="sheet-actions"><button class="btn primary" data-action="play-found" data-key="${esc(f.key)}">Play</button>
+          <button class="btn" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>Turn on profiles</button></div>
+        <p class="hint sheet-note">${f.ready
+          ? "With profiles on, everyone who plays gets their own settings and saves. Lootnest already found where this game keeps them."
+          : "With profiles on, everyone who plays gets their own settings and saves. You'll choose where this game keeps them."}</p>
+        <div class="sheet-list"><button data-action="found-hide" data-key="${esc(f.key)}">Hide from the library</button></div></aside>`;
+    }
+    const g = it.g;
+    const owner = S.d.active[g.id];
+    const s = session(g.id);
+    const meta = `<span>${esc(sourceLabel(it.source))} · Profiles on</span>
+      ${s ? `<span class="status"><span class="dot" style="background:${esc(color(s.playerId))}"></span>${esc(sessionText(s))}</span>`
+        : owner && player(owner) ? `<span class="who"><span class="dot" style="background:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files are loaded</span>`
+        : `<span>Not set up yet</span>`}`;
+    return `<div class="sheet-scrim" data-action="scrim"></div><aside class="sheet" role="dialog" aria-modal="true" aria-label="${esc(g.name)}">${close}
+      ${top(meta)}
+      <div class="sheet-actions"><button class="btn primary" data-action="play" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Play</button>
+        <button class="btn" data-action="load-only" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Load someone's files without playing</button></div>
+      <div class="sheet-list">
+        <button data-action="edit-game" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Edit game</button>
+        ${g.launch.type === "steam" && !g.steamDirect ? `<button data-action="steam-setup" data-game="${esc(g.id)}">Ask who's playing when started from Steam</button>` : ""}
+        <button data-action="shortcut" data-game="${esc(g.id)}">Create desktop shortcut</button>
+        <hr>
+        <button data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}">Open the game's save folder</button>
+        <button data-action="open-backups" data-game="${esc(g.id)}">Open backups</button>
+        <hr>
+        <button class="danger" data-action="remove-game" data-game="${esc(g.id)}">Turn off profiles</button>
+      </div></aside>`;
+  }
   function hookBanner() {
     if (!S.hooks || S.hideHookBanner) return "";
     const missing = S.hooks.games.filter((h) => !h.detected && !h.direct && game(h.gameId));
@@ -233,69 +372,9 @@
       <button class="btn quiet" data-action="hide-banner">Later</button></div></div>`;
   }
 
-  // ----------------------------------------------------------- found list --
   async function loadFound() {
     try { S.found = await api.found(); } catch (e) { /* not ready */ }
-    if (S.view === "games" && !S.picker) render();
-  }
-
-  const sourceLabel = (f) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", shortcut: "Shortcut", folder: "Folder" }[f.source] || f.source);
-
-  function foundSection(empty) {
-    const F = S.found;
-    const list = F.games || [];
-    const ready = list.filter((f) => f.ready);
-    if (!list.length && !F.scanning && !empty) return "";
-    const head = `<div class="found-head"><div><h2>${empty ? "Games found on this PC" : "Found on this PC"}</h2>
-        <p class="sub">${F.scanning ? "Scanning Steam, Epic, GOG, game folders and shortcuts" : list.length ? "Not in Lootnest yet. Ready ones have their settings and saves located already." : "Nothing new found. Add a game by hand if it's missing."}</p></div>
-        <div class="row">${ready.length > 1 ? `<button class="btn primary" data-action="add-all" ${S.adding ? "disabled" : ""}>Add all ${ready.length} ready</button>` : ""}
-        <button class="btn quiet" data-action="rescan" ${F.scanning ? "disabled" : ""}>${F.scanning ? "Scanning" : "Scan again"}</button></div></div>`;
-    const rows = list.map((f) => `<div class="found">
-        <div class="grow"><b>${esc(f.name)}</b>
-          <div class="game-meta"><span>${esc(sourceLabel(f))}</span>
-          ${f.ready ? `<span class="ok-text">${f.paths.length === 1 ? "Save location found" : f.paths.length + " save locations found"}</span>` : `<span>Needs its save location</span>`}</div></div>
-        <button class="btn small" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${f.ready ? "Add" : "Choose"}</button>
-        <button class="btn small quiet" data-action="found-hide" data-key="${esc(f.key)}" aria-label="Hide ${esc(f.name)}">Hide</button>
-      </div>`).join("");
-    return `<section class="found-section">${head}${list.length ? `<div class="found-list">${rows}</div>` : ""}</section>`;
-  }
-
-  function gameRow(g) {
-    const owner = S.d.active[g.id];
-    const s = session(g.id);
-    const profiles = (S.d.profiles[g.id] || []).length;
-    const who = owner && player(owner)
-      ? `<span class="who"><span class="dot" style="background:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files loaded</span>`
-      : `<span>Not set up yet</span>`;
-    const actions = s
-      ? `<span class="status"><span class="dot" style="background:${esc(color(s.playerId))}"></span>${esc(sessionText(s))}</span>`
-      : `<button class="btn primary" data-action="play" data-game="${esc(g.id)}">Play</button>
-         <div class="menu-wrap">
-           <button class="btn icon quiet" data-action="menu" data-game="${esc(g.id)}" aria-label="More for ${esc(g.name)}" aria-expanded="${S.menuFor === g.id}">${icon.dots}</button>
-           ${S.menuFor === g.id ? gameMenu(g) : ""}
-         </div>`;
-    return `<article class="game${s ? " busy" : ""}">
-      <div class="game-owner" style="${owner && player(owner) ? `background:${esc(color(owner))}` : ""}"></div>
-      <div class="game-body">
-        <div class="game-name">${esc(g.name)}</div>
-        <div class="game-meta">${who}<span>${esc(launchLabel(g))}</span><span>${profiles === 1 ? "1 profile" : profiles + " profiles"}</span></div>
-      </div>
-      <div class="game-actions">${actions}</div>
-    </article>`;
-  }
-
-  function gameMenu(g) {
-    return `<div class="menu" role="menu">
-      <button role="menuitem" data-action="edit-game" data-game="${esc(g.id)}">Edit game</button>
-      <button role="menuitem" data-action="load-only" data-game="${esc(g.id)}">Load someone's files without playing</button>
-      ${g.launch.type === "steam" && !g.steamDirect ? `<button role="menuitem" data-action="steam-setup" data-game="${esc(g.id)}">Ask who's playing when started from Steam</button>` : ""}
-      <button role="menuitem" data-action="shortcut" data-game="${esc(g.id)}">Create desktop shortcut</button>
-      <hr>
-      <button role="menuitem" data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}">Open the game's save folder</button>
-      <button role="menuitem" data-action="open-backups" data-game="${esc(g.id)}">Open backups</button>
-      <hr>
-      <button role="menuitem" class="danger" data-action="remove-game" data-game="${esc(g.id)}">Remove game</button>
-    </div>`;
+    if (S.view === "library" && !S.picker) render();
   }
 
   // ---------------------------------------------------------------- picker --
@@ -414,6 +493,8 @@
       o.innerHTML = viewSteamSetup();
     } else if (D.kind === "blocked") {
       o.innerHTML = viewBlocked();
+    } else if (D.kind === "sheet") {
+      o.innerHTML = viewSheet();
     }
   }
 
@@ -547,7 +628,7 @@
     try {
       const saved = await api.saveGame(g);
       const n = saved.paths.length;
-      toast(`Added ${saved.name}. Lootnest found ${n === 1 ? "its save location" : n + " save locations"}; check them with Edit game from the ⋯ menu.`);
+      toast(`Added ${saved.name}. Lootnest found ${n === 1 ? "its save location" : n + " save locations"}; click the game to check them.`);
       await refresh();
       loadFound();
       loadHooks().then(render);
@@ -614,7 +695,7 @@
           <span class="switch"><input type="checkbox" data-field="steamDirect" ${g.steamDirect ? "checked" : ""}><span></span></span></label>`
       : `<div class="row"><input type="text" class="grow" data-field="exe" value="${esc(g.launch.exe)}" spellcheck="false"><button class="btn" data-action="browse-exe">Browse</button></div>`;
     return `<div class="page">
-      <div class="page-head"><div><button class="btn quiet small" data-action="edit-cancel" style="margin:0 0 10px -12px">${icon.back}Games</button>
+      <div class="page-head"><div><button class="btn quiet small" data-action="edit-cancel" style="margin:0 0 10px -12px">${icon.back}Library</button>
       <h1>${E.isNew ? "Add " + esc(g.name || "a game") : "Edit " + esc(g.name)}</h1></div></div>
       <div class="form">
         <section class="section">
@@ -666,7 +747,7 @@
     try {
       const saved = await api.saveGame(g);
       toast(E.isNew ? `Added ${saved.name}` : `Saved ${saved.name}`);
-      S.edit = null; S.view = "games";
+      S.edit = null; S.view = "library"; S.animateView = true;
       await refresh();
       loadFound();
       loadHooks().then(render);
@@ -777,7 +858,8 @@
   const actions = {
     nav(el) {
       if (S.view === "edit" && !confirmLeaveEdit()) return;
-      S.view = el.dataset.view; S.menuFor = null; S.edit = null;
+      S.view = el.dataset.view; S.menuFor = null; S.edit = null; S.animateView = true;
+      if (S.view === "library") S.animateCards = true;
       if (S.view !== "players") S.players = null;
       render(); $("#view").scrollTop = 0;
     },
@@ -785,9 +867,16 @@
     "add-steam": (el) => addSteam(el.dataset.app),
     "add-exe": addExe,
     play: (el) => openPicker(el.dataset.game, "play"),
+    "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key),
+    async "play-found"(el) {
+      const f = (S.found.games || []).find((x) => x.key === el.dataset.key);
+      if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
+      try { await api.launchFound(el.dataset.key); toast(`Starting ${f ? f.name : "the game"}`); } catch (e) { toast(errText(e), "error"); }
+    },
+    filter(el) { S.filter = el.dataset.filter; S.animateCards = true; render(); },
     "load-only": (el) => openPicker(el.dataset.game, "load"),
     menu(el) { S.menuFor = S.menuFor === el.dataset.game ? null : el.dataset.game; render(); const m = $(".menu button"); if (m) m.focus(); },
-    "edit-game": (el) => editGame(el.dataset.game),
+    "edit-game": (el) => { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; editGame(el.dataset.game); },
     async shortcut(el) {
       S.menuFor = null; render();
       try { await api.shortcut(el.dataset.game); toast("Shortcut added to your desktop"); } catch (e) { toast(errText(e), "error"); }
@@ -797,9 +886,9 @@
     async "remove-game"(el) {
       S.menuFor = null; render();
       const g = game(el.dataset.game);
-      const ok = await confirmDialog({ title: `Remove ${g.name}?`, body: "Lootnest stops managing it. Everyone's profiles are moved to the “removed” folder in Lootnest's data, and the game keeps the files of whoever played last.", ok: "Remove game" });
+      const ok = await confirmDialog({ title: `Turn off profiles for ${g.name}?`, body: "The game stays in your library. Everyone's profiles are moved to the “removed” folder in Lootnest's data, and the game keeps the files of whoever played last.", ok: "Turn off profiles" });
       if (!ok) return;
-      try { await api.deleteGame(g.id); toast(`Removed ${g.name}`); await refresh(); } catch (e) { toast(errText(e), "error"); }
+      try { await api.deleteGame(g.id); toast(`Profiles are off for ${g.name}`); await refresh(); loadFound(); } catch (e) { toast(errText(e), "error"); }
     },
     pick(el) { S.picker.playerId = el.dataset.player; S.picker.owner = ""; S.picker.newMode = ""; runPick(); },
     "answer-owner"(el) { S.picker.owner = el.dataset.player; S.picker.ask = null; runPick(); },
@@ -815,7 +904,7 @@
     },
     "dialog-cancel": () => closeDialog(false),
     scrim(el, ev) { if (ev.target === el && S.dialog && S.dialog.kind !== "welcome") closeDialog(false); },
-    "edit-cancel"() { if (!confirmLeaveEdit()) return; S.edit = null; S.view = "games"; render(); },
+    "edit-cancel"() { if (!confirmLeaveEdit()) return; S.edit = null; S.view = "library"; S.animateView = true; render(); },
     async "browse-exe"() {
       const r = await browse("exe", S.edit.game.launch.exe);
       if (r.path && S.edit) { S.edit.game.launch.exe = r.tokenized || r.path; render(); }
@@ -866,6 +955,7 @@
     async "found-add"(el) {
       const f = (S.found.games || []).find((x) => x.key === el.dataset.key);
       if (!f) return;
+      if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
       if (f.ready) { await addFound([f.key]); return; }
       openEditor({
         isNew: true,
@@ -875,6 +965,7 @@
       });
     },
     async "found-hide"(el) {
+      if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
       try { await api.ignoreFound(el.dataset.key); S.found.games = S.found.games.filter((f) => f.key !== el.dataset.key); render(); } catch (e) { toast(errText(e), "error"); }
     },
     async "show-log"() { try { S.logText = (await api.log()) || "Nothing yet."; } catch (e) { S.logText = errText(e); } render(); },
@@ -920,6 +1011,12 @@
 
   document.addEventListener("input", (ev) => {
     const el = ev.target;
+    if (el.id === "lib-q") {
+      S.q = el.value;
+      const grid = $("#grid");
+      if (grid) { grid.innerHTML = gridHTML(); loadCovers(); }
+      return;
+    }
     if (el.id === "steam-q" && S.dialog) {
       S.dialog.q = el.value;
       const pos = el.selectionStart;

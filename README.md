@@ -18,6 +18,7 @@ It's made for couples, siblings and housemates who share a gaming PC and keep ov
 
 ## Features
 
+- **Library**: every game on your PC in one place, with its cover from Steam's cache on this PC. Play anything from there, and turn on profiles for the games you share.
 - **Works with any game** that keeps its settings and saves in files: Steam, Epic, GOG, or a standalone .exe.
 - **Finds your games**: scans Steam, Epic, GOG, game folders on every drive, and desktop and Start menu shortcuts. It also locates their save folders for you.
 - **Asks from Steam too**: Steam's own Play button opens the "Who's playing?" picker, after a one-time automatic setup.
