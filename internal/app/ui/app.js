@@ -3,7 +3,7 @@
   // ------------------------------------------------------------------ api --
   const call = (name, ...args) => {
     const f = window[name];
-    if (typeof f !== "function") return Promise.reject("PlaySwap isn't ready yet.");
+    if (typeof f !== "function") return Promise.reject("Lootnest isn't ready yet.");
     return f(...args);
   };
   const api = {
@@ -125,7 +125,7 @@
         loadHooks().then(render);
         const g = game(ev.gameId);
         if (ev.need) openPicker(ev.gameId, "play");
-        else toast(`Starting ${g ? g.name : "the game"} for ${pname(ev.playerId)}. Next time, start it from the ${g ? g.name : "game"} (PlaySwap) shortcut on your desktop to choose who's playing.`);
+        else toast(`Starting ${g ? g.name : "the game"} for ${pname(ev.playerId)}. Next time, start it from the ${g ? g.name : "game"} (Lootnest) shortcut on your desktop to choose who's playing.`);
         break;
       }
       case "pickerClosed":
@@ -201,7 +201,7 @@
       if ((S.found.games || []).length || S.found.scanning) return `<div class="page">${head}${foundSection(true)}
         <div class="row" style="margin-top:18px"><button class="btn" data-action="add-game">${icon.plus}Add a game by hand</button></div></div>`;
       return `<div class="page">${head}<div class="empty">
-        <div><h2>Add the first game you share</h2><p class="sub">PlaySwap needs to know where the game keeps its settings and saves. For Steam games it can find most of that for you.</p></div>
+        <div><h2>Add the first game you share</h2><p class="sub">Lootnest needs to know where the game keeps its settings and saves. For Steam games it can find most of that for you.</p></div>
         <div class="quick">
           <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button>
           ${cs2 ? `<button class="btn" data-action="add-steam" data-app="730">Add Counter-Strike 2</button>` : ""}
@@ -217,8 +217,8 @@
     if (!missing.length && leaving.length) {
       const what = leaving.length === 1 ? esc(leaving[0].name) : leaving.length + " games";
       const text = S.hooks.steamRunning
-        ? `So that Steam starts ${what} by itself, Steam has to restart once (about 10 seconds) while PlaySwap takes itself out of the launch options.`
-        : `PlaySwap takes itself out of the launch options for ${what}. Steam is closed, so this takes a second.`;
+        ? `So that Steam starts ${what} by itself, Steam has to restart once (about 10 seconds) while Lootnest takes itself out of the launch options.`
+        : `Lootnest takes itself out of the launch options for ${what}. Steam is closed, so this takes a second.`;
       return `<div class="banner"><div><b>Let Steam start ${what}</b><p>${text}</p></div>
         <div class="row"><button class="btn" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Updating" : S.hooks.steamRunning ? "Restart Steam and update" : "Update now"}</button>
         <button class="btn quiet" data-action="hide-banner">Later</button></div></div>`;
@@ -226,8 +226,8 @@
     if (!missing.length) return "";
     const what = missing.length === 1 ? esc(missing[0].name) : missing.length + " games";
     const text = S.hooks.steamRunning
-      ? `So that Steam's Play button asks who's playing ${what}, Steam has to restart once (about 10 seconds). PlaySwap does it for you.`
-      : `PlaySwap can set Steam up so its Play button asks who's playing ${what}.`;
+      ? `So that Steam's Play button asks who's playing ${what}, Steam has to restart once (about 10 seconds). Lootnest does it for you.`
+      : `Lootnest can set Steam up so its Play button asks who's playing ${what}.`;
     return `<div class="banner"><div><b>Make Steam ask who's playing</b><p>${text}</p></div>
       <div class="row"><button class="btn" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Setting up" : S.hooks.steamRunning ? "Restart Steam and set up" : "Set up"}</button>
       <button class="btn quiet" data-action="hide-banner">Later</button></div></div>`;
@@ -247,7 +247,7 @@
     const ready = list.filter((f) => f.ready);
     if (!list.length && !F.scanning && !empty) return "";
     const head = `<div class="found-head"><div><h2>${empty ? "Games found on this PC" : "Found on this PC"}</h2>
-        <p class="sub">${F.scanning ? "Scanning Steam, Epic, GOG, game folders and shortcuts" : list.length ? "Not in PlaySwap yet. Ready ones have their settings and saves located already." : "Nothing new found. Add a game by hand if it's missing."}</p></div>
+        <p class="sub">${F.scanning ? "Scanning Steam, Epic, GOG, game folders and shortcuts" : list.length ? "Not in Lootnest yet. Ready ones have their settings and saves located already." : "Nothing new found. Add a game by hand if it's missing."}</p></div>
         <div class="row">${ready.length > 1 ? `<button class="btn primary" data-action="add-all" ${S.adding ? "disabled" : ""}>Add all ${ready.length} ready</button>` : ""}
         <button class="btn quiet" data-action="rescan" ${F.scanning ? "disabled" : ""}>${F.scanning ? "Scanning" : "Scan again"}</button></div></div>`;
     const rows = list.map((f) => `<div class="found">
@@ -301,7 +301,7 @@
   // ---------------------------------------------------------------- picker --
   function openPicker(gameId, mode, reqId) {
     const g = game(gameId);
-    if (!g) { toast("That game isn't in PlaySwap anymore.", "error"); if (reqId) api.cancelRequest(reqId); return; }
+    if (!g) { toast("That game isn't in Lootnest anymore.", "error"); if (reqId) api.cancelRequest(reqId); return; }
     if (S.picker && S.picker.reqId && S.picker.reqId !== reqId) api.cancelRequest(S.picker.reqId);
     S.menuFor = null;
     if (S.dialog && S.dialog.kind !== "welcome") S.dialog = null;
@@ -334,7 +334,7 @@
     if (P.ask === "owner") {
       return `<div class="picker"><div class="picker-head"><div></div><button class="btn quiet" data-action="picker-back">${icon.back}Back</button></div>
         <div class="question"><div><h2>Whose files are in ${esc(g.name)} right now?</h2>
-        <p>This is the first time PlaySwap handles this game. The settings and saves on this PC will become that person's profile.</p></div>
+        <p>This is the first time Lootnest handles this game. The settings and saves on this PC will become that person's profile.</p></div>
         <div class="choices">
           ${cfg().players.map((p) => `<button class="choice" data-action="answer-owner" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>${esc(possessive(p.name))}</b></span></button>`).join("")}
           <button class="choice" data-action="answer-owner" data-player="none"><span class="dot"></span><span><b>Nobody's, or not sure</b><span>They're kept as a backup in case you need them.</span></span></button>
@@ -424,9 +424,9 @@
     const who = D.playerId && player(D.playerId) ? pname(D.playerId) : "";
     return `<div class="scrim"><div class="dialog narrow" role="alertdialog" aria-modal="true" aria-label="An anti-cheat blocked ${esc(g.name)}">
       <div><h2>An anti-cheat blocked ${esc(g.name)}</h2>
-        <p class="sub">Anti-cheats such as FACEIT AC only let Steam start the game, so PlaySwap couldn't start it.</p></div>
-      <div class="note">PlaySwap can fix this now: Steam will start ${esc(g.name)} by itself (Steam restarts once, about 10 seconds), and ${who ? `the game starts for <b>${esc(who)}</b>` : "you choose who's playing"}.
-        <br>PlaySwap also puts a <b>${esc(g.name)} (PlaySwap)</b> shortcut on your desktop. Start the game from it, or from Play here, and it asks who's playing every time.</div>
+        <p class="sub">Anti-cheats such as FACEIT AC only let Steam start the game, so Lootnest couldn't start it.</p></div>
+      <div class="note">Lootnest can fix this now: Steam will start ${esc(g.name)} by itself (Steam restarts once, about 10 seconds), and ${who ? `the game starts for <b>${esc(who)}</b>` : "you choose who's playing"}.
+        <br>Lootnest also puts a <b>${esc(g.name)} (Lootnest)</b> shortcut on your desktop. Start the game from it, or from Play here, and it asks who's playing every time.</div>
       ${who ? `<p class="hint">${esc(possessive(who))} files are loaded.</p>` : ""}
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Not now</button>
         <button class="btn primary" data-action="fix-blocked" ${D.busy ? "disabled" : ""}>${D.busy ? "Fixing and starting" : "Fix it and start the game"}</button></div>
@@ -451,7 +451,7 @@
     const H = S.hooks;
     let body;
     if (!H) body = `<p class="hint">Reading Steam's settings</p>`;
-    else if (!H.games.length) body = `<div class="note">No Steam games in PlaySwap yet. Add one first.</div>`;
+    else if (!H.games.length) body = `<div class="note">No Steam games in Lootnest yet. Add one first.</div>`;
     else {
       const list = (D.focus ? H.games.filter((h) => h.gameId === D.focus) : H.games).filter((h) => !h.direct);
       body = list.map((h) => `<div class="hook${h.detected ? " done" : ""}">
@@ -466,7 +466,7 @@
       <div class="page-head" style="margin:0"><div><h2>Ask who's playing when started from Steam</h2>
         <p class="sub">Do this once per game. Afterwards, pressing Play in Steam opens the picker, loads that person's files, then starts the game.</p></div>
         <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
-      ${H && H.games.some((h) => !h.detected && !h.direct) ? `<div class="note"><b>Easiest:</b> let PlaySwap do it. ${H.steamRunning ? "Steam closes and reopens by itself (about 10 seconds)." : "Steam is closed, so this takes a second."}
+      ${H && H.games.some((h) => !h.detected && !h.direct) ? `<div class="note"><b>Easiest:</b> let Lootnest do it. ${H.steamRunning ? "Steam closes and reopens by itself (about 10 seconds)." : "Steam is closed, so this takes a second."}
         <div class="row" style="margin-top:10px"><button class="btn primary" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Setting up" : "Set up automatically"}</button></div></div>
       <p class="hint">Or by hand:</p>` : ""}
       <ol class="steps">
@@ -539,7 +539,7 @@
     } catch (e) { toast(errText(e), "error"); }
   }
 
-  // addDirect adds a game straight away when PlaySwap found everything it
+  // addDirect adds a game straight away when Lootnest found everything it
   // needs (the process and at least one save location), like "Add" in the
   // found list. It returns false when the editor should open instead.
   async function addDirect(g) {
@@ -547,7 +547,7 @@
     try {
       const saved = await api.saveGame(g);
       const n = saved.paths.length;
-      toast(`Added ${saved.name}. PlaySwap found ${n === 1 ? "its save location" : n + " save locations"}; check them with Edit game from the ⋯ menu.`);
+      toast(`Added ${saved.name}. Lootnest found ${n === 1 ? "its save location" : n + " save locations"}; check them with Edit game from the ⋯ menu.`);
       await refresh();
       loadFound();
       loadHooks().then(render);
@@ -610,7 +610,7 @@
     const cands = (ins.candidates || []).filter((c) => c.name.toLowerCase() !== (g.processName || "").toLowerCase()).slice(0, 6);
     const launch = g.launch.type === "steam"
       ? `<div class="note">Launched through Steam (app ${esc(g.launch.appId)}).</div>
-        <label class="toggle"><span><b style="font-weight:500">Let Steam start this game</b><p>Turn this on if an anti-cheat, such as FACEIT AC, blocks the game when PlaySwap starts it. Steam's Play button then starts the game without asking who's playing. PlaySwap adds a desktop shortcut that asks every time.</p></span>
+        <label class="toggle"><span><b style="font-weight:500">Let Steam start this game</b><p>Turn this on if an anti-cheat, such as FACEIT AC, blocks the game when Lootnest starts it. Steam's Play button then starts the game without asking who's playing. Lootnest adds a desktop shortcut that asks every time.</p></span>
           <span class="switch"><input type="checkbox" data-field="steamDirect" ${g.steamDirect ? "checked" : ""}><span></span></span></label>`
       : `<div class="row"><input type="text" class="grow" data-field="exe" value="${esc(g.launch.exe)}" spellcheck="false"><button class="btn" data-action="browse-exe">Browse</button></div>`;
     return `<div class="page">
@@ -623,7 +623,7 @@
         </section>
 
         <section class="section">
-          <div class="section-head"><h2>Game process</h2><p>The program that runs while someone plays. PlaySwap watches it to know when to save that person's progress.</p></div>
+          <div class="section-head"><h2>Game process</h2><p>The program that runs while someone plays. Lootnest watches it to know when to save that person's progress.</p></div>
           <div class="row"><input type="text" class="grow" data-field="processName" value="${esc(g.processName)}" placeholder="for example cs2" spellcheck="false" style="max-width:320px"><span class="hint">.exe</span></div>
           ${cands.length ? `<div class="row"><span class="hint">Other programs in the game folder:</span>${cands.map((c) => `<button class="btn small" data-action="set-proc" data-name="${esc(c.name)}">${esc(c.name)}</button>`).join("")}</div>` : ""}
         </section>
@@ -645,7 +645,7 @@
         </section>
 
         <section class="section">
-          <div class="section-head"><h2>Launch options</h2><p>Optional. Added when PlaySwap starts the game, for example <span class="selectable">-novid</span> or <span class="selectable">-w 1920 -h 1080</span>.</p></div>
+          <div class="section-head"><h2>Launch options</h2><p>Optional. Added when Lootnest starts the game, for example <span class="selectable">-novid</span> or <span class="selectable">-w 1920 -h 1080</span>.</p></div>
           <div class="args">
             <span class="label">Everyone</span><input type="text" data-field="args" value="${esc(g.launch.args || "")}" spellcheck="false">
             ${cfg().players.map((p) => `<span class="who"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</span><input type="text" data-field="parg" data-player="${esc(p.id)}" value="${esc((g.playerArgs || {})[p.id] || "")}" spellcheck="false">`).join("")}
@@ -709,7 +709,7 @@
     const ps = S.players.map((p, i) => ({ id: p.id, name: (p.name || "").trim() || (welcome ? "Player " + (i + 1) : ""), color: p.color }));
     const removed = cfg().players.filter((o) => !ps.some((p) => p.id === o.id));
     if (removed.length && !welcome) {
-      const ok = await confirmDialog({ title: `Remove ${removed.map((p) => p.name).join(" and ")}?`, body: "Their profiles are moved to the “removed” folder inside PlaySwap's data folder, so nothing is deleted for good.", ok: "Remove" });
+      const ok = await confirmDialog({ title: `Remove ${removed.map((p) => p.name).join(" and ")}?`, body: "Their profiles are moved to the “removed” folder inside Lootnest's data folder, so nothing is deleted for good.", ok: "Remove" });
       if (!ok) return;
     }
     try {
@@ -732,10 +732,10 @@
     return `<div class="page"><div class="page-head"><div><h1>Settings</h1></div></div>
       <div class="form">
         <section class="section"><div class="toggles">
-          ${sw("autostart", "Start with Windows", "PlaySwap opens quietly in the tray when you sign in, so it's always watching your games.", S.d.autostart)}
-          ${sw("closeToTray", "Keep running when the window is closed", "Closing the window leaves PlaySwap in the tray. Quit from the tray icon.", s.closeToTray)}
+          ${sw("autostart", "Start with Windows", "Lootnest opens quietly in the tray when you sign in, so it's always watching your games.", S.d.autostart)}
+          ${sw("closeToTray", "Keep running when the window is closed", "Closing the window leaves Lootnest in the tray. Quit from the tray icon.", s.closeToTray)}
           ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts.", s.hideWhilePlaying)}
-          ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without PlaySwap, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}
+          ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
         </div></section>
@@ -753,8 +753,8 @@
           ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}
         </section>
         <section class="section">
-          <div class="section-head"><h2>About</h2><p>PlaySwap ${esc(S.d.version)}. Uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows.</p></div>
-          <div class="row"><button class="btn quiet danger" data-action="quit">Quit PlaySwap</button></div>
+          <div class="section-head"><h2>About</h2><p>Lootnest ${esc(S.d.version)}. Uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows.</p></div>
+          <div class="row"><button class="btn quiet danger" data-action="quit">Quit Lootnest</button></div>
         </section>
       </div></div>`;
   }
@@ -797,7 +797,7 @@
     async "remove-game"(el) {
       S.menuFor = null; render();
       const g = game(el.dataset.game);
-      const ok = await confirmDialog({ title: `Remove ${g.name}?`, body: "PlaySwap stops managing it. Everyone's profiles are moved to the “removed” folder in PlaySwap's data, and the game keeps the files of whoever played last.", ok: "Remove game" });
+      const ok = await confirmDialog({ title: `Remove ${g.name}?`, body: "Lootnest stops managing it. Everyone's profiles are moved to the “removed” folder in Lootnest's data, and the game keeps the files of whoever played last.", ok: "Remove game" });
       if (!ok) return;
       try { await api.deleteGame(g.id); toast(`Removed ${g.name}`); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
@@ -846,7 +846,7 @@
       if (!h) return;
       try { await api.copy(h.option); S.dialog.copied = h.gameId; renderOverlay(); } catch (e) { toast(errText(e), "error"); }
     },
-    "hide-banner"() { S.hideHookBanner = true; render(); toast("PlaySwap will finish this the next time Steam is closed."); },
+    "hide-banner"() { S.hideHookBanner = true; render(); toast("Lootnest will finish this the next time Steam is closed."); },
     async "hooks-apply"() {
       S.hooksBusy = true; render(); if (S.dialog) renderOverlay();
       try {

@@ -17,13 +17,13 @@ body:
   - type: input
     id: versions
     attributes:
-      label: PlaySwap and Windows versions
-      placeholder: "PlaySwap 1.2.0, Windows 11 24H2"
+      label: Lootnest and Windows versions
+      placeholder: "Lootnest 1.2.0, Windows 11 24H2"
     validations:
       required: true
   - type: textarea
     id: log
     attributes:
-      label: playswap.log
-      description: From %LOCALAPPDATA%\PlaySwap. It contains folder paths, so check it before posting.
+      label: lootnest.log
+      description: From %LOCALAPPDATA%\Lootnest. It contains folder paths, so check it before posting.
       render: text

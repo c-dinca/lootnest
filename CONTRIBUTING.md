@@ -1,4 +1,4 @@
-# Contributing to PlaySwap
+# Contributing to Lootnest
 
 Thanks for helping. Here is how to make a change land smoothly.
 
@@ -6,13 +6,13 @@ Thanks for helping. Here is how to make a change land smoothly.
 
 Open an issue using the bug report form. Include:
 
-- Your Windows version and the PlaySwap version (Settings > About).
-- The game, and whether it was started from Steam, PlaySwap or a shortcut.
-- `%LOCALAPPDATA%\PlaySwap\playswap.log`. It has no passwords, but it does contain folder paths, so check it before you share it.
+- Your Windows version and the Lootnest version (Settings > About).
+- The game, and whether it was started from Steam, Lootnest or a shortcut.
+- `%LOCALAPPDATA%\Lootnest\lootnest.log`. It has no passwords, but it does contain folder paths, so check it before you share it.
 
 ## Adding a game preset
 
-A preset lets PlaySwap set a game up with no questions. Presets live in `KnownSteamGames` in `internal/core/steam.go`:
+A preset lets Lootnest set a game up with no questions. Presets live in `KnownSteamGames` in `internal/core/steam.go`:
 
 ```go
 730: {

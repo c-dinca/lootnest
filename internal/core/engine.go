@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	// ErrNeedOwner: PlaySwap has never managed this game, so it must be told
+	// ErrNeedOwner: Lootnest has never managed this game, so it must be told
 	// whose files are currently on the PC before it can swap.
 	ErrNeedOwner = errors.New("need-owner")
 	// ErrNeedNewMode: the chosen player has no profile yet for this game; the

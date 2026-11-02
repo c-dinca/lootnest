@@ -11,7 +11,7 @@ LANG = 0x0409
 
 MANIFEST = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">
-  <assemblyIdentity type="win32" name="PlaySwap.{name}" version="{ver4}" processorArchitecture="amd64"/>
+  <assemblyIdentity type="win32" name="Lootnest.{name}" version="{ver4}" processorArchitecture="amd64"/>
   <description>{desc}</description>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
@@ -69,11 +69,11 @@ def version_info(product, desc, version, original):
     ls = (parts[2] << 16) | parts[3]
     fixed = struct.pack("<13I", 0xFEEF04BD, 0x00010000, ms, ls, ms, ls, 0x3F, 0, 0x40004, 1, 0, 0, 0)
     strings = [
-        ("CompanyName", "PlaySwap"),
+        ("CompanyName", "Lootnest"),
         ("FileDescription", desc),
         ("FileVersion", version),
         ("InternalName", original.rsplit(".", 1)[0]),
-        ("LegalCopyright", "PlaySwap"),
+        ("LegalCopyright", "Lootnest"),
         ("OriginalFilename", original),
         ("ProductName", product),
         ("ProductVersion", version),

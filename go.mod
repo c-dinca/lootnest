@@ -1,4 +1,4 @@
-module playswap
+module lootnest
 
 go 1.24
 

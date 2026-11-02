@@ -53,7 +53,7 @@ func newFixture(t *testing.T) *fixture {
 		LocalLow:   filepath.Join(f.home, "AppData", "LocalLow"),
 		SteamPath:  f.steam,
 		SteamUser:  func() (string, error) { return SteamUserDir(f.steam, "", 0) },
-		DataDir:    filepath.Join(root, "PlaySwapData"),
+		DataDir:    filepath.Join(root, "LootnestData"),
 	}
 	_ = os.MkdirAll(filepath.Join(f.steam, "userdata", "12345"), 0o755)
 	store := &Store{Dir: f.env.DataDir}
@@ -360,7 +360,7 @@ func TestSteamLaunchOptions(t *testing.T) {
 					{
 						"LaunchOptions"		"-novid -w 1920"
 					}
-					"440" { "LaunchOptions" "\"C:\\Users\\me\\AppData\\Local\\Programs\\PlaySwap\\PlaySwap.exe\" --steam 440 -- %command%" }
+					"440" { "LaunchOptions" "\"C:\\Users\\me\\AppData\\Local\\Programs\\Lootnest\\Lootnest.exe\" --steam 440 -- %command%" }
 				}
 			}
 		}
@@ -370,8 +370,8 @@ func TestSteamLaunchOptions(t *testing.T) {
 	if err != nil || got != "-novid -w 1920" {
 		t.Fatalf("got %q %v", got, err)
 	}
-	opt := WrapperLaunchOption(`C:\P S\PlaySwap.exe`, 730, got)
-	if opt != `"C:\P S\PlaySwap.exe" --steam 730 -- %command% -novid -w 1920` {
+	opt := WrapperLaunchOption(`C:\P S\Lootnest.exe`, 730, got)
+	if opt != `"C:\P S\Lootnest.exe" --steam 730 -- %command% -novid -w 1920` {
 		t.Fatalf("option %q", opt)
 	}
 	if HasWrapper(got, 730) {
@@ -389,7 +389,7 @@ func TestSteamLaunchOptions(t *testing.T) {
 func TestSteamDirect(t *testing.T) {
 	g := Game{Launch: Launch{Type: "steam", AppID: 730}}
 	if !g.UsesSteamWrapper() {
-		t.Fatal("a Steam game goes through PlaySwap by default")
+		t.Fatal("a Steam game goes through Lootnest by default")
 	}
 	g.SteamDirect = true
 	if g.UsesSteamWrapper() {

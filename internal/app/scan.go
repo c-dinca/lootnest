@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // scanPC finds games from Steam, Epic, GOG, common game folders on every
@@ -86,7 +86,7 @@ func (a *App) scanPC() []core.FoundGame {
 		}
 		base := strings.ToLower(filepath.Base(target))
 		if base == "steam.exe" || strings.Contains(base, "launcher") || strings.Contains(base, "unins") || strings.Contains(base, "setup") ||
-			strings.Contains(base, "install") || base == "playswap.exe" {
+			strings.Contains(base, "install") || base == "lootnest.exe" {
 			continue
 		}
 		root := core.GameRoot(target, containers)
@@ -106,7 +106,7 @@ func (a *App) scanPC() []core.FoundGame {
 	return env.FinishFound(all)
 }
 
-// visibleFound hides games already in PlaySwap and ones the user dismissed.
+// visibleFound hides games already in Lootnest and ones the user dismissed.
 func (a *App) visibleFound(list []core.FoundGame) []core.FoundGame {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()

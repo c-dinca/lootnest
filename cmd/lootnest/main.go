@@ -1,11 +1,11 @@
 //go:build windows
 
-// PlaySwap: separate game settings and saves for everyone sharing one PC.
+// Lootnest: separate game settings and saves for everyone sharing one PC.
 //
-//	PlaySwap.exe                 open the app
-//	PlaySwap.exe --tray          start in the tray (used by "Start with Windows")
-//	PlaySwap.exe --launch <id>   ask who's playing, then start that game
-//	PlaySwap.exe --uninstall     remove PlaySwap
+//	Lootnest.exe                 open the app
+//	Lootnest.exe --tray          start in the tray (used by "Start with Windows")
+//	Lootnest.exe --launch <id>   ask who's playing, then start that game
+//	Lootnest.exe --uninstall     remove Lootnest
 package main
 
 import (
@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/app"
-	"playswap/internal/win"
+	"lootnest/internal/app"
+	"lootnest/internal/win"
 )
 
 func init() {
@@ -71,7 +71,10 @@ func main() {
 		return
 	}
 
-	if err := app.Run(app.Options{StartHidden: tray, LaunchGame: launch}); err != nil {
+	// Lootnest used to be PlaySwap: move its data folder over (once).
+	migrateErr := app.MigrateLegacyData()
+
+	if err := app.Run(app.Options{MigrateErr: migrateErr, StartHidden: tray, LaunchGame: launch}); err != nil {
 		os.Exit(1)
 	}
 }

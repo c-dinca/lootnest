@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // bind exposes the API to the page as window.ps_<name>(...) promises.
@@ -220,7 +220,7 @@ func (a *App) apiSaveGame(g core.Game) (core.Game, error) {
 		a.directShortcut(saved.ID)
 	}
 	if !isNew && saved.SteamDirect != wasDirect {
-		// Taking PlaySwap out of Steam isn't optional; putting it back follows
+		// Taking Lootnest out of Steam isn't optional; putting it back follows
 		// the automatic setting.
 		a.autoHooksAlways()
 	} else if isNew {
@@ -538,7 +538,7 @@ func (a *App) apiShortcut(gameID string) (string, error) {
 	if desktop == "" {
 		return "", errors.New("Couldn't find your Desktop folder.")
 	}
-	lnk := filepath.Join(desktop, strings.TrimSpace(badFileChars.ReplaceAllString(g.Name, " "))+" (PlaySwap).lnk")
+	lnk := filepath.Join(desktop, strings.TrimSpace(badFileChars.ReplaceAllString(g.Name, " "))+" (Lootnest).lnk")
 	icon, iconIdx := a.exePath, 0
 	switch g.Launch.Type {
 	case "exe":

@@ -13,18 +13,18 @@ import (
 	"strings"
 	"time"
 
-	"playswap/internal/core"
-	"playswap/internal/win"
+	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // ---------------------------------------------------------------------------
 // Steam launch options hand-off.
 //
 // A Steam game's launch options are set to
-//     "…\PlaySwap.exe" --steam <appid> -- %command%
-// so pressing Play in Steam starts a short-lived PlaySwap process (the
+//     "…\Lootnest.exe" --steam <appid> -- %command%
+// so pressing Play in Steam starts a short-lived Lootnest process (the
 // "wrapper") with the game's real command line. The wrapper asks the main
-// PlaySwap window to show the picker and swap files, waits for the answer
+// Lootnest window to show the picker and swap files, waits for the answer
 // in requests\<id>.json, then starts the game itself (so it inherits Steam's
 // environment) and stays alive until the game closes.
 // ---------------------------------------------------------------------------
@@ -88,13 +88,13 @@ func (a *App) handleSteamRequest(appID int, reqID string) {
 
 	switch {
 	case game == nil:
-		a.logf("Steam started app %d, which PlaySwap doesn't manage; letting it run", appID)
+		a.logf("Steam started app %d, which Lootnest doesn't manage; letting it run", appID)
 		a.answerRequest(reqID, "run", "")
 	case s != nil && (s.Phase == "launching" || s.Phase == "playing" || s.viaPlay):
-		// PlaySwap's own Play button already swapped the files.
+		// Lootnest's own Play button already swapped the files.
 		a.answerRequest(reqID, "run", "")
 	case s != nil:
-		a.answerRequest(reqID, "cancel", "PlaySwap is still busy with this game.")
+		a.answerRequest(reqID, "cancel", "Lootnest is still busy with this game.")
 	default:
 		a.mu.Lock()
 		a.requests[reqID] = gameID
@@ -162,13 +162,13 @@ func (a *App) apiSteamSetup() SteamSetup {
 // options. It returns the exit code to use.
 func SteamWrapper(appID int, command []string) int {
 	if len(command) == 0 {
-		win.MessageBox(0, "Steam didn't pass the game's command to PlaySwap.\n\nIn the game's launch options, make sure the PlaySwap line ends with %command%.",
+		win.MessageBox(0, "Steam didn't pass the game's command to Lootnest.\n\nIn the game's launch options, make sure the Lootnest line ends with %command%.",
 			Name, win.MB_ICONWARNING)
 		return 1
 	}
-	exe, _ := os.Executable()
+	exe := AppExe()
 	logf := func(format string, args ...any) {
-		f, err := os.OpenFile(filepath.Join(DataDir(), "playswap.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		f, err := os.OpenFile(filepath.Join(DataDir(), "lootnest.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 		if err == nil {
 			fmt.Fprintf(f, "[%s] %s\r\n", time.Now().Format("2006-01-02 15:04:05"), fmt.Sprintf(format, args...))
 			f.Close()
@@ -182,12 +182,12 @@ func SteamWrapper(appID int, command []string) int {
 		logf("Steam wrapper: couldn't start %s: %v", command[0], err)
 		if errors.Is(err, os.ErrPermission) {
 			// Anti-cheats such as FACEIT AC only let Steam start the game.
-			// The PlaySwap window offers to fix that in one click.
+			// The Lootnest window offers to fix that in one click.
 			if h := win.FindWindow(WindowClass); h != 0 && win.SendCommand(h, fmt.Sprintf("blocked:%d", appID)) {
 				return 1
 			}
-			win.MessageBox(0, "An anti-cheat, such as FACEIT AC, stopped PlaySwap from starting the game. It only lets Steam start it.\n\n"+
-				"Open PlaySwap, choose Edit game for this game and turn on \"Let Steam start this game\".", Name, win.MB_ICONWARNING)
+			win.MessageBox(0, "An anti-cheat, such as FACEIT AC, stopped Lootnest from starting the game. It only lets Steam start it.\n\n"+
+				"Open Lootnest, choose Edit game for this game and turn on \"Let Steam start this game\".", Name, win.MB_ICONWARNING)
 			return 1
 		}
 		win.MessageBox(0, "Couldn't start the game:\n"+err.Error(), Name, win.MB_ICONERROR)
@@ -197,7 +197,7 @@ func SteamWrapper(appID int, command []string) int {
 	h := win.FindWindow(WindowClass)
 	if h == 0 {
 		if err := win.StartDetached(exe, "--tray", filepath.Dir(exe)); err != nil {
-			logf("Steam wrapper: couldn't start PlaySwap (%v); starting the game without asking", err)
+			logf("Steam wrapper: couldn't start Lootnest (%v); starting the game without asking", err)
 			return run()
 		}
 		for i := 0; i < 200 && h == 0; i++ {
@@ -205,7 +205,7 @@ func SteamWrapper(appID int, command []string) int {
 			h = win.FindWindow(WindowClass)
 		}
 		if h == 0 {
-			logf("Steam wrapper: PlaySwap didn't open; starting the game without asking")
+			logf("Steam wrapper: Lootnest didn't open; starting the game without asking")
 			return run()
 		}
 	}
@@ -213,7 +213,7 @@ func SteamWrapper(appID int, command []string) int {
 	reqID := core.NewID("r")
 	resPath := filepath.Join(requestsDir(), reqID+".json")
 	if !win.SendCommand(h, fmt.Sprintf("steam:%d:%s", appID, reqID)) {
-		logf("Steam wrapper: PlaySwap didn't answer; starting the game without asking")
+		logf("Steam wrapper: Lootnest didn't answer; starting the game without asking")
 		return run()
 	}
 	deadline := time.Now().Add(30 * time.Minute)
@@ -222,7 +222,7 @@ func SteamWrapper(appID int, command []string) int {
 		b, err := os.ReadFile(resPath)
 		if err != nil {
 			if win.FindWindow(WindowClass) == 0 {
-				logf("Steam wrapper: PlaySwap closed while waiting; starting the game without asking")
+				logf("Steam wrapper: Lootnest closed while waiting; starting the game without asking")
 				return run()
 			}
 			continue
@@ -292,7 +292,7 @@ func (a *App) handleSteamBlocked(appID int) {
 	if gameID == "" {
 		return
 	}
-	a.logf("An anti-cheat blocked %s from starting through PlaySwap", a.gameName(gameID))
+	a.logf("An anti-cheat blocked %s from starting through Lootnest", a.gameName(gameID))
 	a.emitSessions()
 	a.show()
 	a.emit("blocked", map[string]any{"gameId": gameID, "playerId": playerID})
@@ -314,7 +314,7 @@ func (a *App) apiFixBlocked(gameID, playerID string) error {
 	return nil
 }
 
-// fixBlocked lets Steam start the game from now on (taking PlaySwap out of
+// fixBlocked lets Steam start the game from now on (taking Lootnest out of
 // its launch options, restarting Steam if needed), then starts it for the
 // player. Need "picker" means the UI should ask who's playing.
 func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
@@ -323,7 +323,7 @@ func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
 	a.mu.Unlock()
 	g := cfg.Game(gameID)
 	if g == nil || g.Launch.Type != "steam" {
-		return Need{}, errors.New("That game isn't in PlaySwap anymore.")
+		return Need{}, errors.New("That game isn't in Lootnest anymore.")
 	}
 	if !g.SteamDirect {
 		g.SteamDirect = true
@@ -346,7 +346,7 @@ func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
 	}
 	if _, err := a.applyHooks(false, restoresOnly); err != nil {
 		if errors.Is(err, ErrSteamRunning) {
-			return Need{}, errors.New("Steam opened again before PlaySwap could update it. Close Steam (Steam menu, Exit), then try again.")
+			return Need{}, errors.New("Steam opened again before Lootnest could update it. Close Steam (Steam menu, Exit), then try again.")
 		}
 		return Need{}, err
 	}
@@ -360,7 +360,7 @@ func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
 	return need, err
 }
 
-// directShortcut puts a "<game> (PlaySwap)" shortcut on the desktop for a
+// directShortcut puts a "<game> (Lootnest)" shortcut on the desktop for a
 // game Steam starts by itself: Steam's Play button can't ask who's playing,
 // the shortcut can.
 func (a *App) directShortcut(gameID string) {
