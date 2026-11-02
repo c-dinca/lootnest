@@ -104,7 +104,28 @@ func install(o installOpts) error {
 	})
 }
 
+// silentUpdate is "Lootnest-Setup.exe --update", started by Lootnest's own
+// "Update now": install over the current version with the same choices
+// (desktop shortcut, Start with Windows), with no window, then reopen it.
+func silentUpdate() int {
+	_, autostart := win.Autostart(app.Name)
+	_, err := os.Stat(app.DesktopShortcut())
+	desktop := err == nil
+	if err := install(installOpts{Desktop: desktop, Autostart: autostart}); err != nil {
+		win.MessageBox(0, "Lootnest couldn't update:\n"+err.Error()+"\n\nYou can download the installer from the release page instead.", "Lootnest update", win.MB_ICONERROR)
+		return 1
+	}
+	exe := filepath.Join(installDir(), app.Name+".exe")
+	if err := win.StartDetached(exe, "", filepath.Dir(exe)); err != nil {
+		return 1
+	}
+	return 0
+}
+
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "--update" {
+		os.Exit(silentUpdate())
+	}
 	win.EnableDPIAwareness()
 	dpi := win.SystemDPI()
 	scale := func(v int) int { return v * dpi / 96 }
