@@ -521,12 +521,9 @@
     S.dialog = null; renderOverlay();
     try {
       const ins = await api.inspectSteam(appId);
-      const preset = ins.preset;
-      openEditor({
-        isNew: true,
-        game: { id: "", name: ins.name, launch: { type: "steam", appId, args: "" }, processName: ins.processName || "", playerArgs: {}, paths: preset ? preset.paths.map((p) => ({ id: "", path: p })) : [] },
-        inspect: ins,
-      });
+      const g = { id: "", name: ins.name, launch: { type: "steam", appId, args: "" }, processName: ins.processName || "", playerArgs: {}, paths: (ins.proposed || []).map((p) => ({ id: "", path: p })) };
+      if (await addDirect(g)) return;
+      openEditor({ isNew: true, game: g, inspect: ins });
     } catch (e) { toast(errText(e), "error"); }
   }
 
@@ -536,12 +533,26 @@
     S.dialog = null; renderOverlay();
     try {
       const ins = await api.inspectExe(r.path);
-      openEditor({
-        isNew: true,
-        game: { id: "", name: ins.name || "", launch: { type: "exe", exe: r.tokenized || r.path, args: "" }, processName: ins.processName, playerArgs: {}, paths: [] },
-        inspect: ins,
-      });
+      const g = { id: "", name: ins.name || "", launch: { type: "exe", exe: r.tokenized || r.path, args: "" }, processName: ins.processName, playerArgs: {}, paths: (ins.proposed || []).map((p) => ({ id: "", path: p })) };
+      if (await addDirect(g)) return;
+      openEditor({ isNew: true, game: g, inspect: ins });
     } catch (e) { toast(errText(e), "error"); }
+  }
+
+  // addDirect adds a game straight away when PlaySwap found everything it
+  // needs (the process and at least one save location), like "Add" in the
+  // found list. It returns false when the editor should open instead.
+  async function addDirect(g) {
+    if (!g.name || !g.processName || !g.paths.length) return false;
+    try {
+      const saved = await api.saveGame(g);
+      const n = saved.paths.length;
+      toast(`Added ${saved.name}. PlaySwap found ${n === 1 ? "its save location" : n + " save locations"}; check them with Edit game from the ⋯ menu.`);
+      await refresh();
+      loadFound();
+      loadHooks().then(render);
+      return true;
+    } catch (e) { return false; }
   }
 
   // ---------------------------------------------------------------- editor --
