@@ -2,67 +2,98 @@
 
 <h1 align="center">Lootnest</h1>
 
-<p align="center">A home for every game on your PC.<br>First feature: separate game settings and saves for everyone who shares one PC.</p>
+<p align="center">A home for every game on your PC.<br>See them all in one place, play anything, and give everyone who shares the PC their own settings and saves.</p>
 
-<p align="center"><a href="../../releases/latest"><b>Download for Windows</b></a></p>
+<p align="center"><a href="../../releases/latest"><b>Download for Windows</b></a> · <a href="CHANGELOG.md">What's new</a></p>
 
 ---
 
-Press **Play**, pick who's playing, and Lootnest puts that person's resolution, sensitivity, keybinds and save files in place before the game starts. When the game closes, it saves their progress back to their own profile.
+![The Library: every game on the PC with its cover, and whose files are loaded in each](docs/screenshots/library.png)
 
-It's made for couples, siblings and housemates who share a gaming PC and keep overwriting each other's settings.
+Lootnest finds the games on your PC (Steam, Epic, GOG and the rest) and puts them in one library. For the games you share, turn on **profiles**: press **Play**, pick who's playing, and Lootnest puts that person's resolution, sensitivity, keybinds and saves in place before the game starts. When the game closes, their progress goes back to their own profile.
 
-> **Lootnest was called PlaySwap** until version 1.3. Installing Lootnest over PlaySwap carries over players, games, profiles, backups and the Steam set-up. Lootnest is growing into a game manager for all your games; per-player profiles are its first feature.
+It's made for couples, siblings and housemates who share a gaming PC and one Steam account, and keep overwriting each other's settings.
 
-![The Games page: whose files are loaded in each game, and games found on the PC](docs/screenshots/games.png)
+> **Lootnest was called PlaySwap** until version 1.3. Installing Lootnest over PlaySwap carries over players, games, profiles, backups and the Steam set-up.
 
 ## Features
 
-- **Library**: every game on your PC in one place, with its cover from Steam's cache on this PC. Play anything from there, and turn on profiles for the games you share.
-- **Works with any game** that keeps its settings and saves in files: Steam, Epic, GOG, or a standalone .exe.
-- **Finds your games**: scans Steam, Epic, GOG, game folders on every drive, and desktop and Start menu shortcuts. It also locates their save folders for you.
-- **Asks from Steam too**: Steam's own Play button opens the "Who's playing?" picker, after a one-time automatic setup.
-- **Safe by design**: a backup before every swap, no half-written files, and refuses folders too broad to swap.
-- **Lives in the tray**: notices games started outside Lootnest and saves their progress to whoever's files are loaded.
-- **No account, no telemetry, works offline.** The only network access is opt-in: **Download covers for games outside Steam** (Settings, off by default) looks those games up on the Steam store by name and saves their covers on your PC. Only the game's name is sent, to `store.steampowered.com`, and the image comes from Steam's image server. **Check for updates automatically** (Settings, off by default) asks GitHub once a day for the latest Lootnest version; **Check for updates** does the same once, when you press it. **Update now** downloads the installer from the GitHub release, checks its SHA-256, and installs it.
+**Library**
+- Every game on the PC in one grid, with search and filters: Steam, Epic, GOG, game folders on every drive, and your shortcuts.
+- Covers come from Steam's own cache on your PC. Covers for games outside Steam can be downloaded if you turn that on.
+- Play any game from the library. Click a cover for everything else about it.
 
-![The picker that opens when Steam starts a game](docs/screenshots/steam-picker.png)
+**Profiles**, per game, when you want them
+- Everyone gets their own settings and saves, on one Windows account and one Steam account.
+- Works with any game that keeps its settings and saves in files. Lootnest finds where most games keep them.
+- Steam's own Play button can ask "Who's playing?" too, after a one-time automatic setup.
+- Desktop shortcuts that ask every time.
+
+**Safe by design**
+- A backup before every swap, no half-written files, and folders too broad to swap are refused.
+- **Steam Cloud can stay on.** Each game says whether Steam Cloud syncs its swapped files. If Steam ever replaces a player's files with the cloud's copy, Lootnest says so and keeps that player's profile as it was.
+- **Anti-cheat friendly.** It never injects into, hooks or reads the memory of a game. With FACEIT AC, one click switches a game to being started by Steam (see [below](#anti-cheats-faceit-ac)).
+
+**Stays out of the way**
+- Lives in the tray and notices games started outside Lootnest.
+- Updates itself: **Settings > Check for updates**, then **Update now**.
+
+**Coming next:** Game Mover (move a game to another drive in one click), cloud backup of profiles, and achievements.
+
+![A game's panel: play, load someone's files, and the game's options](docs/screenshots/game-panel.png)
 
 ## Install
 
 1. Download `Lootnest-Setup.exe` from the [latest release](../../releases/latest) and run it.
-2. If SmartScreen says it protected your PC, choose **More info**, then **Run anyway**. The app isn't code-signed yet.
-3. Name the players, add the games Lootnest found, and let it set up Steam.
+2. If SmartScreen says it protected your PC, choose **More info**, then **Run anyway**. Lootnest isn't code-signed yet.
+3. Name the players. The Library fills itself; turn on profiles for the games you share.
 
-You need Windows 10 or 11 (64-bit) with the Microsoft Edge WebView2 Runtime, which is built into Windows 11 and current Windows 10. No administrator rights are needed. To uninstall, use **Settings > Apps > Installed apps**.
+You need Windows 10 or 11 (64-bit) with the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and current Windows 10. No administrator rights are needed.
 
-**Steam Cloud can stay on.** Each game's panel says whether Steam Cloud syncs any of the files profiles swap. For those that it does, Lootnest checks the files each time the game starts: if Steam replaced a player's files with the cloud's copy (for example from the same Steam account on another PC), Lootnest tells you, keeps that player's profile as it was, and saves the session as a backup instead.
+To update, use **Settings > Check for updates**. Your players, games and profiles are kept. To uninstall, use Windows **Settings > Apps > Installed apps**.
 
-## What it can't separate
+## Privacy
 
-Lootnest swaps files on your PC. Anything that belongs to the Steam account stays shared: achievements, playtime, friends, inventory, and online ranks. So do settings a game keeps in the Windows registry or on its own servers. If each person can have their own Steam account, that separates everything; Lootnest is for when you share one.
+No account and no telemetry; Lootnest works offline. It only goes online when you ask it to:
 
-## How it works
+| What | When | What is sent |
+| --- | --- | --- |
+| **Check for updates** | When you press it, or once a day if **Check for updates automatically** is on (off by default) | A request for the latest Lootnest version, to `api.github.com` |
+| **Update now** | When you press it | Downloads the installer from the GitHub release, and checks its SHA-256 before running it |
+| **Download covers for games outside Steam** | Only if you turn it on (off by default) | The game's name, to `store.steampowered.com`; the cover comes from Steam's image server and is saved on your PC |
 
-1. You start a game from Steam, from Lootnest, or from a Lootnest desktop shortcut.
+## How profiles work
+
+![The picker that opens before a game starts](docs/screenshots/picker.png)
+
+1. You start a game from the Library, from Steam, or from a Lootnest desktop shortcut.
 2. Lootnest asks who's playing.
 3. It saves the files currently on the PC back to whoever they belong to, backs them up, and copies in the chosen player's files.
 4. The game starts. Lootnest watches its process.
 5. When the game closes, Lootnest saves the files to that player's profile.
 
-For Steam, Lootnest sets each managed game's launch options to `"…\Lootnest.exe" --steam <app id> -- %command%`. It edits Steam's `localconfig.vdf` only while Steam is closed, changes only `LaunchOptions`, and keeps a backup. Any options you already had are kept, and they're put back when you remove the game or uninstall Lootnest.
+For Steam's Play button, Lootnest sets the game's launch options to `"…\Lootnest.exe" --steam <app id> -- %command%`. It edits Steam's `localconfig.vdf` only while Steam is closed, changes only `LaunchOptions`, and keeps a backup. Options you already had are kept, and they're put back when you turn profiles off or uninstall Lootnest.
 
 ### Anti-cheats (FACEIT AC)
 
-Some anti-cheats only let Steam start the game. With FACEIT AC running, CS2 can't start through Lootnest's launch option. When that happens, Lootnest opens and offers **Fix it and start the game**, which does the steps below for you. You can also do it yourself: open **Edit game** and turn on **Let Steam start this game**. Lootnest then takes itself out of the game's launch options, and you use Lootnest's **Play** button: it loads the chosen player's files, then asks Steam to start the game. Steam's own Play button can't ask who's playing for these games, because the anti-cheat only accepts Steam as the program that starts them. So Lootnest puts a **<game> (Lootnest)** shortcut on your desktop that asks every time. If you press Play in Steam anyway, a notification says whose settings are loaded.
+Some anti-cheats only let Steam start the game, so with FACEIT AC running, CS2 can't start through Lootnest's launch option. When that happens, Lootnest offers **Fix it and start the game**. It switches the game to **Let Steam start this game** (also in **Edit game**), takes itself out of the launch options, and starts the game for the chosen player through Steam.
 
-Lootnest never injects into, hooks, or reads the memory of a game. It copies files while the game is closed and checks which programs are running by name.
+From then on, start the game from Lootnest or from the **<game> (Lootnest)** desktop shortcut, and both ask who's playing. Steam's own Play button can't ask for these games, so if you use it anyway, a notification says whose settings are loaded.
 
-Data lives in `%LOCALAPPDATA%\Lootnest`: `profiles\<player>\<game>`, `backups\<game>\<date-time>`, `config.json` and `lootnest.log`.
+### What profiles can't separate
+
+Lootnest swaps files on your PC. Anything that belongs to the Steam account stays shared: achievements, playtime, friends, inventory and online ranks. So do settings a game keeps in the Windows registry or on its own servers. If everyone can have their own Steam account, that separates everything; profiles are for when you share one.
 
 ## Adding a game by hand
 
-If the scan misses a game, use **Add game**. Choose the Steam game or the .exe, then add every folder or file that holds its settings or saves. [PCGamingWiki](https://www.pcgamingwiki.com) lists these locations for most PC games ("Game data" section). Paths can use `%APPDATA%`, `%LOCALAPPDATA%`, `{LOCALLOW}`, `{DOCUMENTS}`, `{SAVEDGAMES}`, `{STEAM}` and `{STEAMUSER}`.
+If the scan misses a game, use **Add game** and choose the Steam game or the .exe. Lootnest fills in the save locations it finds. Add any others yourself. [PCGamingWiki](https://www.pcgamingwiki.com) lists them for most PC games, in the "Game data" section. Paths can use `%APPDATA%`, `%LOCALAPPDATA%`, `{LOCALLOW}`, `{DOCUMENTS}`, `{SAVEDGAMES}`, `{STEAM}` and `{STEAMUSER}`.
+
+Data lives in `%LOCALAPPDATA%\Lootnest`:
+- `profiles\<player>\<game>`
+- `backups\<game>\<date-time>`
+- `covers`
+- `config.json`
+- `lootnest.log`
 
 ## Building from source
 
@@ -70,7 +101,7 @@ You need Go 1.24+, Python 3 and bash (Git Bash on Windows). Pillow is optional; 
 
 ```bash
 ./build.sh                 # dist/Lootnest-Setup.exe and dist/Lootnest.exe
-VERSION=1.3.0 ./build.sh   # stamps a version (default: the VERSION file)
+VERSION=1.4.0 ./build.sh   # stamps a version (default: the VERSION file)
 go test ./internal/core/   # tests
 ```
 
@@ -78,9 +109,9 @@ It cross-compiles from Windows, macOS or Linux with no C compiler. Pushing a `v*
 
 | Folder | Contents |
 | --- | --- |
-| `internal/core` | Swap engine, path safety, Steam and game scanning (platform-neutral, tested) |
+| `internal/core` | Swap engine, path safety, Steam, Steam Cloud, covers, updates, game scanning (platform-neutral, tested) |
 | `internal/win` | Windows calls: tray, file dialogs, shortcuts, registry |
-| `internal/app` | The app; its interface is in `internal/app/ui` |
+| `internal/app` | The app; its interface is plain HTML, CSS and JS in `internal/app/ui` |
 | `cmd/lootnest`, `cmd/setup` | The app and installer entry points |
 | `tools` | Icon, Windows resources (icon, manifest, version), exe checks |
 | `third_party` | Vendored, lightly patched go-webview2, go-winloader and golang.org/x/sys |
