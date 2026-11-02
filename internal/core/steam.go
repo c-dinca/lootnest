@@ -3,6 +3,9 @@ package core
 import (
 	"errors"
 	"fmt"
+	"image"
+	_ "image/jpeg" // image.DecodeConfig for Steam's cached covers
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"sort"
@@ -142,32 +145,66 @@ type SteamGame struct {
 }
 
 // SteamCover finds the portrait cover Steam keeps for a game in its local
-// cache (Steam\appcache\librarycache), or "" when there is none. Older
-// Steam clients store "<appid>_library_600x900.jpg"; newer ones a
-// "<appid>" folder, sometimes with a hashed subfolder, holding
-// "library_600x900.jpg".
+// cache (Steam\appcache\librarycache), or "" when there is none. Steam has
+// stored it as "<appid>_library_600x900.jpg", as "<appid>\library_600x900.jpg"
+// and, in recent clients, under other or hashed names inside "<appid>\".
+// So every image there is considered: the largest one with a cover's 2:3
+// portrait shape wins, and a "library_600x900" name wins a tie.
 func SteamCover(steamPath string, appID int) string {
 	if steamPath == "" || appID <= 0 {
 		return ""
 	}
 	cache := filepath.Join(steamPath, "appcache", "librarycache")
 	id := strconv.Itoa(appID)
-	if p := filepath.Join(cache, id+"_library_600x900.jpg"); exists(p) {
-		return p
-	}
-	dir := filepath.Join(cache, id)
-	if p := filepath.Join(dir, "library_600x900.jpg"); exists(p) {
-		return p
-	}
-	ents, _ := os.ReadDir(dir)
-	for _, e := range ents {
-		if e.IsDir() {
-			if p := filepath.Join(dir, e.Name(), "library_600x900.jpg"); exists(p) {
-				return p
+	var cands []string
+	flat, _ := filepath.Glob(filepath.Join(cache, id+"_*"))
+	cands = append(cands, flat...)
+	var walk func(dir string, depth int)
+	walk = func(dir string, depth int) {
+		ents, err := os.ReadDir(dir)
+		if err != nil {
+			return
+		}
+		for _, e := range ents {
+			p := filepath.Join(dir, e.Name())
+			if e.IsDir() {
+				if depth < 2 {
+					walk(p, depth+1)
+				}
+			} else {
+				cands = append(cands, p)
 			}
 		}
 	}
-	return ""
+	walk(filepath.Join(cache, id), 0)
+
+	best, bestScore := "", 0
+	for _, p := range cands {
+		ext := strings.ToLower(filepath.Ext(p))
+		if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+			continue
+		}
+		f, err := os.Open(p)
+		if err != nil {
+			continue
+		}
+		cfg, _, err := image.DecodeConfig(f)
+		f.Close()
+		if err != nil || cfg.Width < 100 || cfg.Height == 0 {
+			continue
+		}
+		if r := float64(cfg.Width) / float64(cfg.Height); r < 0.6 || r > 0.73 {
+			continue // header, hero, logo and icons aren't portrait covers
+		}
+		score := cfg.Width * 2
+		if strings.HasPrefix(strings.ToLower(filepath.Base(p)), "library_600x900") || strings.Contains(strings.ToLower(filepath.Base(p)), "_library_600x900") {
+			score++
+		}
+		if score > bestScore {
+			best, bestScore = p, score
+		}
+	}
+	return best
 }
 
 // SteamLibraries lists every steamapps library folder (including the main one).
