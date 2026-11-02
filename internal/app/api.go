@@ -367,6 +367,9 @@ type Inspect struct {
 	Preset      *core.Preset        `json:"preset,omitempty"`
 	Candidates  []core.ExeCandidate `json:"candidates"`
 	Suggestions []core.Suggestion   `json:"suggestions"`
+	// Proposed are the locations to fill in without asking (the preset, else
+	// the best suggestions), the same choice the scan makes.
+	Proposed []string `json:"proposed"`
 }
 
 func (a *App) apiInspectSteam(appID int) (Inspect, error) {
@@ -397,6 +400,10 @@ func (a *App) apiInspectSteam(appID int) (Inspect, error) {
 	if out.Suggestions == nil {
 		out.Suggestions = []core.Suggestion{}
 	}
+	out.Proposed = core.ProposePaths(out.Suggestions, out.Preset)
+	if out.Proposed == nil {
+		out.Proposed = []string{}
+	}
 	return out, nil
 }
 
@@ -415,6 +422,10 @@ func (a *App) apiInspectExe(path string) (Inspect, error) {
 	out.Suggestions = a.env.SuggestPaths(name, base, 0)
 	if out.Suggestions == nil {
 		out.Suggestions = []core.Suggestion{}
+	}
+	out.Proposed = core.ProposePaths(out.Suggestions, nil)
+	if out.Proposed == nil {
+		out.Proposed = []string{}
 	}
 	return out, nil
 }
