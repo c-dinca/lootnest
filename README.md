@@ -51,7 +51,7 @@ For Steam, PlaySwap sets each managed game's launch options to `"…\PlaySwap.ex
 
 ### Anti-cheats (FACEIT AC)
 
-Some anti-cheats only let Steam start the game. With FACEIT AC running, CS2 can't start through PlaySwap's launch option. When that happens, PlaySwap opens and offers **Fix it and start the game**, which does the steps below for you. You can also do it yourself: open **Edit game** and turn on **Let Steam start this game**. PlaySwap then takes itself out of the game's launch options, and you use PlaySwap's **Play** button: it loads the chosen player's files, then asks Steam to start the game. Pressing Play in Steam starts the game without asking, with whoever's files are loaded.
+Some anti-cheats only let Steam start the game. With FACEIT AC running, CS2 can't start through PlaySwap's launch option. When that happens, PlaySwap opens and offers **Fix it and start the game**, which does the steps below for you. You can also do it yourself: open **Edit game** and turn on **Let Steam start this game**. PlaySwap then takes itself out of the game's launch options, and you use PlaySwap's **Play** button: it loads the chosen player's files, then asks Steam to start the game. Steam's own Play button can't ask who's playing for these games, because the anti-cheat only accepts Steam as the program that starts them. So PlaySwap puts a **<game> (PlaySwap)** shortcut on your desktop that asks every time. If you press Play in Steam anyway, a notification says whose settings are loaded.
 
 PlaySwap never injects into, hooks, or reads the memory of a game. It copies files while the game is closed and checks which programs are running by name.
 

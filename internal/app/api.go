@@ -216,6 +216,9 @@ func (a *App) apiSaveGame(g core.Game) (core.Game, error) {
 	if err != nil || saved.Launch.Type != "steam" {
 		return saved, err
 	}
+	if saved.SteamDirect && (isNew || !wasDirect) {
+		a.directShortcut(saved.ID)
+	}
 	if !isNew && saved.SteamDirect != wasDirect {
 		// Taking PlaySwap out of Steam isn't optional; putting it back follows
 		// the automatic setting.

@@ -125,7 +125,7 @@
         loadHooks().then(render);
         const g = game(ev.gameId);
         if (ev.need) openPicker(ev.gameId, "play");
-        else toast(`Starting ${g ? g.name : "the game"} for ${pname(ev.playerId)}. Steam starts it from now on.`);
+        else toast(`Starting ${g ? g.name : "the game"} for ${pname(ev.playerId)}. Next time, start it from the ${g ? g.name : "game"} (PlaySwap) shortcut on your desktop to choose who's playing.`);
         break;
       }
       case "pickerClosed":
@@ -426,7 +426,7 @@
       <div><h2>An anti-cheat blocked ${esc(g.name)}</h2>
         <p class="sub">Anti-cheats such as FACEIT AC only let Steam start the game, so PlaySwap couldn't start it.</p></div>
       <div class="note">PlaySwap can fix this now: Steam will start ${esc(g.name)} by itself (Steam restarts once, about 10 seconds), and ${who ? `the game starts for <b>${esc(who)}</b>` : "you choose who's playing"}.
-        <br>From then on, press <b>Play</b> in PlaySwap to choose who's playing.</div>
+        <br>PlaySwap also puts a <b>${esc(g.name)} (PlaySwap)</b> shortcut on your desktop. Start the game from it, or from Play here, and it asks who's playing every time.</div>
       ${who ? `<p class="hint">${esc(possessive(who))} files are loaded.</p>` : ""}
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Not now</button>
         <button class="btn primary" data-action="fix-blocked" ${D.busy ? "disabled" : ""}>${D.busy ? "Fixing and starting" : "Fix it and start the game"}</button></div>
@@ -599,7 +599,7 @@
     const cands = (ins.candidates || []).filter((c) => c.name.toLowerCase() !== (g.processName || "").toLowerCase()).slice(0, 6);
     const launch = g.launch.type === "steam"
       ? `<div class="note">Launched through Steam (app ${esc(g.launch.appId)}).</div>
-        <label class="toggle"><span><b style="font-weight:500">Let Steam start this game</b><p>Turn this on if an anti-cheat, such as FACEIT AC, blocks the game when PlaySwap starts it. Steam's Play button then starts the game without asking who's playing, so use Play in PlaySwap to choose first.</p></span>
+        <label class="toggle"><span><b style="font-weight:500">Let Steam start this game</b><p>Turn this on if an anti-cheat, such as FACEIT AC, blocks the game when PlaySwap starts it. Steam's Play button then starts the game without asking who's playing. PlaySwap adds a desktop shortcut that asks every time.</p></span>
           <span class="switch"><input type="checkbox" data-field="steamDirect" ${g.steamDirect ? "checked" : ""}><span></span></span></label>`
       : `<div class="row"><input type="text" class="grow" data-field="exe" value="${esc(g.launch.exe)}" spellcheck="false"><button class="btn" data-action="browse-exe">Browse</button></div>`;
     return `<div class="page">

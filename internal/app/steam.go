@@ -330,6 +330,7 @@ func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
 		if _, err := a.apiSaveGameQuiet(*g); err != nil {
 			return Need{}, err
 		}
+		a.directShortcut(g.ID)
 	}
 	a.mu.Lock()
 	restoresOnly := !a.cfg.Settings.AutoSteamHooks
@@ -357,6 +358,17 @@ func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
 		return Need{Need: "picker"}, nil
 	}
 	return need, err
+}
+
+// directShortcut puts a "<game> (PlaySwap)" shortcut on the desktop for a
+// game Steam starts by itself: Steam's Play button can't ask who's playing,
+// the shortcut can.
+func (a *App) directShortcut(gameID string) {
+	if lnk, err := a.apiShortcut(gameID); err != nil {
+		a.logf("Couldn't create the desktop shortcut for %s: %v", a.gameName(gameID), err)
+	} else {
+		a.logf("Desktop shortcut created: %s", lnk)
+	}
 }
 
 // ParseSteamArgs pulls "--steam <appid> -- <command...>" out of the arguments.
