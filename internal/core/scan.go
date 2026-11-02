@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -36,9 +37,40 @@ var gameMarkerExt = map[string]bool{
 	".rpf": true, ".wad": true, ".pck": true, ".assets": true, ".big": true, ".gpk": true, ".upk": true, ".ucas": true,
 }
 
+// hasChromium reports a folder that holds a Chromium, Electron, CEF or Qt
+// WebEngine build (icudtl.dat or libcef.dll) in it or up to two levels
+// below. Apps built on them (browsers, Discord, launchers, hardware tools)
+// ship .pak files too, so in such a folder .pak files don't count as a game
+// marker.
+func hasChromium(dir string) bool {
+	var walk func(d string, depth int) bool
+	walk = func(d string, depth int) bool {
+		ents, err := os.ReadDir(d)
+		if err != nil || len(ents) > 3000 {
+			return false
+		}
+		for _, e := range ents {
+			if n := strings.ToLower(e.Name()); !e.IsDir() && (n == "icudtl.dat" || n == "libcef.dll") {
+				return true
+			}
+		}
+		if depth >= 2 {
+			return false
+		}
+		for _, e := range ents {
+			if e.IsDir() && walk(filepath.Join(d, e.Name()), depth+1) {
+				return true
+			}
+		}
+		return false
+	}
+	return walk(dir, 0)
+}
+
 // LooksLikeGame checks a folder (and two levels below) for files that game
 // engines and game stores leave behind.
 func LooksLikeGame(dir string) bool {
+	chromium := hasChromium(dir)
 	var walk func(d string, depth int) bool
 	walk = func(d string, depth int) bool {
 		ents, err := os.ReadDir(d)
@@ -57,7 +89,7 @@ func LooksLikeGame(dir string) bool {
 				}
 				continue
 			}
-			if gameMarkerFiles[n] || gameMarkerExt[filepath.Ext(n)] {
+			if gameMarkerFiles[n] || (gameMarkerExt[filepath.Ext(n)] && !(chromium && filepath.Ext(n) == ".pak")) {
 				return true
 			}
 			if strings.HasSuffix(n, ".exe") {
@@ -73,7 +105,7 @@ func LooksLikeGame(dir string) bool {
 		for _, e := range ents {
 			if e.IsDir() {
 				n := strings.ToLower(e.Name())
-				if n == "redist" || n == "_commonredist" || n == "directx" || strings.HasPrefix(n, "$") {
+				if n == "redist" || n == "_commonredist" || n == "directx" || n == "locales" || n == "swiftshader" || strings.HasPrefix(n, "$") {
 					continue
 				}
 				if walk(filepath.Join(d, e.Name()), depth+1) {
@@ -254,6 +286,48 @@ func EpicGames(manifestDir string) []FoundGame {
 	return out
 }
 
+// versionedDir matches app install folders named after a version, such as
+// "Battle.net.17709" or Discord's "app-1.0.9187".
+var versionedDir = regexp.MustCompile(`(^app-\d)|([.-]\d{3,}$)`)
+
+// notGameDir reports folder names that hold launchers, runtimes or
+// installers rather than a game.
+func notGameDir(name string) bool {
+	n := strings.ToLower(name)
+	if versionedDir.MatchString(n) {
+		return true
+	}
+	for _, w := range []string{"launcher", "online services", "social club", "redist", "installer", "setup"} {
+		if strings.Contains(n, w) {
+			return true
+		}
+	}
+	return false
+}
+
+// vendorDirs are hardware and driver makers' install folders: their tools
+// (AMD Software, G HUB, iCUE...) are never games.
+var vendorDirs = map[string]bool{
+	"amd": true, "ati technologies": true, "nvidia": true, "nvidia corporation": true, "intel": true, "realtek": true,
+	"logitech": true, "logishrd": true, "lghub": true, "razer": true, "corsair": true, "steelseries": true,
+	"asus": true, "msi": true, "gigabyte": true, "nzxt": true,
+}
+
+// SkipShortcut reports shortcuts that point at a launcher, installer or
+// hardware tool rather than a game: root is the game folder GameRoot found
+// for the target exe.
+func SkipShortcut(target, root string) bool {
+	if notGameDir(filepath.Base(root)) {
+		return true // e.g. Ubisoft Game Launcher, which has the games inside it
+	}
+	for _, part := range strings.Split(filepath.ToSlash(filepath.Dir(target)), "/") {
+		if vendorDirs[strings.ToLower(part)] {
+			return true
+		}
+	}
+	return false
+}
+
 // ScanFolders looks one level inside each root (and inside known game
 // folders like D:\Games) for folders that look like games.
 func ScanFolders(roots []string, containers []string) []FoundGame {
@@ -275,7 +349,7 @@ func ScanFolders(roots []string, containers []string) []FoundGame {
 				continue
 			}
 			dir := filepath.Join(root, e.Name())
-			if isContainer(dir, containers) || seen[strings.ToLower(dir)] {
+			if notGameDir(e.Name()) || isContainer(dir, containers) || seen[strings.ToLower(dir)] {
 				continue
 			}
 			seen[strings.ToLower(dir)] = true

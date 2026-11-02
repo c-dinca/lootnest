@@ -55,7 +55,7 @@ func (a *App) scanPC() []core.FoundGame {
 			continue
 		}
 		for _, n := range []string{"Epic Games", "Rockstar Games", "EA Games", "Electronic Arts", "Ubisoft", `Ubisoft\Ubisoft Game Launcher\games`,
-			`GOG Galaxy\Games`, "Battle.net", "Riot Games", "Bethesda.net Launcher\\games", "Square Enix", "Games"} {
+			`GOG Galaxy\Games`, "Riot Games", "Bethesda.net Launcher\\games", "Square Enix", "Games"} {
 			p := filepath.Join(pf, n)
 			if st, err := os.Stat(p); err == nil && st.IsDir() {
 				roots = append(roots, p)
@@ -85,7 +85,8 @@ func (a *App) scanPC() []core.FoundGame {
 			continue
 		}
 		base := strings.ToLower(filepath.Base(target))
-		if base == "steam.exe" || strings.Contains(base, "launcher") || strings.Contains(base, "unins") || base == "playswap.exe" {
+		if base == "steam.exe" || strings.Contains(base, "launcher") || strings.Contains(base, "unins") || strings.Contains(base, "setup") ||
+			strings.Contains(base, "install") || base == "playswap.exe" {
 			continue
 		}
 		root := core.GameRoot(target, containers)
@@ -96,7 +97,7 @@ func (a *App) scanPC() []core.FoundGame {
 				break
 			}
 		}
-		if skip || !core.LooksLikeGame(root) {
+		if skip || core.SkipShortcut(target, root) || !core.LooksLikeGame(root) {
 			continue
 		}
 		name := strings.TrimSuffix(filepath.Base(lnk), filepath.Ext(lnk))
