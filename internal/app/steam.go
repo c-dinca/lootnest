@@ -334,16 +334,20 @@ func (a *App) fixBlocked(gameID, playerID string) (Need, error) {
 	a.mu.Lock()
 	restoresOnly := !a.cfg.Settings.AutoSteamHooks
 	a.mu.Unlock()
-	res, err := a.applyHooks(true, restoresOnly)
-	if err != nil {
-		return Need{}, err
-	}
-	if res.Restarted {
-		// Give Steam a moment to come back before asking it to start the game.
-		for i := 0; i < 60 && !steamRunning(); i++ {
-			time.Sleep(500 * time.Millisecond)
+	// Close Steam and leave it closed: "steam.exe -applaunch" below starts it
+	// again and only launches the game once Steam has signed in. Launching
+	// into a Steam that is still starting can leave the game hanging.
+	if steamRunning() {
+		a.logf("Closing Steam so it starts %s by itself", g.Name)
+		if err := shutdownSteam(a.env.SteamPath); err != nil {
+			return Need{}, err
 		}
-		time.Sleep(5 * time.Second)
+	}
+	if _, err := a.applyHooks(false, restoresOnly); err != nil {
+		if errors.Is(err, ErrSteamRunning) {
+			return Need{}, errors.New("Steam opened again before PlaySwap could update it. Close Steam (Steam menu, Exit), then try again.")
+		}
+		return Need{}, err
 	}
 	if playerID == "" {
 		return Need{Need: "picker"}, nil
