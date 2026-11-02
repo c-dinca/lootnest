@@ -50,6 +50,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_addFound", a.apiAddFound))
 	must(a.w.Bind("ps_foundGame", a.apiFoundGame))
 	must(a.w.Bind("ps_applyHooks", a.apiApplyHooks))
+	must(a.w.Bind("ps_fixBlocked", a.apiFixBlocked))
 	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
