@@ -144,6 +144,7 @@ func syncSteamHooks(cfg *core.Config, env *core.Env, exe string, install, allowR
 	}
 
 	wasRunning := steamRunning()
+	logf("Steam launch options to update for %d game(s) in %s", len(changes), userDir)
 	if wasRunning {
 		if !allowRestart {
 			res.NeedsRestart = true

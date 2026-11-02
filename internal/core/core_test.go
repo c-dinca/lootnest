@@ -412,3 +412,44 @@ func TestSteamDirect(t *testing.T) {
 		t.Fatalf("steamDirect lost on reload: %v", err)
 	}
 }
+
+func TestSteamUserDirMostRecent(t *testing.T) {
+	steam := t.TempDir()
+	for _, a := range []string{"0", "1163518216", "924453954"} {
+		_ = os.MkdirAll(filepath.Join(steam, "userdata", a, "config"), 0o755)
+	}
+	// The other account's settings changed last; Steam still signs in to 924453954.
+	write(t, filepath.Join(steam, "userdata", "1163518216", "config", "localconfig.vdf"), "x")
+	write(t, filepath.Join(steam, "config", "loginusers.vdf"), `"users"
+{
+	"76561199123783944"
+	{
+		"AccountName"		"other"
+		"MostRecent"		"0"
+		"Timestamp"		"1790000000"
+	}
+	"76561198884719682"
+	{
+		"AccountName"		"me"
+		"MostRecent"		"1"
+		"Timestamp"		"1780000000"
+	}
+}
+`)
+	if got := MostRecentSteamAccount(steam); got != "924453954" {
+		t.Fatalf("MostRecentSteamAccount = %q", got)
+	}
+	// Steam not signed in yet (ActiveUser 0): use loginusers.vdf, not "0" or the other account.
+	if p, err := SteamUserDir(steam, "", 0); err != nil || filepath.Base(p) != "924453954" {
+		t.Fatalf("SteamUserDir = %s, %v", p, err)
+	}
+	// Signed in: the active account wins.
+	if p, _ := SteamUserDir(steam, "", 1163518216); filepath.Base(p) != "1163518216" {
+		t.Fatalf("active account should win, got %s", p)
+	}
+	// Without loginusers.vdf: the account whose localconfig.vdf changed last.
+	_ = os.Remove(filepath.Join(steam, "config", "loginusers.vdf"))
+	if p, _ := SteamUserDir(steam, "", 0); filepath.Base(p) != "1163518216" {
+		t.Fatalf("fallback should pick the newest localconfig.vdf, got %s", p)
+	}
+}
