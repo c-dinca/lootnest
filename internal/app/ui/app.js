@@ -189,7 +189,17 @@
 
   function hookBanner() {
     if (!S.hooks || S.hideHookBanner) return "";
-    const missing = S.hooks.games.filter((h) => !h.detected && game(h.gameId));
+    const missing = S.hooks.games.filter((h) => !h.detected && !h.direct && game(h.gameId));
+    const leaving = S.hooks.games.filter((h) => h.detected && h.direct && game(h.gameId));
+    if (!missing.length && leaving.length) {
+      const what = leaving.length === 1 ? esc(leaving[0].name) : leaving.length + " games";
+      const text = S.hooks.steamRunning
+        ? `So that Steam starts ${what} by itself, Steam has to restart once (about 10 seconds) while PlaySwap takes itself out of the launch options.`
+        : `PlaySwap takes itself out of the launch options for ${what}. Steam is closed, so this takes a second.`;
+      return `<div class="banner"><div><b>Let Steam start ${what}</b><p>${text}</p></div>
+        <div class="row"><button class="btn" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Updating" : S.hooks.steamRunning ? "Restart Steam and update" : "Update now"}</button>
+        <button class="btn quiet" data-action="hide-banner">Later</button></div></div>`;
+    }
     if (!missing.length) return "";
     const what = missing.length === 1 ? esc(missing[0].name) : missing.length + " games";
     const text = S.hooks.steamRunning
@@ -255,7 +265,7 @@
     return `<div class="menu" role="menu">
       <button role="menuitem" data-action="edit-game" data-game="${esc(g.id)}">Edit game</button>
       <button role="menuitem" data-action="load-only" data-game="${esc(g.id)}">Load someone's files without playing</button>
-      ${g.launch.type === "steam" ? `<button role="menuitem" data-action="steam-setup" data-game="${esc(g.id)}">Ask who's playing when started from Steam</button>` : ""}
+      ${g.launch.type === "steam" && !g.steamDirect ? `<button role="menuitem" data-action="steam-setup" data-game="${esc(g.id)}">Ask who's playing when started from Steam</button>` : ""}
       <button role="menuitem" data-action="shortcut" data-game="${esc(g.id)}">Create desktop shortcut</button>
       <hr>
       <button role="menuitem" data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}">Open the game's save folder</button>
@@ -402,7 +412,7 @@
     if (!H) body = `<p class="hint">Reading Steam's settings</p>`;
     else if (!H.games.length) body = `<div class="note">No Steam games in PlaySwap yet. Add one first.</div>`;
     else {
-      const list = D.focus ? H.games.filter((h) => h.gameId === D.focus) : H.games;
+      const list = (D.focus ? H.games.filter((h) => h.gameId === D.focus) : H.games).filter((h) => !h.direct);
       body = list.map((h) => `<div class="hook${h.detected ? " done" : ""}">
           <div class="row" style="justify-content:space-between"><b>${esc(h.name)}</b>
             <span class="${h.detected ? "ok-text" : "hint"}">${h.detected ? "Set up: Steam asks who's playing" : "Not set up yet"}</span></div>
@@ -415,7 +425,7 @@
       <div class="page-head" style="margin:0"><div><h2>Ask who's playing when started from Steam</h2>
         <p class="sub">Do this once per game. Afterwards, pressing Play in Steam opens the picker, loads that person's files, then starts the game.</p></div>
         <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
-      ${H && H.games.some((h) => !h.detected) ? `<div class="note"><b>Easiest:</b> let PlaySwap do it. ${H.steamRunning ? "Steam closes and reopens by itself (about 10 seconds)." : "Steam is closed, so this takes a second."}
+      ${H && H.games.some((h) => !h.detected && !h.direct) ? `<div class="note"><b>Easiest:</b> let PlaySwap do it. ${H.steamRunning ? "Steam closes and reopens by itself (about 10 seconds)." : "Steam is closed, so this takes a second."}
         <div class="row" style="margin-top:10px"><button class="btn primary" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Setting up" : "Set up automatically"}</button></div></div>
       <p class="hint">Or by hand:</p>` : ""}
       <ol class="steps">
@@ -547,7 +557,9 @@
     const sugg = (ins.suggestions || []).filter((s) => !taken.has(s.path.toLowerCase()));
     const cands = (ins.candidates || []).filter((c) => c.name.toLowerCase() !== (g.processName || "").toLowerCase()).slice(0, 6);
     const launch = g.launch.type === "steam"
-      ? `<div class="note">Launched through Steam (app ${esc(g.launch.appId)}).</div>`
+      ? `<div class="note">Launched through Steam (app ${esc(g.launch.appId)}).</div>
+        <label class="toggle"><span><b style="font-weight:500">Let Steam start this game</b><p>Turn this on if an anti-cheat, such as FACEIT AC, blocks the game when PlaySwap starts it. Steam's Play button then starts the game without asking who's playing, so use Play in PlaySwap to choose first.</p></span>
+          <span class="switch"><input type="checkbox" data-field="steamDirect" ${g.steamDirect ? "checked" : ""}><span></span></span></label>`
       : `<div class="row"><input type="text" class="grow" data-field="exe" value="${esc(g.launch.exe)}" spellcheck="false"><button class="btn" data-action="browse-exe">Browse</button></div>`;
     return `<div class="page">
       <div class="page-head"><div><button class="btn quiet small" data-action="edit-cancel" style="margin:0 0 10px -12px">${icon.back}Games</button>
@@ -780,9 +792,11 @@
     async "hooks-apply"() {
       S.hooksBusy = true; render(); if (S.dialog) renderOverlay();
       try {
+        const onlyLeaving = S.hooks && !S.hooks.games.some((h) => !h.detected && !h.direct);
         const r = await api.applyHooks(true);
         await loadHooks();
-        if (r && r.changed) toast(r.restarted ? "Steam restarted. Its Play button now asks who's playing." : "Done. Steam's Play button now asks who's playing.");
+        if (r && r.changed && onlyLeaving) toast(r.restarted ? "Steam restarted. It now starts those games by itself." : "Done. Steam now starts those games by itself.");
+        else if (r && r.changed) toast(r.restarted ? "Steam restarted. Its Play button now asks who's playing." : "Done. Steam's Play button now asks who's playing.");
       } catch (e) { toast(errText(e), "error"); }
       S.hooksBusy = false; render(); if (S.dialog) renderOverlay();
     },
@@ -864,6 +878,7 @@
     if (f === "name") g.name = el.value;
     else if (f === "exe") g.launch.exe = el.value;
     else if (f === "processName") g.processName = el.value;
+    else if (f === "steamDirect") g.steamDirect = el.checked;
     else if (f === "args") g.launch.args = el.value;
     else if (f === "parg") { g.playerArgs = g.playerArgs || {}; g.playerArgs[el.dataset.player] = el.value; }
     else if (f === "path") { const p = g.paths.find((x) => x._k === el.dataset.k); if (p) p.path = el.value; }

@@ -385,3 +385,30 @@ func TestSteamLaunchOptions(t *testing.T) {
 		t.Fatal("missing app should be empty")
 	}
 }
+
+func TestSteamDirect(t *testing.T) {
+	g := Game{Launch: Launch{Type: "steam", AppID: 730}}
+	if !g.UsesSteamWrapper() {
+		t.Fatal("a Steam game goes through PlaySwap by default")
+	}
+	g.SteamDirect = true
+	if g.UsesSteamWrapper() {
+		t.Fatal("a game Steam starts itself must not use the wrapper")
+	}
+	exe := Game{Launch: Launch{Type: "exe", Exe: `C:\x.exe`}}
+	if exe.UsesSteamWrapper() {
+		t.Fatal("non-Steam games never use the wrapper")
+	}
+
+	// The flag survives a save and load of the config.
+	store := &Store{Dir: t.TempDir()}
+	cfg := DefaultConfig()
+	cfg.Games = []Game{{ID: "cs2", Name: "Counter-Strike 2", ProcessName: "cs2", Launch: Launch{Type: "steam", AppID: 730}, SteamDirect: true, Paths: []PathEntry{}}}
+	if err := store.SaveConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := store.LoadConfig()
+	if err != nil || !got.Game("cs2").SteamDirect {
+		t.Fatalf("steamDirect lost on reload: %v", err)
+	}
+}

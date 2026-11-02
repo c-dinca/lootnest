@@ -46,6 +46,16 @@ type Game struct {
 	// SteamPrevOptions are the Steam launch options the game had before
 	// PlaySwap added itself; they're put back when PlaySwap lets go.
 	SteamPrevOptions string `json:"steamPrevOptions,omitempty"`
+	// SteamDirect keeps PlaySwap out of the game's Steam launch options, so
+	// Steam starts the game itself. Needed when an anti-cheat (FACEIT AC)
+	// refuses to let any other program start the game.
+	SteamDirect bool `json:"steamDirect,omitempty"`
+}
+
+// UsesSteamWrapper reports whether Steam's Play button should go through
+// PlaySwap for this game.
+func (g *Game) UsesSteamWrapper() bool {
+	return g.Launch.Type == "steam" && !g.SteamDirect
 }
 
 type Settings struct {

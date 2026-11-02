@@ -205,8 +205,21 @@ var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
 
 func (a *App) apiSaveGame(g core.Game) (core.Game, error) {
 	isNew := g.ID == ""
+	wasDirect := false
+	a.mu.Lock()
+	if old := a.cfg.Game(g.ID); old != nil {
+		wasDirect = old.SteamDirect
+	}
+	a.mu.Unlock()
 	saved, err := a.apiSaveGameQuiet(g)
-	if err == nil && isNew && saved.Launch.Type == "steam" {
+	if err != nil || saved.Launch.Type != "steam" {
+		return saved, err
+	}
+	if !isNew && saved.SteamDirect != wasDirect {
+		// Taking PlaySwap out of Steam isn't optional; putting it back follows
+		// the automatic setting.
+		a.autoHooksAlways()
+	} else if isNew {
 		a.autoHooks()
 	}
 	return saved, err
