@@ -260,7 +260,7 @@
   function libraryItems() {
     const items = cfg().games.map((g) => ({
       kind: "game", id: g.id, name: g.name, appId: g.launch.type === "steam" ? g.launch.appId : 0,
-      source: g.launch.type === "steam" ? "steam" : "other", g,
+      source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", g,
     }));
     (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, f }));
     return items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));

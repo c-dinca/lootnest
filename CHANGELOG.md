@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: a game outside Steam showed as "Other" once its profiles were on (GTA V from Epic, for example). It keeps the store it was found in, in its panel and in the Library's filters.
 - Every game in the Library has settings now, profiles or not: **Game settings** (the name it's shown with, and launch options Lootnest adds when it starts the game), **Create desktop shortcut** (starts the game directly), **Open the game's folder**, and for Steam games **Check the game's files in Steam**. Names and launch options carry over when profiles are turned on.
 - Fixed: dialogs and the game panel flickered (played their opening animation again) each time something in them changed, such as picking a drive in Game Mover or the progress bar moving.
 
