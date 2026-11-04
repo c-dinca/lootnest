@@ -339,6 +339,15 @@ option { background: var(--panel); }
 .choice b { display: block; font-weight: 600; font-size: 15px; color: var(--text); }
 .choice span { color: var(--muted); font-size: 13px; }
 .choice .dot { width: 14px; height: 14px; }
+.choice.on { border-color: var(--gold); }
+.choice.on .dot { background: var(--gold); }
+.choice:disabled { opacity: .5; cursor: default; }
+.choice:disabled:hover { background: var(--panel); border-color: var(--line); }
+
+/* Game Mover: how much of the game is copied. */
+.mover { display: grid; gap: 10px; }
+.meter { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 4px; background: var(--gold); transition: width .25s var(--ease); }
 
 /* Loading a player's files: their name and a steady progress line. */
 .working { align-self: center; justify-self: center; display: grid; justify-items: center; gap: 20px; padding-bottom: 8vh; animation: rise .24s var(--ease); }

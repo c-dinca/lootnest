@@ -357,6 +357,10 @@ func (a *App) quit(force bool) {
 			}
 		}
 		a.mu.Unlock()
+		if name := movingName(); name != "" {
+			win.MessageBox(a.hwnd, "Lootnest is moving "+name+" to another drive. Quit once it's done; Lootnest tells you when.", Name, win.MB_OK|win.MB_ICONINFORMATION)
+			return
+		}
 		if len(playing) > 0 {
 			msg := "Still playing: " + strings.Join(playing, ", ") + ".\n\nIf Lootnest quits now, that progress is saved the next time you pick a player for the game in Lootnest. Quit anyway?"
 			if win.MessageBox(a.hwnd, msg, Name, win.MB_YESNO|win.MB_ICONQUESTION|win.MB_DEFBUTTON2) != win.IDYES {

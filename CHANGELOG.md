@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- New **Game Mover**: a Steam game's panel has **Move to another drive**. Pick one of the PC's Steam libraries; Lootnest shows the game's size and each drive's free space, closes Steam, copies the game (with its workshop items) and checks every file, and only then moves Steam's records and removes the old copy. If anything goes wrong first, the game stays where it was. Steam reopens when it's done.
 - The Library is saved: when Lootnest opens, your games are there at once, and the scan updates them quietly in the background. A game the scan misses stays while it's still installed; uninstalled games drop out.
 - Fixed: for Steam games without a preset, Lootnest proposed swapping Steam's own folder for the game (`Steam\userdata\<account>\<appid>`), which also swapped Steam Cloud's records. It now proposes the folders inside it (such as `local` and `remote`) and refuses the folder itself. Games already set up that way are switched over automatically at start; each player's files are moved to the new entries, nothing is deleted.
 

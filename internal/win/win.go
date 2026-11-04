@@ -497,3 +497,17 @@ func WebView2Installed() bool {
 	return check(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\EdgeUpdate\Clients\`+client) ||
 		check(registry.CURRENT_USER, `Software\Microsoft\EdgeUpdate\Clients\`+client)
 }
+
+// DiskFree is the space free for this user on the drive that holds path, or
+// -1 when Windows can't say.
+func DiskFree(path string) int64 {
+	p, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return -1
+	}
+	var free, total, all uint64
+	if err := windows.GetDiskFreeSpaceEx(p, &free, &total, &all); err != nil {
+		return -1
+	}
+	return int64(free)
+}
