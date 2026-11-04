@@ -250,12 +250,13 @@
     const all = libraryItems();
     const withProfiles = cfg().games.length;
     const scanning = S.found.scanning;
+    const refreshing = S.found.refreshing;
     const chips = [["all", "All"], ["profiles", "With profiles"], ["steam", "Steam"], ["epic", "Epic"], ["gog", "GOG"], ["other", "Other"]];
     const head = `<div class="lib-head"><div class="grow"><h1>Library</h1>
         <p class="sub">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC · ${withProfiles === 1 ? "1 with profiles" : withProfiles + " with profiles"}` : "Every game on this PC, in one place."}</p></div>
         <input type="search" id="lib-q" class="search" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games">
         <button class="btn" data-action="add-game">${icon.plus}Add game</button>
-        <button class="btn quiet" data-action="rescan" ${scanning ? "disabled" : ""}>${scanning ? "Scanning" : "Scan again"}</button></div>`;
+        <button class="btn quiet" data-action="rescan" ${refreshing ? "disabled" : ""}>${refreshing ? "Scanning" : "Scan again"}</button></div>`;
     if (!all.length && !scanning) {
       return `<div class="page wide">${head}<div class="empty"><div><h2>No games found yet</h2>
         <p class="sub">Lootnest looks in Steam, Epic, GOG, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
@@ -1028,7 +1029,7 @@
       } catch (e) { toast(errText(e), "error"); }
       S.hooksBusy = false; render(); if (S.dialog) renderOverlay();
     },
-    rescan() { S.found = { scanning: true, games: S.found.games || [] }; render(); api.scan(); },
+    rescan() { S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [] }; render(); api.scan(); },
     async "add-all"() {
       const keys = (S.found.games || []).filter((f) => f.ready).map((f) => f.key);
       await addFound(keys);

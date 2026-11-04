@@ -438,3 +438,51 @@ func sourceRank(s string) int {
 	}
 	return 3
 }
+
+// ---------------------------------------------------------------------------
+// The library is saved, so it shows at once when Lootnest opens; the scan
+// then refreshes it in the background.
+// ---------------------------------------------------------------------------
+
+func (s *Store) LibraryPath() string { return filepath.Join(s.Dir, "library.json") }
+
+// LoadLibrary returns the games found by the last scan, or nil.
+func (s *Store) LoadLibrary() []FoundGame {
+	b, err := os.ReadFile(s.LibraryPath())
+	if err != nil {
+		return nil
+	}
+	var list []FoundGame
+	if json.Unmarshal(b, &list) != nil {
+		return nil
+	}
+	return list
+}
+
+func (s *Store) SaveLibrary(list []FoundGame) error {
+	if list == nil {
+		list = []FoundGame{}
+	}
+	return writeJSONAtomic(s.LibraryPath(), list)
+}
+
+// MergeFound combines a fresh scan with the saved library. Everything the
+// scan found is kept, as found. A saved game the scan missed stays while its
+// folder still exists (a slow drive, a scan rule that changed), and is
+// dropped once its folder is gone (the game was uninstalled).
+func MergeFound(saved, fresh []FoundGame, stillThere func(dir string) bool) []FoundGame {
+	out := append([]FoundGame{}, fresh...)
+	have := map[string]bool{}
+	for _, f := range fresh {
+		have[f.Key] = true
+	}
+	for _, f := range saved {
+		if have[f.Key] || f.Dir == "" || !stillThere(f.Dir) {
+			continue
+		}
+		out = append(out, f)
+		have[f.Key] = true
+	}
+	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
+	return out
+}

@@ -141,6 +141,9 @@ func (a *App) isAdded(cfg *core.Config, f core.FoundGame) bool {
 	return false
 }
 
+// startScan refreshes the library in the background. The first time, the
+// library saved by the last scan is shown at once, so games don't vanish and
+// reappear each time Lootnest opens.
 func (a *App) startScan() {
 	a.mu.Lock()
 	if a.scanning {
@@ -148,6 +151,10 @@ func (a *App) startScan() {
 		return
 	}
 	a.scanning = true
+	if a.found == nil {
+		a.found = a.store.LoadLibrary()
+	}
+	saved := append([]core.FoundGame{}, a.found...)
 	a.mu.Unlock()
 	a.emit("found", map[string]any{"scanning": true})
 	go func() {
@@ -161,26 +168,35 @@ func (a *App) startScan() {
 			}()
 			list = a.scanPC()
 		}()
+		fresh := len(list)
+		list = core.MergeFound(saved, list, dirExists)
 		a.mu.Lock()
 		a.found = list
 		a.scanning = false
 		a.mu.Unlock()
-		a.logf("Scan found %d games in %s", len(list), time.Since(start).Round(100*time.Millisecond))
+		if err := a.store.SaveLibrary(list); err != nil {
+			a.logf("ERROR saving the library: %v", err)
+		}
+		a.logf("Scan found %d games in %s (%d in the library)", fresh, time.Since(start).Round(100*time.Millisecond), len(list))
 		a.emit("found", map[string]any{"scanning": false})
 	}()
 }
 
 type FoundState struct {
-	Scanning bool             `json:"scanning"`
-	Games    []core.FoundGame `json:"games"`
+	Scanning   bool             `json:"scanning"`   // first scan, nothing to show yet
+	Refreshing bool             `json:"refreshing"` // a scan is updating the saved library
+	Games      []core.FoundGame `json:"games"`
 }
 
 func (a *App) apiFound() FoundState {
 	a.mu.Lock()
+	if a.found == nil {
+		a.found = a.store.LoadLibrary() // asked before the first scan started
+	}
 	list := append([]core.FoundGame{}, a.found...)
-	scanning := a.scanning
+	scanning := a.scanning || a.found == nil // nil: never scanned on this PC
 	a.mu.Unlock()
-	return FoundState{Scanning: scanning, Games: a.visibleFound(list)}
+	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: a.visibleFound(list)}
 }
 
 func (a *App) apiScan() { a.startScan() }
