@@ -42,6 +42,10 @@
     fixBlocked: (gameId, playerId) => call("ps_fixBlocked", gameId, playerId || ""),
     moveInfo: (appId) => call("ps_moveInfo", appId),
     moveGame: (appId, lib) => call("ps_moveGame", appId, lib),
+    saveLibraryPref: (key, name, args) => call("ps_saveLibraryPref", key, name, args),
+    openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
+    foundShortcut: (key) => call("ps_foundShortcut", key),
+    steamVerify: (appId) => call("ps_steamVerify", appId),
   };
 
   // ---------------------------------------------------------------- state --
@@ -411,7 +415,14 @@
         <p class="hint sheet-note">${f.ready
           ? "With profiles on, everyone who plays gets their own settings and saves. Lootnest already found where this game keeps them."
           : "With profiles on, everyone who plays gets their own settings and saves. You'll choose where this game keeps them."}</p>
-        <div class="sheet-list">${f.source === "steam" && f.appId ? `<button data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}">Move to another drive</button>` : ""}
+        <div class="sheet-list">
+          <button data-action="game-settings" data-key="${esc(f.key)}">Game settings</button>
+          <button data-action="found-shortcut" data-key="${esc(f.key)}">Create desktop shortcut</button>
+          <hr>
+          <button data-action="open-game-folder" data-key="${esc(f.key)}">Open the game's folder</button>
+          ${f.source === "steam" && f.appId ? `<button data-action="steam-verify" data-app="${f.appId}">Check the game's files in Steam</button>
+          <button data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}">Move to another drive</button>` : ""}
+          <hr>
           <button data-action="found-hide" data-key="${esc(f.key)}">Hide from the library</button></div></aside>`;
     }
     const g = it.g;
@@ -437,7 +448,9 @@
         <button data-action="shortcut" data-game="${esc(g.id)}">Create desktop shortcut</button>
         ${g.launch.type === "steam" ? `<button data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}" ${s ? "disabled" : ""}>Move to another drive</button>` : ""}
         <hr>
+        <button data-action="open-game-folder" data-game="${esc(g.id)}">Open the game's folder</button>
         <button data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}">Open the game's save folder</button>
+        ${g.launch.type === "steam" ? `<button data-action="steam-verify" data-app="${g.launch.appId}" ${s ? "disabled" : ""}>Check the game's files in Steam</button>` : ""}
         <button data-action="open-backups" data-game="${esc(g.id)}">Open backups</button>
         <hr>
         <button class="danger" data-action="remove-game" data-game="${esc(g.id)}">Turn off profiles</button>
@@ -599,6 +612,8 @@
       o.innerHTML = viewSheet();
     } else if (D.kind === "move") {
       o.innerHTML = viewMove();
+    } else if (D.kind === "game-settings") {
+      o.innerHTML = viewGameSettings();
     }
   }
 
@@ -639,6 +654,35 @@
       ${others.length ? `<p class="hint">The game is copied and checked before anything is removed from where it is now.${I.steamRunning ? " Steam closes while the game moves and opens again when it's done." : ""}</p>` : ""}
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
         ${others.length ? `<button class="btn primary" data-action="move-go" ${D.pick ? "" : "disabled"}>Move</button>` : ""}</div>`);
+  }
+
+  // --------------------------------------------- game settings (no profiles) --
+  function openGameSettings(key) {
+    const f = (S.found.games || []).find((x) => x.key === key);
+    if (!f) return;
+    S.dialog = { kind: "game-settings", key, busy: false };
+    renderOverlay();
+    setTimeout(() => { const i = $("#gs-name"); if (i) i.focus(); }, 30);
+  }
+
+  function viewGameSettings() {
+    const D = S.dialog;
+    const f = (S.found.games || []).find((x) => x.key === D.key);
+    if (!f) return "";
+    const steam = f.source === "steam";
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="${esc(f.name)} settings">
+      <div><h2>${esc(f.name)} settings</h2><p class="sub">These settings don't depend on profiles and stay if you turn them on.</p></div>
+      <div class="field"><label for="gs-name">Name in the Library</label>
+        <input id="gs-name" type="text" value="${esc(f.name)}" maxlength="60" placeholder="${esc(f.scanName || f.name)}" spellcheck="false">
+        ${f.scanName ? `<p class="hint">Found as ${esc(f.scanName)}. Leave it empty to use that name again.</p>` : ""}</div>
+      <div class="field"><label for="gs-args">Launch options</label>
+        <input id="gs-args" type="text" value="${esc(f.args || "")}" placeholder="${steam ? "-novid -high" : "-windowed"}" spellcheck="false">
+        <p class="hint">${steam
+          ? "Added when Lootnest or its desktop shortcut starts the game. Launch options set in Steam still apply too."
+          : "Added when Lootnest or its desktop shortcut starts the game."}</p></div>
+      <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
+        <button class="btn primary" data-action="game-settings-save" ${D.busy ? "disabled" : ""}>Save</button></div>
+    </div></div>`;
   }
 
   // ---------------------------------------------------- anti-cheat block --
@@ -1062,6 +1106,28 @@
       try { await api.fixBlocked(D.gameId, D.playerId); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
     },
     "dialog-cancel": () => closeDialog(false),
+    "game-settings"(el) { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; openGameSettings(el.dataset.key); },
+    async "game-settings-save"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "game-settings") return;
+      const name = $("#gs-name").value, args = $("#gs-args").value;
+      D.busy = true; renderOverlay();
+      try {
+        await api.saveLibraryPref(D.key, name, args);
+        await loadFound();
+        if (S.dialog === D) { S.dialog = null; renderOverlay(); }
+        toast("Saved");
+      } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
+    },
+    async "open-game-folder"(el) {
+      try { await (el.dataset.game ? api.openGameFolder("game", el.dataset.game) : api.openGameFolder("found", el.dataset.key)); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "found-shortcut"(el) {
+      try { await api.foundShortcut(el.dataset.key); toast("Shortcut added to your desktop"); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "steam-verify"(el) {
+      try { await api.steamVerify(+el.dataset.app); toast("Steam is checking the game's files. It downloads any that are missing or damaged."); } catch (e) { toast(errText(e), "error"); }
+    },
     "move-open"(el) { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; openMove(+el.dataset.app, el.dataset.name); },
     "move-pick"(el) { if (S.dialog && S.dialog.kind === "move") { S.dialog.pick = el.dataset.lib; renderOverlay(); } },
     async "move-go"() {
@@ -1130,7 +1196,7 @@
       if (f.ready) { await addFound([f.key]); return; }
       openEditor({
         isNew: true,
-        game: { id: "", name: f.name, launch: f.source === "steam" ? { type: "steam", appId: f.appId, args: "" } : { type: "exe", exe: f.exe, args: "" },
+        game: { id: "", name: f.name, launch: f.source === "steam" ? { type: "steam", appId: f.appId, args: f.args || "" } : { type: "exe", exe: f.exe, args: f.args || "" },
           processName: f.processName || "", playerArgs: {}, paths: (f.paths || []).map((p) => ({ id: "", path: p })) },
         inspect: { suggestions: f.suggestions || [], candidates: [] },
       });

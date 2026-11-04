@@ -214,3 +214,24 @@ func TestSavedLibrary(t *testing.T) {
 		t.Fatal("the fresh scan's details win")
 	}
 }
+
+func TestLibraryPrefs(t *testing.T) {
+	list := []FoundGame{{Key: "steam:730", Name: "Counter-Strike 2"}, {Key: "dir:c:\\games\\x", Name: "X"}}
+	out := ApplyLibraryPrefs(list, map[string]LibraryPref{"steam:730": {Name: "CS2", Args: "-novid"}})
+	if out[0].Name != "CS2" || out[0].ScanName != "Counter-Strike 2" || out[0].Args != "-novid" {
+		t.Fatalf("prefs not applied: %+v", out[0])
+	}
+	if out[1].Name != "X" || out[1].Args != "" || out[1].ScanName != "" {
+		t.Fatalf("a game without prefs stays as found: %+v", out[1])
+	}
+	if list[0].Name != "Counter-Strike 2" {
+		t.Fatal("the saved library must not change")
+	}
+	p, err := CleanLibraryPref(LibraryPref{Name: "  CS2 ", Args: " -novid -high "})
+	if err != nil || p.Name != "CS2" || p.Args != "-novid -high" {
+		t.Fatalf("got %+v %v", p, err)
+	}
+	if _, err := CleanLibraryPref(LibraryPref{Args: "-a\n-b"}); err == nil {
+		t.Fatal("launch options on two lines are refused")
+	}
+}

@@ -21,7 +21,7 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 **Library**
 - Every game on the PC in one grid, with search and filters: Steam, Epic, GOG, game folders on every drive, and your shortcuts.
 - Covers come from Steam's own cache on your PC. Covers for games outside Steam can be downloaded if you turn that on.
-- Play any game from the library. Click a cover for everything else about it.
+- Play any game from the library. Click a cover for everything else about it: rename it, add launch options, open its folder, put a shortcut on the desktop, or have Steam check its files. None of this needs profiles.
 
 **Profiles**, per game, when you want them
 - Everyone gets their own settings and saves, on one Windows account and one Steam account.
