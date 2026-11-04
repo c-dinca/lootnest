@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: dialogs and the game panel flickered (played their opening animation again) each time something in them changed, such as picking a drive in Game Mover or the progress bar moving.
+
 ## 1.5.0
 
 - New **Game Mover**: a Steam game's panel has **Move to another drive**. Pick one of the PC's Steam libraries; Lootnest shows the game's size and each drive's free space, closes Steam, copies the game (with its workshop items) and checks every file, and only then moves Steam's records and removes the old copy. If anything goes wrong first, the game stays where it was. Steam reopens when it's done.
