@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -215,7 +216,35 @@ func (e *Env) CheckSafe(p string) error {
 			return fmt.Errorf("%s is too broad (it contains %s); pick the game's own folder inside it", p, prot)
 		}
 	}
+	if e.SteamAppFolder(p) != 0 {
+		return fmt.Errorf("%s is Steam's own folder for this game, where it keeps Steam Cloud's records; add the game's folder inside it instead (such as local or remote)", p)
+	}
 	return nil
+}
+
+// SteamAppFolder returns the app id when p is exactly Steam's own folder for
+// a game, Steam\userdata\<account>\<appid>. Swapping it would swap Steam's
+// Steam Cloud records (remotecache.vdf) along with the game's files.
+func (e *Env) SteamAppFolder(p string) int {
+	if e.SteamPath == "" {
+		return 0
+	}
+	rel, err := filepath.Rel(strings.ToLower(filepath.Join(e.SteamPath, "userdata")), strings.ToLower(filepath.Clean(p)))
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return 0
+	}
+	parts := strings.Split(filepath.ToSlash(rel), "/")
+	if len(parts) != 2 {
+		return 0
+	}
+	id, err := strconv.Atoi(parts[1])
+	if err != nil || id <= 0 {
+		return 0
+	}
+	if _, err := strconv.Atoi(parts[0]); err != nil {
+		return 0
+	}
+	return id
 }
 
 // Tokenize rewrites an absolute path with tokens so stored configs survive

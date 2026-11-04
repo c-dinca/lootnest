@@ -186,3 +186,57 @@ func (e *Engine) LivePaths(g *Game) ([]string, error) {
 	}
 	return out, nil
 }
+
+// SplitSteamAppFolder fixes a game set up (by earlier versions) to swap
+// Steam's whole folder for it, Steam\userdata\<account>\<appid>, which also
+// swapped Steam Cloud's records. That entry is replaced by one entry per
+// folder inside it (local, remote, ...), and each player's saved copy of
+// those folders is moved, not copied, to the new entries, so nothing is lost
+// and nobody's files change. It reports whether g changed; the caller saves
+// the config.
+func (e *Engine) SplitSteamAppFolder(cfg *Config, g *Game) (bool, error) {
+	if g.Launch.Type != "steam" {
+		return false, nil
+	}
+	changed := false
+	var paths []PathEntry
+	for _, p := range g.Paths {
+		abs, err := e.Env.expand(p.Path)
+		if err != nil || e.Env.SteamAppFolder(abs) != g.Launch.AppID {
+			paths = append(paths, p)
+			continue
+		}
+		subs, err := os.ReadDir(abs)
+		if err != nil {
+			return false, err
+		}
+		var add []PathEntry
+		for _, d := range subs {
+			if d.IsDir() {
+				add = append(add, PathEntry{ID: p.ID + "-" + strings.ToLower(d.Name()), Path: p.Path + "/" + d.Name()})
+			}
+		}
+		if len(add) == 0 {
+			paths = append(paths, p) // nothing to split into; left for the user to fix
+			continue
+		}
+		for _, pl := range cfg.Players {
+			dir := e.Store.ProfileDir(pl.ID, g.ID)
+			for _, a := range add {
+				sub := filepath.Join(dir, p.ID, filepath.Base(filepath.FromSlash(a.Path)))
+				if exists(sub) && !exists(filepath.Join(dir, a.ID)) {
+					if err := os.Rename(sub, filepath.Join(dir, a.ID)); err != nil {
+						return false, err
+					}
+				}
+			}
+		}
+		e.logf("%s swapped Steam's own folder for it; it now swaps the folders inside it instead", g.Name)
+		paths = append(paths, add...)
+		changed = true
+	}
+	if changed {
+		g.Paths = paths
+	}
+	return changed, nil
+}
