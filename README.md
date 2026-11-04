@@ -34,11 +34,14 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 - **Steam Cloud can stay on.** Each game says whether Steam Cloud syncs its swapped files. If Steam ever replaces a player's files with the cloud's copy, Lootnest says so and keeps that player's profile as it was.
 - **Anti-cheat friendly.** It never injects into, hooks or reads the memory of a game. With FACEIT AC, one click switches a game to being started by Steam (see [below](#anti-cheats-faceit-ac)).
 
+**Game Mover**
+- Move a Steam game to another of your Steam libraries, such as a bigger or faster drive, from its panel. The game is copied and checked before anything is removed, and Steam is closed and reopened for you.
+
 **Stays out of the way**
 - Lives in the tray and notices games started outside Lootnest.
 - Updates itself: **Settings > Check for updates**, then **Update now**.
 
-**Coming next:** Game Mover (move a game to another drive in one click), cloud backup of profiles, and achievements.
+**Coming next:** Game Mover for games outside Steam, cloud backup of profiles, and achievements.
 
 ![A game's panel: play, load someone's files, and the game's options](docs/screenshots/game-panel.png)
 
@@ -109,7 +112,7 @@ It cross-compiles from Windows, macOS or Linux with no C compiler. Pushing a `v*
 
 | Folder | Contents |
 | --- | --- |
-| `internal/core` | Swap engine, path safety, Steam, Steam Cloud, covers, updates, game scanning (platform-neutral, tested) |
+| `internal/core` | Swap engine, path safety, Steam, Steam Cloud, Game Mover, covers, updates, game scanning (platform-neutral, tested) |
 | `internal/win` | Windows calls: tray, file dialogs, shortcuts, registry |
 | `internal/app` | The app; its interface is plain HTML, CSS and JS in `internal/app/ui` |
 | `cmd/lootnest`, `cmd/setup` | The app and installer entry points |

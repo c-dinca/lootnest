@@ -40,6 +40,8 @@
     installUpdate: () => call("ps_installUpdate"),
     cloudStatus: (id) => call("ps_cloudStatus", id),
     fixBlocked: (gameId, playerId) => call("ps_fixBlocked", gameId, playerId || ""),
+    moveInfo: (appId) => call("ps_moveInfo", appId),
+    moveGame: (appId, lib) => call("ps_moveGame", appId, lib),
   };
 
   // ---------------------------------------------------------------- state --
@@ -63,6 +65,7 @@
     found: { scanning: true, games: [] },
     adding: false,
     hooksBusy: false,
+    moving: null,     // {appId, name, step, done, total} while Game Mover copies a game
   };
   const browseWaiters = {};
   let seq = 0;
@@ -154,6 +157,29 @@
         S.covers[ev.key] = ev.url;
         showCover(ev.key);
         break;
+      case "moveInfo": {
+        const D = S.dialog && S.dialog.kind === "move" && S.dialog.appId === ev.info.appId ? S.dialog : null;
+        if (!D) break;
+        D.info = ev.info;
+        const room = (l) => l.free < 0 || l.free >= ev.info.size + MOVE_MARGIN;
+        const first = (ev.info.libraries || []).find((l) => !l.current && room(l));
+        D.pick = first ? first.path : "";
+        renderOverlay();
+        break;
+      }
+      case "moveProgress":
+        S.moving = Object.assign(S.moving || {}, ev);
+        if (S.dialog && S.dialog.kind === "move") renderOverlay();
+        break;
+      case "moveDone": {
+        S.moving = null;
+        if (S.dialog && S.dialog.kind === "move" && S.dialog.appId === ev.appId) { S.dialog = null; renderOverlay(); }
+        if (ev.error) toast(`Couldn't move ${ev.name}: ${ev.error}${/[.!?]$/.test(ev.error) ? "" : "."}`, "error");
+        else if (ev.leftover) toast(`${ev.name} moved. Some old files were in use and are still in ${ev.leftover}; you can delete that folder.`);
+        else toast(`${ev.name} is now in ${ev.lib}.`);
+        refresh();
+        break;
+      }
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
@@ -385,7 +411,8 @@
         <p class="hint sheet-note">${f.ready
           ? "With profiles on, everyone who plays gets their own settings and saves. Lootnest already found where this game keeps them."
           : "With profiles on, everyone who plays gets their own settings and saves. You'll choose where this game keeps them."}</p>
-        <div class="sheet-list"><button data-action="found-hide" data-key="${esc(f.key)}">Hide from the library</button></div></aside>`;
+        <div class="sheet-list">${f.source === "steam" && f.appId ? `<button data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}">Move to another drive</button>` : ""}
+          <button data-action="found-hide" data-key="${esc(f.key)}">Hide from the library</button></div></aside>`;
     }
     const g = it.g;
     const owner = S.d.active[g.id];
@@ -408,6 +435,7 @@
         <button data-action="edit-game" data-game="${esc(g.id)}" ${s ? "disabled" : ""}>Edit game</button>
         ${g.launch.type === "steam" && !g.steamDirect ? `<button data-action="steam-setup" data-game="${esc(g.id)}">Ask who's playing when started from Steam</button>` : ""}
         <button data-action="shortcut" data-game="${esc(g.id)}">Create desktop shortcut</button>
+        ${g.launch.type === "steam" ? `<button data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}" ${s ? "disabled" : ""}>Move to another drive</button>` : ""}
         <hr>
         <button data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}">Open the game's save folder</button>
         <button data-action="open-backups" data-game="${esc(g.id)}">Open backups</button>
@@ -561,7 +589,48 @@
       o.innerHTML = viewBlocked();
     } else if (D.kind === "sheet") {
       o.innerHTML = viewSheet();
+    } else if (D.kind === "move") {
+      o.innerHTML = viewMove();
     }
+  }
+
+  // ------------------------------------------------------------ game mover --
+  const MOVE_MARGIN = 512 * 1024 * 1024; // room kept free beyond the game's size
+
+  function openMove(appId, name) {
+    S.dialog = { kind: "move", appId, name, info: null, pick: "" };
+    renderOverlay();
+    if (!S.moving) api.moveInfo(appId).catch((e) => { if (S.dialog && S.dialog.kind === "move") { S.dialog.info = { error: errText(e), libraries: [] }; renderOverlay(); } });
+  }
+
+  function viewMove() {
+    const D = S.dialog, M = S.moving, I = D.info;
+    const head = (sub) => `<div><h2>Move ${esc(D.name)} to another drive</h2>${sub ? `<p class="sub">${sub}</p>` : ""}</div>`;
+    const wrap = (inner) => `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Move ${esc(D.name)}">${inner}</div></div>`;
+    if (M && M.appId === D.appId) {
+      const pct = M.total ? Math.min(100, Math.round((M.done / M.total) * 100)) : 0;
+      const text = M.step === "steam" ? "Closing Steam" : M.total ? `Copying ${fmtSize(M.done)} of ${fmtSize(M.total)}` : "Starting";
+      return wrap(`${head("")}<div class="mover"><div class="meter"><i style="width:${pct}%"></i></div><p class="hint">${esc(text)}</p></div>
+        <p class="hint">You can close this window; Lootnest keeps going and tells you when it's done. Keep Steam closed until then.</p>
+        <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
+    }
+    if (M) {
+      return wrap(`${head("")}<p class="note">Lootnest is moving ${esc(M.name || "another game")}. Wait for it to finish, then move this one.</p>
+        <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
+    }
+    if (!I) return wrap(`${head("Working out the game's size")}<div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button></div>`);
+    if (I.error) return wrap(`${head("")}<p class="note">${esc(I.error)}</p><div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
+    const cur = I.libraries.find((l) => l.current);
+    const others = I.libraries.filter((l) => !l.current);
+    const room = (l) => l.free < 0 || l.free >= I.size + MOVE_MARGIN;
+    const list = others.length
+      ? `<div class="choices">${others.map((l) => `<button class="choice${D.pick === l.path ? " on" : ""}" data-action="move-pick" data-lib="${esc(l.path)}" ${room(l) ? "" : "disabled"} aria-pressed="${D.pick === l.path}">
+          <span class="dot"></span><span><b>${esc(l.path)}</b><span>${l.free < 0 ? "Free space unknown" : fmtSize(l.free) + " free"}${room(l) ? "" : " · not enough room"}</span></span></button>`).join("")}</div>`
+      : `<p class="note">Steam has one library on this PC. To move games to another drive, add a library there in Steam: <b>Settings > Storage</b>, then <b>Add drive</b>. Then come back here.</p>`;
+    return wrap(`${head(`${fmtSize(I.size)} · now in ${esc(cur ? cur.path : "")}`)}${list}
+      ${others.length ? `<p class="hint">The game is copied and checked before anything is removed from where it is now.${I.steamRunning ? " Steam closes while the game moves and opens again when it's done." : ""}</p>` : ""}
+      <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
+        ${others.length ? `<button class="btn primary" data-action="move-go" ${D.pick ? "" : "disabled"}>Move</button>` : ""}</div>`);
   }
 
   // ---------------------------------------------------- anti-cheat block --
@@ -985,6 +1054,18 @@
       try { await api.fixBlocked(D.gameId, D.playerId); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
     },
     "dialog-cancel": () => closeDialog(false),
+    "move-open"(el) { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; openMove(+el.dataset.app, el.dataset.name); },
+    "move-pick"(el) { if (S.dialog && S.dialog.kind === "move") { S.dialog.pick = el.dataset.lib; renderOverlay(); } },
+    async "move-go"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "move" || !D.pick) return;
+      try {
+        await api.moveGame(D.appId, D.pick);
+        if (S.dialog !== D) return; // already done
+        S.moving = Object.assign({ appId: D.appId, name: D.name, step: "", done: 0, total: 0 }, S.moving && S.moving.appId === D.appId ? S.moving : {});
+        renderOverlay();
+      } catch (e) { toast(errText(e), "error"); }
+    },
     scrim(el, ev) { if (ev.target === el && S.dialog && S.dialog.kind !== "welcome") closeDialog(false); },
     "edit-cancel"() { if (!confirmLeaveEdit()) return; S.edit = null; S.view = "library"; S.animateView = true; render(); },
     async "browse-exe"() {
