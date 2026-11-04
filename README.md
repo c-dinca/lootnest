@@ -108,7 +108,7 @@ VERSION=1.4.0 ./build.sh   # stamps a version (default: the VERSION file)
 go test ./internal/core/   # tests
 ```
 
-It cross-compiles from Windows, macOS or Linux with no C compiler. Pushing a `v*` tag makes GitHub Actions build both .exe files and publish a release.
+It cross-compiles from Windows, macOS or Linux with no C compiler. To release, bump `VERSION`, rename `## Unreleased` in CHANGELOG.md to the new version, and merge to `main`: GitHub Actions builds both .exe files and publishes the release with that section as its notes. Pushing a `v*` tag publishes one too.
 
 | Folder | Contents |
 | --- | --- |

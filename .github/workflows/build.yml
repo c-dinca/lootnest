@@ -1,13 +1,20 @@
 name: Build
 
 # Every push and pull request: run the tests and build both .exe files.
-# A pushed tag like v1.2.0: also publish a GitHub release with the .exe files.
+# A push to main whose VERSION has no release yet publishes that release,
+# with the version's CHANGELOG section as its notes (so a release is: bump
+# VERSION, rename "## Unreleased" to "## <version>", merge).
+# A pushed tag like v1.2.0 also publishes a release with the .exe files.
 on:
   push:
     branches: [main]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -33,6 +40,34 @@ jobs:
         with:
           name: Lootnest
           path: |
+            dist/Lootnest-Setup.exe
+            dist/Lootnest.exe
+
+      - name: Is VERSION a new release?
+        id: newver
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          v="$(tr -d '[:space:]' < VERSION)"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null; then
+            echo "v$v is already released"
+            exit 0
+          fi
+          awk -v h="## $v" '$0 == h { f = 1; next } /^## / { if (f) exit } f' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::VERSION is $v but CHANGELOG.md has no '## $v' section to use as release notes"
+            exit 1
+          fi
+          echo "tag=v$v" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the new version
+        if: steps.newver.outputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.newver.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Lootnest ${{ steps.newver.outputs.tag }}
+          body_path: release-notes.md
+          files: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
 
