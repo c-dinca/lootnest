@@ -22,6 +22,27 @@ type FoundGame struct {
 	Suggestions []Suggestion `json:"suggestions"`
 	Ready       bool         `json:"ready"` // has a confident set of paths
 	Note        string       `json:"note,omitempty"`
+	// Args are launch options the user set in the game's settings (from
+	// Config.LibraryPrefs; never saved in library.json).
+	Args string `json:"args,omitempty"`
+	// ScanName is the name the scan found, when the user renamed the game.
+	ScanName string `json:"scanName,omitempty"`
+}
+
+// ApplyLibraryPrefs returns the list with the user's names and launch
+// options filled in.
+func ApplyLibraryPrefs(list []FoundGame, prefs map[string]LibraryPref) []FoundGame {
+	out := make([]FoundGame, len(list))
+	for i, f := range list {
+		if p, ok := prefs[f.Key]; ok {
+			if p.Name != "" && p.Name != f.Name {
+				f.ScanName, f.Name = f.Name, p.Name
+			}
+			f.Args = p.Args
+		}
+		out[i] = f
+	}
+	return out
 }
 
 var gameMarkerFiles = map[string]bool{

@@ -121,31 +121,22 @@ func (a *App) apiCover(appID int, name, key string) string {
 // apiLaunchFound starts a game that isn't set up for profiles: Steam games
 // through Steam, others by their exe.
 func (a *App) apiLaunchFound(key string) error {
-	a.mu.Lock()
-	var name, exe string
-	appID := 0
-	found := false
-	for _, f := range a.found {
-		if f.Key == key {
-			name, exe, appID, found = f.Name, f.Exe, f.AppID, true
-			break
-		}
-	}
-	a.mu.Unlock()
+	f, found := a.foundByKey(key)
 	if !found {
-		return errors.New("That game isn't on the list anymore. Scan again from the Library.")
+		return errFoundGone
 	}
+	name, exe, appID, args := f.Name, f.Exe, f.AppID, f.Args
 	if appID > 0 {
 		if a.env.SteamPath == "" {
 			return errors.New("Steam wasn't found on this PC")
 		}
 		a.logf("Starting %s through Steam", name)
-		return win.StartDetached(a.env.SteamPath+`\steam.exe`, fmt.Sprintf("-applaunch %d", appID), a.env.SteamPath)
+		return win.StartDetached(a.env.SteamPath+`\steam.exe`, strings.TrimSpace(fmt.Sprintf("-applaunch %d %s", appID, args)), a.env.SteamPath)
 	}
 	path, err := a.env.ResolveExe(exe)
 	if err != nil {
 		return err
 	}
 	a.logf("Starting %s", name)
-	return win.StartDetached(path, "", dirOf(path))
+	return win.StartDetached(path, args, dirOf(path))
 }

@@ -88,6 +88,31 @@ type Config struct {
 	SteamRestores map[string]string `json:"steamRestores,omitempty"`
 	// IgnoredFound: scan results the user chose to hide.
 	IgnoredFound []string `json:"ignoredFound,omitempty"`
+	// LibraryPrefs: settings for Library games without profiles, by scan key.
+	LibraryPrefs map[string]LibraryPref `json:"libraryPrefs,omitempty"`
+}
+
+// LibraryPref is what the user changed about a Library game that has no
+// profiles: the name it's shown with and options added when it starts.
+type LibraryPref struct {
+	Name string `json:"name,omitempty"`
+	Args string `json:"args,omitempty"`
+}
+
+// CleanLibraryPref trims a game's settings and checks they're sensible.
+func CleanLibraryPref(p LibraryPref) (LibraryPref, error) {
+	p.Name = strings.TrimSpace(p.Name)
+	p.Args = strings.TrimSpace(p.Args)
+	if len(p.Name) > 120 {
+		return p, errors.New("That name is too long.")
+	}
+	if len(p.Args) > 1000 {
+		return p, errors.New("Those launch options are too long.")
+	}
+	if strings.ContainsAny(p.Name+p.Args, "\r\n\t\x00") {
+		return p, errors.New("Names and launch options must fit on one line.")
+	}
+	return p, nil
 }
 
 // PlayerColors is the palette offered in the UI. The first two are the defaults.

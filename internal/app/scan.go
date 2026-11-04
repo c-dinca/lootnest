@@ -193,7 +193,7 @@ func (a *App) apiFound() FoundState {
 	if a.found == nil {
 		a.found = a.store.LoadLibrary() // asked before the first scan started
 	}
-	list := append([]core.FoundGame{}, a.found...)
+	list := core.ApplyLibraryPrefs(a.found, a.cfg.LibraryPrefs)
 	scanning := a.scanning || a.found == nil // nil: never scanned on this PC
 	a.mu.Unlock()
 	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: a.visibleFound(list)}
@@ -219,9 +219,9 @@ type AddResult struct {
 func gameFromFound(f core.FoundGame) core.Game {
 	g := core.Game{Name: f.Name, ProcessName: f.ProcessName, PlayerArgs: map[string]string{}}
 	if f.Source == "steam" {
-		g.Launch = core.Launch{Type: "steam", AppID: f.AppID}
+		g.Launch = core.Launch{Type: "steam", AppID: f.AppID, Args: f.Args}
 	} else {
-		g.Launch = core.Launch{Type: "exe", Exe: f.Exe}
+		g.Launch = core.Launch{Type: "exe", Exe: f.Exe, Args: f.Args}
 	}
 	for _, p := range f.Paths {
 		g.Paths = append(g.Paths, core.PathEntry{Path: p})
@@ -248,7 +248,7 @@ func (a *App) apiAddFound(keys []string) (AddResult, error) {
 		want[k] = true
 	}
 	a.mu.Lock()
-	found := append([]core.FoundGame{}, a.found...)
+	found := core.ApplyLibraryPrefs(a.found, a.cfg.LibraryPrefs) // names and launch options carry over
 	a.mu.Unlock()
 	for _, f := range found {
 		if !want[f.Key] {
