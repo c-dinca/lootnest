@@ -204,6 +204,7 @@ func TestCheckSafe(t *testing.T) {
 		"{DOCUMENTS}/My Games",
 		"{STEAM}",
 		"{STEAMUSER}",
+		"{STEAMUSER}/730", // Steam's own folder for the game (Steam Cloud's records)
 		f.home,
 		f.root,
 		filepath.Join(f.env.DataDir, "x"),
@@ -216,7 +217,7 @@ func TestCheckSafe(t *testing.T) {
 			t.Errorf("%s resolved to %s, expected refusal", p, r)
 		}
 	}
-	good := []string{"%APPDATA%/Game", "{STEAMUSER}/730/local/cfg", "{DOCUMENTS}/My Games/Skyrim", "{STEAMUSER}/730"}
+	good := []string{"%APPDATA%/Game", "{STEAMUSER}/730/local/cfg", "{DOCUMENTS}/My Games/Skyrim", "{STEAMUSER}/730/remote"}
 	for _, p := range good {
 		if _, err := f.env.Resolve(p); err != nil {
 			t.Errorf("%s refused: %v", p, err)

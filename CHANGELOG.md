@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: for Steam games without a preset, Lootnest proposed swapping Steam's own folder for the game (`Steam\userdata\<account>\<appid>`), which also swapped Steam Cloud's records. It now proposes the folders inside it (such as `local` and `remote`) and refuses the folder itself. Games already set up that way are switched over automatically at start; each player's files are moved to the new entries, nothing is deleted.
+
 ## 1.4.1
 
 - Steam Cloud can stay on. Each game's panel says whether Steam Cloud syncs the files its profiles swap. When it does, Lootnest checks them every time the game starts; if Steam replaced a player's files with the cloud's copy, Lootnest says so, keeps that player's profile as it was, and saves the session as a backup instead of over the profile.

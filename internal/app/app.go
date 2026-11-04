@@ -143,6 +143,23 @@ func Run(opt Options) error {
 	if opt.MigrateErr != nil {
 		a.logf("Couldn't move PlaySwap's data to the Lootnest folder yet (%v); using %s for now", opt.MigrateErr, DataDir())
 	}
+	// Games set up by older versions to swap Steam's whole folder for them
+	// (with Steam Cloud's records): swap the folders inside it instead.
+	if err == nil && !first {
+		fixed := false
+		for i := range a.cfg.Games {
+			changed, serr := a.eng.SplitSteamAppFolder(a.cfg, &a.cfg.Games[i])
+			if serr != nil {
+				a.logf("ERROR updating the folders of %s: %v", a.cfg.Games[i].Name, serr)
+			}
+			fixed = fixed || changed
+		}
+		if fixed {
+			if serr := a.store.SaveConfig(a.cfg); serr != nil {
+				a.logf("ERROR %v", serr)
+			}
+		}
+	}
 
 	win.EnableDPIAwareness()
 	win.AllowDarkMenus()

@@ -106,3 +106,47 @@ func TestRevertSession(t *testing.T) {
 		t.Fatalf("Mihai's profile must be untouched, got %q", p)
 	}
 }
+
+func TestSplitSteamAppFolder(t *testing.T) {
+	f := newFixture(t)
+	user := filepath.Join(f.steam, "userdata", "12345")
+	app := filepath.Join(user, "381210")
+	write(t, filepath.Join(app, "remotecache.vdf"), "steam's records")
+	write(t, filepath.Join(app, "remote", "save.dat"), "live save")
+	write(t, filepath.Join(app, "local", "cfg.ini"), "live cfg")
+	f.cfg.Games = []Game{{ID: "dbd", Name: "Dead by Daylight", ProcessName: "dbd", Launch: Launch{Type: "steam", AppID: 381210},
+		Paths: []PathEntry{{ID: "s", Path: "{STEAMUSER}/381210"}, {ID: "c", Path: "%APPDATA%/DBD"}}}}
+	// Mihai's profile, saved by an older version: the whole folder.
+	prof := f.eng.Store.ProfileDir("p2", "dbd")
+	write(t, filepath.Join(prof, "s", "remotecache.vdf"), "old records")
+	write(t, filepath.Join(prof, "s", "remote", "save.dat"), "mihai's save")
+	write(t, filepath.Join(prof, "s", "local", "cfg.ini"), "mihai's cfg")
+
+	g := f.cfg.Game("dbd")
+	changed, err := f.eng.SplitSteamAppFolder(f.cfg, g)
+	if err != nil || !changed {
+		t.Fatalf("split: %v %v", changed, err)
+	}
+	got := map[string]string{}
+	for _, p := range g.Paths {
+		got[p.ID] = p.Path
+	}
+	if len(got) != 3 || got["s-remote"] != "{STEAMUSER}/381210/remote" || got["s-local"] != "{STEAMUSER}/381210/local" || got["c"] == "" {
+		t.Fatalf("paths: %+v", g.Paths)
+	}
+	if err := f.eng.CheckPaths(g); err != nil {
+		t.Fatalf("the new paths must be valid: %v", err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(prof, "s-remote", "save.dat")); string(b) != "mihai's save" {
+		t.Fatalf("Mihai's save must move with the entry, got %q", b)
+	}
+	if b, _ := os.ReadFile(filepath.Join(prof, "s-local", "cfg.ini")); string(b) != "mihai's cfg" {
+		t.Fatalf("Mihai's cfg must move with the entry, got %q", b)
+	}
+	if b, _ := os.ReadFile(filepath.Join(app, "remote", "save.dat")); string(b) != "live save" {
+		t.Fatal("the live files must not change")
+	}
+	if again, _ := f.eng.SplitSteamAppFolder(f.cfg, g); again {
+		t.Fatal("a second run must change nothing")
+	}
+}
