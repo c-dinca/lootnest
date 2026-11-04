@@ -129,11 +129,30 @@ func (a *App) apiMoveGame(appID int, lib string) error {
 		moveMu.Unlock()
 		return errors.New(msg)
 	}
+	known := false
+	for _, l := range core.SteamLibraries(a.env.SteamPath) {
+		if strings.EqualFold(filepath.Clean(l), filepath.Clean(lib)) {
+			known = true
+		}
+	}
+	if !known {
+		moveMu.Unlock()
+		return errors.New("That isn't one of Steam's libraries on this PC.")
+	}
 	movingApp, movingGame = appID, in.Name
 	moveMu.Unlock()
 
 	go func() {
-		res, err := a.moveGame(in, lib)
+		var res core.MoveResult
+		err := errors.New("the move stopped unexpectedly. Steam's Storage settings show where the game is; details are in lootnest.log")
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					a.logf("ERROR move crashed: %v", r)
+				}
+			}()
+			res, err = a.moveGame(in, lib)
+		}()
 		moveMu.Lock()
 		movingApp, movingGame = 0, ""
 		moveMu.Unlock()
