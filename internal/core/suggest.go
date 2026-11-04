@@ -101,9 +101,15 @@ func (e *Env) SuggestPaths(gameName, installDirName string, appID int) []Suggest
 
 	if appID > 0 && e.SteamUser != nil {
 		if su, err := e.SteamUser(); err == nil {
-			p := filepath.Join(su, strconv.Itoa(appID))
-			if st, err := os.Stat(p); err == nil && st.IsDir() {
-				push(p, "Steam user data for this game")
+			// The game's folders inside Steam's own folder for it, never that
+			// folder itself (it holds Steam Cloud's records).
+			app := filepath.Join(su, strconv.Itoa(appID))
+			if subs, err := os.ReadDir(app); err == nil {
+				for _, d := range subs {
+					if d.IsDir() {
+						push(filepath.Join(app, d.Name()), "Steam user data for this game")
+					}
+				}
 			}
 		}
 	}
