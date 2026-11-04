@@ -180,3 +180,37 @@ func TestSkipShortcut(t *testing.T) {
 		}
 	}
 }
+
+func TestSavedLibrary(t *testing.T) {
+	store := &Store{Dir: t.TempDir()}
+	if store.LoadLibrary() != nil {
+		t.Fatal("no library saved yet")
+	}
+	saved := []FoundGame{
+		{Key: "steam:1091500", Name: "Cyberpunk 2077", Dir: "/games/cp"},   // uninstalled since
+		{Key: "dir:/games/oc2", Name: "Overcooked! 2", Dir: "/games/oc2"},  // the scan missed it, still installed
+		{Key: "steam:381210", Name: "Dead by Daylight", Dir: "/games/dbd"}, // found again
+	}
+	if err := store.SaveLibrary(saved); err != nil {
+		t.Fatal(err)
+	}
+	if got := store.LoadLibrary(); len(got) != 3 {
+		t.Fatalf("reload: %+v", got)
+	}
+	fresh := []FoundGame{
+		{Key: "steam:381210", Name: "Dead by Daylight", Dir: "/games/dbd", Ready: true},
+		{Key: "steam:1422450", Name: "Deadlock", Dir: "/games/deadlock"},
+	}
+	there := map[string]bool{"/games/oc2": true, "/games/dbd": true, "/games/deadlock": true}
+	got := MergeFound(saved, fresh, func(d string) bool { return there[d] })
+	var names []string
+	for _, g := range got {
+		names = append(names, g.Name)
+	}
+	if strings.Join(names, ",") != "Dead by Daylight,Deadlock,Overcooked! 2" {
+		t.Fatalf("merged: %v", names)
+	}
+	if !got[0].Ready {
+		t.Fatal("the fresh scan's details win")
+	}
+}
