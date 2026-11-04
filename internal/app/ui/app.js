@@ -569,8 +569,16 @@
   }
   function closeDialog(v) { const wasSteam = S.dialog && S.dialog.kind === "steam"; S.dialog = null; renderOverlay(); if (wasSteam) render(); if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); } }
 
+  // Redrawing the dialog that's already open (a choice clicked, progress, an
+  // answer from Go) must not play its opening animation again.
+  let shownOverlay = null, shownStep = "";
   function renderOverlay() {
     const o = $("#overlay");
+    const P = S.picker;
+    const now = P || S.dialog;
+    const step = P ? (P.ask || "") + (P.working ? ":working" : "") : "";
+    o.classList.toggle("still", now !== null && now === shownOverlay && step === shownStep);
+    shownOverlay = now; shownStep = step;
     if (S.picker) { o.innerHTML = viewPicker(); return; }
     if (!S.dialog) { o.innerHTML = ""; return; }
     const D = S.dialog;

@@ -356,6 +356,10 @@ option { background: var(--panel); }
 .bar::after { content: ""; display: block; width: 35%; height: 100%; border-radius: 3px; background: var(--c, var(--gold)); animation: slide 1.2s var(--ease) infinite; }
 @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 
+/* A dialog redrawn in place keeps still; only opening one animates. */
+#overlay.still .scrim, #overlay.still .dialog, #overlay.still .sheet-scrim, #overlay.still .sheet,
+#overlay.still .picker, #overlay.still .slot, #overlay.still .question, #overlay.still .working { animation: none; }
+
 /* ----------------------------------------------------------------- modal */
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(10, 9, 8, .6); display: grid; place-items: center; padding: 24px; animation: fade .16s var(--ease); }
 .dialog {
