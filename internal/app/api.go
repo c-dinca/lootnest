@@ -99,6 +99,7 @@ type AppState struct {
 	Autostart bool                `json:"autostart"`
 	DataDir   string              `json:"dataDir"`
 	Colors    []string            `json:"colors"`
+	Sources   map[string]string   `json:"sources"` // game id -> where the scan found it
 }
 
 func (a *App) apiState() AppState {
@@ -108,6 +109,7 @@ func (a *App) apiState() AppState {
 	a.mu.Unlock()
 	st.Active = a.store.LoadState()
 	st.Sessions = a.sessionsSnapshot()
+	st.Sources = a.gameSources(cfg)
 	st.Profiles = map[string][]string{}
 	for _, g := range cfg.Games {
 		list := []string{}

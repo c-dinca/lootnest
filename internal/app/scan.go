@@ -126,19 +126,46 @@ func (a *App) visibleFound(list []core.FoundGame) []core.FoundGame {
 }
 
 func (a *App) isAdded(cfg *core.Config, f core.FoundGame) bool {
-	for _, g := range cfg.Games {
-		if f.AppID != 0 && g.Launch.Type == "steam" && g.Launch.AppID == f.AppID {
+	for i := range cfg.Games {
+		if a.isFoundGame(&cfg.Games[i], f) {
 			return true
 		}
-		if g.Launch.Type == "exe" && f.Dir != "" {
-			if exe, err := a.env.ResolveExe(g.Launch.Exe); err == nil {
-				if rel, err := filepath.Rel(strings.ToLower(f.Dir), strings.ToLower(exe)); err == nil && !strings.HasPrefix(rel, "..") {
-					return true
-				}
+	}
+	return false
+}
+
+// isFoundGame reports whether a game with profiles is this scan result.
+func (a *App) isFoundGame(g *core.Game, f core.FoundGame) bool {
+	if f.AppID != 0 && g.Launch.Type == "steam" && g.Launch.AppID == f.AppID {
+		return true
+	}
+	if g.Launch.Type == "exe" && f.Dir != "" {
+		if exe, err := a.env.ResolveExe(g.Launch.Exe); err == nil {
+			if rel, err := filepath.Rel(strings.ToLower(f.Dir), strings.ToLower(exe)); err == nil && !strings.HasPrefix(rel, "..") {
+				return true
 			}
 		}
 	}
 	return false
+}
+
+// gameSources says where each game with profiles came from (epic, gog, ...),
+// from the scan result it was added from. Games added by hand have none.
+func (a *App) gameSources(cfg *core.Config) map[string]string {
+	a.mu.Lock()
+	found := append([]core.FoundGame{}, a.found...)
+	a.mu.Unlock()
+	out := map[string]string{}
+	for i := range cfg.Games {
+		g := &cfg.Games[i]
+		best := -1
+		for _, f := range found {
+			if len(f.Dir) > best && f.Source != "" && a.isFoundGame(g, f) {
+				out[g.ID], best = f.Source, len(f.Dir)
+			}
+		}
+	}
+	return out
 }
 
 // startScan refreshes the library in the background. The first time, the
