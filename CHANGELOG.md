@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.47.0
+
+- **The Updates page, redone.**
+  - At the top, how many games Lootnest keeps track of, how many have a newer version out, how many are up to date and how many it can't tell. Click any of them to show only those games.
+  - **Needs a look** gathers what's waiting for you: a new copy of a game to carry over, or an update after which the game closed right away, with Undo.
+  - Each game is a card with its art, where it's installed, and its state: newer version out, up to date, or can't tell. Your copy's version sits beside the latest, the latest patch notes are one click away, and there's one clear button.
+  - **More** on each card has the game's update history, Undo the last update, and Copy its saves first.
+  - **Update history** lists every update Lootnest applied to a game, newest first, with what each one changed.
+  - **Check again** looks for newer versions right away.
+- **Empty pages look the part.** An empty Library now shows a proper starting point, with what Lootnest looks for and the two ways to fill it. The same goes for Updates when there's nothing to keep up to date.
+
 ## 1.46.0
 
 - **Your games in the sidebar**, as in Steam's library.
