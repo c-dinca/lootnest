@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.18.0
+
+- **Who's at the PC.** Click your name under **Who's here** in the sidebar, or use **Switch**, and Lootnest keeps you in the seat:
+  - every **Play** is yours, straight away, without asking "Who's playing?";
+  - the game page's big button is **Play as** you, with "or play as…" for anyone else;
+  - your name shows **Seated**.
+- Choose **Nobody** in **Switch**, or click your name again, to go back to being asked each time. The seat is also cleared when Lootnest quits, so the next person isn't playing as you by mistake.
+- Starting a game from Steam's Play button still asks who's playing.
+
 ## 1.17.4
 
 - **When each player's profile was last saved, and how big it is.** The game page's **Players** panel shows it under each player, for example "Saved yesterday, 24 MB". It's the time the game last wrote that player's files.
