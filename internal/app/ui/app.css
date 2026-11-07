@@ -958,3 +958,17 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .dialog .swatch { width: 22px; height: 22px; }
 
 ::selection { background: var(--accent-wash); }
+
+/* Achievements page: one profile's, across every game. */
+.ach-page { display: grid; gap: var(--space-6); padding: var(--space-8) var(--page-gutter) var(--space-12); }
+.ach-stats { padding: var(--space-2) 0; }
+.ach-stats dd { font: 750 var(--fs-32)/1 var(--font-title); }
+.ach-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--space-10); align-items: start; }
+@media (max-width: 1100px) { .ach-cols { grid-template-columns: minmax(0, 1fr); } }
+.ach-games { display: grid; margin: 0; padding: 0; list-style: none; }
+.ach-games button { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 30%) 72px; align-items: center; gap: var(--space-4); width: 100%; padding: var(--space-3) var(--space-2); border: 0; border-bottom: var(--hairline) solid var(--edge-1); border-radius: 0; background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.ach-games button:hover { background: var(--glass-ctl); }
+.ach-games button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.ach-game-name { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.ach-game-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-14); font-weight: 650; }
+.ach-game-num { text-align: right; font-size: var(--fs-13); color: var(--fg-2); }

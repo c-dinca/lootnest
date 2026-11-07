@@ -153,6 +153,16 @@
       if (STATE !== "loading") emit({ type: "achievements", key, set });
       return ok();
     },
+    ps_allAchievements: () => {
+      const rec = (n, off) => Array.from({ length: n }, (_, i) => ({ id: "A" + i, name: ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist"][i % 6], unlocked: true, at: iso((i + off) * 7 * h) }));
+      const games = [
+        { key: "game:cs2", name: "Counter-Strike 2", source: "steam", total: 167, unlocked: 61, recent: rec(4, 1) },
+        { key: "game:bg3", name: "Baldur's Gate 3", source: "pc", total: 54, unlocked: 21, recent: rec(3, 2), players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { unlocked: [21, 54, 9][i % 3], recent: rec(3, i + 2) }])) },
+        { key: "steam:1091500", name: "Cyberpunk 2077", source: "steam", total: 57, unlocked: 57, recent: rec(2, 5) },
+      ];
+      if (STATE !== "loading") emit({ type: "allAchievements", games });
+      return ok();
+    },
     ps_browse: (id) => { emit({ type: "browse", reqId: id, cancelled: true }); return ok(); },
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };

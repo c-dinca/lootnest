@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.22.0
+
+- **Achievements in the sidebar**: one page with every game's achievements on this PC, for one profile at a time.
+  - **Latest unlocked**, across every game, with the game and when.
+  - **Games**, ordered by how close each is to 100%, with a bar and "21 of 54". Click one to open its page.
+  - The totals: achievements unlocked, games at 100% and games with achievements.
+  - Choose whose with the profile buttons. Games whose achievements go with the profile show that profile's own. Steam's belong to the Steam account, and one set kept on the PC is marked **Shared**.
+- Everything is read from this PC, as before. Nothing is sent anywhere.
+
 ## 1.21.0
 
 - **New profile, right from "Who's playing?"** The last slot makes a profile on the spot. It can be someone new, or another run for yourself, such as "Cristian hardcore". Name it, press Enter, and it's chosen.

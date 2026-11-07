@@ -41,6 +41,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_profileInfo", a.apiProfileInfo))
 	must(a.w.Bind("ps_achievements", a.apiAchievements))
 	must(a.w.Bind("ps_setSharedAchievements", a.apiSetSharedAchievements))
+	must(a.w.Bind("ps_allAchievements", a.apiAllAchievements))
 	must(a.w.Bind("ps_shortcut", a.apiShortcut))
 	must(a.w.Bind("ps_open", a.apiOpen))
 	must(a.w.Bind("ps_log", a.apiLog))
