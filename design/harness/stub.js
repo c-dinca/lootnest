@@ -44,6 +44,7 @@
     { key: "dir:c:\\xboxgames\\forza horizon 5", name: "Forza Horizon 5", source: "xbox", exe: "", uri: "shell:AppsFolder\\x_8wekyb3d8bbwe!Game", _art: 1551360 },
     { key: "dir:d:\\games\\gtav", name: "Grand Theft Auto V", source: "rockstar", exe: "D:\\Games\\GTAV\\GTA5.exe", _art: 271590 },
     { key: "dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", source: "folder", exe: "D:\\Games\\Phantom Blade Zero\\PBZ.exe" }, // no art
+    { key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", steamId: 777, exe: "D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe" }, // no art
     { key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", source: "added", added: true, exe: "D:\\Games\\Onimusha\\Onimusha.exe" }, // no art
   ];
   if (N === "0") { games = []; found = []; }

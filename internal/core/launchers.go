@@ -57,7 +57,7 @@ var battleNetCodes = map[string]string{
 // launcherApps are the launchers and store apps themselves, never games.
 var launcherApps = []string{"battle.net", "blizzard battle.net", "blizzard app", "ubisoft connect", "uplay", "ea app", "ea desktop", "origin",
 	"riot client", "riot vanguard", "rockstar games launcher", "rockstar games social club", "social club", "amazon games",
-	"epic games launcher", "epic online services", "gog galaxy", "itch", "xbox", "steam", "playnite", "lootnest", "playswap"}
+	"epic games launcher", "epic online services", "gog galaxy", "itch", "xbox", "steam", "playnite", "lootnest", "playswap", "hydra", "hydralauncher"}
 
 // IsLauncherApp says whether a program's name is a launcher's, not a game's:
 // the name itself, or with "beta", "launcher", "client" or a note in

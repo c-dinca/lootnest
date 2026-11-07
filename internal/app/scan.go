@@ -35,18 +35,19 @@ func (a *App) scanPC() []core.FoundGame {
 	}
 
 	// The other launchers: from Windows' installed programs, the Xbox app's
-	// folders and the itch app's.
+	// folders, the itch app's and Hydra's library.
 	var entries []core.UninstallEntry
 	for _, e := range win.InstalledPrograms() {
 		entries = append(entries, core.UninstallEntry(e))
 	}
 	all = append(all, core.LauncherGames(entries)...)
 	all = append(all, core.XboxGames(win.XboxGameFolders())...)
+	roots, containers := gameFolders(env)
 	if ad := os.Getenv("APPDATA"); ad != "" {
 		all = append(all, core.ItchGames(filepath.Join(ad, "itch", "apps"))...)
+		all = append(all, core.HydraGames(filepath.Join(ad, "hydralauncher", "hydra-db"), filepath.Join(DataDir(), "hydra-tmp"), containers)...)
 	}
 
-	roots, containers := gameFolders(env)
 	all = append(all, core.ScanFolders(roots, containers)...)
 
 	// Shortcuts the user made (common for games installed by hand).

@@ -1,7 +1,7 @@
 # Lootnest
 
 ## What it is
-A Windows game manager for a household that shares one PC (and often one Steam account). It gathers every game on the PC, from Steam, Epic, GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar and itch.io, plus game folders and shortcuts, into one Library.
+A Windows game manager for a household that shares one PC (and often one Steam account). It gathers every game on the PC, from Steam, Epic, GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io and Hydra, plus game folders and shortcuts, into one Library.
 
 ## The mechanism nobody else has
 Per-player profiles. Each person in the household gets their own settings and saves for the same game. Before a game starts, Lootnest swaps the right person's files into place, and when the game closes it saves their progress back to their profile. A backup is made before every swap.

@@ -7,7 +7,7 @@ fresh chat can carry on without the old one's context.
 ## The product
 
 Lootnest is a Windows game manager. Every game on the PC, from Steam, Epic,
-GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, game
+GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, Hydra, game
 folders and shortcuts, sits in one Library. Its core is **profiles**: each
 profile has its own settings, saves and achievements in every game, and
 Lootnest swaps the right files into place before a game starts, then saves
@@ -154,6 +154,12 @@ These shipped recently, newest last:
   local `core.Cloud`) when they change; restore from the game's page.
   `Engine.keepVanished` keeps a profile's copy in backups before a save
   would empty it.
+- **1.30** Hydra Launcher as one more launcher (`core/hydra.go`): its
+  installed games are read from a copy of its LevelDB library
+  (`%APPDATA%\hydralauncher\hydra-db`, `!games!<shop>:<id>`, via
+  `syndtr/goleveldb`). `FoundGame.SteamID` carries the Steam id Hydra
+  knows, for save locations and achievements. Only games already on the
+  PC; Lootnest never offers Hydra's downloads or sources.
 - **1.30** Settings in categories (a list on the left, as in Steam's);
   drawers scroll (they were as tall as their content); more Racing Red:
   the current page's bar, page-title stripes, cover hover, `ln-tag--accent`.

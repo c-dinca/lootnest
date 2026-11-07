@@ -35,6 +35,9 @@ type FoundGame struct {
 	ScanName string `json:"scanName,omitempty"`
 	// Added marks a game the user added to the Library by hand.
 	Added bool `json:"added,omitempty"`
+	// SteamID is the game's Steam app id when another launcher knows it
+	// (Hydra). AppID stays 0: the game isn't a Steam install.
+	SteamID int `json:"steamId,omitempty"`
 }
 
 // MergeAdded puts the games the user added by hand into the scan results.
@@ -71,11 +74,11 @@ var genericDirs = map[string]bool{
 	"windowsnoeditor": true, "steam": true, "epic": true, "gog": true, "exe": true,
 }
 
-// ExeGame describes a game the user added to the Library by its exe: its
-// folder, a name for it, and the save locations profiles would use.
-func (e *Env) ExeGame(exe string, containers []string) FoundGame {
-	exe = filepath.Clean(exe)
-	root := GameRoot(exe, containers)
+// exeRoot is the game folder an exe belongs to (above bin, Win64 and the
+// like, below a folder of games), the game's name from it, and the
+// process name.
+func exeRoot(exe string, containers []string) (root, name, process string) {
+	root = GameRoot(exe, containers)
 	for i := 0; i < 4 && genericDirs[strings.ToLower(filepath.Base(root))]; i++ {
 		parent := filepath.Dir(root)
 		if parent == root || isContainer(parent, containers) {
@@ -83,12 +86,20 @@ func (e *Env) ExeGame(exe string, containers []string) FoundGame {
 		}
 		root = parent
 	}
-	process := strings.TrimSuffix(filepath.Base(exe), filepath.Ext(exe))
-	name := prettyName(filepath.Base(root))
+	process = strings.TrimSuffix(filepath.Base(exe), filepath.Ext(exe))
+	name = prettyName(filepath.Base(root))
 	if isContainer(root, containers) || genericDirs[strings.ToLower(filepath.Base(root))] {
 		root = filepath.Dir(exe) // an exe straight in D:\Games: the exe names the game
 		name = prettyName(process)
 	}
+	return root, name, process
+}
+
+// ExeGame describes a game the user added to the Library by its exe: its
+// folder, a name for it, and the save locations profiles would use.
+func (e *Env) ExeGame(exe string, containers []string) FoundGame {
+	exe = filepath.Clean(exe)
+	root, name, process := exeRoot(exe, containers)
 	f := FoundGame{Key: "dir:" + strings.ToLower(root), Name: name, Source: "added", Exe: e.Tokenize(exe), Dir: root, ProcessName: process}
 	f.Suggestions = e.SuggestPaths(f.Name, root, 0)
 	if f.Suggestions == nil {
@@ -525,7 +536,7 @@ func (e *Env) FinishFound(list []FoundGame) []FoundGame {
 					f.ProcessName = strings.TrimSuffix(filepath.Base(f.Exe), filepath.Ext(f.Exe))
 				}
 			}
-			f.Suggestions = e.SuggestPaths(f.Name, f.Dir, 0)
+			f.Suggestions = e.SuggestPaths(f.Name, f.Dir, f.SteamID)
 			f.Paths = ProposePaths(f.Suggestions, nil)
 			f.Ready = f.ProcessName != "" && f.Exe != "" && len(f.Paths) > 0
 			if f.Exe != "" {
@@ -548,7 +559,7 @@ func sourceRank(s string) int {
 	switch s {
 	case "steam":
 		return 0
-	case "epic", "gog", "xbox", "ubisoft", "ea", "battlenet", "riot", "amazon", "rockstar", "itch":
+	case "epic", "gog", "xbox", "ubisoft", "ea", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra":
 		return 1
 	case "shortcut":
 		return 2

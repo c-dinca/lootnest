@@ -50,6 +50,11 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 	if g != nil && appID <= 0 {
 		appID = core.GameAppID(g)
 	}
+	if appID <= 0 && g == nil {
+		if f, ok := a.foundByKey(key); ok {
+			appID = f.SteamID // the id another launcher (Hydra) knows
+		}
+	}
 	if appID <= 0 {
 		appID = core.FolderAppID(dir)
 	}
