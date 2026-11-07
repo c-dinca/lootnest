@@ -5,6 +5,7 @@
 - **Home** is its own page now, and where Lootnest opens: the game you played last, **Continue playing**, **News from your games**. The **Library** is just your games: search, filters, sort and cover size.
 - The window's colours change when you choose a game, not as the pointer passes over covers: Home takes the game played last, a game's page that game, and the Library the game you opened last.
 - A game's page goes back to where you opened it from (Home or Library), scrolled where you were.
+- **Player profiles.** Click a player (in the sidebar or on **Players**) for their page: a banner in their colour or from a favourite game's art, their picture, name and a short tagline, time played and games, up to six favourite games and what they played lately. **Edit profile** changes all of it; a picture is cropped square and kept on this PC only (`avatars\`).
 
 ## 1.9.2
 
