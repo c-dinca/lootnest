@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.16.0
+
+A new look, starting with the game page:
+- **The game page** is built around who's playing. The game's art fills the top of the page, and under it a single bar holds everything about playing:
+  - **Play as** the person whose files are loaded, in their colour;
+  - whose files are in the game right now;
+  - everyone else, under "or play as…";
+  - how long each player has played.
+- **"A copy is made before every swap"** sits right under the bar.
+- **Actions are grouped** as Profiles, Game files, Shortcuts and Danger. Steam Cloud, Cloud save, Shelf and news are in a side column.
+- **The sidebar** is frosted glass over the game's colours. Players show with their own colour.
+- **Toasts** have an icon for done or for a problem, and no coloured edge.
+- **New type:** Figtree for the interface, next to Bricolage Grotesque for titles. Both are embedded.
+- **Accessibility:**
+  - every text passes WCAG AA, including text over the game's art and on any player colour;
+  - every control has a visible focus ring;
+  - glass turns solid when Windows' transparency effects are off.
+- Achievements is no longer in the sidebar until it exists.
+
+The other pages move to the new look in the next updates.
+
 ## 1.15.1
 
 - **Choose the save folder** (or a save file) in a game's **Cloud save** section, for games Lootnest can't find the saves of by itself, such as a game you added by hand or one too new for PCGamingWiki's list. Its saves go to the cloud from then on, no profiles needed. **Look it up on PCGamingWiki** opens the game's page there, which says where it keeps them.
