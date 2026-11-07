@@ -151,8 +151,77 @@ type SteamGame struct {
 // So every image there is considered: the largest one with a cover's 2:3
 // portrait shape wins, and a "library_600x900" name wins a tie.
 func SteamCover(steamPath string, appID int) string {
+	best, bestScore := "", 0
+	for _, p := range steamCacheImages(steamPath, appID) {
+		cfg, ok := imageSize(p)
+		if !ok || cfg.Width < 100 || cfg.Height == 0 {
+			continue
+		}
+		if r := float64(cfg.Width) / float64(cfg.Height); r < 0.6 || r > 0.73 {
+			continue // header, hero, logo and icons aren't portrait covers
+		}
+		score := cfg.Width * 2
+		if strings.HasPrefix(strings.ToLower(filepath.Base(p)), "library_600x900") || strings.Contains(strings.ToLower(filepath.Base(p)), "_library_600x900") {
+			score++
+		}
+		if score > bestScore {
+			best, bestScore = p, score
+		}
+	}
+	return best
+}
+
+// SteamHero finds the wide banner Steam shows at the top of a game's page
+// (library_hero), from the same local cache, or "".
+func SteamHero(steamPath string, appID int) string {
+	best, bestScore := "", 0
+	for _, p := range steamCacheImages(steamPath, appID) {
+		cfg, ok := imageSize(p)
+		if !ok || cfg.Width < 960 || cfg.Height == 0 {
+			continue
+		}
+		if r := float64(cfg.Width) / float64(cfg.Height); r < 2.4 || r > 3.6 {
+			continue // the hero is about 3:1
+		}
+		score := cfg.Width * 2
+		if strings.Contains(strings.ToLower(filepath.Base(p)), "library_hero") && !strings.Contains(strings.ToLower(filepath.Base(p)), "blur") {
+			score++
+		}
+		if score > bestScore {
+			best, bestScore = p, score
+		}
+	}
+	return best
+}
+
+// SteamLogo finds the game's transparent logo Steam draws over the hero, or "".
+func SteamLogo(steamPath string, appID int) string {
+	for _, p := range steamCacheImages(steamPath, appID) {
+		n := strings.ToLower(filepath.Base(p))
+		if strings.HasSuffix(n, ".png") && strings.Contains(n, "logo") {
+			if cfg, ok := imageSize(p); ok && cfg.Width >= 200 {
+				return p
+			}
+		}
+	}
+	return ""
+}
+
+func imageSize(p string) (image.Config, bool) {
+	f, err := os.Open(p)
+	if err != nil {
+		return image.Config{}, false
+	}
+	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	return cfg, err == nil
+}
+
+// steamCacheImages lists the images Steam keeps for a game in its library
+// cache, under any of the names and folders Steam has used.
+func steamCacheImages(steamPath string, appID int) []string {
 	if steamPath == "" || appID <= 0 {
-		return ""
+		return nil
 	}
 	cache := filepath.Join(steamPath, "appcache", "librarycache")
 	id := strconv.Itoa(appID)
@@ -177,34 +246,13 @@ func SteamCover(steamPath string, appID int) string {
 		}
 	}
 	walk(filepath.Join(cache, id), 0)
-
-	best, bestScore := "", 0
+	out := cands[:0]
 	for _, p := range cands {
-		ext := strings.ToLower(filepath.Ext(p))
-		if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
-			continue
-		}
-		f, err := os.Open(p)
-		if err != nil {
-			continue
-		}
-		cfg, _, err := image.DecodeConfig(f)
-		f.Close()
-		if err != nil || cfg.Width < 100 || cfg.Height == 0 {
-			continue
-		}
-		if r := float64(cfg.Width) / float64(cfg.Height); r < 0.6 || r > 0.73 {
-			continue // header, hero, logo and icons aren't portrait covers
-		}
-		score := cfg.Width * 2
-		if strings.HasPrefix(strings.ToLower(filepath.Base(p)), "library_600x900") || strings.Contains(strings.ToLower(filepath.Base(p)), "_library_600x900") {
-			score++
-		}
-		if score > bestScore {
-			best, bestScore = p, score
+		if ext := strings.ToLower(filepath.Ext(p)); ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+			out = append(out, p)
 		}
 	}
-	return best
+	return out
 }
 
 // SteamLibraries lists every steamapps library folder (including the main one).

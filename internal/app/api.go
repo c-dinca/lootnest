@@ -61,6 +61,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_saveLibraryPref", a.apiSaveLibraryPref))
 	must(a.w.Bind("ps_addLibraryGame", a.apiAddLibraryGame))
 	must(a.w.Bind("ps_gameIcon", a.apiGameIcon))
+	must(a.w.Bind("ps_art", a.apiArt))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))
@@ -90,18 +91,19 @@ type SteamStatus struct {
 }
 
 type AppState struct {
-	Version   string              `json:"version"`
-	Config    *core.Config        `json:"config"`
-	FirstRun  bool                `json:"firstRun"`
-	LoadError string              `json:"loadError,omitempty"`
-	Active    map[string]string   `json:"active"`
-	Sessions  []Session           `json:"sessions"`
-	Profiles  map[string][]string `json:"profiles"`
-	Steam     SteamStatus         `json:"steam"`
-	Autostart bool                `json:"autostart"`
-	DataDir   string              `json:"dataDir"`
-	Colors    []string            `json:"colors"`
-	Sources   map[string]string   `json:"sources"` // game id -> where the scan found it
+	Version   string                 `json:"version"`
+	Config    *core.Config           `json:"config"`
+	FirstRun  bool                   `json:"firstRun"`
+	LoadError string                 `json:"loadError,omitempty"`
+	Active    map[string]string      `json:"active"`
+	Sessions  []Session              `json:"sessions"`
+	Profiles  map[string][]string    `json:"profiles"`
+	Steam     SteamStatus            `json:"steam"`
+	Autostart bool                   `json:"autostart"`
+	DataDir   string                 `json:"dataDir"`
+	Colors    []string               `json:"colors"`
+	Sources   map[string]string      `json:"sources"` // game id -> where the scan found it
+	Recent    map[string]core.Played `json:"recent"`  // Library key -> last played
 }
 
 func (a *App) apiState() AppState {
@@ -112,6 +114,7 @@ func (a *App) apiState() AppState {
 	st.Active = a.store.LoadState()
 	st.Sessions = a.sessionsSnapshot()
 	st.Sources = a.gameSources(cfg)
+	st.Recent = a.store.LoadRecent()
 	st.Profiles = map[string][]string{}
 	for _, g := range cfg.Games {
 		list := []string{}

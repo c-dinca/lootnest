@@ -5,7 +5,8 @@
 package app
 
 import (
-	_ "embed"
+	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,8 +28,8 @@ const (
 	WindowClass = "LootnestMainWindow"
 	MutexName   = `Local\Lootnest.SingleInstance.v1`
 	UninstallID = "Lootnest"
-	bgColor     = 0x141312 // --ink in ui/app.css: the title bar blends into the window
-	borderColor = 0x2F2C28 // --line
+	bgColor     = 0x0E1117 // --ink-2 in ui/app.css: the title bar frames the window like the sidebar
+	borderColor = 0x2A3142 // --line
 )
 
 // Version is set at build time with -ldflags "-X lootnest/internal/app.Version=..."
@@ -43,8 +44,20 @@ var uiCSS string
 //go:embed ui/app.js
 var uiJS string
 
+// Bricolage Grotesque (SIL Open Font License), embedded so titles look the
+// same on every PC without going online.
+//
+//go:embed ui/fonts/*.woff2
+var uiFonts embed.FS
+
 func pageHTML() string {
-	h := strings.Replace(uiHTML, "/*@CSS*/", uiCSS, 1)
+	css := uiCSS
+	for _, name := range []string{"bricolage-latin", "bricolage-latin-ext"} {
+		if b, err := uiFonts.ReadFile("ui/fonts/" + name + ".woff2"); err == nil {
+			css = strings.Replace(css, "@FONT:"+name+"@", base64.StdEncoding.EncodeToString(b), 1)
+		}
+	}
+	h := strings.Replace(uiHTML, "/*@CSS*/", css, 1)
 	return strings.Replace(h, "/*@JS*/", uiJS, 1)
 }
 
