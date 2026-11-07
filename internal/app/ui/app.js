@@ -82,6 +82,7 @@
     updatePlan: (key, path) => call("ps_updatePlan", key, path),
     updateApply: (key, path) => call("ps_updateApply", key, path),
     updateUndo: (key, id) => call("ps_updateUndo", key, id),
+    updateInstaller: (key, path, full) => call("ps_updateInstaller", key, path, !!full),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
@@ -367,6 +368,16 @@
           if (ev.opening) { D.opening = true; renderOverlay(); break; }
           D.busy = false; D.opening = false; D.plan = ev.plan || null; D.check = ev.check || null; D.error = ev.error || ""; D.dir = ev.dir || ""; D.free = ev.free; renderOverlay();
         }
+        break;
+      }
+      case "updateProgress": {
+        const D = S.dialog;
+        if (D && D.kind === "update" && D.key === ev.key) { D.step = ev.step; renderOverlay(); }
+        break;
+      }
+      case "updateBroke": {
+        toast("The game closed right after starting. If the update broke it, Undo it on the Updates page.", "error");
+        S.updates = null; api.updates().catch(() => {});
         break;
       }
       case "updateDone": {
@@ -2471,7 +2482,8 @@
         : U.newsOn ? `<span>Up to date, as far as Steam's news says.</span>` : `<span>Files from ${esc(day(r.changed))}.</span>`;
       const vtxt = (v) => (v ? (v.startsWith("build ") ? "Build " + v.slice(6) : v) : "");
       const chain = applied.length > 1 ? applied.slice().reverse().map((u) => esc(vtxt(u.to) || u.source)).join(" → ") : "";
-      const hist = last ? `<span class="upd-last">${r.version ? `Version ${esc(vtxt(r.version))}. ` : ""}Updated ${esc(ago(last.at))} from ${esc(last.source)}${chain ? ` (${chain})` : ""}. <button class="gpage-link" data-action="upd-undo" data-key="${esc(r.key)}" data-id="${esc(last.id)}" data-name="${esc(r.name)}">Undo</button></span>`
+      const broke = last && last.broke ? `<span class="find-low">It closed right after starting, the first time since this update. If it doesn't work, Undo puts it back.</span>` : "";
+      const hist = last ? `${broke}<span class="upd-last">${r.version ? `Version ${esc(vtxt(r.version))}. ` : ""}Updated ${esc(ago(last.at))} from ${esc(last.source)}${chain ? ` (${chain})` : ""}.${last.noUndo ? "" : ` <button class="gpage-link" data-action="upd-undo" data-key="${esc(r.key)}" data-id="${esc(last.id)}" data-name="${esc(r.name)}">Undo</button>`}</span>`
         : r.version ? `<span class="upd-last">Version ${esc(vtxt(r.version))}, from its folder's name.</span>` : "";
       const keepLink = `<button class="gpage-link upd-keep" data-action="upd-keep" data-key="${esc(r.key)}">Reinstalling it? Copy its saves first</button>`;
       return `<li class="upd-row${r.newer ? " upd-row--new" : ""}"><div class="upd-name"><button class="gpage-link upd-title" data-action="upd-open-game" data-key="${esc(r.key)}">${esc(r.name)}</button><span class="upd-src">${esc(sourceLabel(r.source || "folder"))}</span></div>
@@ -2490,13 +2502,14 @@
   function viewUpdateDrawer() {
     const D = S.dialog;
     const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${D.busy ? "disabled" : ""}>${label}</button>`;
-    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: "With an update you have: a folder, or a .zip, .7z or .rar", body, foot });
-    const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip, .7z or .rar")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}</div>`;
+    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: "With an update you have: a folder, a .zip, .7z or .rar, or an installer", body, foot });
+    const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip, .7z or .rar")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}${btn('data-action="upd-pick" data-kind="installer"', "Run an installer", "ln-button--ghost")}</div>`;
     if (D.done) {
       const u = D.done;
       return shell(D.undone ? `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Undone</b><p>${esc(D.name)} is as it was before the update from ${esc(u.source)}.</p></div></div></div>`
-        : `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Updated</b><p>${u.added.length} files added and ${u.replaced.length} replaced, from ${esc(u.source)}. The saves and the old files are kept, so you can undo it.</p></div></div></div>`,
-        D.undone ? `<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}` : `${btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
+        : `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Updated</b><p>${u.added.length} files added and ${u.replaced.length} replaced or removed, from ${esc(u.source)}. ${u.noUndo ? "The saves are kept. No copy of the game was kept, so it can't be undone." : "The saves and the old files are kept, so you can undo it."} The first time you start it, Lootnest checks it runs.</p></div></div></div>`,
+        D.undone ? `<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`
+          : `${u.noUndo ? "" : btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}${btn('data-action="upd-another"', "Apply another update", "ln-button--ghost")}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
     }
     const intro = `<p class="gpage-hint">Lootnest doesn't download updates. Choose one you have, and Lootnest shows what it changes before anything happens. If an update comes in parts (.part1.rar, .part2.rar), choose the first. For an installer (.exe), run it yourself.</p>`;
     if (!D.path) return shell(`${intro}${choose}`);
@@ -2504,6 +2517,17 @@
     if (D.error && !D.plan) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     const P = D.plan;
     if (!P) return shell(`${intro}${choose}`);
+    if (P.kind === "installer") {
+      const free = D.free ?? P.free ?? -1, room = free < 0 || free >= P.gameSize * 1.05;
+      if (D.full === undefined) D.full = room;
+      const steps = { copying: "Copying the game first. A big game takes a few minutes.", installer: "The installer is running. Finish it, then come back here.", checking: "Checking what the installer changed" };
+      if (D.busy) return shell(lnInline("", steps[D.step] || "Getting ready", D.step === "installer" ? "Lootnest records what changes in the game's folder when it closes." : ""));
+      return shell(`<div class="gpage-sub">${gpHead("Run an installer")}<p class="gpage-hint">Lootnest copies the saves, runs <span class="selectable">${esc(P.name)}</span>, then records what it changed in <span class="selectable">${esc(D.dir)}</span>. Point the installer at that folder.</p></div>
+        <label class="toggle"><span><b>Keep a copy of the game first, so it can be undone</b><p>${esc(fmtBytes(P.gameSize))}${room ? "" : `, more than the room free (${esc(fmtBytes(free))})`}. Once the installer is done, only the files it changed are kept.</p></span>
+          <span class="switch"><input type="checkbox" data-action="upd-full" ${D.full ? "checked" : ""} ${room ? "" : "disabled"}><span></span></span></label>
+        ${D.error ? lnInline("error", esc(D.error)) : ""}`,
+        `${btn('data-action="upd-pick" data-kind="installer"', "Choose another", "ln-button--ghost")}<span class="grow"></span>${btn('data-action="upd-run"', "Run the installer", "ln-button--primary")}`);
+    }
     const where = P.where.slice(0, 6).map((w) => `<div><dt class="selectable">${w.path ? esc(w.path) : "The game's own folder"}</dt><dd>${w.files} file${w.files === 1 ? "" : "s"}</dd></div>`).join("");
     const room = D.free >= 0 && D.free < P.bytes + P.kept ? `<p class="find-low">There isn't enough room on this drive: it needs ${esc(fmtBytes(P.bytes + P.kept))}.</p>` : "";
     const C = D.check || {};
@@ -3115,6 +3139,14 @@
       try { await api.deleteOldCopy(el.dataset.old); } catch (e) { C.busy = false; toast(errText(e), "error"); render(); }
     },
     async "upd-keep"(el) { try { await api.keepSavesNow(el.dataset.key); toast("Copying its saves"); } catch (e) { toast(errText(e), "error"); } },
+    "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined }); renderOverlay(); } },
+    "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },
+    async "upd-run"() {
+      const D = S.dialog;
+      if (!D || !D.plan) return;
+      D.busy = true; D.step = ""; D.error = ""; renderOverlay();
+      try { await api.updateInstaller(D.key, D.path, D.full); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
     "upd-start"(el) { S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name }; renderOverlay(); focusDrawer(); },
     async "upd-pick"(el) {
       const D = S.dialog;

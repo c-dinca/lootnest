@@ -96,6 +96,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_updatePlan", a.apiUpdatePlan))
 	must(a.w.Bind("ps_updateApply", a.apiUpdateApply))
 	must(a.w.Bind("ps_updateUndo", a.apiUpdateUndo))
+	must(a.w.Bind("ps_updateInstaller", a.apiUpdateInstaller))
 	must(a.w.Bind("ps_newCopies", a.apiNewCopies))
 	must(a.w.Bind("ps_carryOver", a.apiCarryOver))
 	must(a.w.Bind("ps_dismissCopy", a.apiDismissCopy))
@@ -625,6 +626,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "update":
 			opt.Title = "Choose the update"
 			opt.Filters = []win.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
+		case "installer":
+			opt.Title = "Choose the update's installer"
+			opt.Filters = []win.FileFilter{{Name: "Installers (*.exe)", Spec: "*.exe"}}
 		case "updateDir":
 			opt.Title = "Choose the update's folder"
 			opt.Folder = true

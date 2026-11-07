@@ -148,3 +148,46 @@ func makeZip(t *testing.T, path string, files map[string]string) {
 	}
 	f.Close()
 }
+
+func TestInstallerUpdateCanBeUndone(t *testing.T) {
+	game, _ := gameWithUpdate(t)
+	full := filepath.Join(t.TempDir(), "full")
+	if err := Mirror(game, full); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := SnapshotDir(game)
+	// The installer changes the exe, adds a pak and removes an old one.
+	time.Sleep(10 * time.Millisecond)
+	write(t, filepath.Join(game, "ProjectPBZ", "Binaries", "Win64", "PBZ.exe"), "installed exe")
+	write(t, filepath.Join(game, "ProjectPBZ", "Content", "Paks", "new", "c.pak"), "new pak")
+	_ = os.Remove(filepath.Join(game, "ProjectPBZ", "Content", "Paks", "a.pak"))
+	after, _ := SnapshotDir(game)
+	added, changed, removed := DiffSnapshots(before, after)
+	if len(added) != 1 || len(changed) != 1 || len(removed) != 1 {
+		t.Fatalf("diff = %v %v %v", added, changed, removed)
+	}
+	keep := filepath.Join(t.TempDir(), "u1")
+	u, err := RecordInstallerUpdate(game, full, keep, "PBZ", "PBZ-Update-v1.0.3-setup.exe", added, changed, removed, time.Now())
+	if err != nil || u.NoUndo || u.To != "1.0.3" || !u.Verify {
+		t.Fatalf("record = %+v, %v", u, err)
+	}
+	_ = os.RemoveAll(full) // the full copy isn't needed any more
+	if _, err := UndoUpdate(game, keep); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(game, "ProjectPBZ", "Binaries", "Win64", "PBZ.exe")) != "old exe" ||
+		read(t, filepath.Join(game, "ProjectPBZ", "Content", "Paks", "a.pak")) != "old pak" ||
+		exists(filepath.Join(game, "ProjectPBZ", "Content", "Paks", "new")) ||
+		read(t, filepath.Join(game, "ProjectPBZ", "Saved", "slot.sav")) != "my save" {
+		t.Fatal("undo should put the folder back as it was, saves untouched")
+	}
+
+	// Without a full copy, it can't be undone, and says so.
+	u2, _ := RecordInstallerUpdate(game, "", filepath.Join(t.TempDir(), "u2"), "PBZ", "setup.exe", nil, nil, nil, time.Now())
+	if !u2.NoUndo {
+		t.Fatal("no copy, no undo")
+	}
+	if _, err := UndoUpdate(game, u2.Dir); err == nil {
+		t.Fatal("undo without a copy must be refused")
+	}
+}

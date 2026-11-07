@@ -71,8 +71,12 @@ type AppliedUpdate struct {
 	Replaced []string  `json:"replaced"`
 	Dirs     []string  `json:"dirs,omitempty"` // folders it made, removed on undo when empty
 	Bytes    int64     `json:"bytes"`
-	State    string    `json:"state"`          // "applying", "applied", "undone"
-	From     string    `json:"from,omitempty"` // the versions it was for and brought, from its name
+	State    string    `json:"state"`            // "applying", "applied", "undone"
+	Kind     string    `json:"kind,omitempty"`   // "installer" for an update an installer made
+	NoUndo   bool      `json:"noUndo,omitempty"` // no copy of the old files was kept
+	Verify   bool      `json:"verify,omitempty"` // not started since: Lootnest watches its first start
+	Broke    bool      `json:"broke,omitempty"`  // the game closed right after its first start since
+	From     string    `json:"from,omitempty"`   // the versions it was for and brought, from its name
 	To       string    `json:"to,omitempty"`
 	Dir      string    `json:"-"`
 }
@@ -378,7 +382,7 @@ func ApplyUpdate(gameDir string, p *UpdatePlan, keepDir, game string, now time.T
 			return nil, failUpdate(u, gameDir, fmt.Errorf("%s: %w", f.Rel, err))
 		}
 	}
-	u.State = "applied"
+	u.State, u.Verify = "applied", true
 	return u, saveUpdate(u)
 }
 
@@ -486,6 +490,9 @@ func UndoUpdate(gameDir, keepDir string) (*AppliedUpdate, error) {
 	if u.State == "undone" {
 		return u, nil
 	}
+	if u.NoUndo {
+		return u, errors.New("this update can't be undone: no copy of the game was kept before its installer ran")
+	}
 	if err := revertFiles(u, gameDir); err != nil {
 		return u, err
 	}
@@ -528,4 +535,106 @@ func GameUpdates(root string) []AppliedUpdate {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].At.After(out[j].At) })
 	return out
+}
+
+// SaveUpdate writes an update's record again (after a change such as Verify).
+func SaveUpdate(u *AppliedUpdate) error { return saveUpdate(u) }
+
+// FileStamp is a file's size and time, enough to tell it changed.
+type FileStamp struct {
+	Size int64
+	Mod  int64
+}
+
+// SnapshotDir lists a folder's files with their size and time.
+func SnapshotDir(dir string) (map[string]FileStamp, error) {
+	out := map[string]FileStamp{}
+	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil // unreadable: left out
+		}
+		if d.Type()&fs.ModeSymlink != 0 {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.IsDir() || len(out) > 500000 {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		rel, err := filepath.Rel(dir, p)
+		if err != nil {
+			return nil
+		}
+		out[filepath.ToSlash(rel)] = FileStamp{info.Size(), info.ModTime().UnixNano()}
+		return nil
+	})
+	return out, err
+}
+
+// DiffSnapshots says what changed between two snapshots of a folder.
+func DiffSnapshots(before, after map[string]FileStamp) (added, changed, removed []string) {
+	for rel, a := range after {
+		if b, ok := before[rel]; !ok {
+			added = append(added, rel)
+		} else if a != b {
+			changed = append(changed, rel)
+		}
+	}
+	for rel := range before {
+		if _, ok := after[rel]; !ok {
+			removed = append(removed, rel)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(changed)
+	sort.Strings(removed)
+	return added, changed, removed
+}
+
+// RecordInstallerUpdate records what an installer changed in a game's
+// folder. With fullCopy (a copy of the folder made before it ran), the old
+// versions of the files it changed or removed are kept in the record, so
+// it can be undone like any update; fullCopy can be deleted afterwards.
+func RecordInstallerUpdate(gameDir, fullCopy, keepDir, game, installer string, added, changed, removed []string, now time.Time) (*AppliedUpdate, error) {
+	u := &AppliedUpdate{ID: filepath.Base(keepDir), Game: game, Source: installer, At: now.UTC(), State: "applied", Dir: keepDir, Kind: "installer",
+		Added: append([]string{}, added...), Replaced: append(append([]string{}, changed...), removed...), Verify: true}
+	u.From, u.To = UpdateVersions(installer)
+	if err := os.MkdirAll(filepath.Join(keepDir, "files"), 0o755); err != nil {
+		return nil, err
+	}
+	if fullCopy == "" {
+		u.NoUndo = true
+	} else {
+		for _, rel := range u.Replaced {
+			src := filepath.Join(fullCopy, filepath.FromSlash(rel))
+			info, err := os.Stat(src)
+			if err != nil {
+				continue
+			}
+			if err := copyFile(src, filepath.Join(keepDir, "files", filepath.FromSlash(rel)), info); err != nil {
+				return nil, fmt.Errorf("couldn't keep the old %s: %w", rel, err)
+			}
+		}
+		seen := map[string]bool{}
+		for _, rel := range u.Added {
+			for d := filepath.ToSlash(filepath.Dir(rel)); d != "." && !seen[d]; d = filepath.ToSlash(filepath.Dir(d)) {
+				seen[d] = true
+				if !exists(filepath.Join(fullCopy, filepath.FromSlash(d))) {
+					u.Dirs = append(u.Dirs, d)
+				}
+			}
+		}
+		sort.Sort(sort.Reverse(sort.StringSlice(u.Dirs)))
+	}
+	for _, rel := range u.Added {
+		if st, err := os.Stat(filepath.Join(gameDir, filepath.FromSlash(rel))); err == nil {
+			u.Bytes += st.Size()
+		}
+	}
+	return u, saveUpdate(u)
 }

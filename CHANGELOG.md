@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.40.0
+
+- **Updates that come as an installer.** **Apply an update** now also runs an update's installer (an .exe you have). Lootnest:
+  - copies the game's saves first and, if there's room on the drive, the whole game, so the update can be undone;
+  - runs the installer and waits for it to finish. Point it at the game's folder;
+  - records which files it added, changed or removed, and keeps only the old versions of those once it's done.
+  - Without the copy of the game, the saves are still kept, but that update can't be undone.
+- **Apply another update** right after one, for games that need several in a row.
+- **A check after the first start.** The first time a game starts after an update, Lootnest watches it. If it closes within a few seconds, Lootnest says so and points to **Undo**, since that usually means the update doesn't fit the copy.
+
 ## 1.39.0
 
 - **A new copy of the same game.** When a game in a folder is reinstalled as a whole new version, in a new folder or beside the old one, Lootnest notices it's the same game, by its name or Steam id, and asks: **Is this a new copy of Phantom Blade Zero?** It asks on the Updates page and on the new copy's page.

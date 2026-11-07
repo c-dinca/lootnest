@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.39.0)
+## Where things stand (1.40.0)
 
 These shipped recently, newest last:
 
@@ -190,7 +190,7 @@ These shipped recently, newest last:
   `ApplyUpdate` / `UndoUpdate` for an update the user brings (folder or
   .zip; the update's own top folder is skipped by `bestPrefix`). Replaced
   files are kept in `backups\updates\<game>\<time>\files`. Lootnest never
-  finds or downloads an update. Not yet: installers, rolling a whole
+  finds or downloads an update. Installers came in 1.40; not yet: rolling a whole
   folder back.
 - **1.38** .7z and .rar updates (`core/updatearchive.go`: `StageUpdate`
   into `.lootnest-update-<hash>` beside the game's folder, via
@@ -203,6 +203,13 @@ These shipped recently, newest last:
   moves in-folder saves, `RekeyGame`/`RekeyConfig` move what's keyed by
   the Library key, `Engine.Reseat` puts the owner's profile into a game
   with profiles after its paths are retargeted.
+- **1.40** Installer updates (`apiUpdateInstaller`, `win.RunAndWait`):
+  saves first, an optional full copy of the game, a snapshot diff
+  (`SnapshotDir`, `DiffSnapshots`) and `RecordInstallerUpdate`, which keeps
+  only the changed files' old versions (`NoUndo` without the full copy).
+  Apply another update in a row. `watchFirstStart` (from `apiLaunchFound`)
+  marks an update `Broke` when the game closes within 20 s of its first
+  start.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as

@@ -191,6 +191,11 @@ func (a *App) apiUpdatePlan(key, path string) {
 			out["error"] = err.Error()
 			return
 		}
+		if strings.EqualFold(filepath.Ext(path), ".exe") {
+			info := a.installerInfo(t, path)
+			out["plan"], out["dir"], out["free"] = info, t.Dir, info["free"]
+			return
+		}
 		p, err := a.planUpdate(t, path)
 		if err != nil {
 			out["error"] = sentence(err)
@@ -372,4 +377,162 @@ func sentence(err error) string {
 		s += "."
 	}
 	return s
+}
+
+// ------------------------------------------------------------ installers --
+
+// apiUpdateInstaller runs an update's installer (an .exe the user chose)
+// for a game and records what it changed. With full, a copy of the game's
+// folder is kept first so the update can be undone; only the files the
+// installer changed stay in the record afterwards. Progress comes as
+// "updateProgress" events and the end as "updateDone".
+func (a *App) apiUpdateInstaller(key, path string, full bool) error {
+	t, err := a.updTarget(key)
+	if err != nil {
+		return err
+	}
+	if !strings.EqualFold(filepath.Ext(path), ".exe") || !fileExists(path) {
+		return errors.New("Choose the update's installer, an .exe.")
+	}
+	if isInside(path, t.Dir) {
+		return errors.New("That's a program inside the game's own folder, not an update's installer.")
+	}
+	if t.running() {
+		return fmt.Errorf("%s is running; close it first.", t.Name)
+	}
+	go func() {
+		out := map[string]any{"key": key}
+		defer func() { a.emit("updateDone", out) }()
+		step := func(s string) { a.emit("updateProgress", map[string]any{"key": key, "step": s}) }
+		updMu.Lock()
+		defer updMu.Unlock()
+		keep := filepath.Join(a.updatesDir(t), time.Now().Format("20060102-150405"))
+		fullCopy := ""
+		if full {
+			size := core.Size(t.Dir)
+			if free := win.DiskFree(a.store.BackupsDir()); free >= 0 && free < size+(256<<20) {
+				out["error"] = fmt.Sprintf("There isn't enough room for a copy of the game (%s). Run it without one, or make room first.", gb(size))
+				return
+			}
+			step("copying")
+			fullCopy = filepath.Join(keep, "full")
+			if err := core.Mirror(t.Dir, fullCopy); err != nil {
+				_ = os.RemoveAll(keep)
+				out["error"] = "Nothing was changed: Lootnest couldn't copy the game first (" + err.Error() + ")."
+				return
+			}
+		}
+		if err := a.keepSavesBeforeUpdate(t); err != nil {
+			_ = os.RemoveAll(keep)
+			out["error"] = "Nothing was changed: Lootnest couldn't copy the saves first (" + err.Error() + ")."
+			return
+		}
+		before, _ := core.SnapshotDir(t.Dir)
+		step("installer")
+		a.logf("Running %s to update %s", path, t.Name)
+		if _, err := win.RunAndWait(a.hwnd, path, filepath.Dir(path)); err != nil {
+			_ = os.RemoveAll(keep)
+			out["error"] = sentence(err)
+			return
+		}
+		// Some installers hand the work to another process: wait until the
+		// folder stops changing.
+		step("checking")
+		after, _ := core.SnapshotDir(t.Dir)
+		for i := 0; i < 120; i++ {
+			time.Sleep(5 * time.Second)
+			next, _ := core.SnapshotDir(t.Dir)
+			if sameSnapshot(after, next) {
+				break
+			}
+			after = next
+		}
+		added, changed, removed := core.DiffSnapshots(before, after)
+		if len(added)+len(changed)+len(removed) == 0 {
+			_ = os.RemoveAll(keep)
+			out["error"] = "The installer didn't change anything in " + t.Dir + ". It may have installed somewhere else."
+			return
+		}
+		u, err := core.RecordInstallerUpdate(t.Dir, fullCopy, keep, t.Name, filepath.Base(path), added, changed, removed, time.Now())
+		if fullCopy != "" {
+			_ = os.RemoveAll(fullCopy)
+		}
+		if err != nil {
+			out["error"] = sentence(err)
+			return
+		}
+		a.logf("%s's installer changed %d files, added %d and removed %d", t.Name, len(changed), len(added), len(removed))
+		out["update"] = u
+	}()
+	return nil
+}
+
+func sameSnapshot(a, b map[string]core.FileStamp) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+// installerInfo answers a plan for an installer: the game's size and the
+// room for a copy of it.
+func (a *App) installerInfo(t updTarget, path string) map[string]any {
+	return map[string]any{"kind": "installer", "source": path, "name": filepath.Base(path), "gameSize": core.Size(t.Dir), "free": win.DiskFree(a.store.BackupsDir())}
+}
+
+// ------------------------------------------------------ is it working? --
+
+// watchFirstStart follows a game's first start after an update: if it
+// closes within 20 seconds, the update probably broke it, and the user is
+// offered Undo. Once it runs longer, the update is fine.
+func (a *App) watchFirstStart(key string) {
+	t, err := a.updTarget(key)
+	if err != nil || t.Process == "" {
+		return
+	}
+	var u *core.AppliedUpdate
+	for _, x := range core.GameUpdates(a.updatesDir(t)) {
+		x := x
+		if x.State == "applied" {
+			if x.Verify {
+				u = &x
+			}
+			break
+		}
+	}
+	if u == nil {
+		return
+	}
+	go func() {
+		name := strings.ToLower(strings.TrimSuffix(t.Process, ".exe"))
+		up := func() bool { procs, _ := win.ProcessNames(); return procs[name] }
+		started := time.Time{}
+		for i := 0; i < 90 && started.IsZero(); i++ {
+			time.Sleep(time.Second)
+			if up() {
+				started = time.Now()
+			}
+		}
+		if started.IsZero() {
+			return // never seen: nothing to tell
+		}
+		for time.Since(started) < 20*time.Second {
+			time.Sleep(2 * time.Second)
+			if !up() {
+				u.Broke = true
+				_ = core.SaveUpdate(u)
+				a.logf("%s closed %s after starting, its first start since the update from %s", t.Name, time.Since(started).Round(time.Second), u.Source)
+				a.notify(t.Name+" closed right after starting", "It's the first start since the update from "+u.Source+". If it doesn't work, Undo puts the game back on the Updates page.")
+				a.emit("updateBroke", map[string]any{"key": key, "id": u.ID})
+				return
+			}
+		}
+		u.Verify, u.Broke = false, false
+		_ = core.SaveUpdate(u)
+	}()
 }
