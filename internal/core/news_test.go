@@ -82,3 +82,10 @@ func TestNewerThanCopy(t *testing.T) {
 		t.Fatalf("an up-to-date copy has nothing newer: %+v", u)
 	}
 }
+
+func TestNewsSummaryTagsWithAttributes(t *testing.T) {
+	got := newsSummary(`[p align="justify"]Thank you for your support.[/p][p align="justify"] New Features [/p][list][*]Audio[/list]`, 240)
+	if got != "Thank you for your support. New Features Audio" {
+		t.Fatalf("summary = %q", got)
+	}
+}

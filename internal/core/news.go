@@ -50,7 +50,7 @@ type GameNews struct {
 }
 
 var (
-	bbTags     = regexp.MustCompile(`\[/?[a-zA-Z0-9*]+(=[^\]]*)?\]`)
+	bbTags     = regexp.MustCompile(`\[/?[a-zA-Z0-9*]+([= ][^\]]*)?\]`) // [b], [url=...], [p align="justify"]
 	htmlTags   = regexp.MustCompile(`<[^>]+>`)
 	spaces     = regexp.MustCompile(`\s+`)
 	updateWord = regexp.MustCompile(`(?i)\b(patch|update|hotfix|v?\d+\.\d+(\.\d+)*)\b`)
