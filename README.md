@@ -60,6 +60,10 @@ You need Windows 10 or 11 (64-bit) with the Microsoft Edge WebView2 Runtime, whi
 
 To update, use **Settings > Check for updates**. Your players, games and profiles are kept. To uninstall, use Windows **Settings > Apps > Installed apps**.
 
+## Security
+
+How Lootnest protects your files, its window and its updates is in [SECURITY.md](SECURITY.md), along with how to report a problem privately.
+
 ## Privacy
 
 No account and no telemetry; Lootnest works offline. It only goes online when you ask it to:
@@ -107,7 +111,7 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 
 ## Building from source
 
-You need Go 1.24+, Python 3 and bash (Git Bash on Windows). Pillow is optional; it only redraws the icon.
+You need Go (go.mod's `toolchain` line names the release; recent Go downloads it by itself), Python 3 and bash (Git Bash on Windows). Pillow is optional; it only redraws the icon.
 
 ```bash
 ./build.sh                 # dist/Lootnest-Setup.exe and dist/Lootnest.exe

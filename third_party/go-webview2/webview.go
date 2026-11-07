@@ -97,6 +97,12 @@ type WebViewOptions struct {
 	// WindowOptions customizes the window that is created to embed the
 	// WebView2 widget.
 	WindowOptions WindowOptions
+
+	// PlaySwap patch: AllowRequest, when set, sees every request the page
+	// makes (documents, images, fonts, scripts, fetches). Requests it
+	// refuses get an empty 403 response, so the page can't load or send
+	// anything elsewhere and can't navigate away from the app.
+	AllowRequest func(uri string) bool
 }
 
 // New creates a new webview in a new window.
@@ -131,6 +137,21 @@ func NewWithOptions(options WebViewOptions) WebView {
 				_ = c2.PutDefaultBackgroundColor(edge.COREWEBVIEW2_COLOR{A: 255, R: uint8(bg >> 16), G: uint8(bg >> 8), B: uint8(bg)})
 			}
 		}
+	}
+
+	if allow := options.AllowRequest; allow != nil {
+		chromium.WebResourceRequestedCallback = func(req *edge.ICoreWebView2WebResourceRequest, args *edge.ICoreWebView2WebResourceRequestedEventArgs) {
+			uri, err := req.GetUri()
+			if err == nil && allow(uri) {
+				return
+			}
+			if env := chromium.Environment(); env != nil {
+				if resp, err := env.CreateWebResourceResponse(nil, 403, "Forbidden", ""); err == nil {
+					_ = args.PutResponse(resp)
+				}
+			}
+		}
+		chromium.AddWebResourceRequestedFilter("*", edge.COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL)
 	}
 
 	settings, err := chromium.GetSettings()

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.9.2
+
+Security hardening, with nothing to change on your side:
+- Built with Go 1.27.3. The previous Go (1.24.7) had known vulnerabilities in its URL parsing and HTTPS certificate checks; `govulncheck` now reports none, and every build runs it.
+- Lootnest's window only ever shows its own page: every request it makes goes through an allowlist (its page, and pictures on Steam's image servers), so nothing can load from, send to or navigate to anywhere else.
+- A Content-Security-Policy with a per-start nonce: only Lootnest's own script runs in the window.
+- Updates install only from this repository's releases, and only with a SHA-256 to check the installer against.
+- The SteamGridDB key is encrypted for your Windows account (DPAPI) instead of kept in plain text; a key saved by 1.8 or 1.9 is encrypted at the next start.
+- New SECURITY.md describes all of this and how to report a problem privately.
+
 ## 1.9.1
 
 - Lootnest can keep itself up to date. It asks once, **Keep Lootnest up to date?**; with yes, it checks every 6 hours, shows a Windows notification when a new version is out, and installs it by itself while it's in the tray and no game is running. Both are in Settings (**Check for updates automatically**, **Install updates by themselves**).

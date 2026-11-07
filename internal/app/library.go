@@ -226,7 +226,7 @@ func fetchAuth(u, bearer string) ([]byte, error) {
 // grid is SteamGridDB with the user's key, or nil without one.
 func (a *App) grid() *core.GridDB {
 	a.mu.Lock()
-	key := a.cfg.Settings.GridDBKey
+	key := revealSecret(a.cfg.Settings.GridDBKey)
 	a.mu.Unlock()
 	if strings.TrimSpace(key) == "" {
 		return nil

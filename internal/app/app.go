@@ -5,6 +5,7 @@
 package app
 
 import (
+	"crypto/rand"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
@@ -50,7 +51,14 @@ var uiJS string
 //go:embed ui/fonts/*.woff2
 var uiFonts embed.FS
 
+// pageHTML is the UI with its stylesheet, script and fonts inlined. Its
+// Content-Security-Policy allows only this one script (by a nonce made for
+// each start), images and fonts from data: URLs and Steam's image servers,
+// and nothing else: no other scripts, no inline handlers, no fetches.
 func pageHTML() string {
+	nonce := make([]byte, 18)
+	_, _ = rand.Read(nonce)
+	n := base64.RawStdEncoding.EncodeToString(nonce)
 	css := uiCSS
 	for _, name := range []string{"bricolage-latin", "bricolage-latin-ext"} {
 		if b, err := uiFonts.ReadFile("ui/fonts/" + name + ".woff2"); err == nil {
@@ -58,6 +66,7 @@ func pageHTML() string {
 		}
 	}
 	h := strings.Replace(uiHTML, "/*@CSS*/", css, 1)
+	h = strings.ReplaceAll(h, "@NONCE@", n)
 	return strings.Replace(h, "/*@JS*/", uiJS, 1)
 }
 
@@ -167,6 +176,12 @@ func Run(opt Options) error {
 			}
 			fixed = fixed || changed
 		}
+		// A key saved in plain text by an earlier version gets encrypted.
+		if k := a.cfg.Settings.GridDBKey; k != "" && !strings.HasPrefix(k, secretPrefix) {
+			if enc, perr := protectSecret(k); perr == nil {
+				a.cfg.Settings.GridDBKey, fixed = enc, true
+			}
+		}
 		if fixed {
 			if serr := a.store.SaveConfig(a.cfg); serr != nil {
 				a.logf("ERROR %v", serr)
@@ -182,6 +197,9 @@ func Run(opt Options) error {
 	a.w = webview2.NewWithOptions(webview2.WebViewOptions{
 		AutoFocus: true,
 		DataPath:  filepath.Join(DataDir(), "WebView2"),
+		// The window only ever shows Lootnest's own page: nothing else can be
+		// loaded or navigated to, so the page's access to Lootnest can't leak.
+		AllowRequest: core.AllowedPageRequest,
 		WindowOptions: webview2.WindowOptions{
 			Title:       Name,
 			Width:       uint(scale(1100)),
