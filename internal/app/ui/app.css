@@ -598,7 +598,18 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 @container (max-width: 1400px) { .lib-recent-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } .lib-cap:nth-child(n+5) { display: none; } }
 @container (max-width: 1000px) { .lib-recent-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lib-cap:nth-child(n+4) { display: none; } }
 @container (max-width: 640px) { .lib-recent-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lib-cap:nth-child(n+3) { display: none; } }
-.lib-recent:not([hidden]) + .lib-tools { margin-top: var(--space-10); }
+.lib-all-head { margin-top: var(--space-12); }
+.lib-all-head[hidden], .lib-shelves[hidden] { display: none; }
+.lib-all-head + .lib-tools { margin-top: var(--space-4); }
+/* Collection shelves: one row of covers each, scrolling sideways. */
+.lib-shelves { display: grid; gap: var(--space-8); margin-top: var(--space-10); }
+.lib-shelf .ln-section-head { margin-bottom: var(--space-4); }
+.lib-shelf-n { margin-left: var(--space-3); font: 600 var(--fs-15)/1 var(--font-ui); color: var(--fg-3); vertical-align: 2px; }
+.lib-shelf-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: clamp(120px, 7vw, 168px); gap: var(--space-5);
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-bottom: var(--space-3);
+}
+.lib-shelf-row > * { scroll-snap-align: start; }
 .lib-cap { position: relative; min-width: 0; }
 .lib-cap-open { display: flex; flex-direction: column; justify-content: flex-start; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; }
 .lib-cap-art { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--radius-ctl); background: var(--bg-surface); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }

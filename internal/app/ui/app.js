@@ -618,7 +618,7 @@
     const ps = cfg().players;
     const who = ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     return `<div class="lib ln-root">${head}${hookBanner() || coverHint(all) ? `<div class="lib-banners">${hookBanner()}${coverHint(all)}</div>` : ""}
-      ${recentShelf(all)}
+      ${(() => { const top = recentShelf(all) + collectionShelves(all); return top ? top + `<div class="ln-section-head lib-all-head"${S.q ? " hidden" : ""}><div><h2>All games</h2></div></div>` : ""; })()}
       <div class="lib-tools">
         <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}</div>${who}</div>
         <div class="lib-tools-side">
@@ -652,6 +652,23 @@
     };
     return `<section class="lib-recent" aria-label="Recent games"${S.q ? " hidden" : ""}><div class="ln-section-head"><div><h2>Recent games</h2></div></div>
       <div class="lib-recent-row">${rec.map(cap).join("")}</div></section>`;
+  }
+  // A shelf for each collection, under Recent games, as in Steam: its
+  // covers in one row that scrolls sideways, and See all to filter the
+  // Library to it. Same rules as Recent games for when they show.
+  function collectionShelves(all) {
+    if (S.filter !== "all" || S.who || S.store !== "all" || S.tag || S.status) return "";
+    const tags = cfg().tags || {}, by = {};
+    all.forEach((it) => (tags[recentKey(it)] || []).forEach((t) => (by[t] = by[t] || []).push(it)));
+    const names = Object.keys(by).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b, undefined, { sensitivity: "base" }));
+    if (!names.length) return "";
+    // The six largest; the rest are in the Library's collections menu.
+    return `<div class="lib-shelves"${S.q ? " hidden" : ""}>${names.slice(0, 6).map((t) => {
+      const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
+      return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="lib-shelf-n ln-num">${list.length}</span></h2></div>
+          <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-all" data-tag="${esc(t)}">See all</button></div>
+        <div class="lib-shelf-row">${list.slice(0, 16).map(cardHTML).join("")}</div></section>`;
+    }).join("")}</div>`;
   }
 
   // Home: what are we playing tonight, and who's playing? The game played
@@ -2926,6 +2943,7 @@
     swatch(el) { S.players[+el.dataset.i].color = el.dataset.color; S.dialog && S.dialog.kind === "welcome" ? renderOverlay() : render(); },
     "add-player"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); render(); const ins = document.querySelectorAll('[data-field="pname"]'); ins[ins.length - 1].focus(); },
     "remove-player"(el) { S.players.splice(+el.dataset.i, 1); render(); },
+    "shelf-all"(el) { S.tag = el.dataset.tag; render(); const t = $(".lib-tools"); if (t) t.scrollIntoView({ block: "start" }); },
     "set-tab"(el) { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); render(); const v = $("#view"); if (v) v.scrollTop = 0; },
     "reset-players"() { S.players = null; render(); },
     "edit-profiles"() { S.dialog = { kind: "profiles" }; renderOverlay(); focusDrawer(); },
@@ -3037,7 +3055,7 @@
       S.q = el.value;
       const grid = $("#grid");
       if (grid) { grid.innerHTML = gridHTML(); loadCovers(); }
-      const shelf = $(".lib-recent"); if (shelf) shelf.hidden = !!S.q; // a search shows only what it finds
+      document.querySelectorAll(".lib-recent, .lib-shelves, .lib-all-head").forEach((x) => { x.hidden = !!S.q; }); // a search shows only what it finds
       return;
     }
     if (el.id === "steam-q" && S.dialog) {

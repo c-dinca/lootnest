@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.32.0
+
+- **A shelf for each collection in the Library**, as in Steam. Under **Recent games**, each of your collections, such as "Co-op" or "Weekend", has a row of its games, the ones played last first. Scroll a row sideways to see more, or press **See all** to show only that collection.
+  - The six largest collections get a shelf. The others are in the **All collections** menu, as before.
+  - Then **All games** shows the whole Library with its filters.
+  - Searching or filtering the Library shows only the games you asked for.
+
 ## 1.31.0
 
 - **Recent games, at the top of the Library**, as in Steam. The last five games you played are on their wide artwork, each with who played it last, when, and how long it's been played in all. Point at one to get a red **Play** button, or click it to open its page.
