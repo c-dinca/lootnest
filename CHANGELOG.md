@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.54.0
+
+- **Tonight, on Home**: one game to play, picked for whoever's here from their Up next, what they're playing and what they never started. Finished, 100% and dropped games are left out. **Another** spins for a different one; the pick holds for the day.
+
 ## 1.53.0
 
 - **Try a save safely.** Got a save from a friend, or one from a mod site? A game's **Manage**, **Try a save** puts it in a new run of yours: your settings, with the save you brought. Your own saves stay exactly as they were, and playing as you again is one click. Keep the run, or delete it in Profiles.

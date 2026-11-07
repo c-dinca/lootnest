@@ -1319,7 +1319,7 @@
     return `<div class="gpage home ln-root${head.art ? "" : " no-art"}">${head.top}
       <div class="gpage-body">${head.bar}${head.note}${banners ? `<div class="home-banners">${banners}</div>` : ""}
         <div class="home-cols">
-          <div>${continueShelf(recent.slice(1), allBtn)}</div>
+          <div>${continueShelf(recent.slice(1), allBtn)}${tonightBlock(all)}</div>
           <aside class="gpage-aside">${playersBlock(all)}${saveCheckBlock()}</aside>
         </div>
         ${homeNews(recent)}
@@ -1376,6 +1376,60 @@
     return `<section aria-label="Continue playing">${head}<div class="home-tiles">${list.slice(0, 10).map((it) => tileHTML(it, playedBy(it))).join("")}</div></section>`;
   }
 
+  // What to play tonight: one game for whoever's here, from their Up next,
+  // what they're playing and what they never started. The pick holds for
+  // the day; Another spins again.
+  function tonightPicks(all) {
+    const me = seated() || cfg().players[0];
+    const pid = me ? me.id : "", day = 864e5, now = Date.now();
+    const out = [];
+    all.forEach((it) => {
+      const st = pid ? statusOf(it, pid) : "";
+      if (st === "finished" || st === "complete" || st === "stopped") return;
+      const at = playedAt(it);
+      let w, why;
+      if (st === "next") { w = 6; why = "Up next"; }
+      else if (st === "playing") { w = 3; why = at ? `Playing, last played ${ago(at)}` : "Playing"; }
+      else if (!at) { w = 1.5; why = "Never started"; }
+      else if (now - at > 30 * day) { w = 1.2; why = "Not played in a while"; }
+      else { w = 0.6; why = `Played ${ago(at)}`; }
+      if (at && now - at < day) w *= 0.3; // already on Continue playing
+      out.push({ it, w, why });
+    });
+    return out;
+  }
+  // A weighted pick; seed gives the same one all day.
+  function tonightPick(picks, seed, avoid) {
+    const list = picks.filter((p) => p.it.id !== avoid);
+    if (!list.length) return picks[0] || null;
+    let r = seed === undefined ? Math.random() : ((Math.sin(seed) + 1) / 2) % 1;
+    const total = list.reduce((n, p) => n + p.w, 0);
+    for (const p of list) { r -= p.w / total; if (r <= 0) return p; }
+    return list[list.length - 1];
+  }
+  function tonightBlock(all) {
+    const picks = tonightPicks(all);
+    if (picks.length < 2) return "";
+    const me = seated() || cfg().players[0];
+    const today = Math.floor(Date.now() / 864e5);
+    if (!S.tonight || S.tonight.day !== today || S.tonight.seat !== (me && me.id)) {
+      const p = tonightPick(picks, today * 7.13 + ((me && me.id) || "").length);
+      S.tonight = { day: today, seat: me && me.id, id: p && p.it.id };
+    }
+    const pick = picks.find((p) => p.it.id === S.tonight.id) || picks[0];
+    const it = pick.it;
+    ensureCover(it);
+    const c = S.covers[coverKey(it)];
+    const play = it.kind === "game"
+      ? `<button class="ln-button ln-button--primary ln-button--sm" data-action="play" data-game="${esc(it.id)}">${GI.play}Play</button>`
+      : `<button class="ln-button ln-button--primary ln-button--sm" data-action="play-found" data-key="${esc(it.id)}">${GI.play}Play</button>`;
+    return `<section class="tonight" aria-label="What to play tonight"><div class="ln-section-head"><div><h2>Tonight</h2></div></div>
+      <div class="tn-card">
+        <button class="tn-cover" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">${c ? `<img src="${c}" alt="">` : `<span class="tn-none">${esc(it.name)}</span>`}</button>
+        <div class="tn-info"><span class="tn-why">${esc(pick.why)}</span><b class="tn-name">${esc(it.name)}</b>
+          <div class="tn-actions">${play}<button class="ln-button ln-button--ghost ln-button--sm" data-action="tonight-spin">Another</button></div></div>
+      </div></section>`;
+  }
   // Each player and the game they played last: one click to carry on.
   // Your saves: how Lootnest looks after them, from the save check.
   let saveCheckAsked = false;
@@ -4421,6 +4475,27 @@
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },
     "save-players": () => savePlayers(false),
     "welcome-done": () => savePlayers(true),
+    "tonight-spin"() {
+      const all = libraryItems(), picks = tonightPicks(all);
+      if (picks.length < 2 || !S.tonight) return;
+      const next = tonightPick(picks, undefined, S.tonight.id);
+      const done = () => { S.tonight.id = next.it.id; render(); };
+      const cover = $(".tn-cover"), name = $(".tn-name");
+      if (reduced() || !cover || !name) { done(); return; }
+      // A short roulette over the games that have a cover, slowing down.
+      const withArt = picks.filter((p) => S.covers[coverKey(p.it)]);
+      if (withArt.length < 3) { done(); return; }
+      let n = 0;
+      const steps = 11;
+      const tick = () => {
+        const p = withArt[(n * 5 + 3) % withArt.length];
+        cover.innerHTML = `<img src="${S.covers[coverKey(p.it)]}" alt="">`;
+        name.textContent = p.it.name;
+        cover.classList.remove("tn-flick"); void cover.offsetWidth; cover.classList.add("tn-flick");
+        if (++n < steps) setTimeout(tick, 45 + n * n * 3); else setTimeout(done, 160);
+      };
+      tick();
+    },
     "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); },
     "try-save"(el) { const sp = seated(); S.dialog = { kind: "trysave", gameId: el.dataset.game, from: sp && hasProfile(el.dataset.game, sp.id) ? sp.id : "" }; renderOverlay(); },
     async "try-browse"(el) {
