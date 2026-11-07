@@ -23,6 +23,10 @@ type Player struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Color string `json:"color"`
+	// Of makes this profile a run of another (a person): "Cristian
+	// hardcore" of Cristian. It shows under them, in their colour and with
+	// their picture. Runs have no runs of their own.
+	Of string `json:"of,omitempty"`
 	// Profile page (see ValidatePlayers for the limits):
 	// - Tagline: a line under the name; Bio: a few lines about them.
 	// - Avatar: a picture is saved as avatars/<id>.png; without one,
@@ -356,12 +360,15 @@ func ValidateGame(g *Game) error {
 	return nil
 }
 
+// MaxPlayers is how many profiles Lootnest keeps: people and their runs.
+const MaxPlayers = 16
+
 func ValidatePlayers(ps []Player) error {
 	if len(ps) < 1 {
 		return errors.New("Keep at least one profile.")
 	}
-	if len(ps) > 8 {
-		return errors.New("Lootnest supports up to 8 profiles.")
+	if len(ps) > MaxPlayers {
+		return fmt.Errorf("Lootnest supports up to %d profiles.", MaxPlayers)
 	}
 	names := map[string]bool{}
 	ids := map[string]bool{}
@@ -417,6 +424,34 @@ func ValidatePlayers(ps []Player) error {
 		p.Sections = secs
 		if !colorRe.MatchString(p.Color) {
 			p.Color = PlayerColors[i%len(PlayerColors)]
+		}
+	}
+	// Runs: of a person here (not of themselves or of another run), with
+	// that person's colour. A run of someone who's gone becomes a person.
+	byID := map[string]*Player{}
+	for i := range ps {
+		byID[ps[i].ID] = &ps[i]
+	}
+	for i := range ps {
+		p := &ps[i]
+		if p.Of == "" {
+			continue
+		}
+		parent := byID[p.Of]
+		if parent == nil || parent.ID == p.ID || parent.Of != "" {
+			p.Of = ""
+			continue
+		}
+		p.Color = parent.Color
+	}
+	for i := range ps { // someone with runs is a person, not a run
+		if ps[i].Of != "" {
+			for j := range ps {
+				if ps[j].Of == ps[i].ID {
+					ps[i].Of = ""
+					break
+				}
+			}
 		}
 	}
 	return nil

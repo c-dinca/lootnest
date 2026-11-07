@@ -136,6 +136,27 @@
   const game = (id) => cfg().games.find((g) => g.id === id);
   const color = (id) => (player(id) || {}).color || "var(--dim)";
   const pname = (id) => (player(id) || {}).name || "Someone";
+  // Runs: a profile can be a run of a person ("Cristian hardcore" of
+  // Cristian). It shows under them, with their colour and picture.
+  const MAX_PROFILES = 16;
+  const parentOf = (p) => (p && p.of && p.of !== p.id && player(p.of)) || null;
+  // "hardcore" for "Cristian hardcore" of Cristian.
+  const runLabel = (p) => {
+    const par = parentOf(p);
+    if (!par) return "";
+    const n = p.name.trim();
+    return n.toLowerCase().startsWith(par.name.toLowerCase() + " ") ? n.slice(par.name.length).trim() : n;
+  };
+  // People in order, each followed by their runs.
+  function grouped(list) {
+    list = list || cfg().players;
+    const ids = new Set(list.map((p) => p.id));
+    const isRun = (p) => p.of && p.of !== p.id && ids.has(p.of);
+    const out = [];
+    list.filter((p) => !isRun(p)).forEach((p) => { out.push(p); list.filter((r) => isRun(r) && r.of === p.id).forEach((r) => out.push(r)); });
+    list.forEach((p) => { if (!out.includes(p)) out.push(p); });
+    return out;
+  }
   const session = (gid) => (S.d.sessions || []).find((s) => s.gameId === gid);
   const hasProfile = (gid, pid) => ((S.d.profiles || {})[gid] || []).includes(pid);
   const possessive = (n) => (/s$/i.test(n) ? n + "’" : n + "’s");
@@ -465,11 +486,11 @@
     const playing = {}, seat = seated(), ps = cfg().players;
     (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = s; });
     $("#who-head").innerHTML = `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu">${GI.swap}${seat ? "Switch" : "Sit down"}</button>` : ""}`;
-    $("#who").innerHTML = ps.map((p) => {
+    $("#who").innerHTML = grouped(ps).map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
       const on = seat && seat.id === p.id;
-      return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}"
+      return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}${parentOf(p) ? " who-run" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}"
         title="${on ? `${esc(p.name)} is at the PC. Click to leave the seat empty.` : `Sit ${esc(p.name)} at the PC: Play starts as ${esc(p.name)}.`}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}${on ? ' <span class="ln-tag ln-tag--player">Seated</span>' : ""}</span>
         <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></button>`;
     }).join("");
@@ -1021,12 +1042,14 @@
   // A player's avatar in the system's style: their picture, a game's cover,
   // or their initial on their colour.
   const lnAvatar = (p, size) => {
-    const u = (S.d.avatars || {})[p.id];
-    const g = !u && p.avatarGame && itemByKey(p.avatarGame);
+    // A run wears its person's picture and colour, with a ring.
+    const par = parentOf(p), who = par || p;
+    const u = (S.d.avatars || {})[who.id];
+    const g = !u && who.avatarGame && itemByKey(who.avatarGame);
     if (g) ensureCover(g);
     const gu = g && (S.covers[coverKey(g)] || S.icons[coverKey(g)]);
-    const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc(p.name.trim().charAt(0).toUpperCase());
-    return `<span class="ln-avatar ln-player${size ? " ln-avatar--" + size : ""}" style="--player:${esc(p.color)}" aria-hidden="true">${inner}</span>`;
+    const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc((who.name || "?").trim().charAt(0).toUpperCase());
+    return `<span class="ln-avatar ln-player${size ? " ln-avatar--" + size : ""}${par ? " is-run" : ""}" style="--player:${esc(who.color || p.color)}" aria-hidden="true">${inner}</span>`;
   };
   const gpHead = (t) => `<div class="ln-section-head ln-section-head--minor"><h2>${t}</h2></div>`;
   const gpRow = (attrs, ic, title, sub, opt = {}) => `<button class="ln-row${opt.danger ? " ln-row--danger" : ""}" ${attrs}${opt.disabled ? " disabled" : ""}>${ic}<span><b>${title}</b>${sub ? `<span>${sub}</span>` : ""}</span></button>`;
@@ -1198,6 +1221,9 @@
         <span class="slot-new-plus" aria-hidden="true">${GI.plus}</span>
         <label class="name" for="np-name">New profile</label>
         <input id="np-name" class="ln-input" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Name, such as Cristian hardcore" value="${esc(P.newName || "")}">
+        <select id="np-of" class="ln-input" aria-label="Whose profile">
+          <option value="">Someone new</option>
+          ${cfg().players.filter((p) => !parentOf(p)).map((p) => `<option value="${esc(p.id)}" ${P.newOf === p.id ? "selected" : ""}>A run for ${esc(p.name)}</option>`).join("")}</select>
         <span class="error-text" id="np-error" role="alert">${esc(P.newError || "")}</span>
         <div class="slot-new-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="np-cancel">Cancel</button><button class="ln-button ln-button--primary ln-button--sm" data-action="np-create">${P.mode === "load" ? "Make it" : "Make it and play"}</button></div></div>`;
   }
@@ -1254,11 +1280,11 @@
         <p class="hint">${P.mode === "steam" ? "Steam is starting the game. Their settings and saves load first." : P.mode === "play" ? "Their settings and saves load before the game starts." : "Their settings and saves are loaded; the game isn't started."}</p></div>
         <button class="ln-button ln-button--ghost" data-action="picker-close">${P.mode === "steam" ? "Don't start" : "Cancel"}</button></div>
       <div class="slots">
-        ${ps.map((p, i) => `<button class="slot ln-player${S.d.active[g.id] === p.id ? " in" : ""}" style="--player:${esc(p.color)}" data-action="pick" data-player="${esc(p.id)}">
-          ${lnAvatar(p, "120")}
-          <span class="name">${esc(p.name)}</span><span class="state">${esc(slotState(g.id, p.id))}</span>
-          <span class="slot-label"><span>${S.d.active[g.id] === p.id ? "In the game now" : "Play as " + esc(p.name)}</span>${i < 9 ? `<kbd aria-hidden="true">${i + 1}</kbd>` : ""}</span></button>`).join("")}
-        ${ps.length < 8 ? newProfileSlot(P) : ""}
+        ${grouped(ps).map((p, i) => `<button class="slot ln-player${S.d.active[g.id] === p.id ? " in" : ""}${parentOf(p) ? " slot-run" : ""}" style="--player:${esc(p.color)}" data-action="pick" data-player="${esc(p.id)}">
+          ${lnAvatar(p, parentOf(p) ? "72" : "120")}
+          ${parentOf(p) ? `<span class="slot-of">${esc(possessive(parentOf(p).name))} run</span>` : ""}<span class="name">${esc(parentOf(p) ? runLabel(p) : p.name)}</span><span class="state">${esc(slotState(g.id, p.id))}</span>
+          <span class="slot-label"><span>${S.d.active[g.id] === p.id ? "In the game now" : parentOf(p) ? "Play this run" : "Play as " + esc(p.name)}</span>${i < 9 ? `<kbd aria-hidden="true">${i + 1}</kbd>` : ""}</span></button>`).join("")}
+        ${ps.length < MAX_PROFILES ? newProfileSlot(P) : ""}
       </div>
       <div class="picker-foot"><span>Press ${ps.length > 1 ? "1–" + Math.min(ps.length, 9) : "1"} to choose, Esc ${P.mode === "steam" ? "to not start the game" : "to cancel"}</span><span>${esc(g.name)}</span></div>
     </div>`;
@@ -1666,10 +1692,19 @@
   }
 
   function playerRow(p, i, total, welcome) {
-    return `<div class="player ln-player" style="--player:${esc(p.color || "#6c9bd2")}">
+    // While editing, a row can be a run of a person in the list (not of
+    // itself, not of a run, and not while it has runs of its own).
+    const list = S.players || [];
+    const par = !welcome && p.of && list.find((x) => x.id === p.of && x.id !== p.id && !x.of);
+    const hasRuns = p.id && list.some((x) => x.of === p.id);
+    const people = list.filter((x) => x !== p && !x.of && x.id && x.name.trim());
+    const of = welcome ? "" : `<select class="ln-input player-of" data-field="pof" data-i="${i}" aria-label="Whose profile" ${hasRuns ? "disabled title=\"It has runs of its own\"" : ""}>
+        <option value="">A person</option>${people.map((x) => `<option value="${esc(x.id)}" ${par && par.id === x.id ? "selected" : ""}>A run for ${esc(x.name)}</option>`).join("")}</select>`;
+    return `<div class="player ln-player${par ? " player-run" : ""}" style="--player:${esc(p.color || "#6c9bd2")}">
       ${lnAvatar({ ...p, name: p.name || "?" }, "32")}
-      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${welcome && /^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="${welcome ? (i === 0 ? "Your name" : "Their name") : "Name"}" maxlength="24" aria-label="Name">
-      <div class="swatches" role="radiogroup" aria-label="Colour for ${esc(p.name || "player " + (i + 1))}">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="swatch" data-i="${i}" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>
+      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${welcome && /^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="${welcome ? (i === 0 ? "Your name" : "Their name") : par ? par.name + " hardcore" : "Name"}" maxlength="24" aria-label="Name">
+      ${of}
+      ${par ? `<span class="player-same">${esc(possessive(par.name))} colour</span>` : `<div class="swatches" role="radiogroup" aria-label="Colour for ${esc(p.name || "player " + (i + 1))}">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="swatch" data-i="${i}" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>`}
       ${welcome ? "" : `<button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="remove-player" data-i="${i}" aria-label="Remove ${esc(p.name)}" title="Remove" ${total <= 1 ? "disabled" : ""}>${GI.x}</button>`}
     </div>`;
   }
@@ -1998,7 +2033,7 @@
   function viewPlayers() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
-    const cards = cfg().players.map((p) => {
+    const card = (p) => {
       const st = playerStats(p);
       const last = st.recent[0];
       const covers = st.recent.slice(0, 4).map(({ it }) => { ensureCover(it); const c = S.covers[coverKey(it)]; return `<span class="pcard-cover" title="${esc(it.name)}"${c ? ` style="background-image:url('${c}')"` : ""}></span>`; }).join("");
@@ -2007,14 +2042,20 @@
         <span class="pcard-who">${lnAvatar(p, "72")}<span class="pcard-name"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : last ? `${esc(last.it.name)}, ${esc(ago(last.r.at))}` : st.top ? `Most played: ${esc(st.top.name)}` : "No games played yet"}</span></span></span>
         ${covers ? `<span class="pcard-covers" aria-hidden="true">${covers}</span>` : ""}
         <span class="pcard-nums"><span><b class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</b>played</span><span><b class="ln-num">${st.played}</b>${st.played === 1 ? "game" : "games"}</span><span><b class="ln-num">${st.profiles}</b>with saves</span></span></button>`;
+    };
+    // Each person, with their runs listed under their card.
+    const people = cfg().players.filter((p) => !parentOf(p));
+    const cards = people.map((p) => {
+      const runs = cfg().players.filter((r) => parentOf(r) === p);
+      return `<div class="pgroup">${card(p)}${runs.length ? `<ul class="pruns" aria-label="${esc(possessive(p.name))} runs">${runs.map((r) => { const st = playerStats(r); return `<li><button class="prun ln-player" data-action="open-player" data-player="${esc(r.id)}" style="--player:${esc(r.color)}">${lnAvatar(r, "32")}<span><b>${esc(runLabel(r))}</b><span>Run, ${st.total ? esc(hours(st.total)) : "0 h"} played</span></span></button></li>`; }).join("")}</ul>` : ""}</div>`;
     }).join("");
     return `<div class="players-page ln-root">
       <header class="lib-head"><div><h1>Profiles</h1><p>Each profile has its own settings, saves and achievements in every game. Make one for everyone who plays, or a few for yourself, one per run.</p></div>
         <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile someone exported from Lootnest on another PC: their saves, picture and play time">Import a profile</button></div></header>
       <div class="pcards">${cards}</div>
       <section class="players-edit"><div class="ln-section-head"><div><h2>Names and colours</h2><p>A profile's colour marks its files, its Play button and its games everywhere in Lootnest.</p></div></div>
-        <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
-        <div class="players-foot">${ps.length < 8 ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add profile</button>` : ""}
+        <div class="players">${grouped(ps).map((p) => playerRow(p, ps.indexOf(p), ps.length, false)).join("")}</div>
+        <div class="players-foot">${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add profile</button>` : ""}
           <span class="players-grow"></span><span class="error-text" id="players-error"></span>
           ${dirty ? `<button class="ln-button ln-button--ghost" data-action="reset-players">Discard changes</button>` : ""}
           <button class="ln-button ln-button--primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save profiles</button></div>
@@ -2616,19 +2657,21 @@
     "np-open"() { S.picker.creating = true; S.picker.newError = ""; renderOverlay(); setTimeout(() => { const i = $("#np-name"); if (i) i.focus(); }, 20); },
     "np-cancel"() { S.picker.creating = false; S.picker.newName = ""; S.picker.newError = ""; renderOverlay(); },
     async "np-create"() {
-      const P = S.picker, i = $("#np-name"), name = ((i && i.value) || "").trim();
+      const P = S.picker, i = $("#np-name"), name = ((i && i.value) || "").trim(), ofSel = $("#np-of");
       if (!P) return;
       P.newName = name;
+      P.newOf = (ofSel && ofSel.value) || "";
+      const of = player(P.newOf);
       const fail = (t) => { P.newError = t; renderOverlay(); setTimeout(() => { const x = $("#np-name"); if (x) x.focus(); }, 20); };
       if (!name) return fail("Give it a name.");
       if (cfg().players.some((p) => p.name.trim().toLowerCase() === name.toLowerCase())) return fail(`There's already a profile called ${name}.`);
       const used = new Set(cfg().players.map((p) => p.color.toLowerCase()));
-      const list = cfg().players.map((p) => ({ ...p })).concat([{ id: "", name, color: S.d.colors.find((c) => !used.has(c.toLowerCase())) || S.d.colors[cfg().players.length % S.d.colors.length] }]);
+      const list = cfg().players.map((p) => ({ ...p })).concat([{ id: "", name, of: of ? of.id : "", color: of ? of.color : S.d.colors.find((c) => !used.has(c.toLowerCase())) || S.d.colors[cfg().players.length % S.d.colors.length] }]);
       try { await api.savePlayers(list); } catch (e) { return fail(errText(e)); }
       await refresh();
       const np = cfg().players.find((p) => p.name === name);
       if (!S.picker || !np) return;
-      S.picker.creating = false; S.picker.newName = ""; S.picker.newError = "";
+      S.picker.creating = false; S.picker.newName = ""; S.picker.newError = ""; S.picker.newOf = "";
       S.picker.playerId = np.id; S.picker.owner = ""; S.picker.newMode = ""; S.picker.copyFrom = ""; S.picker.from = S.d.active[S.picker.gameId] || "";
       runPick();
     },
@@ -2819,6 +2862,14 @@
     }
     const f = el.dataset.field;
     if (!f) return;
+    if (f === "pof") {
+      // A run of a person takes their colour; back to "a person" keeps it.
+      const p = S.players[+el.dataset.i], par = S.players.find((x) => x.id === el.value);
+      p.of = par ? par.id : "";
+      if (par) p.color = par.color;
+      render();
+      return;
+    }
     if (f === "pname") { S.players[+el.dataset.i].name = el.value; if (S.view === "players" && !S.dialog) { const b = $('[data-action="save-players"]'); if (b) b.disabled = false; } return; }
     const E = S.edit;
     if (!E) return;
@@ -2870,7 +2921,7 @@
       }
       if (ev.key === "Escape") { ev.preventDefault(); if (S.picker.ask) actions["picker-back"](); else closePicker(); return; }
       if (!S.picker.ask && /^[1-9]$/.test(ev.key)) {
-        const p = cfg().players[+ev.key - 1];
+        const p = grouped()[+ev.key - 1];
         if (p) { ev.preventDefault(); S.picker.playerId = p.id; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); }
       }
       return;
