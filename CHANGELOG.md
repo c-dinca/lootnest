@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.55.3
+
+- **Big Picture opens reliably.** Pressing F11 or Start twice in quick succession no longer leaves Big Picture on with an empty screen that takes every key.
+- Back in Big Picture returns to the game you opened, instead of the first one in the list.
+- Dialogs that open while Big Picture is on show above it, and the keyboard and a controller reach their buttons.
+- With no games yet, Big Picture's Home and Library say so and offer a button to leave.
+- The background in Big Picture no longer blinks to black when Lootnest updates something in the background.
+- The View button on a controller turns Big Picture's sounds on and off.
+
 ## 1.55.2
 
 - **Starting a run from a save point works again.** The name Lootnest gives the new run, such as "Ana from Before the boss", now fits the 24 characters a profile's name can have, and gets a number at the end when another profile has it. Before, a long or repeated name made the run fail to start.
