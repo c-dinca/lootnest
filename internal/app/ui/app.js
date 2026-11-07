@@ -82,6 +82,11 @@
     updatePlan: (key, path) => call("ps_updatePlan", key, path),
     updateApply: (key, path) => call("ps_updateApply", key, path),
     updateUndo: (key, id) => call("ps_updateUndo", key, id),
+    newCopies: () => call("ps_newCopies"),
+    carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
+    dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
+    deleteOldCopy: (oldKey) => call("ps_deleteOldCopy", oldKey),
+    keepSavesNow: (key) => call("ps_keepSavesNow", key),
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
@@ -110,6 +115,8 @@
     front: null,      // Store rows before a search: {daily, specials, top, deals} or {error}
     gq: { q: "", hits: null, sel: -1 }, // the search in the sidebar
     updates: null,    // the Updates page: {games, newsOn} from ps_updates
+    copies: null,     // "Is this a new copy?" offers from ps_newCopies
+    carried: {},      // old key -> the result of carrying it over (for the page)
     offers: {},       // Steam app id -> {offer, pc, owned} or {error}, for Find games
     d: null,          // AppState from Go
     view: "home",
@@ -338,6 +345,22 @@
         if (S.view === "updates") render();
         break;
       }
+      case "newCopies": {
+        if (ev.offers) { S.copies = ev.offers; updateNavCount(); if (S.view === "updates" || S.view === "game") render(); }
+        else api.newCopies().catch(() => {});
+        break;
+      }
+      case "carried": {
+        const C = S.carried[ev.old] || {};
+        C.busy = false;
+        if (ev.error) { C.error = ev.error; toast(ev.error, "error"); }
+        else if (ev.deleted) { C.deleted = true; toast("The old folder was deleted. Its saves are in Lootnest's backups."); }
+        else Object.assign(C, { done: true, saves: ev.saves || [], profile: ev.profile || "", oldThere: !!ev.oldThere, error: "" });
+        S.carried[ev.old] = C;
+        S.updates = null; api.newCopies().catch(() => {}); api.updates().catch(() => {});
+        if (S.view === "updates" || S.view === "game") render();
+        break;
+      }
       case "updatePlan": {
         const D = S.dialog;
         if (D && D.kind === "update" && D.key === ev.key && D.path === ev.path) {
@@ -348,6 +371,7 @@
       }
       case "updateDone": {
         const D = S.dialog;
+        if (ev.kept) { toast(ev.error || "Its saves are copied to Lootnest's backups. You can reinstall it now.", ev.error ? "error" : ""); break; }
         if (D && D.kind === "update" && D.key === ev.key) { D.busy = false; D.error = ev.error || ""; if (!ev.error) { D.done = ev.update; D.undone = !!ev.undone; } renderOverlay(); }
         else if (ev.error) toast(ev.error, "error");
         else toast(ev.undone ? "The update was undone" : "Updated");
@@ -1120,10 +1144,12 @@
     if (N.error) return `<section class="news">${head}${lnInline("error", esc(N.error))}</section>`;
     const items = (N.items || []).slice(0, 5).map((n, i) => ({ it, n, i }));
     const uk = updKey(it);
+    const offer = it.kind === "found" && (S.copies || []).find((o) => o.new.key === it.id);
     const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.`,
       uk ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-start" data-key="${esc(uk)}" data-name="${esc(it.name)}">Apply an update</button>` : "") : "";
-    if (!items.length) return `<section class="news">${head}${newer}<p class="news-none">Steam has no news for this game yet.</p></section>`;
-    return (newer ? `<div class="news-newer">${newer}</div>` : "") + newsSection(title, items, false);
+    const copyBanner = offer ? `<div class="news-newer">${copyCard(offer, true)}</div>` : "";
+    if (!items.length) return `${copyBanner}<section class="news">${head}${newer}<p class="news-none">Steam has no news for this game yet.</p></section>`;
+    return copyBanner + (newer ? `<div class="news-newer">${newer}</div>` : "") + newsSection(title, items, false);
   }
 
   // ------------------------------------------------------------ game page --
@@ -2411,8 +2437,25 @@
   const UPDATABLE = ["folder", "added", "shortcut", "hydra", "other"];
   const updKey = (it) => (it.kind === "game" ? (it.g.launch.type === "exe" && UPDATABLE.includes(it.source) ? "game:" + it.id : "") : UPDATABLE.includes(it.source) && !it.appId ? "found:" + it.id : "");
   function updateNavCount() {
-    const n = S.updates ? S.updates.games.filter((g) => g.newer).length : 0;
+    const n = (S.updates ? S.updates.games.filter((g) => g.newer).length : 0) + (S.copies ? S.copies.length : 0);
     const el = $("#upd-count"); if (el) el.textContent = n ? String(n) : "";
+  }
+  // "Is this a new copy?": a game reinstalled as a whole new version.
+  function copyCard(o, compact) {
+    const C = S.carried[o.old.key] || {};
+    const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${C.busy ? "disabled" : ""}>${label}</button>`;
+    const ids = `data-old="${esc(o.old.key)}" data-new="${esc(o.new.key)}" data-name="${esc(o.old.name)}"`;
+    const what = [o.profiles ? "its profiles and their saves" : o.saves.length ? `its saves (${o.saves.map(esc).join(", ")})` : "", "playtime, status, collections and settings"].filter(Boolean).join(", ");
+    return `<div class="copy-card"><div><b>${esc(o.new.name)} looks like a new copy of ${esc(o.old.name)}</b>
+      <p>${o.oldGone ? `The old folder, <span class="selectable">${esc(o.old.dir)}</span>, is gone.` : `The old copy is still in <span class="selectable">${esc(o.old.dir)}</span>.`} Lootnest can carry over ${what}.</p></div>
+      <div class="gpage-actions">${btn(`data-action="copy-carry" ${ids}`, C.busy ? "Carrying over" : "Carry everything over", "ln-button--primary")}${compact ? "" : btn(`data-action="copy-dismiss" ${ids}`, "Not the same game", "ln-button--ghost")}</div></div>`;
+  }
+  function carriedCard(oldKey) {
+    const C = S.carried[oldKey];
+    if (!C || !C.done) return "";
+    const saves = C.profile ? `${esc(pname(C.profile))}'s files are in the new copy.` : C.saves.length ? `${C.saves.length} save location${C.saves.length === 1 ? "" : "s"} came along${C.saves.some((x) => x.replaced) ? ", and the new copy's own are in backups" : ""}.` : "It had no saves inside its folder.";
+    return `<div class="copy-card copy-card--done"><div><b>${C.name ? esc(C.name) + " is carried over to its new copy" : "Carried over"}</b><p>${saves} Playtime, status, collections and settings moved too.</p></div>
+      ${C.oldThere && !C.deleted ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="copy-delete-old" data-old="${esc(oldKey)}" ${C.busy ? "disabled" : ""}>Delete the old folder</button></div>` : ""}</div>`;
   }
   function viewUpdates() {
     const head = `<header class="lib-head"><div><h1>Updates</h1><p>For games no store keeps up to date. Lootnest tells you when a newer version is out, and applies an update you have, with a copy of everything it replaces first.</p></div></header>`;
@@ -2430,12 +2473,17 @@
       const chain = applied.length > 1 ? applied.slice().reverse().map((u) => esc(vtxt(u.to) || u.source)).join(" → ") : "";
       const hist = last ? `<span class="upd-last">${r.version ? `Version ${esc(vtxt(r.version))}. ` : ""}Updated ${esc(ago(last.at))} from ${esc(last.source)}${chain ? ` (${chain})` : ""}. <button class="gpage-link" data-action="upd-undo" data-key="${esc(r.key)}" data-id="${esc(last.id)}" data-name="${esc(r.name)}">Undo</button></span>`
         : r.version ? `<span class="upd-last">Version ${esc(vtxt(r.version))}, from its folder's name.</span>` : "";
+      const keepLink = `<button class="gpage-link upd-keep" data-action="upd-keep" data-key="${esc(r.key)}">Reinstalling it? Copy its saves first</button>`;
       return `<li class="upd-row${r.newer ? " upd-row--new" : ""}"><div class="upd-name"><button class="gpage-link upd-title" data-action="upd-open-game" data-key="${esc(r.key)}">${esc(r.name)}</button><span class="upd-src">${esc(sourceLabel(r.source || "folder"))}</span></div>
-        <div class="upd-status">${status}${hist}</div>
+        <div class="upd-status">${status}${hist}${keepLink}</div>
         <div class="gpage-actions"><button class="ln-button ${r.newer ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="upd-start" data-key="${esc(r.key)}" data-name="${esc(r.name)}">Apply an update</button></div></li>`;
     };
     const newer = U.games.filter((g) => g.newer), rest = U.games.filter((g) => !g.newer);
-    return `<div class="upd-page ln-root">${head}${news}
+    if (!S.copies) api.newCopies().catch(() => {});
+    const offers = S.copies || [];
+    const done = Object.keys(S.carried).filter((k) => S.carried[k].done && !S.carried[k].deleted).map(carriedCard).join("");
+    const copies = offers.length || done ? `<section class="find-row"><div class="ln-section-head"><div><h2>New copies</h2><p>Games reinstalled as a whole new version. Carry everything over so nothing stays behind with the old folder.</p></div></div>${done}${offers.map((o) => copyCard(o, false)).join("")}</section>` : "";
+    return `<div class="upd-page ln-root">${head}${news}${copies}
       ${newer.length ? `<section class="find-row"><div class="ln-section-head"><div><h2>A newer version is out</h2></div></div><ul class="upd-list">${newer.map(row).join("")}</ul></section>` : ""}
       <section class="find-row"><div class="ln-section-head"><div><h2>${newer.length ? "Your other games in folders" : "Your games in folders"}</h2></div></div><ul class="upd-list">${rest.map(row).join("")}</ul></section></div>`;
   }
@@ -3050,6 +3098,23 @@
       if (!R || R.error) { delete S.offers[appId]; api.gameOffer(appId, el.dataset.name).catch((e) => { S.offers[appId] = { error: errText(e) }; renderOverlay(); }); }
       renderOverlay(); focusDrawer();
     },
+    async "copy-carry"(el) {
+      const old = el.dataset.old, nw = el.dataset.new;
+      const ok = await confirmDialog({ title: `Carry ${el.dataset.name} over to its new copy?`, body: "Its saves go into the new copy's folder, at the same places (what the new copy has there is kept in backups first). Its playtime, status, collections and settings move to the new copy. The old folder isn't touched.", ok: "Carry over" });
+      if (!ok) return;
+      S.carried[old] = { busy: true, name: el.dataset.name }; render();
+      try { await api.carryOver(old, nw); } catch (e) { S.carried[old] = { error: errText(e) }; toast(errText(e), "error"); render(); }
+    },
+    async "copy-dismiss"(el) {
+      try { await api.dismissCopy(el.dataset.old, el.dataset.new); S.copies = (S.copies || []).filter((o) => !(o.old.key === el.dataset.old && o.new.key === el.dataset.new)); updateNavCount(); render(); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "copy-delete-old"(el) {
+      const ok = await confirmDialog({ title: "Delete the old folder?", body: "Its saves are copied to Lootnest's backups first. Everything else in the old folder is deleted.", ok: "Delete it", danger: true });
+      if (!ok) return;
+      const C = S.carried[el.dataset.old] || {}; C.busy = true; S.carried[el.dataset.old] = C; render();
+      try { await api.deleteOldCopy(el.dataset.old); } catch (e) { C.busy = false; toast(errText(e), "error"); render(); }
+    },
+    async "upd-keep"(el) { try { await api.keepSavesNow(el.dataset.key); toast("Copying its saves"); } catch (e) { toast(errText(e), "error"); } },
     "upd-start"(el) { S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name }; renderOverlay(); focusDrawer(); },
     async "upd-pick"(el) {
       const D = S.dialog;

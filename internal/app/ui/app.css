@@ -1237,3 +1237,12 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .upd-new { color: var(--fg-1); font-weight: 600; }
 .upd-last { color: var(--fg-3); }
 @media (max-width: 760px) { .upd-row { grid-template-columns: 1fr; } }
+
+/* New copies: a game reinstalled as a whole new version. */
+.copy-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-6); padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-left: 3px solid var(--accent); border-radius: var(--radius-panel); background: var(--bg-raised); }
+.copy-card + .copy-card { margin-top: var(--space-2); }
+.copy-card > div:first-child { display: grid; gap: var(--space-1); flex: 1 1 360px; min-width: 0; }
+.copy-card b { font-size: var(--fs-14); font-weight: 650; }
+.copy-card p { margin: 0; font-size: var(--fs-13); color: var(--fg-2); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.copy-card--done { border-left-color: var(--success); }
+.upd-keep { justify-self: start; margin-top: var(--space-1); font-size: var(--fs-12); color: var(--fg-2); }

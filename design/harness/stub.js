@@ -239,6 +239,13 @@
       ] }), 120);
       return ok();
     },
+    ps_newCopies: () => {
+      setTimeout(() => emit({ type: "newCopies", offers: [{ old: { key: "dir:d:\\games\\phantom.blade.zero.v1.0.1", name: "Phantom Blade Zero", dir: "D:\\Games\\Phantom.Blade.Zero.v1.0.1" },
+        new: { key: "dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", dir: "D:\\Games\\Phantom Blade Zero" }, oldGone: false, saves: ["ProjectPBZ/Saved"], profiles: false }] }), 100);
+      return ok();
+    },
+    ps_carryOver: (oldKey) => { setTimeout(() => emit({ type: "carried", old: oldKey, saves: [{ rel: "ProjectPBZ/Saved", size: 7e7, replaced: true }], oldThere: true }), 500); return ok(); },
+    ps_deleteOldCopy: (oldKey) => { setTimeout(() => emit({ type: "carried", old: oldKey, deleted: true }), 400); return ok(); },
     ps_updatePlan: (key, path) => {
       if (/\.(rar|7z)$/i.test(path)) setTimeout(() => emit({ type: "updatePlan", key, path, opening: true }), 50);
       setTimeout(() => emit({ type: "updatePlan", key, path, dir: "D:\\Games\\Phantom.Blade.Zero.v1.0.1", free: 412 * 2 ** 30,
