@@ -172,4 +172,5 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Library, inputs (`ln-input`, `ln-search`) | On the system (1.16.2) |
 | Players and a player's page | On the system (1.16.5) |
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
-| Settings, Add game, first run, dialogs | Old layouts on the new tokens (the old variable names point at system tokens), Step 5 |
+| Settings | On the system (1.16.7) |
+| Add game, first run, dialogs | Old layouts on the new tokens (the old variable names point at system tokens), Step 5 |
