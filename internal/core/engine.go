@@ -94,12 +94,21 @@ func (e *Engine) HasProfile(playerID, gameID string) bool {
 	return exists(filepath.Join(e.Store.ProfileDir(playerID, gameID), initMarker))
 }
 
-// SaveLiveTo copies the game's live files into a player's profile.
+// SaveLiveTo copies the game's live files into a player's profile. It
+// refuses while a swap of the game is unfinished: the files in place may
+// then be a mix of two profiles.
 func (e *Engine) SaveLiveTo(g *Game, playerID string) error {
 	rs, err := e.resolveAll(g)
 	if err != nil {
 		return err
 	}
+	if _, pending := e.Store.PendingSwaps()[g.ID]; pending {
+		return fmt.Errorf("the last swap of %s didn't finish; Lootnest finishes it before the game next starts, or when Lootnest starts again", g.Name)
+	}
+	return e.saveLive(g, playerID, rs)
+}
+
+func (e *Engine) saveLive(g *Game, playerID string, rs []resolved) error {
 	dir := e.Store.ProfileDir(playerID, g.ID)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
@@ -227,6 +236,9 @@ func (e *Engine) Activate(cfg *Config, gameID, playerID string, opt ActivateOpti
 	if err != nil {
 		return err
 	}
+	if _, err := e.finishPending(cfg, g, rs, opt.Keep); err != nil {
+		return err
+	}
 
 	active := e.Store.LoadState()[gameID]
 	if active != "" && cfg.Player(active) == nil {
@@ -263,9 +275,7 @@ func (e *Engine) Activate(cfg *Config, gameID, playerID string, opt ActivateOpti
 		if _, err := e.Backup(g, opt.Keep); err != nil {
 			return err
 		}
-		if err := e.restore(g, playerID, rs); err != nil {
-			return err
-		}
+		return e.swapIn(g, playerID, rs, false)
 	} else {
 		switch opt.NewProfile {
 		case NewCopy:
@@ -276,10 +286,7 @@ func (e *Engine) Activate(cfg *Config, gameID, playerID string, opt ActivateOpti
 				if _, err := e.Backup(g, opt.Keep); err != nil {
 					return err
 				}
-				if err := e.restore(g, playerID, rs); err != nil {
-					return err
-				}
-				break
+				return e.swapIn(g, playerID, rs, false)
 			}
 			if err := e.SaveLiveTo(g, playerID); err != nil {
 				return err
@@ -288,16 +295,7 @@ func (e *Engine) Activate(cfg *Config, gameID, playerID string, opt ActivateOpti
 			if _, err := e.Backup(g, opt.Keep); err != nil {
 				return err
 			}
-			for _, r := range rs {
-				if err := removeAll(r.live); err != nil {
-					return fmt.Errorf("couldn't clear %s: %w", r.live, err)
-				}
-			}
-			// Mark the profile as existing (empty) so the next swap restores
-			// "nothing" for this player instead of asking again.
-			if err := e.SaveLiveTo(g, playerID); err != nil {
-				return err
-			}
+			return e.swapIn(g, playerID, rs, true)
 		default:
 			return ErrNeedNewMode
 		}

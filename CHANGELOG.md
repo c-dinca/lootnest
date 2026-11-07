@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.26.0
+
+- **Swaps that can't be cut in half.** Loading a profile's files takes a few steps. If Lootnest closed or the PC turned off in the middle, the files on the PC could be a mix of two profiles, and the next swap would save that mix over someone's profile. Lootnest now writes down whose files are going in before it changes anything. When it starts again, it finishes that swap first, and says so. Nothing saves the files in place until it has.
+- **Every copy is checked.** When Lootnest copies a game's files, into a profile, a backup or back onto the PC, it reads the copy back and compares it with the original. A copy that doesn't match replaces nothing, and the swap stops with an error instead.
+
 ## 1.25.0
 
 - **Status, for each profile.** On a game's page, set where it is for you: **Playing**, **Up next**, **Finished**, **100%** or **Dropped**. Each profile and each run has its own, and the buttons show everyone's at a glance. Press it again to clear it.

@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"io"
@@ -126,14 +128,47 @@ func copyFile(src, dst string, info fs.FileInfo) error {
 	if err != nil {
 		return err
 	}
-	if _, err := io.Copy(out, in); err != nil {
+	// The source is hashed as it's read, and the copy is read back and
+	// compared, so a short or damaged copy never replaces anything.
+	h := sha1.New()
+	n, err := io.Copy(out, io.TeeReader(in, h))
+	if err != nil {
 		out.Close()
 		return err
 	}
 	if err := out.Close(); err != nil {
 		return err
 	}
+	if afterCopy != nil {
+		afterCopy(dst)
+	}
+	if err := verifyCopy(dst, n, h.Sum(nil)); err != nil {
+		return err
+	}
 	_ = os.Chtimes(dst, info.ModTime(), info.ModTime())
+	return nil
+}
+
+// afterCopy lets tests damage a copy before it's checked.
+var afterCopy func(dst string)
+
+// ErrCopyMismatch: a copy didn't read back the same as what was written.
+var ErrCopyMismatch = errors.New("the copy doesn't match the original")
+
+func verifyCopy(path string, size int64, sum []byte) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	h := sha1.New()
+	n, err := io.Copy(h, f)
+	if err != nil {
+		return err
+	}
+	if n != size || !bytes.Equal(h.Sum(nil), sum) {
+		return fmt.Errorf("%s: %w", path, ErrCopyMismatch)
+	}
 	return nil
 }
 

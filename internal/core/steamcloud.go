@@ -168,10 +168,7 @@ func (e *Engine) RevertSession(cfg *Config, gameID, playerID string, keep int) (
 	if !e.HasProfile(playerID, gameID) {
 		return dir, nil // nothing to put back; the files stay as they are
 	}
-	if err := e.restore(g, playerID, rs); err != nil {
-		return dir, err
-	}
-	return dir, e.Store.SetActive(gameID, playerID)
+	return dir, e.swapIn(g, playerID, rs, false)
 }
 
 // LivePaths resolves a game's swapped locations.
