@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.53.0, beta)
+## Where things stand (1.54.0, beta)
 
 These shipped recently, newest last:
 
@@ -322,6 +322,12 @@ These shipped recently, newest last:
   games "out of swaps by default": profiles are only ever turned on by
   the user, so there's nothing to take out; the page's anti-cheat note
   (1.50) says what's swapped.
+- **1.54** Tonight on Home (`tonightBlock`, `tonightPicks` weights: Up
+  next 6, Playing 3, never started 1.5, not in 30 days 1.2, else 0.6,
+  played today x0.3; finished, 100% and dropped out), a pick seeded by
+  the day and the seat (`S.tonight`), action `tonight-spin` with a short
+  cover roulette (none with reduced motion). This is "What do we play
+  tonight?" from the agreed list, without the time-you-have part.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
@@ -421,7 +427,7 @@ game can only be checked on the owner's PC.
 3. **Lootnest on a USB stick**: a portable Lootnest carries its profiles;
    on a friend's PC it swaps your saves in and theirs back afterwards,
    with a copy first, installing nothing.
-4. **What do we play tonight?**: from who's seated (co-op games none of
+4. **What do we play tonight?** (Tonight on Home, 1.54): from who's seated (co-op games none of
    them finished when two sit), the time they have, Up next, and a
    backlog roulette.
 5. **Your year in games**: a yearly recap per profile and per household,
