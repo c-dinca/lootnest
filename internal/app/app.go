@@ -39,17 +39,23 @@ var Version = "1.0.0"
 //go:embed ui/index.html
 var uiHTML string
 
+//go:embed ui/system.css
+var uiSystemCSS string
+
 //go:embed ui/app.css
 var uiCSS string
 
 //go:embed ui/app.js
 var uiJS string
 
-// Bricolage Grotesque (SIL Open Font License), embedded so titles look the
-// same on every PC without going online.
+// Bricolage Grotesque and Figtree (both SIL Open Font License 1.1), embedded
+// so the window looks the same on every PC without going online.
 //
 //go:embed ui/fonts/*.woff2
 var uiFonts embed.FS
+
+// uiFontNames are the files in ui/fonts that system.css asks for.
+var uiFontNames = []string{"bricolage-latin", "bricolage-latin-ext", "figtree-latin", "figtree-latin-ext"}
 
 // pageHTML is the UI with its stylesheet, script and fonts inlined. Its
 // Content-Security-Policy allows only this one script (by a nonce made for
@@ -59,8 +65,8 @@ func pageHTML() string {
 	nonce := make([]byte, 18)
 	_, _ = rand.Read(nonce)
 	n := base64.RawStdEncoding.EncodeToString(nonce)
-	css := uiCSS
-	for _, name := range []string{"bricolage-latin", "bricolage-latin-ext"} {
+	css := uiSystemCSS + "\n" + uiCSS
+	for _, name := range uiFontNames {
 		if b, err := uiFonts.ReadFile("ui/fonts/" + name + ".woff2"); err == nil {
 			css = strings.Replace(css, "@FONT:"+name+"@", base64.StdEncoding.EncodeToString(b), 1)
 		}

@@ -4,10 +4,11 @@ import fs from "node:fs";
 import path from "node:path";
 const here = path.dirname(new URL(import.meta.url).pathname);
 const ui = path.join(here, "../../internal/app/ui");
-let css = fs.readFileSync(path.join(ui, "app.css"), "utf8");
-for (const n of ["bricolage-latin", "bricolage-latin-ext"]) {
-  css = css.replace("@FONT:" + n + "@", fs.readFileSync(path.join(ui, "fonts", n + ".woff2")).toString("base64"));
-}
+// Like app.go: system.css, then app.css, with the fonts inlined.
+const fonts = ["bricolage-latin", "bricolage-latin-ext", "figtree-latin", "figtree-latin-ext"];
+const withFonts = (css) => fonts.reduce((c, n) => c.replace("@FONT:" + n + "@", fs.readFileSync(path.join(ui, "fonts", n + ".woff2")).toString("base64")), css);
+const system = fs.readFileSync(path.join(ui, "system.css"), "utf8");
+const css = withFonts(system + "\n" + fs.readFileSync(path.join(ui, "app.css"), "utf8"));
 const art = {};
 const cache = path.join(here, ".cache");
 if (fs.existsSync(cache)) {
@@ -25,4 +26,10 @@ const html = fs.readFileSync(path.join(ui, "index.html"), "utf8")
   .replaceAll("@NONCE@", "harness");
 fs.mkdirSync(path.join(here, "dist"), { recursive: true });
 fs.writeFileSync(path.join(here, "dist", "page.html"), html);
+// The kitchen sink: every system component in every state (dev only).
+const ks = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitchen sink · Lootnest</title><style>${withFonts(system)}\n${fs.readFileSync(path.join(here, "kitchen-sink.css"), "utf8")}</style></head>
+<body>${fs.readFileSync(path.join(here, "icons.svg"), "utf8")}<script>window.__ART=${JSON.stringify(art)};</script>
+<script>${fs.readFileSync(path.join(here, "kitchen-sink.js"), "utf8")}</script></body></html>`;
+fs.writeFileSync(path.join(here, "dist", "kitchen-sink.html"), ks);
 console.log("dist/page.html", Math.round(html.length / 1024), "KB,", Object.keys(art).length, "art files");
