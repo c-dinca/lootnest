@@ -60,6 +60,8 @@
     restoreOpen: (file, pw) => call("ps_restoreOpen", file, pw || ""),
     restoreApply: () => call("ps_restoreApply"),
     restoreCancel: () => call("ps_restoreCancel"),
+    importApply: () => call("ps_importApply"),
+    exportPlayer: (id, dir, pw) => call("ps_exportPlayer", id, dir, pw || ""),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -251,8 +253,14 @@
       }
       case "restored": {
         const D = S.dialog;
-        if (D && D.kind === "restore") { D.busy = false; if (ev.ok) { D.done = ev.safety; } else D.error = ev.error; renderOverlay(); }
+        if (D && D.kind === "restore") { D.busy = false; D.applying = false; if (ev.ok) { D.done = ev.safety; D.result = ev.import; } else D.error = ev.error; renderOverlay(); }
         refresh();
+        break;
+      }
+      case "exported": {
+        const D = S.dialog;
+        if (D && D.kind === "export") { D.busy = false; if (ev.error) D.error = ev.error; else D.done = ev.file; renderOverlay(); }
+        else if (ev.error) toast(ev.error, "error");
         break;
       }
       case "pickerClosed":
@@ -1064,6 +1072,8 @@
       o.innerHTML = viewBackupPassword();
     } else if (D.kind === "restore") {
       o.innerHTML = viewRestore();
+    } else if (D.kind === "export") {
+      o.innerHTML = viewExport();
     } else if (D.kind === "shelf-note") {
       o.innerHTML = viewShelfNote();
     } else if (D.kind === "profile") {
@@ -1488,7 +1498,8 @@
       <div class="pp-head">${avatarHTML(p, "xl")}
         <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}${p.bio ? `<p class="pp-bio">${esc(p.bio).replace(/\n/g, "<br>")}</p>` : ""}</div>
         <div class="pp-actions">${last ? `<button class="btn primary" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${icon.play}Play ${esc(last.it.name)}</button>` : ""}
-          <button class="btn" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button></div></div>
+          <button class="btn" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button>
+          <button class="btn quiet" data-action="export-player" data-player="${esc(p.id)}">Export profile</button></div></div>
       <div class="pp-body">${body || `<p class="hint">Nothing to show yet: <b>Edit profile</b> chooses what this page shows.</p>`}</div>
     </div>`;
   }
@@ -1681,6 +1692,8 @@
         <span class="pcard-nums"><span><b>${st.total ? esc(hours(st.total)) : "0 h"}</b> played</span><span><b>${st.shelfN.playing || 0}</b> playing</span><span><b>${st.shelfN.finished || 0}</b> finished</span></span></span></button>`; }).join("");
     return `<div class="page"><div class="page-head"><div><h1>Players</h1><p class="sub">Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div></div>
       <div class="pcards">${cards}</div>
+      <div class="row" style="margin-top:14px"><button class="btn quiet" data-action="restore-pick" data-mode="import">Import a profile</button>
+        <span class="hint">A profile someone exported from Lootnest on another PC: their saves, picture, shelf and play time.</span></div>
       <h2 class="shelf-title" style="margin-top:36px">Names and colours</h2>
       <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
       <div class="row" style="margin-top:14px">${ps.length < 8 ? `<button class="btn" data-action="add-player">${icon.plus}Add player</button>` : ""}</div>
@@ -1820,7 +1833,11 @@
     const D = S.dialog, I = D.info;
     const foot = (btn) => `<div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="restore-close">${D.done ? "Close" : "Cancel"}</button>${btn || ""}</div>`;
     let body;
-    if (D.done) {
+    if (D.done && D.result) {
+      const r = D.result;
+      body = `<div><h2>${r.replaced ? "Updated" : "Added"} ${esc(r.name)}</h2><p class="sub">${r.games === 1 ? "Their saves in 1 game are" : `Their saves in ${r.games} games are`} in place${r.added ? `, ${r.added === 1 ? "1 game was" : r.added + " games were"} added` : ""}.${r.skipped ? ` ${r.skipped === 1 ? "1 save location doesn't" : r.skipped + " save locations don't"} match this PC's game and ${r.skipped === 1 ? "was" : "were"} left out.` : ""}</p></div>
+        <p class="hint selectable">What was here before is saved in ${esc(D.done)}. To go back, restore that file.</p>${foot()}`;
+    } else if (D.done) {
       body = `<div><h2>Restored</h2><p class="sub">Players, games and saves from the backup are in place. Before each game's next swap, Lootnest asks whose files are on this PC.</p></div>
         <p class="hint selectable">What was here before is saved in ${esc(D.done)}. To go back, restore that file.</p>${foot()}`;
     } else if (!I || D.busy) {
@@ -1832,12 +1849,37 @@
       body = `<div><h2>Can't restore this file</h2><p class="sub">${esc(I.error)}</p></div>${foot()}`;
     } else {
       const when = new Date(I.created).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" });
+      if (I.kind === "player") {
+        const name = (I.players || [])[0] || "this player";
+        const here = cfg().players.some((p) => p.name.toLowerCase() === name.toLowerCase());
+        body = `<div><h2>Import ${esc(possessive(name))} profile?</h2><p class="sub">Exported on ${esc(I.computer || "a PC")}, ${esc(when)}. Their saves in ${I.games === 1 ? "1 game" : I.games + " games"}, picture, shelf and play time.</p></div>
+          <p class="sub">${here ? `If this is the same ${esc(name)} as here, their profile is updated with this one; otherwise they're added as another player.` : "They're added as a new player."} Games this PC doesn't have yet are added. Everything here now is saved first, so you can go back.</p>
+          ${foot(`<button class="btn primary" data-action="restore-apply">Import</button>`)}`;
+        return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Import a profile">${body}</div></div>`;
+      }
       body = `<div><h2>Restore this backup?</h2><p class="sub">Made on ${esc(I.computer || "a PC")}, ${esc(when)}${I.app ? ", Lootnest " + esc(I.app) : ""}.</p></div>
         <dl class="facts"><div><dt>Players</dt><dd>${esc((I.players || []).join(", ") || "None")}</dd></div><div><dt>Games with profiles</dt><dd>${I.games}</dd></div></dl>
         <p class="sub">Its players, games, saves, profile pictures, shelf and play time replace the ones here. This PC's settings stay. Everything here now is saved first, so you can go back.</p>
         ${foot(`<button class="btn primary" data-action="restore-apply">Restore</button>`)}`;
     }
     return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Restore a backup">${body}</div></div>`;
+  }
+
+  function viewExport() {
+    const D = S.dialog, p = player(D.pid);
+    const name = p ? p.name : "";
+    if (D.done) {
+      return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Profile exported">
+        <div><h2>${esc(possessive(name))} profile is saved</h2><p class="sub selectable">${esc(D.done)}</p></div>
+        <p class="sub">On the other PC, open Lootnest, then <b>Players</b>, <b>Import a profile</b>, and choose this file.</p>
+        <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">Done</button></div></div></div>`;
+    }
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Export a profile">
+      <div><h2>Export ${esc(possessive(name))} profile</h2><p class="sub">One file with their saves in every game they have a profile for, their picture, banner, shelf and play time, to take to another PC.</p></div>
+      <div class="field"><label for="ex-pw">Password <span class="hint">optional, at least 8 characters</span></label><input id="ex-pw" type="password" autocomplete="new-password" maxlength="200"></div>
+      <div class="field"><label for="ex-pw2">The same password again</label><input id="ex-pw2" type="password" autocomplete="new-password" maxlength="200"></div>
+      <p class="hint">With a password, the file is encrypted (AES-256) and needs it to be imported.</p>
+      <div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="export-save" ${D.busy ? "disabled" : ""}>${D.busy ? "Saving" : "Choose a folder and save"}</button></div></div></div>`;
   }
 
   async function saveSetting(el) {
@@ -1970,10 +2012,10 @@
       D.busy = true; D.error = ""; renderOverlay();
       try { await api.setBackupPassword(pw); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
     },
-    async "restore-pick"() {
+    async "restore-pick"(el) {
       const r = await browse("backup");
       if (!r.path) { if (r.error) toast(r.error, "error"); return; }
-      S.dialog = { kind: "restore", file: r.path, busy: true }; renderOverlay();
+      S.dialog = { kind: "restore", file: r.path, busy: true, mode: (el && el.dataset.mode) || "restore" }; renderOverlay();
       try { await api.restoreOpen(r.path, ""); } catch (e) { S.dialog.busy = false; S.dialog.info = { error: errText(e) }; renderOverlay(); }
     },
     async "restore-pw"() {
@@ -1985,7 +2027,17 @@
     async "restore-apply"() {
       const D = S.dialog;
       D.busy = true; D.applying = true; D.error = ""; renderOverlay();
-      try { await api.restoreApply(); } catch (e) { D.busy = false; D.applying = false; D.error = errText(e); renderOverlay(); }
+      try { await (D.info && D.info.kind === "player" ? api.importApply() : api.restoreApply()); } catch (e) { D.busy = false; D.applying = false; D.error = errText(e); renderOverlay(); }
+    },
+    "export-player"(el) { S.dialog = { kind: "export", pid: el.dataset.player }; renderOverlay(); },
+    async "export-save"() {
+      const D = S.dialog, pw = $("#ex-pw").value;
+      if (pw && pw !== $("#ex-pw2").value) { D.error = "The two passwords aren't the same."; renderOverlay(); return; }
+      if (pw && [...pw].length < 8) { D.error = "Use at least 8 characters, or no password."; renderOverlay(); return; }
+      const r = await browse("exportDir", (S.backup && S.backup.target) || "");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.exportPlayer(D.pid, r.path, pw); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
     },
     "restore-close"() { const D = S.dialog; S.dialog = null; renderOverlay(); if (D && !D.done) api.restoreCancel().catch(() => {}); },
     "launch-from-exe"() { const g = S.edit.game; g.launch = { ...g.launch, type: "exe", uri: "" }; render(); },

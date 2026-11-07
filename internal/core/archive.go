@@ -69,7 +69,10 @@ var ErrBadPassword = errors.New("That password doesn't open this backup, or the 
 var ErrNeedPassword = errors.New("need-password")
 
 type BackupManifest struct {
-	Format   int         `json:"format"`
+	Format int `json:"format"`
+	// Kind is "" for a backup of everything, "player" for one player's
+	// profile (ExportPlayer).
+	Kind     string      `json:"kind,omitempty"`
 	App      string      `json:"app"` // Lootnest version that made it
 	Computer string      `json:"computer"`
 	Created  time.Time   `json:"created"`
@@ -344,6 +347,12 @@ type BackupOptions struct {
 // WriteBackupFile writes a backup to path: first to path+".partial", then
 // moved into place, so a sync app never uploads half a backup.
 func WriteBackupFile(path, dataDir string, live []LiveSource, m BackupManifest, opt BackupOptions) (int64, error) {
+	return writeArchiveFile(path, func(w io.Writer) error { return WriteBackup(w, dataDir, live, m) }, opt)
+}
+
+// writeArchiveFile writes what write makes to path, encrypted with opt's
+// key if it has one, through path+".partial".
+func writeArchiveFile(path string, write func(io.Writer) error, opt BackupOptions) (int64, error) {
 	tmp := path + ".partial"
 	f, err := os.Create(tmp)
 	if err != nil {
@@ -358,12 +367,12 @@ func WriteBackupFile(path, dataDir string, live []LiveSource, m BackupManifest, 
 	}()
 	bw := bufio.NewWriterSize(f, 1<<20)
 	if opt.Key == nil {
-		if err := WriteBackup(bw, dataDir, live, m); err != nil {
+		if err := write(bw); err != nil {
 			return 0, err
 		}
 	} else {
 		pr, pw := io.Pipe()
-		go func() { pw.CloseWithError(WriteBackup(pw, dataDir, live, m)) }()
+		go func() { pw.CloseWithError(write(pw)) }()
 		err := encryptBackup(bw, pr, opt.Key, opt.Salt, opt.Iters)
 		pr.CloseWithError(err)
 		if err != nil {
@@ -614,6 +623,9 @@ func (ob *OpenedBackup) Config() (*Config, error) {
 // place before its next swap, so the files on this PC are never saved over
 // anyone's profile by mistake.
 func (s *Store) Restore(ob *OpenedBackup, current *Config) (*Config, error) {
+	if ob.Manifest.Kind == "player" {
+		return nil, errors.New("This is one player's profile, not a backup of everything; use Import a profile on Players.")
+	}
 	cfg, err := ob.Config()
 	if err != nil {
 		return nil, err

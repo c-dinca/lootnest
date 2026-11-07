@@ -74,6 +74,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_restoreOpen", a.apiRestoreOpen))
 	must(a.w.Bind("ps_restoreApply", a.apiRestoreApply))
 	must(a.w.Bind("ps_restoreCancel", a.apiRestoreCancel))
+	must(a.w.Bind("ps_importApply", a.apiImportApply))
+	must(a.w.Bind("ps_exportPlayer", a.apiExportPlayer))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
@@ -566,10 +568,13 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Title = "Choose a picture"
 			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.gif)", Spec: "*.png;*.jpg;*.jpeg;*.gif"}}
 		case "backup":
-			opt.Title = "Choose a Lootnest backup"
+			opt.Title = "Choose a Lootnest backup or profile"
 			opt.Filters = []win.FileFilter{{Name: "Lootnest backups (*.zip, *.lnbak)", Spec: "*.zip;*.lnbak"}}
 		case "backupDir":
 			opt.Title = "Choose where backups go"
+			opt.Folder = true
+		case "exportDir":
+			opt.Title = "Choose where to save the profile"
 			opt.Folder = true
 		case "file":
 			opt.Title = "Choose a settings or save file"
