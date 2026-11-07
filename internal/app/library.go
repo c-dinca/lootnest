@@ -3,9 +3,13 @@
 package app
 
 import (
+	"bytes"
+	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"image/png"
 	"io"
 	"net/http"
 	"os"
@@ -139,4 +143,51 @@ func (a *App) apiLaunchFound(key string) error {
 	}
 	a.logf("Starting %s", name)
 	return win.StartDetached(path, args, dirOf(path))
+}
+
+var (
+	iconMu    sync.Mutex
+	iconCache = map[string]string{} // exe path -> data: URL of its icon, or ""
+)
+
+// apiGameIcon returns the icon of a game's exe as a PNG data: URL, or ""
+// when it has none. It's what the Library shows for a game without a cover;
+// nothing goes online. Icons are kept in <data>\covers once extracted.
+func (a *App) apiGameIcon(exe string) string {
+	path, err := a.env.ResolveExe(exe)
+	if err != nil {
+		return ""
+	}
+	key := strings.ToLower(path)
+	iconMu.Lock()
+	c, ok := iconCache[key]
+	iconMu.Unlock()
+	if ok {
+		return c
+	}
+	sum := sha1.Sum([]byte(key))
+	file := filepath.Join(coversDir(), "icon-"+hex.EncodeToString(sum[:8])+".png")
+	if st, err := os.Stat(file); err != nil || st.ModTime().Before(modTime(path)) {
+		c = ""
+		if img, err := win.ExeIcon(path, 256); err == nil {
+			var buf bytes.Buffer
+			if png.Encode(&buf, img) == nil && os.MkdirAll(coversDir(), 0o755) == nil {
+				_ = os.WriteFile(file, buf.Bytes(), 0o644)
+			}
+		}
+	}
+	if _, err := os.Stat(file); err == nil {
+		c = dataURL(file)
+	}
+	iconMu.Lock()
+	iconCache[key] = c
+	iconMu.Unlock()
+	return c
+}
+
+func modTime(p string) time.Time {
+	if st, err := os.Stat(p); err == nil {
+		return st.ModTime()
+	}
+	return time.Time{}
 }

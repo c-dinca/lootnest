@@ -68,6 +68,23 @@ func FindStoreApp(fetch Fetch, name string) (int, error) {
 	return 0, nil
 }
 
+// findStoreAppLoose looks the name up, then, if the store doesn't know it,
+// the name without its last word or two ("Game Name Deluxe Edition",
+// "Game Name Tag"), never shorter than two words.
+func findStoreAppLoose(fetch Fetch, name string) (int, error) {
+	words := strings.Fields(name)
+	for n, tries := len(words), 0; n >= 1 && tries < 3; n, tries = n-1, tries+1 {
+		if tries > 0 && n < 2 {
+			break
+		}
+		id, err := FindStoreApp(fetch, strings.Join(words[:n], " "))
+		if err != nil || id > 0 {
+			return id, err
+		}
+	}
+	return 0, nil
+}
+
 func coverFile(dir, name string, appID int) (key, path string) {
 	key = CoverKey(name)
 	if appID > 0 {
@@ -107,7 +124,7 @@ func DownloadedCover(fetch Fetch, dir, name string, appID int) (string, error) {
 		return "", err
 	}
 	if appID <= 0 {
-		id, err := FindStoreApp(fetch, name)
+		id, err := findStoreAppLoose(fetch, name)
 		if err != nil {
 			return "", err // offline or the store failed: try again next time
 		}

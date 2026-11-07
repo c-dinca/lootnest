@@ -44,6 +44,7 @@
     moveGame: (appId, lib) => call("ps_moveGame", appId, lib),
     saveLibraryPref: (key, name, args) => call("ps_saveLibraryPref", key, name, args),
     addLibraryGame: (kind, appId, path) => call("ps_addLibraryGame", kind, appId || 0, path || ""),
+    gameIcon: (exe) => call("ps_gameIcon", exe),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
     steamVerify: (appId) => call("ps_steamVerify", appId),
@@ -56,6 +57,7 @@
     q: "",             // library search
     filter: "all",     // library filter chip
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
+    icons: {},         // cover key -> the game exe's icon as a data: URL, or "" (shown when there's no cover)
     update: {},        // {available, version, page, upToDate, checking, error, step}
     animateCards: true, // stagger the cards in on the next library render
     animateView: true,  // fade the page in on the next render
@@ -261,9 +263,9 @@
   function libraryItems() {
     const items = cfg().games.map((g) => ({
       kind: "game", id: g.id, name: g.name, appId: g.launch.type === "steam" ? g.launch.appId : 0,
-      source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", g,
+      source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", exe: g.launch.type === "exe" ? g.launch.exe : "", g,
     }));
-    (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, f }));
+    (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, exe: f.appId ? "" : f.exe || "", f }));
     return items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
   }
 
@@ -333,9 +335,12 @@
   function coverHTML(it) {
     const key = coverKey(it);
     const c = S.covers[key];
-    const can = it.appId || cfg().settings.downloadCovers;
-    const img = can && c !== "" ? `<img alt="" data-cover="${esc(key)}" data-app="${it.appId || 0}" data-name="${esc(it.name)}"${c ? ` src="${c}" class="ready"` : ""}>` : "";
-    return `<div class="nocover"${c ? " hidden" : ""}>${esc(it.name)}</div>${img}`;
+    const ic = !c && S.icons[key];
+    const can = it.appId || cfg().settings.downloadCovers || it.exe;
+    const show = can && (c !== "" || ic !== "" && it.exe);
+    const src = c ? ` src="${c}" class="ready"` : ic ? ` src="${ic}" class="icon ready"` : "";
+    const img = show ? `<img alt="" data-cover="${esc(key)}" data-app="${it.appId || 0}" data-name="${esc(it.name)}" data-exe="${esc(it.exe || "")}"${src}>` : "";
+    return `<div class="nocover${ic ? " with-icon" : ""}"${c ? " hidden" : ""}${ic ? ` style="--icon:url('${ic}')"` : ""}><span>${esc(it.name)}</span></div>${img}`;
   }
 
   function cardHTML(it, delay) {
@@ -367,23 +372,35 @@
   const pendingCovers = new Set(); // downloads Go is doing; a "cover" event ends them
   async function fetchCover(img) {
     const key = img.dataset.cover;
+    const can = +img.dataset.app || cfg().settings.downloadCovers;
     if (!(key in S.covers) && !pendingCovers.has(key)) {
       let url = "";
-      try { url = (await api.cover(+img.dataset.app, img.dataset.name, key)) || ""; } catch (e) { /* no cover */ }
+      if (can) { try { url = (await api.cover(+img.dataset.app, img.dataset.name, key)) || ""; } catch (e) { /* no cover */ } }
       if (url) S.covers[key] = url;
-      else if (cfg().settings.downloadCovers) pendingCovers.add(key); // may still arrive
+      else if (can && cfg().settings.downloadCovers) pendingCovers.add(key); // may still arrive
       else S.covers[key] = "";
+    }
+    // No cover (yet): the game's own icon, read from its exe on this PC.
+    if (!S.covers[key] && img.dataset.exe && !(key in S.icons)) {
+      try { S.icons[key] = (await api.gameIcon(img.dataset.exe)) || ""; } catch (e) { S.icons[key] = ""; }
     }
     showCover(key);
   }
 
   function showCover(key) {
-    if (!(key in S.covers)) return;
+    const url = S.covers[key], ic = S.icons[key];
+    if (!url && !ic && !(key in S.covers)) return; // still waiting for a download
     document.querySelectorAll(`img[data-cover="${CSS.escape(key)}"]`).forEach((el) => {
       const tile = el.previousElementSibling;
-      if (!S.covers[key]) { el.remove(); return; }
-      el.onload = () => { el.classList.add("ready"); if (tile) tile.hidden = true; };
-      el.src = S.covers[key];
+      if (url) {
+        el.onload = () => { el.classList.remove("icon"); el.classList.add("ready"); if (tile) { tile.hidden = true; tile.classList.remove("with-icon"); } };
+        el.src = url;
+      } else if (ic) {
+        el.classList.add("icon");
+        if (tile) { tile.classList.add("with-icon"); tile.style.setProperty("--icon", `url("${ic}")`); }
+        el.onload = () => el.classList.add("ready");
+        el.src = ic;
+      } else el.remove();
     });
   }
 

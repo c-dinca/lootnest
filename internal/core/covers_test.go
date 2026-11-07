@@ -79,3 +79,22 @@ func TestDownloadedCover(t *testing.T) {
 		t.Fatalf("by app id: %q %v", p, err)
 	}
 }
+
+func TestFindStoreAppLoose(t *testing.T) {
+	var terms []string
+	fetch := func(u string) ([]byte, error) {
+		term := strings.TrimPrefix(u, storeSearchURL)
+		terms = append(terms, term)
+		if term == "Phantom+Blade+Zero" {
+			return []byte(`{"items":[{"id":2,"name":"Phantom Blade Zero"}]}`), nil
+		}
+		return []byte(`{"items":[]}`), nil
+	}
+	if id, err := findStoreAppLoose(fetch, "Phantom Blade Zero Extra Words"); err != nil || id != 2 {
+		t.Fatalf("the name without its last words should be found: %d %v (%v)", id, err, terms)
+	}
+	terms = nil
+	if id, _ := findStoreAppLoose(fetch, "Unknown Game"); id != 0 || len(terms) != 1 {
+		t.Fatalf("a two-word name is not shortened to one word: %d %v", id, terms)
+	}
+}
