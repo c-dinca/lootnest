@@ -48,6 +48,12 @@ What makes it different, and the direction to keep pushing:
   components), `app.css`, and `app.js` (one module, about 3,000 lines).
 - `cmd/lootnest`, `cmd/setup` (the installer and its `setup.html`),
   `tools/mkicon.py` (draws the icon), `build.sh`.
+- `site/`: the website (https://c-dinca.github.io/lootnest/), plain
+  HTML, CSS and JS published to GitHub Pages by `.github/workflows/site.yml`
+  when `site/**` changes on main. Its hero is a live swap demo
+  (`site.js`). Screenshots in `site/img` come from the harness at 2x.
+  A change only to `site/` or docs ships no app, so it needs no VERSION
+  bump or release.
 - `design/harness`: a dev-only fixture harness that renders the real UI in
   Chromium with stubbed `ps_*` calls.
   - `node design/harness/build.mjs` writes `dist/page.html`.

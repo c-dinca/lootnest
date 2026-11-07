@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lootnest, a vault for every save on your PC</title>
+<meta name="description" content="Lootnest puts every game on your Windows PC in one library, copies your saves before anything changes them, and keeps runs and profiles of a game apart. Free, no account.">
+<meta property="og:title" content="Lootnest">
+<meta property="og:description" content="Every game on your PC in one library. A copy of your saves before anything touches them. Runs of a game, each with its own saves.">
+<meta property="og:image" content="https://c-dinca.github.io/lootnest/img/game.jpg">
+<meta property="og:url" content="https://c-dinca.github.io/lootnest/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://c-dinca.github.io/lootnest/">
+<meta name="theme-color" content="#111217">
+<link rel="icon" href="img/icon.png">
+<link rel="preload" href="fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#" aria-label="Lootnest, top of the page">
+      <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle class="gem" cx="10" cy="6.25" r="2.5"/></svg>
+      <span>Lootnest</span>
+    </a>
+    <nav class="top-nav" aria-label="On this page">
+      <a href="#runs">Runs</a>
+      <a href="#play">How a swap works</a>
+      <a href="#outside">Games outside stores</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://github.com/c-dinca/lootnest">GitHub</a>
+    </nav>
+    <a class="btn btn-small" href="https://github.com/c-dinca/lootnest/releases/latest/download/Lootnest-Setup.exe">Download</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <h1>Keep every save.</h1>
+      <p class="lede">Lootnest puts every game on your PC in one library and copies your saves before anything changes them. Keep runs of a game, a hardcore try or a new game+, each with saves of its own. Share the PC, and everyone gets theirs.</p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/c-dinca/lootnest/releases/latest/download/Lootnest-Setup.exe">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 15.5h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download for Windows
+        </a>
+        <p class="cta-note">Free, with no account. Windows 10 and 11. <span id="ver">In beta.</span></p>
+      </div>
+    </div>
+
+    <figure class="demo" aria-label="A swap in Baldur's Gate 3: choose a profile to see its files loaded">
+      <div class="demo-head">
+        <div>
+          <p class="demo-game">Baldur's Gate 3</p>
+          <p class="demo-path">%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3</p>
+        </div>
+        <p class="demo-copies" id="copies-line">No copies yet</p>
+      </div>
+
+      <div class="demo-who" role="radiogroup" aria-label="Who plays next">
+        <button type="button" role="radio" aria-checked="true" data-p="0" style="--c:#6C9BD2"><i>C</i>Cristian</button>
+        <button type="button" role="radio" aria-checked="false" data-p="1" style="--c:#6C9BD2" class="run"><i>C</i>Cristian hardcore</button>
+        <button type="button" role="radio" aria-checked="false" data-p="2" style="--c:#E88CA0"><i>M</i>Mihai</button>
+      </div>
+
+      <dl class="demo-files" id="files">
+        <div><dt>Latest save</dt><dd data-k="save">Act 3, Lower City</dd></div>
+        <div><dt>Difficulty</dt><dd data-k="mode">Balanced</dd></div>
+        <div><dt>Controls</dt><dd data-k="ctl">Mouse, sensitivity 1.2</dd></div>
+        <div><dt>Display</dt><dd data-k="res">2560 × 1440, Ultra</dd></div>
+        <div><dt>Achievements</dt><dd data-k="ach">7 of 54</dd></div>
+      </dl>
+
+      <p class="demo-status" id="status" aria-live="polite"><span class="dot"></span><span id="status-t">Cristian's files are loaded.</span></p>
+    </figure>
+  </div>
+</section>
+
+<section class="shot-band" aria-label="The Library">
+  <div class="wrap">
+    <img class="window" src="img/library.jpg" width="2880" height="1760" alt="Lootnest's Library: games from Steam, Epic, GOG and a game folder in one grid, with the sidebar listing recent games and collections.">
+    <p class="stores">It finds games from Steam, Epic, GOG, Xbox and PC Game Pass, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, Hydra, your shortcuts and game folders on every drive.</p>
+  </div>
+</section>
+
+<section class="runs" id="runs">
+  <div class="wrap split">
+    <div class="split-copy">
+      <h2>Runs, each with its own saves</h2>
+      <p>Lootnest starts with one profile: yours. On any game's page, <b>New run</b> starts another playthrough with saves and settings of its own. Start it from nothing, or from a copy of where you are now. Your main saves stay exactly as they were.</p>
+      <p>Switch runs from the game's page. Each keeps its playtime, its achievements, and a status: playing, up next, finished, 100% or dropped.</p>
+      <p class="aside">Sharing the PC? Add a profile for each person, and Play asks who's playing. Everyone keeps their own sensitivity, keybinds and saves on one Windows account and one Steam account.</p>
+    </div>
+    <img class="window" src="img/game.jpg" width="2880" height="1760" loading="lazy" alt="Baldur's Gate 3 in Lootnest, with runs named Cristian, Cristian hardcore and Cristian 100%, each with its own playtime and achievements, and a New run button.">
+  </div>
+</section>
+
+<section class="play" id="play">
+  <div class="wrap">
+    <h2>What happens when you press Play</h2>
+    <p class="play-lede">The game itself is never touched. Lootnest only moves the files a game keeps your saves and settings in, and copies them first.</p>
+    <ol class="steps">
+      <li><h3>The files on the PC go home</h3><p>Whatever is in the game's save folders now is saved back to the profile it belongs to.</p></li>
+      <li><h3>A copy is made</h3><p>Those files are copied to Lootnest's backups, and every copy is read back before anything is replaced.</p></li>
+      <li><h3>Your files go in</h3><p>The profile you chose has its saves and settings put in place. A swap cut short is finished the next time Lootnest starts.</p></li>
+      <li><h3>You play</h3><p>The game starts as it always does. Lootnest waits in the tray and watches for it to close.</p></li>
+      <li><h3>Your progress is kept</h3><p>When the game closes, what you played goes back to your profile, ready for next time.</p></li>
+    </ol>
+    <div class="play-notes">
+      <p><b>Steam Cloud can stay on.</b> Each game says whether Steam Cloud syncs the files it swaps. If Steam ever replaces a profile's files with the cloud's copy, Lootnest says so on the game's page and keeps the profile as it was.</p>
+      <p><b>Any copy can go back.</b> Every copy made before a swap is listed on the game's page, with whose files it holds. Put one back in one click; what's there now is copied first.</p>
+    </div>
+  </div>
+</section>
+
+<section class="outside" id="outside">
+  <div class="wrap">
+    <h2>For games from outside the stores</h2>
+    <p class="section-lede">Games in a folder, DRM-free, portable or added by hand get the same care as the rest, and a few things of their own.</p>
+    <div class="outside-grid">
+      <div class="feature-list">
+        <div class="feature">
+          <h3>A safety net for saves in the game's folder</h3>
+          <p>Some games keep their saves next to the game. Lootnest copies them whenever they change, so deleting or reinstalling the folder doesn't take them with it.</p>
+        </div>
+        <div class="feature">
+          <h3>Save points</h3>
+          <p>A named copy of your saves, "Before the boss", from the game's page or with <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F5</kbd> while you play. Go back to any of them, or start a new run from that moment.</p>
+        </div>
+        <div class="feature">
+          <h3>Achievements, read from the PC</h3>
+          <p>Lootnest reads the achievement files Steam-compatible tools leave on the PC, keeps them per profile, and shows a note over the game when one unlocks, with how rare it is.</p>
+        </div>
+        <div class="feature">
+          <h3>Updates you bring, with Undo</h3>
+          <p>Lootnest says when a newer version is out. Apply an update you have, a folder, an archive or an installer: your saves and every replaced file are copied first.</p>
+        </div>
+      </div>
+      <div class="toast-stage">
+        <img class="window" src="img/achievements.jpg" width="2880" height="1760" loading="lazy" alt="The Achievements page: a ring of progress for each game and the rarest achievements unlocked.">
+        <div class="toast" aria-hidden="true">
+          <span class="toast-badge"><svg viewBox="0 0 20 20"><path d="M6 3.5h8v3.2a4 4 0 0 1-8 0zM6 5H3.5v1a2.5 2.5 0 0 0 2.6 2.5M14 5h2.5v1a2.5 2.5 0 0 1-2.6 2.5M10 10.7v3M7 16.5h6M8 13.7h4l.5 2.8h-5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="toast-text"><span class="toast-kicker">Achievement unlocked</span><span class="toast-title">Against all odds</span><span class="toast-line">Ultra rare, 0.9% of players have it</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sofa">
+  <div class="wrap sofa-in">
+    <img class="window" src="img/bigpicture.jpg" width="2880" height="1760" loading="lazy" alt="Big Picture: Lootnest on the whole screen, with rows of game art and controller hints along the bottom.">
+    <div class="sofa-copy">
+      <h2>From the sofa</h2>
+      <p>Press <kbd>Start</kbd> on a controller, or <kbd>F11</kbd>, and Lootnest fills the screen like a console: your games in rows, a screen for each, and Play as whoever's sitting down.</p>
+    </div>
+  </div>
+</section>
+
+<section class="privacy" id="privacy">
+  <div class="wrap split split-top">
+    <div class="split-copy">
+      <h2>Nothing goes online unless you turn it on</h2>
+      <p>No account, no telemetry, and it works offline. Cloud saves go to your own OneDrive, Google Drive or Dropbox folder, encrypted on your PC first if you set a password.</p>
+      <p>Lootnest never downloads games or updates, never changes how a game starts, and never touches a game's memory. Games with an anti-cheat get no notes over them.</p>
+    </div>
+    <div class="off-list">
+      <p class="off-head">Off until you turn it on</p>
+      <dl>
+        <div><dt>Covers and artwork</dt><dd>A game's name, to the Steam store</dd></div>
+        <div><dt>The Store and prices</dt><dd>What you search for, to Steam and CheapShark</dd></div>
+        <div><dt>How rare achievements are</dt><dd>A game's Steam id, for Steam's public numbers</dd></div>
+        <div><dt>Game news and updates</dt><dd>A game's Steam id, for its patch notes</dd></div>
+        <div><dt>Save locations list</dt><dd>Nothing about you: a list from PCGamingWiki</dd></div>
+        <div><dt>Lootnest updates</dt><dd>Asked once, then a version check to GitHub</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="wrap faq-in">
+    <h2>Questions</h2>
+    <div class="faq-list">
+      <details>
+        <summary>Is it free?</summary>
+        <p>Yes, and the code is open under the MIT license. There's no account, no subscription and nothing to unlock for keeping your saves safe.</p>
+      </details>
+      <details>
+        <summary>Does it change my games?</summary>
+        <p>No. Lootnest moves only the files a game keeps its saves and settings in, and copies them first. It doesn't patch, inject into or read the memory of any game.</p>
+      </details>
+      <details>
+        <summary>What if I use Steam Cloud?</summary>
+        <p>Keep it on. Each game says whether Steam Cloud syncs the files Lootnest swaps. If Steam replaces a profile's files, Lootnest tells you and keeps the profile as it was.</p>
+      </details>
+      <details>
+        <summary>What about games with an anti-cheat?</summary>
+        <p>Lootnest never touches the game's own files, swaps only its settings and saves, and shows no notes over it. For FACEIT, one click lets Steam start the game instead.</p>
+      </details>
+      <details>
+        <summary>Windows says it protected my PC.</summary>
+        <p>Lootnest isn't code-signed yet, so SmartScreen asks. Choose <b>More info</b>, then <b>Run anyway</b>. The installer needs no administrator rights.</p>
+      </details>
+      <details>
+        <summary>Can I try it on games I care about?</summary>
+        <p>It's in beta. A copy is made before every swap, but start with a game whose saves you could lose, and see the checklist in <a href="https://github.com/c-dinca/lootnest/blob/main/docs/TESTING.md">docs/TESTING.md</a>.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="end">
+  <div class="wrap end-in">
+    <h2>Your saves, before anything else.</h2>
+    <a class="btn" href="https://github.com/c-dinca/lootnest/releases/latest/download/Lootnest-Setup.exe">Download for Windows</a>
+    <p class="cta-note">Or read the <a href="https://github.com/c-dinca/lootnest/blob/main/CHANGELOG.md">changelog</a> first.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p>Lootnest is made by Cristian Dinca and open source under the MIT license.</p>
+    <p><a href="https://github.com/c-dinca/lootnest">Source</a> <a href="https://github.com/c-dinca/lootnest/issues/new">Report a problem</a> <a href="https://github.com/c-dinca/lootnest/blob/main/SECURITY.md">Security</a></p>
+    <p class="fine">Game art in the screenshots belongs to the games' makers. Lootnest isn't affiliated with Valve, Steam or any store.</p>
+  </div>
+</footer>
+
+<script src="site.js" defer></script>
+</body>
+</html>
