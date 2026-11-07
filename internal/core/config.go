@@ -450,3 +450,37 @@ func (s *Store) RecordPlay(key, playerID string, at time.Time) error {
 	}
 	return writeJSONAtomic(s.RecentPath(), rec)
 }
+
+func (s *Store) PlaytimePath() string { return filepath.Join(s.Dir, "playtime.json") }
+
+// LoadPlaytime returns how long each player has played each game through
+// Lootnest, in seconds, by Library key and player id.
+func (s *Store) LoadPlaytime() map[string]map[string]int64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := map[string]map[string]int64{}
+	if b, err := os.ReadFile(s.PlaytimePath()); err == nil {
+		_ = json.Unmarshal(b, &out)
+	}
+	return out
+}
+
+// AddPlaytime adds a finished session's length to a player's time in a game.
+// Sessions under a minute (a crash at start) and over a day (a clock jump)
+// aren't counted.
+func (s *Store) AddPlaytime(key, playerID string, d time.Duration) error {
+	if playerID == "" || d < time.Minute || d > 24*time.Hour {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	pt := map[string]map[string]int64{}
+	if b, err := os.ReadFile(s.PlaytimePath()); err == nil {
+		_ = json.Unmarshal(b, &pt)
+	}
+	if pt[key] == nil {
+		pt[key] = map[string]int64{}
+	}
+	pt[key][playerID] += int64(d / time.Second)
+	return writeJSONAtomic(s.PlaytimePath(), pt)
+}

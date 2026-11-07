@@ -550,3 +550,15 @@ func TestRecentPlays(t *testing.T) {
 		t.Fatalf("got %+v", r)
 	}
 }
+
+func TestPlaytime(t *testing.T) {
+	s := &Store{Dir: t.TempDir()}
+	_ = s.AddPlaytime("game:cs2", "p1", 90*time.Minute)
+	_ = s.AddPlaytime("game:cs2", "p1", 30*time.Minute)
+	_ = s.AddPlaytime("game:cs2", "p2", 20*time.Second) // too short to count
+	_ = s.AddPlaytime("game:cs2", "p2", 48*time.Hour)   // a clock jump
+	pt := s.LoadPlaytime()
+	if pt["game:cs2"]["p1"] != 7200 || pt["game:cs2"]["p2"] != 0 {
+		t.Fatalf("got %+v", pt)
+	}
+}
