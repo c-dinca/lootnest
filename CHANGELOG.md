@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.20.0
+
+- **Each profile has its own achievements**, in games whose achievements a Steam-compatible tool keeps on the PC:
+  - the achievements folder goes with the profile when you swap, like the saves, so Mihai's unlocks stay Mihai's;
+  - the game page shows whose achievements they are, with a button per profile and their count, for example "Cristian 7, Mihai 2".
+  - It's on by default. **Share one set** on the game page keeps one set for everyone, as before. Each profile's own stay in their profile, so you can switch back.
+- From the next swap, whoever's files are loaded keeps the achievements on the PC now. A copy is made before the swap, as always.
+- Steam's own achievements belong to the Steam account, so they stay the same for every profile.
+
 ## 1.19.1
 
 - **New brand colours.** Obsidian Black (`#111217`) for the window, Ice Grey (`#DFE5EB`) for text and the main buttons, and touches of Racing Red (`#EF233C`):

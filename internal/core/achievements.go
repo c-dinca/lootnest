@@ -37,6 +37,9 @@ type AchievementSet struct {
 	Total    int           `json:"total"`
 	Unlocked int           `json:"unlocked"`
 	List     []Achievement `json:"list"`
+	// Players are each player's own, for a game whose achievements go with
+	// their profile (player id -> their set).
+	Players map[string]*AchievementSet `json:"players,omitempty"`
 }
 
 // achFile is a place a Steam-compatible tool keeps a game's achievements.
@@ -542,4 +545,110 @@ func prettyAchID(id string) string {
 		return id
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// AchEntryPrefix starts the id of a swapped achievements folder in a
+// player's profile, so it's never taken for one of the game's own paths.
+const AchEntryPrefix = "ach-"
+
+// achEntryID is the profile folder name for one achievements location: the
+// same on every PC and in every version, whatever the user's folders are.
+func achEntryID(f achFile) string {
+	h := uint32(2166136261)
+	for _, c := range []byte(f.base + "|" + f.path) {
+		h = (h ^ uint32(c)) * 16777619
+	}
+	return AchEntryPrefix + strconv.FormatUint(uint64(h), 16)
+}
+
+// GameAppID is a game's Steam app id: Steam's own, or the one found next to
+// a game started from its exe. 0 when there's none.
+func GameAppID(g *Game) int {
+	if g.Launch.AppID > 0 {
+		return g.Launch.AppID
+	}
+	if g.Launch.Exe != "" {
+		return FolderAppID(filepath.Dir(g.Launch.Exe))
+	}
+	return 0
+}
+
+// achievementEntries are the achievements folders swapped with a game's
+// profiles, so each player has their own: the ones that exist on this PC
+// or in someone's profile, and that don't overlap a path the game already
+// swaps. None when the game keeps achievements shared.
+func (e *Engine) achievementEntries(g *Game, have []resolved) []resolved {
+	if g.SharedAchievements || e.Env == nil {
+		return nil
+	}
+	appID := GameAppID(g)
+	if appID <= 0 {
+		return nil
+	}
+	var out []resolved
+	clashes := func(p string) bool {
+		for _, r := range append(append([]resolved{}, have...), out...) {
+			if isWithin(p, r.live) || isWithin(r.live, p) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, f := range achFiles {
+		b := e.Env.achBase(f.base)
+		if b == "" {
+			continue
+		}
+		file := filepath.Join(b, achPath(f.path, appID))
+		// The whole folder (achievements and the stats they count from), or
+		// only the file when the game already swaps something inside the
+		// folder, such as its saves.
+		for _, c := range []struct{ id, live string }{{achEntryID(f), filepath.Dir(file)}, {achEntryID(f) + "-f", file}} {
+			if !exists(c.live) && !e.anyProfileHas(g.ID, c.id) {
+				continue
+			}
+			if e.Env.CheckSafe(c.live) != nil || clashes(c.live) {
+				continue
+			}
+			out = append(out, resolved{PathEntry{ID: c.id, Path: c.live}, c.live})
+			break
+		}
+	}
+	return out
+}
+
+func (e *Engine) anyProfileHas(gameID, entryID string) bool {
+	if e.Store == nil {
+		return false
+	}
+	m, _ := filepath.Glob(filepath.Join(e.Store.ProfilesDir(), "*", gameID, entryID))
+	return len(m) > 0
+}
+
+// ProfileUnlocks reads a player's own achievements for a game from their
+// profile (the copy swapped out with their files). ok is false when their
+// profile holds none.
+func (e *Engine) ProfileUnlocks(playerID string, g *Game) (map[string]time.Time, bool) {
+	appID := GameAppID(g)
+	if appID <= 0 || e.Store == nil {
+		return nil, false
+	}
+	dir := e.Store.ProfileDir(playerID, g.ID)
+	var best, bestFmt string
+	var bestT time.Time
+	for _, f := range achFiles {
+		for _, p := range []string{filepath.Join(dir, achEntryID(f), filepath.Base(achPath(f.path, appID))), filepath.Join(dir, achEntryID(f)+"-f")} {
+			if st, err := os.Stat(p); err == nil && !st.IsDir() && st.ModTime().After(bestT) {
+				best, bestFmt, bestT = p, f.format, st.ModTime()
+			}
+		}
+	}
+	if best == "" {
+		return nil, false
+	}
+	b, err := os.ReadFile(best)
+	if err != nil {
+		return nil, false
+	}
+	return ParseUnlocks(b, bestFmt), true
 }
