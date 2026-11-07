@@ -549,6 +549,19 @@ func TestRecentPlays(t *testing.T) {
 	if len(r) != 2 || r["game:cs2"].Player != "p2" || !r["game:cs2"].At.Equal(t0.Add(2*time.Hour)) {
 		t.Fatalf("got %+v", r)
 	}
+	// Each player's own last time is kept, not only the last player's.
+	if !r["game:cs2"].Players["p1"].Equal(t0) || !r["game:cs2"].Players["p2"].Equal(t0.Add(2*time.Hour)) || len(r["steam:1091500"].Players) != 0 {
+		t.Fatalf("per player: %+v", r)
+	}
+	// An entry from before Players existed reads as its one player.
+	if err := os.WriteFile(s.RecentPath(), []byte(`{"game:x":{"at":"2026-11-01T10:00:00Z","player":"p3"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_ = s.RecordPlay("game:x", "p1", t0)
+	r = s.LoadRecent()
+	if !r["game:x"].Players["p3"].Equal(time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)) || !r["game:x"].Players["p1"].Equal(t0) {
+		t.Fatalf("old entry: %+v", r["game:x"])
+	}
 }
 
 func TestPlaytime(t *testing.T) {

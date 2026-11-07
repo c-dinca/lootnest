@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.17.3
+
+- **Lootnest remembers when each player last played each game**, not only who played it last. So Mihai's "yesterday" still shows after Cristian has played since:
+  - each save slot in **Who's playing?** says when that player last played, for example "Played 2 days ago";
+  - **Who's playing** on Home shows each player's own last game;
+  - the game page's **Players** panel shows when each of them last played;
+  - player cards and **Played lately** on a player's page list all the games they played, not only the ones they played last.
+- Games you played before this version show only their last player until the others play them again.
+
 ## 1.17.2
 
 - **Starting a game no longer flashes the desktop.** Lootnest used to hide its window the moment it started a game, so while the game was still loading you saw the desktop, then the game. Now the picker shows **Starting Counter-Strike 2** (or your game) until the game is actually running, and only then does Lootnest step aside (with **Hide while a game runs** on).

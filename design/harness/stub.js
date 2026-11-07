@@ -60,7 +60,10 @@
   games.forEach((g, i) => {
     profiles[g.id] = g._players;
     active[g.id] = g._players[g._players.length > 1 ? 1 : 0];
-    recent["game:" + g.id] = { at: iso((i + 1) * 5 * h), player: g._players[i % g._players.length] };
+    // The last player, plus each player's own last time (players).
+    const last = g._players[i % g._players.length];
+    recent["game:" + g.id] = { at: iso((i + 1) * 5 * h), player: last,
+      players: Object.fromEntries(g._players.map((p, j) => [p, iso((i + 1) * 5 * h + (p === last ? 0 : (j + 1) * 26 * h))])) };
     playtime["game:" + g.id] = Object.fromEntries(g._players.map((p, j) => [p, (j + 1) * (i + 2) * 11 * h / 1000]));
     delete g._players;
   });

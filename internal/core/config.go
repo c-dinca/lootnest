@@ -508,10 +508,13 @@ func writeJSONAtomic(path string, v any) error {
 	return os.Rename(tmp, path)
 }
 
-// Played is when a game was last started from Lootnest, and by whom.
+// Played is when a game was last started from Lootnest, and by whom, plus
+// the last time each player started it (Players), so "Mihai, yesterday"
+// still shows once Cristian has played since.
 type Played struct {
-	At     time.Time `json:"at"`
-	Player string    `json:"player,omitempty"`
+	At      time.Time            `json:"at"`
+	Player  string               `json:"player,omitempty"`
+	Players map[string]time.Time `json:"players,omitempty"`
 }
 
 func (s *Store) RecentPath() string { return filepath.Join(s.Dir, "recent.json") }
@@ -525,7 +528,28 @@ func (s *Store) LoadRecent() map[string]Played {
 	if b, err := os.ReadFile(s.RecentPath()); err == nil {
 		_ = json.Unmarshal(b, &out)
 	}
+	for k, p := range out {
+		out[k] = p.withLast()
+	}
 	return out
+}
+
+// withLast fills in Players from Player for entries written before
+// Players existed (1.17.2 and earlier).
+func (p Played) withLast() Played {
+	if p.Player == "" {
+		return p
+	}
+	if _, ok := p.Players[p.Player]; ok {
+		return p
+	}
+	m := make(map[string]time.Time, len(p.Players)+1)
+	for id, t := range p.Players {
+		m[id] = t
+	}
+	m[p.Player] = p.At
+	p.Players = m
+	return p
 }
 
 // RecordPlay notes that a game was just started. Only the 200 most recent
@@ -537,7 +561,16 @@ func (s *Store) RecordPlay(key, playerID string, at time.Time) error {
 	if b, err := os.ReadFile(s.RecentPath()); err == nil {
 		_ = json.Unmarshal(b, &rec)
 	}
-	rec[key] = Played{At: at, Player: playerID}
+	next := Played{At: at, Player: playerID, Players: rec[key].withLast().Players}
+	if playerID != "" {
+		m := make(map[string]time.Time, len(next.Players)+1)
+		for id, t := range next.Players {
+			m[id] = t
+		}
+		m[playerID] = at
+		next.Players = m
+	}
+	rec[key] = next
 	if len(rec) > 200 {
 		oldest := ""
 		for k, p := range rec {
