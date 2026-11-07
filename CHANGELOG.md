@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.37.0
+
+- **Updates**, a new page in the sidebar, for games no store keeps up to date: games in a folder, added by hand, or from Hydra.
+  - It lists the games with a newer version out, from their patch notes on Steam (with **Show game updates and news** on), and the sidebar shows how many.
+  - **Apply an update** takes an update you have, as a folder or a .zip. Lootnest doesn't download updates.
+  - Before anything changes, it shows what the update does: how many files it replaces and adds, and where they go. An update often comes inside a folder of its own, and Lootnest puts what's in it into the game's folder. Notes such as README.txt are shown, not copied.
+  - It copies the game's saves and every file it replaces first, checks each new file as it goes in, and puts everything back if something fails.
+  - **Undo** takes the update back out: the files it added go, and the ones it replaced come back.
+  - A game's page offers **Apply an update** too, under "A newer version is out".
+  - .rar and .7z archives need to be extracted first. For an installer (.exe), run it yourself.
+
 ## 1.36.1
 
 - A game's news no longer shows bits of code such as `[p align="justify"]` in the short text under its title.

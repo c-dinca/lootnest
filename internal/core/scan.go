@@ -615,3 +615,10 @@ func MergeFound(saved, fresh []FoundGame, stillThere func(dir string) bool) []Fo
 	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
 	return out
 }
+
+// GameFolderOf is the folder of the game an exe belongs to, as the scan
+// finds it (above bin, Win64 and the like).
+func GameFolderOf(exe string, containers []string) string {
+	root, _, _ := exeRoot(filepath.Clean(exe), containers)
+	return root
+}
