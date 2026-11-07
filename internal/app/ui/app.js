@@ -119,6 +119,10 @@
     ach: {},          // Library key -> achievements read from this PC (null: none)
     doctor: {},       // Library key -> Achievement Doctor's check (achDoctor event)
     points: {},       // Library key -> its save points (savePoints event)
+    sideQ: "",        // the filter over the sidebar's games
+    sideSort: pref("sideSort", "name"), // name, recent or played
+    sideClosed: (() => { try { return new Set(JSON.parse(pref("sideClosed", "[]"))); } catch (e) { return new Set(); } })(),
+    folded: pref("folded", "") === "1", // the sidebar folded to a rail
     achWho: {},       // Library key -> whose achievements are shown
     setTab: pref("setTab", "general"), // the Settings category open
     allAch: null,     // the Achievements page: every game's, null until read
@@ -525,6 +529,7 @@
     $("#lib-count").textContent = n ? n : "";
     renderWho();
     renderSideUpdate();
+    renderSideGames();
     const v = $("#view");
     const keepScroll = v.scrollTop;
     const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
@@ -540,7 +545,12 @@
     else if (S.view === "achievements") v.innerHTML = viewAchievements();
     else if (S.view === "find") v.innerHTML = viewFind();
     else if (S.view === "updates") v.innerHTML = viewUpdates();
-    if (S.animateView && v.firstElementChild) v.firstElementChild.classList.add("enter");
+    if (S.animateView && v.firstElementChild) {
+      // From a transition the page itself already moves; its parts still
+      // come in one after another.
+      if (S.animateView !== "kids") v.firstElementChild.classList.add("enter");
+      staggerIn(v);
+    }
     S.animateView = false;
     v.scrollTop = keepScroll;
     if (typing >= 0) { const q = $("#lib-q"); if (q) { q.focus(); q.setSelectionRange(typing, typing); } }
@@ -658,6 +668,148 @@
     toast(S.seat ? `${pname(S.seat)} is at the PC. Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
 
+  // ---------------------------------------------------------- side games --
+  // Every game in the sidebar, as in Steam's library: what's being played,
+  // the last few played, each collection, then all of them. The filter
+  // narrows it to the names that match.
+  const SIDE_SORTS = { name: "Sorted by name", recent: "Sorted by last played", played: "Sorted by time played" };
+  function sideSorted(list) {
+    const out = list.slice();
+    if (S.sideSort === "recent") out.sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
+    else if (S.sideSort === "played") out.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || a.name.localeCompare(b.name));
+    return out;
+  }
+  function sideRow(it, cur) {
+    const ck = coverKey(it), c = S.covers[ck], ic = !c && S.icons[ck];
+    const s = it.g && session(it.g.id);
+    const owner = it.g && S.d.active[it.g.id];
+    const thumb = c ? `<img class="ready" src="${c}" alt="">` : ic ? `<img class="ready icon" src="${ic}" alt="">` : `<b>${esc((it.name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase())}</b>`;
+    const sub = s ? `<small>${esc(sessionText(s))}</small>` : "";
+    const mark = s ? '<span class="sg-live" aria-hidden="true"></span>' : owner && player(owner) ? `<span class="sg-mark ln-player" style="--player:${esc(color(owner))}" title="${esc(possessive(pname(owner)))} files are loaded"><i></i></span>` : "";
+    return `<button class="sg-row${s ? " playing" : ""}" data-action="open-sheet" ${itemAttr(it)} data-ck="${esc(ck)}"${cur ? ' aria-current="true"' : ""} title="${esc(it.name)}">
+      <span class="sg-thumb">${thumb}</span><span class="sg-name">${esc(it.name)}${sub}</span>${mark}</button>`;
+  }
+  function renderSideGames() {
+    const box = $("#side-games");
+    if (!box) return;
+    const all = libraryItems();
+    const cur = S.view === "game" && S.page ? S.page : null;
+    const isCur = (it) => cur && cur.kind === it.kind && cur.id === it.id;
+    const group = (id, title, list, opts = {}) => {
+      if (!list.length) return "";
+      const closed = !opts.open && S.sideClosed.has(id);
+      return `<div class="sg-group${closed ? " closed" : ""}" data-g="${esc(id)}"><button class="sg-head" data-action="side-group" data-g="${esc(id)}" aria-expanded="${!closed}">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg><span>${esc(title)}</span><span class="sg-n">${list.length}</span></button>
+        <div class="sg-rows">${list.map((it) => sideRow(it, isCur(it))).join("")}</div></div>`;
+    };
+    let html;
+    const q = S.sideQ.trim().toLowerCase();
+    if (q) {
+      const hits = sideSorted(all.filter((it) => it.name.toLowerCase().includes(q)));
+      html = hits.length ? group("matches", "Matches", hits, { open: true }) : `<p class="sg-empty">No game called that.</p>`;
+    } else if (!all.length) {
+      html = `<p class="sg-empty">${S.found.scanning ? "Looking for your games" : "No games yet."}</p>`;
+    } else {
+      const playing = all.filter((it) => it.g && session(it.g.id));
+      const recent = recentItems(all, false).filter((it) => !playing.includes(it)).slice(0, 5);
+      const tags = {};
+      all.forEach((it) => tagsOf(it).forEach((t) => (tags[t] = tags[t] || []).push(it)));
+      html = group("playing", "Playing now", playing, { open: true }) + group("recent", "Recent", recent)
+        + Object.keys(tags).sort((a, b) => a.localeCompare(b)).map((t) => group("tag:" + t, t, sideSorted(tags[t]))).join("")
+        + group("all", "All games", sideSorted(all));
+    }
+    if (box.dataset.html === html) return; // nothing changed: keep it as it is
+    const top = box.scrollTop;
+    box.innerHTML = html;
+    box.dataset.html = html;
+    box.scrollTop = top;
+    const sb = $("#side-sort");
+    if (sb) { sb.title = SIDE_SORTS[S.sideSort]; sb.setAttribute("aria-label", SIDE_SORTS[S.sideSort] + ". Change it"); }
+    watchSideThumbs();
+  }
+  // Covers for the sidebar's list, as rows come into sight; only the
+  // picture changes when one arrives.
+  let sideObserver = null;
+  function watchSideThumbs() {
+    const box = $("#side-games");
+    if (!sideObserver) {
+      sideObserver = new IntersectionObserver((entries) => entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        sideObserver.unobserve(e.target);
+        const it = itemFor(e.target);
+        if (it) sideThumb(it);
+      }), { root: box, rootMargin: "200px" });
+    }
+    box.querySelectorAll(".sg-row").forEach((r) => { if (!r.querySelector("img")) sideObserver.observe(r); });
+  }
+  async function sideThumb(it) {
+    const key = coverKey(it);
+    if (S.covers[key] || S.icons[key]) return fillThumbs(key);
+    if (coverAsked.has(key) || key in S.covers) return;
+    coverAsked.add(key);
+    const can = it.appId || cfg().settings.downloadCovers;
+    let url = "";
+    if (can) { try { url = (await api.cover(it.appId || 0, it.name, key)) || ""; } catch (e) { /* none */ } }
+    if (url) S.covers[key] = url;
+    else if (it.exe && !(key in S.icons)) { try { S.icons[key] = (await api.gameIcon(it.exe)) || ""; } catch (e) { S.icons[key] = ""; } }
+    fillThumbs(key);
+  }
+  function fillThumbs(key) {
+    const c = S.covers[key], ic = !c && S.icons[key];
+    if (!c && !ic) return;
+    document.querySelectorAll(`#side-games .sg-row[data-ck="${CSS.escape(key)}"] .sg-thumb`).forEach((t) => {
+      t.innerHTML = `<img class="${ic ? "icon" : ""}" src="${c || ic}" alt="">`;
+      const img = t.firstChild;
+      if (img.complete) img.classList.add("ready"); else img.onload = () => img.classList.add("ready");
+    });
+    const box = $("#side-games");
+    if (box) box.dataset.html = ""; // the next render redraws with the picture
+  }
+  // Folding the sidebar to a rail, and dragging its edge.
+  function applyFold(animate) {
+    const app = $("#app");
+    if (!animate) app.classList.add("no-anim");
+    app.classList.toggle("side-folded", S.folded);
+    const b = $(".side-collapse");
+    if (b) { const t = S.folded ? "Open the sidebar (Ctrl+B)" : "Fold the sidebar (Ctrl+B)"; b.title = t; b.setAttribute("aria-label", t); }
+    if (!animate) requestAnimationFrame(() => app.classList.remove("no-anim"));
+  }
+  function setFold(on) { S.folded = on; setPref("folded", on ? "1" : ""); applyFold(true); }
+  function applySideWidth() {
+    const w = parseInt(pref("sideW", ""), 10);
+    $("#app").style.setProperty("--side-w", w >= 200 && w <= 440 ? w + "px" : "");
+  }
+  (function sideResize() {
+    const h = $("#side-resize");
+    if (!h) return;
+    h.addEventListener("pointerdown", (ev) => {
+      if (S.folded) return;
+      ev.preventDefault();
+      h.setPointerCapture(ev.pointerId);
+      const app = $("#app");
+      app.classList.add("resizing");
+      const move = (e) => { const w = Math.max(200, Math.min(440, Math.round(e.clientX))); app.style.setProperty("--side-w", w + "px"); };
+      const up = (e) => {
+        h.removeEventListener("pointermove", move); h.removeEventListener("pointerup", up);
+        app.classList.remove("resizing");
+        setPref("sideW", String(Math.max(200, Math.min(440, Math.round(e.clientX)))));
+      };
+      h.addEventListener("pointermove", move); h.addEventListener("pointerup", up);
+    });
+    h.addEventListener("dblclick", () => { setPref("sideW", ""); applySideWidth(); });
+  })();
+  // Tiles and blocks of a page coming in, one after another.
+  function staggerIn(root) {
+    if (reduced()) return;
+    let i = 0;
+    root.querySelectorAll(".ln-tile, .lib-cap, .home-cols > *, .gpage-block, .ach-game, .upd-row, .find-row, .bk-card, .set-sub, .pl-card").forEach((el) => {
+      if (i > 24 || el.getBoundingClientRect().top > innerHeight) return;
+      el.style.setProperty("--i", i++);
+      el.classList.add("stagger");
+      el.addEventListener("animationend", () => el.classList.remove("stagger"), { once: true });
+    });
+  }
+
   // --------------------------------------------------------------- library --
   function sessionText(s) {
     const n = pname(s.playerId);
@@ -753,7 +905,7 @@
         <div class="ln-actions"><button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan">Scan again</button></div></div></div></div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
-    const sizes = [["s", "Small covers", 10], ["m", "Medium covers", 13], ["l", "Large covers", 16]];
+    const sizes = [["s", "Small covers", 10], ["m", "Medium covers", 13], ["l", "Large covers", 16], ["list", "A list", 0]];
     const seg = (k, l, n) => `<button data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}<span class="ln-count ln-num">${n}</span></button>`;
     const ps = cfg().players;
     const who = ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
@@ -766,7 +918,7 @@
           ${allTags().length || S.tag ? `<select id="lib-tag" class="ln-input" aria-label="Collection"><option value="">All collections</option>${allTags().map((t) => `<option value="${esc(t)}" ${S.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>` : ""}
           <select id="lib-status" class="ln-input" aria-label="Status"><option value="">Any status</option>${STATUSES.map(([k, l]) => `<option value="${k}" ${S.status === k ? "selected" : ""}>${l}</option>`).join("")}</select>
           <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>
-          <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span style="--h:${h}px"></span></button>`).join("")}</div>
+          <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}">${h ? `<span style="--h:${h}px"></span>` : '<i class="lib-size-list" aria-hidden="true"></i>'}</button>`).join("")}</div>
         </div></div>
       ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
       <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
@@ -997,7 +1149,42 @@
   function gridHTML() {
     const items = shownItems();
     if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
+    if (S.density === "list") {
+      return `<div class="lib-list-head" aria-hidden="true"><span></span><span>Name</span><span>Last played</span><span>Time played</span><span>Profiles</span><span></span></div>${items.map(listRowHTML).join("")}`;
+    }
     return items.map(cardHTML).join("");
+  }
+  // The Library as a list, as in Steam's: a row per game with when it was
+  // last played, how long, and who has a profile.
+  function listRowHTML(it) {
+    const ck = coverKey(it), c = S.covers[ck], ic = !c && S.icons[ck];
+    ensureCoverQuiet(it);
+    const g = it.g, s = g && session(g.id), owner = g && S.d.active[g.id];
+    const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
+    const t = totalPlayed(it) || steamTime(it);
+    const thumb = c ? `<img src="${c}" alt="">` : ic ? `<img class="icon" src="${ic}" alt="">` : `<b>${esc((it.name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase())}</b>`;
+    const prof = owners.length ? owners.map((p) => `<span class="ln-mark ln-player${p.id === owner ? " is-loaded" : ""}" style="--player:${esc(p.color)}" title="${esc(p.name)}${p.id === owner ? ", files loaded" : ""}"></span>`).join("") : `<span class="lib-row-dim">Off</span>`;
+    const play = s ? `<span class="ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
+      : `<button class="ln-button ln-button--primary ln-button--sm lib-row-play" data-action="${g ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
+    return `<div class="lib-row${s ? " busy" : ""}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
+        <span class="lib-row-thumb">${thumb}</span>
+        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}</small></span>
+        <span class="lib-row-cell">${playedAt(it) ? playedBy(it) : '<span class="lib-row-dim">Never</span>'}</span>
+        <span class="lib-row-cell ln-num">${t ? esc(hours(t)) : '<span class="lib-row-dim">None</span>'}</span>
+        <span class="lib-row-cell lib-row-prof">${prof}</span></button>${play}</div>`;
+  }
+  // A cover for a row of the list, without drawing the whole page again.
+  function ensureCoverQuiet(it) {
+    const key = coverKey(it);
+    if (S.covers[key] || S.icons[key] || coverAsked.has(key)) return;
+    Promise.resolve().then(() => sideThumb(it)).then(() => {
+      const c = S.covers[key] || S.icons[key];
+      if (!c) return;
+      document.querySelectorAll(".lib-row-open").forEach((b) => {
+        const x = itemFor(b);
+        if (x && coverKey(x) === key) b.querySelector(".lib-row-thumb").innerHTML = `<img${S.covers[key] ? "" : ' class="icon"'} src="${c}" alt="">`;
+      });
+    });
   }
 
   // Steam games have a cover in Steam's cache; other games only when the
@@ -1087,6 +1274,7 @@
     if (!document.startViewTransition || reduced()) { update(); if (after) after(); return; }
     if (before) before();
     const t = document.startViewTransition(update);
+    t.ready.catch(() => {}); // skipped when another starts: nothing to do
     t.finished.finally(() => { if (after) after(); });
   }
 
@@ -3132,11 +3320,32 @@
   const actions = {
     nav(el) {
       if (S.view === "edit" && !confirmLeaveEdit()) return;
-      S.view = el.dataset.view; S.menuFor = null; S.edit = null; S.animateView = true;
-      if (S.view === "cloud") { loadBackupInfo(); loadSaves(); }
-      if (S.view === "library") S.animateCards = true;
-      if (S.view !== "players") S.players = null;
-      render(); $("#view").scrollTop = 0;
+      const view = el.dataset.view;
+      transition(() => {
+        S.view = view; S.menuFor = null; S.edit = null; S.animateView = document.startViewTransition && !reduced() ? "kids" : true;
+        if (S.view === "cloud") { loadBackupInfo(); loadSaves(); }
+        if (S.view === "library") S.animateCards = true;
+        if (S.view !== "players") S.players = null;
+        render(); $("#view").scrollTop = 0;
+      });
+    },
+    "side-toggle"() { setFold(!S.folded); },
+    "side-group"(el) {
+      const g = el.dataset.g;
+      if (S.sideClosed.has(g)) S.sideClosed.delete(g); else S.sideClosed.add(g);
+      setPref("sideClosed", JSON.stringify([...S.sideClosed]));
+      const grp = el.closest(".sg-group");
+      grp.classList.toggle("closed");
+      el.setAttribute("aria-expanded", !grp.classList.contains("closed"));
+      if (!grp.classList.contains("closed")) { const r = grp.querySelector(".sg-rows"); r.classList.add("opening"); r.addEventListener("animationend", () => r.classList.remove("opening"), { once: true }); watchSideThumbs(); }
+      $("#side-games").dataset.html = "";
+    },
+    "side-sort"() {
+      const order = Object.keys(SIDE_SORTS);
+      S.sideSort = order[(order.indexOf(S.sideSort) + 1) % order.length];
+      setPref("sideSort", S.sideSort);
+      renderSideGames();
+      toast(SIDE_SORTS[S.sideSort]);
     },
     "add-game": startAddDialog,
     "add-steam": (el) => addSteam(el.dataset.app),
@@ -3380,7 +3589,7 @@
     },
     async "upd-keep"(el) { try { await api.keepSavesNow(el.dataset.key); toast("Copying its saves"); } catch (e) { toast(errText(e), "error"); } },
     async "report-problem"() { try { await api.reportProblem(); toast("Copied. Paste it into the new issue."); } catch (e) { toast(errText(e), "error"); } },
-    "test-toast"() { api.testToast().catch((e) => toast(errText(e), "error")); },
+    "test-toast"() { api.testToast().then(() => toast("A note shows at the bottom right of the screen for five seconds. If none does, Show recent activity says why.")).catch((e) => toast(errText(e), "error")); },
     "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined }); renderOverlay(); } },
     "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },
     async "upd-run"() {
@@ -3738,8 +3947,11 @@
   });
 
   let findTimer = 0;
+  // The search in a folded sidebar opens it.
+  document.addEventListener("focusin", (ev) => { if (ev.target.id === "gq" && S.folded) setFold(false); });
   document.addEventListener("input", (ev) => {
     const el = ev.target;
+    if (el.id === "side-q") { S.sideQ = el.value; renderSideGames(); return; }
     if (S.dialog && S.dialog.kind === "profile") {
       const f = el.dataset.pe, D = S.dialog;
       if (f) D.p[f] = f === "bannerY" ? +el.value : el.value;
@@ -3819,6 +4031,18 @@
 
   // The sidebar search: Ctrl+K anywhere, arrows and Enter in its list.
   document.addEventListener("keydown", (ev) => {
+    // Ctrl+B folds the sidebar to a rail of icons, and opens it again.
+    if (ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "b") { ev.preventDefault(); setFold(!S.folded); return; }
+    // In the sidebar's games, the arrows move from game to game.
+    if ((ev.key === "ArrowDown" || ev.key === "ArrowUp") && (ev.target.closest && (ev.target.closest("#side-games") || ev.target.id === "side-q"))) {
+      const rows = [...document.querySelectorAll("#side-games .sg-group:not(.closed) .sg-row, #side-games .sg-head")];
+      const i = rows.indexOf(ev.target);
+      const n = ev.target.id === "side-q" ? (ev.key === "ArrowDown" ? rows[0] : null) : rows[i + (ev.key === "ArrowDown" ? 1 : -1)];
+      if (n) { ev.preventDefault(); n.focus(); n.scrollIntoView({ block: "nearest" }); }
+      else if (ev.key === "ArrowUp" && i === 0) { ev.preventDefault(); $("#side-q").focus(); }
+      return;
+    }
+    if (ev.key === "Escape" && ev.target.id === "side-q" && ev.target.value) { ev.preventDefault(); ev.target.value = ""; S.sideQ = ""; renderSideGames(); return; }
     // Enter in a save point's name: make it, or save the new name.
     if (ev.key === "Enter" && (ev.target.id === "pt-new" || ev.target.id === "pt-rename")) {
       ev.preventDefault();
@@ -3828,6 +4052,7 @@
     }
     if (ev.ctrlKey && !ev.altKey && ev.key.toLowerCase() === "k") {
       ev.preventDefault();
+      if (S.folded) setFold(false);
       const q = $("#gq"); if (q) { q.focus(); q.select(); renderGq(); }
       return;
     }
@@ -3910,6 +4135,8 @@
       return;
     }
     if (S.d.loadError) toast(S.d.loadError, "error");
+    applyFold(false); applySideWidth();
+    if (S.seat) api.setSeat(S.seat).catch(() => {});
     if (S.d.firstRun) { S.players = JSON.parse(JSON.stringify(cfg().players)); S.dialog = { kind: "welcome" }; }
     render();
     loadHooks().then(() => { if (!S.picker) render(); });

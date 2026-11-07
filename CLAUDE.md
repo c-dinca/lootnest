@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.45.0, beta)
+## Where things stand (1.46.0, beta)
 
 These shipped recently, newest last:
 
@@ -245,6 +245,14 @@ These shipped recently, newest last:
   "-beta" version would stop updates. The save check on Home
   (`app/savecheck.go`, `saveCheckBlock()`), and Report a problem (copies
   the version and log, opens a new GitHub issue; nothing is sent).
+- **1.46** The shell: games in the sidebar (`renderSideGames()`, groups
+  playing, recent, collections, all; `#side-q` filter; `S.sideSort`;
+  folded groups in `S.sideClosed`), the sidebar folds to a rail
+  (`.app.side-folded`, Ctrl+B, `S.folded`) and resizes (`#side-resize`,
+  pref `sideW`). Motion tokens (`--dur-4`, `--ease-emph`, `--stagger`,
+  `--rise`), view transitions on nav, `staggerIn()`. The Library's list
+  view (`S.density === "list"`, `listRowHTML`). `win.ToastFailed` logs why
+  a toast couldn't be shown and falls back to the tray.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:

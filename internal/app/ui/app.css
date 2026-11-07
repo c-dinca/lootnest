@@ -1281,3 +1281,170 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .sc-line--ok { --tone: var(--success); }
 .sc-line--mid { --tone: var(--warning); }
 .sc-line--low { --tone: var(--danger); }
+
+/* =================================================================== shell
+   The sidebar, as in Steam's library: the sections at the top, then every
+   game in a list you can filter, sort and fold by collection; who's here and
+   Settings at the bottom. It's as wide as you drag it, or folds to a rail of
+   icons (Ctrl+B). */
+.app { grid-template-columns: var(--side-w) minmax(0, 1fr); transition: grid-template-columns var(--dur-4) var(--ease-emph); }
+.app.no-anim { transition: none; }
+.side { gap: 0; padding: 0 var(--space-2) var(--space-2); overflow: hidden; }
+.side-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: var(--bar-h); flex: none; }
+.side-top .brand { height: auto; margin: 0; min-width: 0; }
+.brand-name { white-space: nowrap; }
+.side-btn { display: inline-grid; place-items: center; width: 28px; height: 28px; flex: none; padding: 0; border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-3); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.side-btn svg { width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.side-btn:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
+.side-btn:active { transform: scale(.94); }
+.side-btn:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.side-btn[aria-pressed="true"] { color: var(--fg-1); background: var(--glass-ctl-on); }
+.side-search { margin: 0 0 var(--space-2); flex: none; }
+.side-kbd { position: absolute; right: var(--space-2); padding: 1px 5px; border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 10px/1.4 var(--font-ui); color: var(--fg-3); pointer-events: none; transition: opacity var(--dur-1) var(--ease-out); }
+.side-search .ln-input:focus ~ .side-kbd, .side-search .ln-input:not(:placeholder-shown) ~ .side-kbd { opacity: 0; }
+.nav-list { flex: none; }
+.nav { height: 34px; }
+.nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav .count { margin-left: 0; }
+
+/* The games. */
+.side-lib { display: flex; flex-direction: column; min-height: 0; flex: 1; margin-top: var(--space-4); border-top: var(--hairline) solid var(--edge-1); padding-top: var(--space-3); }
+.side-lib-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0 var(--space-1) var(--space-2); }
+.side-lib-head .side-label { padding: 0; }
+.side-lib-tools { display: flex; gap: 2px; }
+.side-filter { position: relative; display: flex; align-items: center; margin: 0 0 var(--space-2); }
+.side-filter svg { position: absolute; left: var(--space-2); width: 14px; height: 14px; fill: none; stroke: var(--fg-3); stroke-width: 1.5; stroke-linecap: round; pointer-events: none; }
+.side-filter input { width: 100%; height: 28px; padding: 0 var(--space-2) 0 28px; border: var(--hairline) solid transparent; border-radius: var(--radius-ctl); background: var(--glass-ctl); color: var(--fg-1); font: 500 var(--fs-13)/1 var(--font-ui); transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
+.side-filter input::placeholder { color: var(--fg-3); }
+.side-filter input:hover { background: var(--glass-ctl-hover); }
+.side-filter input:focus { outline: none; border-color: var(--edge-3); background: var(--bg-well); }
+.side-games { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 calc(var(--space-2) * -1); padding: 0 var(--space-2) var(--space-2); scrollbar-gutter: stable; }
+.side-games::-webkit-scrollbar { width: 8px; }
+.side-games::-webkit-scrollbar-thumb { border-width: 2px; }
+.sg-group { margin-bottom: var(--space-1); }
+.sg-head { display: flex; align-items: center; gap: var(--space-1); width: 100%; height: 26px; padding: 0 var(--space-1); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-3); font: 650 var(--fs-12)/1 var(--font-ui); text-align: left; cursor: pointer; }
+.sg-head:hover { color: var(--fg-1); }
+.sg-head:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.sg-head svg { width: 12px; height: 12px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--dur-2) var(--ease-out); }
+.sg-group.closed .sg-head svg { transform: rotate(-90deg); }
+.sg-head .sg-n { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
+.sg-rows { display: grid; gap: 1px; overflow: hidden; }
+.sg-group.closed .sg-rows { display: none; }
+.sg-row { position: relative; display: grid; grid-template-columns: var(--thumb-w) minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); width: 100%; min-height: 36px; padding: 3px var(--space-2) 3px 3px; border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+.sg-row:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
+.sg-row:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.sg-row[aria-current="true"] { background: var(--glass-ctl-on); color: var(--fg-1); }
+.sg-row[aria-current="true"]::before { content: ""; position: absolute; left: -4px; top: 8px; bottom: 8px; width: 2px; border-radius: var(--radius-tag); background: var(--accent); }
+.sg-thumb { position: relative; width: var(--thumb-w); height: var(--thumb-h); border-radius: 2px; overflow: hidden; background: var(--bg-raised); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }
+.sg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.sg-thumb img.ready { opacity: 1; }
+.sg-thumb img.icon { object-fit: contain; padding: 3px; }
+.sg-thumb b { position: absolute; inset: 0; display: grid; place-items: center; font: 750 var(--fs-12)/1 var(--font-title); color: var(--fg-3); }
+.sg-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-name small { display: block; font-size: 11px; color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; }
+.sg-row.playing .sg-name small { color: var(--success); }
+.sg-mark { display: flex; align-items: center; gap: 3px; }
+.sg-mark i { width: 6px; height: 6px; border-radius: var(--radius-round); background: var(--player-fill); }
+.sg-live { width: 7px; height: 7px; border-radius: var(--radius-round); background: var(--success); box-shadow: 0 0 0 0 oklch(0.82 0.110 155 / 0.6); animation: live 1.8s var(--ease-out) infinite; }
+@keyframes live { 0% { box-shadow: 0 0 0 0 oklch(0.82 0.110 155 / 0.55); } 70%, 100% { box-shadow: 0 0 0 6px oklch(0.82 0.110 155 / 0); } }
+.sg-empty { padding: var(--space-2); font-size: var(--fs-13); color: var(--fg-3); }
+
+/* The bottom: who's here, Lootnest's own update, Settings. */
+.side-foot { flex: none; display: grid; gap: 1px; padding-top: var(--space-2); border-top: var(--hairline) solid var(--edge-1); }
+.side-foot .who-list { max-height: calc(36px * 3 + 2px); }
+.side-foot .side-update { margin: 0; padding: var(--space-1) 0; }
+.side-foot .nav-bottom { margin-top: var(--space-1); }
+
+/* Dragging the edge resizes the sidebar. */
+.side-resize { position: absolute; top: 0; right: -3px; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; }
+.side-resize::after { content: ""; position: absolute; top: 0; bottom: 0; left: 2px; width: 2px; background: var(--accent); opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
+.side-resize:hover::after, .app.resizing .side-resize::after { opacity: .7; }
+.app.resizing, .app.resizing * { cursor: col-resize !important; user-select: none; }
+.app.resizing { transition: none; }
+
+/* Folded: a rail of icons. */
+.app.side-folded { --side-w: var(--side-rail); }
+.side-folded .side { padding-inline: var(--space-2); }
+.side-folded .side-top { flex-direction: column; justify-content: center; gap: var(--space-2); height: auto; padding: var(--space-3) 0 var(--space-2); }
+.side-folded .brand-name, .side-folded .brand-stage, .side-folded .nav-label, .side-folded .nav .count, .side-folded .side-lib-head, .side-folded .side-filter, .side-folded .who-head, .side-folded .who-item .who-name, .side-folded .who-item .what, .side-folded .side-update, .side-folded .side-resize, .side-folded .sg-head, .side-folded .sg-name, .side-folded .sg-mark { display: none; }
+.side-folded .side-collapse svg { transform: scaleX(-1); }
+.side-folded .side-search .ln-input { width: 40px; padding: 0; color: transparent; cursor: pointer; }
+.side-folded .side-search .ln-input::placeholder { color: transparent; }
+.side-folded .side-search .ln-icon { left: 12px; }
+.side-folded .side-kbd { display: none; }
+.side-folded .nav { justify-content: center; padding: 0; }
+.side-folded .nav[aria-current="page"]::before { left: -8px; }
+.side-folded .nav[data-view="library"] .count, .side-folded .nav[data-view="updates"] .count:not(:empty) { display: block; position: absolute; top: 3px; right: 6px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: var(--radius-round); background: var(--accent); color: var(--fg-on-accent); font: 750 9px/14px var(--font-ui); text-align: center; }
+.side-folded .nav[data-view="library"] .count { display: none; }
+.side-folded .side-lib { margin-top: var(--space-3); padding-top: var(--space-2); }
+.side-folded .side-games { margin: 0 -4px; padding: 0 4px; scrollbar-width: none; }
+.side-folded .side-games::-webkit-scrollbar { display: none; }
+.side-folded .sg-group.closed .sg-rows { display: grid; }
+.side-folded .sg-row { grid-template-columns: 1fr; justify-items: center; padding: 3px 0; }
+.side-folded .sg-thumb { --thumb-w: 30px; --thumb-h: 40px; }
+.side-folded .sg-group + .sg-group { border-top: var(--hairline) solid var(--edge-1); padding-top: var(--space-1); }
+.side-folded .who-item { grid-template-columns: 1fr; justify-items: center; padding: var(--space-1) 0; }
+.side-folded .who-item .ln-avatar { grid-row: auto; }
+.side-folded .who-list { max-height: none; }
+
+@media (max-width: 760px) { .side-resize { display: none; } }
+
+/* ================================================================= motion
+   Pages arrive with a short rise; tiles one after another; covers lift under
+   the pointer. Quick and mechanical, never bouncy. */
+#view { view-transition-name: page; }
+::view-transition-old(page) { animation: page-out var(--dur-1) var(--ease-out) both; }
+::view-transition-new(page) { animation: page-in var(--dur-4) var(--ease-emph) both; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+@keyframes page-out { to { opacity: 0; } }
+@keyframes page-in { from { opacity: 0; transform: translateY(var(--rise)); } }
+.enter { animation: page-in var(--dur-4) var(--ease-emph) both; }
+.stagger { animation: tile-in var(--dur-4) var(--ease-emph) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }
+@keyframes tile-in { from { opacity: 0; transform: translateY(var(--rise)) scale(.985); } }
+.ln-tile__cover { transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.ln-tile:hover .ln-tile__cover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.ln-tile:active .ln-tile__cover { transform: translateY(-1px); }
+.ln-button:active:not(:disabled) { transform: scale(.98); }
+.ln-button { transition-property: background-color, border-color, color, transform, box-shadow; }
+.sg-rows.opening { animation: rows-in var(--dur-3) var(--ease-emph); }
+@keyframes rows-in { from { opacity: 0; transform: translateY(-4px); } }
+.ln-toast { animation: toast-in var(--dur-3) var(--ease-emph) both; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .app, .sg-thumb img, .ln-tile__cover { transition: none; }
+  .enter, .stagger, .ln-toast, .sg-rows.opening, .sg-live { animation: none; }
+  ::view-transition-old(page), ::view-transition-new(page) { animation: none; }
+  .ln-tile:hover .ln-tile__cover { transform: none; }
+}
+
+/* =========================================================== library list
+   The Library as rows, as in Steam's list view. */
+.lib-size .lib-size-list { display: block; width: 14px; height: 10px; background: linear-gradient(currentColor, currentColor) 0 0 / 100% 1.5px no-repeat, linear-gradient(currentColor, currentColor) 0 50% / 100% 1.5px no-repeat, linear-gradient(currentColor, currentColor) 0 100% / 100% 1.5px no-repeat; }
+.lib-grid.size-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.lib-list-head, .lib-row-open { display: grid; grid-template-columns: 40px minmax(180px, 2fr) minmax(140px, 1.2fr) 110px 110px; align-items: center; gap: var(--space-4); }
+.lib-list-head { padding: var(--space-2) var(--space-3); font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); border-bottom: var(--hairline) solid var(--edge-1); grid-template-columns: 40px minmax(180px, 2fr) minmax(140px, 1.2fr) 110px 110px 96px; }
+.lib-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 96px; align-items: center; gap: var(--space-4); padding-right: var(--space-3); border-bottom: var(--hairline) solid var(--edge-1); border-radius: var(--radius-ctl); transition: background-color var(--dur-1) var(--ease-out); }
+.lib-row:hover { background: var(--glass-ctl); }
+.lib-row-open { min-height: 56px; padding: var(--space-2) 0 var(--space-2) var(--space-3); border: 0; background: none; color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; }
+.lib-row-open:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-ctl); }
+.lib-row-thumb { position: relative; width: 30px; height: 40px; border-radius: 2px; overflow: hidden; background: var(--bg-raised); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); transition: transform var(--dur-2) var(--ease-out); }
+.lib-row:hover .lib-row-thumb { transform: scale(1.06); }
+.lib-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lib-row-thumb img.icon { object-fit: contain; padding: 4px; }
+.lib-row-thumb b { position: absolute; inset: 0; display: grid; place-items: center; font: 750 var(--fs-13)/1 var(--font-title); color: var(--fg-3); }
+.lib-row-name { min-width: 0; display: grid; }
+.lib-row-name b { font-weight: 650; font-size: var(--fs-14); color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-row-name small { font-size: var(--fs-12); color: var(--fg-3); }
+.lib-row-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-row-dim { color: var(--fg-3); }
+.lib-row-prof { display: flex; align-items: center; gap: var(--space-1); }
+.lib-row-prof .ln-mark { width: 10px; height: 10px; }
+.lib-row-prof .is-loaded { box-shadow: 0 0 0 2px var(--bg-ground), 0 0 0 3px var(--player-fill); }
+.lib-row-play { opacity: 0; transform: translateX(4px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); justify-self: end; }
+.lib-row:hover .lib-row-play, .lib-row:focus-within .lib-row-play { opacity: 1; transform: none; }
+.lib-row .ln-tag { justify-self: end; }
+@media (max-width: 1100px) { .lib-list-head, .lib-row-open { grid-template-columns: 40px minmax(160px, 2fr) minmax(120px, 1fr) 90px; } .lib-list-head span:nth-child(5), .lib-row-prof { display: none; } }
+
+/* The Library's tools stay in reach while the grid scrolls under them. */
+.lib-tools { position: sticky; top: var(--space-2); z-index: 4; margin-inline: calc(var(--space-4) * -1); padding: var(--space-3) var(--space-4); background: var(--glass-chrome); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border-radius: var(--radius-panel); }

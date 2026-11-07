@@ -263,6 +263,14 @@ func Run(opt Options) error {
 	a.w.SetHtml(pageHTML())
 
 	a.tray = win.NewTray(a.hwnd, dpi)
+	win.ToastFailed = func(t win.Toast, err error) {
+		// The note over the game couldn't be made: say why in the log, and
+		// show it as a Windows notification instead.
+		a.logf("ERROR a note over the game couldn't be shown (%v); it went to Windows' notifications", err)
+		if a.tray != nil {
+			a.ui(func() { a.tray.Notify(t.Title, strings.TrimSpace(t.Kicker+". "+t.Line)) })
+		}
+	}
 	a.tray.Add(Name)
 	if len(recovered) > 0 {
 		names := make([]string, len(recovered))
