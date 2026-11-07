@@ -258,6 +258,7 @@
       case "gameSaves": {
         if (ev.info) { S.gsaves[ev.info.key] = ev.info; if (S.view === "game") render(); break; }
         if (ev.error) toast(ev.error, "error");
+        else if (ev.unchanged) toast("Nothing new to back up: the saves are the same as the newest version.");
         else if (ev.saved) toast("Saved to the cloud");
         else if (ev.restored) toast(ev.skipped ? `Restored; ${ev.skipped} save location${ev.skipped === 1 ? "" : "s"} this PC doesn't have ${ev.skipped === 1 ? "was" : "were"} left out` : "Restored");
         if (ev.changed) { S.gsaves = {}; if (S.view === "game") render(); }
@@ -1673,19 +1674,23 @@
         ${s.saveDb ? "" : `<p class="hint">Or turn on <b>Find save locations online</b>: Lootnest then uses PCGamingWiki's list of where over 20,000 games keep their saves. <button class="link-btn" data-action="savedb-on">Turn it on</button></p>`}`;
     } else {
       const yours = G.source === "you";
-      where = `<ul class="gs-locs">${G.locations.map((l) => `<li class="selectable" title="${esc(l.resolved)}"><span>${esc(l.path)}</span><span class="hint">${esc(fmtBytes(l.size || 0))}${yours ? ` <button class="link-btn" data-action="gs-remove" data-key="${esc(it.id)}" data-path="${esc(l.path)}" aria-label="Remove">Remove</button>` : ""}</span></li>`).join("")}</ul>
+      where = `<span class="label">On this PC</span>
+        <ul class="gs-locs">${G.locations.map((l) => `<li class="selectable" title="${esc(l.resolved)}"><span>${esc(l.path)}</span><span class="gs-tools"><span class="hint">${esc(fmtBytes(l.size || 0))}</span>
+          <button class="link-btn" data-action="open-path" data-path="${esc(l.path)}">Open</button>${yours ? `<button class="link-btn" data-action="gs-remove" data-key="${esc(it.id)}" data-path="${esc(l.path)}">Remove</button>` : ""}</span></li>`).join("")}</ul>
         <p class="hint">${yours ? "Chosen by you." : G.source === "list" ? "Found with PCGamingWiki's list of save locations." : "Folders named like the game."}
           ${yours ? "" : `<button class="link-btn" data-action="gs-own" data-key="${esc(it.id)}">Choose them yourself</button>`}</p>
         ${yours ? choose : ""}`;
     }
     const vs = G.versions || [];
+    const inCloud = G.cloudDir ? `<div class="gs-cloud"><span class="label">In ${esc(G.provider || "your cloud folder")}</span>
+      <div class="gs-cloud-row"><span class="selectable">${esc(G.cloudDir)}</span><button class="btn small quiet" data-action="gs-open" data-key="${esc(it.id)}">Open folder</button></div></div>` : "";
     const list = G.locations.length || vs.length ? `${vs.length ? `<ul class="gs-versions">${vs.map((v, i) => `<li><span><b>${esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }))}</b>
         <span class="hint">${esc(v.computer)}, ${esc(fmtBytes(v.size))}${i === 0 ? ", newest" : ""}</span></span>
         <button class="btn small quiet" data-action="gs-restore" data-key="${esc(it.id)}" data-id="${esc(v.id)}" data-when="${esc(v.created)}" data-pc="${esc(v.computer)}" ${G.busy ? "disabled" : ""}>Restore</button></li>`).join("")}</ul>`
         : `<p class="hint">No versions yet.${G.off === "disabled" ? "" : " One is made when the saves change and the game is closed."}</p>`}
       ${G.off === "disabled" ? `<p class="hint">Automatic versions are off on <b>Cloud saves</b>.</p>` : ""}
       ${G.locations.length ? `<div class="row"><button class="btn" data-action="gs-now" data-key="${esc(it.id)}" ${G.busy ? "disabled" : ""}>${G.busy ? "Saving" : "Back up now"}</button></div>` : ""}` : "";
-    return `<div class="gp-saves">${head}${where}${list}</div>`;
+    return `<div class="gp-saves">${head}${where}${inCloud}${list}</div>`;
   }
 
   // The game page's Shelf: where the game stands for each player.
@@ -2169,6 +2174,7 @@
       catch (e) { toast(errText(e), "error"); }
     },
     "gs-own"(el) { const G = S.gsaves[el.dataset.key]; if (G) { G.source = "you"; G.locations = []; G.versions = G.versions || []; render(); } },
+    "gs-open"(el) { api.open("gameSaves", el.dataset.key).catch((e) => toast(errText(e), "error")); },
     "gs-pcgw"(el) { api.open("pcgw", el.dataset.name).catch((e) => toast(errText(e), "error")); },
     async "gs-now"(el) {
       const G = S.gsaves[el.dataset.key];

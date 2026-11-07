@@ -702,6 +702,8 @@ func (a *App) apiOpen(kind, arg string) error {
 		target = DataDir()
 	case "backupFolder":
 		return a.openBackupFolder()
+	case "gameSaves":
+		return a.openGameSaves(arg)
 	case "backups":
 		target = filepath.Join(a.store.BackupsDir(), filepath.Base(arg))
 	case "profile":

@@ -216,11 +216,14 @@ func (a *App) backUpGame(c *core.Cloud, f core.FoundGame, force bool) (*core.Sav
 		saveGamesaves(st)
 		return nil, nil
 	}
-	if vs := c.GameVersions(key); !force && len(vs) > 0 && vs[0].Hash == hash {
+	if vs := c.GameVersions(key); len(vs) > 0 && vs[0].Hash == hash {
 		e.Hash, e.At = hash, vs[0].Created
 		st[key] = e
 		saveGamesaves(st)
-		return nil, nil // another PC made the same version
+		if force {
+			return nil, errSavesUnchanged
+		}
+		return nil, nil // the newest version (from here or another PC) is the same
 	}
 	v, err := c.SaveGameVersion(key, f.Name, gl.Locs, hash, gameSavesKeep)
 	if err != nil {
@@ -235,6 +238,9 @@ func (a *App) backUpGame(c *core.Cloud, f core.FoundGame, force bool) (*core.Sav
 
 // watchGameSaves backs up the saves of games outside Steam that changed,
 // every few minutes, while the game isn't running.
+// errSavesUnchanged: Back up now when the newest version is the same saves.
+var errSavesUnchanged = errors.New("The saves haven't changed since the newest version, so no new one was made.")
+
 func (a *App) watchGameSaves() {
 	time.Sleep(90 * time.Second)
 	for {
@@ -278,6 +284,8 @@ func (a *App) backUpChangedGames() {
 
 type GameSavesInfo struct {
 	Key       string              `json:"key"`
+	CloudDir  string              `json:"cloudDir,omitempty"` // where its versions are
+	Provider  string              `json:"provider,omitempty"` // OneDrive, Google Drive, ...
 	Locations []core.SaveLocation `json:"locations"`
 	Source    string              `json:"source"`
 	Versions  []core.SaveVersion  `json:"versions"`
@@ -321,6 +329,13 @@ func (a *App) apiGameSaves(key string) {
 			return
 		}
 		info.Versions = append(info.Versions, c.GameVersions(gameSavesKey(f))...)
+		info.CloudDir = filepath.Join(core.CloudDir(s.BackupDir), "saves", gameSavesKey(f))
+		info.Provider = "your folder"
+		for _, cf := range cloudFolders() {
+			if strings.EqualFold(filepath.Clean(cf.Path), filepath.Clean(s.BackupDir)) {
+				info.Provider = cf.Name
+			}
+		}
 	}()
 }
 
@@ -353,7 +368,9 @@ func (a *App) apiGameSaveNow(key string) error {
 		defer func() { a.emit("gameSaves", out); a.apiGameSaves(key) }()
 		gameSaveMu.Lock()
 		defer gameSaveMu.Unlock()
-		if _, err := a.backUpGame(c, f, true); err != nil {
+		if _, err := a.backUpGame(c, f, true); errors.Is(err, errSavesUnchanged) {
+			out["saved"], out["unchanged"] = false, true
+		} else if err != nil {
 			out["error"] = err.Error()
 		}
 	}()
@@ -400,4 +417,26 @@ func (a *App) apiGameSaveRestore(key, id string) error {
 		out["skipped"] = skipped
 	}()
 	return nil
+}
+
+// openGameSaves shows a game's versions in Explorer (the cloud folder).
+func (a *App) openGameSaves(key string) error {
+	f, ok := a.foundByKey(key)
+	if !ok {
+		return errFoundGone
+	}
+	a.mu.Lock()
+	dir := a.cfg.Settings.BackupDir
+	a.mu.Unlock()
+	if dir == "" {
+		return errors.New("Choose a cloud folder on Cloud saves first.")
+	}
+	t := filepath.Join(core.CloudDir(dir), "saves", gameSavesKey(f))
+	if _, err := os.Stat(t); err != nil {
+		t = core.CloudDir(dir)
+		if _, err := os.Stat(t); err != nil {
+			t = dir
+		}
+	}
+	return win.ShellOpen(t)
 }
