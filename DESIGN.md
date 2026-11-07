@@ -204,7 +204,7 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Sidebar, backdrop, toasts | On the system (1.16.0) |
 | Game page, profiles on and off, with Cloud save, Shelf and news | On the system (1.16.0) |
 | Home, banners (`ln-banner`) | On the system (1.16.1) |
-| Library, inputs (`ln-input`, `ln-search`) | On the system (1.16.2) |
+| Library, inputs (`ln-input`, `ln-search`) | On the system (1.16.2). Since 1.31, **Recent games** (`.lib-recent`, `.lib-cap`) opens it, as in Steam's library: the last five played on their wide art (16:9), each with who played and their time, and a red Play on hover. It shows only on the Library as it opens, not filtered, and a search hides it. The filters sit under it, above the grid they filter. |
 | Players and a player's page | On the system (1.16.5) |
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
 | The seat (who's at the PC) | On the system (1.18.0). It lives in the sidebar's **Who's here** rather than the mock's top-right control, so it never covers a page's own actions or the game art. |
