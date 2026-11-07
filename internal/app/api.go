@@ -72,6 +72,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_found", a.apiFound))
 	must(a.w.Bind("ps_scan", a.apiScan))
 	must(a.w.Bind("ps_ignoreFound", a.apiIgnoreFound))
+	must(a.w.Bind("ps_unhideFound", a.apiUnhideFound))
 	must(a.w.Bind("ps_addFound", a.apiAddFound))
 	must(a.w.Bind("ps_foundGame", a.apiFoundGame))
 	must(a.w.Bind("ps_applyHooks", a.apiApplyHooks))
