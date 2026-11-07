@@ -502,6 +502,9 @@ func (e *Env) FinishFound(list []FoundGame) []FoundGame {
 	sort.SliceStable(list, func(i, j int) bool { return sourceRank(list[i].Source) < sourceRank(list[j].Source) })
 	var out []FoundGame
 	for _, f := range list {
+		if f.Source != "added" && f.Source != "steam" && IsLauncherApp(f.Name) {
+			continue
+		}
 		dup := false
 		for _, o := range out {
 			if o.Key == f.Key || (f.Dir != "" && o.Dir != "" && (isWithin(f.Dir, o.Dir) || isWithin(o.Dir, f.Dir))) {
@@ -588,7 +591,8 @@ func MergeFound(saved, fresh []FoundGame, stillThere func(dir string) bool) []Fo
 		have[f.Key] = true
 	}
 	for _, f := range saved {
-		if have[f.Key] || f.Dir == "" || !stillThere(f.Dir) {
+		// A launcher an earlier scan took for a game is left out now.
+		if have[f.Key] || f.Dir == "" || !stillThere(f.Dir) || f.Source != "added" && IsLauncherApp(f.Name) {
 			continue
 		}
 		out = append(out, f)
