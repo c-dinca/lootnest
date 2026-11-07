@@ -699,7 +699,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 
 .players-edit { margin-top: var(--space-12); max-width: 880px; }
 .players { display: grid; border-top: var(--hairline) solid var(--edge-1); }
-.player { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto auto; align-items: center; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.player { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto auto auto; align-items: center; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
 .player .ln-input { width: 100%; font-size: var(--fs-15); font-weight: 600; }
 .swatches { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .swatch { width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--radius-round); cursor: pointer; box-shadow: inset 0 0 0 var(--hairline) var(--edge-2); transition: box-shadow var(--dur-1) var(--ease-out); }
@@ -981,3 +981,20 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-ms-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-ctl); background: var(--glass-ctl-active); color: var(--fg-3); }
 .ach-ms-grid li.done .ach-ms-icon { background: var(--accent-wash); color: var(--accent); }
 .ach-ms-grid li:not(.done) b { color: var(--fg-2); }
+
+/* Runs: a profile that's a run of a person shows under them. */
+.who-item.who-run { padding-left: calc(var(--space-2) + 16px); }
+.who-item.who-run .ln-avatar { --size: 20px; font-size: 10px; }
+.slot.slot-run { width: clamp(160px, 12vw, 200px); padding-top: var(--space-6); }
+.slot.slot-run .name { font-size: var(--fs-24); }
+.slot-of { font-size: var(--fs-12); color: var(--fg-2); }
+.pgroup { display: grid; gap: var(--space-2); align-content: start; }
+.pruns { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.prun { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-2) var(--space-3); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-ctl); background: var(--glass-panel); color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
+.prun:hover { background: var(--glass-ctl-hover); border-color: var(--player-fill); }
+.prun:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.prun b { display: block; font-size: var(--fs-14); font-weight: 650; }
+.prun span span { font-size: var(--fs-12); color: var(--fg-2); }
+.player.player-run { padding-left: var(--space-8); }
+.player-of { width: auto; min-width: 170px; }
+.player-same { font-size: var(--fs-13); color: var(--fg-2); }

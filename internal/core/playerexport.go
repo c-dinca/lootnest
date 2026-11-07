@@ -162,8 +162,8 @@ func (s *Store) ImportPlayer(ob *OpenedBackup, current *Config) (*Config, Import
 	old := p.ID
 	if local := cfg.Player(p.ID); local != nil {
 		res.Replaced = true
-	} else if len(cfg.Players) >= 8 {
-		return nil, res, errors.New("Lootnest supports up to 8 profiles; remove one first.")
+	} else if len(cfg.Players) >= MaxPlayers {
+		return nil, res, fmt.Errorf("Lootnest supports up to %d profiles; remove one first.", MaxPlayers)
 	}
 	// A different player here with the same name: tell them apart.
 	for n := 2; nameTaken(cfg, p.Name, p.ID); n++ {

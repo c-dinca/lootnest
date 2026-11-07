@@ -671,3 +671,26 @@ func TestNewProfileCopyFrom(t *testing.T) {
 		t.Fatalf("Cristian's back: %q", got)
 	}
 }
+
+// A run belongs to a person: it takes their colour; runs of runs, of
+// themselves, or of someone gone become people again.
+func TestPlayerRuns(t *testing.T) {
+	ps := []Player{
+		{ID: "p1", Name: "Cristian", Color: "#6C9BD2"},
+		{ID: "p2", Name: "Cristian hardcore", Color: "#D9738E", Of: "p1"},
+		{ID: "p3", Name: "Deep", Color: "#5FB49C", Of: "p2"},
+		{ID: "p4", Name: "Self", Color: "#5FB49C", Of: "p4"},
+		{ID: "p5", Name: "Orphan", Color: "#5FB49C", Of: "gone"},
+	}
+	if err := ValidatePlayers(ps); err != nil {
+		t.Fatal(err)
+	}
+	if ps[1].Of != "p1" || ps[1].Color != "#6C9BD2" {
+		t.Fatalf("run of Cristian: %+v", ps[1])
+	}
+	for _, i := range []int{2, 3, 4} {
+		if ps[i].Of != "" {
+			t.Fatalf("%s should be a person: %+v", ps[i].Name, ps[i])
+		}
+	}
+}

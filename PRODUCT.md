@@ -15,6 +15,8 @@ A profile is a save slot with a name, not only a person, like the profiles on a 
 
 Completionists, people who replay and people who keep a clean save for each playthrough count as much as the couch.
 
+Since 1.24 a run belongs to its person (`Player.Of`). It has their colour and picture and is listed under them everywhere, the way a console groups a user's saves.
+
 ## Who uses it, and when
 - **The household.** Siblings, partners, parents and kids sharing one gaming PC, at home, in the evening, often from a couch or desk with the window maximised.
   - One person usually sets it up: adds players, turns on profiles per game, chooses a cloud folder.

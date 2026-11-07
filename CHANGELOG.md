@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.24.0
+
+- **Profiles grouped by person, as on a console.** A profile can be **a run for** someone: "Cristian hardcore" and "Cristian 100%" are Cristian's runs. Each has its own saves, settings and achievements, as any profile does.
+  - A run has its person's colour and picture, with a thin ring around it so you can tell them apart.
+  - Runs are listed under their person in the sidebar, in **Who's playing?** (as "Cristian's run, hardcore") and on the **Profiles** page, where a person's card has their runs under it.
+  - Make one from **New profile** in **Who's playing?** by choosing **A run for Cristian**, or on **Profiles** with the new **Whose profile** menu on each row.
+- Lootnest now keeps up to 16 profiles, so there's room for everyone's runs.
+
 ## 1.23.3
 
 - **Each profile's achievements go to the cloud with its saves.** With **Sync saves between PCs** on, a profile's own achievements (1.20) now go up after a session with its saves, and come down on your other PC before the game starts. That works even on a PC that doesn't have them yet.
