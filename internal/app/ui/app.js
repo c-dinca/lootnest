@@ -48,6 +48,8 @@
     addLibraryGame: (kind, appId, path) => call("ps_addLibraryGame", kind, appId || 0, path || ""),
     gameIcon: (exe) => call("ps_gameIcon", exe),
     art: (appId, name, key, kind) => call("ps_art", appId || 0, name, key, kind),
+    setAvatar: (id, path) => call("ps_setAvatar", id, path),
+    removeAvatar: (id) => call("ps_removeAvatar", id),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -214,6 +216,13 @@
         S.news[ev.key] = ev;
         if (S.view === "game" || S.view === "library" || S.view === "home") render();
         break;
+      case "avatar": {
+        const D = S.dialog && S.dialog.kind === "profile" ? S.dialog : null;
+        if (D) D.busy = false;
+        if (ev.error) toast(ev.error, "error");
+        refresh();
+        break;
+      }
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
@@ -246,7 +255,7 @@
     if (!S.d) return;
     document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#6C9BD2");
     document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#D9738E");
-    const top = S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view;
+    const top = S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view;
     document.querySelectorAll(".nav[data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
     const n = libraryItems().length;
     $("#lib-count").textContent = n ? n : "";
@@ -259,6 +268,7 @@
     else if (S.view === "game") v.innerHTML = viewGame();
     else if (S.view === "edit") v.innerHTML = viewEdit();
     else if (S.view === "players") v.innerHTML = viewPlayers();
+    else if (S.view === "player") v.innerHTML = viewPlayer();
     else if (S.view === "settings") v.innerHTML = viewSettings();
     if (S.animateView && v.firstElementChild) v.firstElementChild.classList.add("enter");
     S.animateView = false;
@@ -349,7 +359,7 @@
     $("#who").innerHTML = cfg().players.map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
-      return `<div class="who-item${s ? " playing" : ""}" style="--c:${esc(p.color)}"><span class="avatar" aria-hidden="true">${esc(p.name.trim().charAt(0).toUpperCase())}</span><span class="who-name">${esc(p.name)}</span>
+      return `<div class="who-item${s ? " playing" : ""}" style="--c:${esc(p.color)}">${avatarHTML(p, "")}<span class="who-name">${esc(p.name)}</span>
         <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></div>`;
     }).join("");
   }
@@ -1010,6 +1020,10 @@
       o.innerHTML = viewBlocked();
     } else if (D.kind === "move") {
       o.innerHTML = viewMove();
+    } else if (D.kind === "profile") {
+      const q = $("#pe-q"), pos = q && document.activeElement === q ? q.selectionStart : -1;
+      o.innerHTML = viewProfileEditor();
+      if (pos >= 0) { const q2 = $("#pe-q"); q2.focus(); q2.setSelectionRange(pos, pos); }
     } else if (D.kind === "news") {
       o.innerHTML = viewReader();
       if (!$("#overlay").classList.contains("still")) { const b = $(".reader-body"); if (b) b.scrollTop = 0; }
@@ -1347,10 +1361,87 @@
     </div>`;
   }
 
+  // ------------------------------------------------------------ profiles --
+  // Each player's own page: their picture, a banner from a game they pick,
+  // a line about them, their favourite games and what they've played.
+  const avatarHTML = (p, cls) => {
+    const u = (S.d.avatars || {})[p.id];
+    return `<span class="avatar ${cls || ""}" style="--c:${esc(p.color)}" aria-hidden="true">${u ? `<img src="${u}" alt="">` : esc(p.name.trim().charAt(0).toUpperCase())}</span>`;
+  };
+  const itemByKey = (k) => libraryItems().find((it) => recentKey(it) === k || it.id === k);
+  function playerStats(p) {
+    const items = libraryItems();
+    let total = 0, top = null, topT = 0;
+    items.forEach((it) => { const t = (playtimeOf(it) || {})[p.id] || 0; total += t; if (t > topT) { top = it; topT = t; } });
+    const recent = items.map((it) => ({ it, r: (S.d.recent || {})[recentKey(it)] })).filter((x) => x.r && x.r.player === p.id)
+      .sort((a, b) => new Date(b.r.at) - new Date(a.r.at));
+    const profiles = cfg().games.filter((g) => hasProfile(g.id, p.id)).length;
+    return { total, top, topT, recent, profiles };
+  }
+  function bannerHTML(p) {
+    const it = p.banner && itemByKey(p.banner);
+    if (it) { loadArt(it); ensureCover(it); }
+    const u = it ? artOf(it) : "";
+    return u ? `<div class="art" style="background-image:url('${u}')"></div>` : `<div class="art none" style="background:color-mix(in srgb, ${esc(p.color)} 38%, var(--panel))"></div>`;
+  }
+  function viewPlayer() {
+    const p = player(S.playerPage);
+    if (!p) { S.view = "players"; return viewPlayers(); }
+    const st = playerStats(p);
+    const favs = (p.favorites || []).map(itemByKey).filter(Boolean);
+    favs.forEach(ensureCover);
+    const stat = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+    return `<div class="profile-page" style="--c:${esc(p.color)}">
+      <div class="pp-banner">${bannerHTML(p)}<button class="btn ghost back" data-action="nav" data-view="players">${icon.back}Players</button></div>
+      <div class="pp-head">${avatarHTML(p, "xl")}
+        <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}</div>
+        <button class="btn" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button></div>
+      <div class="pp-stats">
+        ${stat(st.total ? esc(hours(st.total)) : "None yet", "played with Lootnest")}
+        ${stat(String(st.profiles), st.profiles === 1 ? "game with a profile" : "games with a profile")}
+        ${stat(st.top ? esc(st.top.name) : "None yet", st.top ? esc(hours(st.topT)) + ", most played" : "most played")}
+        ${stat(st.recent[0] ? esc(st.recent[0].it.name) : "None yet", st.recent[0] ? "played " + esc(ago(st.recent[0].r.at)) : "last played")}
+      </div>
+      <section class="pp-section"><h2 class="shelf-title">Favourite games</h2>
+        ${favs.length ? `<div class="grid size-l">${favs.map((it) => cardHTML(it, -1)).join("")}</div>`
+          : `<p class="hint">Pick up to six games to show here: <b>Edit profile</b>.</p>`}</section>
+      ${st.recent.length ? `<section class="pp-section"><h2 class="shelf-title">Played lately</h2>
+        <ul class="pp-recent">${st.recent.slice(0, 8).map(({ it, r }) => `<li><button data-action="open-sheet" ${it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`}><b>${esc(it.name)}</b><span>${esc(ago(r.at))}</span></button></li>`).join("")}</ul></section>` : ""}
+    </div>`;
+  }
+
+  function viewProfileEditor() {
+    const D = S.dialog, p = D.p;
+    const q = (D.q || "").toLowerCase();
+    const games = libraryItems().filter((it) => !q || it.name.toLowerCase().includes(q));
+    const fav = new Set(p.favorites || []);
+    return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="Edit ${esc(p.name)}'s profile">
+      <div class="page-head" style="margin:0"><div><h2>Edit profile</h2><p class="sub">Only people using this PC see it.</p></div>
+        <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
+      <div class="pe-top">${avatarHTML({ ...p, id: p.id }, "lg")}
+        <div class="row"><button class="btn" data-action="avatar-pick" ${D.busy ? "disabled" : ""}>${D.busy ? "Reading the picture" : "Choose a picture"}</button>
+        ${(S.d.avatars || {})[p.id] ? `<button class="btn quiet" data-action="avatar-remove">Remove picture</button>` : ""}</div></div>
+      <div class="field"><label for="pe-name">Name</label><input id="pe-name" type="text" maxlength="24" value="${esc(p.name)}" data-pe="name"></div>
+      <div class="field"><label for="pe-tag">A line about you</label><input id="pe-tag" type="text" maxlength="80" value="${esc(p.tagline || "")}" placeholder="Support main. Never the driver." data-pe="tagline"></div>
+      <div class="field"><span class="label">Colour</span><div class="swatches">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="pe-color" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div></div>
+      <div class="field"><label for="pe-banner">Banner</label><select id="pe-banner" data-pe="banner"><option value="">Your colour</option>
+        ${libraryItems().map((it) => `<option value="${esc(recentKey(it))}" ${p.banner === recentKey(it) ? "selected" : ""}>${esc(it.name)}</option>`).join("")}</select></div>
+      <div class="field"><span class="label">Favourite games <span class="hint">${fav.size} of 6</span></span>
+        <input type="search" id="pe-q" placeholder="Find a game" value="${esc(D.q || "")}" autocomplete="off">
+        <div class="pe-games">${games.map((it) => { const k = recentKey(it), on = fav.has(k); return `<button class="pe-game${on ? " on" : ""}" data-action="pe-fav" data-k="${esc(k)}" aria-pressed="${on}" ${!on && fav.size >= 6 ? "disabled" : ""}><span class="check"></span>${esc(it.name)}</button>`; }).join("")}</div></div>
+      <div class="dialog-foot"><span class="error-text" id="pe-error"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="pe-save">Save profile</button></div>
+    </div></div>`;
+  }
+
   function viewPlayers() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
+    const cards = cfg().players.map((p) => { const st = playerStats(p); return `<button class="pcard" data-action="open-player" data-player="${esc(p.id)}" style="--c:${esc(p.color)}">
+        <span class="pcard-banner">${bannerHTML(p)}</span>${avatarHTML(p, "lg")}
+        <span class="pcard-body"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : st.total ? esc(hours(st.total)) + " played" : "No games played yet"}</span></span></button>`; }).join("");
     return `<div class="page"><div class="page-head"><div><h1>Players</h1><p class="sub">Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div></div>
+      <div class="pcards">${cards}</div>
+      <h2 class="shelf-title" style="margin-top:36px">Names and colours</h2>
       <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
       <div class="row" style="margin-top:14px">${ps.length < 8 ? `<button class="btn" data-action="add-player">${icon.plus}Add player</button>` : ""}</div>
       <div class="row" style="margin-top:28px"><button class="btn primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save players</button>
@@ -1358,7 +1449,7 @@
   }
 
   async function savePlayers(welcome) {
-    const ps = S.players.map((p, i) => ({ id: p.id, name: (p.name || "").trim() || (welcome ? "Player " + (i + 1) : ""), color: p.color }));
+    const ps = S.players.map((p, i) => ({ ...p, name: (p.name || "").trim() || (welcome ? "Player " + (i + 1) : "") }));
     const removed = cfg().players.filter((o) => !ps.some((p) => p.id === o.id));
     if (removed.length && !welcome) {
       const ok = await confirmDialog({ title: `Remove ${removed.map((p) => p.name).join(" and ")}?`, body: "Their profiles are moved to the “removed” folder inside Lootnest's data folder, so nothing is deleted for good.", ok: "Remove" });
@@ -1451,6 +1542,31 @@
     play: (el) => openPicker(el.dataset.game, "play"),
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
+    "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
+    "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "" }; renderOverlay(); },
+    "pe-color"(el) { S.dialog.p.color = el.dataset.color; renderOverlay(); },
+    "pe-fav"(el) {
+      const f = S.dialog.p.favorites = S.dialog.p.favorites || [];
+      const i = f.indexOf(el.dataset.k);
+      if (i >= 0) f.splice(i, 1); else if (f.length < 6) f.push(el.dataset.k);
+      renderOverlay();
+    },
+    async "avatar-pick"() {
+      const D = S.dialog;
+      const r = await browse("image");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      D.busy = true; renderOverlay();
+      try { await api.setAvatar(D.p.id, r.path); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
+    },
+    async "avatar-remove"() { try { await api.removeAvatar(S.dialog.p.id); await refresh(); } catch (e) { toast(errText(e), "error"); } },
+    async "pe-save"() {
+      const D = S.dialog, p = D.p;
+      p.name = $("#pe-name").value; p.tagline = $("#pe-tag").value; p.banner = $("#pe-banner").value;
+      p.avatar = !!(S.d.avatars || {})[p.id];
+      const ps = cfg().players.map((x) => (x.id === p.id ? p : x));
+      try { await api.savePlayers(ps); S.dialog = null; S.players = null; await refresh(); toast("Profile saved"); }
+      catch (e) { const t = $("#pe-error"); if (t) t.textContent = errText(e); }
+    },
     density(el) { S.density = el.dataset.size; setPref("density", S.density); render(); },
     "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
     "open-link": (el) => api.open("link", el.dataset.url).catch((e) => toast(errText(e), "error")),
@@ -1664,6 +1780,11 @@
 
   document.addEventListener("input", (ev) => {
     const el = ev.target;
+    if (S.dialog && S.dialog.kind === "profile") {
+      if (el.dataset.pe) S.dialog.p[el.dataset.pe] = el.value;
+      if (el.id === "pe-q") { S.dialog.q = el.value; renderOverlay(); }
+      return;
+    }
     if (el.id === "lib-q") {
       S.q = el.value;
       const grid = $("#grid");

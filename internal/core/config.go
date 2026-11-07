@@ -22,6 +22,13 @@ type Player struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Color string `json:"color"`
+	// Profile page: a line under the name, a picture (saved as
+	// avatars/<id>.png when Avatar is true), the game whose art is the
+	// banner, and up to six favourite games (Library keys).
+	Tagline   string   `json:"tagline,omitempty"`
+	Avatar    bool     `json:"avatar,omitempty"`
+	Banner    string   `json:"banner,omitempty"`
+	Favorites []string `json:"favorites,omitempty"`
 }
 
 type PathEntry struct {
@@ -313,6 +320,18 @@ func ValidatePlayers(ps []Player) error {
 			return fmt.Errorf("invalid player id %q", p.ID)
 		}
 		ids[p.ID] = true
+		p.Tagline = strings.TrimSpace(p.Tagline)
+		if len([]rune(p.Tagline)) > 80 || strings.ContainsAny(p.Tagline, "\r\n") {
+			return fmt.Errorf("%s's line is too long; keep it to one line under 80 characters.", p.Name)
+		}
+		if len(p.Favorites) > 6 {
+			return fmt.Errorf("%s can show up to 6 favourite games.", p.Name)
+		}
+		for _, k := range append([]string{p.Banner}, p.Favorites...) {
+			if len(k) > 400 || strings.ContainsAny(k, "\r\n\x00") {
+				return errors.New("invalid game in a profile")
+			}
+		}
 		if !colorRe.MatchString(p.Color) {
 			p.Color = PlayerColors[i%len(PlayerColors)]
 		}

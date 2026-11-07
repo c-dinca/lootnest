@@ -62,6 +62,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_addLibraryGame", a.apiAddLibraryGame))
 	must(a.w.Bind("ps_gameIcon", a.apiGameIcon))
 	must(a.w.Bind("ps_art", a.apiArt))
+	must(a.w.Bind("ps_setAvatar", a.apiSetAvatar))
+	must(a.w.Bind("ps_removeAvatar", a.apiRemoveAvatar))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
@@ -107,6 +109,7 @@ type AppState struct {
 	Recent    map[string]core.Played      `json:"recent"`    // Library key -> last played
 	Playtime  map[string]map[string]int64 `json:"playtime"`  // Library key -> player -> seconds
 	SteamTime map[string]int64            `json:"steamTime"` // Library key -> seconds Steam counts for the account
+	Avatars   map[string]string           `json:"avatars"`   // player id -> profile picture as a data: URL
 }
 
 func (a *App) apiState() AppState {
@@ -119,6 +122,14 @@ func (a *App) apiState() AppState {
 	st.Sources = a.gameSources(cfg)
 	st.Recent = a.store.LoadRecent()
 	st.Playtime = a.store.LoadPlaytime()
+	st.Avatars = map[string]string{}
+	for _, p := range cfg.Players {
+		if p.Avatar {
+			if u := dataURL(avatarPath(p.ID)); u != "" {
+				st.Avatars[p.ID] = u
+			}
+		}
+	}
 	st.SteamTime = map[string]int64{}
 	// Steam's own record of what was played and when, so the Library's
 	// shelves fill in for games started from Steam too.
@@ -527,6 +538,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "exe":
 			opt.Title = "Choose the game's .exe"
 			opt.Filters = []win.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
+		case "image":
+			opt.Title = "Choose a picture"
+			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.gif)", Spec: "*.png;*.jpg;*.jpeg;*.gif"}}
 		case "file":
 			opt.Title = "Choose a settings or save file"
 			opt.Filters = []win.FileFilter{{Name: "All files", Spec: "*.*"}}
