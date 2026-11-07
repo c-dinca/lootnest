@@ -91,6 +91,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_gameSaveRestoreLocal", a.apiGameSaveRestoreLocal))
 	must(a.w.Bind("ps_findGames", a.apiFindGames))
 	must(a.w.Bind("ps_gameOffer", a.apiGameOffer))
+	must(a.w.Bind("ps_storeFront", a.apiStoreFront))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))

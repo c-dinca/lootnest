@@ -77,6 +77,7 @@
     gameSaveRestoreLocal: (key, id) => call("ps_gameSaveRestoreLocal", key, id),
     findGames: (q) => call("ps_findGames", q),
     gameOffer: (appId, name) => call("ps_gameOffer", appId, name),
+    storeFront: () => call("ps_storeFront"),
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
@@ -101,7 +102,9 @@
     tag: "",          // the Library's collection filter ("" for all)
     status: "",       // the Library's status filter ("" for any)
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
-    find: { q: "", hits: null, error: "" }, // Find games: the search and what came back
+    find: { q: "", hits: null, error: "" }, // Store: the search and what came back
+    front: null,      // Store rows before a search: {daily, specials, top, deals} or {error}
+    gq: { q: "", hits: null, sel: -1 }, // the search in the sidebar
     offers: {},       // Steam app id -> {offer, pc, owned} or {error}, for Find games
     d: null,          // AppState from Go
     view: "home",
@@ -318,9 +321,15 @@
         break;
       }
       case "findGames": {
+        if (ev.q === S.gq.q) { S.gq.hits = ev.hits || []; renderGq(); }
         if (ev.q !== S.find.q) break; // an older search
         S.find.hits = ev.hits || null; S.find.error = ev.error || "";
         const r = $("#find-results"); if (r) r.innerHTML = findResults();
+        break;
+      }
+      case "storeFront": {
+        S.front = ev.front || { error: ev.error || "Couldn't reach the store." };
+        if (S.view === "find" && !S.find.q.trim()) { const r = $("#find-results"); if (r) r.innerHTML = findResults(); }
         break;
       }
       case "gameOffer": {
@@ -2290,7 +2299,7 @@
             <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
             ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : `<div class="bk-row"><div><b>Steam isn't on this PC</b><p>Steam games show up here once it's installed.</p></div></div>`}`)],
       ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
-          ${sw("findGames", "Find games", "The Find games page looks any game up on the Steam store, with its requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
+          ${sw("findGames", "Store", "The Store page, and the search in the sidebar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}`)
@@ -2364,6 +2373,51 @@
   }
   const fmtGoal = (x) => (x.unit === "h" ? Math.floor(x.cur) + " of " + x.goal + " h" : Math.floor(x.cur) + " of " + x.goal + (x.unit ? " " + x.unit : ""));
 
+  // --------------------------------------------------------- sidebar search --
+  // One search box on every page: your games first, then the store's.
+  let gqTimer = 0;
+  function gqItems() {
+    const q = S.gq.q.trim().toLowerCase();
+    if (!q) return [];
+    const mine = libraryItems().filter((it) => it.name.toLowerCase().includes(q)).slice(0, 5).map((it) => ({ mine: it }));
+    const ownedIds = new Set(mine.map((m) => m.mine.appId).filter(Boolean));
+    const store = (S.gq.hits || []).filter((h) => !ownedIds.has(h.appId) && !h.owned).slice(0, 6).map((h) => ({ hit: h }));
+    return [...mine, ...store];
+  }
+  function renderGq() {
+    const pop = $("#gq-pop"), input = $("#gq");
+    if (!pop || !input) return;
+    const q = S.gq.q.trim();
+    if (!q || document.activeElement !== input && !pop.contains(document.activeElement)) { pop.hidden = true; input.setAttribute("aria-expanded", "false"); return; }
+    const items = gqItems(), on = cfg().settings.findGames;
+    let i = -1;
+    const opt = (inner, extra = "") => { i++; return `<button class="gq-item${i === S.gq.sel ? " is-sel" : ""}" role="option" aria-selected="${i === S.gq.sel}" data-action="gq-open" data-i="${i}" ${extra}>${inner}</button>`; };
+    const mine = items.filter((x) => x.mine), store = items.filter((x) => x.hit);
+    const mineHTML = mine.length ? `<div class="gq-group"><span class="gq-label">Your games</span>${mine.map((m) => opt(`<span class="gq-name">${esc(m.mine.name)}</span><span class="gq-meta">${esc(m.mine.kind === "game" ? "Profiles on" : sourceLabel(m.mine.source))}</span>`)).join("")}</div>` : "";
+    const storeHTML = !on ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Turn on the Store to search every game, with prices and whether it runs here.</p></div>`
+      : S.gq.hits === null ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Looking it up</p></div>`
+      : store.length ? `<div class="gq-group"><span class="gq-label">Store</span>${store.map((x) => opt(`${x.hit.image ? `<img src="${esc(x.hit.image)}" alt="">` : ""}<span class="gq-name">${esc(x.hit.name)}</span><span class="gq-meta">${x.hit.price ? esc(cents(x.hit.price)) : ""}</span>`)).join("")}</div>` : "";
+    const none = !mine.length && on && S.gq.hits && !store.length ? `<p class="gq-note">Nothing called "${esc(q)}".</p>` : "";
+    pop.innerHTML = `${mineHTML}${storeHTML}${none}${on ? `<button class="gq-all" data-action="gq-all">See everything for "${esc(q)}" in the Store</button>` : ""}`;
+    pop.hidden = false; input.setAttribute("aria-expanded", "true");
+  }
+  function gqClose() { S.gq.sel = -1; const pop = $("#gq-pop"); if (pop) pop.hidden = true; const i = $("#gq"); if (i) i.setAttribute("aria-expanded", "false"); }
+  function gqOpen(i) {
+    const x = gqItems()[i];
+    if (!x) return;
+    gqClose(); $("#gq").blur();
+    if (x.mine) openSheet(x.mine.kind, x.mine.id, null);
+    else actions["find-open"]({ dataset: { app: String(x.hit.appId), name: x.hit.name } });
+  }
+  function gqAll() {
+    const q = S.gq.q.trim();
+    if (!q) return;
+    gqClose();
+    S.find = { q, hits: null, error: "" };
+    S.view = "find"; S.page = null; S.dialog = null; S.animateView = true; render();
+    api.findGames(q).catch((e) => { S.find.error = errText(e); const r = $("#find-results"); if (r) r.innerHTML = findResults(); });
+  }
+
   // ------------------------------------------------------------ find games --
   // Any game, installed or not: its price in the official stores and its
   // requirements beside this PC. Opt-in, in Settings, Online.
@@ -2372,16 +2426,35 @@
   const offTag = (pct) => (pct > 0 ? `<span class="ln-tag ln-tag--accent">${pct}% off</span>` : "");
   function viewFind() {
     const on = cfg().settings.findGames;
-    const search = on ? `<div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="find-q" class="ln-input" placeholder="Search for a game" value="${esc(S.find.q)}" autocomplete="off" spellcheck="false" aria-label="Search for a game"></label></div>` : "";
-    const head = `<header class="lib-head"><div><h1>Find games</h1><p>Any game, with its price in the official stores and how its requirements compare with this PC.</p></div>${search}</header>`;
+    const search = on ? `<div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="find-q" class="ln-input" placeholder="Search the store" value="${esc(S.find.q)}" autocomplete="off" spellcheck="false" aria-label="Search the store"></label></div>` : "";
+    const head = `<header class="lib-head"><div><h1>Store</h1><p>Any game, with its price in every official store and whether it runs on this PC.</p></div>${search}</header>`;
     if (!on) return `<div class="find-page ln-root">${head}<section class="find-off"><h2>Look up any game</h2>
-      <p>Find games asks the Steam store for the game and its requirements, and CheapShark for its price in other official stores, such as GOG, Humble and Fanatical. Only what you type, or the game's Steam id, is sent. Lootnest opens the store you choose in your browser.</p>
-      <button class="ln-button ln-button--primary" data-action="find-on">Turn on Find games</button></section></div>`;
+      <p>The Store asks the Steam store for games, deals and requirements, and CheapShark for prices in other official stores, such as GOG, Humble and Fanatical. Only what you type, or a game's Steam id, is sent. Lootnest opens the store you choose in your browser.</p>
+      <button class="ln-button ln-button--primary" data-action="find-on">Turn on the Store</button></section></div>`;
     return `<div class="find-page ln-root">${head}<div id="find-results">${findResults()}</div></div>`;
+  }
+  // A game in a Store row, on its wide art.
+  function storeCard(it) {
+    const price = it.store ? `<span class="ln-num">${esc(money(it.usd, "USD"))}</span>${offTag(it.price && it.price.discount)}<span class="find-store-name">${esc(it.store)}</span>`
+      : it.price ? `<span class="ln-num">${esc(cents(it.price))}</span>${offTag(it.price.discount)}` : `<span>Free</span>`;
+    return `<li><button class="find-card find-card--wide" data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
+      ${it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : `<span class="find-noimg"></span>`}
+      <span class="find-card-body"><b>${esc(it.name)}</b><span class="find-card-meta">${price}${it.score ? `<span class="find-score" title="Metacritic">${it.score}</span>` : ""}${it.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`;
+  }
+  function storeFront() {
+    const F = S.front;
+    if (!F) { api.storeFront().catch((e) => { S.front = { error: errText(e) }; const r = $("#find-results"); if (r) r.innerHTML = findResults(); }); S.front = { loading: true }; return lnInline("", "Opening the store"); }
+    if (F.loading) return lnInline("", "Opening the store");
+    if (F.error) return `${lnInline("error", esc(F.error))}<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="store-retry">Try again</button></div>`;
+    const row = (title, sub, list) => (list && list.length ? `<section class="find-row"><div class="ln-section-head"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div></div><ul class="find-grid find-grid--wide">${list.map(storeCard).join("")}</ul></section>` : "");
+    const d = F.daily;
+    const daily = d ? `<button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="">` : ""}
+      <span class="find-daily-body"><span class="find-daily-label">Today's deal on Steam</span><b>${esc(d.name)}</b><span class="find-card-meta">${d.price ? `<span class="ln-num">${esc(cents(d.price))}</span>${offTag(d.price.discount)}` : ""}${d.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button>` : "";
+    return `${daily}${row("Deals on Steam", "", F.specials)}${row("Best deals in other stores", "Well-reviewed games on sale in official stores, from CheapShark, in US dollars.", F.deals)}${row("Top sellers on Steam", "", F.top)}`;
   }
   function findResults() {
     const F = S.find;
-    if (!F.q.trim()) return `<p class="find-hint">Type a game's name. Games already on this PC are marked.</p>`;
+    if (!F.q.trim()) return storeFront();
     if (F.error) return lnInline("error", esc(F.error));
     if (!F.hits) return lnInline("", "Looking it up");
     if (!F.hits.length) return `<p class="find-hint">The Steam store has nothing called "${esc(F.q)}".</p>`;
@@ -2832,6 +2905,9 @@
       if (!R || R.error) { delete S.offers[appId]; api.gameOffer(appId, el.dataset.name).catch((e) => { S.offers[appId] = { error: errText(e) }; renderOverlay(); }); }
       renderOverlay(); focusDrawer();
     },
+    "store-retry"() { S.front = null; const r = $("#find-results"); if (r) r.innerHTML = findResults(); },
+    "gq-open"(el) { gqOpen(+el.dataset.i); },
+    "gq-all"() { gqAll(); },
     "find-store"(el) { api.open("store", el.dataset.url).catch((e) => toast(errText(e), "error")); },
     "find-library"(el) {
       const o = el.dataset.owned || "", [kind, ...rest] = o.split(":"), id = rest.join(":");
@@ -3162,6 +3238,13 @@
       if (el.id === "pe-q") { D.q = el.value; renderOverlay(); }
       return;
     }
+    if (el.id === "gq") {
+      S.gq.q = el.value; S.gq.hits = null; S.gq.sel = -1;
+      clearTimeout(gqTimer);
+      if (el.value.trim() && cfg().settings.findGames) gqTimer = setTimeout(() => { api.findGames(S.gq.q).catch(() => { S.gq.hits = []; renderGq(); }); }, 300);
+      renderGq();
+      return;
+    }
     if (el.id === "find-q") {
       S.find.q = el.value; S.find.hits = null; S.find.error = "";
       clearTimeout(findTimer);
@@ -3221,6 +3304,28 @@
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 
+  // The sidebar search: Ctrl+K anywhere, arrows and Enter in its list.
+  document.addEventListener("keydown", (ev) => {
+    if (ev.ctrlKey && !ev.altKey && ev.key.toLowerCase() === "k") {
+      ev.preventDefault();
+      const q = $("#gq"); if (q) { q.focus(); q.select(); renderGq(); }
+      return;
+    }
+    if (ev.target.id !== "gq") return;
+    const n = gqItems().length;
+    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+      ev.preventDefault();
+      if (n) { S.gq.sel = ev.key === "ArrowDown" ? (S.gq.sel + 1) % n : (S.gq.sel <= 0 ? n - 1 : S.gq.sel - 1); renderGq(); }
+    } else if (ev.key === "Enter") {
+      ev.preventDefault();
+      if (S.gq.sel >= 0 && S.gq.sel < n) gqOpen(S.gq.sel); else if (cfg().settings.findGames) gqAll(); else if (n) gqOpen(0);
+    } else if (ev.key === "Escape") {
+      ev.preventDefault(); ev.stopPropagation();
+      gqClose(); ev.target.blur();
+    }
+  }, true);
+  document.addEventListener("focusin", (ev) => { if (ev.target.id === "gq") renderGq(); });
+  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".side-search")) gqClose(); });
   document.addEventListener("keydown", (ev) => {
     if (ev.target.id === "tag-new" && ev.key === "Enter") { ev.preventDefault(); actions["tag-add"]({ dataset: { key: ev.target.dataset.key } }); return; }
     if (!$("#ctx").hidden) {

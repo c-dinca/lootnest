@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.35.0
+
+- **Search from every page.** The **Search** box at the top of the sidebar (Ctrl+K) finds your games as you type and, with the Store on, any game in the store too. Pick one with the arrows and Enter: your games open their page, the others open their prices and requirements. Press Enter to see everything in the Store.
+- **Find games is now the Store**, with something to look at before you search:
+  - today's deal on Steam;
+  - the deals and top sellers on Steam, in your currency;
+  - the best deals in other official stores, on games with good reviews (from CheapShark, in US dollars), with each game's Metacritic score.
+- Games already on this PC are marked everywhere in the Store.
+
 ## 1.34.0
 
 - **Find games**, a new page in the sidebar. Look up any game, installed or not, and open it to see:
