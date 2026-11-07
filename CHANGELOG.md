@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.53.0
+
+- **Try a save safely.** Got a save from a friend, or one from a mod site? A game's **Manage**, **Try a save** puts it in a new run of yours: your settings, with the save you brought. Your own saves stay exactly as they were, and playing as you again is one click. Keep the run, or delete it in Profiles.
+  - Bring a folder, a single save file (it joins your other saves in that folder), or a .zip, .7z or .rar.
+  - Choose whose files the run starts from, and, for a game with more than one, where the save goes.
+
 ## 1.52.0
 
 - **Copies of every game's saves, on this PC.** For games outside Steam (in a folder, from Epic, GOG, Hydra or added by hand), Lootnest now copies all the saves it knows of whenever they change and the game is closed: the ones in Documents or AppData too, not only those inside the game's folder. The last five are kept, and nothing is sent anywhere.

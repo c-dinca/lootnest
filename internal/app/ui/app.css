@@ -1740,3 +1740,11 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .gp-newrun { border-style: dashed; color: var(--fg-2); }
 .gp-newrun:hover { color: var(--fg-1); border-style: solid; }
 .gp-newrun .ln-icon { width: 14px; height: 14px; }
+
+/* Try a save (dialog trysave) */
+.try-field { display: grid; gap: var(--space-1); font-size: var(--fs-13); color: var(--fg-2); }
+.try-field .ln-input { color: var(--fg-1); }
+.try-pick { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.try-src { display: grid; gap: 2px; margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-ctl); }
+.try-src > span:first-child { font-weight: 650; color: var(--fg-1); overflow-wrap: anywhere; }
+.try-src .gpage-hint { overflow-wrap: anywhere; }

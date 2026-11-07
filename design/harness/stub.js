@@ -277,8 +277,18 @@
       if (STATE !== "loading") emit({ type: "allAchievements", games });
       return ok();
     },
+    // A run to try a save in: a profile of the person, as Go makes it.
+    ps_trySave: (gid, from, loc, src, name) => {
+      const base = PLAYERS.find((p) => p.id === from) || PLAYERS[0];
+      const per = PLAYERS.find((p) => p.id === base.of) || base;
+      const id = "p" + (Date.now() % 100000);
+      PLAYERS.push({ id, name: name || per.name + " trying a save", color: per.color, of: per.id });
+      (profiles[gid] = profiles[gid] || []).push(id);
+      return ok(id);
+    },
     ps_browse: (id, kind) => {
       if (kind === "installer") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\setup-pbz-update-1.0.3.exe" });
+      else if (kind === "trySaveFile" || kind === "trySaveDir") emit({ type: "browse", reqId: id, path: kind === "trySaveFile" ? "C:\\Users\\cris\\Downloads\\BG3 Act 3 save from Mihnea.zip" : "C:\\Users\\cris\\Downloads\\BG3 save" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
       return ok();

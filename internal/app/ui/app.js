@@ -20,6 +20,7 @@
     inspectExe: (p) => call("ps_inspectExe", p),
     checkPath: (p) => call("ps_checkPath", p),
     browse: (id, kind, start) => call("ps_browse", id, kind, start || ""),
+    trySave: (gameId, from, loc, src, name) => call("ps_trySave", gameId, from, loc, src, name),
     play: (r) => call("ps_play", r),
     load: (r) => call("ps_load", r),
     closeGame: (id) => call("ps_closeGame", id),
@@ -1920,6 +1921,7 @@
       gpRow(`data-action="load-only" data-game="${esc(g.id)}"`, GI.load, "Load someone's files", "Without starting the game", { disabled: s }),
       g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "When the game starts from Steam's Play button") : "",
       gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "How it starts and what profiles swap", { disabled: s }),
+      gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.load, "Try a save", "From a friend or a mod site, in a run of its own", { disabled: s || cfg().players.length >= MAX_PROFILES }),
     ]) + gpGroup("Game files", [
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
@@ -1935,6 +1937,38 @@
       <header class="ln-drawer__head"><div><h2>${o.title}</h2>${o.sub ? `<p>${o.sub}</p>` : ""}</div><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="dialog-cancel" aria-label="Close">${GI.x}</button></header>
       <div class="ln-drawer__body">${o.body}</div>${o.foot ? `<footer class="ln-drawer__foot">${o.foot}</footer>` : ""}</aside></div>`;
   const dialogItem = (D) => libraryItems().find((x) => x.kind === D.ik && x.id === D.iid) || null;
+  // Try a save: someone else's save in a new run, never over anyone's files.
+  function viewTrySave(D) {
+    const g = game(D.gameId);
+    if (!g) return "";
+    const froms = cfg().players.filter((p) => hasProfile(g.id, p.id));
+    const from = player(D.from) || froms[0];
+    const per = from ? personOf(from) : null;
+    const locs = (g.paths || []).filter((p) => !String(p.id || "").startsWith("ach-"));
+    const loc = locs.find((l) => l.id === D.loc) || locs[0];
+    if (!per || !loc) return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
+      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Play ${esc(g.name)} once with profiles first, so there are files to start the run from.</p></div>
+      <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">OK</button></div></div></div>`;
+    const sel = (id, list, cur, label) => list.length > 1 ? `<label class="try-field"><span>${label}</span><select class="ln-input" id="${id}">${list.map((x) => `<option value="${esc(x.id)}"${x.id === cur ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>` : "";
+    const chosen = D.src ? `<p class="try-src"><span class="selectable" title="${esc(D.src)}">${esc(D.src.split(/[\\/]/).pop())}</span><span class="gpage-hint">${esc(D.src)}</span></p>` : "";
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
+      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">It goes into a new run of ${esc(possessive(per.name))}, with ${esc(possessive(from.name))} settings and the save you bring. ${esc(possessive(from.name))} own saves stay as they are: playing as ${esc(from.name)} again is one click. Keep the run, or delete it in Profiles.</p></div>
+      ${sel("try-from", froms.map((p) => ({ id: p.id, label: p.name })), from.id, "Start from")}
+      ${sel("try-loc", locs.map((l) => ({ id: l.id, label: l.path })), loc.id, "Where the save goes")}
+      <div class="try-pick"><button class="ln-button ln-button--secondary ln-button--sm" data-action="try-browse" data-kind="trySaveDir">Choose a folder</button>
+        <button class="ln-button ln-button--ghost ln-button--sm" data-action="try-browse" data-kind="trySaveFile">Choose a file or archive</button></div>
+      ${chosen}
+      <label class="try-field"><span>The run's name</span><input type="text" class="ln-input" id="try-name" maxlength="32" placeholder="${esc(per.name)} trying a save" value="${esc(D.name || "")}"></label>
+      <div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
+      <button class="btn primary" data-action="try-go" ${D.busy || !D.src ? "disabled" : ""}>${D.busy ? "Starting the run" : "Start the run"}</button></div></div></div>`;
+  }
+  // The dialog's choices, kept across a re-render.
+  function tryKeep(D) {
+    const f = $("#try-from"), l = $("#try-loc"), n = $("#try-name");
+    if (f) D.from = f.value;
+    if (l) D.loc = l.value;
+    if (n) D.name = n.value;
+  }
   function viewManage() {
     const it = dialogItem(S.dialog);
     if (!it) return "";
@@ -2161,6 +2195,9 @@
         <div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
         <button class="btn primary" data-action="new-run-go" ${D.busy ? "disabled" : ""}>Start the run</button></div></div></div>` : "";
       setTimeout(() => { const i = $("#newrun-name"); if (i && document.activeElement !== i) i.focus(); }, 20);
+    } else if (D.kind === "trysave") {
+      o.innerHTML = viewTrySave(D);
+      setTimeout(() => { const i = $("#try-name"); if (i && !D.src && document.activeElement === document.body) i.focus(); }, 20);
     } else if (D.kind === "add") {
       o.innerHTML = viewAddDialog();
     } else if (D.kind === "welcome") {
@@ -4385,6 +4422,36 @@
     "save-players": () => savePlayers(false),
     "welcome-done": () => savePlayers(true),
     "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); },
+    "try-save"(el) { const sp = seated(); S.dialog = { kind: "trysave", gameId: el.dataset.game, from: sp && hasProfile(el.dataset.game, sp.id) ? sp.id : "" }; renderOverlay(); },
+    async "try-browse"(el) {
+      const D = S.dialog;
+      if (!D || D.kind !== "trysave") return;
+      tryKeep(D);
+      const r = await browse(el.dataset.kind);
+      if (S.dialog !== D) return;
+      if (r.error) D.error = r.error;
+      else if (r.path) { D.src = r.path; D.error = ""; }
+      renderOverlay();
+    },
+    async "try-go"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "trysave" || D.busy || !D.src) return;
+      tryKeep(D);
+      const g = game(D.gameId);
+      const froms = cfg().players.filter((p) => hasProfile(D.gameId, p.id));
+      const from = player(D.from) || froms[0];
+      const loc = ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-")).find((l) => l.id === D.loc) || ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-"))[0];
+      if (!g || !from || !loc) return;
+      D.busy = true; D.error = ""; renderOverlay();
+      try {
+        const id = await api.trySave(g.id, from.id, loc.id, D.src, (D.name || "").trim());
+        await refresh();
+        S.dialog = null; renderOverlay();
+        const run = player(id);
+        toast(run ? `${run.name} is ready, with the save you brought. ${possessive(from.name)} own saves are as they were.` : "The run is ready.");
+        render();
+      } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
     async "new-run-go"() {
       const D = S.dialog;
       if (!D || D.kind !== "newrun" || D.busy) return;
