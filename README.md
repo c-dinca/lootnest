@@ -6,7 +6,7 @@
 
 <p align="center"><b>In beta.</b> Everything that moves your files makes a copy first.</p>
 
-<p align="center"><a href="../../releases/latest"><b>Download for Windows</b></a> · <a href="CHANGELOG.md">What's new</a></p>
+<p align="center"><a href="../../releases/latest"><b>Download for Windows</b></a> · <a href="https://c-dinca.github.io/lootnest/">Website</a> · <a href="CHANGELOG.md">What's new</a></p>
 
 ---
 
