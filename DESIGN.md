@@ -183,6 +183,7 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Library, inputs (`ln-input`, `ln-search`) | On the system (1.16.2) |
 | Players and a player's page | On the system (1.16.5) |
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
+| The seat (who's at the PC) | On the system (1.18.0). It lives in the sidebar's **Who's here** rather than the mock's top-right control, so it never covers a page's own actions or the game art. |
 | Settings | On the system (1.16.7) |
 | Dialogs (Add game, first run, the profile editor, confirmations), the right-click menu, older buttons and form controls | On the system (1.16.8) |
 | The "Who's playing?" picker and the swap moment | On the system (1.17.0) |

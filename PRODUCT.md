@@ -38,5 +38,5 @@ Per-player profiles. Each person in the household gets their own settings and sa
 Swap logic, file handling, the Go/IPC API and data models. The redesign is the UI layer only; data a design needs but doesn't exist yet goes in `design/DATA_NEEDS.md`.
 
 ## Open decisions
-- **The seat.** Is "who's at the PC" a choice made at every launch (today), or a persistent seat that stays until someone switches, with the picker as the exception?
+- **The seat.** Decided in 1.18.0: a seat that stays until someone switches, or until Lootnest quits. Every Play is the seated player's, and the picker is the exception. With nobody seated, Play asks every time, as before.
 - **Achievements.** In the nav as "soon": show it with intent, or hide it until it exists?

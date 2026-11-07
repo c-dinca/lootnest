@@ -439,15 +439,37 @@
   window.addEventListener("blur", closeContext);
   document.addEventListener("scroll", closeContext, true);
 
+  // The seat: who's at the PC, until someone switches or Lootnest quits.
+  // Every Play is theirs; "or play as…" and the picker are for anyone else.
+  const seated = () => (S.seat && player(S.seat)) || null;
   function renderWho() {
-    const playing = {};
+    const playing = {}, seat = seated(), ps = cfg().players;
     (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = s; });
-    $("#who").innerHTML = cfg().players.map((p) => {
+    $("#who-head").innerHTML = `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu">${GI.swap}${seat ? "Switch" : "Sit down"}</button>` : ""}`;
+    $("#who").innerHTML = ps.map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
-      return `<div class="who-item${s ? " playing" : ""}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}</span>
-        <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></div>`;
+      const on = seat && seat.id === p.id;
+      return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}"
+        title="${on ? `${esc(p.name)} is at the PC. Click to leave the seat empty.` : `Sit ${esc(p.name)} at the PC: Play starts as ${esc(p.name)}.`}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}${on ? ' <span class="ln-tag ln-tag--player">Seated</span>' : ""}</span>
+        <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></button>`;
     }).join("");
+  }
+  function seatMenu(el) {
+    const seat = seated(), m = $("#ctx");
+    m.innerHTML = `<div class="ctx-title">Who's at the PC?</div>${cfg().players.map((p) => `<button data-action="seat-set" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${!!(seat && seat.id === p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span class="grow">${esc(p.name)}</span>${seat && seat.id === p.id ? GI.tick : ""}</button>`).join("")}
+      <hr><button data-action="seat-set" data-player="" role="menuitemradio" aria-checked="${!seat}">Nobody: ask who's playing each time</button>`;
+    m.hidden = false;
+    const b = el.getBoundingClientRect(), r = m.getBoundingClientRect();
+    m.style.left = Math.min(b.left, innerWidth - r.width - 8) + "px";
+    m.style.top = Math.min(b.bottom + 4, innerHeight - r.height - 8) + "px";
+    const first = m.querySelector('[aria-checked="true"]') || m.querySelector("button");
+    if (first) first.focus({ preventScroll: true });
+  }
+  function setSeat(pid) {
+    S.seat = pid && player(pid) ? pid : "";
+    render();
+    toast(S.seat ? `${pname(S.seat)} is at the PC. Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
 
   // --------------------------------------------------------------- library --
@@ -954,6 +976,8 @@
   const gsvg = (d, fill) => `<svg class="ln-icon" viewBox="0 0 20 20" aria-hidden="true"${fill ? ' style="fill:currentColor;stroke:none"' : ""}>${d}</svg>`;
   const GI = {
     back: gsvg('<path d="M12 4.75 6.75 10 12 15.25"/>'),
+    swap: gsvg('<path d="M4 7h11.5M12.75 4.25 15.5 7l-2.75 2.75M16 13H4.5M7.25 10.25 4.5 13l2.75 2.75"/>'),
+    tick: gsvg('<path d="M5 10.5l3.25 3.25L15 7"/>'),
     play: gsvg('<path d="M6.5 4.4v11.2a.9.9 0 0 0 1.37.77l9.05-5.6a.9.9 0 0 0 0-1.54L7.87 3.63A.9.9 0 0 0 6.5 4.4z"/>', true),
     load: gsvg('<path d="M10 3.5v8.25M6.75 8.5 10 11.75l3.25-3.25"/><path d="M3.75 13v2.25c0 .7.55 1.25 1.25 1.25h10c.7 0 1.25-.55 1.25-1.25V13"/>'),
     ask: gsvg('<path d="M5.25 3.75h9.5c.83 0 1.5.67 1.5 1.5v6.5c0 .83-.67 1.5-1.5 1.5H9.5l-3.75 3v-3h-.5c-.83 0-1.5-.67-1.5-1.5v-6.5c0-.83.67-1.5 1.5-1.5z"/><path d="M8.5 7.1a1.6 1.6 0 1 1 2.25 1.46c-.45.2-.75.6-.75 1.1v.1M10 11.6v.01"/>'),
@@ -1038,7 +1062,7 @@
       meta.push(withProfile.length ? `Profiles on for ${esc(withProfile.map((p) => p.name).join(", ").replace(/, ([^,]*)$/, " and $1"))}` : "Profiles on");
       if (rec) meta.push(esc(lastPlayed(it)));
       // The one Play: whoever's files are loaded, else whoever played last.
-      const lead = player(owner) || (rec && player(rec.player)) || withProfile[0] || ps[0];
+      const lead = seated() || player(owner) || (rec && player(rec.player)) || withProfile[0] || ps[0];
       const others = ps.filter((p) => p !== lead);
       const pt = playtimeOf(it);
       let play, state;
@@ -2211,7 +2235,10 @@
     "add-game": startAddDialog,
     "add-steam": (el) => addSteam(el.dataset.app),
     "add-exe": addExe,
-    play: (el) => openPicker(el.dataset.game, "play"),
+    play: (el) => { const p = seated(); if (p) actions["play-as"]({ dataset: { game: el.dataset.game, player: p.id } }); else openPicker(el.dataset.game, "play"); },
+    seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
+    "seat-set"(el) { setSeat(el.dataset.player); },
+    "seat-menu"(el) { seatMenu(el); },
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },

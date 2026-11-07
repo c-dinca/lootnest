@@ -95,7 +95,19 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .side-sep { height: var(--hairline); background: var(--edge-1); margin: var(--space-4) var(--space-2); }
 .side-label { font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); padding: 0 var(--space-2) var(--space-1); }
 .who-list { display: grid; gap: 1px; overflow: auto; }
-.who-item { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: var(--space-3); align-items: center; min-height: 36px; padding: var(--space-1) var(--space-2); color: var(--fg-1); }
+/* Who's here: each player is a button that seats them (who's at the PC);
+   the seated one wears a Seated tag. */
+.who-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.who-switch { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2); font: 600 var(--fs-12)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+.who-switch:hover { background: var(--glass-ctl); color: var(--fg-1); }
+.who-switch:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.who-switch .ln-icon { width: 14px; height: 14px; }
+.who-item { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: var(--space-3); align-items: center; width: 100%; min-height: 36px; padding: var(--space-1) var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.who-item:hover { background: var(--glass-ctl); }
+.who-item:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.who-item.seated { background: var(--glass-ctl-hover); }
+.who-item .who-name .ln-tag { margin-left: var(--space-1); vertical-align: 1px; }
+.ctx button .grow { flex: 1; }
 .who-item .ln-avatar { grid-row: 1 / span 2; }
 .who-item .who-name { font-weight: 600; line-height: var(--lh-snug); }
 .who-item .what { font-size: var(--fs-12); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--lh-snug); }
