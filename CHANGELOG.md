@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.3
+
+- **Each profile's achievements go to the cloud with its saves.** With **Sync saves between PCs** on, a profile's own achievements (1.20) now go up after a session with its saves, and come down on your other PC before the game starts. That works even on a PC that doesn't have them yet.
+- The first sync after this update uploads each profile's saves again, this time with their achievements.
+
 ## 1.23.2
 
 - **Achievements show for more games in a folder.** Lootnest finds a game's Steam id in more places:

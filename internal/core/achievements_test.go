@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -187,5 +188,55 @@ func TestSteamSchemaComplete(t *testing.T) {
 	full := CompleteList([]Achievement{{ID: "B", Unlocked: true}}, s)
 	if len(full) != 2 || full[0].ID != "A" || full[1].Name != "Second" || !full[1].Unlocked {
 		t.Fatalf("%+v", full)
+	}
+}
+
+// A profile's achievements go to the cloud with its saves, and come down
+// on a PC that doesn't have them yet, under that PC's own user folders.
+func TestAchievementsCloudSync(t *testing.T) {
+	fA, fB := newFixture(t), newFixture(t)
+	root := t.TempDir()
+	a, b := &Cloud{Root: root, Computer: "PC-A"}, &Cloud{Root: root, Computer: "PC-B"}
+	p := &Player{ID: "p1", Name: "Cristian", Color: "#112233"}
+	write(t, fA.optFile(), "sens=1")
+	write(t, filepath.Join(fA.appdata, "GSE Saves", "730", "achievements.json"), `{"A":{"earned":true}}`)
+	// Cristian's files and achievements go into his profile on PC A.
+	if err := fA.eng.Activate(fA.cfg, "cs2", "p2", ActivateOptions{FirstOwner: "p1", NewProfile: NewFresh}); err != nil {
+		t.Fatal(err)
+	}
+	gA := *fA.cfg.Game("cs2")
+	gA.Paths = fA.eng.SyncPaths(&gA, false)
+	hasAch := false
+	for _, pe := range gA.Paths {
+		hasAch = hasAch || strings.HasPrefix(pe.Path, AchToken)
+	}
+	if !hasAch {
+		t.Fatalf("achievements are synced: %+v", gA.Paths)
+	}
+	dirA := func(pe PathEntry) string { return filepath.Join(fA.eng.Store.ProfileDir("p1", "cs2"), pe.ID) }
+	h, err := SyncHash(&gA, dirA)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Upload("p1", p, &gA, dirA, h, 1); err != nil {
+		t.Fatal(err)
+	}
+	// PC B has never seen them: every place they could go is offered.
+	gB := *fB.cfg.Game("cs2")
+	gB.Paths = fB.eng.SyncPaths(&gB, true)
+	dirB := func(pe PathEntry) string { return filepath.Join(fB.eng.Store.ProfileDir("p1", "cs2"), pe.ID) }
+	if skipped, err := b.Download("p1", &gB, dirB, filepath.Join(t.TempDir(), "tmp")); err != nil || skipped != 0 {
+		t.Fatalf("download: %d %v", skipped, err)
+	}
+	_ = os.WriteFile(filepath.Join(fB.eng.Store.ProfileDir("p1", "cs2"), initMarker), []byte("x"), 0o644)
+	if u, ok := fB.eng.ProfileUnlocks("p1", fB.cfg.Game("cs2")); !ok || len(u) != 1 {
+		t.Fatalf("Cristian's achievements on PC B: %v %v", u, ok)
+	}
+	// Loading Cristian on PC B puts them where that PC's tool looks.
+	if err := fB.eng.Activate(fB.cfg, "cs2", "p1", ActivateOptions{FirstOwner: OwnerNobody}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, filepath.Join(fB.appdata, "GSE Saves", "730", "achievements.json")); got != `{"A":{"earned":true}}` {
+		t.Fatalf("on PC B: %q", got)
 	}
 }

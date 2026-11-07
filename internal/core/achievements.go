@@ -726,3 +726,65 @@ func CompleteList(list, schema []Achievement) []Achievement {
 	}
 	return out
 }
+
+// AchToken starts the path of an achievements folder in cloud saves: the
+// same on every PC (the folder itself is under each PC's own user folders).
+const AchToken = "{ACHIEVEMENTS}/"
+
+// SyncPaths are a game's locations for cloud saves: its own paths, and
+// the achievements folders that go with each profile (by AchToken+id). With
+// all, every place this game's achievements could be on this PC is listed,
+// so a download can bring them to a PC that doesn't have them yet.
+func (e *Engine) SyncPaths(g *Game, all bool) []PathEntry {
+	out := append([]PathEntry{}, g.Paths...)
+	if g.SharedAchievements {
+		return out
+	}
+	if all {
+		appID := GameAppID(g)
+		if appID <= 0 || e.Env == nil {
+			return out
+		}
+		for _, f := range achFiles {
+			if e.Env.achBase(f.base) == "" {
+				continue
+			}
+			id := achEntryID(f)
+			out = append(out, PathEntry{ID: id, Path: AchToken + id}, PathEntry{ID: id + "-f", Path: AchToken + id + "-f"})
+		}
+		return out
+	}
+	rs, err := e.resolveAll(g)
+	if err != nil {
+		return out
+	}
+	for _, r := range rs {
+		if strings.HasPrefix(r.entry.ID, AchEntryPrefix) {
+			out = append(out, PathEntry{ID: r.entry.ID, Path: AchToken + r.entry.ID})
+		}
+	}
+	return out
+}
+
+// AchLive is where an achievements entry (by its id) is on this PC: the
+// tool's folder, or its file for an id ending in -f. "" if unknown.
+func (e *Engine) AchLive(g *Game, id string) string {
+	appID := GameAppID(g)
+	if appID <= 0 || e.Env == nil {
+		return ""
+	}
+	for _, f := range achFiles {
+		b := e.Env.achBase(f.base)
+		if b == "" {
+			continue
+		}
+		file := filepath.Join(b, achPath(f.path, appID))
+		switch id {
+		case achEntryID(f):
+			return filepath.Dir(file)
+		case achEntryID(f) + "-f":
+			return file
+		}
+	}
+	return ""
+}
