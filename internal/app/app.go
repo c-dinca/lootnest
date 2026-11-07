@@ -183,6 +183,11 @@ func Run(opt Options) error {
 			fixed = fixed || changed
 		}
 		// A key saved in plain text by an earlier version gets encrypted.
+		if k := a.cfg.Settings.SteamAPIKey; k != "" && !strings.HasPrefix(k, secretPrefix) {
+			if enc, perr := protectSecret(k); perr == nil {
+				a.cfg.Settings.SteamAPIKey, fixed = enc, true
+			}
+		}
 		if k := a.cfg.Settings.GridDBKey; k != "" && !strings.HasPrefix(k, secretPrefix) {
 			if enc, perr := protectSecret(k); perr == nil {
 				a.cfg.Settings.GridDBKey, fixed = enc, true

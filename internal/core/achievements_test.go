@@ -167,3 +167,17 @@ func TestAchievementsSwapFileWhenFolderOverlaps(t *testing.T) {
 		t.Fatalf("read from the profile: %v %v", u, ok)
 	}
 }
+
+func TestSteamSchemaComplete(t *testing.T) {
+	b := []byte(`{"game":{"gameName":"x","availableGameStats":{"achievements":[
+		{"name":"A","displayName":"First","description":"d","hidden":0,"icon":"https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/730/a.jpg"},
+		{"name":"B","displayName":"Second","hidden":1,"icon":"https://evil.example/b.jpg"}]}}}`)
+	s := ParseSteamSchema(b, 730)
+	if len(s) != 2 || s[0].Name != "First" || s[0].Icon == "" || !s[1].Hidden || s[1].Icon != "" {
+		t.Fatalf("%+v", s)
+	}
+	full := CompleteList([]Achievement{{ID: "B", Unlocked: true}}, s)
+	if len(full) != 2 || full[0].ID != "A" || full[1].Name != "Second" || !full[1].Unlocked {
+		t.Fatalf("%+v", full)
+	}
+}

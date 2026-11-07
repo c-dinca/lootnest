@@ -41,8 +41,9 @@ Report a vulnerability** on this repository. Don't open a public issue.
   lists for it; anything else is refused before it runs.
 
 **Keys you save**
-- A SteamGridDB API key is encrypted for your Windows account with DPAPI
-  before it's written to `config.json`; another user or PC can't read it.
+- A SteamGridDB API key and a Steam Web API key are encrypted for your
+  Windows account with DPAPI before they're written to `config.json`;
+  another user or PC can't read them, and they're kept out of the log.
 
 **Backups**
 - A backup is one file in the folder you choose; Lootnest never uploads it.
