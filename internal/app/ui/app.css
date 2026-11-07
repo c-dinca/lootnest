@@ -1521,3 +1521,108 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .upd-ver { min-width: 230px; justify-content: flex-end; }
 .upd-art span { background: repeating-linear-gradient(135deg, transparent 0 10px, oklch(1 0 0 / 0.025) 10px 20px), linear-gradient(160deg, var(--bg-active), var(--bg-raised)); }
 @media (max-width: 1180px) { .upd-ver { min-width: 0; justify-content: flex-start; } }
+
+/* =========================================================== achievements
+   Each one in its tier's colour: the ring round its icon, a bar of how many
+   players have it, the tier's name. Locked ones are grey with a lock; hidden
+   ones are covered until clicked. Rings and numbers fill as a page comes in;
+   an unlock in a running game shows in the window too. */
+.ach { --tier: var(--edge-2); grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; }
+.ach.tier-ultra { --tier: var(--tier-ultra); }
+.ach.tier-rare { --tier: var(--tier-rare); }
+.ach.tier-uncommon { --tier: var(--tier-uncommon); }
+.ach.tier-common { --tier: var(--tier-common); }
+.ach-ico { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-ctl); background: var(--bg-raised); color: var(--tier, var(--fg-3)); box-shadow: inset 0 0 0 2px var(--tier, var(--edge-2)); overflow: hidden; transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.ach-ico img { width: 100%; height: 100%; object-fit: cover; display: block; padding: 2px; border-radius: var(--radius-ctl); }
+.ach-ico > .ln-icon { width: 22px; height: 22px; }
+.ach.is-on:hover .ach-ico { transform: translateY(-2px) scale(1.06); box-shadow: inset 0 0 0 2px var(--tier), 0 8px 22px -10px var(--tier); }
+.ach.locked .ach-ico { --tier: var(--edge-2); color: var(--fg-3); }
+.ach.locked .ach-ico img { filter: grayscale(1) brightness(.55); }
+.ach-lock { position: absolute; right: 2px; bottom: 2px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: var(--radius-tag); background: var(--bg-ground); color: var(--fg-2); }
+.ach-lock .ln-icon { width: 12px; height: 12px; }
+.ach > div b { color: var(--fg-1); }
+.ach.locked > div b { color: var(--fg-2); }
+.ach-rar { display: block; width: 100%; max-width: 160px; height: 3px; margin-top: 6px; border-radius: var(--radius-tag); background: var(--glass-ctl-active); overflow: hidden; }
+.ach-rar i { display: block; height: 100%; background: var(--tier, var(--fg-3)); }
+.ach.locked .ach-rar i { background: var(--fg-3); }
+.ach-tier { display: grid; justify-items: end; gap: 1px; white-space: nowrap; }
+.ach-tier em { font: 700 var(--fs-12)/1.2 var(--font-ui); font-style: normal; color: var(--tier); }
+.ach.locked .ach-tier em { color: var(--fg-3); }
+.ach-tier b { font: 650 var(--fs-12)/1.2 var(--font-ui); color: var(--fg-2); }
+.ach.is-hidden { cursor: pointer; border-radius: var(--radius-ctl); }
+.ach.is-hidden .ach-ico { background: repeating-linear-gradient(135deg, var(--bg-raised) 0 6px, var(--bg-active) 6px 12px); }
+.ach.is-hidden > div { filter: blur(0.3px); }
+.ach.is-hidden:hover > div b { text-decoration: underline; text-underline-offset: 3px; }
+.ach.is-hidden:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+/* Ultra rare ones catch the light. */
+.ach.tier-ultra.is-on .ach-ico::after, .ach-show-card.tier-ultra .ach-ico::after, .ach-pop.tier-ultra .ach-ico::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, oklch(1 0 0 / 0.45) 48%, transparent 64%); transform: translateX(-120%); animation: shine 3.6s var(--ease-in-out) infinite; pointer-events: none; }
+@keyframes shine { 0%, 62% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+
+/* Rings: how much of a game is done. */
+.ach-ring { display: block; transform: rotate(-90deg); }
+.ach-ring circle { fill: none; stroke-width: 3.2; }
+.ach-ring .bg { stroke: var(--glass-ctl-active); }
+.ach-ring .fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: var(--p) 100; transition: stroke-dasharray var(--dur-4) var(--ease-emph); }
+.ach-ring.is-full .fg { stroke: var(--tier-ultra); }
+.arrive .ach-ring .fg { animation: ring-in 1100ms var(--ease-emph) both; }
+@keyframes ring-in { from { stroke-dasharray: 0 100; } }
+.arrive .ach-bar span { transform-origin: left; animation: bar-in 1100ms var(--ease-emph) both; }
+@keyframes bar-in { from { transform: scaleX(0); } }
+.ach-gring { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex: none; }
+.ach-gring .ach-ring-n { position: absolute; font: 700 11px/1 var(--font-ui); color: var(--fg-1); }
+.ach-gring .ach-ring-n small { font-size: 8px; color: var(--fg-3); }
+.ach-gcard { grid-template-columns: 64px minmax(0, 1fr) auto; }
+.ach-gcard:hover { transform: translateY(-2px); }
+.ach-gcard { transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.ach-gcard.done { border-color: oklch(0.84 0.14 85 / 0.6); background: linear-gradient(160deg, oklch(0.84 0.14 85 / 0.08), transparent 60%), var(--glass-panel); }
+
+/* The summary: a big ring and the numbers beside it. */
+.ach-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-8); }
+.ach-hero-ring { position: relative; display: grid; place-items: center; width: 132px; height: 132px; }
+.ach-hero-ring .ach-ring circle { stroke-width: 2.6; }
+.ach-hero-ring .ach-ring-n { position: absolute; font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); }
+.ach-hero-ring .ach-ring-n small { font-size: var(--fs-15); color: var(--fg-2); margin-left: 1px; }
+@media (max-width: 700px) { .ach-hero { grid-template-columns: 1fr; } }
+
+/* Rarest unlocked: the ones to be proud of, on show. */
+.ach-show-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.ach-show-card { --tier: var(--tier-common); }
+.ach-show-card.tier-ultra { --tier: var(--tier-ultra); }
+.ach-show-card.tier-rare { --tier: var(--tier-rare); }
+.ach-show-card.tier-uncommon { --tier: var(--tier-uncommon); }
+.ach-show-card button { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: radial-gradient(120% 140% at 0% 0%, color-mix(in oklch, var(--tier) 16%, transparent), transparent 60%), var(--glass-panel); color: var(--fg-1); text-align: left; cursor: pointer; overflow: hidden; transition: transform var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.ach-show-card button:hover { transform: translateY(-3px); border-color: color-mix(in oklch, var(--tier) 60%, transparent); box-shadow: 0 16px 32px -20px var(--tier); }
+.ach-show-card button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.ach-show-card .ach-ico { width: 56px; height: 56px; }
+.ach-show-card .ach-ico > .ln-icon { width: 26px; height: 26px; }
+.ach-show-body { display: grid; gap: 2px; min-width: 0; }
+.ach-show-body em { font: 700 var(--fs-12)/1.2 var(--font-ui); font-style: normal; color: var(--tier); }
+.ach-show-body b { font: 700 var(--fs-15)/var(--lh-snug) var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ach-show-body span { font-size: var(--fs-12); color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ach-show-pct { display: grid; justify-items: end; font: 750 var(--fs-18)/1 var(--font-title); color: var(--fg-1); }
+.ach-show-pct small { font: 500 var(--fs-12)/1.4 var(--font-ui); color: var(--fg-3); }
+
+/* An unlock in the window, at the top right. */
+.ach-pops { position: fixed; top: var(--space-4); right: var(--space-4); z-index: 90; display: grid; gap: var(--space-2); justify-items: end; pointer-events: none; }
+.ach-pop { --tier: var(--tier-common); position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: var(--space-3); width: 360px; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3); border: var(--hairline) solid color-mix(in oklch, var(--tier) 45%, transparent); border-left: 4px solid var(--player-fill, var(--accent)); border-radius: var(--radius-panel); background: radial-gradient(120% 140% at 0% 0%, color-mix(in oklch, var(--tier) 18%, transparent), transparent 55%), var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), 0 0 40px -16px var(--tier); overflow: hidden; animation: pop-in 520ms var(--ease-emph) both; }
+.ach-pop.tier-ultra { --tier: var(--tier-ultra); }
+.ach-pop.tier-rare { --tier: var(--tier-rare); }
+.ach-pop.tier-uncommon { --tier: var(--tier-uncommon); }
+.ach-pop .ach-ico { width: 52px; height: 52px; animation: pop-badge 700ms var(--ease-emph) 120ms both; }
+.ach-pop .ach-ico > .ln-icon { width: 26px; height: 26px; }
+.ach-pop > div { display: grid; gap: 1px; min-width: 0; }
+.ach-pop-k { font-size: var(--fs-12); color: var(--fg-2); }
+.ach-pop b { font: 700 var(--fs-15)/var(--lh-snug) var(--font-ui); color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ach-pop-l { font-size: var(--fs-12); color: var(--fg-2); }
+.ach-pop-l em { font-style: normal; font-weight: 700; color: var(--tier); }
+.ach-pop::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, oklch(1 0 0 / 0.10) 50%, transparent 65%); transform: translateX(-100%); animation: pop-sweep 1200ms var(--ease-out) 300ms both; pointer-events: none; }
+.ach-pop.out { animation: pop-out 360ms var(--ease-in-out) both; }
+@keyframes pop-in { from { opacity: 0; transform: translateX(40px) scale(.96); } }
+@keyframes pop-out { to { opacity: 0; transform: translateX(40px) scale(.98); } }
+@keyframes pop-badge { from { transform: scale(.4) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); opacity: 1; } }
+@keyframes pop-sweep { to { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ach-ring .fg, .arrive .ach-ring .fg, .arrive .ach-bar span, .ach-pop, .ach-pop .ach-ico, .ach-pop::before, .ach-pop.out, .ach-ico::after { animation: none !important; transition: none; }
+  .ach.is-on:hover .ach-ico, .ach-show-card button:hover, .ach-gcard:hover { transform: none; }
+}

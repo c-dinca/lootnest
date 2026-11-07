@@ -149,6 +149,15 @@
   --rise: 10px;     /* how far a page or tile comes up as it arrives */
   --shadow-lift: 0 18px 32px -18px oklch(0.02 0.010 276 / 0.9);  /* a cover lifted under the pointer */
 
+  /* Achievement tiers, by the share of players who have one (Steam's
+     numbers): gold for ultra rare (under 2%), blue for rare (under 10%),
+     green for uncommon (under 30%), silver for common. Each is 8:1 or more
+     on the ground, so they work as small text too. */
+  --tier-ultra:    #F2C14E;
+  --tier-rare:     #6FA8F5;
+  --tier-uncommon: #5FC28E;
+  --tier-common:   #AEB6C2;
+
   /* The sidebar: as wide as the user drags it, or a rail of icons. */
   --side-rail: 64px;
   --thumb-w: 22px; --thumb-h: 30px;  /* a game's cover in the sidebar's list */

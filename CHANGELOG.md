@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.48.0
+
+- **Achievements, the way you know them from consoles.**
+  - Each one wears its tier, from how many players have it: **Ultra rare** in gold (under 2%), **Rare** in blue, **Uncommon** in green, **Common** in silver. You see the tier and a bar of how rare it is, and ultra rare ones catch the light.
+  - Locked achievements are grey, with a lock. Hidden ones stay covered until you click them.
+  - The Achievements page opens on a ring of how much you've unlocked, with the numbers counting up. A new **Rarest unlocked** row shows the four your profile should be proudest of.
+  - Each game has a ring of how much of it is done; gold at 100%.
+- **Unlocks in the window.** When a game unlocks an achievement while Lootnest is open, a note slides in at the top right of Lootnest's window too, with its tier and how rare it is.
+- **The note over the game, redone.** It now slides in from the right, with a trophy in the tier's colour, the achievement's name, and how rare it is in that colour.
+- **Show one** shows both: the note in the window and the one over the screen.
+
 ## 1.47.0
 
 - **The Updates page, redone.**

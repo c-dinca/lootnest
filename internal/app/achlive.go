@@ -190,7 +190,9 @@ func (a *App) achShow(r achRun, l *achLive, fresh []string) {
 		// A whole file came in at once (restored saves, a tool set up):
 		// one toast, not a minute of them.
 		win.ShowToast(win.Toast{Kicker: kicker, Title: strconv.Itoa(len(fresh)) + " achievements unlocked", Line: l.name, Accent: color})
-	} else {
+	}
+	shown := []core.Achievement{}
+	if len(fresh) <= 4 {
 		for _, id := range fresh {
 			x, ok := byID[id]
 			if !ok {
@@ -212,12 +214,15 @@ func (a *App) achShow(r achRun, l *achLive, fresh []string) {
 				} else if x.Description != "" {
 					line = x.Description
 				}
+				x.Percent = p
 			}
-			win.ShowToast(win.Toast{Kicker: kicker, Title: name, Line: line, Accent: color})
+			x.Name = name
+			shown = append(shown, x)
+			win.ShowToast(win.Toast{Kicker: kicker, Title: name, Line: line, Accent: color, Badge: core.RarityColor(x.Percent)})
 		}
 	}
 	a.logf("%s: %d achievement(s) unlocked", l.name, len(fresh))
-	a.emit("achUnlocked", map[string]any{"key": r.key, "count": len(fresh)})
+	a.emit("achUnlocked", map[string]any{"key": r.key, "count": len(fresh), "game": l.name, "player": l.player, "list": shown})
 }
 
 // apiTestToast shows what a toast over a game looks like.
@@ -229,7 +234,7 @@ func (a *App) apiTestToast() {
 	}
 	a.mu.Unlock()
 	a.logf("Showing a test note at the bottom right of the screen")
-	win.ShowToast(win.Toast{Kicker: "Achievement unlocked", Title: "This is how an unlock looks", Line: "Rare, 4.2% of players have it", Accent: color})
+	win.ShowToast(win.Toast{Kicker: "Achievement unlocked", Title: "This is how an unlock looks", Line: "Rare, 4.2% of players have it", Accent: color, Badge: core.RarityColor(4.2)})
 }
 
 // ------------------------------------------------------------- rarity ---
