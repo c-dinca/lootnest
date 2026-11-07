@@ -1,91 +1,87 @@
-// Lootnest's site: the swap demo in the hero, the toast over the
-// Achievements screenshot, and the latest version under the download.
+// Lootnest's site: the load screen in the hero (choose a slot and the
+// game's folder gets its files, with a copy made first), the unlock note
+// over the Achievements screenshot, and the latest version.
 (() => {
   "use strict";
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
 
   // ------------------------------------------------------------ the swap ---
-  const profiles = [
-    { name: "Cristian", color: "#6C9BD2", save: "Act 3, Lower City", mode: "Balanced", ctl: "Mouse, sensitivity 1.2", res: "2560 × 1440, Ultra", ach: "7 of 54" },
-    { name: "Cristian hardcore", color: "#6C9BD2", save: "Act 2, Moonrise Towers", mode: "Honour Mode", ctl: "Mouse, sensitivity 1.2", res: "2560 × 1440, Ultra", ach: "11 of 54" },
-    { name: "Mihai", color: "#E88CA0", save: "Act 1, the Emerald Grove", mode: "Explorer", ctl: "Controller", res: "1920 × 1080, High", ach: "2 of 54" },
+  const slots = [
+    { name: "Player 1", color: "#6C9BD2", save: "Act 3, Lower City", mode: "Balanced", ctl: "Mouse, sensitivity 1.2", res: "2560 × 1440, Ultra", ach: "7 of 54" },
+    { name: "Player 1, hardcore", color: "#6C9BD2", save: "Act 2, Moonrise Towers", mode: "Honour Mode", ctl: "Mouse, sensitivity 1.2", res: "2560 × 1440, Ultra", ach: "11 of 54" },
+    { name: "Player 2", color: "#E88CA0", save: "Act 1, the Emerald Grove", mode: "Explorer", ctl: "Controller", res: "1920 × 1080, High", ach: "2 of 54" },
   ];
-  const who = document.querySelector(".demo-who");
+  const list = document.querySelector(".slots");
   const status = document.getElementById("status");
   const statusT = document.getElementById("status-t");
-  const copies = document.getElementById("copies-line");
+  const copies = document.getElementById("copies");
   const cells = [...document.querySelectorAll("#files dd")];
-  let loaded = 0, busy = false, copyCount = 0;
+  let loaded = 0, cursor = 0, busy = false, made = 0, queued = -1;
 
-  const say = (text, on) => {
-    statusT.textContent = text;
-    status.classList.toggle("busy", !!on);
+  const say = (text, on) => { statusT.textContent = text; status.classList.toggle("busy", !!on); };
+  const items = () => [...list.querySelectorAll("li[data-p]")];
+  const point = (i) => {
+    cursor = i;
+    items().forEach((li) => li.setAttribute("aria-selected", String(+li.dataset.p === i)));
+    list.setAttribute("aria-activedescendant", "slot-" + i);
   };
 
-  async function swapTo(i) {
-    if (busy || i === loaded) return;
+  async function load(i) {
+    if (busy) { queued = i; return; }
+    if (i === loaded) return;
     busy = true;
-    const from = profiles[loaded], to = profiles[i];
-    who.querySelectorAll("button").forEach((b) => {
-      b.setAttribute("aria-checked", String(+b.dataset.p === i));
-      b.disabled = true;
-    });
-    say(`Saving ${from.name}'s files back to their profile`, true);
-    await wait(700);
-    copyCount++;
-    copies.innerHTML = `<span>${copyCount}</span> ${copyCount === 1 ? "copy" : "copies"} kept`;
-    const n = copies.firstChild;
-    requestAnimationFrame(() => n.classList.add("bump"));
-    say("Copy made and read back", true);
+    const from = slots[loaded], to = slots[i];
+    say(`Saving ${from.name}'s files back to their slot`, true);
     await wait(650);
-    say(`Loading ${to.name}'s files`, true);
-    for (const dd of cells) {
-      const v = to[dd.dataset.k];
-      if (dd.textContent === v) continue;
-      dd.classList.remove("in"); dd.classList.add("out");
-      await wait(90);
-    }
-    await wait(240);
-    for (const dd of cells) {
-      if (!dd.classList.contains("out")) continue;
-      dd.textContent = to[dd.dataset.k];
-      dd.classList.remove("out"); dd.classList.add("in");
-      await wait(70);
-    }
-    await wait(300);
+    made++;
+    copies.innerHTML = `<b>${made}</b> ${made === 1 ? "copy" : "copies"} made before swapping, kept in Lootnest's backups.`;
+    requestAnimationFrame(() => copies.firstChild.classList.add("bump"));
+    say("Copy made and read back", true);
+    await wait(600);
+    say(`Putting ${to.name}'s files in the game's folder`, true);
+    const changing = cells.filter((dd) => dd.textContent !== to[dd.dataset.k]);
+    for (const dd of changing) { dd.classList.remove("in"); dd.classList.add("out"); await wait(70); }
+    await wait(220);
+    for (const dd of changing) { dd.textContent = to[dd.dataset.k]; dd.classList.remove("out"); dd.classList.add("in"); await wait(60); }
+    await wait(280);
     status.style.setProperty("--c", to.color);
-    say(`${to.name}'s files are loaded. Ready to play.`, false);
+    say(`${to.name}'s files are in the game's folder. Ready to play.`, false);
     loaded = i;
-    who.querySelectorAll("button").forEach((b) => (b.disabled = false));
     busy = false;
+    if (queued >= 0) { const q = queued; queued = -1; if (q !== loaded) load(q); }
   }
 
-  if (who) {
-    who.addEventListener("click", (e) => {
-      const b = e.target.closest("button[data-p]");
-      if (b) swapTo(+b.dataset.p);
+  if (list) {
+    list.addEventListener("click", (e) => {
+      const li = e.target.closest("li[data-p]");
+      if (!li) return;
+      point(+li.dataset.p);
+      load(+li.dataset.p);
     });
-    who.addEventListener("keydown", (e) => {
-      if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) return;
-      e.preventDefault();
-      const n = profiles.length;
-      const next = (loaded + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : n - 1)) % n;
-      who.querySelector(`[data-p="${next}"]`).focus();
-      swapTo(next);
+    list.addEventListener("keydown", (e) => {
+      const n = slots.length;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        point((cursor + (e.key === "ArrowDown" ? 1 : n - 1)) % n);
+        load(cursor);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        load(cursor);
+      }
     });
-    // One swap on its own, so the page shows what Lootnest does before anyone
-    // clicks. Only once, and only while the demo is on screen.
+    // One swap on its own, so the page shows what Lootnest does before
+    // anyone touches it: once, and only while the screen is in view.
     const io = new IntersectionObserver((es) => {
       if (es.some((x) => x.isIntersecting)) {
         io.disconnect();
-        setTimeout(() => { if (loaded === 0 && !busy) swapTo(1); }, reduce ? 0 : 1400);
+        setTimeout(() => { if (loaded === 0 && !busy && cursor === 0) { point(1); load(1); } }, reduce ? 0 : 1600);
       }
-    }, { threshold: 0.6 });
-    io.observe(who.closest(".demo"));
+    }, { threshold: 0.3 });
+    io.observe(list.closest(".load"));
   }
 
-  // ------------------------------------------------- the toast arriving ---
+  // ------------------------------------------------- the note arriving ---
   const toast = document.querySelector(".toast");
   if (toast && "IntersectionObserver" in window) {
     toast.style.opacity = "0";
@@ -97,12 +93,6 @@
     }, { threshold: 0.5 });
     io.observe(toast.parentElement);
   }
-
-  // ------------------------------------------------------- the header ---
-  const top = document.querySelector(".top");
-  const onScroll = () => top.classList.toggle("scrolled", scrollY > 8);
-  addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
 
   // -------------------------------------------------- latest version ---
   const ver = document.getElementById("ver");

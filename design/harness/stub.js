@@ -19,8 +19,12 @@
     { id: "p5", name: "Ioana", color: "#9C88D0" },
     { id: "p6", name: "Radu", color: "#D98A5F" },
   ].slice(0, P);
-  // ?runs=1: two runs of Cristian's ("Cristian hardcore", "Cristian 100%").
-  if (q.get("runs") === "1") PLAYERS.push({ id: "r1", name: "Cristian hardcore", color: "#6C9BD2", of: "p1" }, { id: "r2", name: "Cristian 100%", color: "#6C9BD2", of: "p1" });
+  // ?anon=1: "Player 1", "Player 2" and so on, for screenshots made public
+  // (the website), with nobody's name in them.
+  const ANON = q.get("anon") === "1";
+  if (ANON) PLAYERS.forEach((p, i) => { p.name = "Player " + (i + 1); });
+  // ?runs=1: two runs of the first profile ("Cristian hardcore", "Cristian 100%").
+  if (q.get("runs") === "1") PLAYERS.push({ id: "r1", name: PLAYERS[0].name + " hardcore", color: "#6C9BD2", of: "p1" }, { id: "r2", name: PLAYERS[0].name + " 100%", color: "#6C9BD2", of: "p1" });
   const ids = PLAYERS.map((p) => p.id);
   const some = (n) => ids.slice(0, Math.min(n, ids.length));
 
