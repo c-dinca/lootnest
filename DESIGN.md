@@ -137,6 +137,7 @@ The kitchen sink forces states with `data-force="hover|active|focus"`. Nothing i
 | Segmented control | `.ln-segmented` | `role="radiogroup"`; selected, hover, focus, disabled, counts | Switches between views ("Everyone / Mine / With profiles"). The arrow keys move the choice. |
 | Toast | `.ln-toast`, `--success`, `--error` | Player toast with an avatar; one optional ghost action | Says what happened, with the same words as the action. An error says why, and what to do. |
 | Empty / loading / error | `.ln-state`, `--error`, `--inline` | Block or inline. A spinner, an icon, a title, one line and actions | Each says what is going on and what to do next. It is never bare text. |
+| Banner | `.ln-banner` | Title, one line and actions; a spinner while something runs | A notice that needs a decision. There's no coloured side edge. |
 | Backdrop | `.ln-backdrop` | The game's art, blurred | Game pages, and Home behind the last-played game. |
 
 ## Accessibility
@@ -167,4 +168,5 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 |---|---|
 | Sidebar, backdrop, toasts | On the system (1.16.0) |
 | Game page, profiles on and off, with Cloud save, Shelf and news | On the system (1.16.0) |
-| Home, Library, Players, Cloud saves, Settings, Add game, first run | Old styles, Step 5 |
+| Home, banners (`ln-banner`) | On the system (1.16.1) |
+| Library, Players, Cloud saves, Settings, Add game, first run | Old styles, Step 5 |

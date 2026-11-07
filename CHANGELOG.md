@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.16.1
+
+Home in the new look. It answers "what are we playing tonight, and who's playing?":
+- The game played last fills the top, with the same play bar as its game page: **Play as** whoever's files are loaded, and "or play as…" for everyone else.
+- **Continue playing** shows the other games played lately as covers. Each cover shows who played it last, and the colour bars along the bottom show who has a profile.
+- **Who's playing** lists everyone with the game they played last, and a Play button that carries on as them.
+- News comes last, as a short list.
+- Banners (updates, Steam's launch options, covers) are calmer and no longer have a coloured edge.
+
 ## 1.16.0
 
 A new look, starting with the game page:

@@ -519,20 +519,31 @@
       <div class="grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
   }
 
-  // Home: what you play, not everything you have. The game played last,
-  // the others played lately, news from them, and a way into the Library.
+  // Home: what are we playing tonight, and who's playing? The game played
+  // last with its play bar, the others played lately with who played them,
+  // each player's last game, and the news last.
   function viewHome() {
     const all = libraryItems();
-    const hero = libraryHero(all), shelves = continueShelf(all) + newsShelf(all);
-    const hour = new Date().getHours();
-    const hello = hour < 5 ? "Late night" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-    const body = hero ? hero + shelves : `<div class="empty"><div><h2>Nothing played yet</h2>
-        <p class="sub">Start a game from your Library and it shows up here, with the others you play and their news.</p></div>
-        <button class="btn primary" data-action="nav" data-view="library">Open the Library</button></div>`;
-    return `<div class="page wide">${updateBanner()}${hookBanner()}
-      <div class="home-head"><h1>${hello}</h1><button class="btn quiet" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button></div>
-      ${body}</div>`;
+    const recent = recentItems(all, false);
+    const banners = updateBanner() + hookBanner();
+    const allBtn = all.length ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button>` : "";
+    if (!recent.length) {
+      return `<div class="home-empty ln-root">${banners}
+        <div class="ln-section-head"><div><h2>Home</h2></div>${allBtn}</div>
+        <div class="ln-glass ln-state">${homeIcon}<div><h3>Nothing played yet</h3><p>Start a game from your Library and it shows up here, with who played it, the others you play and their news.</p>
+          <div class="ln-actions"><button class="ln-button ln-button--primary" data-action="nav" data-view="library">Open the Library</button></div></div></div></div>`;
+    }
+    const first = recent[0];
+    const head = gameView(first, false);
+    return `<div class="gpage home ln-root${head.art ? "" : " no-art"}">${head.top}
+      <div class="gpage-body">${head.bar}${head.note}${banners ? `<div class="home-banners">${banners}</div>` : ""}
+        <div class="home-cols">
+          <div>${continueShelf(recent.slice(1), allBtn)}</div>
+          <aside class="gpage-aside">${playersBlock(all)}${homeNews(recent)}</aside>
+        </div>
+      </div></div>`;
   }
+  const homeIcon = '<svg class="ln-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3.25" y="5.5" width="13.5" height="9" rx="2.5"/><path d="M6.75 8.5v3M5.25 10h3M12.5 9.25v.01M14 10.75v.01"/></svg>';
 
   // Shelves, as in the best launchers: the games played lately, then what's
   // new in them. Both only show what Lootnest actually knows.
@@ -554,56 +565,87 @@
     if (url || S.icons[key]) render();
   }
 
-  function continueShelf(all) {
-    const list = recentItems(all, true).slice(0, 8);
-    if (!list.length) return "";
-    list.forEach((it) => { loadArt(it); ensureCover(it); });
-    return `<section class="shelf" aria-label="Continue playing"><h2 class="shelf-title">Continue playing</h2>
-      <div class="capsules">${list.map((it) => {
-        const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
-        const t = playedText(it);
-        const k = coverKey(it), poster = !S.art["hero:" + k] && (S.covers[k] || S.icons[k]);
-        return `<div class="capsule-wrap"><button class="capsule" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}">${artHTML(it)}
-          ${poster ? `<span class="capsule-poster${S.covers[k] ? "" : " icon"}" style="background-image:url('${poster}')"></span>` : ""}
-          <span class="capsule-body"><b>${esc(it.name)}</b><span>${esc(lastPlayed(it))}${t ? `<span class="sep"></span>${esc(t)}` : ""}</span></span></button>
-          ${it.kind === "game" && session(it.id) ? "" : `<button class="quick-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${icon.play}</button>`}</div>`;
-      }).join("")}</div></section>`;
+  // A game as a cover tile (system.css .ln-tile): who has a profile is the
+  // colour code along the bottom, whose files are loaded the tall bar.
+  function tileHTML(it, meta) {
+    ensureCover(it);
+    const k = coverKey(it), c = S.covers[k];
+    const g = it.g, owner = g && S.d.active[g.id], s = g && session(g.id);
+    const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
+    const bars = owners.length ? `<div class="ln-tile__owners" aria-hidden="true">${owners.map((p) => `<span class="ln-player" style="--player:${esc(p.color)}"${p.id === owner ? " data-loaded" : ""}></span>`).join("")}</div>` : "";
+    const badge = s ? `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>` : "";
+    const cover = c ? `<img src="${c}" alt="">` : `<div class="ln-tile__none"><b>${esc(it.name)}</b><span>${esc(sourceLabel(it.source))}</span></div>`;
+    return `<button class="ln-tile" data-action="open-sheet" ${itemAttr(it)}>
+      <div class="ln-tile__cover">${cover}${bars}${badge}</div>
+      <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span></button>`;
   }
+  // "Mihai, yesterday": who played it last, in their colour.
+  function playedBy(it) {
+    const r = (S.d.recent || {})[recentKey(it)];
+    if (!r) return esc(sourceLabel(it.source));
+    const p = r.player && player(r.player);
+    return p ? `<span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span>${esc(p.name)}, ${esc(ago(r.at))}` : esc(cap(ago(r.at)));
+  }
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
+  function continueShelf(list, allBtn) {
+    const head = `<div class="ln-section-head"><div><h2>Continue playing</h2></div>${allBtn}</div>`;
+    if (!list.length) return `<section>${head}<p class="home-hint">The other games you play show up here.</p></section>`;
+    return `<section aria-label="Continue playing">${head}<div class="home-tiles">${list.slice(0, 10).map((it) => tileHTML(it, playedBy(it))).join("")}</div></section>`;
+  }
+
+  // Each player and the game they played last: one click to carry on.
+  function playersBlock(all) {
+    const ps = cfg().players;
+    if (!ps.length) return "";
+    const rec = S.d.recent || {};
+    const lastOf = {};
+    Object.entries(rec).forEach(([k, r]) => {
+      if (!r.player) return;
+      const t = new Date(r.at).getTime();
+      if (!lastOf[r.player] || t > lastOf[r.player].t) lastOf[r.player] = { t, k, at: r.at };
+    });
+    return `<section class="gpage-block">${gpHead("Who's playing")}<div class="ln-list home-players">${ps.map((p) => {
+      const l = lastOf[p.id], it = l && itemByKey(l.k);
+      const busy = it && it.g && session(it.g.id);
+      const go = !it || busy ? "" : it.g
+        ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="play-as" data-game="${esc(it.g.id)}" data-player="${esc(p.id)}" aria-label="Play ${esc(it.name)} as ${esc(p.name)}">${GI.play}Play</button>`
+        : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="play-found" data-key="${esc(it.id)}" aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
+      return `<div class="home-player">${lnAvatar(p, "32")}<div><b>${esc(p.name)}</b><span>${it ? `${esc(it.name)}, ${esc(ago(l.at))}` : "Hasn't played yet"}</span></div>${go}</div>`;
+    }).join("")}</div></section>`;
+  }
+
   function ensureNews(it) {
     const key = coverKey(it);
     if (S.news[key] || !cfg().settings.gameNews) return;
     S.news[key] = { loading: true };
     api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
   }
-  function newsShelf(all) {
+  // News is the last thing on Home: a short list, never next to Play.
+  function homeNews(recent) {
     if (!cfg().settings.gameNews) return "";
-    const games = recentItems(all, false).slice(0, 8);
-    if (!games.length) return "";
-    const cards = [];
-    games.forEach((it) => {
+    const items = [];
+    recent.slice(0, 8).forEach((it) => {
       ensureNews(it);
       const N = S.news[coverKey(it)];
-      ((N && N.items) || []).slice(0, 3).forEach((n, i) => cards.push({ it, n, i }));
+      ((N && N.items) || []).slice(0, 3).forEach((n, i) => items.push({ it, n, i }));
     });
-    if (!cards.length) return "";
-    cards.sort((a, b) => new Date(b.n.date) - new Date(a.n.date));
-    return `<section class="shelf" aria-label="News from your games"><h2 class="shelf-title">News from your games</h2>
-      <div class="news-cards">${cards.slice(0, 6).map(({ it, n, i }) => {
-        const pic = n.image || S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || "";
-        return `<button class="news-card" data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
-          <span class="news-pic"${pic ? ` style="background-image:url('${esc(pic)}')"` : ""}></span>
-          <span class="news-card-body"><span class="news-game">${n.update ? '<span class="dot"></span>' : ""}${esc(it.name)}<span class="news-when">${esc(day(n.date))}</span></span>
-          <b>${esc(n.title)}</b></span></button>`;
-      }).join("")}</div></section>`;
+    if (!items.length) return "";
+    items.sort((a, b) => new Date(b.n.date) - new Date(a.n.date));
+    return `<section class="gpage-block">${gpHead("News from your games")}<ul class="gpage-news">${items.slice(0, 5).map(({ it, n, i }) => `<li><button data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
+      <time class="ln-num">${esc(day(n.date))}</time><span><b>${n.update ? '<span class="ln-tag">Update</span>' : ""}${esc(n.title)}</b><span>${esc(it.name)}</span></span></button></li>`).join("")}</ul></section>`;
   }
+
+  // Notices at the top of Home and the Library (system.css .ln-banner).
+  const banner = (title, text, actions, busy) => `<div class="ln-banner ln-root">${busy ? '<span class="ln-spinner" aria-hidden="true"></span>' : ""}<div class="ln-banner__text"><b>${title}</b><p>${text}</p></div>${actions ? `<div class="ln-banner__actions">${actions}</div>` : ""}</div>`;
+  const bBtn = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
 
   // Asked once: keep Lootnest up to date by itself, or not.
   function updatesPrompt() {
     const s = cfg().settings;
     if (s.updatesAsked || s.checkUpdates || S.update.available) return "";
-    return `<div class="banner"><div><b>Keep Lootnest up to date?</b>
-      <p>Lootnest checks GitHub every few hours, tells you with a notification when a new version is out, and installs it while it's in the tray and no game is running. Nothing about you or your games is sent.</p></div>
-      <div class="row"><button class="btn quiet" data-action="updates-no">Not now</button><button class="btn primary" data-action="updates-yes">Keep it up to date</button></div></div>`;
+    return banner("Keep Lootnest up to date?", "Lootnest checks GitHub every few hours, tells you with a notification when a new version is out, and installs it while it's in the tray and no game is running. Nothing about you or your games is sent.",
+      bBtn("ghost", 'data-action="updates-no"', "Not now") + bBtn("primary", 'data-action="updates-yes"', "Keep it up to date"));
   }
 
   // A newer Lootnest shows in the sidebar on every page, not only on Home.
@@ -619,20 +661,20 @@
     const U = S.update;
     if (!U.available) return updatesPrompt();
     if (U.step) {
-      return `<div class="banner"><div><b>${U.step === "installing" ? `Installing Lootnest ${esc(U.version)}` : `Downloading Lootnest ${esc(U.version)}`}</b>
-        <p>${U.step === "installing" ? "Lootnest closes and opens again in a few seconds." : "Your players, games and profiles stay as they are."}</p></div><div class="bar" aria-hidden="true"></div></div>`;
+      return banner(U.step === "installing" ? `Installing Lootnest ${esc(U.version)}` : `Downloading Lootnest ${esc(U.version)}`,
+        U.step === "installing" ? "Lootnest closes and opens again in a few seconds." : "Your players, games and profiles stay as they are.", "", true);
     }
-    return `<div class="banner"><div><b>Lootnest ${esc(U.version)} is ready to install</b><p>You have ${esc(S.d.version)}. Updating keeps your players, games and profiles.</p></div>
-      <div class="row">${U.page ? `<button class="btn quiet" data-action="update-notes">What's new</button>` : ""}<button class="btn primary" data-action="update-now">Update now</button></div></div>`;
+    return banner(`Lootnest ${esc(U.version)} is ready to install`, `You have ${esc(S.d.version)}. Updating keeps your players, games and profiles.`,
+      (U.page ? bBtn("ghost", 'data-action="update-notes"', "What's new") : "") + bBtn("primary", 'data-action="update-now"', "Update now"));
   }
 
   function coverHint(all) {
     if (cfg().settings.downloadCovers || S.hideCoverHint) return "";
     const n = all.filter((it) => !it.appId).length;
     if (!n) return "";
-    return `<div class="banner"><div><b>Find covers and artwork for ${n === 1 ? "1 game" : n + " games"}</b>
-      <p>Lootnest looks ${n === 1 ? "it" : "them"} up on the Steam store by name, and on SteamGridDB if you add a key in Settings. Only the games' names are sent. Everything found is saved on this PC.</p></div>
-      <div class="row"><button class="btn quiet" data-action="covers-later">Not now</button><button class="btn primary" data-action="covers-on">Find covers</button></div></div>`;
+    return banner(`Find covers and artwork for ${n === 1 ? "1 game" : n + " games"}`,
+      `Lootnest looks ${n === 1 ? "it" : "them"} up on the Steam store by name, and on SteamGridDB if you add a key in Settings. Only the games' names are sent. Everything found is saved on this PC.`,
+      bBtn("ghost", 'data-action="covers-later"', "Not now") + bBtn("primary", 'data-action="covers-on"', "Find covers"));
   }
 
   function gridHTML() {
@@ -794,10 +836,7 @@
     if (c) return `<div class="art soft" style="background-image:url('${c}')"></div>`;
     return `<div class="art none"></div>`;
   }
-  function titleHTML(it, cls) {
-    const logo = S.art["logo:" + coverKey(it)];
-    return logo ? `<h1 class="${cls} has-logo"><img src="${logo}" alt="${esc(it.name)}"></h1>` : `<h1 class="${cls}">${esc(it.name)}</h1>`;
-  }
+
   const artWanted = new Set();
   async function loadArt(it) {
     const key = coverKey(it);
@@ -811,29 +850,7 @@
     } catch (e) { /* no art */ }
   }
 
-  // One Play button per player for games with profiles, in the player's
-  // colour: playing here starts with choosing who plays.
-  function playButtons(it, big) {
-    if (it.kind === "found") return `<button class="btn primary${big ? " big" : ""}" data-action="play-found" data-key="${esc(it.id)}">${icon.play}Play</button>`;
-    const g = it.g, s = session(g.id), owner = S.d.active[g.id];
-    if (s) return `<span class="status big"><span class="dot" style="background:${esc(color(s.playerId))}"></span>${esc(sessionText(s))}</span>`;
-    return cfg().players.map((p) => `<button class="play-as${big ? " big" : ""}" style="--c:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}">
-      ${icon.play}<span>Play as <b>${esc(p.name)}</b></span>${owner === p.id ? `<span class="loaded" title="${esc(possessive(p.name))} files are loaded">loaded</span>` : ""}</button>`).join("");
-  }
 
-  function libraryHero(all) {
-    const rec = S.d.recent || {};
-    let best = null, at = 0;
-    all.forEach((it) => { const r = rec[recentKey(it)]; const t = r ? new Date(r.at).getTime() : 0; if (t > at) { best = it; at = t; } });
-    if (!best) return "";
-    loadArt(best); ensureCover(best);
-    const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
-    return `<section class="hero" aria-label="Last played">${artHTML(best)}
-      <div class="hero-body">${titleHTML(best, "hero-title")}
-        <p class="hero-when">${esc(lastPlayed(best))}${playedText(best) ? `<span class="sep"></span>${esc(playedText(best))}` : ""}</p>
-        <div class="hero-play">${playButtons(best, false)}<button class="btn ghost" data-action="open-sheet" ${attr}>Details</button></div>
-      </div></section>`;
-  }
 
   const day = (d) => new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: new Date(d).getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
 
@@ -928,6 +945,11 @@
     const P = S.page;
     const it = P && libraryItems().find((x) => x.kind === P.kind && x.id === P.id);
     if (!it) { S.view = "library"; return viewLibrary(); }
+    return gameView(it, true);
+  }
+  // The game page (page = true), or just its art and play bar, as on Home.
+  function gameView(it, page) {
+    const P = page ? S.page : {};
     loadArt(it);
     const key = coverKey(it);
     const hero = S.art["hero:" + key], cover = S.covers[key] || "";
@@ -936,6 +958,7 @@
     const meta = [esc(sourceLabel(it.source))];
     const st = steamTime(it);
     let bar, note = "", colA, colB, aside;
+    const details = page ? "" : `<button class="ln-button ln-button--ghost" data-action="open-sheet" ${itemAttr(it)}>Details</button>`;
 
     if (it.kind === "found") {
       const f = it.f;
@@ -945,7 +968,7 @@
       bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
         <div class="gpage-state"><b>Profiles off</b><span>Everyone shares the same settings and saves</span></div>
-        <div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}Turn on profiles</button></div>
+        <div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}Turn on profiles</button>${details}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       note = `<p class="gpage-note">Turn on profiles so everyone who plays gets their own settings and saves. ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>`;
       colA = gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", f.args ? `Name and launch options: <code>${esc(f.args)}</code>` : "Name and launch options")])
@@ -956,7 +979,7 @@
         f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged") : "",
         f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
       ]);
-      aside = gameSavesBlock(it) + shelfBlock(it) + newsHTML(it);
+      aside = page ? gameSavesBlock(it) + shelfBlock(it) + newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
       const ps = cfg().players;
@@ -979,7 +1002,7 @@
       const chips = !s && others.length ? `<div class="gpage-others"><span class="gpage-others-label">or play as…</span>${others.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" aria-label="Play as ${esc(p.name)}">${lnAvatar(p)}${esc(p.name)}</button>`).join("")}</div>` : "";
       const top = ps.filter((p) => pt[p.id]).sort((a, b) => pt[b.id] - pt[a.id]).slice(0, 3);
       const stats = top.map((p) => gpStat(hoursValue(pt[p.id]), esc(p.name), p)).join("") + (st ? gpStat(hoursValue(st), "Steam account") : "");
-      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${chips}${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
+      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${chips}${details}${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       note = `<p class="gpage-note">${GI.copy}A copy is made before every swap.</p>`;
       colA = gpGroup("Profiles", [
         gpRow(`data-action="load-only" data-game="${esc(g.id)}"`, GI.load, "Load someone's files", "Without starting the game", { disabled: s }),
@@ -999,14 +1022,15 @@
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
         overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.`,
       }[P.cloud.state];
-      aside = (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") + shelfBlock(it) + newsHTML(it);
+      aside = page ? (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") + shelfBlock(it) + newsHTML(it) : "";
     }
-    const back = `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${S.from === "home" ? "Home" : "Library"}</button>`;
-    return `<div class="gpage ln-root${art ? "" : " no-art"}">
-      <section class="gpage-hero">${art}${back}
+    const back = page ? `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${S.from === "home" ? "Home" : "Library"}</button>` : "";
+    const top = `<section class="gpage-hero">${art}${back}
         <div class="gpage-title"><h1 class="${it.name.length > 22 ? "long" : ""}">${esc(it.name)}</h1>
           <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p></div>
-      </section>
+      </section>`;
+    if (!page) return { top, bar, note, art };
+    return `<div class="gpage ln-root${art ? "" : " no-art"}">${top}
       <div class="gpage-body">${bar}${note}
         <div class="gpage-cols"><div class="gpage-col">${colA}</div><div class="gpage-col">${colB}</div><aside class="gpage-aside">${aside}</aside></div>
       </div></div>`;
@@ -1020,18 +1044,16 @@
       const text = S.hooks.steamRunning
         ? `So that Steam starts ${what} by itself, Steam has to restart once (about 10 seconds) while Lootnest takes itself out of the launch options.`
         : `Lootnest takes itself out of the launch options for ${what}. Steam is closed, so this takes a second.`;
-      return `<div class="banner"><div><b>Let Steam start ${what}</b><p>${text}</p></div>
-        <div class="row"><button class="btn" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Updating" : S.hooks.steamRunning ? "Restart Steam and update" : "Update now"}</button>
-        <button class="btn quiet" data-action="hide-banner">Later</button></div></div>`;
+      return banner(`Let Steam start ${what}`, text, bBtn("ghost", 'data-action="hide-banner"', "Later")
+        + bBtn("secondary", `data-action="hooks-apply" ${S.hooksBusy ? 'aria-busy="true"' : ""}`, (S.hooksBusy ? '<span class="ln-spinner" aria-hidden="true"></span>' : "") + (S.hooksBusy ? "Updating" : S.hooks.steamRunning ? "Restart Steam and update" : "Update now")));
     }
     if (!missing.length) return "";
     const what = missing.length === 1 ? esc(missing[0].name) : missing.length + " games";
     const text = S.hooks.steamRunning
       ? `So that Steam's Play button asks who's playing ${what}, Steam has to restart once (about 10 seconds). Lootnest does it for you.`
       : `Lootnest can set Steam up so its Play button asks who's playing ${what}.`;
-    return `<div class="banner"><div><b>Make Steam ask who's playing</b><p>${text}</p></div>
-      <div class="row"><button class="btn" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Setting up" : S.hooks.steamRunning ? "Restart Steam and set up" : "Set up"}</button>
-      <button class="btn quiet" data-action="hide-banner">Later</button></div></div>`;
+    return banner("Make Steam ask who's playing", text, bBtn("ghost", 'data-action="hide-banner"', "Later")
+      + bBtn("secondary", `data-action="hooks-apply" ${S.hooksBusy ? 'aria-busy="true"' : ""}`, (S.hooksBusy ? '<span class="ln-spinner" aria-hidden="true"></span>' : "") + (S.hooksBusy ? "Setting up" : S.hooks.steamRunning ? "Restart Steam and set up" : "Set up")));
   }
 
   async function loadFound() {
