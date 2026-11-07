@@ -174,3 +174,58 @@ func TestFolderSaves(t *testing.T) {
 		t.Fatal("needs a folder")
 	}
 }
+
+func TestVersionTargetsKeepsEveryLocation(t *testing.T) {
+	f := newFixture(t)
+	c := &Cloud{Root: t.TempDir(), Computer: "PC-A"}
+	a := filepath.Join(f.appdata, "Indie", "Saves")
+	b := filepath.Join(f.appdata, "Indie", "Config")
+	write(t, filepath.Join(a, "slot1.sav"), "a old")
+	write(t, filepath.Join(b, "keys.ini"), "b old")
+	both := []SaveLocation{{Path: f.env.Tokenize(a), Resolved: a}, {Path: f.env.Tokenize(b), Resolved: b}}
+	key := GameSavesKey("Indie", "")
+	h, _ := SavesHash(both)
+	v, err := c.SaveGameVersion(key, "Indie", both, h, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(b, "keys.ini"), "b now")
+	// The game knows only a here; the version also has b.
+	targets, err := c.VersionTargets(key, v.ID, both[:1], f.env.Resolve)
+	if err != nil || len(targets) != 2 || targets[1].Resolved != b {
+		t.Fatalf("%+v %v", targets, err)
+	}
+	if _, err := c.RestoreGameVersion(key, v.ID, both[:1], f.env.Resolve, filepath.Join(t.TempDir(), "tmp")); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(b, "keys.ini")) != "b old" {
+		t.Fatal("b restored")
+	}
+}
+
+func TestReadSavesWrongKeyLeavesNoTmp(t *testing.T) {
+	f := newFixture(t)
+	root := t.TempDir()
+	key, err := CloudKey(root, "cloud password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := &Cloud{Root: root, Key: key, Computer: "PC-A"}
+	saves := filepath.Join(f.appdata, "Indie", "Saves")
+	write(t, filepath.Join(saves, "slot1.sav"), "level 1")
+	locs := []SaveLocation{{Path: f.env.Tokenize(saves), Resolved: saves}}
+	game := GameSavesKey("Indie", "")
+	v, err := c.SaveGameVersion(game, "Indie", locs, "h", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmp := filepath.Join(t.TempDir(), "tmp")
+	paths, at := locationsAsPaths(locs)
+	wrong := make([]byte, len(key))
+	if _, err := readSaves(filepath.Join(c.savesDir(game), v.ID+".lnbak"), wrong, paths, at, tmp); err == nil {
+		t.Fatal("the wrong key is refused")
+	}
+	if exists(tmp) {
+		t.Fatal("the decrypted copy is removed")
+	}
+}

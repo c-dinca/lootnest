@@ -52,7 +52,7 @@ type netEntry struct {
 	At    time.Time `json:"at,omitempty"`
 	// Gone: the saves were in the folder and aren't any more; the user was
 	// told once. Keep holds more copies from then on, so the ones from
-	// before stay while the game makes new saves.
+	// before stay while the game makes new saves; it grows to 15 at most.
 	Gone bool `json:"gone,omitempty"`
 	Keep int  `json:"keep,omitempty"`
 	// Folder: the last copy had saves from inside the game's folder. Before
@@ -156,11 +156,20 @@ func (a *App) safetyNet() {
 		hadFolder := e.Hash != "" && (e.Folder || !e.Vault)
 		if hadFolder && !inFolder && !e.Gone {
 			e.Gone = true
-			e.Keep = len(c.GameVersions(key)) + netKeep
+			vs := c.GameVersions(key)
+			e.Keep = max(e.Keep, min(len(vs)+netKeep, 3*netKeep))
 			st[key], changed = e, true
 			a.logf("Safety net: %s's saves are gone from %s; copies are in %s", f.Name, f.Dir, c.Root)
+			at := e.At
+			if at.IsZero() && len(vs) > 0 {
+				at = vs[0].Created
+			}
+			copyFrom := "a copy"
+			if !at.IsZero() {
+				copyFrom += " from " + at.Local().Format("2 Jan, 15:04")
+			}
 			a.notify(f.Name+"'s saves are gone from its folder",
-				"If it was reinstalled or updated, Lootnest has a copy from "+e.At.Local().Format("2 Jan, 15:04")+". Put it back from the game's page.")
+				"If it was reinstalled or updated, Lootnest has "+copyFrom+". Put it back from the game's page.")
 		}
 		if e.Gone && inFolder {
 			e.Gone = false
@@ -186,7 +195,11 @@ func (a *App) safetyNet() {
 		}
 		e.Quick = quick
 		if hash != e.Hash {
-			if vs := c.GameVersions(key); len(vs) == 0 || vs[0].Hash != hash {
+			if vs := c.GameVersions(key); len(vs) > 0 && vs[0].Hash == hash {
+				if e.At.IsZero() {
+					e.At = vs[0].Created
+				}
+			} else {
 				keep := netKeep
 				if e.Keep > keep {
 					keep = e.Keep
@@ -232,7 +245,10 @@ func (a *App) apiGameSaveRestoreLocal(key, id string) error {
 			return
 		}
 		st := loadNet()
-		delete(st, gameSavesKey(f)) // read them again next time
+		k := gameSavesKey(f)
+		e := st[k]
+		e.Quick, e.Hash = "", "" // read them again next time
+		st[k] = e
 		saveNet(st)
 	}()
 	return nil
@@ -241,11 +257,9 @@ func (a *App) apiGameSaveRestoreLocal(key, id string) error {
 // restoreVersion puts version id of a game's saves from c in place over
 // locs, keeping the saves there now in backups\saves-<game> first.
 func (a *App) restoreVersion(c *core.Cloud, f core.FoundGame, id string, locs []core.SaveLocation) error {
-	keep := filepath.Join(a.store.BackupsDir(), "saves-"+gameSavesKey(f), time.Now().Format("20060102-150405")+"-before-restore")
-	for i, l := range locs {
-		if err := core.Mirror(l.Resolved, filepath.Join(keep, fmt.Sprint(i))); err != nil {
-			return errors.New("Nothing was restored: Lootnest couldn't keep the saves here first (" + err.Error() + ").")
-		}
+	keep, err := a.keepBeforeRestore(c, f, id, locs)
+	if err != nil {
+		return err
 	}
 	tmp := filepath.Join(DataDir(), "saves-tmp-"+time.Now().Format("150405.000"))
 	if _, err := c.RestoreGameVersion(gameSavesKey(f), id, locs, a.env.Resolve, tmp); err != nil {
@@ -253,4 +267,20 @@ func (a *App) restoreVersion(c *core.Cloud, f core.FoundGame, id string, locs []
 	}
 	a.logf("Restored %s's saves from version %s (the saves before are in %s)", f.Name, id, keep)
 	return nil
+}
+
+// keepBeforeRestore copies every location restoring version id would write
+// to into backups\saves-<game>\<time>-before-restore, and returns that folder.
+func (a *App) keepBeforeRestore(c *core.Cloud, f core.FoundGame, id string, locs []core.SaveLocation) (string, error) {
+	targets, err := c.VersionTargets(gameSavesKey(f), id, locs, a.env.Resolve)
+	if err != nil {
+		return "", err
+	}
+	keep := filepath.Join(a.store.BackupsDir(), "saves-"+gameSavesKey(f), time.Now().Format("20060102-150405")+"-before-restore")
+	for i, l := range targets {
+		if err := core.Mirror(l.Resolved, filepath.Join(keep, fmt.Sprint(i))); err != nil {
+			return "", errors.New("Nothing was restored: Lootnest couldn't keep the saves here first (" + err.Error() + ").")
+		}
+	}
+	return keep, nil
 }

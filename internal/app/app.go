@@ -267,6 +267,7 @@ func Run(opt Options) error {
 	a.w.SetSize(scale(860), scale(580), webview2.HintMin)
 	a.taskbarCreated = win.RegisterWindowMessage("TaskbarCreated")
 
+	cleanRestoreLeftovers()
 	a.bind()
 	a.w.SetHtml(pageHTML())
 
@@ -300,7 +301,6 @@ func Run(opt Options) error {
 		a.autoHooks()
 		go a.watchUpdates()
 		go a.cleanupLegacy()
-		cleanRestoreLeftovers()
 		go a.watchGameSaves()
 		time.Sleep(time.Minute)
 		a.backupIfDue()

@@ -401,12 +401,10 @@ func (a *App) apiGameSaveRestore(key, id string) error {
 		gameSaveMu.Lock()
 		defer gameSaveMu.Unlock()
 		gl := a.savesOf(f)
-		keep := filepath.Join(a.store.BackupsDir(), "saves-"+gameSavesKey(f), time.Now().Format("20060102-150405")+"-before-restore")
-		for i, l := range gl.Locs {
-			if err := core.Mirror(l.Resolved, filepath.Join(keep, fmt.Sprint(i))); err != nil {
-				out["error"] = "Nothing was restored: Lootnest couldn't keep the saves here first (" + err.Error() + ")."
-				return
-			}
+		keep, err := a.keepBeforeRestore(c, f, id, gl.Locs)
+		if err != nil {
+			out["error"] = err.Error()
+			return
 		}
 		tmp := filepath.Join(DataDir(), "saves-tmp-"+time.Now().Format("150405.000"))
 		skipped, err := c.RestoreGameVersion(gameSavesKey(f), id, gl.Locs, a.env.Resolve, tmp)

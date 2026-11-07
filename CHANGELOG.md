@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.55.1
+
+- **Putting saves back is safer.** When you put back a copy from **Copies on this PC** or from the cloud folder, Lootnest now first copies every save location that copy will write to, including ones the game doesn't use on this PC yet. Before, only the locations the game knew of here were copied first.
+- After putting back a copy from this PC, Lootnest keeps all the extra copies it held on to when a game's saves went missing from its folder. Before, the next check could clear out older copies you might still need.
+- When a game's saves go missing from its folder, the notice now gives the date of the copy Lootnest has, or no date at all, instead of 1 January when it didn't know one.
+- If putting back an encrypted copy fails, for example with the wrong password, the unpacked files are removed right away. Ones left by a crash are removed when Lootnest next starts.
+
 ## 1.55.0
 
 - **Your year in games.** A profile's page has **Year in games**: a picture of that profile's year, ready to share.

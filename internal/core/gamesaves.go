@@ -131,29 +131,14 @@ func (c *Cloud) pruneVersions(game string, keep int) {
 	}
 }
 
-// RestoreGameVersion puts a version's saves in place over locs (the game's
-// locations here, or the ones the version names when the game has none
-// here yet: resolve turns a tokenized path into this PC's).
-func (c *Cloud) RestoreGameVersion(game, id string, locs []SaveLocation, resolve func(string) (string, error), tmp string) (skipped int, err error) {
-	if !safeComponent(id) {
-		return 0, errors.New("unknown version")
+// VersionTargets is every location version id of game has here: locs (the
+// game's locations here), then the version's own paths resolved on this PC
+// by resolve, which turns a tokenized path into this PC's.
+func (c *Cloud) VersionTargets(game, id string, locs []SaveLocation, resolve func(string) (string, error)) ([]SaveLocation, error) {
+	v, err := c.gameVersion(game, id)
+	if err != nil {
+		return nil, err
 	}
-	var v *SaveVersion
-	for _, x := range c.GameVersions(game) {
-		if x.ID == id {
-			x := x
-			v = &x
-		}
-	}
-	if v == nil {
-		return 0, errors.New("That version isn't in the cloud folder any more.")
-	}
-	file := filepath.Join(c.savesDir(game), id+".zip")
-	if v.Encrypted {
-		file = filepath.Join(c.savesDir(game), id+".lnbak")
-	}
-	// Every location the version has, here: the ones found here, else the
-	// version's own paths resolved on this PC.
 	all := append([]SaveLocation{}, locs...)
 	for _, p := range v.Paths {
 		found := false
@@ -165,6 +150,36 @@ func (c *Cloud) RestoreGameVersion(game, id string, locs []SaveLocation, resolve
 				all = append(all, SaveLocation{Path: p, Resolved: r})
 			}
 		}
+	}
+	return all, nil
+}
+
+func (c *Cloud) gameVersion(game, id string) (*SaveVersion, error) {
+	if !safeComponent(id) {
+		return nil, errors.New("unknown version")
+	}
+	for _, x := range c.GameVersions(game) {
+		if x.ID == id {
+			return &x, nil
+		}
+	}
+	return nil, errors.New("That version isn't in the cloud folder any more.")
+}
+
+// RestoreGameVersion puts a version's saves in place over its
+// VersionTargets.
+func (c *Cloud) RestoreGameVersion(game, id string, locs []SaveLocation, resolve func(string) (string, error), tmp string) (skipped int, err error) {
+	v, err := c.gameVersion(game, id)
+	if err != nil {
+		return 0, err
+	}
+	all, err := c.VersionTargets(game, id, locs, resolve)
+	if err != nil {
+		return 0, err
+	}
+	file := filepath.Join(c.savesDir(game), id+".zip")
+	if v.Encrypted {
+		file = filepath.Join(c.savesDir(game), id+".lnbak")
 	}
 	paths, at := locationsAsPaths(all)
 	return readSaves(file, c.Key, paths, at, tmp)
