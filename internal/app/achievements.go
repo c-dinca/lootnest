@@ -4,6 +4,8 @@ package app
 
 import (
 	"errors"
+	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -24,12 +26,15 @@ var (
 // from Steam's library cache or from the files next to the game.
 func (a *App) apiAchievements(key string, appID int, dir string) {
 	go func() {
-		set := a.achievements(key, appID, dir)
+		set := a.achievements(key, appID, dir, true)
 		a.emit("achievements", map[string]any{"key": key, "set": set})
 	}()
 }
 
-func (a *App) achievements(key string, appID int, dir string) *core.AchievementSet {
+// achievements reads one game's. online lets it ask Steam for the names of
+// a game's achievements (with the user's Steam Web API key); otherwise only
+// what's saved on this PC is used.
+func (a *App) achievements(key string, appID int, dir string, online bool) *core.AchievementSet {
 	var g *core.Game
 	if id, ok := strings.CutPrefix(key, "game:"); ok {
 		a.mu.Lock()
@@ -62,6 +67,19 @@ func (a *App) achievements(key string, appID int, dir string) *core.AchievementS
 		list = core.LocalSchema(dir)
 	}
 	unlocks, file := a.env.PCUnlocks(appID)
+	// Steam's library cache keeps only some of a game's achievements, and a
+	// game in a folder may have only their ids: Steam's schema fills in the
+	// rest, when the user gave a Steam Web API key.
+	if len(list) == 0 && unlocks == nil && total == 0 {
+		// nothing on this PC: no reason to ask
+	} else if len(list) < total || len(list) == 0 || unnamed(list) {
+		if schema := a.steamSchema(appID, online); len(schema) > 0 {
+			list = core.CompleteList(list, schema)
+			if total < len(list) {
+				total = len(list)
+			}
+		}
+	}
 
 	// Each player's own, when the game has profiles and its achievements
 	// go with them: the loaded player's are on the PC, the others' in
@@ -203,7 +221,7 @@ func (a *App) apiAllAchievements() {
 		}
 		out := []achSummary{}
 		for _, it := range items {
-			set := a.achievements(it.key, it.appID, it.dir)
+			set := a.achievements(it.key, it.appID, it.dir, false)
 			if set == nil || set.Total == 0 {
 				continue
 			}
@@ -218,4 +236,68 @@ func (a *App) apiAllAchievements() {
 		}
 		a.emit("allAchievements", map[string]any{"games": out})
 	}()
+}
+
+func unnamed(list []core.Achievement) bool {
+	for _, a := range list {
+		if a.Name == "" {
+			return true
+		}
+	}
+	return false
+}
+
+var (
+	schemaMu     sync.Mutex
+	schemaFailed = map[int]bool{}
+)
+
+func schemaFile(appID int) string {
+	return filepath.Join(DataDir(), "achievements", strconv.Itoa(appID)+".json")
+}
+
+// steamSchema is a game's full list of achievements from Steam's Web API,
+// kept on this PC for a week. Only with the user's own key; without one, or
+// offline, it's whatever was saved before.
+func (a *App) steamSchema(appID int, online bool) []core.Achievement {
+	file := schemaFile(appID)
+	b, err := os.ReadFile(file)
+	fresh := err == nil && time.Since(modTime(file)) < 7*24*time.Hour
+	if !fresh && online {
+		a.mu.Lock()
+		key := revealSecret(a.cfg.Settings.SteamAPIKey)
+		a.mu.Unlock()
+		schemaMu.Lock()
+		failed := schemaFailed[appID]
+		schemaMu.Unlock()
+		if strings.TrimSpace(key) != "" && !failed {
+			u := "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?l=english&appid=" + strconv.Itoa(appID) + "&key=" + url.QueryEscape(strings.TrimSpace(key))
+			if nb, ferr := fetchURL(u); ferr == nil && len(nb) > 0 {
+				if len(core.ParseSteamSchema(nb, appID)) > 0 {
+					_ = os.MkdirAll(filepath.Dir(file), 0o755)
+					_ = os.WriteFile(file, nb, 0o644)
+				}
+				b = nb
+			} else {
+				schemaMu.Lock()
+				schemaFailed[appID] = true // once per run
+				schemaMu.Unlock()
+				if ferr != nil {
+					a.logf("Achievement names for app %d: %v", appID, scrubKey(ferr.Error(), key))
+				}
+			}
+		}
+	}
+	if len(b) == 0 {
+		return nil
+	}
+	return core.ParseSteamSchema(b, appID)
+}
+
+// scrubKey keeps the user's key out of the log.
+func scrubKey(s, key string) string {
+	if k := strings.TrimSpace(key); k != "" {
+		s = strings.ReplaceAll(s, k, "…")
+	}
+	return s
 }

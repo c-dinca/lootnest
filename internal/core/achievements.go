@@ -652,3 +652,69 @@ func (e *Engine) ProfileUnlocks(playerID string, g *Game) (map[string]time.Time,
 	}
 	return ParseUnlocks(b, bestFmt), true
 }
+
+// ParseSteamSchema reads Steam's GetSchemaForGame answer: every
+// achievement's id, name, description, hidden flag and icon.
+func ParseSteamSchema(b []byte, appID int) []Achievement {
+	var v struct {
+		Game struct {
+			Stats struct {
+				Achievements []struct {
+					Name        string `json:"name"`
+					DisplayName string `json:"displayName"`
+					Description string `json:"description"`
+					Hidden      any    `json:"hidden"`
+					Icon        string `json:"icon"`
+				} `json:"achievements"`
+			} `json:"availableGameStats"`
+		} `json:"game"`
+	}
+	if json.Unmarshal(b, &v) != nil {
+		return nil
+	}
+	var out []Achievement
+	for _, a := range v.Game.Stats.Achievements {
+		if a.Name == "" {
+			continue
+		}
+		out = append(out, Achievement{ID: a.Name, Name: a.DisplayName, Description: a.Description, Hidden: truthy(a.Hidden), Icon: steamAchIcon(a.Icon, appID)})
+	}
+	return out
+}
+
+// CompleteList fills a partial list (Steam's library cache keeps only some
+// achievements) from a full schema: names and icons come from either, and
+// whether each is unlocked from the list.
+func CompleteList(list, schema []Achievement) []Achievement {
+	if len(schema) == 0 {
+		return list
+	}
+	have := map[string]Achievement{}
+	for _, a := range list {
+		have[a.ID] = a
+	}
+	out := make([]Achievement, 0, len(schema))
+	for _, s := range schema {
+		if a, ok := have[s.ID]; ok {
+			if a.Name == "" {
+				a.Name = s.Name
+			}
+			if a.Description == "" {
+				a.Description = s.Description
+			}
+			if a.Icon == "" {
+				a.Icon = s.Icon
+			}
+			out = append(out, a)
+			delete(have, s.ID)
+			continue
+		}
+		out = append(out, s)
+	}
+	for _, a := range list { // in the list but not the schema: keep it
+		if _, ok := have[a.ID]; ok {
+			out = append(out, a)
+		}
+	}
+	return out
+}

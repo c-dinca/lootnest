@@ -120,6 +120,10 @@ type Settings struct {
 	// DownloadCovers on, art for games the Steam store doesn't know comes
 	// from SteamGridDB.
 	GridDBKey string `json:"gridDbKey,omitempty"`
+	// SteamAPIKey is the user's own Steam Web API key (optional): with it,
+	// achievements of games the PC has no names for (games in a folder)
+	// get their names, descriptions and pictures from Steam.
+	SteamAPIKey string `json:"steamApiKey,omitempty"`
 	// Backups to a folder the user picks (usually one a cloud app syncs):
 	// BackupDir is that folder (backups go in <dir>\Lootnest), BackupAuto
 	// makes one after each session, BackupKeep is how many this PC keeps.

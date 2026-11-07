@@ -431,6 +431,9 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 		return fmt.Errorf("couldn't save the SteamGridDB key safely: %w", err)
 	}
 	s.GridDBKey = key
+	if s.SteamAPIKey, err = protectSecret(s.SteamAPIKey); err != nil {
+		return fmt.Errorf("couldn't save the Steam Web API key safely: %w", err)
+	}
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()

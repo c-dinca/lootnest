@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.23.1
+
+- **Names and pictures for every achievement, with your own Steam Web API key** (optional, in Settings, Online). Without it, Lootnest can show only an id for a game in a folder without a `steam_settings` file, such as "Kill ten". With it, Steam gives the real names, descriptions and pictures.
+  - Steam games show their whole list too, not only the part Steam's library keeps on the PC.
+  - Each game's list is asked for once when you open its page, then kept on this PC for a week.
+  - Only the game's Steam id and your key are sent, to Steam. The key is encrypted on this PC like the SteamGridDB one, and kept out of the log.
+
 ## 1.23.0
 
 - **Lootnest milestones**, for any game, even one with no achievements of its own. They're on the Achievements page, for each profile:

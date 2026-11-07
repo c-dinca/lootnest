@@ -2074,7 +2074,10 @@
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}
           <div class="bk-row set-wide"><div><label for="s-grid"><b>SteamGridDB API key</b> <span class="set-opt">optional</span></label>
             <p>Covers and artwork for games the Steam store doesn't know. Get a free key on steamgriddb.com, under Preferences, API. It's sent only to SteamGridDB.</p></div>
-            <input id="s-grid" class="ln-input" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key"></div>`)}
+            <input id="s-grid" class="ln-input" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key"></div>
+          <div class="bk-row set-wide"><div><label for="s-steamkey"><b>Steam Web API key</b> <span class="set-opt">optional</span></label>
+            <p>Names, descriptions and pictures for achievements Lootnest finds on this PC without them, such as a game in a folder. Get a free key on steamcommunity.com/dev/apikey. Only the game's Steam id and your key are sent, to Steam; what comes back is kept on this PC.</p></div>
+            <input id="s-steamkey" class="ln-input" type="password" autocomplete="off" spellcheck="false" data-setting="steamApiKey" value="${esc(s.steamApiKey || "")}" placeholder="Paste your key"></div>`)}
         ${group("Updates", "", `
           ${sw("checkUpdates", "Check for updates automatically", "Every few hours, Lootnest asks GitHub for its latest version number and tells you with a notification when a new one is out. Nothing about you or your games is sent.", s.checkUpdates)}
           ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your profiles, games and saves stay as they are.", s.autoInstallUpdates) : ""}
@@ -2362,6 +2365,7 @@
     try {
       await api.saveSettings({ settings: s, autostart });
       if (f === "downloadCovers" || f === "gridDbKey") { S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); }
+      if (f === "steamApiKey") { S.ach = {}; achAsked.clear(); S.allAch = null; }
       await refresh();
     } catch (e) { toast(errText(e), "error"); await refresh(); }
   }
