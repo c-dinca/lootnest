@@ -105,12 +105,12 @@ func TestFirewallRules(t *testing.T) {
 	tag := core.OfflineTag("dir:test:" + exe)
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	run := func(script string) string {
-		c := exec.Command(ps, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", core.EncodePowerShell("$ProgressPreference = 'SilentlyContinue'\n"+script))
+		c := exec.Command(ps, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", core.EncodePowerShell("$ProgressPreference = 'SilentlyContinue'\ntry {\n"+script+"\n} catch { Write-Output ('ERROR: ' + $_.Exception.Message + ' AT ' + $_.InvocationInfo.Line); exit 1 }"))
 		var stderr strings.Builder
 		c.Stderr = &stderr
 		out, err := c.Output()
 		if err != nil {
-			t.Fatalf("%v: %s %s", err, out, stderr.String())
+			t.Fatalf("%v running %q: %s %s", err, strings.SplitN(script, "\n", 4)[len(strings.SplitN(script, "\n", 4))-1], out, stderr.String())
 		}
 		return strings.TrimSpace(string(out))
 	}
