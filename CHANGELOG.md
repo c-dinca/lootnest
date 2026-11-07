@@ -6,6 +6,12 @@
 - **Import a profile** on **Players** adds that player, or updates them if they're already here. Their games are matched to the ones on this PC (same Steam game, launcher link, exe or name), and games this PC doesn't have yet are added. Everything here is saved first, so an import can be undone like a restore.
 - A profile file and a full backup can't be mixed up: **Restore from a backup** and **Import a profile** each say what a file is and do the right thing with it.
 
+## 1.12.1
+
+- Fixed: the Battle.net app itself showed in the Library as a game, with another game's cover (Mega Man Battle Network, because "Battle.net" is inside that name). Launchers and store apps (Battle.net, Ubisoft Connect, EA app, Riot Client, Rockstar Games Launcher and others) are never taken for games, and one an earlier version added leaves the Library at the next scan.
+- Covers looked up by name now need the names to match from the start ("Game" and "Game Deluxe Edition"), not just one name appearing inside the other.
+- A program whose install folder is a whole drive or Program Files is never taken for one game.
+
 ## 1.12.0
 
 - The Library now finds games from every launcher on your PC:

@@ -59,9 +59,12 @@ func FindStoreApp(fetch Fetch, name string) (int, error) {
 			return it.ID, nil
 		}
 	}
+	// Else one name starting with the other ("Game" and "Game Deluxe
+	// Edition"). A name only found inside another ("Battle.net" in
+	// "Mega Man Battle Network") is a different game.
 	for _, it := range res.Items {
 		n := norm(it.Name)
-		if len(n) >= 5 && len(key) >= 5 && (strings.Contains(n, key) || strings.Contains(key, n)) {
+		if len(n) >= 5 && len(key) >= 5 && (strings.HasPrefix(n, key) || strings.HasPrefix(key, n)) {
 			return it.ID, nil
 		}
 	}
