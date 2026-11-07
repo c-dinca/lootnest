@@ -664,13 +664,13 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-art.soft { filter: var(--blur-art-soft); }
 .gpage-hero::after { content: ""; position: absolute; inset: 0; background: var(--scrim-art); -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade); pointer-events: none; }
 .gpage-back { position: absolute; z-index: 1; top: var(--space-3); left: calc(var(--page-gutter) - var(--space-2)); color: var(--fg-1); }
-.gpage-title { position: relative; z-index: 1; width: 100%; max-width: calc(var(--page-max) + 2 * var(--page-gutter)); padding: 0 var(--page-gutter) calc(var(--overlap-bar) + var(--space-6)); }
+.gpage-title { position: relative; z-index: 1; width: 100%; padding: 0 var(--page-gutter) calc(var(--overlap-bar) + var(--space-6)); }
 .gpage h1 { margin: 0; font: 750 clamp(var(--fs-40), 4vw, var(--fs-72))/1 var(--font-title); font-variation-settings: "opsz" 96; letter-spacing: var(--track-title); text-wrap: balance; max-width: 18ch; }
 .gpage h1.long { font-size: clamp(var(--fs-32), 3vw, var(--fs-56)); max-width: 24ch; }
 .gpage-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) 0; margin: var(--space-3) 0 0; font-size: var(--fs-13); color: var(--fg-1); }
 .gpage-meta span + span::before { content: ""; display: inline-block; width: var(--hairline); height: var(--fs-12); margin: 0 var(--space-3); background: var(--edge-2); vertical-align: -1px; }
 
-.gpage-body { position: relative; z-index: 1; max-width: calc(var(--page-max) + 2 * var(--page-gutter)); padding: 0 var(--page-gutter) var(--space-16); margin-top: calc(-1 * var(--overlap-bar)); }
+.gpage-body { position: relative; z-index: 1; padding: 0 var(--page-gutter) var(--space-16); margin-top: calc(-1 * var(--overlap-bar)); }
 .gpage-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-6);
   min-height: var(--overlap-bar); padding: var(--space-5) var(--space-6);
@@ -691,8 +691,6 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-note { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0 var(--space-1); font-size: var(--fs-13); color: var(--fg-2); }
 .gpage-note .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
 
-.gpage-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 360px); gap: var(--space-10); margin-top: var(--space-10); align-items: start; }
-.gpage-col, .gpage-aside { display: grid; gap: var(--space-8); align-content: start; min-width: 0; }
 .gpage code { font: 500 var(--fs-12)/1.4 "Cascadia Mono", Consolas, monospace; color: var(--fg-1); }
 .gpage-block > * + * { margin-top: var(--space-3); }
 .gpage-block > .ln-section-head + * { margin-top: 0; }
@@ -707,29 +705,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-paths dd, .gpage-block .ln-facts dd { display: flex; align-items: center; gap: var(--space-1); }
 .gpage-block .ln-facts dt > span { display: grid; gap: 1px; padding: var(--space-2) 0; }
 .gpage-block .ln-facts b { font-weight: 600; }
-.gpage-newer { padding: var(--space-3) var(--space-4); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel); background: var(--glass-panel); }
-.gpage-newer b { font-size: var(--fs-14); }
-.gpage-newer p { margin-top: 2px; }
 
-.gpage-news { list-style: none; margin: 0; padding: 0; border-top: var(--hairline) solid var(--edge-1); }
-.gpage-news button {
-  display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: var(--space-3); width: 100%; padding: 10px var(--space-1);
-  border: 0; border-bottom: var(--hairline) solid var(--edge-1); background: none; color: var(--fg-1);
-  font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out);
-}
-.gpage-news button:hover { background: var(--glass-ctl); }
-.gpage-news button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-ctl); }
-.gpage-news time { padding-top: 1px; font-size: var(--fs-12); color: var(--fg-3); }
-.gpage-news b { display: flex; align-items: baseline; gap: 6px; font-size: var(--fs-13); font-weight: 600; line-height: var(--lh-snug); }
-.gpage-news b .ln-tag { height: 18px; flex: none; }
-.gpage-news span span { display: -webkit-box; margin-top: 2px; font-size: var(--fs-12); color: var(--fg-2); -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 
-.gpage-shelf { border-top: var(--hairline) solid var(--edge-1); }
-.gpage-shelf-row { display: grid; gap: var(--space-2); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
-.gpage-shelf-top { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
-.gpage-shelf-top b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.gpage-shelf .ln-segmented { flex-wrap: wrap; justify-self: start; }
-.gpage-shelf .ln-segmented button { height: 26px; padding: 0 var(--space-2); font-size: var(--fs-12); }
 .gpage-shelf-note { margin: 0; font-size: var(--fs-13); color: var(--fg-2); white-space: pre-wrap; user-select: text; }
 .gpage-rate { display: inline-flex; }
 .gpage-rate button { display: grid; place-items: center; width: 22px; height: var(--ctl-sm); padding: 0; border: 0; background: none; color: var(--fg-3); cursor: pointer; }
@@ -740,19 +717,12 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-rate button:hover ~ button svg { fill: none; }
 .gpage-rate button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-tag); }
 
-@media (max-width: 1360px) {
-  .gpage-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .gpage-aside { grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-10); }
-}
 @media (max-height: 760px) {
   .gpage-hero { height: clamp(300px, 52vh, 640px); }
 }
-@media (min-width: 2200px) {
-  :root { --page-max: 1760px; --page-gutter: 64px; }
-}
 
 /* ------------------------------------------------------------------ home */
-.home-empty { display: grid; gap: var(--space-6); max-width: calc(var(--page-max) + 2 * var(--page-gutter)); padding: var(--space-10) var(--page-gutter); }
+.home-empty { display: grid; gap: var(--space-6); max-width: 960px; padding: var(--space-10) var(--page-gutter); }
 .home-banners { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
 .home-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: var(--space-10); margin-top: var(--space-10); align-items: start; }
 .home-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); gap: var(--space-6) var(--space-5); }
@@ -797,3 +767,70 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-play .ln-icon { fill: currentColor; stroke: none; }
 .lib-card:hover .lib-play, .lib-card:focus-within .lib-play { opacity: 1; }
 .lib-play:hover { background: var(--bg-active); }
+
+/* Game page below the play bar: the news large with the players beside
+   it, then everything to manage, all across the window. */
+.gpage-col, .gpage-aside, .gpage-side { display: grid; gap: var(--space-8); align-content: start; min-width: 0; }
+.gpage-main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 440px); gap: var(--space-10); margin-top: var(--space-10); align-items: start; }
+.gpage-manage { margin-top: var(--space-12); }
+.gpage-manage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-6) var(--space-8); align-items: start; }
+.gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"] { order: 1; }
+.gpage-group[data-g="Game files"] { order: 2; }
+.gpage-group[data-g="Shortcuts"] { order: 3; }
+.gpage-group[data-g="Danger"] { order: 4; }
+
+.gp-split { display: flex; gap: 2px; height: 6px; margin-bottom: var(--space-3); }
+.gp-split span { border-radius: 1px; background: var(--player-fill); }
+.gp-people { border-top: var(--hairline) solid var(--edge-1); }
+.gp-person { display: grid; gap: var(--space-3); padding: var(--space-4) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.gp-person-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
+.gp-person-name b { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-14); font-weight: 650; }
+.gp-person-name > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
+.gp-person-ctl { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.gp-person .ln-segmented button { height: 26px; padding: 0 var(--space-2); font-size: var(--fs-12); }
+
+/* News, on the game page and Home: the newest post large, the rest listed. */
+.news-grid { display: grid; gap: var(--space-5); }
+.news-feature {
+  display: grid; grid-template-columns: clamp(320px, 46%, 600px) minmax(0, 1fr); padding: 0; overflow: hidden; text-align: left; cursor: pointer; font: inherit; color: var(--fg-1);
+  background: var(--glass-panel); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel);
+  transition: border-color var(--dur-1) var(--ease-out);
+}
+.news-feature:hover { border-color: var(--edge-3); }
+.news-feature:focus-visible, .news-list button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.news-pic { display: block; min-height: 100%; aspect-ratio: 16 / 9; background: var(--bg-raised) center / cover no-repeat; }
+.news-feature .news-body { display: grid; gap: var(--space-2); align-content: center; max-width: 72ch; padding: var(--space-6) var(--space-8); }
+.news-feature b { font: 700 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); text-wrap: balance; }
+.news-sum { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--fs-13); line-height: var(--lh-body); color: var(--fg-2); }
+.news-feature .news-sum { -webkit-line-clamp: 3; font-size: var(--fs-14); }
+.news-read { justify-self: start; margin-top: var(--space-1); font-size: var(--fs-13); font-weight: 650; text-decoration: underline; text-decoration-color: var(--edge-3); text-underline-offset: 3px; }
+.news-feature:hover .news-read { text-decoration-color: currentColor; }
+.news-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--fs-12); color: var(--fg-3); }
+.news-meta .ln-tag { height: 18px; }
+.news-meta > span:not(.ln-tag) { color: var(--fg-2); }
+.news-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 0 var(--space-6); margin: 0; padding: 0; list-style: none; }
+.news-list button {
+  display: grid; grid-template-columns: clamp(112px, 9vw, 160px) minmax(0, 1fr); gap: var(--space-4); align-items: center;
+  width: 100%; padding: var(--space-3) 0; border: 0; border-top: var(--hairline) solid var(--edge-1); background: none;
+  color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out);
+}
+.news-list button:hover { background: var(--glass-ctl); }
+.news-thumb { aspect-ratio: 16 / 9; border-radius: var(--radius-ctl); background: var(--bg-raised) center / cover no-repeat; }
+.news-list .news-body { display: grid; gap: var(--space-1); min-width: 0; }
+.news-list b { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--fs-15); font-weight: 650; line-height: var(--lh-snug); }
+.news-none { margin: 0; font-size: var(--fs-13); color: var(--fg-2); }
+.news-newer { margin-bottom: var(--space-4); }
+.home .news { margin-top: var(--space-12); }
+.gp-players .ln-section-head { margin-bottom: var(--space-4); }
+@media (max-width: 1500px) {
+  .news-feature { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 1360px) {
+  .gpage-main { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
+}
+@media (max-width: 1180px) {
+  .gpage-main { grid-template-columns: minmax(0, 1fr); }
+  .gpage-side { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-10); }
+}
