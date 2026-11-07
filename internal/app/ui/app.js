@@ -525,10 +525,10 @@
   }
 
   const sourceLabel = (src) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", xbox: "Xbox", ea: "EA app", ubisoft: "Ubisoft Connect", battlenet: "Battle.net",
-    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src] || "Other");
+    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", hydra: "Hydra", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src] || "Other");
   // Each store and launcher is its own filter; folders, shortcuts and games
   // added by hand are "Other".
-  const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch"];
+  const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra"];
   const filterOf = (src) => (LAUNCHERS.includes(src) ? src : "other");
 
   // Every game on the PC: the ones with profiles, then everything the scan found.

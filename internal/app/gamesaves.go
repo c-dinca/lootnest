@@ -128,7 +128,7 @@ func (a *App) savesOf(f core.FoundGame) gameLocs {
 		if base != "" {
 			names = append(names, filepath.Base(base))
 		}
-		if dg := db.Find(f.AppID, names...); dg != nil {
+		if dg := db.Find(max(f.AppID, f.SteamID), names...); dg != nil {
 			if locs := a.env.FindSaves(dg, base); len(locs) > 0 {
 				return gameLocs{locs, "list"}
 			}

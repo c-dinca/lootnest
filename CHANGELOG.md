@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.33.0
+
+- **Games installed with Hydra are in the Library.** Lootnest reads Hydra's own list of the games it installed on this PC, like it does for itch.io or GOG, and shows them with Hydra as their store. Pick **Hydra** in the store filter to see only those.
+  - Hydra can stay open: Lootnest reads a copy of its list and never changes it.
+  - They get everything a game in a folder gets: profiles, cloud saves, the safety net for saves kept in the game's folder, and achievements.
+  - Hydra knows each game's Steam id, so Lootnest finds its save locations and achievements more often.
+  - Only games already installed are listed. Lootnest doesn't download anything.
+
 ## 1.32.0
 
 - **A shelf for each collection in the Library**, as in Steam. Under **Recent games**, each of your collections, such as "Co-op" or "Weekend", has a row of its games, the ones played last first. Scroll a row sideways to see more, or press **See all** to show only that collection.

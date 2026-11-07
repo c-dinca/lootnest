@@ -7,7 +7,7 @@ fresh chat can carry on without the old one's context.
 ## The product
 
 Lootnest is a Windows game manager. Every game on the PC, from Steam, Epic,
-GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, game
+GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, Hydra, game
 folders and shortcuts, sits in one Library. Its core is **profiles**: each
 profile has its own settings, saves and achievements in every game, and
 Lootnest swaps the right files into place before a game starts, then saves
@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.32.0)
+## Where things stand (1.33.0)
 
 These shipped recently, newest last:
 
@@ -161,6 +161,12 @@ These shipped recently, newest last:
   as in Steam's library, above the filters and the grid.
 - **1.32** Library: a shelf for each collection (`collectionShelves()`,
   up to six), then an All games heading over the filters.
+- **1.33** Hydra Launcher as one more launcher (`core/hydra.go`): its
+  installed games are read from a copy of its LevelDB library
+  (`%APPDATA%\hydralauncher\hydra-db`, `!games!<shop>:<id>`, via
+  `syndtr/goleveldb`). `FoundGame.SteamID` carries the Steam id Hydra
+  knows, for save locations and achievements. Only games already on the
+  PC; Lootnest never offers Hydra's downloads or sources.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
