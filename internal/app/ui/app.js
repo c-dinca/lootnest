@@ -88,7 +88,9 @@
     from: "home",      // the view a game's page goes back to
     selected: null,    // {kind, id} of the game last opened: the Library's colours follow it
     q: "",             // library search
-    filter: "all",     // library filter chip
+    filter: "all",     // library: "all" or "profiles"
+    store: "all",      // library: a store or launcher, or "all"
+    who: "",           // library: only the games this player has a profile in or played last
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
     icons: {},         // cover key -> the game exe's icon as a data: URL, or "" (shown when there's no cover)
     art: {},           // "hero:<appid>" / "logo:<appid>" -> Steam's wide art and logo, or ""
@@ -99,7 +101,6 @@
     density: pref("density", "m"),    // cover size: s | m | l
     ctx: null,         // the right-click menu: {x, y, kind, id}
     update: {},        // {available, version, page, upToDate, checking, error, step}
-    animateCards: true, // stagger the cards in on the next library render
     animateView: true,  // fade the page in on the next render
     menuFor: null,
     picker: null,     // {gameId, mode, ask, playerId, owner, newMode, working}
@@ -468,14 +469,17 @@
     const q = S.q.trim().toLowerCase();
     const list = libraryItems().filter((it) => {
       if (q && !it.name.toLowerCase().includes(q)) return false;
-      if (S.filter === "profiles") return it.kind === "game";
-      if (S.filter !== "all") return filterOf(it.source) === S.filter;
+      if (S.filter === "profiles" && it.kind !== "game") return false;
+      if (S.store !== "all" && filterOf(it.source) !== S.store) return false;
+      if (S.who && !playedOrOwned(it, S.who)) return false;
       return true;
     });
     if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
     else if (S.sort === "played") list.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || playedAt(b) - playedAt(a));
     return list;
   }
+  // A player's games: the ones they have a profile in, or played last.
+  const playedOrOwned = (it, pid) => (it.kind === "game" && hasProfile(it.id, pid)) || ((S.d.recent || {})[recentKey(it)] || {}).player === pid;
   const playedAt = (it) => { const r = (S.d.recent || {})[recentKey(it)]; return r ? new Date(r.at).getTime() : 0; };
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
   const totalPlayed = (it) => Object.values(playtimeOf(it)).reduce((a, b) => a + b, 0);
@@ -494,29 +498,33 @@
     const scanning = S.found.scanning;
     const refreshing = S.found.refreshing;
     const have = new Set(all.map((it) => filterOf(it.source)));
-    const short = { epic: "Epic", ea: "EA", ubisoft: "Ubisoft", battlenet: "Battle.net", amazon: "Amazon", itch: "itch.io" };
-    const chips = [["all", "All"], ["profiles", "With profiles"],
-      ...LAUNCHERS.filter((k) => have.has(k) || S.filter === k).map((k) => [k, short[k] || sourceLabel(k)]),
-      ...(have.has("other") || S.filter === "other" ? [["other", "Other"]] : [])];
-    const head = `<div class="lib-head"><div class="grow"><h1>Library</h1>
-        <p class="sub">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</p></div>
-        <input type="search" id="lib-q" class="search" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)">
-        <button class="btn" data-action="add-game">${icon.plus}Add game</button>
-        <button class="btn quiet" data-action="rescan" ${refreshing ? "disabled" : ""}>${refreshing ? "Scanning" : "Scan again"}</button></div>`;
+    const stores = [["all", "All stores"], ...LAUNCHERS.filter((k) => have.has(k) || S.store === k).map((k) => [k, sourceLabel(k)]),
+      ...(have.has("other") || S.store === "other" ? [["other", "Other"]] : [])];
+    const head = `<header class="lib-head"><div><h1>Library</h1>
+        <p>${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</p></div>
+        <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
+        <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
+        <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button></div></header>`;
     if (!all.length && !scanning) {
-      return `<div class="page wide">${head}<div class="empty"><div><h2>No games found yet</h2>
-        <p class="sub">Lootnest looks in Steam, Epic, GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
-        <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button></div></div>`;
+      return `<div class="lib ln-root">${head}<div class="ln-glass ln-state">${homeIcon}<div><h3>No games found yet</h3>
+        <p>Lootnest looks in Steam, Epic, GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, game folders and your shortcuts. Add a game by hand if yours isn't found.</p>
+        <div class="ln-actions"><button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan">Scan again</button></div></div></div></div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
-    const sizes = [["s", "Small covers"], ["m", "Medium covers"], ["l", "Large covers"]];
-    return `<div class="page wide">${head}${hookBanner()}
-      <div class="lib-tools"><div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
-        <div class="row tools-right"><label class="sort"><span class="hint">Sort by</span><select id="lib-sort" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
-        <div class="seg" role="group" aria-label="Cover size">${sizes.map(([k, l], i) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span class="sz sz${i}"></span></button>`).join("")}</div></div></div>
-      ${scanning ? `<div class="scanning"><span class="spinner"></span>Looking for games on this PC</div>` : ""}
-      ${coverHint(all)}
-      <div class="grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
+    const sizes = [["s", "Small covers", 10], ["m", "Medium covers", 13], ["l", "Large covers", 16]];
+    const seg = (k, l, n) => `<button data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}<span class="ln-count ln-num">${n}</span></button>`;
+    const ps = cfg().players;
+    const who = ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
+    return `<div class="lib ln-root">${head}${hookBanner() || coverHint(all) ? `<div class="lib-banners">${hookBanner()}${coverHint(all)}</div>` : ""}
+      <div class="lib-tools">
+        <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}</div>${who}</div>
+        <div class="lib-tools-side">
+          <select id="lib-store" class="ln-input" aria-label="Store">${stores.map(([k, l]) => `<option value="${k}" ${S.store === k ? "selected" : ""}>${l}</option>`).join("")}</select>
+          <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>
+          <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span style="--h:${h}px"></span></button>`).join("")}</div>
+        </div></div>
+      ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
+      <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
   }
 
   // Home: what are we playing tonight, and who's playing? The game played
@@ -679,10 +687,8 @@
 
   function gridHTML() {
     const items = shownItems();
-    if (!items.length) return `<p class="hint">${S.q ? `No game matches “${esc(S.q)}”.` : "No games here."}</p>`;
-    const animate = S.animateCards;
-    S.animateCards = false;
-    return items.map((it, i) => cardHTML(it, animate ? Math.min(i, 14) : -1)).join("");
+    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
+    return items.map(cardHTML).join("");
   }
 
   // Steam games have a cover in Steam's cache; other games only when the
@@ -699,20 +705,23 @@
     return `<div class="nocover${ic ? " with-icon" : ""}"${c ? " hidden" : ""}${ic ? ` style="--icon:url('${ic}')"` : ""}><span>${esc(it.name)}</span></div>${img}`;
   }
 
-  function cardHTML(it, delay) {
+  // A Library cover (system.css .ln-tile). Who has a profile is the colour
+  // code along the bottom; the tall bar, and the line under the title, say
+  // whose files are loaded.
+  function cardHTML(it) {
     const g = it.g;
     const owner = g && S.d.active[g.id];
     const s = g && session(g.id);
-    const badge = s
-      ? `<span class="badge"><span class="dot" style="background:${esc(color(s.playerId))}"></span>${esc(sessionText(s))}</span>`
-      : owner && player(owner) ? `<span class="badge"><span class="dot" style="background:${esc(color(owner))}"></span>${esc(pname(owner))}</span>` : "";
-    const meta = esc(sourceLabel(it.source));
-    const dots = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)).map((p) => `<span class="dot" style="background:${esc(p.color)}" title="${esc(p.name)} has a profile"></span>`).join("") : "";
-    const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
-    return `<div class="card${s ? " busy" : ""}${delay >= 0 ? " in" : ""}"${delay > 0 ? ` style="animation-delay:${delay * 22}ms"` : ""}>
-      <button class="cover-btn" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}"><div class="cover">${coverHTML(it)}${badge}</div></button>
-      ${s ? "" : `<button class="quick-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${icon.play}</button>`}
-      <div class="card-title">${esc(it.name)}</div><div class="card-meta"><span>${meta}</span>${g ? `<span class="profiles" title="Profiles on">${dots || '<span class="dot"></span>'}</span>` : ""}</div></div>`;
+    const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
+    const bars = owners.length ? `<div class="ln-tile__owners" aria-hidden="true">${owners.map((p) => `<span class="ln-player" style="--player:${esc(p.color)}"${p.id === owner ? " data-loaded" : ""}></span>`).join("")}</div>` : "";
+    const badge = s ? `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>` : "";
+    const meta = owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
+      : g ? "Profiles on" : esc(sourceLabel(it.source));
+    const attr = itemAttr(it);
+    return `<div class="card lib-card${s ? " busy" : ""}">
+      <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
+        <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span></button>
+      ${s ? "" : `<button class="ln-button ln-button--secondary ln-button--icon ln-button--sm lib-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
   }
 
   // Covers load lazily as cards scroll into view; Steam keeps them on this PC.
@@ -922,6 +931,8 @@
     copy: gsvg('<rect x="7.25" y="7.25" width="9" height="9" rx="1.75"/><path d="M12.75 7.25V5.5c0-.97-.78-1.75-1.75-1.75H5.5c-.97 0-1.75.78-1.75 1.75V11c0 .97.78 1.75 1.75 1.75h1.75"/>'),
     sliders: gsvg('<path d="M3.5 6.25h7.25M15.25 6.25h1.25M3.5 13.75h1.25M9.25 13.75h7.25"/><circle cx="13" cy="6.25" r="2.25"/><circle cx="7" cy="13.75" r="2.25"/>'),
     profiles: gsvg('<circle cx="7.75" cy="7" r="2.75"/><path d="M2.75 16.25c.45-2.65 2.45-4.25 5-4.25s4.55 1.6 5 4.25M13 4.6a2.5 2.5 0 0 1 0 4.8M14.5 12.25c1.5.4 2.5 1.65 2.75 3.5"/>'),
+    search: gsvg('<circle cx="8.75" cy="8.75" r="4.75"/><path d="M12.25 12.25 16 16"/>'),
+    plus: gsvg('<path d="M10 4.5v11M4.5 10h11"/>'),
     alert: gsvg('<path d="M10 3.5 17 16H3z"/><path d="M10 8.25v3.5M10 13.9v.01"/>'),
   };
   // A player's avatar in the system's style: their picture, a game's cover,
@@ -2342,7 +2353,8 @@
       if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
       try { await api.launchFound(el.dataset.key); toast(`Starting ${f ? f.name : "the game"}`); } catch (e) { toast(errText(e), "error"); }
     },
-    filter(el) { S.filter = el.dataset.filter; S.animateCards = true; render(); },
+    filter(el) { S.filter = el.dataset.filter; render(); },
+    who(el) { S.who = S.who === el.dataset.player ? "" : el.dataset.player; render(); },
     async "covers-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.downloadCovers = true;
@@ -2587,6 +2599,7 @@
     if (el.dataset.backup === "sync") { S.saves = null; saveBackup({ sync: el.checked }).then(loadSaves); return; }
     if (el.dataset.backup === "keep") { saveBackup({ keep: parseInt(el.value, 10) || 0 }); return; }
     if (el.id === "lib-sort") { S.sort = el.value; setPref("sort", S.sort); render(); return; }
+    if (el.id === "lib-store") { S.store = el.value; render(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 

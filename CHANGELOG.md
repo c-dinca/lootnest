@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.16.2
+
+The Library in the new look:
+- Covers fill the whole window, and the controls take less room.
+- Under each title you can see whose files are loaded, in their colour. Who has a profile shows as the colour bars along the bottom of the cover.
+- Show **All** or **With profiles**, and pick a player to see only their games: the ones they have a profile in, or played last.
+- The store (Steam, Epic, GOG…) is now a menu instead of a row of buttons.
+- A game without a cover shows its title on a quiet cover.
+- Play appears on a cover when you point at it.
+
 ## 1.16.1
 
 Home in the new look. It answers "what are we playing tonight, and who's playing?":
