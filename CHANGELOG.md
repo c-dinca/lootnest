@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.4
+
+- **When each player's profile was last saved, and how big it is.** The game page's **Players** panel shows it under each player, for example "Saved yesterday, 24 MB". It's the time the game last wrote that player's files.
+- In **Who's playing?**, a save slot with no play recorded shows when it was last saved instead.
+
 ## 1.17.3
 
 - **Lootnest remembers when each player last played each game**, not only who played it last. So Mihai's "yesterday" still shows after Cristian has played since:
