@@ -16,6 +16,33 @@ Each has a static mock of the profiles-on game page in [`mocks/`](mocks/): Count
 
 There are 1920×1080 shots next to these. To open the mocks yourself, first run `node design/harness/fetch-art.mjs`, which downloads the Steam art (it isn't committed). `node design/mocks/shoot.mjs` takes the shots again.
 
+## Chosen: C with B's colours, and glass
+
+The owner picked a remix. Mock: [`mocks/couch-glass.html`](mocks/couch-glass.html).
+
+| 1440×900 | 1280×720 at 150% |
+|---|---|
+| ![](mocks/couch-glass-1440x900.jpg) | ![](mocks/couch-glass-1280x720@1.5x.jpg) |
+
+- **From C (Couch)**
+  - The seat bar: "Mihai's seat" and **Switch**.
+  - One big **Play as Mihai**, with "or play as…" small faces for everyone else.
+  - "Your save is in · 44 h".
+  - Bricolage Grotesque and Figtree.
+  - Relaxed density with 48px targets, radius 8 / 14 / 24 / full, and warm 220–280ms motion.
+- **From B (Save Slot)**
+  - The graphite slate palette: ground `oklch(0.17 0.012 250)`, steps 0.21 / 0.25 / 0.29, ink `oklch(0.95 0.006 250)`.
+  - The player label colours: fill `oklch(0.72 0.12 h)`, text `oklch(0.20 0.03 h)`.
+  - The shell is no longer tinted by the seated player; a player's colour appears only on what belongs to them.
+- **New: glass, asked for by the owner**
+  - The game's own art, blurred to 90px at 30%, lights the whole window from behind.
+  - The sidebar, the seat bar and the panels are frosted slate: `backdrop-filter: blur(28–40px) saturate(140–150%)` over a fill at 50–72% opacity, with a 1px inner edge at 7% white.
+  - The title card overlaps the bottom of the key art, so the blur shows through it.
+  - There are no glows and no gradient washes. The only gradients are the scrims that keep text readable over art.
+  - With `prefers-reduced-transparency`, every glass step falls back to its solid slate step and the backdrop is removed.
+  - Contrast was measured on the shot over the brightest part of the art: secondary text is 5.8:1 at worst, and ink is 9:1.
+  - WebView2 is Chromium, so `backdrop-filter` is supported. The cost is checked in Step 3 on the 400-game Library.
+
 **How these three were picked.** I listed seven things from the household-gaming world, in order of how well they carry the product's mechanism, whose save is in the machine:
 
 1. a console's save-slot / memory card screen;
