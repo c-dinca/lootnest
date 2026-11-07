@@ -84,6 +84,14 @@ func TestFolderAppIDAndSchema(t *testing.T) {
 	if len(s) != 2 || s[0].Name != "The Fool" || s[0].Description != "Meet Jackie" || s[0].Hidden || !s[1].Hidden {
 		t.Fatalf("schema %+v", s)
 	}
+	// Unreal games keep it in <Game>\Binaries\Win64.
+	dir3 := t.TempDir()
+	ue := filepath.Join(dir3, "ProjectPBZ", "Binaries", "Win64")
+	_ = os.MkdirAll(ue, 0o755)
+	_ = os.WriteFile(filepath.Join(ue, "steam_appid.txt"), []byte("2638890"), 0o644)
+	if n := FolderAppID(dir3); n != 2638890 {
+		t.Fatalf("unreal app id %d", n)
+	}
 	dir2 := t.TempDir()
 	_ = os.WriteFile(filepath.Join(dir2, "steam_emu.ini"), []byte("[Settings]\nAppId=413150\n"), 0o644)
 	if n := FolderAppID(dir2); n != 413150 {

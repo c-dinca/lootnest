@@ -268,6 +268,8 @@ func hexLE(s string) int64 {
 	return n
 }
 
+var skipForAppID = map[string]bool{"content": true, "paks": true, "movies": true, "localization": true, "shaders": true, "streamingassets": true, "_commonredist": true, "redist": true}
+
 var appIDLine = regexp.MustCompile(`(?im)^\s*(?:real)?app_?id\s*=\s*(\d{2,8})\s*$`)
 
 // FolderAppID finds the Steam app id of a game installed outside Steam
@@ -277,17 +279,23 @@ func FolderAppID(dir string) int {
 	if dir == "" {
 		return 0
 	}
-	found := 0
+	found, seen := 0, 0
 	root := filepath.Clean(dir)
 	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
-		if found > 0 {
+		seen++
+		if found > 0 || seen > 20000 {
 			return filepath.SkipAll
 		}
 		if err != nil {
 			return filepath.SkipDir
 		}
 		if d.IsDir() {
-			if rel, _ := filepath.Rel(root, p); strings.Count(rel, string(filepath.Separator)) >= 2 {
+			// Deep enough for Unreal games (<Game>\Binaries\Win64), without
+			// walking their content.
+			if p != root && skipForAppID[strings.ToLower(d.Name())] {
+				return filepath.SkipDir
+			}
+			if rel, _ := filepath.Rel(root, p); strings.Count(rel, string(filepath.Separator)) >= 3 {
 				return filepath.SkipDir
 			}
 			return nil

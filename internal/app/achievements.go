@@ -24,9 +24,9 @@ var (
 // thread, and sends them as an "achievements" event (set is null when
 // there are none to show). Nothing goes online: names and pictures come
 // from Steam's library cache or from the files next to the game.
-func (a *App) apiAchievements(key string, appID int, dir string) {
+func (a *App) apiAchievements(key string, appID int, dir, name string) {
 	go func() {
-		set := a.achievements(key, appID, dir, true)
+		set := a.achievements(key, appID, dir, name, true)
 		a.emit("achievements", map[string]any{"key": key, "set": set})
 	}()
 }
@@ -34,7 +34,7 @@ func (a *App) apiAchievements(key string, appID int, dir string) {
 // achievements reads one game's. online lets it ask Steam for the names of
 // a game's achievements (with the user's Steam Web API key); otherwise only
 // what's saved on this PC is used.
-func (a *App) achievements(key string, appID int, dir string, online bool) *core.AchievementSet {
+func (a *App) achievements(key string, appID int, dir, name string, online bool) *core.AchievementSet {
 	var g *core.Game
 	if id, ok := strings.CutPrefix(key, "game:"); ok {
 		a.mu.Lock()
@@ -54,6 +54,10 @@ func (a *App) achievements(key string, appID int, dir string, online bool) *core
 		appID = core.FolderAppID(dir)
 	}
 	if appID <= 0 {
+		appID = knownStoreAppID(name)
+	}
+	if appID <= 0 {
+		a.logAchOnce("none|"+key, "Achievements for %s: no Steam app id next to the game, so none to read", name)
 		return nil
 	}
 	var list []core.Achievement
@@ -111,6 +115,7 @@ func (a *App) achievements(key string, appID int, dir string, online bool) *core
 		}
 	}
 	if len(list) == 0 && total == 0 && unlocks == nil && own == nil {
+		a.logAchOnce("none|"+key, "Achievements for %s (app %d): none found on this PC", name, appID)
 		return nil
 	}
 	set := &core.AchievementSet{AppID: appID, Source: "steam"}
@@ -144,7 +149,7 @@ func (a *App) achievements(key string, appID int, dir string, online bool) *core
 		if own != nil {
 			from += ", each player's own"
 		}
-		a.logf("Achievements for app %d: %d of %d, from %s", appID, set.Unlocked, set.Total, from)
+		a.logf("Achievements for %s (app %d): %d of %d, from %s", name, appID, set.Unlocked, set.Total, from)
 	}
 	return set
 }
@@ -221,7 +226,7 @@ func (a *App) apiAllAchievements() {
 		}
 		out := []achSummary{}
 		for _, it := range items {
-			set := a.achievements(it.key, it.appID, it.dir, false)
+			set := a.achievements(it.key, it.appID, it.dir, it.name, false)
 			if set == nil || set.Total == 0 {
 				continue
 			}
@@ -300,4 +305,32 @@ func scrubKey(s, key string) string {
 		s = strings.ReplaceAll(s, k, "…")
 	}
 	return s
+}
+
+// knownStoreAppID is the Steam app id Lootnest already looked up by name
+// for a game outside Steam, for its cover or its news (saved on this PC).
+// It never goes online itself.
+func knownStoreAppID(name string) int {
+	if strings.TrimSpace(name) == "" {
+		return 0
+	}
+	offline := func(string) ([]byte, error) { return nil, errors.New("offline") }
+	for _, d := range []string{newsDir(), coversDir()} {
+		if id, err := core.StoreAppID(offline, d, name); err == nil && id > 0 {
+			return id
+		}
+	}
+	return 0
+}
+
+// logAchOnce writes a line to the log once per run, so "Show recent
+// activity" says why a game shows no achievements.
+func (a *App) logAchOnce(id, format string, args ...any) {
+	achMu.Lock()
+	first := !achLogged[id]
+	achLogged[id] = true
+	achMu.Unlock()
+	if first {
+		a.logf(format, args...)
+	}
 }

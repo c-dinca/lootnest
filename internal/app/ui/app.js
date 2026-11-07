@@ -24,7 +24,7 @@
     load: (r) => call("ps_load", r),
     closeGame: (id) => call("ps_closeGame", id),
     profileInfo: (id) => call("ps_profileInfo", id),
-    achievements: (key, appId, dir) => call("ps_achievements", key, appId || 0, dir || ""),
+    achievements: (key, appId, dir, name) => call("ps_achievements", key, appId || 0, dir || "", name || ""),
     setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
     allAchievements: () => call("ps_allAchievements"),
     shortcut: (id) => call("ps_shortcut", id),
@@ -1846,7 +1846,7 @@
     if (!achAsked.has(key)) {
       achAsked.add(key);
       const dir = it.f ? it.f.dir : it.exe;
-      if (it.appId || dir) api.achievements(key, it.appId, dir).catch(() => {});
+      if (it.appId || dir) api.achievements(key, it.appId, dir, it.name).catch(() => {});
     }
     const top = S.ach[key];
     if (!top || !top.total) return "";
