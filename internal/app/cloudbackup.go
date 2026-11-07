@@ -569,12 +569,18 @@ func (a *App) applyOpened(player bool) error {
 	return nil
 }
 
-// cleanRestoreLeftovers removes unpacked backups left by a crash.
+// cleanRestoreLeftovers removes unpacked backups and saves left by a crash.
 func cleanRestoreLeftovers() {
 	ents, _ := os.ReadDir(DataDir())
 	for _, e := range ents {
-		if e.IsDir() && strings.HasPrefix(e.Name(), "restore-") {
-			_ = os.RemoveAll(filepath.Join(DataDir(), e.Name()))
+		if !e.IsDir() {
+			continue
+		}
+		for _, p := range []string{"restore-", "saves-tmp-", "sync-tmp-", "try-"} {
+			if strings.HasPrefix(e.Name(), p) {
+				_ = os.RemoveAll(filepath.Join(DataDir(), e.Name()))
+				break
+			}
 		}
 	}
 }

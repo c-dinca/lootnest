@@ -293,11 +293,11 @@ func writeSaves(w io.Writer, paths []PathEntry, dir func(PathEntry) string) erro
 // readSaves unpacks a saves file into place: each location to dir of the
 // entry with the same path. Locations paths doesn't have are counted.
 func readSaves(file string, key []byte, paths []PathEntry, dir func(PathEntry) string, tmp string) (skipped int, err error) {
+	defer os.RemoveAll(tmp)
 	ob, err := openArchive(file, tmp, key)
 	if err != nil {
 		return 0, err
 	}
-	defer os.RemoveAll(tmp)
 	b, err := os.ReadFile(filepath.Join(ob, "paths.json"))
 	if err != nil {
 		return 0, errors.New("The cloud copy is damaged.")
