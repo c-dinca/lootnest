@@ -952,6 +952,7 @@
     sliders: gsvg('<path d="M3.5 6.25h7.25M15.25 6.25h1.25M3.5 13.75h1.25M9.25 13.75h7.25"/><circle cx="13" cy="6.25" r="2.25"/><circle cx="7" cy="13.75" r="2.25"/>'),
     profiles: gsvg('<circle cx="7.75" cy="7" r="2.75"/><path d="M2.75 16.25c.45-2.65 2.45-4.25 5-4.25s4.55 1.6 5 4.25M13 4.6a2.5 2.5 0 0 1 0 4.8M14.5 12.25c1.5.4 2.5 1.65 2.75 3.5"/>'),
     search: gsvg('<circle cx="8.75" cy="8.75" r="4.75"/><path d="M12.25 12.25 16 16"/>'),
+    x: gsvg('<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>'),
     plus: gsvg('<path d="M10 4.5v11M4.5 10h11"/>'),
     alert: gsvg('<path d="M10 3.5 17 16H3z"/><path d="M10 8.25v3.5M10 13.9v.01"/>'),
   };
@@ -1574,10 +1575,11 @@
   }
 
   function playerRow(p, i, total, welcome) {
-    return `<div class="player">
+    return `<div class="player ln-player" style="--player:${esc(p.color || "#6c9bd2")}">
+      ${lnAvatar({ ...p, name: p.name || "?" }, "32")}
+      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${welcome && /^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="${welcome ? (i === 0 ? "Your name" : "Their name") : "Name"}" maxlength="24" aria-label="Name">
       <div class="swatches" role="radiogroup" aria-label="Colour for ${esc(p.name || "player " + (i + 1))}">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="swatch" data-i="${i}" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>
-      <input type="text" data-field="pname" data-i="${i}" value="${welcome && /^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="${welcome ? (i === 0 ? "Your name" : "Their name") : "Name"}" maxlength="24" aria-label="Name">
-      ${welcome ? "" : `<button class="btn icon quiet" data-action="remove-player" data-i="${i}" aria-label="Remove ${esc(p.name)}" ${total <= 1 ? "disabled" : ""}>${icon.x}</button>`}
+      ${welcome ? "" : `<button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="remove-player" data-i="${i}" aria-label="Remove ${esc(p.name)}" title="Remove" ${total <= 1 ? "disabled" : ""}>${GI.x}</button>`}
     </div>`;
   }
 
@@ -1647,19 +1649,19 @@
     const st = playerStats(p);
     const last = st.recent.find((x) => x.it.kind === "game" && !session(x.it.id));
     const body = sectionsOf(p).map((s) => ppSection(s, p, st)).filter(Boolean).join("");
-    return `<div class="profile-page" style="--c:${esc(p.color)}">
-      <div class="pp-banner">${bannerHTML(p)}<button class="btn ghost back" data-action="nav" data-view="players">${icon.back}Players</button></div>
-      <div class="pp-head">${avatarHTML(p, "xl")}
+    return `<div class="profile-page ln-root ln-player" style="--player:${esc(p.color)}">
+      <div class="pp-banner">${bannerHTML(p)}<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="nav" data-view="players">${GI.back}Players</button></div>
+      <div class="pp-head">${lnAvatar(p, "120")}
         <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}${p.bio ? `<p class="pp-bio">${esc(p.bio).replace(/\n/g, "<br>")}</p>` : ""}</div>
-        <div class="pp-actions">${last ? `<button class="btn primary" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${icon.play}Play ${esc(last.it.name)}</button>` : ""}
-          <button class="btn" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button>
-          <button class="btn quiet" data-action="export-player" data-player="${esc(p.id)}">Export profile</button></div></div>
+        <div class="pp-actions">${last ? `<button class="ln-button ln-button--play ln-button--lg" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${GI.play}Play ${esc(last.it.name)}</button>` : ""}
+          <button class="ln-button ln-button--secondary" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button>
+          <button class="ln-button ln-button--ghost" data-action="export-player" data-player="${esc(p.id)}">Export profile</button></div></div>
       <div class="pp-body">${body || `<p class="hint">Nothing to show yet: <b>Edit profile</b> chooses what this page shows.</p>`}</div>
     </div>`;
   }
 
   function ppSection(s, p, st) {
-    const sec = (title, inner, extra) => `<section class="pp-section pp-${s}"><div class="pp-sh"><h2 class="shelf-title">${title}</h2>${extra || ""}</div>${inner}</section>`;
+    const sec = (title, inner, extra) => `<section class="pp-section pp-${s}"><div class="ln-section-head"><div><h2>${title}</h2></div>${extra || ""}</div>${inner}</section>`;
     if (s === "now") {
       const it = p.now && itemByKey(p.now);
       if (!it) return "";
@@ -1857,22 +1859,32 @@
     </div></div>`;
   }
 
+  // Players: the household. A card per person (their banner, what they
+  // play, their numbers), then their names and colours.
   function viewPlayers() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
-    const cards = cfg().players.map((p) => { const st = playerStats(p); return `<button class="pcard" data-action="open-player" data-player="${esc(p.id)}" style="--c:${esc(p.color)}">
-        <span class="pcard-banner">${bannerHTML(p)}</span>${avatarHTML(p, "lg")}
-        <span class="pcard-body"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : st.recent[0] ? "Played " + esc(st.recent[0].it.name) + " " + esc(ago(st.recent[0].r.at)) : "No games played yet"}</span>
-        <span class="pcard-nums"><span><b>${st.total ? esc(hours(st.total)) : "0 h"}</b> played</span><span><b>${st.played}</b> ${st.played === 1 ? "game" : "games"}</span><span><b>${st.profiles}</b> with a profile</span></span></span></button>`; }).join("");
-    return `<div class="page"><div class="page-head"><div><h1>Players</h1><p class="sub">Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div></div>
+    const cards = cfg().players.map((p) => {
+      const st = playerStats(p);
+      const last = st.recent[0];
+      const covers = st.recent.slice(0, 4).map(({ it }) => { ensureCover(it); const c = S.covers[coverKey(it)]; return `<span class="pcard-cover" title="${esc(it.name)}"${c ? ` style="background-image:url('${c}')"` : ""}></span>`; }).join("");
+      return `<button class="pcard ln-player" data-action="open-player" data-player="${esc(p.id)}" style="--player:${esc(p.color)}">
+        <span class="pcard-banner">${bannerHTML(p)}</span>
+        <span class="pcard-who">${lnAvatar(p, "72")}<span class="pcard-name"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : last ? `${esc(last.it.name)}, ${esc(ago(last.r.at))}` : st.top ? `Most played: ${esc(st.top.name)}` : "No games played yet"}</span></span></span>
+        ${covers ? `<span class="pcard-covers" aria-hidden="true">${covers}</span>` : ""}
+        <span class="pcard-nums"><span><b class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</b>played</span><span><b class="ln-num">${st.played}</b>${st.played === 1 ? "game" : "games"}</span><span><b class="ln-num">${st.profiles}</b>with a profile</span></span></button>`;
+    }).join("");
+    return `<div class="players-page ln-root">
+      <header class="lib-head"><div><h1>Players</h1><p>Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div>
+        <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile someone exported from Lootnest on another PC: their saves, picture and play time">Import a profile</button></div></header>
       <div class="pcards">${cards}</div>
-      <div class="row" style="margin-top:14px"><button class="btn quiet" data-action="restore-pick" data-mode="import">Import a profile</button>
-        <span class="hint">A profile someone exported from Lootnest on another PC: their saves, picture and play time.</span></div>
-      <h2 class="shelf-title" style="margin-top:36px">Names and colours</h2>
-      <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
-      <div class="row" style="margin-top:14px">${ps.length < 8 ? `<button class="btn" data-action="add-player">${icon.plus}Add player</button>` : ""}</div>
-      <div class="row" style="margin-top:28px"><button class="btn primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save players</button>
-      ${dirty ? `<button class="btn quiet" data-action="reset-players">Discard changes</button>` : ""}<span class="error-text" id="players-error"></span></div></div>`;
+      <section class="players-edit"><div class="ln-section-head"><div><h2>Names and colours</h2><p>A player's colour marks their files, their Play button and their games everywhere in Lootnest.</p></div></div>
+        <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
+        <div class="players-foot">${ps.length < 8 ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add player</button>` : ""}
+          <span class="players-grow"></span><span class="error-text" id="players-error"></span>
+          ${dirty ? `<button class="ln-button ln-button--ghost" data-action="reset-players">Discard changes</button>` : ""}
+          <button class="ln-button ln-button--primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save players</button></div>
+      </section></div>`;
   }
 
   async function savePlayers(welcome) {

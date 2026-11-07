@@ -170,4 +170,5 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Game page, profiles on and off, with Cloud save, Shelf and news | On the system (1.16.0) |
 | Home, banners (`ln-banner`) | On the system (1.16.1) |
 | Library, inputs (`ln-input`, `ln-search`) | On the system (1.16.2) |
-| Players, Cloud saves, Settings, Add game, first run | Old styles, Step 5 |
+| Players and a player's page | On the system (1.16.5) |
+| Cloud saves, Settings, Add game, first run, dialogs | Old styles, Step 5 |
