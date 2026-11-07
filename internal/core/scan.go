@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,11 +12,14 @@ import (
 
 // FoundGame is a game discovered on the PC that Lootnest could manage.
 type FoundGame struct {
-	Key         string       `json:"key"` // stable id: "steam:730", "dir:d:\games\x"
-	Name        string       `json:"name"`
-	Source      string       `json:"source"` // steam, epic, gog, folder, shortcut
-	AppID       int          `json:"appId,omitempty"`
-	Exe         string       `json:"exe,omitempty"` // launch target for non-Steam games
+	Key    string `json:"key"` // stable id: "steam:730", "dir:d:\games\x"
+	Name   string `json:"name"`
+	Source string `json:"source"` // steam, epic, gog, folder, shortcut
+	AppID  int    `json:"appId,omitempty"`
+	Exe    string `json:"exe,omitempty"` // launch target for non-Steam games
+	// URI starts the game through its launcher (see SafeLaunchURI), when
+	// the launcher must start it.
+	URI         string       `json:"uri,omitempty"`
 	Dir         string       `json:"dir"`
 	ProcessName string       `json:"processName"`
 	Paths       []string     `json:"paths"` // proposed save/settings locations
@@ -337,6 +341,8 @@ type epicManifest struct {
 	InstallLocation      string   `json:"InstallLocation"`
 	LaunchExecutable     string   `json:"LaunchExecutable"`
 	AppName              string   `json:"AppName"`
+	CatalogNamespace     string   `json:"CatalogNamespace"`
+	CatalogItemID        string   `json:"CatalogItemId"`
 	BIsIncompleteInstall bool     `json:"bIsIncompleteInstall"`
 	AppCategories        []string `json:"AppCategories"`
 }
@@ -368,8 +374,17 @@ func EpicGames(manifestDir string) []FoundGame {
 		if !exists(exe) {
 			continue
 		}
-		out = append(out, FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(m.InstallLocation)), Name: m.DisplayName, Source: "epic",
-			Exe: exe, Dir: filepath.Clean(m.InstallLocation)})
+		f := FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(m.InstallLocation)), Name: m.DisplayName, Source: "epic",
+			Exe: exe, Dir: filepath.Clean(m.InstallLocation)}
+		// Through the Epic launcher, so the game is signed in like when it
+		// starts from Epic.
+		if m.CatalogNamespace != "" && m.CatalogItemID != "" && m.AppName != "" {
+			if u := "com.epicgames.launcher://apps/" + url.PathEscape(m.CatalogNamespace) + "%3A" + url.PathEscape(m.CatalogItemID) + "%3A" +
+				url.PathEscape(m.AppName) + "?action=launch&silent=true"; SafeLaunchURI(u) {
+				f.URI = u
+			}
+		}
+		out = append(out, f)
 	}
 	return out
 }
@@ -527,7 +542,7 @@ func sourceRank(s string) int {
 	switch s {
 	case "steam":
 		return 0
-	case "epic", "gog":
+	case "epic", "gog", "xbox", "ubisoft", "ea", "battlenet", "riot", "amazon", "rockstar", "itch":
 		return 1
 	case "shortcut":
 		return 2

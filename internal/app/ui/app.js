@@ -402,14 +402,18 @@
     return { loading: `Loading ${possessive(n)} files`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${possessive(n)} progress` }[s.phase] || "";
   }
 
-  const sourceLabel = (src) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src] || "Other");
-  const filterOf = (src) => (src === "steam" || src === "epic" || src === "gog" ? src : "other");
+  const sourceLabel = (src) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", xbox: "Xbox", ea: "EA app", ubisoft: "Ubisoft Connect", battlenet: "Battle.net",
+    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src] || "Other");
+  // Each store and launcher is its own filter; folders, shortcuts and games
+  // added by hand are "Other".
+  const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch"];
+  const filterOf = (src) => (LAUNCHERS.includes(src) ? src : "other");
 
   // Every game on the PC: the ones with profiles, then everything the scan found.
   function libraryItems() {
     const items = cfg().games.map((g) => ({
       kind: "game", id: g.id, name: g.name, appId: g.launch.type === "steam" ? g.launch.appId : 0,
-      source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", exe: g.launch.type === "exe" ? g.launch.exe : "", g,
+      source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", exe: g.launch.type !== "steam" ? g.launch.exe || "" : "", g,
     }));
     (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, exe: f.appId ? "" : f.exe || "", f }));
     return items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
@@ -444,7 +448,11 @@
     const withProfiles = cfg().games.length;
     const scanning = S.found.scanning;
     const refreshing = S.found.refreshing;
-    const chips = [["all", "All"], ["profiles", "With profiles"], ["steam", "Steam"], ["epic", "Epic"], ["gog", "GOG"], ["other", "Other"]];
+    const have = new Set(all.map((it) => filterOf(it.source)));
+    const short = { epic: "Epic", ea: "EA", ubisoft: "Ubisoft", battlenet: "Battle.net", amazon: "Amazon", itch: "itch.io" };
+    const chips = [["all", "All"], ["profiles", "With profiles"],
+      ...LAUNCHERS.filter((k) => have.has(k) || S.filter === k).map((k) => [k, short[k] || sourceLabel(k)]),
+      ...(have.has("other") || S.filter === "other" ? [["other", "Other"]] : [])];
     const head = `<div class="lib-head"><div class="grow"><h1>Library</h1>
         <p class="sub">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</p></div>
         <input type="search" id="lib-q" class="search" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)">
@@ -452,7 +460,7 @@
         <button class="btn quiet" data-action="rescan" ${refreshing ? "disabled" : ""}>${refreshing ? "Scanning" : "Scan again"}</button></div>`;
     if (!all.length && !scanning) {
       return `<div class="page wide">${head}<div class="empty"><div><h2>No games found yet</h2>
-        <p class="sub">Lootnest looks in Steam, Epic, GOG, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
+        <p class="sub">Lootnest looks in Steam, Epic, GOG, Xbox, EA, Ubisoft, Battle.net, Riot, Amazon, Rockstar, itch.io, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
         <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button></div></div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
@@ -1317,6 +1325,9 @@
       ? `<div class="note">Launched through Steam (app ${esc(g.launch.appId)}).</div>
         <label class="toggle"><span><b style="font-weight:500">Let Steam start this game</b><p>Turn this on if an anti-cheat, such as FACEIT AC, blocks the game when Lootnest starts it. Steam's Play button then starts the game without asking who's playing. Lootnest adds a desktop shortcut that asks every time.</p></span>
           <span class="switch"><input type="checkbox" data-field="steamDirect" ${g.steamDirect ? "checked" : ""}><span></span></span></label>`
+      : g.launch.type === "uri"
+      ? `<div class="note">Started through ${esc(sourceLabel((S.d.sources || {})[g.id] || "") === "Other" ? "its launcher" : sourceLabel((S.d.sources || {})[g.id]))}, like from the launcher itself.</div>
+        ${g.launch.exe ? `<div class="row"><button class="btn quiet" data-action="launch-from-exe">Start it from its .exe instead</button></div>` : ""}`
       : `<div class="row"><input type="text" class="grow" data-field="exe" value="${esc(g.launch.exe)}" spellcheck="false"><button class="btn" data-action="browse-exe">Browse</button></div>`;
     return `<div class="page">
       <div class="page-head"><div><button class="btn quiet small" data-action="edit-cancel" style="margin:0 0 10px -12px">${icon.back}Library</button>
@@ -1977,6 +1988,7 @@
       try { await api.restoreApply(); } catch (e) { D.busy = false; D.applying = false; D.error = errText(e); renderOverlay(); }
     },
     "restore-close"() { const D = S.dialog; S.dialog = null; renderOverlay(); if (D && !D.done) api.restoreCancel().catch(() => {}); },
+    "launch-from-exe"() { const g = S.edit.game; g.launch = { ...g.launch, type: "exe", uri: "" }; render(); },
     density(el) { S.density = el.dataset.size; setPref("density", S.density); render(); },
     "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
     "open-link": (el) => api.open("link", el.dataset.url).catch((e) => toast(errText(e), "error")),

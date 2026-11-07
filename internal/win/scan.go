@@ -125,3 +125,69 @@ func ResolveShortcuts(lnks []string) map[string]string {
 }
 
 func ProgramData() string { return KnownFolder(windows.FOLDERID_ProgramData) }
+
+// InstalledProgram is one program from Windows' installed programs list.
+type InstalledProgram struct {
+	Key, DisplayName, Publisher, InstallLocation, UninstallString, DisplayIcon string
+}
+
+// InstalledPrograms lists the installed programs (for every user and for
+// this one, 64- and 32-bit).
+func InstalledPrograms() []InstalledProgram {
+	var out []InstalledProgram
+	for _, src := range []struct {
+		root registry.Key
+		path string
+	}{
+		{registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`},
+		{registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall`},
+		{registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Uninstall`},
+	} {
+		k, err := registry.OpenKey(src.root, src.path, registry.ENUMERATE_SUB_KEYS)
+		if err != nil {
+			continue
+		}
+		names, _ := k.ReadSubKeyNames(-1)
+		k.Close()
+		for _, n := range names {
+			sk, err := registry.OpenKey(src.root, src.path+`\`+n, registry.QUERY_VALUE)
+			if err != nil {
+				continue
+			}
+			get := func(v string) string { s, _, _ := sk.GetStringValue(v); return s }
+			out = append(out, InstalledProgram{Key: n, DisplayName: get("DisplayName"), Publisher: get("Publisher"),
+				InstallLocation: get("InstallLocation"), UninstallString: get("UninstallString"), DisplayIcon: get("DisplayIcon")})
+			sk.Close()
+		}
+	}
+	return out
+}
+
+// XboxGameFolders are the folders the Xbox app installs games in: the one
+// each drive's .GamingRoot file names, and XboxGames on every drive.
+func XboxGameFolders() []string {
+	var out []string
+	seen := map[string]bool{}
+	add := func(p string) {
+		if st, err := os.Stat(p); err == nil && st.IsDir() && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			out = append(out, p)
+		}
+	}
+	for _, d := range FixedDrives() {
+		// .GamingRoot: "RGBX", a count, then UTF-16 folder names.
+		if b, err := os.ReadFile(filepath.Join(d, ".GamingRoot")); err == nil && len(b) > 8 && string(b[:4]) == "RGBX" {
+			u := make([]uint16, 0, (len(b)-8)/2)
+			for i := 8; i+1 < len(b); i += 2 {
+				u = append(u, uint16(b[i])|uint16(b[i+1])<<8)
+			}
+			for _, name := range strings.Split(windows.UTF16ToString(u), "\x00") {
+				if name = strings.TrimSpace(name); name != "" && !strings.ContainsAny(name, `:*?"<>|`) {
+					add(filepath.Join(d, name))
+				}
+			}
+		}
+		add(filepath.Join(d, "XboxGames"))
+	}
+	return out
+}

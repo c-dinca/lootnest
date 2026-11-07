@@ -34,6 +34,18 @@ func (a *App) scanPC() []core.FoundGame {
 		}
 	}
 
+	// The other launchers: from Windows' installed programs, the Xbox app's
+	// folders and the itch app's.
+	var entries []core.UninstallEntry
+	for _, e := range win.InstalledPrograms() {
+		entries = append(entries, core.UninstallEntry(e))
+	}
+	all = append(all, core.LauncherGames(entries)...)
+	all = append(all, core.XboxGames(win.XboxGameFolders())...)
+	if ad := os.Getenv("APPDATA"); ad != "" {
+		all = append(all, core.ItchGames(filepath.Join(ad, "itch", "apps"))...)
+	}
+
 	roots, containers := gameFolders(env)
 	all = append(all, core.ScanFolders(roots, containers)...)
 
@@ -157,7 +169,10 @@ func (a *App) isFoundGame(g *core.Game, f core.FoundGame) bool {
 	if f.AppID != 0 && g.Launch.Type == "steam" && g.Launch.AppID == f.AppID {
 		return true
 	}
-	if g.Launch.Type == "exe" && f.Dir != "" {
+	if g.Launch.Type == "uri" && f.URI != "" && g.Launch.URI == f.URI {
+		return true
+	}
+	if (g.Launch.Type == "exe" || g.Launch.Type == "uri") && g.Launch.Exe != "" && f.Dir != "" {
 		if exe, err := a.env.ResolveExe(g.Launch.Exe); err == nil {
 			if rel, err := filepath.Rel(strings.ToLower(f.Dir), strings.ToLower(exe)); err == nil && !strings.HasPrefix(rel, "..") {
 				return true
@@ -267,6 +282,8 @@ func gameFromFound(f core.FoundGame) core.Game {
 	g := core.Game{Name: f.Name, ProcessName: f.ProcessName, PlayerArgs: map[string]string{}}
 	if f.Source == "steam" {
 		g.Launch = core.Launch{Type: "steam", AppID: f.AppID, Args: f.Args}
+	} else if f.URI != "" && core.SafeLaunchURI(f.URI) {
+		g.Launch = core.Launch{Type: "uri", URI: f.URI, Exe: f.Exe, Args: f.Args}
 	} else {
 		g.Launch = core.Launch{Type: "exe", Exe: f.Exe, Args: f.Args}
 	}
