@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0
+
+- New setting, off by default: **Show game updates and news**. A game's page then lists its latest updates and announcements from Steam's news feed, with patch notes marked; click one to read it on Steam. For a game no store keeps up to date (added by hand, or found in a game folder), Lootnest also says when an update came out after your copy's files. Only the game's Steam id, or its name, is sent; each feed is read at most every 6 hours.
+
 ## 1.6.0
 
 - A new look. Deep blue-graphite instead of brown, game titles set in Bricolage Grotesque (built in, nothing is downloaded), and each player's colour used for their own Play button, the same as on the "Who's playing?" screen.

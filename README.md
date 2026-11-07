@@ -24,6 +24,7 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 - The Library opens on the game you played last, in its own artwork, with a Play button for each player.
 - Every game has its own page: its art, who has a profile, whose files are loaded, and everything else about it. Rename it, add launch options, open its folder, put a shortcut on the desktop, or have Steam check its files. None of this needs profiles.
 - Games without a cover show their own icon, read from the game on your PC.
+- **Updates and news**, if you turn it on: each game's page lists its latest updates and patch notes from Steam's news feed. For a game no store keeps up to date, Lootnest says when a newer version than yours is out.
 
 **Profiles**, per game, when you want them
 - Everyone gets their own settings and saves, on one Windows account and one Steam account.
@@ -66,6 +67,7 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 | **Check for updates** | When you press it, or once a day if **Check for updates automatically** is on (off by default) | A request for the latest Lootnest version, to `api.github.com` |
 | **Update now** | When you press it | Downloads the installer from the GitHub release, and checks its SHA-256 before running it |
 | **Download covers for games outside Steam** | Only if you turn it on (off by default) | The game's name, to `store.steampowered.com`; the cover comes from Steam's image server and is saved on your PC |
+| **Show game updates and news** | Only if you turn it on (off by default), when you open a game's page; each feed is read at most every 6 hours | The game's Steam app id to `api.steampowered.com` (for a game outside Steam, first its name to `store.steampowered.com`) |
 
 ## How profiles work
 
