@@ -379,3 +379,157 @@ type PCSpecs struct {
 	FreeOn  string `json:"freeOn"`  // that drive, such as "D:"
 	Windows string `json:"windows"` // such as "Windows 11"
 }
+
+// ---------------------------------------------------------------- store ---
+
+const (
+	featuredURL  = "https://store.steampowered.com/api/featuredcategories?l=english&cc=%s"
+	sharkBestURL = "https://www.cheapshark.com/api/1.0/deals?sortBy=Deal%20Rating&metacritic=75&onSale=1&pageSize=40"
+)
+
+// StoreItem is a game in one of the Store page's rows.
+type StoreItem struct {
+	AppID int         `json:"appId"`
+	Name  string      `json:"name"`
+	Image string      `json:"image"` // wide art, 616x353 when Steam has it
+	Price *StorePrice `json:"price,omitempty"`
+	// For a deal in another store: its name, price in US dollars and link.
+	Store string  `json:"store,omitempty"`
+	USD   float64 `json:"usd,omitempty"`
+	URL   string  `json:"url,omitempty"`
+	Score int     `json:"score,omitempty"` // Metacritic
+	Owned string  `json:"owned,omitempty"`
+}
+
+// StoreFront is what the Store page shows before a search.
+type StoreFront struct {
+	Daily    *StoreItem  `json:"daily,omitempty"`
+	Specials []StoreItem `json:"specials"`
+	Top      []StoreItem `json:"top"`
+	Deals    []StoreItem `json:"deals"`
+}
+
+// FetchStoreFront reads Steam's featured games (the daily deal, specials
+// and top sellers) and CheapShark's best deals on well-reviewed games.
+// Either half failing leaves its rows empty; both failing is an error.
+func FetchStoreFront(fetch Fetch, cc string, stores map[string]string) (*StoreFront, error) {
+	f := &StoreFront{Specials: []StoreItem{}, Top: []StoreItem{}, Deals: []StoreItem{}}
+	err1 := steamFeatured(fetch, cc, f)
+	err2 := sharkBest(fetch, stores, f)
+	if err1 != nil && err2 != nil {
+		return nil, err1
+	}
+	return f, nil
+}
+
+type steamFeaturedItem struct {
+	ID       int    `json:"id"`
+	Type     int    `json:"type"`
+	Name     string `json:"name"`
+	Currency string `json:"currency"`
+	Original *int   `json:"original_price"`
+	Final    int    `json:"final_price"`
+	Discount int    `json:"discount_percent"`
+	Large    string `json:"large_capsule_image"`
+	Header   string `json:"header_image"`
+}
+
+func (it steamFeaturedItem) item() (StoreItem, bool) {
+	if it.Type != 0 || it.ID <= 0 || it.Name == "" {
+		return StoreItem{}, false
+	}
+	s := StoreItem{AppID: it.ID, Name: it.Name}
+	for _, img := range []string{it.Large, it.Header} {
+		if SafeNewsImage(img) {
+			s.Image = img
+			break
+		}
+	}
+	if it.Currency != "" && it.Original != nil {
+		s.Price = &StorePrice{Currency: it.Currency, Initial: *it.Original, Final: it.Final, Discount: it.Discount}
+	}
+	return s, true
+}
+
+func steamFeatured(fetch Fetch, cc string, f *StoreFront) error {
+	b, err := fetch(fmt.Sprintf(featuredURL, StoreCountry(cc)))
+	if err != nil {
+		return err
+	}
+	var res map[string]json.RawMessage
+	if err := json.Unmarshal(b, &res); err != nil {
+		return fmt.Errorf("unexpected reply from the Steam store: %w", err)
+	}
+	type row struct {
+		ID    string              `json:"id"`
+		Items []steamFeaturedItem `json:"items"`
+	}
+	read := func(key string) []StoreItem {
+		var r row
+		out := []StoreItem{}
+		if json.Unmarshal(res[key], &r) != nil {
+			return out
+		}
+		for _, it := range r.Items {
+			if s, ok := it.item(); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	f.Specials, f.Top = read("specials"), read("top_sellers")
+	// The daily deal sits in a numbered row with id "cat_dailydeal".
+	for k, v := range res {
+		if _, err := strconv.Atoi(k); err != nil {
+			continue
+		}
+		var r row
+		if json.Unmarshal(v, &r) == nil && r.ID == "cat_dailydeal" && len(r.Items) > 0 {
+			if s, ok := r.Items[0].item(); ok {
+				f.Daily = &s
+			}
+		}
+	}
+	return nil
+}
+
+func sharkBest(fetch Fetch, stores map[string]string, f *StoreFront) error {
+	b, err := fetch(sharkBestURL)
+	if err != nil {
+		return err
+	}
+	var list []struct {
+		Title   string `json:"title"`
+		Deal    string `json:"dealID"`
+		Store   string `json:"storeID"`
+		GameID  string `json:"gameID"`
+		Sale    string `json:"salePrice"`
+		Normal  string `json:"normalPrice"`
+		Savings string `json:"savings"`
+		Score   string `json:"metacriticScore"`
+		SteamID string `json:"steamAppID"`
+	}
+	if err := json.Unmarshal(b, &list); err != nil {
+		return err
+	}
+	seen := map[string]bool{}
+	for _, d := range list {
+		id, _ := strconv.Atoi(d.SteamID)
+		sale, err := strconv.ParseFloat(d.Sale, 64)
+		name := stores[d.Store]
+		if id <= 0 || err != nil || name == "" || d.Deal == "" || seen[d.GameID] {
+			continue // the list is best first: keep each game's best deal only
+		}
+		seen[d.GameID] = true
+		sav, _ := strconv.ParseFloat(d.Savings, 64)
+		score, _ := strconv.Atoi(d.Score)
+		f.Deals = append(f.Deals, StoreItem{AppID: id, Name: d.Title, Store: name, USD: sale, Score: score,
+			Price: &StorePrice{Currency: "USD", Discount: int(sav + 0.5)},
+			Image: fmt.Sprintf("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/%d/header.jpg", id),
+			URL:   SharkDealURL + url.QueryEscape(unescapeDeal(d.Deal))})
+		if len(f.Deals) == 12 {
+			break
+		}
+	}
+	return nil
+}

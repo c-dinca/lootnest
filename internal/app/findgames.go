@@ -136,6 +136,58 @@ func (a *App) apiGameOffer(appID int, name string) error {
 	return nil
 }
 
+var (
+	frontMu sync.Mutex
+	front   *core.StoreFront
+	frontAt time.Time
+)
+
+// apiStoreFront sends the Store page's rows (Steam's daily deal, specials
+// and top sellers, and CheapShark's best deals) as a "storeFront" event.
+// They're kept for half an hour.
+func (a *App) apiStoreFront() error {
+	if !a.findOn() {
+		return errFindOff
+	}
+	go func() {
+		out := map[string]any{}
+		defer func() { a.emit("storeFront", out) }()
+		frontMu.Lock()
+		f := front
+		fresh := f != nil && time.Since(frontAt) < 30*time.Minute
+		frontMu.Unlock()
+		if !fresh {
+			nf, err := core.FetchStoreFront(fetchURL, storeCountry(), sharkStores())
+			if err != nil {
+				a.logf("Store: %v", err)
+				out["error"] = "Couldn't reach the Steam store. Check the connection and try again."
+				return
+			}
+			frontMu.Lock()
+			front, frontAt, f = nf, time.Now(), nf
+			frontMu.Unlock()
+		}
+		// Mark what's on this PC, on a copy: the Library may have changed.
+		c := *f
+		byID, byName := a.ownedIndex()
+		mark := func(list []core.StoreItem) []core.StoreItem {
+			out := append([]core.StoreItem{}, list...)
+			for i := range out {
+				out[i].Owned = ownedOf(byID, byName, out[i].AppID, out[i].Name)
+			}
+			return out
+		}
+		c.Specials, c.Top, c.Deals = mark(f.Specials), mark(f.Top), mark(f.Deals)
+		if f.Daily != nil {
+			d := *f.Daily
+			d.Owned = ownedOf(byID, byName, d.AppID, d.Name)
+			c.Daily = &d
+		}
+		out["front"] = &c
+	}()
+	return nil
+}
+
 // sharkStores is CheapShark's list of stores, kept for a day.
 func sharkStores() map[string]string {
 	findMu.Lock()

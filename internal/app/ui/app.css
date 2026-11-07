@@ -1156,3 +1156,42 @@ option { background: var(--bg-surface); color: var(--fg-1); }
   .find-req-row { grid-template-columns: 1fr 1fr; }
   .find-req-head { display: none; }
 }
+
+/* The Store's rows, before a search. */
+.find-row { display: grid; gap: var(--space-3); }
+.find-row .ln-section-head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
+.find-grid--wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.find-card--wide img, .find-card--wide .find-noimg { aspect-ratio: 616 / 353; }
+.find-store-name { color: var(--fg-3); }
+.find-score { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 20px; padding: 0 var(--space-1); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); color: var(--fg-1); font-size: var(--fs-12); font-weight: 650; font-variant-numeric: tabular-nums; }
+.find-daily { position: relative; display: grid; grid-template-columns: minmax(0, 460px) 1fr; align-items: center; gap: var(--space-6); width: 100%; padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-1); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out); }
+.find-daily:hover { border-color: var(--accent); }
+.find-daily:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.find-daily img { display: block; width: 100%; border-radius: var(--radius-ctl); }
+.find-daily-body { display: grid; gap: var(--space-2); }
+.find-daily-label { font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); }
+.find-daily-body b { font: 750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+@media (max-width: 760px) { .find-daily { grid-template-columns: 1fr; } }
+
+/* The search in the sidebar, on every page. */
+.side-search { position: relative; margin: 0 0 var(--space-3); }
+.side-search .ln-search { width: 100%; }
+.side-search .ln-input { height: var(--ctl-sm); font-size: var(--fs-13); }
+.gq-pop { position: absolute; z-index: 40; top: calc(100% + var(--space-1)); left: 0; width: min(420px, calc(100vw - var(--space-6))); max-height: min(520px, 75vh); overflow: auto; display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel); background: var(--bg-raised); box-shadow: var(--shadow-overlay); }
+.gq-group { display: grid; gap: 1px; }
+.gq-label { padding: var(--space-1) var(--space-2); font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); }
+.gq-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); min-height: 40px; padding: var(--space-1) var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); text-align: left; font-size: var(--fs-13); cursor: pointer; }
+.gq-item:not(:has(img)) { grid-template-columns: 1fr auto; }
+.gq-item img { width: 72px; aspect-ratio: 231 / 87; object-fit: cover; border-radius: var(--radius-tag); background: var(--bg-well); }
+.gq-item:hover, .gq-item.is-sel { background: var(--bg-active); }
+.gq-item:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.gq-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gq-meta { color: var(--fg-2); font-size: var(--fs-12); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gq-note { margin: 0; padding: var(--space-1) var(--space-2) var(--space-2); font-size: var(--fs-13); color: var(--fg-2); }
+.gq-all { padding: var(--space-2); border: 0; border-top: var(--hairline) solid var(--edge-1); background: none; color: var(--fg-1); font-size: var(--fs-13); font-weight: 600; text-align: left; cursor: pointer; }
+.gq-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 760px) { .side-search { flex: 1 1 100%; order: 3; margin: var(--space-2) 0 0; } }
+.gq-pop[hidden] { display: none; }
+/* The sidebar paints above the page, so the search's list can reach over it. */
+.side { position: relative; z-index: 3; }
+#find-results { display: grid; gap: var(--space-10); }

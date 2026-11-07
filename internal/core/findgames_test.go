@@ -116,3 +116,34 @@ func TestReqBytes(t *testing.T) {
 		}
 	}
 }
+
+func TestFetchStoreFront(t *testing.T) {
+	featured := `{"0":{"id":"cat_spotlight","items":[{"name":"Free Weekend","url":"x"}]},
+"5":{"id":"cat_dailydeal","items":[{"id":584980,"type":0,"currency":"EUR","original_price":1479,"final_price":354,"discount_percent":76,"name":"Late Shift","header_image":"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/584980/header.jpg"}]},
+"specials":{"id":"cat_specials","items":[{"id":1,"type":0,"name":"A","discounted":true,"discount_percent":10,"original_price":1999,"final_price":1799,"currency":"EUR","large_capsule_image":"https://shared.akamai.steamstatic.com/a.jpg"},{"id":2,"type":1,"name":"A bundle"}]},
+"top_sellers":{"id":"cat_topsellers","items":[{"id":3,"type":0,"name":"Free one","original_price":null,"final_price":0,"currency":"EUR","large_capsule_image":"https://evil.example/x.jpg"}]},
+"status":1}`
+	deals := `[{"title":"Disco Elysium","dealID":"3Y%2Fp","storeID":"30","gameID":"227942","salePrice":"7.89","savings":"80.27","metacriticScore":"97","steamAppID":"632470"},
+{"title":"Disco Elysium","dealID":"zz","storeID":"21","gameID":"227942","salePrice":"9.79","savings":"75.5","metacriticScore":"97","steamAppID":"632470"},
+{"title":"No Steam id","dealID":"q","storeID":"30","gameID":"1","salePrice":"1","savings":"50","steamAppID":null}]`
+	f, err := FetchStoreFront(fakeFetch(map[string]string{"featuredcategories": featured, "deals?": deals}), "ro", map[string]string{"30": "IndieGala", "21": "WinGameStore"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Daily == nil || f.Daily.Name != "Late Shift" || f.Daily.Price.Discount != 76 || f.Daily.Image == "" {
+		t.Fatalf("daily = %+v", f.Daily)
+	}
+	if len(f.Specials) != 1 || f.Specials[0].Price.Final != 1799 || len(f.Top) != 1 || f.Top[0].Price != nil || f.Top[0].Image != "" {
+		t.Fatalf("rows = %+v / %+v", f.Specials, f.Top)
+	}
+	if len(f.Deals) != 1 || f.Deals[0].Store != "IndieGala" || f.Deals[0].USD != 7.89 || f.Deals[0].Score != 97 || !SafeStoreLink(f.Deals[0].URL) {
+		t.Fatalf("deals = %+v", f.Deals)
+	}
+	// One half down: the other still shows.
+	if f, err := FetchStoreFront(fakeFetch(map[string]string{"deals?": deals}), "ro", map[string]string{"30": "IndieGala"}); err != nil || len(f.Deals) != 1 {
+		t.Fatalf("Steam down: %+v %v", f, err)
+	}
+	if _, err := FetchStoreFront(fakeFetch(nil), "ro", nil); err == nil {
+		t.Fatal("both down should fail")
+	}
+}

@@ -140,6 +140,23 @@
       }, 150);
       return ok();
     },
+    ps_storeFront: () => {
+      const hdr = (id) => `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/header.jpg`;
+      const eur = (i, f) => ({ currency: "EUR", initial: i, final: f, discount: i > f ? Math.round((i - f) * 100 / i) : 0 });
+      const g = (appId, name, p, extra) => Object.assign({ appId, name, image: hdr(appId), price: p }, extra || {});
+      setTimeout(() => {
+        if (STATE === "offline") { emit({ type: "storeFront", error: "Couldn't reach the Steam store. Check the connection and try again." }); return; }
+        emit({ type: "storeFront", front: {
+          daily: g(1145360, "Hades", eur(2450, 612)),
+          specials: [g(1245620, "ELDEN RING", eur(5999, 2999)), g(1086940, "Baldur's Gate 3", eur(5999, 4799)), g(413150, "Stardew Valley", eur(1399, 979)), g(1091500, "Cyberpunk 2077", eur(5999, 2999), { owned: "found:steam:1091500" })],
+          deals: [g(632470, "Disco Elysium - The Final Cut", { currency: "USD", discount: 80 }, { store: "IndieGala", usd: 7.89, score: 97, url: "https://www.cheapshark.com/redirect?dealID=a" }),
+            g(49520, "Borderlands 2", { currency: "USD", discount: 90 }, { store: "Steam", usd: 1.99, score: 89, url: "https://www.cheapshark.com/redirect?dealID=b" }),
+            g(115800, "Owlboy", { currency: "USD", discount: 90 }, { store: "GOG", usd: 1.99, score: 88, url: "https://www.cheapshark.com/redirect?dealID=c" })],
+          top: [g(4115450, "Phantom Blade Zero", eur(5999, 5999)), g(570, "Dota 2", null), g(730, "Counter-Strike 2", null, { owned: "game:cs2" })],
+        } });
+      }, 150);
+      return ok();
+    },
     ps_gameOffer: (appId, name) => {
       const req = (rec) => [{ value: "Requires a 64-bit processor and operating system" }, { label: "OS", value: rec ? "Windows 10/11" : "Windows 10" },
         { label: "Processor", value: rec ? "INTEL CORE I7-8700K or AMD RYZEN 5 3600X" : "INTEL CORE I5-8400 or AMD RYZEN 3 3300X" },
