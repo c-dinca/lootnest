@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.55.4
+
+- **On your own, you're always the one playing.** With runs of your own and nobody else, Lootnest seats you from the start. Clicking yourself or a run in the sidebar makes Play start as that one, and the seat is never left empty. Big Picture's Profiles tab uses the same words.
+- In Try a save, choosing someone else in Start from now updates the sentence above it and the suggested name of the run.
+- If starting a new run fails, the name you typed stays in the box next to the error. Cancel can't be clicked while the run is being made. If the dialog is closed then anyway, the run stays in Profiles and the game doesn't start.
+- The roulette in What do we play tonight shows a different cover on every step. Clicking Another again while it spins doesn't start it over.
+- Year in games says "1 day in a row" instead of "1 days", and Save the picture waits until the picture is finished. Its button can't be clicked again while it saves.
+- The Tab key stays inside an open dialog, panel or Big Picture, and closing a dialog puts the keyboard back on the button that opened it.
+
 ## 1.55.3
 
 - **Big Picture opens reliably.** Pressing F11 or Start twice in quick succession no longer leaves Big Picture on with an empty screen that takes every key.
@@ -381,7 +390,7 @@ Lootnest is now in **beta**: everything it was built to do is in, and the work f
   - from a copy of the files loaded now;
   - from a copy of any other profile's files for that game, such as Cristian's saves while Mihai's are loaded.
   The profile it was copied from is never changed.
-- Pressing 1–9 in "Who's playing?" now plays the swap animation too.
+- Pressing 1 to 9 in "Who's playing?" now plays the swap animation too.
 
 ## 1.20.1
 

@@ -657,13 +657,14 @@
   // Every Play is theirs; "or play as…" and the picker are for anyone else.
   const seated = () => (S.seat && player(S.seat)) || null;
   function renderWho() {
-    const playing = {}, seat = seated(), ps = cfg().players;
+    const playing = {}, ps = cfg().players;
     (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = s; });
-    // Just you, with no runs: Play is always yours, nothing to choose.
+    // Just you: someone is always seated, so Play is yours.
     const alone = solo(), single = ps.length <= 1;
     $("#app").classList.toggle("is-solo", alone);
     $("#app").classList.toggle("is-single", single);
-    if (single && ps[0] && S.seat !== ps[0].id) { S.seat = ps[0].id; api.setSeat(S.seat).catch(() => {}); }
+    if (alone && !seated() && people()[0]) { S.seat = people()[0].id; api.setSeat(S.seat).catch(() => {}); }
+    const seat = seated();
     $("#who-head").innerHTML = alone ? `<span>Playing as</span>` : `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu">${GI.swap}${seat ? "Switch" : "Sit down"}</button>` : ""}`;
     $("#who").innerHTML = grouped(ps).map((p) => {
       const s = playing[p.id];
@@ -689,7 +690,7 @@
     S.seat = pid && player(pid) ? pid : "";
     api.setSeat(S.seat).catch(() => {});
     render();
-    toast(S.seat ? `${pname(S.seat)} is at the PC. Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
+    toast(S.seat ? `${solo() ? "" : `${pname(S.seat)} is at the PC. `}Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
 
 
@@ -766,9 +767,9 @@
       return `<div class="bp-grid-wrap"><h2 class="bp-h">All games <span>${all.length}</span></h2><div class="bp-grid">${all.map((it) => bpTile(it, false)).join("")}</div></div>`;
     }
     if (BP.tab === "profiles") {
-      const ps = cfg().players, seat = seated();
-      return `<div class="bp-choose"><h1>Who's here?</h1><p class="bp-sub">Whoever sits down plays as themselves. A to sit down.</p>
-        <div class="bp-people">${ps.map((p) => `<button class="bp-person ln-player${seat && seat.id === p.id ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="seat:${esc(p.id)}" data-go="seat" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${seat && seat.id === p.id ? "Sitting here" : "Sit down"}</span></button>`).join("")}</div></div>`;
+      const ps = cfg().players, seat = seated(), alone = solo();
+      return `<div class="bp-choose"><h1>${alone ? "Playing as" : "Who's here?"}</h1><p class="bp-sub">${alone ? "A to play as this one." : "Whoever sits down plays as themselves. A to sit down."}</p>
+        <div class="bp-people">${ps.map((p) => `<button class="bp-person ln-player${seat && seat.id === p.id ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="seat:${esc(p.id)}" data-go="seat" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${seat && seat.id === p.id ? (alone ? "Playing" : "Sitting here") : alone ? "Play as this" : "Sit down"}</span></button>`).join("")}</div></div>`;
     }
     if (BP.tab === "achievements") {
       const rows = (S.allAch ? S.allAch.games : []).map((g) => ({ g, it: itemByKey(g.key) })).filter((r) => r.it);
@@ -900,7 +901,7 @@
     else if (go === "choose") { BP.choose = el.dataset.k; BP.focus = ""; sfx("go"); renderBP(true); }
     else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
     else if (go === "back") bpBack();
-    else if (go === "seat") { setSeat(S.seat === el.dataset.p ? "" : el.dataset.p); sfx("go"); renderBP(false); }
+    else if (go === "seat") { actions.seat({ dataset: { player: el.dataset.p } }); sfx("go"); renderBP(false); }
     else if (go === "tab") { BP.tab = el.dataset.t; BP.detail = null; BP.choose = null; BP.focus = ""; renderBP(true); }
     else if (go === "exit") bpClose();
     else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); renderBP(false); }
@@ -926,6 +927,18 @@
     bpSelect(el);
   }, true);
   document.addEventListener("focusin", (ev) => { if (BP.on && ev.target.closest && ev.target.closest("#bp [data-bp]")) { BP.focus = ev.target.dataset.bpid || BP.focus; bpArtFor(ev.target); } });
+  // Tab stays inside what's on top: the picker, a dialog or drawer, or Big Picture.
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Tab") return;
+    const root = S.picker ? $("#overlay .picker") : S.dialog ? $("#overlay .dialog, #overlay .ln-drawer") : BP.on ? $("#bp") : null;
+    if (!root) return;
+    const els = [...root.querySelectorAll("button, input, select, textarea, [tabindex]")].filter((e) => !e.disabled && e.tabIndex >= 0 && e.getClientRects().length);
+    const a = document.activeElement, first = els[0], last = els[els.length - 1];
+    if (!els.length) ev.preventDefault();
+    else if (!root.contains(a)) { ev.preventDefault(); (ev.shiftKey ? last : first).focus(); }
+    else if (ev.shiftKey && (a === first || a === root)) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && a === last) { ev.preventDefault(); first.focus(); }
+  }, true);
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "F11") { ev.preventDefault(); if (BP.on) bpClose(); else bpOpen(); return; }
     if (!BP.on || S.picker || S.dialog) return;
@@ -2257,7 +2270,7 @@
     return new Promise((resolve) => { confirmResolve = resolve; S.dialog = Object.assign({ kind: "confirm" }, o); renderOverlay(); setTimeout(() => { const b = $(".dialog .btn.primary, .dialog .btn.danger-primary"); if (b) b.focus(); }, 20); });
   }
   function closeDialog(v) { const wasSteam = S.dialog && S.dialog.kind === "steam"; S.dialog = null; renderOverlay(); if (wasSteam) render();
-    if (drawerFrom) { if (document.contains(drawerFrom)) drawerFrom.focus(); drawerFrom = null; } if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); } }
+    if (drawerFrom) { focusBack(drawerFrom); drawerFrom = null; } if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); } }
 
   // Redrawing the dialog that's already open (a choice clicked, progress, an
   // answer from Go) must not play its opening animation again.
@@ -2282,13 +2295,16 @@
       o.innerHTML = g && per ? `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="A new run">
         <div><h2>A new run of ${esc(g.name)}</h2><p class="sub">A playthrough of its own, with its own saves and settings, such as a hardcore try or new game+. Next, choose to start it from nothing or from a copy of ${esc(possessive(per.name))} saves. Those stay as they are.</p></div>
         <input type="text" class="ln-input" id="newrun-name" maxlength="24" placeholder="${esc(per.name)} hardcore" value="${esc(D.name || "")}" aria-label="The run's name">
-        <div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
+        <div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
         <button class="btn primary" data-action="new-run-go" ${D.busy ? "disabled" : ""}>Start the run</button></div></div></div>` : "";
       setTimeout(() => { const i = $("#newrun-name"); if (i && document.activeElement !== i) i.focus(); }, 20);
     } else if (D.kind === "recap") {
+      // The picture is drawn once for each year, not again on every redraw.
+      const old = $("#recap-canvas"), key = D.player + ":" + D.year;
       o.innerHTML = viewRecap(D);
       const cv = $("#recap-canvas"), p = player(D.player);
-      if (cv && p) drawRecap(cv, p, D.year).catch(() => {});
+      if (cv && old && D.drawnFor === key) cv.replaceWith(old);
+      else if (cv && p) { D.drawnFor = key; D.drawn = drawRecap(cv, p, D.year).catch(() => {}); }
     } else if (D.kind === "trysave") {
       o.innerHTML = viewTrySave(D);
       setTimeout(() => { const i = $("#try-name"); if (i && !D.src && document.activeElement === document.body) i.focus(); }, 20);
@@ -2339,12 +2355,21 @@
     }
     if (!o.innerHTML) S.dialog = null; // what it was for is gone
   }
-  // Focus moves into a panel when it opens, onto its first action.
+  // Focus moves into a panel or dialog when it opens, onto its first action.
   // Closing it gives focus back to what opened it.
   let drawerFrom = null;
-  function focusDrawer() {
+  function focusOverlay() {
     drawerFrom = document.activeElement;
-    setTimeout(() => { const d = $(".ln-drawer"); if (d) d.focus(); }, 30);
+    setTimeout(() => {
+      const d = $(".ln-drawer"), g = $("#overlay .dialog"), f = g && g.querySelector("input, select, button:not(:disabled)");
+      if (d) d.focus(); else if (f && !g.contains(document.activeElement)) f.focus();
+    }, 30);
+  }
+  // What opened it, or the same button drawn again since.
+  function focusBack(el) {
+    const same = (e) => e.dataset.action && JSON.stringify({ ...e.dataset }) === JSON.stringify({ ...el.dataset });
+    const b = document.contains(el) ? el : [...document.querySelectorAll("[data-action]")].find(same);
+    if (b) b.focus();
   }
 
   // ------------------------------------------------------------ game mover --
@@ -2820,7 +2845,7 @@
     font(720, 260, "t", "condensed"); x.fillStyle = C.fg; x.fillText(String(year), pad - 8, 390);
     font(600, 40, "u"); x.fillStyle = C.fg2; x.fillText(fit(`${possessive(p.name)} year in games`, W - pad * 2), pad, 452);
     // Four numbers.
-    const stats = [[Math.round(R.total / 3600), "hours"], [R.days, R.days === 1 ? "day played" : "days played"], [R.games, R.games === 1 ? "game" : "games"], [R.best, "days in a row"]];
+    const stats = [[Math.round(R.total / 3600), "hours"], [R.days, R.days === 1 ? "day played" : "days played"], [R.games, R.games === 1 ? "game" : "games"], [R.best, R.best === 1 ? "day in a row" : "days in a row"]];
     const sw = (W - pad * 2) / 4;
     stats.forEach(([v, l], i) => {
       const sx = pad + i * sw;
@@ -2868,7 +2893,7 @@
     return `<div class="scrim" data-action="scrim"><div class="dialog recap-dialog" role="dialog" aria-modal="true" aria-label="Year in games">
       <div class="recap-head"><h2>${esc(p.name)} in ${D.year}</h2>${yearSel}</div>${body}
       <div class="dialog-foot"><span class="hint grow">Saved in Pictures\\Lootnest, to share as you like. Nothing is sent.</span><button class="btn quiet" data-action="dialog-cancel">Close</button>
-      ${years.length ? `<button class="btn primary" data-action="recap-save" ${D.busy ? "disabled" : ""}>Save the picture</button>` : ""}</div></div></div>`;
+      ${years.length ? `<button class="btn primary" data-action="recap-save" ${D.busy ? "disabled" : ""}>${D.busy ? "Saving the picture" : "Save the picture"}</button>` : ""}</div></div></div>`;
   }
   function ppSection(s, p, st) {
     const sec = (title, inner, extra) => `<section class="pp-section pp-${s}"><div class="ln-section-head"><div><h2>${title}</h2></div>${extra || ""}</div>${inner}</section>`;
@@ -4061,7 +4086,7 @@
     "add-steam": (el) => addSteam(el.dataset.app),
     "add-exe": addExe,
     play: (el) => { const p = seated(); if (p) actions["play-as"]({ dataset: { game: el.dataset.game, player: p.id } }); else openPicker(el.dataset.game, "play"); },
-    seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
+    seat(el) { const p = el.dataset.player; setSeat(solo() ? p : S.seat === p ? "" : p); },
     "seat-set"(el) { setSeat(el.dataset.player); },
     async "pt-make"(el) {
       const it = itemFor(el);
@@ -4070,7 +4095,7 @@
       P.busy = true; render();
       try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
-    "pt-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "points", ik: it.kind, iid: it.id }; renderOverlay(); focusDrawer(); } },
+    "pt-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "points", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
     async "pt-restore"(el) {
       const it = itemFor(el);
       if (!it) return;
@@ -4126,7 +4151,7 @@
       delete S.doctor[key];
       const open = S.dialog && S.dialog.kind === "achdoc";
       S.dialog = { kind: "achdoc", ik: it.kind, iid: it.id };
-      renderOverlay(); if (!open) focusDrawer();
+      renderOverlay(); if (!open) focusOverlay();
       api.achDoctor(key, it.appId, docDir(it), it.name).catch((e) => { S.doctor[key] = { error: errText(e) }; renderOverlay(); });
     },
     async "doc-name"(el) {
@@ -4140,8 +4165,8 @@
       try { S.logText = (await api.log()) || "Nothing yet."; } catch (e) { S.logText = errText(e); }
       render(); $("#view").scrollTop = 0;
     },
-    "ach-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "achievements", ik: it.kind, iid: it.id }; renderOverlay(); focusDrawer(); } },
-    manage(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "manage", ik: it.kind, iid: it.id }; renderOverlay(); focusDrawer(); } },
+    "ach-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "achievements", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
+    manage(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "manage", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
     "ach-page"(el) { S.achPage = el.dataset.player; render(); },
     "status-who"(el) { S.statusWho[el.dataset.key] = el.dataset.player; render(); },
@@ -4279,7 +4304,7 @@
       S.dialog = { kind: "offer", appId, name: el.dataset.name };
       const R = S.offers[appId];
       if (!R || R.error) { delete S.offers[appId]; api.gameOffer(appId, el.dataset.name).catch((e) => { S.offers[appId] = { error: errText(e) }; renderOverlay(); }); }
-      renderOverlay(); focusDrawer();
+      renderOverlay(); focusOverlay();
     },
     async "copy-carry"(el) {
       const old = el.dataset.old, nw = el.dataset.new;
@@ -4311,7 +4336,7 @@
       D.busy = true; D.step = ""; D.error = ""; renderOverlay();
       try { await api.updateInstaller(D.key, D.path, D.full); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
     },
-    "upd-start"(el) { S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name }; renderOverlay(); focusDrawer(); },
+    "upd-start"(el) { S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name }; renderOverlay(); focusOverlay(); },
     async "upd-pick"(el) {
       const D = S.dialog;
       if (!D || D.kind !== "update") return;
@@ -4338,7 +4363,7 @@
     },
     async copies(el) {
       const id = el.dataset.game;
-      S.dialog = { kind: "copies", gameId: id, list: null }; renderOverlay(); focusDrawer();
+      S.dialog = { kind: "copies", gameId: id, list: null }; renderOverlay(); focusOverlay();
       try { const l = await api.gameBackups(id); if (S.dialog && S.dialog.kind === "copies") { S.dialog.list = l || []; renderOverlay(); } } catch (e) { toast(errText(e), "error"); }
     },
     async "copy-put-back"(el) {
@@ -4365,7 +4390,7 @@
       const it = r && updItem(r.key);
       if (it) openSheet(it.kind, it.id, null); // the game's page has its news, with the patch notes on top
     },
-    "upd-history"(el) { S.dialog = { kind: "updhist", key: el.dataset.key }; renderOverlay(); focusDrawer(); },
+    "upd-history"(el) { S.dialog = { kind: "updhist", key: el.dataset.key }; renderOverlay(); focusOverlay(); },
     "upd-more"(el) {
       const k = esc(el.dataset.key), n = esc(el.dataset.name);
       const r = S.updates && S.updates.games.find((g) => g.key === el.dataset.key);
@@ -4613,7 +4638,7 @@
     "shelf-all"(el) { S.tag = el.dataset.tag; render(); const t = $(".lib-tools"); if (t) t.scrollIntoView({ block: "start" }); },
     "set-tab"(el) { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); render(); const v = $("#view"); if (v) v.scrollTop = 0; },
     "reset-players"() { S.players = null; render(); },
-    "edit-profiles"() { S.dialog = { kind: "profiles" }; renderOverlay(); focusDrawer(); },
+    "edit-profiles"() { S.dialog = { kind: "profiles" }; renderOverlay(); focusOverlay(); },
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },
     "save-players": () => savePlayers(false),
     "welcome-done": () => savePlayers(true),
@@ -4622,32 +4647,40 @@
       if (!p) return;
       const ys = recapYears(p), now = new Date().getFullYear();
       S.dialog = { kind: "recap", player: p.id, year: ys.includes(now) || !ys.length ? now : ys[0] };
-      renderOverlay();
+      renderOverlay(); focusOverlay();
     },
     async "recap-save"() {
-      const D = S.dialog, cv = $("#recap-canvas"), p = D && player(D.player);
-      if (!D || D.kind !== "recap" || D.busy || !cv || !p) return;
-      D.busy = true;
+      const D = S.dialog, p = D && player(D.player);
+      if (!D || D.kind !== "recap" || D.busy || !p) return;
+      D.busy = true; renderOverlay();
       try {
-        const at = await api.saveRecap(p.name, D.year, cv.toDataURL("image/png"));
-        toast(`Saved: ${String(at).split(/[\\/]/).pop()}, in Pictures\\Lootnest.`);
+        let d;
+        do { d = D.drawn; await d; } while (d !== D.drawn);
+        const cv = $("#recap-canvas");
+        if (S.dialog === D && cv) {
+          const at = await api.saveRecap(p.name, D.year, cv.toDataURL("image/png"));
+          toast(`Saved: ${String(at).split(/[\\/]/).pop()}, in Pictures\\Lootnest.`);
+        }
       } catch (e) { toast(errText(e), "error"); }
       D.busy = false;
+      if (S.dialog === D) { renderOverlay(); const b = $('[data-action="recap-save"]'); if (b && document.activeElement === document.body) b.focus(); }
     },
     "tonight-spin"() {
+      if (S.spinning) return;
       const all = libraryItems(), picks = tonightPicks(all);
       if (picks.length < 2 || !S.tonight) return;
+      S.spinning = true;
       const next = tonightPick(picks, undefined, S.tonight.id);
-      const done = () => { S.tonight.id = next.it.id; render(); };
+      const done = () => { S.spinning = false; S.tonight.id = next.it.id; render(); };
       const cover = $(".tn-cover"), name = $(".tn-name");
       if (reduced() || !cover || !name) { done(); return; }
       // A short roulette over the games that have a cover, slowing down.
       const withArt = picks.filter((p) => S.covers[coverKey(p.it)]);
       if (withArt.length < 3) { done(); return; }
       let n = 0;
-      const steps = 11;
+      const steps = 11, start = Math.floor(Math.random() * withArt.length);
       const tick = () => {
-        const p = withArt[(n * 5 + 3) % withArt.length];
+        const p = withArt[(start + n) % withArt.length];
         cover.innerHTML = `<img src="${S.covers[coverKey(p.it)]}" alt="">`;
         name.textContent = p.it.name;
         cover.classList.remove("tn-flick"); void cover.offsetWidth; cover.classList.add("tn-flick");
@@ -4655,8 +4688,8 @@
       };
       tick();
     },
-    "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); },
-    "try-save"(el) { const sp = seated(); S.dialog = { kind: "trysave", gameId: el.dataset.game, from: sp && hasProfile(el.dataset.game, sp.id) ? sp.id : "" }; renderOverlay(); },
+    "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); focusOverlay(); },
+    "try-save"(el) { const sp = seated(); S.dialog = { kind: "trysave", gameId: el.dataset.game, from: sp && hasProfile(el.dataset.game, sp.id) ? sp.id : "" }; renderOverlay(); focusOverlay(); },
     async "try-browse"(el) {
       const D = S.dialog;
       if (!D || D.kind !== "trysave") return;
@@ -4692,10 +4725,12 @@
       const per = player(D.person), inp = $("#newrun-name");
       const name = ((inp && inp.value) || "").trim() || per.name + " hardcore";
       if (cfg().players.some((p) => p.name.toLowerCase() === name.toLowerCase())) { D.error = "There's a profile with that name already."; D.name = name; renderOverlay(); return; }
+      D.name = (inp && inp.value) || "";
       D.busy = true; renderOverlay();
       try {
         await api.savePlayers([...cfg().players, { id: "", name, color: per.color, of: per.id }]);
         await refresh();
+        if (S.dialog !== D) return;
         const run = cfg().players.find((p) => p.name === name && p.of === per.id);
         S.dialog = null; renderOverlay();
         if (run) actions["play-as"]({ dataset: { game: D.gameId, player: run.id } });
@@ -4871,6 +4906,7 @@
     if (el.id === "lib-tag") { S.tag = el.value; render(); return; }
     if (el.id === "lib-status") { S.status = el.value; render(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
+    if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 
