@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.20.1
+
+- **Players are now Profiles**, as on a console. Each profile has its own settings, saves and achievements in every game:
+  - make one for everyone who plays;
+  - or make a few for yourself, one per run, such as "Cristian 100%" and "Cristian hardcore".
+- The sidebar, the **Profiles** page, the game page's **Profiles** panel, first run, the backup and import screens, and Lootnest's messages all say "profile".
+- "Has a profile" on a game is now **Has saves here**. Nothing else changes: your profiles, games and saves are the same.
+
 ## 1.20.0
 
 - **Each profile has its own achievements**, in games whose achievements a Steam-compatible tool keeps on the PC:

@@ -420,7 +420,7 @@ func (a *App) apiSyncResolve(gameID, pid, answer string) error {
 	a.mu.Unlock()
 	g := cfg.Game(gameID)
 	if g == nil || cfg.Player(pid) == nil {
-		return errors.New("That game or player no longer exists.")
+		return errors.New("That game or profile no longer exists.")
 	}
 	if busy || isRunning(g) {
 		return fmt.Errorf("%s is running; choose after it closes.", g.Name)

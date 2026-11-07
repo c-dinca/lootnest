@@ -63,7 +63,7 @@ func (a *App) checkUpdate(manual bool) {
 		updateMu.Unlock()
 		if first && !manual && a.tray != nil {
 			a.ui(func() {
-				a.tray.Notify("Lootnest "+rel.Version+" is ready", "Click to see what's new and update. Your players, games and profiles stay as they are.")
+				a.tray.Notify("Lootnest "+rel.Version+" is ready", "Click to see what's new and update. Your profiles, games and saves stay as they are.")
 			})
 		}
 	} else {

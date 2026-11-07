@@ -52,7 +52,7 @@ func (a *App) makePicture(playerID, src, dst string, build func(string) ([]byte,
 	known := a.cfg.Player(playerID) != nil
 	a.mu.Unlock()
 	if !known {
-		return errors.New("That player doesn't exist.")
+		return errors.New("That profile doesn't exist.")
 	}
 	go func() {
 		out := map[string]any{"id": playerID}
@@ -83,7 +83,7 @@ func (a *App) apiSetShelf(playerID, key string, e core.ShelfEntry) error {
 	known := a.cfg.Player(playerID) != nil
 	a.mu.Unlock()
 	if !known {
-		return errors.New("That player doesn't exist.")
+		return errors.New("That profile doesn't exist.")
 	}
 	return a.store.SetShelf(playerID, key, e, time.Now())
 }
@@ -99,7 +99,7 @@ func (a *App) updatePlayer(playerID string, set func(*core.Player)) error {
 	a.mu.Unlock()
 	p := cfg.Player(playerID)
 	if p == nil {
-		return errors.New("That player doesn't exist.")
+		return errors.New("That profile doesn't exist.")
 	}
 	set(p)
 	return a.saveConfig(cfg)

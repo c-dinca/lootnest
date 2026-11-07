@@ -609,7 +609,7 @@ func (ob *OpenedBackup) Config() (*Config, error) {
 	}
 	cfg.normalize()
 	if err := ValidatePlayers(cfg.Players); err != nil {
-		return nil, fmt.Errorf("This backup's players can't be used: %w", err)
+		return nil, fmt.Errorf("This backup's profiles can't be used: %w", err)
 	}
 	// Games are checked like ones added here; their folders are checked
 	// again (Env.CheckSafe) whenever a swap resolves them.
@@ -629,7 +629,7 @@ func (ob *OpenedBackup) Config() (*Config, error) {
 // anyone's profile by mistake.
 func (s *Store) Restore(ob *OpenedBackup, current *Config) (*Config, error) {
 	if ob.Manifest.Kind == "player" {
-		return nil, errors.New("This is one player's profile, not a backup of everything; use Import a profile on Players.")
+		return nil, errors.New("This is one profile, not a backup of everything; use Import a profile on Profiles.")
 	}
 	cfg, err := ob.Config()
 	if err != nil {
