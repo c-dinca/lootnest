@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1
+
+- Lootnest can keep itself up to date. It asks once, **Keep Lootnest up to date?**; with yes, it checks every 6 hours, shows a Windows notification when a new version is out, and installs it by itself while it's in the tray and no game is running. Both are in Settings (**Check for updates automatically**, **Install updates by themselves**).
+- Fixed: on a big or maximised window, a game's page and Settings stayed in the left half. Pages now grow with the window: a game's page uses the whole width (centred on very wide screens), Settings and Players are a centred column, and covers, shelves and titles get bigger on large screens.
+
 ## 1.9.0
 
 - The Library has shelves now, like the best launchers: under the game you played last, **Continue playing** shows the other recent games in their wide artwork, and **News from your games** the latest posts from them (with **Show game updates and news** on).

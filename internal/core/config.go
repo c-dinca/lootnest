@@ -79,6 +79,11 @@ type Settings struct {
 	// GameNews shows each game's latest updates and announcements from
 	// Steam's news feed on its page. Off by default.
 	GameNews bool `json:"gameNews"`
+	// AutoInstallUpdates installs a newer Lootnest found by the automatic
+	// check by itself, while the window is closed to the tray and no game
+	// is running. UpdatesAsked: the user answered "Keep Lootnest up to date?".
+	AutoInstallUpdates bool `json:"autoInstallUpdates"`
+	UpdatesAsked       bool `json:"updatesAsked"`
 	// GridDBKey is the user's own SteamGridDB API key (optional): with
 	// DownloadCovers on, art for games the Steam store doesn't know comes
 	// from SteamGridDB.

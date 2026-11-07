@@ -28,6 +28,9 @@ var (
 	updateFound core.Release // newest release found, when newer than this one
 	updateBusy  bool
 	lastCheck   time.Time
+	notifiedFor string // the version the user was last notified about
+	updateEvery = 6 * time.Hour
+	updateRetry = 10 * time.Minute // waiting for a game to close before installing
 )
 
 func updatesDir() string { return filepath.Join(DataDir(), "updates") }
@@ -54,6 +57,15 @@ func (a *App) checkUpdate(manual bool) {
 		updateMu.Unlock()
 		a.logf("Lootnest %s is available (this is %s)", rel.Version, Version)
 		ev["available"], ev["version"], ev["page"] = true, rel.Version, rel.Page
+		updateMu.Lock()
+		first := notifiedFor != rel.Version
+		notifiedFor = rel.Version
+		updateMu.Unlock()
+		if first && !manual && a.tray != nil {
+			a.ui(func() {
+				a.tray.Notify("Lootnest "+rel.Version+" is ready", "Click to see what's new and update. Your players, games and profiles stay as they are.")
+			})
+		}
 	} else {
 		ev["upToDate"] = true
 	}
@@ -62,22 +74,45 @@ func (a *App) checkUpdate(manual bool) {
 
 func (a *App) apiCheckUpdate() { go a.checkUpdate(true) }
 
-// watchUpdates checks once a day while "Check for updates automatically" is on.
+// watchUpdates checks every few hours while "Check for updates
+// automatically" is on, and with "Install updates by themselves" on,
+// installs a newer version once the window is in the tray and no game runs.
 func (a *App) watchUpdates() {
 	_ = os.RemoveAll(updatesDir()) // the installer of the last update, if any
 	time.Sleep(20 * time.Second)
 	for {
 		a.mu.Lock()
-		on := a.cfg.Settings.CheckUpdates
+		on, auto := a.cfg.Settings.CheckUpdates, a.cfg.Settings.AutoInstallUpdates
 		a.mu.Unlock()
 		updateMu.Lock()
-		due := time.Since(lastCheck) > 24*time.Hour
+		due := time.Since(lastCheck) > updateEvery
 		updateMu.Unlock()
 		if on && due {
 			a.checkUpdate(false)
 		}
-		time.Sleep(time.Hour)
+		updateMu.Lock()
+		pending := updateFound.SetupURL != "" && !updateBusy
+		updateMu.Unlock()
+		if on && auto && pending && !win.IsVisible(a.hwnd) && a.gameRunning() == "" {
+			a.logf("Installing the update by itself (the window is in the tray, no game is running)")
+			if err := a.apiInstallUpdate(); err != nil {
+				a.logf("Couldn't install the update yet: %v", err)
+			}
+		}
+		time.Sleep(updateRetry)
 	}
+}
+
+// gameRunning names a game being played, started or saved, or "".
+func (a *App) gameRunning() string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for _, s := range a.sessions {
+		if s.Phase == "playing" || s.Phase == "launching" || s.Phase == "saving" {
+			return a.gameName(s.GameID)
+		}
+	}
+	return ""
 }
 
 // apiInstallUpdate downloads and starts the newer release's installer, then
@@ -96,18 +131,12 @@ func (a *App) apiInstallUpdate() error {
 	if busy {
 		return nil
 	}
-	a.mu.Lock()
-	for _, s := range a.sessions {
-		if s.Phase == "playing" || s.Phase == "launching" || s.Phase == "saving" {
-			name := a.gameName(s.GameID)
-			a.mu.Unlock()
-			updateMu.Lock()
-			updateBusy = false
-			updateMu.Unlock()
-			return fmt.Errorf("%s is running. Update after it closes, so its progress is saved first.", name)
-		}
+	if name := a.gameRunning(); name != "" {
+		updateMu.Lock()
+		updateBusy = false
+		updateMu.Unlock()
+		return fmt.Errorf("%s is running. Update after it closes, so its progress is saved first.", name)
 	}
-	a.mu.Unlock()
 
 	go func() {
 		fail := func(err error) {
