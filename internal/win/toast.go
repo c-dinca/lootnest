@@ -135,6 +135,9 @@ var (
 // window couldn't be made), with the toast, so it can go another way.
 var ToastFailed func(t Toast, err error)
 
+// toastShown, in tests, is told each toast window that went on screen.
+var toastShown func(hwnd uintptr)
+
 // ShowToast queues a toast; toasts show one after another. It returns at
 // once. When many arrive together, the ones past the queue's room are
 // dropped rather than kept for minutes.
@@ -207,6 +210,9 @@ func showOne(hinst uintptr, t Toast) {
 	procSetLayeredWindowAttributes.Call(hwnd, 0, 0, 2 /*LWA_ALPHA*/)
 	const swShowNoActivate = 4
 	procShowWindow.Call(hwnd, swShowNoActivate)
+	if toastShown != nil {
+		toastShown(hwnd)
+	}
 	const swpNoMove, swpNoSize, swpNoActivate = 0x2, 0x1, 0x10
 	hwndTopmost := ^uintptr(0) // (HWND)-1
 	procSetWindowPos.Call(hwnd, hwndTopmost, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoActivate)

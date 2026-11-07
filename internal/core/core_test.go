@@ -243,7 +243,9 @@ func TestTokenize(t *testing.T) {
 		filepath.Join(f.home, "Documents", "My Games", "X"):         "{DOCUMENTS}/My Games/X",
 	}
 	for in, want := range cases {
-		if got := f.env.Tokenize(in); got != want {
+		// Lootnest keeps the PC's own separator after the token (\ on
+		// Windows); either reads back the same.
+		if got := filepath.ToSlash(f.env.Tokenize(in)); got != want {
 			t.Errorf("Tokenize(%s) = %s, want %s", in, got, want)
 		}
 		if back, err := f.env.Resolve(f.env.Tokenize(in)); err != nil || back != in {
@@ -292,7 +294,7 @@ func TestVDFAndSteam(t *testing.T) {
 	write(t, filepath.Join(f.appdata, "EldenRing", "7656", "ER0000.sl2"), "save")
 	write(t, filepath.Join(f.home, "AppData", "LocalLow", "Some Studio", "Elden Ring Thing", "x"), "y")
 	sug := f.env.SuggestPaths("ELDEN RING", "ELDEN RING", 1245620)
-	if len(sug) < 2 || sug[0].Path != "%APPDATA%/EldenRing" {
+	if len(sug) < 2 || filepath.ToSlash(sug[0].Path) != "%APPDATA%/EldenRing" {
 		t.Fatalf("suggestions: %+v", sug)
 	}
 }

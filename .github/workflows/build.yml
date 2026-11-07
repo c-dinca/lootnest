@@ -17,7 +17,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The tests on Windows itself: NTFS, files a game holds open, read-only
+  # saves, long paths, the note over a game, hot keys, running as
+  # administrator and Windows Firewall. A release is only made when they pass.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Test on Windows
+        shell: bash
+        run: |
+          go version
+          go test -count=1 ./internal/core/ ./internal/win/
+          go vet ./internal/app
+          go build -o lootnest-test.exe ./cmd/lootnest
+
   build:
+    needs: windows
     runs-on: ubuntu-latest
     permissions:
       contents: write

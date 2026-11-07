@@ -99,16 +99,20 @@ func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + 
 // running it twice leaves one set.
 func FirewallScript(tag, name string, exes []string, block bool) string {
 	var b strings.Builder
-	b.WriteString("$ErrorActionPreference = 'Stop'\n")
+	b.WriteString("$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n")
 	b.WriteString("Get-NetFirewallRule -Group 'Lootnest' -ErrorAction SilentlyContinue | Where-Object { $_.Description -eq " + psQuote(tag) + " } | Remove-NetFirewallRule\n")
 	if block {
 		for _, e := range exes {
 			base := e[strings.LastIndexAny(e, `\/`)+1:]
 			label := "Lootnest keeps " + name + " offline (" + base + ")"
 			b.WriteString("New-NetFirewallRule -DisplayName " + psQuote(label) + " -Group 'Lootnest' -Description " + psQuote(tag) +
-				" -Direction Outbound -Action Block -Profile Any -Program " + psQuote(e) + " | Out-Null\n")
+				" -Direction Outbound -Action Block -Program " + psQuote(e) + " | Out-Null\n")
 		}
 	}
+	// No rules to take away is fine: without this, Get-NetFirewallRule's
+	// silenced "none found" makes PowerShell end with exit code 1. A real
+	// error stops the script before here, with exit code 1.
+	b.WriteString("exit 0\n")
 	return b.String()
 }
 

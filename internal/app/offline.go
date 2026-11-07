@@ -73,6 +73,9 @@ func (a *App) apiSetOffline(key string, on bool) error {
 		if exes = core.GameExes(dir, exe); len(exes) == 0 {
 			return errors.New("There's no program in the game's folder to keep offline.")
 		}
+		for i := range exes {
+			exes[i] = win.LongPath(exes[i]) // the firewall refuses short 8.3 names
+		}
 	}
 	go func() {
 		out := map[string]any{"key": key, "on": on}

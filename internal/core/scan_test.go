@@ -51,7 +51,7 @@ func TestScanFoldersAndRoots(t *testing.T) {
 	done := f.env.FinishFound(found)
 	for _, g := range done {
 		if g.Name == "Hollow Knight" {
-			if !g.Ready || len(g.Paths) != 1 || g.Paths[0] != "{LOCALLOW}/Team Cherry/Hollow Knight" {
+			if !g.Ready || len(g.Paths) != 1 || filepath.ToSlash(g.Paths[0]) != "{LOCALLOW}/Team Cherry/Hollow Knight" {
 				t.Fatalf("paths: %+v", g)
 			}
 		}
