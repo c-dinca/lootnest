@@ -98,6 +98,7 @@ type App struct {
 	hooksPending bool
 	found        []core.FoundGame
 	scanning     bool
+	seat         string // the profile seated in the window ("Who's here")
 
 	tray           *win.Tray
 	quitting       bool

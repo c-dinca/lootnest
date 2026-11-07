@@ -150,6 +150,12 @@ type Settings struct {
 	// keep their saves (Ludusavi's, from PCGamingWiki) to find them.
 	GameSaves bool `json:"gameSaves,omitempty"`
 	SaveDB    bool `json:"saveDb,omitempty"`
+	// AchToastsOff stops the toast over a game when an achievement unlocks
+	// (on unless turned off). AchRarity looks up how rare each achievement
+	// is in Steam's public global percentages: off by default, the game's
+	// Steam id is all that's sent.
+	AchToastsOff bool `json:"achToastsOff,omitempty"`
+	AchRarity    bool `json:"achRarity,omitempty"`
 }
 
 type Config struct {

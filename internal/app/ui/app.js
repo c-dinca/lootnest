@@ -83,6 +83,8 @@
     updateApply: (key, path) => call("ps_updateApply", key, path),
     updateUndo: (key, id) => call("ps_updateUndo", key, id),
     updateInstaller: (key, path, full) => call("ps_updateInstaller", key, path, !!full),
+    setSeat: (id) => call("ps_setSeat", id || ""),
+    testToast: () => call("ps_testToast"),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
@@ -278,6 +280,12 @@
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
+        break;
+      case "achUnlocked":
+        // A game running now unlocked something: its page and the
+        // Achievements page read it again.
+        achAsked.delete(ev.key); S.allAch = null;
+        if (S.view === "game" || S.view === "achievements") render();
         break;
       case "allAchievements":
         S.allAch = { games: ev.games || [] };
@@ -604,6 +612,7 @@
   }
   function setSeat(pid) {
     S.seat = pid && player(pid) ? pid : "";
+    api.setSeat(S.seat).catch(() => {});
     render();
     toast(S.seat ? `${pname(S.seat)} is at the PC. Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
@@ -2334,9 +2343,11 @@
   }
 
   // -------------------------------------------------------------- settings --
-  function sw(field, title, desc, checked) {
+  // invert: the setting turns the thing off (on by default), so the switch
+  // shows the opposite.
+  function sw(field, title, desc, checked, invert) {
     return `<label class="toggle"><span><b style="font-weight:500">${title}</b><p>${desc}</p></span>
-      <span class="switch"><input type="checkbox" data-setting="${field}" ${checked ? "checked" : ""}><span></span></span></label>`;
+      <span class="switch"><input type="checkbox" data-setting="${field}"${invert ? ' data-invert="1"' : ""} ${checked ? "checked" : ""}><span></span></span></label>`;
   }
 
   // Settings: plain on purpose. Groups of rows, each saying what it does,
@@ -2362,6 +2373,9 @@
           ${row("s-backups", "Copies kept per game before each swap", "A copy is made before every swap. The oldest go once there are more than this.", `<input id="s-backups" class="ln-input set-num" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}">`)}
           ${row("s-timeout", "Seconds to wait for a game to start", "If it hasn't started by then, the profile's files stay loaded, and Lootnest still saves them if the game starts later.", `<input id="s-timeout" class="ln-input set-num" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}">`)}
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}`)
+        + sub("While you play", "", `
+          ${sw("achToastsOff", "Show achievements as they unlock", "For games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, in the colour of the profile playing. It's a window of Lootnest's own: nothing goes into the game. It shows over windowed and borderless games, and over most fullscreen ones; switch a game to borderless if it doesn't. Never for games with an anti-cheat.", !s.achToastsOff, true)}
+          ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, at the bottom right of the screen.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
         + sub("Steam", "", `
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${st.found ? row("s-steam", "Steam account", st.accountError ? `<span class="error-text">${esc(st.accountError)}</span>` : "The account on this PC whose Steam launch options Lootnest sets.", `<select id="s-steam" class="ln-input" data-setting="steamAccountId">
@@ -2371,6 +2385,7 @@
           ${sw("findGames", "Store", "The Store page, and the search in the sidebar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
+          ${sw("achRarity", "How rare achievements are", "Each achievement shows the share of Steam's players who have it, from Steam's public numbers, on the game's page and as it unlocks. Only the game's Steam id is sent; no key is needed.", s.achRarity)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}`)
         + sub("Your own keys", "Optional. Each is encrypted on this PC and sent only to the site it's for.", `
           <div class="bk-row set-wide"><div><label for="s-grid"><b>SteamGridDB API key</b></label>
@@ -2954,13 +2969,13 @@
     let autostart = S.d.autostart;
     const f = el.dataset.setting;
     if (f === "autostart") autostart = el.checked;
-    else if (el.type === "checkbox") s[f] = el.checked;
+    else if (el.type === "checkbox") s[f] = el.dataset.invert ? !el.checked : el.checked;
     else if (el.type === "number") s[f] = parseInt(el.value, 10) || 0;
     else s[f] = el.value;
     try {
       await api.saveSettings({ settings: s, autostart });
       if (f === "downloadCovers" || f === "gridDbKey") { S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); }
-      if (f === "steamApiKey") { S.ach = {}; achAsked.clear(); S.allAch = null; }
+      if (f === "steamApiKey" || f === "achRarity") { S.ach = {}; achAsked.clear(); S.allAch = null; }
       await refresh();
     } catch (e) { toast(errText(e), "error"); await refresh(); }
   }
@@ -3139,6 +3154,7 @@
       try { await api.deleteOldCopy(el.dataset.old); } catch (e) { C.busy = false; toast(errText(e), "error"); render(); }
     },
     async "upd-keep"(el) { try { await api.keepSavesNow(el.dataset.key); toast("Copying its saves"); } catch (e) { toast(errText(e), "error"); } },
+    "test-toast"() { api.testToast().catch((e) => toast(errText(e), "error")); },
     "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined }); renderOverlay(); } },
     "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },
     async "upd-run"() {

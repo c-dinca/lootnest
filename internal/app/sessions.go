@@ -257,6 +257,11 @@ func (a *App) watch() {
 	for range t.C {
 		a.tick()
 		n++
+		if n%3 == 0 { // every ~6 s: achievements unlocked in a running game
+			if procs, err := win.ProcessNames(); err == nil {
+				a.achTick(procs)
+			}
+		}
 		if n%15 == 0 { // every ~30 s: finish Steam set-up once Steam is closed
 			a.mu.Lock()
 			pending := a.hooksPending

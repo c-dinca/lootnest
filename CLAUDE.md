@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.40.0)
+## Where things stand (1.41.0)
 
 These shipped recently, newest last:
 
@@ -210,6 +210,15 @@ These shipped recently, newest last:
   Apply another update in a row. `watchFirstStart` (from `apiLaunchFound`)
   marks an update `Broke` when the game closes within 20 s of its first
   start.
+- **1.41** Unlock toasts (`core/achlive.go`, `app/achlive.go`,
+  `win/toast.go`): `achTick` every ~6 s from `watch()` reads `PCUnlocks`
+  for running games (sessions, and Library games outside Steam by
+  process) and shows `NewUnlocks` in a native layered, top-most,
+  click-through window on its own thread (GDI, no WebView). Off for games
+  with `AntiCheat(dir)`; `Settings.AchToastsOff` turns it off.
+  `Settings.AchRarity` (opt-in) reads Steam's public global percentages
+  (`globalPercent`, kept 3 days) into `Achievement.Percent`. The seat is
+  sent to Go (`ps_setSeat`) for the colour.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -280,7 +289,7 @@ Off by default for games with an anti-cheat (EAC, BattlEye, Vanguard).
 WebView2 can do a transparent background (`PutDefaultBackgroundColor`
 with alpha 0 in `third_party/go-webview2`). Window behaviour over a real
 game can only be checked on the owner's PC.
-1. **Unlock toasts**: while a game runs, watch its achievement files
+1. **Unlock toasts** (done in 1.41): while a game runs, watch its achievement files
    (Steam's cache and the tools' files) and show "Achievement unlocked"
    with the name, its rarity (Steam's public global percentages, no key
    needed) and the profile's colour.

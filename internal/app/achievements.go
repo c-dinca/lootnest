@@ -142,6 +142,17 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 			ps.Total = set.Total // so the counts compare
 		}
 	}
+	a.mu.Lock()
+	rare := a.cfg.Settings.AchRarity
+	a.mu.Unlock()
+	if rare {
+		if pct := a.globalPercent(appID, online); pct != nil {
+			core.ApplyPercentages(set.List, pct)
+			for _, ps := range set.Players {
+				core.ApplyPercentages(ps.List, pct)
+			}
+		}
+	}
 	achMu.Lock()
 	first := !achLogged[file+"|"+strconv.Itoa(appID)]
 	achLogged[file+"|"+strconv.Itoa(appID)] = true

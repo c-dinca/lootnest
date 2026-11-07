@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.41.0
+
+- **Achievements as they unlock.** While you play a game whose achievements a Steam-compatible tool keeps on this PC (a game in a folder, from Hydra, or added by hand), a small note shows over the game the moment one unlocks: its name, how rare it is, and the colour of the profile playing.
+  - It's a window of Lootnest's own, at the bottom right of the screen the game is on. It never takes the focus or a click, and nothing goes into the game.
+  - It shows over windowed and borderless games, and over most fullscreen ones on Windows 10 and 11. A game in exclusive fullscreen draws over it: switch that game to borderless.
+  - Never for a game that ships with an anti-cheat (Easy Anti-Cheat, BattlEye).
+  - **Settings, Games and swaps, While you play** turns it off, and **Show one** shows how it looks.
+- **How rare achievements are**, if you turn it on in **Settings, Online**: each achievement shows the share of Steam's players who have it, on the game's page and as it unlocks: ultra rare, rare, uncommon or common. Only the game's Steam id is sent, and no key is needed.
+- Who's at the PC (**Who's here**) is now whose colour an unlock shows in, for games without profiles.
+
 ## 1.40.0
 
 - **Updates that come as an installer.** **Apply an update** now also runs an update's installer (an .exe you have). Lootnest:
