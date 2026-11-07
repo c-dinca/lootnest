@@ -156,6 +156,9 @@ type Settings struct {
 	// Steam id is all that's sent.
 	AchToastsOff bool `json:"achToastsOff,omitempty"`
 	AchRarity    bool `json:"achRarity,omitempty"`
+	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
+	// runs (on unless turned off).
+	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`
 }
 
 type Config struct {

@@ -88,6 +88,12 @@
     achDoctor: (key, appId, dir, name) => call("ps_achDoctor", key, appId || 0, dir || "", name),
     setNameInGame: (key, dir, pid) => call("ps_setNameInGame", key, dir || "", pid),
     setOffline: (key, on) => call("ps_setOffline", key, !!on),
+    savePoints: (key) => call("ps_savePoints", key),
+    makeSavePoint: (key, name) => call("ps_makeSavePoint", key, name || ""),
+    restoreSavePoint: (key, id) => call("ps_restoreSavePoint", key, id),
+    renameSavePoint: (key, id, name) => call("ps_renameSavePoint", key, id, name),
+    deleteSavePoint: (key, id) => call("ps_deleteSavePoint", key, id),
+    branchSavePoint: (key, id, name) => call("ps_branchSavePoint", key, id, name || ""),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
@@ -110,6 +116,7 @@
     pinfo: {},        // game id -> player id -> {saved, size} of their profile
     ach: {},          // Library key -> achievements read from this PC (null: none)
     doctor: {},       // Library key -> Achievement Doctor's check (achDoctor event)
+    points: {},       // Library key -> its save points (savePoints event)
     achWho: {},       // Library key -> whose achievements are shown
     setTab: pref("setTab", "general"), // the Settings category open
     allAch: null,     // the Achievements page: every game's, null until read
@@ -285,6 +292,21 @@
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
         break;
+      case "savePoints":
+        S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
+        if (S.view === "game") render();
+        if (S.dialog && S.dialog.kind === "points") renderOverlay();
+        break;
+      case "savePointMade": {
+        const P = S.points[ev.key] || (S.points[ev.key] = {});
+        P.busy = false;
+        if (ev.error) toast(ev.error, "error");
+        else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
+        else if (ev.point) toast(`Save point made: ${ev.point.name}`);
+        if (S.view === "game") render();
+        if (S.dialog && S.dialog.kind === "points") renderOverlay();
+        break;
+      }
       case "offline":
         if (ev.error) toast(ev.error, "error");
         else toast(ev.on ? "Kept offline. Windows Firewall blocks it from connecting." : "It can go online again.");
@@ -1313,7 +1335,7 @@
     if (!page) return { top, bar, note, art };
     return `<div class="gpage ln-root${art ? "" : " no-art"}">${top}
       <div class="gpage-body">${bar}${note}
-        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
+        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${page ? savePointsBlock(it) : ""}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
       </div></div>`;
   }
   // The Manage panel: what you can do with a game besides playing it,
@@ -1607,6 +1629,9 @@
       o.innerHTML = viewManage();
     } else if (D.kind === "achievements") {
       o.innerHTML = viewAchDrawer();
+    } else if (D.kind === "points") {
+      o.innerHTML = viewPointsDrawer();
+      const r = $("#pt-rename"); if (r && document.activeElement !== r) { r.focus(); r.select(); }
     } else if (D.kind === "achdoc") {
       o.innerHTML = viewAchDoctor();
     } else if (D.kind === "offer") {
@@ -2200,6 +2225,51 @@
       ${list.length ? `<ul class="ach-list ach-grid">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
       <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p><div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-all" ${itemAttr(it)} aria-haspopup="dialog">Show all ${A.total}</button>${docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : ""}${X.toggle}</div></div></section>`;
   }
+  // Save points: named copies of a game's saves, on a timeline.
+  const pointsAsked = new Set();
+  function pointsFor(it) {
+    const key = recentKey(it);
+    if (!pointsAsked.has(key)) { pointsAsked.add(key); api.savePoints(key).catch(() => {}); }
+    return S.points[key];
+  }
+  function pointRow(it, p, full, P) {
+    const when = new Date(p.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    const facts = [esc(when)];
+    if (p.playtime) facts.push(`${esc(hours(p.playtime))} played`);
+    if (p.unlocked) facts.push(`${p.unlocked} achievement${p.unlocked === 1 ? "" : "s"}`);
+    const who = p.player && player(p.player) ? `<span class="ln-mark ln-player" style="--player:${esc(color(p.player))}"></span>${esc(pname(p.player))}` : "";
+    const attrs = `${itemAttr(it)} data-id="${esc(p.id)}" data-name="${esc(p.name)}"`;
+    const b = (cls, a, label) => `<button class="ln-button ${cls} ln-button--sm" ${a} ${P.busy ? "disabled" : ""}>${label}</button>`;
+    const editing = full && S.dialog && S.dialog.editing === p.id;
+    const name = editing ? `<input class="ln-input pt-name-in" id="pt-rename" maxlength="60" value="${esc(p.name)}" aria-label="Name">` : `<b>${esc(p.name)}</b>`;
+    const actions = editing ? b("ln-button--secondary", `data-action="pt-rename-save" ${attrs}`, "Save") + b("ln-button--ghost", 'data-action="pt-rename-cancel"', "Cancel")
+      : b("ln-button--secondary", `data-action="pt-restore" ${attrs}`, "Go back to it")
+        + (full && P.profiles ? b("ln-button--ghost", `data-action="pt-branch" ${attrs} data-player="${esc(p.player || "")}"`, "New run from it") : "")
+        + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
+    return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
+      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.auto ? '<span>Kept before going back</span>' : ""}</span></div><div class="pt-actions">${actions}</div></li>`;
+  }
+  function savePointsBlock(it) {
+    const P = pointsFor(it);
+    if (!P || !P.loaded || P.error) return "";
+    const list = P.points || [];
+    const make = `<div class="pt-make"><input class="ln-input" id="pt-new" maxlength="60" placeholder="Name it, such as Before the boss" aria-label="Save point name" ${P.busy ? "disabled" : ""}>
+      <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? '<span class="ln-spinner" aria-hidden="true"></span>Copying' : "Make a save point"}</button></div>`;
+    const hint = cfg().settings.pointHotkeyOff ? "" : " Ctrl+Shift+F5 makes one while you play.";
+    return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
+      <p class="gpage-hint">A copy of the saves as they are now, to come back to.${hint}</p>${make}
+      ${list.length ? `<ol class="pt-list">${list.slice(0, 3).map((p) => pointRow(it, p, false, P)).join("")}</ol>` : ""}
+      ${list.length ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="pt-all" ${itemAttr(it)} aria-haspopup="dialog">${list.length > 3 ? `Show all ${list.length}` : "Rename, delete or start a run"}</button></div>` : ""}</section>`;
+  }
+  function viewPointsDrawer() {
+    const it = dialogItem(S.dialog);
+    if (!it) return "";
+    const P = S.points[recentKey(it)] || {};
+    const list = P.points || [];
+    return drawer({ label: `${esc(it.name)} save points`, title: "Save points", sub: `${esc(it.name)}, newest first`,
+      body: list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : `<p>No save points yet.</p>`,
+      foot: `<p class="gpage-hint ln-drawer__note">Going back keeps the saves as they are now as a point first.${P.profiles ? " A new run is a profile of its own, starting from that moment." : ""}</p>` });
+  }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
     const head = gpHead("Cloud save");
@@ -2428,6 +2498,7 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}`)
         + sub("While you play", "", `
           ${sw("achToastsOff", "Show achievements as they unlock", "For games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, in the colour of the profile playing. It's a window of Lootnest's own: nothing goes into the game. It shows over windowed and borderless games, and over most fullscreen ones; switch a game to borderless if it doesn't. Never for games with an anti-cheat.", !s.achToastsOff, true)}
+          ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, at the bottom right of the screen.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
         + sub("Steam", "", `
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
@@ -3049,6 +3120,52 @@
     play: (el) => { const p = seated(); if (p) actions["play-as"]({ dataset: { game: el.dataset.game, player: p.id } }); else openPicker(el.dataset.game, "play"); },
     seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
     "seat-set"(el) { setSeat(el.dataset.player); },
+    async "pt-make"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const key = recentKey(it), inp = $("#pt-new"), P = S.points[key] || (S.points[key] = {});
+      P.busy = true; render();
+      try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
+    },
+    "pt-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "points", ik: it.kind, iid: it.id }; renderOverlay(); focusDrawer(); } },
+    async "pt-restore"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const key = recentKey(it), back = S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null;
+      const ok = await confirmDialog({ title: `Go back to ${el.dataset.name}?`, body: `The saves of ${it.name} become what they were then. The saves as they are now are kept as a save point first, so you can come back to them too.`, ok: "Go back to it" });
+      if (back) { S.dialog = back; renderOverlay(); }
+      if (!ok) return;
+      const P = S.points[key] || (S.points[key] = {});
+      P.busy = true; render(); if (back) renderOverlay();
+      try { await api.restoreSavePoint(key, el.dataset.id); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); if (back) renderOverlay(); }
+    },
+    async "pt-branch"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const key = recentKey(it), back = S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null;
+      const who = el.dataset.player && player(el.dataset.player) ? pname(el.dataset.player) : "this profile";
+      const ok = await confirmDialog({ title: `Start a new run from ${el.dataset.name}?`, body: `A new run of ${who} starts with the saves of that moment: a profile of its own, with its own saves from then on. Everyone else's stay as they are.`, ok: "Start the run" });
+      if (back) { S.dialog = back; renderOverlay(); }
+      if (!ok) return;
+      try { const id = await api.branchSavePoint(key, el.dataset.id, ""); await refresh(); toast(`New run: ${pname(id)}. Choose it when you play.`); } catch (e) { toast(errText(e), "error"); }
+    },
+    "pt-rename"(el) { if (S.dialog && S.dialog.kind === "points") { S.dialog.editing = el.dataset.id; renderOverlay(); } },
+    "pt-rename-cancel"() { if (S.dialog) { S.dialog.editing = null; renderOverlay(); } },
+    async "pt-rename-save"(el) {
+      const it = itemFor(el), inp = $("#pt-rename");
+      if (!it || !inp) return;
+      const key = recentKey(it);
+      try { await api.renameSavePoint(key, el.dataset.id, inp.value); S.dialog.editing = null; api.savePoints(key).catch(() => {}); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "pt-delete"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const key = recentKey(it), back = S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null;
+      const ok = await confirmDialog({ title: `Delete ${el.dataset.name}?`, body: "This save point's copy of the saves goes. The game's saves now aren't touched.", ok: "Delete it", danger: true });
+      if (back) { S.dialog = back; renderOverlay(); }
+      if (!ok) return;
+      try { await api.deleteSavePoint(key, el.dataset.id); } catch (e) { toast(errText(e), "error"); }
+    },
     async "offline-toggle"(el) {
       const it = itemFor(el);
       if (!it) return;
@@ -3677,6 +3794,13 @@
 
   // The sidebar search: Ctrl+K anywhere, arrows and Enter in its list.
   document.addEventListener("keydown", (ev) => {
+    // Enter in a save point's name: make it, or save the new name.
+    if (ev.key === "Enter" && (ev.target.id === "pt-new" || ev.target.id === "pt-rename")) {
+      ev.preventDefault();
+      const b = ev.target.id === "pt-new" ? ev.target.closest(".pt-make").querySelector('[data-action="pt-make"]') : ev.target.closest(".pt-row").querySelector('[data-action="pt-rename-save"]');
+      if (b) b.click();
+      return;
+    }
     if (ev.ctrlKey && !ev.altKey && ev.key.toLowerCase() === "k") {
       ev.preventDefault();
       const q = $("#gq"); if (q) { q.focus(); q.select(); renderGq(); }
