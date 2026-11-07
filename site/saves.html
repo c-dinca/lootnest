@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Lootnest handles your saves</title>
+<meta name="description" content="Where Lootnest keeps each slot's saves, when it copies them, and what it never touches.">
+<meta property="og:title" content="How Lootnest handles your saves">
+<meta property="og:image" content="https://c-dinca.github.io/lootnest/img/game.jpg">
+<link rel="canonical" href="https://c-dinca.github.io/lootnest/saves.html">
+<meta name="theme-color" content="#111217">
+<link rel="icon" href="img/icon.png">
+<link rel="preload" href="fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="./" aria-label="Lootnest, the home page">
+      <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle class="gem" cx="10" cy="6.25" r="2.5"/></svg>
+      <span>Lootnest</span>
+    </a>
+    <a class="top-link" href="https://github.com/c-dinca/lootnest">Source</a>
+    <a class="btn btn-small" href="https://github.com/c-dinca/lootnest/releases/latest/download/Lootnest-Setup.exe">Download</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero hero-sub">
+  <div class="wrap">
+    <h1>How it handles your saves.</h1>
+    <p class="lede">Your saves stay on your PC, and nothing is replaced until a copy of it has been read back.</p>
+  </div>
+</section>
+
+<section class="diagram-band">
+  <div class="wrap">
+    <figure class="diagram" aria-label="Each slot's files live in Lootnest. Before a game starts, what's in the game's folder goes back to its slot and is copied; then the chosen slot's files go in. When the game closes, they go back to that slot.">
+      <svg viewBox="0 0 1160 520" role="img" aria-hidden="true">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#DFE5EB"/></marker>
+          <marker id="ahr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#EF233C"/></marker>
+        </defs>
+        <!-- Slots -->
+        <text class="d-label" x="0" y="28">Slots, in Lootnest</text>
+        <g class="d-slot"><rect x="0" y="52" width="330" height="76" rx="6"/><circle cx="34" cy="90" r="9" fill="#6C9BD2"/><text x="58" y="98">Player 1</text></g>
+        <g class="d-slot d-on"><rect x="0" y="144" width="330" height="76" rx="6"/><circle cx="34" cy="182" r="9" fill="#6C9BD2"/><text x="58" y="190">Player 1, hardcore</text></g>
+        <g class="d-slot"><rect x="0" y="236" width="330" height="76" rx="6"/><circle cx="34" cy="274" r="9" fill="#E88CA0"/><text x="58" y="282">Player 2</text></g>
+        <!-- Game folder -->
+        <text class="d-label" x="790" y="28">The game's folder</text>
+        <g class="d-folder"><rect x="790" y="52" width="370" height="260" rx="6"/>
+          <text x="822" y="110">Saves</text><text x="822" y="166">Settings</text><text x="822" y="222">Achievements</text>
+          <text class="d-small" x="822" y="280">Only these. Never the game itself.</text></g>
+        <!-- Arrows -->
+        <path class="d-arrow" d="M340 160 C 520 120, 610 120, 780 150" marker-end="url(#ah)"/>
+        <text class="d-step" x="470" y="108">3. The slot's files go in</text>
+        <path class="d-arrow" d="M780 230 C 610 262, 520 262, 340 222" marker-end="url(#ah)"/>
+        <text class="d-step" x="430" y="298">1. What's there goes back to its slot</text>
+        <!-- Copies -->
+        <g class="d-copies"><rect x="790" y="392" width="370" height="104" rx="6"/>
+          <text x="822" y="438">Copies</text><text class="d-small" x="822" y="472">Before every swap. Read back first.</text></g>
+        <path class="d-arrow d-red" d="M975 316 L 975 384" marker-end="url(#ahr)"/>
+        <text class="d-step" x="955" y="358" text-anchor="end">2. A copy is made and checked</text>
+      </svg>
+    </figure>
+  </div>
+</section>
+
+<section class="chapter">
+  <div class="wrap pair-plain">
+    <div>
+      <h2>Where it all is.</h2>
+      <dl class="where">
+        <div><dt>Each slot's files</dt><dd><code>%LOCALAPPDATA%\Lootnest\profiles</code></dd></div>
+        <div><dt>Copies before swaps</dt><dd><code>%LOCALAPPDATA%\Lootnest\backups</code></dd></div>
+        <div><dt>Copies of every save</dt><dd><code>%LOCALAPPDATA%\Lootnest\safety-net</code></dd></div>
+        <div><dt>Save points</dt><dd><code>%LOCALAPPDATA%\Lootnest\savepoints</code></dd></div>
+      </dl>
+    </div>
+    <div>
+      <h2>Stays shared.</h2>
+      <ul class="shared">
+        <li>Steam achievements and playtime</li>
+        <li>Friends, inventory, online ranks</li>
+        <li>Settings kept in the registry or online</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="chapter">
+  <div class="wrap">
+    <h2>If something goes wrong.</h2>
+    <ul class="wrong">
+      <li><b>The PC turns off mid-swap.</b> It's finished the next time Lootnest starts.</li>
+      <li><b>Steam Cloud replaces a slot's files.</b> The game's page says so; the slot is kept as it was.</li>
+      <li><b>You want an old copy back.</b> The game's page, Copies before swaps, Put back.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="end">
+  <div class="wrap end-in">
+    <h2>Pick a slot.</h2>
+    <a class="btn" href="https://github.com/c-dinca/lootnest/releases/latest/download/Lootnest-Setup.exe">Download for Windows</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p class="foot-links"><a href="./">Home</a><a href="https://github.com/c-dinca/lootnest">Source code</a><a href="https://github.com/c-dinca/lootnest/blob/main/CHANGELOG.md">What's new</a><a href="https://github.com/c-dinca/lootnest/issues/new">Report a problem</a></p>
+  </div>
+</footer>
+</body>
+</html>

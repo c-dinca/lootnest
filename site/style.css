@@ -398,3 +398,37 @@ kbd {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ------------------------------------------- saves.html: the diagram --- */
+
+.hero-sub { padding-bottom: var(--space-6); }
+.hero-sub h1 { font-size: clamp(3rem, 1.4rem + 5vw, 6rem); }
+.hero-sub .lede { margin-top: var(--space-5); }
+.diagram-band { padding: var(--space-6) 0 0; }
+.diagram { margin: 0; padding: var(--space-6); border-radius: var(--radius-3); background: var(--raised); box-shadow: var(--shadow-window); overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 640px; height: auto; font-family: var(--font-ui); }
+.d-label { fill: var(--fg-2); font-size: 18px; font-weight: 600; }
+.d-slot rect, .d-folder rect, .d-copies rect { fill: #111217; stroke: var(--line-strong); stroke-width: 1.5; }
+.d-slot text { fill: var(--fg-2); font: 700 26px var(--font-title); font-stretch: 80%; }
+.d-on rect { stroke: var(--ice); }
+.d-on text { fill: var(--ice); }
+.d-folder text, .d-copies text { fill: var(--ice); font: 700 28px var(--font-title); font-stretch: 80%; }
+.d-folder .d-small, .d-copies .d-small { fill: var(--fg-2); font: 500 17px var(--font-ui); font-stretch: normal; }
+.d-arrow { fill: none; stroke: var(--ice); stroke-width: 2.5; }
+.d-red { stroke: var(--red); }
+.d-step { fill: var(--ice); font-size: 18px; font-weight: 650; }
+
+.pair-plain { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-8); }
+.pair-plain h2 { margin-bottom: var(--space-5); }
+.where { margin: 0; }
+.where div { padding: var(--space-3) 0; border-top: 1px solid var(--line); }
+.where dt { font-size: var(--fs-14); color: var(--fg-2); }
+.where dd { margin: var(--space-1) 0 0; }
+.where code { white-space: normal; overflow-wrap: anywhere; }
+.shared, .wrong { list-style: none; margin: 0; padding: 0; }
+.shared li { padding: var(--space-3) 0; border-top: 1px solid var(--line); font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem); color: var(--fg-2); }
+.wrong { margin-top: var(--space-6); max-width: 52rem; }
+.wrong li { padding: var(--space-4) 0; border-top: 1px solid var(--line); font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem); color: var(--fg-2); }
+.wrong b { color: var(--ice); }
+@media (max-width: 1080px) { .pair-plain { grid-template-columns: minmax(0, 1fr); gap: var(--space-7); } }
+@media (max-width: 640px) { .diagram { padding: var(--space-4); } }
