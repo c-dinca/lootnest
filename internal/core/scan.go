@@ -29,6 +29,8 @@ type FoundGame struct {
 	// Args are launch options the user set in the game's settings (from
 	// Config.LibraryPrefs; never saved in library.json).
 	Args string `json:"args,omitempty"`
+	// Saves are the save locations the user chose (Config.LibraryPrefs).
+	Saves []string `json:"saves,omitempty"`
 	// ScanName is the name the scan found, when the user renamed the game.
 	ScanName string `json:"scanName,omitempty"`
 	// Added marks a game the user added to the Library by hand.
@@ -110,6 +112,7 @@ func ApplyLibraryPrefs(list []FoundGame, prefs map[string]LibraryPref) []FoundGa
 				f.ScanName, f.Name = f.Name, p.Name
 			}
 			f.Args = p.Args
+			f.Saves = p.Saves
 		}
 		out[i] = f
 	}
