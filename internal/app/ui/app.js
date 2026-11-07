@@ -1386,7 +1386,7 @@
     const n = (k, one, many) => (k === 1 ? one : many.replace("#", k));
     const lines = [];
     if (C.profiles) lines.push(line("ok", n(C.profiles, "1 game with profiles: a copy before every swap.", "# games with profiles: a copy before every swap.")));
-    if (C.net) lines.push(line("ok", n(C.net, "1 game keeps its saves in its folder, and Lootnest keeps a copy.", "# games keep their saves in their folder, and Lootnest keeps a copy of each.")));
+    if (C.net) lines.push(line("ok", n(C.net, "Copies of 1 game's saves on this PC, from each time they changed.", "Copies of # games' saves on this PC, from each time they changed.")));
     if (C.points) lines.push(line("ok", n(C.points, "1 game has save points.", "# games have save points.")));
     (C.gone || []).forEach((g) => lines.push(line("low", `${esc(g.name)}'s saves are gone from its folder. <button class="gpage-link" data-action="open-sheet" data-key="${esc(g.key)}">Put a copy back</button>`)));
     if (C.unknownN) lines.push(line("mid", `${n(C.unknownN, "1 game", "# games")} from outside the stores: Lootnest doesn't know where ${C.unknownN === 1 ? "it keeps its" : "they keep their"} saves. ${(C.unknown || []).map((g) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(g.key)}">${esc(g.name)}</button>`).join(", ")}${C.unknownN > (C.unknown || []).length ? ", and more" : ""}`));
@@ -2886,21 +2886,21 @@
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
-    const head = gpHead("Cloud save");
+    const head = gpHead("Saves");
     const G = S.gsaves[it.id];
     if (!G) { if (!gsAsked.has(it.id)) { gsAsked.add(it.id); api.gameSaves(it.id).catch(() => {}); } return `<section class="gpage-block">${head}${lnInline("", "Looking for its saves")}</section>`; }
     if (G.off === "steam") return "";
     if (G.error) return `<section class="gpage-block">${head}${lnInline("error", esc(G.error))}</section>`;
     const btn = (cls, attrs, label) => `<button class="ln-button ${cls} ln-button--sm" ${attrs}>${label}</button>`;
     const when = (v) => esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }));
-    // The Save Safety Net's copies of saves kept inside the game's folder.
+    // The Save Safety Net's copies of the game's saves, on this PC.
     const lv = G.local || [];
-    const local = lv.length ? `<div class="gpage-sub">${gpHead("Copies kept by Lootnest")}<dl class="ln-facts">${lv.map((v, i) => `<div><dt><span><b>${when(v)}</b>
+    const local = lv.length ? `<div class="gpage-sub">${gpHead("Copies on this PC")}<dl class="ln-facts">${lv.map((v, i) => `<div><dt><span><b>${when(v)}</b>
         <span class="gpage-hint">${esc(fmtBytes(v.size))}${i === 0 ? ", newest" : ""}</span></span></dt>
         <dd>${btn("ln-button--ghost", `data-action="gs-restore" data-local="1" data-key="${esc(it.id)}" data-id="${esc(v.id)}" data-when="${esc(v.created)}" ${G.busy ? "disabled" : ""}`, "Restore")}</dd></div>`).join("")}</dl>
-      <p class="gpage-hint">${esc(it.name)} keeps saves inside its own folder, so reinstalling or updating it could take them. Lootnest copies them here when they change and the game is closed.</p></div>` : "";
-    if (G.off === "nocloud") return `<section class="gpage-block">${head}<p>Keep ${esc(possessive(it.name))} saves in your own cloud, with every version to go back to.</p>
-      <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="nav" data-view="cloud">Set up Cloud saves</button></div>${local}</section>`;
+      <p class="gpage-hint">Lootnest copies ${esc(possessive(it.name))} saves when they change and the game is closed, and keeps the last five. Saves inside the game's own folder are in them too, so reinstalling or updating it can't take them.</p></div>` : "";
+    if (G.off === "nocloud") return `<section class="gpage-block">${head}${local}<p>${lv.length ? "To have them on every PC too, keep" : "Keep"} ${esc(possessive(it.name))} saves in your own cloud, with every version to go back to.</p>
+      <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="nav" data-view="cloud">Set up Cloud saves</button></div></section>`;
     if (G.off === "locked") return `<section class="gpage-block">${head}<p>The cloud folder has a password. Enter it on <b>Cloud saves</b>.</p>${local}</section>`;
     const s = cfg().settings;
     const choose = `<div class="gpage-actions">${btn("ln-button--secondary", `data-action="gs-add" data-key="${esc(it.id)}" data-kind="folder"`, G.locations.length ? "Add a folder" : "Choose the save folder")}

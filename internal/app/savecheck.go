@@ -27,7 +27,7 @@ type checkGame struct {
 
 type saveCheck struct {
 	Profiles  int         `json:"profiles"`  // games with profiles: a copy before every swap
-	Net       int         `json:"net"`       // games whose in-folder saves the safety net keeps
+	Net       int         `json:"net"`       // games whose saves the safety net keeps copies of
 	Points    int         `json:"points"`    // games with save points
 	Cloud     bool        `json:"cloud"`     // cloud saves are set up
 	Gone      []checkGame `json:"gone"`      // saves gone from their folder; copies kept
@@ -69,20 +69,23 @@ func (a *App) saveCheck() saveCheck {
 		}
 	}
 	for _, f := range a.visibleFound(a.libraryGames()) {
-		if !gameSavesOn(f) || f.URI != "" || f.Source == "epic" || f.Source == "gog" {
+		if !gameSavesOn(f) {
 			continue
 		}
 		e := net[gameSavesKey(f)]
-		switch {
-		case e.Gone:
+		if e.Gone {
 			c.Gone = append(c.Gone, checkGame{f.Key, f.Name})
-		case e.Hash != "":
+		}
+		if e.Hash != "" {
 			c.Net++
-		default:
-			if f.Dir != "" && len(a.netLocs(f)) == 0 && len(a.savesOf(f).Locs) == 0 {
-				c.UnknownN++
-				c.Unknown = append(c.Unknown, checkGame{f.Key, f.Name})
-			}
+			continue
+		}
+		if f.URI != "" || f.Source == "epic" || f.Source == "gog" {
+			continue // their launcher may keep them; not asked for
+		}
+		if !e.Gone && f.Dir != "" && len(a.vaultLocs(f)) == 0 {
+			c.UnknownN++
+			c.Unknown = append(c.Unknown, checkGame{f.Key, f.Name})
 		}
 	}
 	sort.Slice(c.Unknown, func(i, j int) bool { return strings.ToLower(c.Unknown[i].Name) < strings.ToLower(c.Unknown[j].Name) })

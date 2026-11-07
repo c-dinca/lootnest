@@ -123,7 +123,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.51.0, beta)
+## Where things stand (1.52.0, beta)
 
 These shipped recently, newest last:
 
@@ -303,6 +303,13 @@ These shipped recently, newest last:
   `Player` with `Of`, then `play-as`, whose picker asks fresh or copy).
   Lootnest is positioned as the saves vault for anyone; the shared PC
   is the second use.
+- **1.52** The safety net covers every save location a game outside
+  Steam has (`vaultLocs`: `netLocs` plus `savesOf`, locations over
+  `vaultLocMax` 256 MB outside the folder left out), not only in-folder
+  ones; `netEntry.Folder` and `Vault` keep the "gone from its folder"
+  notice about in-folder saves. Home counts them; the game page's block
+  is **Saves**, with **Copies on this PC**. The website (`site/`, Pages)
+  shipped with it.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.52.0
+
+- **Copies of every game's saves, on this PC.** For games outside Steam (in a folder, from Epic, GOG, Hydra or added by hand), Lootnest now copies all the saves it knows of whenever they change and the game is closed: the ones in Documents or AppData too, not only those inside the game's folder. The last five are kept, and nothing is sent anywhere.
+  - Put one back from the game's page, under **Saves**, **Copies on this PC**. What's there now is copied first.
+  - Home's **Your saves** says how many games Lootnest keeps copies for.
+  - Locations bigger than 256 MB outside the game's folder are left out, since a folder named like the game can hold caches or mods.
+
 ## 1.51.0
 
 - **Lootnest starts with one profile: yours.** It's named after your Windows account, and there's no question about who uses the PC. Rename it, or add someone, in Profiles. Sharing the PC? **Add someone else** is on the first screen too.
