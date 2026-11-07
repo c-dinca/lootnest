@@ -48,6 +48,11 @@
     addLibraryGame: (kind, appId, path) => call("ps_addLibraryGame", kind, appId || 0, path || ""),
     gameIcon: (exe) => call("ps_gameIcon", exe),
     art: (appId, name, key, kind) => call("ps_art", appId || 0, name, key, kind),
+    setAvatar: (id, path) => call("ps_setAvatar", id, path),
+    removeAvatar: (id) => call("ps_removeAvatar", id),
+    setBanner: (id, path) => call("ps_setBanner", id, path),
+    removeBanner: (id) => call("ps_removeBanner", id),
+    setShelf: (id, key, e) => call("ps_setShelf", id, key, e),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -62,7 +67,9 @@
   // ---------------------------------------------------------------- state --
   const S = {
     d: null,          // AppState from Go
-    view: "library",
+    view: "home",
+    from: "home",      // the view a game's page goes back to
+    selected: null,    // {kind, id} of the game last opened: the Library's colours follow it
     q: "",             // library search
     filter: "all",     // library filter chip
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
@@ -183,7 +190,7 @@
         break;
       case "art":
         S.art[ev.key] = ev.url;
-        if (S.view === "game" || S.view === "library") render();
+        if (S.view === "game" || S.view === "library" || S.view === "home") render();
         break;
       case "moveInfo": {
         const D = S.dialog && S.dialog.kind === "move" && S.dialog.appId === ev.info.appId ? S.dialog : null;
@@ -210,8 +217,16 @@
       }
       case "news":
         S.news[ev.key] = ev;
-        if (S.view === "game" || S.view === "library") render();
+        if (S.view === "game" || S.view === "library" || S.view === "home") render();
         break;
+      case "avatar":
+      case "banner": {
+        const D = S.dialog && S.dialog.kind === "profile" ? S.dialog : null;
+        if (D) { D.busy = false; if (!ev.error && ev.type === "banner") D.p.banner = "image"; if (!ev.error && ev.type === "avatar") D.p.avatar = true; }
+        if (ev.error) toast(ev.error, "error");
+        refresh();
+        break;
+      }
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
@@ -244,7 +259,7 @@
     if (!S.d) return;
     document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#6C9BD2");
     document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#D9738E");
-    const top = S.view === "edit" || S.view === "game" ? "library" : S.view;
+    const top = S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view;
     document.querySelectorAll(".nav[data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
     const n = libraryItems().length;
     $("#lib-count").textContent = n ? n : "";
@@ -252,10 +267,12 @@
     const v = $("#view");
     const keepScroll = v.scrollTop;
     const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
-    if (S.view === "library") v.innerHTML = viewLibrary();
+    if (S.view === "home") v.innerHTML = viewHome();
+    else if (S.view === "library") v.innerHTML = viewLibrary();
     else if (S.view === "game") v.innerHTML = viewGame();
     else if (S.view === "edit") v.innerHTML = viewEdit();
     else if (S.view === "players") v.innerHTML = viewPlayers();
+    else if (S.view === "player") v.innerHTML = viewPlayer();
     else if (S.view === "settings") v.innerHTML = viewSettings();
     if (S.animateView && v.firstElementChild) v.firstElementChild.classList.add("enter");
     S.animateView = false;
@@ -289,18 +306,17 @@
     const id = host.dataset.game || host.dataset.key, kind = host.dataset.game ? "game" : "found";
     return libraryItems().find((x) => x.kind === kind && x.id === id) || null;
   }
+  // The colours change when a game is chosen, not as the pointer passes:
+  // Home takes the game played last, a game's page that game, and the
+  // Library the game opened last.
   function defaultBackdrop() {
-    if (S.view === "game" && S.page) return artOf(libraryItems().find((x) => x.kind === S.page.kind && x.id === S.page.id));
-    if (S.view === "library") return artOf(recentItems(libraryItems(), false)[0]);
+    const find = (p) => p && libraryItems().find((x) => x.kind === p.kind && x.id === p.id);
+    if (S.view === "game" && S.page) return artOf(find(S.page));
+    if (S.view === "home") return artOf(recentItems(libraryItems(), false)[0]);
+    if (S.view === "library") return artOf(find(S.selected));
     return "";
   }
   function backdropForView() { clearTimeout(bdTimer); setBackdrop(defaultBackdrop()); }
-  document.addEventListener("mouseover", (ev) => {
-    if (S.view !== "library") return;
-    const card = ev.target.closest(".card, .capsule-wrap, .hero");
-    clearTimeout(bdTimer);
-    bdTimer = setTimeout(() => { const it = card && itemFor(card.querySelector("[data-game], [data-key]")); setBackdrop(it ? artOf(it) || defaultBackdrop() : defaultBackdrop()); }, card ? 160 : 400);
-  });
 
   // ---------------------------------------------------------- right-click --
   function openContext(ev, it) {
@@ -347,7 +363,7 @@
     $("#who").innerHTML = cfg().players.map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
-      return `<div class="who-item${s ? " playing" : ""}" style="--c:${esc(p.color)}"><span class="avatar" aria-hidden="true">${esc(p.name.trim().charAt(0).toUpperCase())}</span><span class="who-name">${esc(p.name)}</span>
+      return `<div class="who-item${s ? " playing" : ""}" style="--c:${esc(p.color)}">${avatarHTML(p, "")}<span class="who-name">${esc(p.name)}</span>
         <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></div>`;
     }).join("");
   }
@@ -413,7 +429,7 @@
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
     const sizes = [["s", "Small covers"], ["m", "Medium covers"], ["l", "Large covers"]];
-    return `<div class="page wide">${updateBanner()}${libraryHero(all)}${continueShelf(all)}${newsShelf(all)}${head}${hookBanner()}
+    return `<div class="page wide">${head}${hookBanner()}
       <div class="lib-tools"><div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
         <div class="row tools-right"><label class="sort"><span class="hint">Sort by</span><select id="lib-sort" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
         <div class="seg" role="group" aria-label="Cover size">${sizes.map(([k, l], i) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span class="sz sz${i}"></span></button>`).join("")}</div></div></div>
@@ -422,17 +438,45 @@
       <div class="grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
   }
 
+  // Home: what you play, not everything you have. The game played last,
+  // the others played lately, news from them, and a way into the Library.
+  function viewHome() {
+    const all = libraryItems();
+    const hero = libraryHero(all), shelves = continueShelf(all) + newsShelf(all);
+    const hour = new Date().getHours();
+    const hello = hour < 5 ? "Late night" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const body = hero ? hero + shelves : `<div class="empty"><div><h2>Nothing played yet</h2>
+        <p class="sub">Start a game from your Library and it shows up here, with the others you play and their news.</p></div>
+        <button class="btn primary" data-action="nav" data-view="library">Open the Library</button></div>`;
+    return `<div class="page wide">${updateBanner()}${hookBanner()}
+      <div class="home-head"><h1>${hello}</h1><button class="btn quiet" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button></div>
+      ${body}</div>`;
+  }
+
   // Shelves, as in the best launchers: the games played lately, then what's
   // new in them. Both only show what Lootnest actually knows.
   function recentItems(all, skipFirst) {
     const list = all.filter((it) => playedAt(it) > 0).sort((a, b) => playedAt(b) - playedAt(a));
     return skipFirst ? list.slice(1) : list;
   }
+  // Covers for games shown outside the grid (Home), loaded once each.
+  const coverAsked = new Set();
+  async function ensureCover(it) {
+    const key = coverKey(it);
+    if (coverAsked.has(key) || key in S.covers) return;
+    coverAsked.add(key);
+    const can = it.appId || cfg().settings.downloadCovers;
+    let url = "";
+    if (can) { try { url = (await api.cover(it.appId || 0, it.name, key)) || ""; } catch (e) { /* none */ } }
+    if (url) S.covers[key] = url;
+    else if (it.exe && !(key in S.icons)) { try { S.icons[key] = (await api.gameIcon(it.exe)) || ""; } catch (e) { S.icons[key] = ""; } }
+    if (url || S.icons[key]) render();
+  }
+
   function continueShelf(all) {
-    if (S.q || S.filter !== "all") return "";
     const list = recentItems(all, true).slice(0, 8);
     if (!list.length) return "";
-    list.forEach(loadArt);
+    list.forEach((it) => { loadArt(it); ensureCover(it); });
     return `<section class="shelf" aria-label="Continue playing"><h2 class="shelf-title">Continue playing</h2>
       <div class="capsules">${list.map((it) => {
         const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
@@ -451,7 +495,7 @@
     api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
   }
   function newsShelf(all) {
-    if (!cfg().settings.gameNews || S.q || S.filter !== "all") return "";
+    if (!cfg().settings.gameNews) return "";
     const games = recentItems(all, false).slice(0, 8);
     if (!games.length) return "";
     const cards = [];
@@ -604,7 +648,8 @@
     const P = { kind, id, cloud: null };
     const go = () => {
       if (S.view === "library") S.libScroll = $("#view").scrollTop;
-      S.page = P;
+      if (S.view === "library" || S.view === "home") { S.from = S.view; S.fromScroll = $("#view").scrollTop; }
+      S.page = P; S.selected = { kind, id };
       S.view = "game"; S.menuFor = null;
       render(); $("#view").scrollTop = 0;
       $("#view").focus({ preventScroll: true });
@@ -622,8 +667,8 @@
     const find = () => P && document.querySelector(`.cover-btn[data-${P.kind === "game" ? "game" : "key"}="${CSS.escape(P.id)}"] .cover`);
     let card = null;
     transition(() => {
-      S.view = "library"; S.page = null;
-      render(); $("#view").scrollTop = S.libScroll || 0;
+      S.view = S.from === "home" ? "home" : "library"; S.page = null;
+      render(); $("#view").scrollTop = S.fromScroll || 0;
       card = find();
       if (card) card.style.viewTransitionName = "poster";
     }, null, () => { if (card) card.style.viewTransitionName = ""; });
@@ -687,12 +732,11 @@
   }
 
   function libraryHero(all) {
-    if (S.q || S.filter !== "all") return "";
     const rec = S.d.recent || {};
     let best = null, at = 0;
     all.forEach((it) => { const r = rec[recentKey(it)]; const t = r ? new Date(r.at).getTime() : 0; if (t > at) { best = it; at = t; } });
     if (!best) return "";
-    loadArt(best);
+    loadArt(best); ensureCover(best);
     const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
     return `<section class="hero" aria-label="Last played">${artHTML(best)}
       <div class="hero-body">${titleHTML(best, "hero-title")}
@@ -755,7 +799,7 @@
     const it = P && libraryItems().find((x) => x.kind === P.kind && x.id === P.id);
     if (!it) { S.view = "library"; return viewLibrary(); }
     loadArt(it);
-    const back = `<button class="btn ghost back" data-action="back-library">${icon.back}Library</button>`;
+    const back = `<button class="btn ghost back" data-action="back-library">${icon.back}${S.from === "home" ? "Home" : "Library"}</button>`;
     const facts = [];
     const add = (k, v) => facts.push(`<div><dt>${k}</dt><dd>${v}</dd></div>`);
     add("Store", esc(sourceLabel(it.source)));
@@ -822,7 +866,7 @@
         </div>
       </div>
       <div class="gp-body">
-        <div class="gp-side"><dl class="facts">${facts.join("")}</dl>${newsHTML(it)}</div>
+        <div class="gp-side"><dl class="facts">${facts.join("")}</dl>${shelfBlock(it)}${newsHTML(it)}</div>
         <div class="gp-manage">${list}</div>
       </div></div>`;
   }
@@ -980,6 +1024,12 @@
       o.innerHTML = viewBlocked();
     } else if (D.kind === "move") {
       o.innerHTML = viewMove();
+    } else if (D.kind === "shelf-note") {
+      o.innerHTML = viewShelfNote();
+    } else if (D.kind === "profile") {
+      const q = $("#pe-q"), pos = q && document.activeElement === q ? q.selectionStart : -1;
+      o.innerHTML = viewProfileEditor();
+      if (pos >= 0) { const q2 = $("#pe-q"); q2.focus(); q2.setSelectionRange(pos, pos); }
     } else if (D.kind === "news") {
       o.innerHTML = viewReader();
       if (!$("#overlay").classList.contains("still")) { const b = $(".reader-body"); if (b) b.scrollTop = 0; }
@@ -1317,10 +1367,278 @@
     </div>`;
   }
 
+  // ------------------------------------------------------------ profiles --
+  // Each player's own page, which they arrange themselves: a banner, their
+  // picture, a few words, the game they're into, their numbers, activity,
+  // shelf (playing, up next, finished, stopped) and collection.
+  const SECTIONS = [
+    ["now", "Currently playing", "A game you're playing, with a note"],
+    ["stats", "Numbers", "Time played, games, finished, streak, longest session"],
+    ["favorites", "Favourite games", "Up to six games, in your order"],
+    ["activity", "Activity", "When you played, the last six months"],
+    ["shelf", "Shelf", "Playing, up next, finished and stopped, with your ratings"],
+    ["collection", "Collection", "Where your games come from"],
+    ["recent", "Played lately", "The last games you played"],
+  ];
+  const SHELF = [["playing", "Playing"], ["next", "Up next"], ["finished", "Finished"], ["stopped", "Stopped"]];
+  const sectionsOf = (p) => { const known = SECTIONS.map((s) => s[0]), on = (p.sections || []).filter((s) => known.includes(s)); return on.length ? on : known; };
+  const shelfOf = (pid) => (S.d.shelf || {})[pid] || {};
+  const daysOf = (pid) => ((S.d.activity || {}).days || {})[pid] || {};
+  const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const daySum = (day) => Object.values(day || {}).reduce((a, b) => a + b, 0);
+  const stars = (n) => "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n);
+
+  const avatarHTML = (p, cls) => {
+    const u = (S.d.avatars || {})[p.id];
+    const g = !u && p.avatarGame && itemByKey(p.avatarGame);
+    if (g) ensureCover(g);
+    const gu = g && (S.covers[coverKey(g)] || S.icons[coverKey(g)]);
+    const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc(p.name.trim().charAt(0).toUpperCase());
+    return `<span class="avatar ${cls || ""}" style="--c:${esc(p.color)}" aria-hidden="true">${inner}</span>`;
+  };
+  const itemByKey = (k) => libraryItems().find((it) => recentKey(it) === k || it.id === k);
+  const itemAttr = (it) => (it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`);
+
+  function playerStats(p) {
+    const items = libraryItems();
+    let total = 0, top = null, topT = 0, played = 0;
+    items.forEach((it) => { const t = (playtimeOf(it) || {})[p.id] || 0; total += t; if (t) played++; if (t > topT) { top = it; topT = t; } });
+    const recent = items.map((it) => ({ it, r: (S.d.recent || {})[recentKey(it)] })).filter((x) => x.r && x.r.player === p.id)
+      .sort((a, b) => new Date(b.r.at) - new Date(a.r.at));
+    played = Math.max(played, recent.length);
+    const profiles = cfg().games.filter((g) => hasProfile(g.id, p.id)).length;
+    const shelf = shelfOf(p.id), shelfN = {};
+    Object.values(shelf).forEach((e) => { if (e.status) shelfN[e.status] = (shelfN[e.status] || 0) + 1; });
+    const rated = Object.values(shelf).filter((e) => e.rating).length;
+    // Streaks: days in a row with some play, counted to today (or yesterday).
+    const days = daysOf(p.id), keys = Object.keys(days).filter((k) => daySum(days[k]) > 0).sort();
+    let best = 0, run = 0, prev = null;
+    keys.forEach((k) => { const d = new Date(k + "T12:00:00"); run = prev && (d - prev) / 864e5 < 1.5 ? run + 1 : 1; best = Math.max(best, run); prev = d; });
+    let streak = 0;
+    for (let d = new Date(), i = 0; i < 400; i++, d.setDate(d.getDate() - 1)) {
+      if (daySum(days[dayKey(d)]) > 0) streak++;
+      else if (i > 0 || streak > 0) break;
+    }
+    const act = S.d.activity || {};
+    const longest = (act.longest || {})[p.id], sessions = (act.sessions || {})[p.id] || 0;
+    const sources = new Set(items.filter((it) => ((playtimeOf(it) || {})[p.id] || 0) > 0 || shelf[recentKey(it)] || recent.some((x) => x.it === it)).map((it) => sourceLabel(it.source)));
+    return { total, top, topT, recent, profiles, played, shelf, shelfN, rated, streak, best, longest, sessions, sources };
+  }
+
+  function bannerHTML(p) {
+    const y = `background-position:center ${p.bannerY || 0}%`;
+    if (p.banner === "image" && (S.d.banners || {})[p.id]) return `<div class="art" style="background-image:url('${S.d.banners[p.id]}');${y}"></div>`;
+    const it = p.banner && p.banner !== "image" && itemByKey(p.banner);
+    if (it) { loadArt(it); ensureCover(it); }
+    const u = it ? artOf(it) : "";
+    return u ? `<div class="art" style="background-image:url('${u}');${y}"></div>` : `<div class="art plain"></div>`;
+  }
+
+  function viewPlayer() {
+    const p = player(S.playerPage);
+    if (!p) { S.view = "players"; return viewPlayers(); }
+    const st = playerStats(p);
+    const last = st.recent.find((x) => x.it.kind === "game" && !session(x.it.id));
+    const body = sectionsOf(p).map((s) => ppSection(s, p, st)).filter(Boolean).join("");
+    return `<div class="profile-page" style="--c:${esc(p.color)}">
+      <div class="pp-banner">${bannerHTML(p)}<button class="btn ghost back" data-action="nav" data-view="players">${icon.back}Players</button></div>
+      <div class="pp-head">${avatarHTML(p, "xl")}
+        <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}${p.bio ? `<p class="pp-bio">${esc(p.bio).replace(/\n/g, "<br>")}</p>` : ""}</div>
+        <div class="pp-actions">${last ? `<button class="btn primary" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${icon.play}Play ${esc(last.it.name)}</button>` : ""}
+          <button class="btn" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button></div></div>
+      <div class="pp-body">${body || `<p class="hint">Nothing to show yet: <b>Edit profile</b> chooses what this page shows.</p>`}</div>
+    </div>`;
+  }
+
+  function ppSection(s, p, st) {
+    const sec = (title, inner, extra) => `<section class="pp-section pp-${s}"><div class="pp-sh"><h2 class="shelf-title">${title}</h2>${extra || ""}</div>${inner}</section>`;
+    if (s === "now") {
+      const it = p.now && itemByKey(p.now);
+      if (!it) return "";
+      loadArt(it); ensureCover(it);
+      const t = (playtimeOf(it) || {})[p.id] || 0, e = st.shelf[recentKey(it)] || {};
+      return `<section class="pp-section pp-now"><button class="now-card" data-action="open-sheet" ${itemAttr(it)}>
+        ${artHTML(it)}<span class="now-text"><span class="now-label">Currently playing</span><b>${esc(it.name)}</b>
+        ${p.nowNote ? `<span class="now-note">${esc(p.nowNote)}</span>` : ""}
+        <span class="now-meta">${t ? `<span>${esc(hours(t))} played</span>` : ""}${e.rating ? `<span class="stars" aria-label="${e.rating} of 5 stars">${stars(e.rating)}</span>` : ""}</span></span></button></section>`;
+    }
+    if (s === "stats") {
+      const stat = (v, l) => `<div class="pstat"><b>${v}</b><span>${l}</span></div>`;
+      return `<section class="pp-section pp-stats">
+        ${stat(st.total ? esc(hours(st.total)) : "None yet", "played with Lootnest")}
+        ${stat(String(st.played), st.played === 1 ? "game played" : "games played")}
+        ${stat(String(st.shelfN.finished || 0), "finished")}
+        ${stat(st.streak ? st.streak + (st.streak === 1 ? " day" : " days") : "None", st.best > st.streak ? `in a row now, best ${st.best}` : "in a row")}
+        ${stat(st.longest ? esc(hours(st.longest.seconds)) : "None yet", st.longest && itemByKey(st.longest.key) ? "longest session, " + esc(itemByKey(st.longest.key).name) : "longest session")}
+        ${stat(st.top ? esc(st.top.name) : "None yet", st.top ? esc(hours(st.topT)) + ", most played" : "most played")}
+      </section>`;
+    }
+    if (s === "favorites") {
+      const favs = (p.favorites || []).map(itemByKey).filter(Boolean);
+      favs.forEach(ensureCover);
+      return sec("Favourite games", favs.length ? `<div class="grid size-l">${favs.map((it) => cardHTML(it, -1)).join("")}</div>`
+        : `<p class="hint">Pick up to six games to show here: <b>Edit profile</b>, then <b>Showcase</b>.</p>`);
+    }
+    if (s === "activity") return sec("Activity", activityHTML(p, st));
+    if (s === "shelf") {
+      const tab = S.shelfTab && SHELF.some((x) => x[0] === S.shelfTab) ? S.shelfTab : (SHELF.find((x) => st.shelfN[x[0]]) || SHELF[0])[0];
+      const list = Object.entries(st.shelf).filter(([, e]) => e.status === tab).map(([k, e]) => ({ it: itemByKey(k), e })).filter((x) => x.it)
+        .sort((a, b) => new Date(b.e.updated) - new Date(a.e.updated));
+      list.forEach((x) => ensureCover(x.it));
+      const tabs = `<div class="segt" role="tablist">${SHELF.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-action="shelf-tab" data-tab="${k}">${l}<span class="n">${st.shelfN[k] || 0}</span></button>`).join("")}</div>`;
+      return sec("Shelf", list.length ? `<div class="shelf-grid">${list.map(({ it, e }) => `<button class="shelf-card" data-action="open-sheet" ${itemAttr(it)}>
+          <div class="cover">${coverHTML(it)}</div><b>${esc(it.name)}</b>${e.rating ? `<span class="stars" aria-label="${e.rating} of 5 stars">${stars(e.rating)}</span>` : ""}
+          ${e.note ? `<span class="shelf-note">${esc(e.note)}</span>` : ""}</button>`).join("")}</div>`
+        : `<p class="hint">Nothing here yet. On a game's page, <b>Shelf</b> says where it stands for you: playing, up next, finished or stopped.</p>`, tabs);
+    }
+    if (s === "collection") {
+      const items = libraryItems(), by = {};
+      items.forEach((it) => {
+        const t = (playtimeOf(it) || {})[p.id] || 0;
+        if (!t && !st.shelf[recentKey(it)] && !st.recent.some((x) => x.it === it)) return;
+        const l = sourceLabel(it.source);
+        by[l] = by[l] || { n: 0, t: 0 }; by[l].n++; by[l].t += t;
+      });
+      const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n || b[1].t - a[1].t);
+      const max = Math.max(1, ...rows.map((r) => r[1].n));
+      return sec("Collection", rows.length ? `<ul class="bars">${rows.map(([l, v]) => `<li><span class="bl">${esc(l)}</span>
+          <span class="bt"><span style="width:${Math.max(4, (v.n / max) * 100)}%"></span></span><span class="bv">${v.n} ${v.n === 1 ? "game" : "games"}${v.t ? ", " + esc(hours(v.t)) : ""}</span></li>`).join("")}</ul>
+          <p class="hint">${items.length} games in the Library on this PC, from ${new Set(items.map((it) => sourceLabel(it.source))).size} places.</p>`
+        : `<p class="hint">Games you play or put on your shelf show up here, by where they come from.</p>`);
+    }
+    if (s === "recent") {
+      if (!st.recent.length) return "";
+      return sec("Played lately", `<ul class="pp-recent">${st.recent.slice(0, 8).map(({ it, r }) => `<li><button data-action="open-sheet" ${itemAttr(it)}><b>${esc(it.name)}</b><span>${esc(ago(r.at))}</span></button></li>`).join("")}</ul>`);
+    }
+    return "";
+  }
+
+  // 26 weeks of play, a column a week, a square a day, darker for more.
+  function activityHTML(p, st) {
+    const days = daysOf(p.id), today = new Date();
+    const start = new Date(today); start.setHours(12, 0, 0, 0);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - 25 * 7);
+    const lvl = (s) => (s <= 0 ? 0 : s < 1800 ? 1 : s < 3600 ? 2 : s < 7200 ? 3 : 4);
+    let cells = "", week = 0, month = 0, months = "";
+    const tKey = dayKey(today), byGame = {};
+    for (let i = 0, d = new Date(start); i < 26 * 7; i++, d.setDate(d.getDate() + 1)) {
+      const k = dayKey(d), sum = daySum(days[k]), future = k > tKey;
+      if (i % 7 === 0 && d.getDate() <= 7) months += `<span style="grid-column:${i / 7 + 1}">${d.toLocaleDateString(undefined, { month: "short" })}</span>`;
+      cells += `<span class="hm l${future ? "x" : lvl(sum)}" style="grid-column:${Math.floor(i / 7) + 1};grid-row:${(i % 7) + 1}" title="${esc(d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }))}${sum ? ": " + esc(hours(sum)) : ""}"></span>`;
+    }
+    for (let i = 0, d = new Date(today); i < 30; i++, d.setDate(d.getDate() - 1)) {
+      const day = days[dayKey(d)] || {};
+      if (i < 7) week += daySum(day);
+      month += daySum(day);
+      Object.entries(day).forEach(([k, v]) => { byGame[k] = (byGame[k] || 0) + v; });
+    }
+    const top = Object.entries(byGame).map(([k, v]) => ({ it: itemByKey(k), v })).filter((x) => x.it).sort((a, b) => b.v - a.v).slice(0, 4);
+    const max = Math.max(1, ...top.map((x) => x.v));
+    return `<div class="activity">
+      <div class="heat-wrap"><div class="heat-months">${months}</div><div class="heat" aria-label="Time played per day">${cells}</div>
+        <div class="heat-key"><span>Less</span><span class="hm l0"></span><span class="hm l1"></span><span class="hm l2"></span><span class="hm l3"></span><span class="hm l4"></span><span>More</span></div></div>
+      <div class="act-side"><div class="act-n"><div><b>${week ? esc(hours(week)) : "0 min"}</b><span>the last 7 days</span></div><div><b>${month ? esc(hours(month)) : "0 min"}</b><span>the last 30 days</span></div><div><b>${st.sessions}</b><span>${st.sessions === 1 ? "session" : "sessions"} in all</span></div></div>
+        ${top.length ? `<ul class="bars">${top.map(({ it, v }) => `<li><span class="bl">${esc(it.name)}</span><span class="bt"><span style="width:${Math.max(4, (v / max) * 100)}%"></span></span><span class="bv">${esc(hours(v))}</span></li>`).join("")}</ul>`
+          : `<p class="hint">Games started from Lootnest are counted here, day by day.</p>`}</div></div>`;
+  }
+
+  // The game page's Shelf: where the game stands for each player.
+  function shelfBlock(it) {
+    const k = recentKey(it);
+    return `<div class="gp-shelf"><h2 class="gp-sub">Shelf</h2>${cfg().players.map((p) => {
+      const e = shelfOf(p.id)[k] || {};
+      return `<div class="sh-row" style="--c:${esc(p.color)}"><div class="sh-top">${avatarHTML(p, "sm")}<span class="sh-name">${esc(p.name)}</span>
+        <button class="btn quiet sh-note" data-action="shelf-note" data-player="${esc(p.id)}" data-k="${esc(k)}">${e.note ? "Edit note" : "Add a note"}</button></div>
+        <div class="sh-ctl"><div class="segt small" role="group" aria-label="${esc(p.name)}: where this game stands">${SHELF.map(([s, l]) => `<button data-action="shelf-set" data-player="${esc(p.id)}" data-k="${esc(k)}" data-status="${s}" aria-pressed="${e.status === s}">${l}</button>`).join("")}</div>
+        <div class="rate" role="group" aria-label="${esc(p.name)}'s rating">${[1, 2, 3, 4, 5].map((n) => `<button data-action="shelf-rate" data-player="${esc(p.id)}" data-k="${esc(k)}" data-n="${n}" aria-label="${n} ${n === 1 ? "star" : "stars"}" aria-pressed="${(e.rating || 0) >= n}">★</button>`).join("")}</div></div>
+        ${e.note ? `<p class="sh-text">${esc(e.note)}</p>` : ""}</div>`;
+    }).join("")}</div>`;
+  }
+  async function setShelf(pid, k, change) {
+    const sh = (S.d.shelf = S.d.shelf || {});
+    const mine = (sh[pid] = sh[pid] || {});
+    const e = { status: "", rating: 0, note: "", ...(mine[k] || {}), ...change };
+    if (!e.status && !e.rating && !e.note) delete mine[k]; else mine[k] = { ...e, updated: new Date().toISOString() };
+    render();
+    try { await api.setShelf(pid, k, { status: e.status, rating: e.rating, note: e.note }); }
+    catch (err) { toast(errText(err), "error"); refresh(); }
+  }
+  function viewShelfNote() {
+    const D = S.dialog, p = player(D.pid), it = itemByKey(D.k);
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Note">
+      <div><h2>${esc(p ? p.name : "")}'s note on ${esc(it ? it.name : "this game")}</h2><p class="sub">Only people using this PC see it.</p></div>
+      <textarea id="sn-text" rows="6" maxlength="500" placeholder="Your note">${esc(D.note || "")}</textarea>
+      <div class="dialog-foot"><span class="error-text grow" id="sn-error"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="shelf-note-save">Save note</button></div>
+    </div></div>`;
+  }
+
+  function viewProfileEditor() {
+    const D = S.dialog, p = D.p, tab = D.tab || "look";
+    const tabs = [["look", "Look"], ["about", "About"], ["showcase", "Showcase"], ["page", "Page"]];
+    const gameOptions = (sel, none) => `<option value="">${none}</option>${libraryItems().map((it) => `<option value="${esc(recentKey(it))}" ${sel === recentKey(it) ? "selected" : ""}>${esc(it.name)}</option>`).join("")}`;
+    let body = "";
+    if (tab === "look") {
+      const hasPic = !!(S.d.avatars || {})[p.id], hasBanner = !!(S.d.banners || {})[p.id];
+      const kind = p.banner === "image" ? "image" : p.banner && !p.banner.startsWith("style:") ? "game" : "plain";
+      body = `
+      <div class="field"><span class="label">Picture</span><div class="pe-row">
+        <button class="btn" data-action="avatar-pick" ${D.busy ? "disabled" : ""}>${D.busy === "avatar" ? "Reading the picture" : hasPic ? "Change picture" : "Choose a picture"}</button>
+        ${hasPic ? `<button class="btn quiet" data-action="avatar-remove">Remove picture</button>` : `<select data-pe="avatarGame" aria-label="Or a game's cover">${gameOptions(p.avatarGame || "", "Or use a game's cover")}</select>`}</div></div>
+      <div class="field"><span class="label">Colour</span><div class="pe-row"><div class="swatches">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="pe-color" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>
+        <label class="custom-color"><input type="color" value="${esc((p.color || "#6c9bd2").toLowerCase())}" data-pe="color" aria-label="Any colour"><span>Any colour</span></label></div></div>
+      <div class="field"><span class="label">Banner</span>
+        <div class="segt">${[["plain", "Colour"], ["image", "Your picture"], ["game", "Game art"]].map(([v, l]) => `<button data-action="pe-banner" data-v="${v}" aria-pressed="${kind === v}">${l}</button>`).join("")}</div>
+        ${kind === "game" ? `<select data-pe="banner" aria-label="Game">${gameOptions(p.banner, "Choose a game")}</select>` : ""}
+        ${kind === "image" ? `<div class="pe-row"><button class="btn" data-action="banner-pick" ${D.busy ? "disabled" : ""}>${D.busy === "banner" ? "Reading the picture" : "Choose another picture"}</button><button class="btn quiet" data-action="banner-remove">Remove picture</button></div>` : ""}
+        ${kind === "image" || kind === "game" ? `<label class="range"><span>Position</span><input type="range" min="0" max="100" step="1" value="${p.bannerY || 0}" data-pe="bannerY"></label>` : ""}
+        <span class="hint">A picture is cropped to a wide strip (3:1) and kept on this PC.</span></div>`;
+    } else if (tab === "about") {
+      body = `
+      <div class="field"><label for="pe-name">Name</label><input id="pe-name" type="text" maxlength="24" value="${esc(p.name)}" data-pe="name"></div>
+      <div class="field"><label for="pe-tag">Tagline</label><input id="pe-tag" type="text" maxlength="80" value="${esc(p.tagline || "")}" placeholder="Optional" data-pe="tagline"></div>
+      <div class="field"><label for="pe-bio">About <span class="hint">up to 300 characters</span></label><textarea id="pe-bio" rows="4" maxlength="300" placeholder="Optional" data-pe="bio">${esc(p.bio || "")}</textarea></div>
+      <div class="field"><label for="pe-now">Currently playing</label><select id="pe-now" data-pe="now">${gameOptions(p.now || "", "None")}</select>
+        <input type="text" maxlength="80" value="${esc(p.nowNote || "")}" placeholder="A note (optional)" data-pe="nowNote" aria-label="A word on it" style="margin-top:8px"></div>`;
+    } else if (tab === "showcase") {
+      const q = (D.q || "").toLowerCase(), fav = p.favorites || [];
+      const games = libraryItems().filter((it) => !q || it.name.toLowerCase().includes(q));
+      body = `
+      <div class="field"><span class="label">Favourite games <span class="hint">${fav.length} of 6, in this order</span></span>
+        ${fav.length ? `<ol class="fav-order">${fav.map((k, i) => { const it = itemByKey(k); return `<li><span>${esc(it ? it.name : "A game no longer here")}</span>
+          <button class="btn quiet icon" data-action="pe-fav-move" data-i="${i}" data-d="-1" aria-label="Earlier" ${i === 0 ? "disabled" : ""}>↑</button>
+          <button class="btn quiet icon" data-action="pe-fav-move" data-i="${i}" data-d="1" aria-label="Later" ${i === fav.length - 1 ? "disabled" : ""}>↓</button>
+          <button class="btn quiet icon" data-action="pe-fav" data-k="${esc(k)}" aria-label="Remove">${icon.x}</button></li>`; }).join("")}</ol>` : ""}
+        <input type="search" id="pe-q" placeholder="Find a game" value="${esc(D.q || "")}" autocomplete="off">
+        <div class="pe-games">${games.map((it) => { const k = recentKey(it), on = fav.includes(k); return `<button class="pe-game${on ? " on" : ""}" data-action="pe-fav" data-k="${esc(k)}" aria-pressed="${on}" ${!on && fav.length >= 6 ? "disabled" : ""}><span class="check"></span>${esc(it.name)}</button>`; }).join("")}</div></div>`;
+    } else {
+      const on = sectionsOf(p);
+      const order = [...on, ...SECTIONS.map((s) => s[0]).filter((s) => !on.includes(s))];
+      body = `<p class="sub" style="margin:0">What your page shows, top to bottom.</p><ul class="sec-list">${order.map((k) => {
+        const s = SECTIONS.find((x) => x[0] === k), i = on.indexOf(k), shown = i >= 0;
+        return `<li class="${shown ? "" : "off"}"><button class="sec-toggle" data-action="pe-sec" data-k="${k}" aria-pressed="${shown}" ${shown && on.length === 1 ? "disabled" : ""}><span class="check"></span><span><b>${s[1]}</b><span>${s[2]}</span></span></button>
+          ${shown ? `<button class="btn quiet icon" data-action="pe-sec-move" data-k="${k}" data-d="-1" aria-label="Higher" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn quiet icon" data-action="pe-sec-move" data-k="${k}" data-d="1" aria-label="Lower" ${i === on.length - 1 ? "disabled" : ""}>↓</button>` : ""}</li>`;
+      }).join("")}</ul>`;
+    }
+    return `<div class="scrim" data-action="scrim"><div class="dialog pe" role="dialog" aria-modal="true" aria-label="Edit ${esc(p.name)}'s profile" style="--c:${esc(p.color)}">
+      <div class="pe-preview"><div class="pe-pbanner">${bannerHTML(p)}</div>${avatarHTML(p, "lg")}
+        <div class="pe-pname"><b id="pe-prev-name">${esc(p.name)}</b><span id="pe-prev-tag">${esc(p.tagline || "")}</span></div>
+        <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
+      <div class="segt pe-tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-action="pe-tab" data-tab="${k}">${l}</button>`).join("")}</div>
+      <div class="pe-body">${body}</div>
+      <div class="dialog-foot"><span class="error-text grow" id="pe-error"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="pe-save">Save profile</button></div>
+    </div></div>`;
+  }
+
   function viewPlayers() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
+    const cards = cfg().players.map((p) => { const st = playerStats(p); return `<button class="pcard" data-action="open-player" data-player="${esc(p.id)}" style="--c:${esc(p.color)}">
+        <span class="pcard-banner">${bannerHTML(p)}</span>${avatarHTML(p, "lg")}
+        <span class="pcard-body"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : st.recent[0] ? "Played " + esc(st.recent[0].it.name) + " " + esc(ago(st.recent[0].r.at)) : "No games played yet"}</span>
+        <span class="pcard-nums"><span><b>${st.total ? esc(hours(st.total)) : "0 h"}</b> played</span><span><b>${st.shelfN.playing || 0}</b> playing</span><span><b>${st.shelfN.finished || 0}</b> finished</span></span></span></button>`; }).join("");
     return `<div class="page"><div class="page-head"><div><h1>Players</h1><p class="sub">Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div></div>
+      <div class="pcards">${cards}</div>
+      <h2 class="shelf-title" style="margin-top:36px">Names and colours</h2>
       <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
       <div class="row" style="margin-top:14px">${ps.length < 8 ? `<button class="btn" data-action="add-player">${icon.plus}Add player</button>` : ""}</div>
       <div class="row" style="margin-top:28px"><button class="btn primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save players</button>
@@ -1328,7 +1646,7 @@
   }
 
   async function savePlayers(welcome) {
-    const ps = S.players.map((p, i) => ({ id: p.id, name: (p.name || "").trim() || (welcome ? "Player " + (i + 1) : ""), color: p.color }));
+    const ps = S.players.map((p, i) => ({ ...p, name: (p.name || "").trim() || (welcome ? "Player " + (i + 1) : "") }));
     const removed = cfg().players.filter((o) => !ps.some((p) => p.id === o.id));
     if (removed.length && !welcome) {
       const ok = await confirmDialog({ title: `Remove ${removed.map((p) => p.name).join(" and ")}?`, body: "Their profiles are moved to the “removed” folder inside Lootnest's data folder, so nothing is deleted for good.", ok: "Remove" });
@@ -1421,6 +1739,85 @@
     play: (el) => openPicker(el.dataset.game, "play"),
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
+    "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
+    "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: "look" }; renderOverlay(); },
+    "pe-tab"(el) { S.dialog.tab = el.dataset.tab; renderOverlay(); },
+    "pe-set"(el) { S.dialog.p[el.dataset.f] = el.dataset.v; renderOverlay(); },
+    "pe-color"(el) { S.dialog.p.color = el.dataset.color; renderOverlay(); },
+    "pe-banner"(el) {
+      const D = S.dialog, v = el.dataset.v;
+      if (v === "image") { if (!(S.d.banners || {})[D.p.id]) return actions["banner-pick"](); D.p.banner = "image"; }
+      else if (v === "game") { const f = (D.p.favorites || [])[0] || (libraryItems()[0] && recentKey(libraryItems()[0])) || ""; D.p.banner = D.p.banner && D.p.banner !== "image" && !D.p.banner.startsWith("style:") ? D.p.banner : f; }
+      else D.p.banner = "";
+      renderOverlay();
+    },
+    async "banner-pick"() {
+      const D = S.dialog;
+      const r = await browse("image");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      D.busy = "banner"; renderOverlay();
+      try { await api.setBanner(D.p.id, r.path); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
+    },
+    async "banner-remove"() {
+      try { await api.removeBanner(S.dialog.p.id); if (S.dialog.p.banner === "image") S.dialog.p.banner = ""; await refresh(); } catch (e) { toast(errText(e), "error"); }
+    },
+    "pe-fav"(el) {
+      const f = S.dialog.p.favorites = S.dialog.p.favorites || [];
+      const i = f.indexOf(el.dataset.k);
+      if (i >= 0) f.splice(i, 1); else if (f.length < 6) f.push(el.dataset.k);
+      renderOverlay();
+    },
+    "pe-fav-move"(el) {
+      const f = S.dialog.p.favorites, i = +el.dataset.i, j = i + +el.dataset.d;
+      if (j < 0 || j >= f.length) return;
+      [f[i], f[j]] = [f[j], f[i]]; renderOverlay();
+    },
+    "pe-sec"(el) {
+      const p = S.dialog.p, on = sectionsOf(p).slice(), i = on.indexOf(el.dataset.k);
+      if (i >= 0) { if (on.length > 1) on.splice(i, 1); } else on.push(el.dataset.k);
+      p.sections = on; renderOverlay();
+    },
+    "pe-sec-move"(el) {
+      const p = S.dialog.p, on = sectionsOf(p).slice(), i = on.indexOf(el.dataset.k), j = i + +el.dataset.d;
+      if (i < 0 || j < 0 || j >= on.length) return;
+      [on[i], on[j]] = [on[j], on[i]]; p.sections = on; renderOverlay();
+    },
+    async "avatar-pick"() {
+      const D = S.dialog;
+      const r = await browse("image");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      D.busy = "avatar"; renderOverlay();
+      try { await api.setAvatar(D.p.id, r.path); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
+    },
+    async "avatar-remove"() { try { await api.removeAvatar(S.dialog.p.id); S.dialog.p.avatar = false; await refresh(); } catch (e) { toast(errText(e), "error"); } },
+    async "pe-save"() {
+      const D = S.dialog, p = { ...D.p };
+      p.avatar = !!(S.d.avatars || {})[p.id];
+      if (p.banner === "image" && !(S.d.banners || {})[p.id]) p.banner = "";
+      p.bannerY = Math.round(+p.bannerY || 0);
+      const ps = cfg().players.map((x) => (x.id === p.id ? p : x));
+      try { await api.savePlayers(ps); S.dialog = null; S.players = null; await refresh(); toast("Profile saved"); }
+      catch (e) { const t = $("#pe-error"); if (t) t.textContent = errText(e); }
+    },
+    "shelf-tab"(el) { S.shelfTab = el.dataset.tab; render(); },
+    "shelf-set"(el) {
+      const cur = (shelfOf(el.dataset.player)[el.dataset.k] || {}).status;
+      setShelf(el.dataset.player, el.dataset.k, { status: cur === el.dataset.status ? "" : el.dataset.status });
+    },
+    "shelf-rate"(el) {
+      const cur = (shelfOf(el.dataset.player)[el.dataset.k] || {}).rating || 0, n = +el.dataset.n;
+      setShelf(el.dataset.player, el.dataset.k, { rating: cur === n ? 0 : n });
+    },
+    "shelf-note"(el) {
+      S.dialog = { kind: "shelf-note", pid: el.dataset.player, k: el.dataset.k, note: (shelfOf(el.dataset.player)[el.dataset.k] || {}).note || "" };
+      renderOverlay(); setTimeout(() => { const t = $("#sn-text"); if (t) t.focus(); }, 30);
+    },
+    async "shelf-note-save"() {
+      const D = S.dialog, note = $("#sn-text").value;
+      if (note.trim().length > 500) { $("#sn-error").textContent = "Keep the note under 500 characters."; return; }
+      S.dialog = null; renderOverlay();
+      await setShelf(D.pid, D.k, { note: note.trim() });
+    },
     density(el) { S.density = el.dataset.size; setPref("density", S.density); render(); },
     "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
     "open-link": (el) => api.open("link", el.dataset.url).catch((e) => toast(errText(e), "error")),
@@ -1634,6 +2031,17 @@
 
   document.addEventListener("input", (ev) => {
     const el = ev.target;
+    if (S.dialog && S.dialog.kind === "profile") {
+      const f = el.dataset.pe, D = S.dialog;
+      if (f) D.p[f] = f === "bannerY" ? +el.value : el.value;
+      if (f === "name") { const n = $("#pe-prev-name"); if (n) n.textContent = el.value; }
+      else if (f === "tagline") { const n = $("#pe-prev-tag"); if (n) n.textContent = el.value; }
+      else if (f === "color") { const d = $(".dialog.pe"); if (d) d.style.setProperty("--c", el.value); document.querySelectorAll('.dialog.pe [style*="--c"]').forEach((a) => a.style.setProperty("--c", el.value)); }
+      else if (f === "bannerY") { const a = $(".pe-pbanner .art"); if (a) a.style.backgroundPosition = `center ${el.value}%`; }
+      else if (f === "banner" || f === "avatarGame") renderOverlay();
+      if (el.id === "pe-q") { D.q = el.value; renderOverlay(); }
+      return;
+    }
     if (el.id === "lib-q") {
       S.q = el.value;
       const grid = $("#grid");

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +23,32 @@ type Player struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Color string `json:"color"`
+	// Profile page (see ValidatePlayers for the limits):
+	// - Tagline: a line under the name; Bio: a few lines about them.
+	// - Avatar: a picture is saved as avatars/<id>.png; without one,
+	//   AvatarGame (a Library key) shows that game's cover, else the
+	//   initial.
+	// - Banner: "" (their colour), "image" (banners/<id>.jpg) or a Library
+	//   key (that game's art). BannerY: which part of the picture shows,
+	//   0-100 from the top.
+	// - Now / NowNote: the game they're into right now, and a word on it.
+	// - Favorites: up to six Library keys, in order.
+	// - Sections: which parts of the page show, in order (ProfileSections).
+	Tagline    string   `json:"tagline,omitempty"`
+	Bio        string   `json:"bio,omitempty"`
+	Avatar     bool     `json:"avatar,omitempty"`
+	AvatarGame string   `json:"avatarGame,omitempty"`
+	Banner     string   `json:"banner,omitempty"`
+	BannerY    int      `json:"bannerY,omitempty"`
+	Now        string   `json:"now,omitempty"`
+	NowNote    string   `json:"nowNote,omitempty"`
+	Favorites  []string `json:"favorites,omitempty"`
+	Sections   []string `json:"sections,omitempty"`
 }
+
+// ProfileSections are the parts a profile page can show, in their default
+// order.
+var ProfileSections = []string{"now", "stats", "favorites", "activity", "shelf", "collection", "recent"}
 
 type PathEntry struct {
 	ID   string `json:"id"`
@@ -313,6 +339,36 @@ func ValidatePlayers(ps []Player) error {
 			return fmt.Errorf("invalid player id %q", p.ID)
 		}
 		ids[p.ID] = true
+		p.Tagline = strings.TrimSpace(p.Tagline)
+		if len([]rune(p.Tagline)) > 80 || strings.ContainsAny(p.Tagline, "\r\n") {
+			return fmt.Errorf("%s's line is too long; keep it to one line under 80 characters.", p.Name)
+		}
+		p.Bio = strings.TrimSpace(strings.ReplaceAll(p.Bio, "\r\n", "\n"))
+		if len([]rune(p.Bio)) > 300 || strings.Count(p.Bio, "\n") > 5 {
+			return fmt.Errorf("%s's about is too long; keep it under 300 characters and 6 lines.", p.Name)
+		}
+		p.NowNote = strings.TrimSpace(p.NowNote)
+		if len([]rune(p.NowNote)) > 80 || strings.ContainsAny(p.NowNote, "\r\n") {
+			return fmt.Errorf("%s's note on the game they're into is too long; keep it to one line under 80 characters.", p.Name)
+		}
+		if len(p.Favorites) > 6 {
+			return fmt.Errorf("%s can show up to 6 favourite games.", p.Name)
+		}
+		for _, k := range append([]string{p.Banner, p.AvatarGame, p.Now}, p.Favorites...) {
+			if len(k) > 400 || strings.ContainsAny(k, "\r\n\x00") {
+				return errors.New("invalid game in a profile")
+			}
+		}
+		p.BannerY = min(max(p.BannerY, 0), 100)
+		seen := map[string]bool{}
+		secs := p.Sections[:0:0]
+		for _, sec := range p.Sections {
+			if slices.Contains(ProfileSections, sec) && !seen[sec] {
+				seen[sec] = true
+				secs = append(secs, sec)
+			}
+		}
+		p.Sections = secs
 		if !colorRe.MatchString(p.Color) {
 			p.Color = PlayerColors[i%len(PlayerColors)]
 		}
