@@ -612,3 +612,30 @@ func TestSteamActivity(t *testing.T) {
 		t.Fatal("no Steam, nothing")
 	}
 }
+
+func TestProfileInfo(t *testing.T) {
+	dir := t.TempDir()
+	e := &Engine{Store: &Store{Dir: dir}}
+	if _, ok := e.ProfileInfo("p1", "g"); ok {
+		t.Fatal("no profile yet")
+	}
+	pd := e.Store.ProfileDir("p1", "g")
+	must := func(err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	must(os.MkdirAll(filepath.Join(pd, "saves", "slot1"), 0o755))
+	must(os.MkdirAll(filepath.Join(pd, "cfg"+tmpSuffix), 0o755))
+	must(os.WriteFile(filepath.Join(pd, initMarker), []byte("x"), 0o644))
+	must(os.WriteFile(filepath.Join(pd, "saves", "slot1", "a.sav"), make([]byte, 100), 0o644))
+	must(os.WriteFile(filepath.Join(pd, "saves", "b.sav"), make([]byte, 50), 0o644))
+	must(os.WriteFile(filepath.Join(pd, "cfg"+tmpSuffix, "half.cfg"), make([]byte, 999), 0o644))
+	t1 := time.Date(2026, 11, 5, 20, 0, 0, 0, time.UTC)
+	must(os.Chtimes(filepath.Join(pd, "saves", "slot1", "a.sav"), t1, t1))
+	must(os.Chtimes(filepath.Join(pd, "saves", "b.sav"), t1.Add(-time.Hour), t1.Add(-time.Hour)))
+	info, ok := e.ProfileInfo("p1", "g")
+	if !ok || info.Size != 150 || !info.Saved.Equal(t1) {
+		t.Fatalf("got %+v %v", info, ok)
+	}
+}

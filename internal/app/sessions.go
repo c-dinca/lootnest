@@ -416,3 +416,21 @@ func (a *App) apiCloseGame(gameID string) error {
 	a.logf("Asked %s to close", g.Name)
 	return nil
 }
+
+// apiProfileInfo reads, off the UI thread, when each player's profile for
+// a game was last saved and how big it is, for the game page and picker.
+// It arrives as a "profileInfo" event.
+func (a *App) apiProfileInfo(gameID string) {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	go func() {
+		out := map[string]core.ProfileInfo{}
+		for _, p := range cfg.Players {
+			if info, ok := a.eng.ProfileInfo(p.ID, gameID); ok {
+				out[p.ID] = info
+			}
+		}
+		a.emit("profileInfo", map[string]any{"gameId": gameID, "info": out})
+	}()
+}

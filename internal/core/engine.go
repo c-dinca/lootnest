@@ -325,3 +325,44 @@ func (e *Engine) Backups(gameID string) []BackupInfo {
 	}
 	return out
 }
+
+// ProfileInfo is when a player's profile for a game was last written by the
+// game (its newest file: copies keep the game's own times) and its size.
+type ProfileInfo struct {
+	Saved time.Time `json:"saved"`
+	Size  int64     `json:"size"`
+}
+
+// ProfileInfo reads a player's profile for a game; ok is false without one.
+func (e *Engine) ProfileInfo(playerID, gameID string) (ProfileInfo, bool) {
+	if !e.HasProfile(playerID, gameID) {
+		return ProfileInfo{}, false
+	}
+	dir := e.Store.ProfileDir(playerID, gameID)
+	var info ProfileInfo
+	_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil // unreadable: count what can be read
+		}
+		name := d.Name()
+		if d.IsDir() {
+			if p != dir && (strings.HasSuffix(name, tmpSuffix) || strings.HasSuffix(name, oldSuffix)) {
+				return filepath.SkipDir // a copy in progress or left over
+			}
+			return nil
+		}
+		if filepath.Dir(p) == dir && name == initMarker {
+			return nil
+		}
+		fi, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		info.Size += fi.Size()
+		if fi.ModTime().After(info.Saved) {
+			info.Saved = fi.ModTime()
+		}
+		return nil
+	})
+	return info, true
+}

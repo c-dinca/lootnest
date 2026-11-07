@@ -23,6 +23,7 @@
     play: (r) => call("ps_play", r),
     load: (r) => call("ps_load", r),
     closeGame: (id) => call("ps_closeGame", id),
+    profileInfo: (id) => call("ps_profileInfo", id),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
@@ -82,6 +83,7 @@
 
   // ---------------------------------------------------------------- state --
   const S = {
+    pinfo: {},        // game id -> player id -> {saved, size} of their profile
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     d: null,          // AppState from Go
     view: "home",
@@ -161,6 +163,7 @@
         if (!S.d) return;
         S.d.sessions = ev.sessions || [];
         S.d.active = ev.active || {};
+        S.pinfo = {}; // a swap or a session's end writes profiles: read again
         onSessions();
         refresh();
         break;
@@ -214,6 +217,11 @@
       case "art":
         S.art[ev.key] = ev.url;
         if (S.view === "game" || S.view === "library" || S.view === "home") render();
+        break;
+      case "profileInfo":
+        S.pinfo[ev.gameId] = ev.info || {};
+        if (S.picker && S.picker.gameId === ev.gameId) renderOverlay();
+        if (S.view === "game" || S.view === "home") render();
         break;
       case "moveInfo": {
         const D = S.dialog && S.dialog.kind === "move" && S.dialog.appId === ev.info.appId ? S.dialog : null;
@@ -480,6 +488,14 @@
   }
   // A player's games: the ones they have a profile in, or played last.
   const playedOrOwned = (it, pid) => (it.kind === "game" && hasProfile(it.id, pid)) || !!lastBy(it, pid);
+  // When a player's profile for a game was last saved, and its size, read
+  // once per game until the next swap ({} until it arrives).
+  function profileInfo(gid, pid) {
+    if (!gid) return {};
+    if (!(gid in S.pinfo)) { S.pinfo[gid] = null; api.profileInfo(gid).catch(() => {}); }
+    const i = (S.pinfo[gid] || {})[pid];
+    return i && new Date(i.saved).getFullYear() > 2000 ? i : {};
+  }
   // When this player last started the game ("" if they never have).
   function lastBy(it, pid) {
     const r = (S.d.recent || {})[recentKey(it)];
@@ -1120,8 +1136,9 @@
   // A slot's line: when they last played it (whose files are in shows on
   // the slot's label), else whether they have a profile yet.
   function slotState(gid, pid) {
-    const at = lastBy({ kind: "game", id: gid }, pid);
+    const at = lastBy({ kind: "game", id: gid }, pid), i = profileInfo(gid, pid);
     if (at) return "Played " + ago(at);
+    if (i.saved) return "Saved " + ago(i.saved);
     return S.d.active[gid] === pid ? "Files loaded now" : hasProfile(gid, pid) ? "Has a profile" : "First time";
   }
 
@@ -1799,6 +1816,12 @@
     return `<section class="gpage-block">${head}${where}${inCloud}${list}</section>`;
   }
 
+  // "Saved yesterday, 24 MB": when the game last wrote this player's
+  // profile, and how much it holds.
+  function saved(g, pid) {
+    const i = g ? profileInfo(g.id, pid) : {};
+    return i.saved ? `<span class="gp-person-saved">Saved ${esc(ago(i.saved))}, ${esc(fmtBytes(i.size))}</span>` : "";
+  }
   // Everyone who plays this game: their time, when they played, and whose
   // files are loaded.
   function playersPanel(it) {
@@ -1811,7 +1834,7 @@
     return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Players</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
       const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has a profile" : g ? "No profile yet" : "", lastBy(it, p.id) ? `last ${ago(lastBy(it, p.id))}` : ""].filter(Boolean).join(", ");
       return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
-        <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span></div>
+        <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span>${saved(g, p.id)}</div>
 </div></div>`;
     }).join("")}</div></section>`;
   }
