@@ -242,6 +242,7 @@ func Run(opt Options) error {
 		go a.watchUpdates()
 		go a.cleanupLegacy()
 		cleanRestoreLeftovers()
+		go a.watchGameSaves()
 		time.Sleep(time.Minute)
 		a.backupIfDue()
 	}()

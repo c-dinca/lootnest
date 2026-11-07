@@ -65,6 +65,9 @@
     savesStatus: () => call("ps_savesStatus"),
     syncNow: () => call("ps_syncNow"),
     syncResolve: (gameId, playerId, answer) => call("ps_syncResolve", gameId, playerId, answer),
+    gameSaves: (key) => call("ps_gameSaves", key),
+    gameSaveNow: (key) => call("ps_gameSaveNow", key),
+    gameSaveRestore: (key, id) => call("ps_gameSaveRestore", key, id),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -78,6 +81,7 @@
 
   // ---------------------------------------------------------------- state --
   const S = {
+    gsaves: {},       // Library key -> cloud saves of a game outside Steam
     d: null,          // AppState from Go
     view: "home",
     from: "home",      // the view a game's page goes back to
@@ -248,6 +252,15 @@
         }
         if (ev.done && S.backupAsked) { S.backupAsked = false; if (ev.error) toast(ev.error, "error"); else toast("Backed up"); }
         loadBackupInfo();
+        break;
+      }
+      case "gameSaves": {
+        if (ev.info) { S.gsaves[ev.info.key] = ev.info; if (S.view === "game") render(); break; }
+        if (ev.error) toast(ev.error, "error");
+        else if (ev.saved) toast("Saved to the cloud");
+        else if (ev.restored) toast(ev.skipped ? `Restored; ${ev.skipped} save location${ev.skipped === 1 ? "" : "s"} this PC doesn't have ${ev.skipped === 1 ? "was" : "were"} left out` : "Restored");
+        if (ev.changed) { S.gsaves = {}; if (S.view === "game") render(); }
+        if (ev.key) { const G = S.gsaves[ev.key]; if (G) G.busy = false; }
         break;
       }
       case "savesStatus":
@@ -937,7 +950,7 @@
         </div>
       </div>
       <div class="gp-body">
-        <div class="gp-side"><dl class="facts">${facts.join("")}</dl>${shelfBlock(it)}${newsHTML(it)}</div>
+        <div class="gp-side"><dl class="facts">${facts.join("")}</dl>${gameSavesBlock(it)}${shelfBlock(it)}${newsHTML(it)}</div>
         <div class="gp-manage">${list}</div>
       </div></div>`;
   }
@@ -1633,6 +1646,41 @@
           : `<p class="hint">Games started from Lootnest are counted here, day by day.</p>`}</div></div>`;
   }
 
+  // A game outside Steam without profiles: its saves, kept as versions in
+  // the cloud folder (Steam games have Steam Cloud; games with profiles sync
+  // each player's saves).
+  const gsAsked = new Set();
+  function gameSavesBlock(it) {
+    if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
+    const G = S.gsaves[it.id];
+    if (!G) { if (!gsAsked.has(it.id)) { gsAsked.add(it.id); api.gameSaves(it.id).catch(() => {}); } return `<div class="gp-saves"><h2 class="gp-sub">Cloud save</h2><p class="hint">Looking for its saves…</p></div>`; }
+    const head = `<h2 class="gp-sub">Cloud save</h2>`;
+    if (G.off === "steam") return "";
+    if (G.error) return `<div class="gp-saves">${head}<p class="error-text">${esc(G.error)}</p></div>`;
+    if (G.off === "nocloud") return `<div class="gp-saves">${head}<p class="sub">Keep ${esc(possessive(it.name))} saves in your own cloud, with every version to go back to.</p>
+      <div class="row"><button class="btn" data-action="nav" data-view="cloud">Set up Cloud saves</button></div></div>`;
+    if (G.off === "locked") return `<div class="gp-saves">${head}<p class="sub">The cloud folder has a password. Enter it on <b>Cloud saves</b>.</p></div>`;
+    const s = cfg().settings;
+    let where;
+    if (!G.locations.length) {
+      where = `<p class="sub">Lootnest doesn't know where ${esc(it.name)} keeps its saves.</p>
+        ${s.saveDb ? `<p class="hint">It isn't in PCGamingWiki's list, and no folder is named like it. Turn on profiles to choose the folders yourself.</p>`
+          : `<p class="hint">With <b>Find save locations online</b> on, Lootnest uses PCGamingWiki's list of where over 20,000 games keep their saves.</p>
+             <div class="row"><button class="btn" data-action="savedb-on">Find save locations online</button></div>`}`;
+    } else {
+      where = `<ul class="gs-locs">${G.locations.map((l) => `<li class="selectable" title="${esc(l.resolved)}">${esc(l.path)}<span class="hint">${esc(fmtBytes(l.size || 0))}</span></li>`).join("")}</ul>
+        <p class="hint">${G.source === "list" ? "Found with PCGamingWiki's list of save locations." : "Folders named like the game; turn on Find save locations online for PCGamingWiki's list."}</p>`;
+    }
+    const vs = G.versions || [];
+    const list = G.locations.length || vs.length ? `${vs.length ? `<ul class="gs-versions">${vs.map((v, i) => `<li><span><b>${esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }))}</b>
+        <span class="hint">${esc(v.computer)}, ${esc(fmtBytes(v.size))}${i === 0 ? ", newest" : ""}</span></span>
+        <button class="btn small quiet" data-action="gs-restore" data-key="${esc(it.id)}" data-id="${esc(v.id)}" data-when="${esc(v.created)}" data-pc="${esc(v.computer)}" ${G.busy ? "disabled" : ""}>Restore</button></li>`).join("")}</ul>`
+        : `<p class="hint">No versions yet.${G.off === "disabled" ? "" : " One is made when the saves change and the game is closed."}</p>`}
+      ${G.off === "disabled" ? `<p class="hint">Automatic versions are off on <b>Cloud saves</b>.</p>` : ""}
+      ${G.locations.length ? `<div class="row"><button class="btn" data-action="gs-now" data-key="${esc(it.id)}" ${G.busy ? "disabled" : ""}>${G.busy ? "Saving" : "Back up now"}</button></div>` : ""}` : "";
+    return `<div class="gp-saves">${head}${where}${list}</div>`;
+  }
+
   // The game page's Shelf: where the game stands for each player.
   function shelfBlock(it) {
     const k = recentKey(it);
@@ -1892,6 +1940,8 @@
           <div class="row"><button class="btn quiet" data-action="backup-pick">Change</button><button class="btn quiet" data-action="backup-open">Open folder</button></div></div>
         <label class="toggle"><span><b style="font-weight:500">Sync saves between PCs</b><p>Each player's saves go up after a session and the newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.</p></span>
           <span class="switch"><input type="checkbox" data-backup="sync" ${B.sync ? "checked" : ""}><span></span></span></label>
+        ${sw("gameSaves", "Keep versions of games outside Steam", "For games without profiles that aren't on Steam (Steam has its own cloud): a new version of their saves when they change and the game is closed. Restore any version from the game's page.", cfg().settings.gameSaves)}
+        ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week. Nothing about you or your games is sent.", cfg().settings.saveDb)}
         <div class="bk-row"><div><b style="font-weight:500">${B.locked ? "Has a password" : B.encrypted ? "Encrypted with your password" : "Not encrypted"}</b>
           <p class="hint">${B.encrypted ? "Only someone with the password can open these files. Use the same password on every PC." : B.locked ? "Enter it to sync on this PC." : "Anyone who can open the folder can read the saves. A password encrypts them (AES-256), on every PC that uses this folder."}</p></div>
           <div class="row">${B.encrypted ? `<button class="btn quiet" data-action="backup-pw" data-on="1">Change password</button><button class="btn quiet" data-action="backup-pw" data-on="0">Remove password</button>` : `<button class="btn" data-action="backup-pw" data-on="1">${B.locked ? "Enter the password" : "Set a password"}</button>`}</div></div>
@@ -2096,6 +2146,24 @@
       if (note.trim().length > 500) { $("#sn-error").textContent = "Keep the note under 500 characters."; return; }
       S.dialog = null; renderOverlay();
       await setShelf(D.pid, D.k, { note: note.trim() });
+    },
+    async "gs-now"(el) {
+      const G = S.gsaves[el.dataset.key];
+      if (G) G.busy = true; render();
+      try { await api.gameSaveNow(el.dataset.key); } catch (e) { if (G) G.busy = false; toast(errText(e), "error"); render(); }
+    },
+    async "gs-restore"(el) {
+      const when = new Date(el.dataset.when).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+      const ok = await confirmDialog({ title: "Restore these saves?", body: `The saves from ${when} on ${el.dataset.pc} replace the ones on this PC. The saves here now are kept in Lootnest's backups first.`, ok: "Restore" });
+      if (!ok) return;
+      const G = S.gsaves[el.dataset.key];
+      if (G) G.busy = true; render();
+      try { await api.gameSaveRestore(el.dataset.key, el.dataset.id); } catch (e) { if (G) G.busy = false; toast(errText(e), "error"); render(); }
+    },
+    async "savedb-on"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.saveDb = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); toast("Downloading the save locations list"); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     async "sync-now"() { S.syncAsked = true; try { await api.syncNow(); } catch (e) { S.syncAsked = false; toast(errText(e), "error"); } },
     async "sync-resolve"(el) {

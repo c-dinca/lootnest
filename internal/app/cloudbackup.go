@@ -190,6 +190,7 @@ func (a *App) apiSetBackup(b BackupSettings) error {
 	first := cfg.Settings.BackupDir == "" && b.Dir != ""
 	if first {
 		b.Auto, b.Sync = true, true // what a cloud folder is for
+		cfg.Settings.GameSaves = true
 	}
 	if b.Dir == "" {
 		b.Sync = false

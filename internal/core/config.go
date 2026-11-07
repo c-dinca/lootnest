@@ -129,6 +129,11 @@ type Settings struct {
 	// CloudSync keeps each player's saves in BackupDir up to date and brings
 	// newer ones from another PC before a game starts (cloudsync.go).
 	CloudSync bool `json:"cloudSync,omitempty"`
+	// GameSaves keeps versions of the saves of Library games outside Steam
+	// in BackupDir (gamesaves.go); SaveDB downloads the list of where games
+	// keep their saves (Ludusavi's, from PCGamingWiki) to find them.
+	GameSaves bool `json:"gameSaves,omitempty"`
+	SaveDB    bool `json:"saveDb,omitempty"`
 }
 
 type Config struct {

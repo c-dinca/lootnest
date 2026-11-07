@@ -231,41 +231,11 @@ func (c *Cloud) Upload(cloudPlayer string, p *Player, g *Game, dir func(PathEntr
 	_ = writeFileAtomic(filepath.Join(pd, "player.json"), pj)
 	key := GameSyncKey(g)
 	data, mp := c.files(cloudPlayer, key)
-	write := func(w io.Writer) error {
-		zw := zip.NewWriter(w)
-		for i, pe := range g.Paths {
-			if src := dir(pe); exists(src) {
-				if err := zipPath(zw, src, "p/"+strconv.Itoa(i)); err != nil {
-					return err
-				}
-			}
-		}
-		// paths.json: entry name -> save location.
-		m := map[string]string{}
-		for i, pe := range g.Paths {
-			if exists(dir(pe)) {
-				m[strconv.Itoa(i)] = pe.Path
-			}
-		}
-		b, _ := json.Marshal(m)
-		f, err := zw.Create("paths.json")
-		if err != nil {
-			return err
-		}
-		if _, err := f.Write(b); err != nil {
-			return err
-		}
-		return zw.Close()
+	opt, err := c.archiveOptions()
+	if err != nil {
+		return nil, err
 	}
-	opt := BackupOptions{}
-	if c.Key != nil {
-		salt, iters, err := c.keyParams()
-		if err != nil {
-			return nil, err
-		}
-		opt = BackupOptions{Key: c.Key, Salt: salt, Iters: iters}
-	}
-	size, err := writeArchiveFile(data, write, opt)
+	size, err := writeArchiveFile(data, func(w io.Writer) error { return writeSaves(w, g.Paths, dir) }, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -285,6 +255,77 @@ func (c *Cloud) Upload(cloudPlayer string, p *Player, g *Game, dir func(PathEntr
 	return meta, nil
 }
 
+func (c *Cloud) archiveOptions() (BackupOptions, error) {
+	if c.Key == nil {
+		return BackupOptions{}, nil
+	}
+	salt, iters, err := c.keyParams()
+	if err != nil {
+		return BackupOptions{}, err
+	}
+	return BackupOptions{Key: c.Key, Salt: salt, Iters: iters}, nil
+}
+
+// writeSaves zips save locations: each as p/<n>, and paths.json naming the
+// location (its tokenized path) of each n.
+func writeSaves(w io.Writer, paths []PathEntry, dir func(PathEntry) string) error {
+	zw := zip.NewWriter(w)
+	m := map[string]string{}
+	for i, pe := range paths {
+		if src := dir(pe); exists(src) {
+			if err := zipPath(zw, src, "p/"+strconv.Itoa(i)); err != nil {
+				return err
+			}
+			m[strconv.Itoa(i)] = pe.Path
+		}
+	}
+	b, _ := json.Marshal(m)
+	f, err := zw.Create("paths.json")
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(b); err != nil {
+		return err
+	}
+	return zw.Close()
+}
+
+// readSaves unpacks a saves file into place: each location to dir of the
+// entry with the same path. Locations paths doesn't have are counted.
+func readSaves(file string, key []byte, paths []PathEntry, dir func(PathEntry) string, tmp string) (skipped int, err error) {
+	ob, err := openArchive(file, tmp, key)
+	if err != nil {
+		return 0, err
+	}
+	defer os.RemoveAll(tmp)
+	b, err := os.ReadFile(filepath.Join(ob, "paths.json"))
+	if err != nil {
+		return 0, errors.New("The cloud copy is damaged.")
+	}
+	var m map[string]string
+	if json.Unmarshal(b, &m) != nil {
+		return 0, errors.New("The cloud copy is damaged.")
+	}
+	for idx, path := range m {
+		var to *PathEntry
+		for i := range paths {
+			if strings.EqualFold(paths[i].Path, path) {
+				to = &paths[i]
+			}
+		}
+		if to == nil {
+			skipped++
+			continue
+		}
+		if err := Mirror(filepath.Join(ob, "p", idx), dir(*to)); err != nil {
+			return skipped, err
+		}
+	}
+	// Locations here that the copy doesn't have are left as they are:
+	// nothing is deleted because another PC lacks it.
+	return skipped, nil
+}
+
 // Download puts a player's saves for a game from the cloud into place:
 // dir(entry) is where each save location's files go. Save locations this
 // PC's game doesn't have are left out (their count is returned).
@@ -300,37 +341,7 @@ func (c *Cloud) Download(cloudPlayer string, g *Game, dir func(PathEntry) string
 		}
 		data = alt
 	}
-	ob, err := openArchive(data, tmp, c.Key)
-	if err != nil {
-		return 0, err
-	}
-	defer os.RemoveAll(tmp)
-	b, err := os.ReadFile(filepath.Join(ob, "paths.json"))
-	if err != nil {
-		return 0, errors.New("The cloud copy is damaged.")
-	}
-	var m map[string]string
-	if json.Unmarshal(b, &m) != nil {
-		return 0, errors.New("The cloud copy is damaged.")
-	}
-	for idx, path := range m {
-		var to *PathEntry
-		for i := range g.Paths {
-			if strings.EqualFold(g.Paths[i].Path, path) {
-				to = &g.Paths[i]
-			}
-		}
-		if to == nil {
-			skipped++
-			continue
-		}
-		if err := Mirror(filepath.Join(ob, "p", idx), dir(*to)); err != nil {
-			return skipped, err
-		}
-	}
-	// Save locations here that the cloud copy doesn't have are left as
-	// they are: nothing is deleted because another PC lacks it.
-	return skipped, nil
+	return readSaves(data, c.Key, g.Paths, dir, tmp)
 }
 
 // openArchive unpacks a sync file (zip, or encrypted with key) into tmp and

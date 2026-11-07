@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.15.0
+
+- **Cloud saves for games outside Steam**, like a launcher's cloud saves:
+  - every Library game that isn't on Steam and has no profiles gets a **Cloud save** section on its page;
+  - a new version of its saves goes to your cloud folder whenever they changed and the game is closed;
+  - the last 10 versions are kept, with when and on which PC each was made;
+  - **Restore** any of them, on this PC or another; the saves here are kept in Lootnest's backups first;
+  - **Back up now** makes one at any time.
+- Steam games keep using Steam Cloud. Games with profiles keep syncing each player's own saves.
+- **Find save locations online** (Cloud saves page, off until you turn it on): Lootnest downloads PCGamingWiki's list of where over 20,000 games keep their saves, about once a week, and uses it to find them without asking. Without it, folders named like the game are used.
+
 ## 1.14.1
 
 - Fixed: a new version could go unnoticed for hours. With **Check for updates automatically** on, Lootnest now checks every hour instead of every 6, and again whenever you open its window, so a new version shows within minutes.

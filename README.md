@@ -75,6 +75,7 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 | **Download covers and artwork** | Only if you turn it on (off by default) | The game's name, to `store.steampowered.com`; covers, wide art and logos come from Steam's image server and are saved on your PC |
 | **SteamGridDB API key** (optional, in Settings) | With covers on, for games the Steam store doesn't know | The game's name or Steam id and your key, to `www.steamgriddb.com`; images come from its CDN and are saved on your PC |
 | **Show game updates and news** | Only if you turn it on (off by default), when you open a game's page; each feed is read at most every 6 hours | The game's Steam app id to `api.steampowered.com` (for a game outside Steam, first its name to `store.steampowered.com`); an update's pictures load from Steam's image server when you open it |
+| **Find save locations online** (Cloud saves) | Only if you turn it on (off by default), then about once a week | Nothing about you or your games: Lootnest downloads the Ludusavi project's list of where games keep their saves (from PCGamingWiki) from `raw.githubusercontent.com` and keeps it on your PC |
 
 **Cloud saves and backup** never go online themselves: Lootnest writes the backup file to the folder you choose. If that folder is one OneDrive, Google Drive or Dropbox syncs, that app uploads it, under that app's own terms. With a password, the file is encrypted on your PC first (AES-256-GCM), so the cloud only ever has the encrypted file.
 
@@ -112,6 +113,7 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `shelf.json` and `activity.json` (each player's shelf and time played per day)
 - `backup.json` (when the last backup to your folder was made)
 - `sync.json` (what each player's cloud saves were at the last sync)
+- `gamesaves.json` and `savedb.json.gz` (cloud saves of games outside Steam, and the save locations list)
 - `config.json`
 - `lootnest.log`
 

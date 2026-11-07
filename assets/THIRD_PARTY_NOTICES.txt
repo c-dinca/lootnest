@@ -199,3 +199,15 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+--------------------------------------------------------------------------
+Save locations list (downloaded only with "Find save locations online")
+
+Lootnest can download the Ludusavi manifest
+(https://github.com/mtkennerly/ludusavi-manifest) by Matthew T. Kennerly,
+which lists where games keep their saves. Its data comes from PCGamingWiki
+(https://www.pcgamingwiki.com), whose content is available under the
+Creative Commons Attribution-NonCommercial-ShareAlike 3.0 license
+(https://creativecommons.org/licenses/by-nc-sa/3.0/). Lootnest doesn't ship
+the list; it downloads it to your PC and keeps only the Windows save
+locations of each game.
