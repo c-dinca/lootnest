@@ -618,6 +618,7 @@
     const ps = cfg().players;
     const who = ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     return `<div class="lib ln-root">${head}${hookBanner() || coverHint(all) ? `<div class="lib-banners">${hookBanner()}${coverHint(all)}</div>` : ""}
+      ${recentShelf(all)}
       <div class="lib-tools">
         <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}</div>${who}</div>
         <div class="lib-tools-side">
@@ -629,6 +630,28 @@
         </div></div>
       ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
       <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
+  }
+  // Recent games, as at the top of Steam's library: the last few played, on
+  // their wide art, one click from Play. Only on the Library as it opens,
+  // not while it's filtered; a search hides it.
+  function recentShelf(all) {
+    if (S.filter !== "all" || S.who || S.store !== "all" || S.tag || S.status) return "";
+    const rec = recentItems(all, false).slice(0, 5);
+    if (rec.length < 2) return "";
+    const cap = (it) => {
+      loadArt(it); ensureCover(it);
+      const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key];
+      const art = hero ? `<img src="${hero}" alt="">` : cover ? `<img class="soft" src="${cover}" alt="">` : "";
+      const t = totalPlayed(it) || steamTime(it);
+      const s = it.g && session(it.g.id);
+      return `<div class="lib-cap${s ? " busy" : ""}${art ? "" : " no-art"}"><button class="lib-cap-open" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">
+          <span class="lib-cap-art">${art || `<span class="lib-cap-none">${esc(it.name)}</span>`}</span>
+          <span class="lib-cap-text"><b>${esc(it.name)}</b><span>${playedBy(it)}${t ? `<span class="lib-cap-time ln-num">${esc(hours(t))}</span>` : ""}</span></span></button>
+        ${s ? `<span class="lib-cap-badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
+          : `<button class="ln-button ln-button--primary ln-button--icon ln-button--sm lib-cap-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
+    };
+    return `<section class="lib-recent" aria-label="Recent games"${S.q ? " hidden" : ""}><div class="ln-section-head"><div><h2>Recent games</h2></div></div>
+      <div class="lib-recent-row">${rec.map(cap).join("")}</div></section>`;
   }
 
   // Home: what are we playing tonight, and who's playing? The game played
@@ -3014,6 +3037,7 @@
       S.q = el.value;
       const grid = $("#grid");
       if (grid) { grid.innerHTML = gridHTML(); loadCovers(); }
+      const shelf = $(".lib-recent"); if (shelf) shelf.hidden = !!S.q; // a search shows only what it finds
       return;
     }
     if (el.id === "steam-q" && S.dialog) {

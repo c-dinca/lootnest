@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.30.0)
+## Where things stand (1.31.0)
 
 These shipped recently, newest last:
 
@@ -157,6 +157,8 @@ These shipped recently, newest last:
 - **1.30** Settings in categories (a list on the left, as in Steam's);
   drawers scroll (they were as tall as their content); more Racing Red:
   the current page's bar, page-title stripes, cover hover, `ln-tag--accent`.
+- **1.31** Library: a Recent games shelf on wide art (`recentShelf()`),
+  as in Steam's library, above the filters and the grid.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as

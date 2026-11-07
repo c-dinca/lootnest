@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.31.0
+
+- **Recent games, at the top of the Library**, as in Steam. The last five games you played are on their wide artwork, each with who played it last, when, and how long it's been played in all. Point at one to get a red **Play** button, or click it to open its page.
+  - It shows when the Library opens. Filter the Library, or search it, and only the games you asked for are left.
+  - The filters now sit under it, right above the games they filter.
+- The **Play** button on a cover in the Library turns red when you point at it.
+
 ## 1.30.0
 
 - **Settings, one part at a time.** Settings now has a list on the left, as in Steam: **General**, **Games and swaps**, **Online**, **Updates**, **Cloud saves**, **Data and activity** and **About**. The one you pick fills the right side, and Lootnest opens it again next time. A red dot on **Updates** says a new version is ready.
