@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -41,5 +42,34 @@ func TestMakeAvatar(t *testing.T) {
 		if _, err := MakeAvatar(filepath.Join(dir, "x.png")); err == nil {
 			t.Fatal("a file that isn't a picture is refused")
 		}
+	}
+}
+
+func TestMakeBanner(t *testing.T) {
+	dir := t.TempDir()
+	src := image.NewNRGBA(image.Rect(0, 0, 1200, 1200)) // square: the middle strip is kept
+	for y := 0; y < 1200; y++ {
+		for x := 0; x < 1200; x++ {
+			c := color.NRGBA{0, 0, 255, 255}
+			if y >= 400 && y < 800 {
+				c = color.NRGBA{255, 0, 0, 255}
+			}
+			src.SetNRGBA(x, y, c)
+		}
+	}
+	p := filepath.Join(dir, "b.png")
+	f, _ := os.Create(p)
+	_ = png.Encode(f, src)
+	f.Close()
+	b, err := MakeBanner(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	img, err := jpeg.Decode(bytes.NewReader(b))
+	if err != nil || img.Bounds().Dx() != BannerW || img.Bounds().Dy() != BannerH {
+		t.Fatalf("a %dx%d JPEG: %v %v", BannerW, BannerH, img.Bounds(), err)
+	}
+	if r, _, bl, _ := img.At(20, 20).RGBA(); r>>8 < 200 || bl>>8 > 60 {
+		t.Fatal("the middle strip of the picture is kept")
 	}
 }

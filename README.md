@@ -106,7 +106,8 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `profiles\<player>\<game>`
 - `backups\<game>\<date-time>`
 - `covers`
-- `avatars` (player pictures)
+- `avatars` and `banners` (pictures for player profiles)
+- `shelf.json` and `activity.json` (each player's shelf and time played per day)
 - `config.json`
 - `lootnest.log`
 

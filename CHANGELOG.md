@@ -5,7 +5,15 @@
 - **Home** is its own page now, and where Lootnest opens: the game you played last, **Continue playing**, **News from your games**. The **Library** is just your games: search, filters, sort and cover size.
 - The window's colours change when you choose a game, not as the pointer passes over covers: Home takes the game played last, a game's page that game, and the Library the game you opened last.
 - A game's page goes back to where you opened it from (Home or Library), scrolled where you were.
-- **Player profiles.** Click a player (in the sidebar or on **Players**) for their page: a banner in their colour or from a favourite game's art, their picture, name and a short tagline, time played and games, up to six favourite games and what they played lately. **Edit profile** changes all of it; a picture is cropped square and kept on this PC only (`avatars\`).
+- **Player profiles.** Click a player (in the sidebar or on **Players**) for their page:
+  - a banner (their colour, their own picture or a game's art), their picture (or a game's cover), name, a line and a few words about them;
+  - **Into right now**: the game they're on, with a note;
+  - their numbers: time played, games played, finished, days in a row, longest session, most played;
+  - **Favourite games** (up to six, in their order), **Activity** (a square a day for the last six months, the last 7 and 30 days, top games), **Shelf**, **Collection** (where their games come from) and **Played lately**;
+  - a **Play** button for the last game they played.
+- **Edit profile** has four parts: **Look** (picture, colour, any colour, banner and which part of it shows), **About**, **Showcase** (favourites, in order) and **Page** (which parts show, and in what order).
+- **Shelf** on every game's page: for each player, where the game stands (**Playing**, **Up next**, **Finished**, **Stopped**), a rating out of five and a note.
+- Everything stays on this PC: pictures in `avatars\` and `banners\`, the shelf in `shelf.json`, time per day in `activity.json` (counted from now on, for games started from Lootnest).
 
 ## 1.9.2
 
