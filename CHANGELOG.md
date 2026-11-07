@@ -13,6 +13,7 @@ Lootnest is now in **beta**: everything it was built to do is in, and the work f
   - whether cloud saves are on.
 - **Report a problem**, in **Settings, About**, copies Lootnest's version and its recent activity for you to paste, and opens a new issue on GitHub in your browser. Lootnest sends nothing itself.
 - **Beta** shows next to Lootnest's name, and in Settings with the version.
+- Save points of games without profiles now also take the saves a game keeps inside its own folder, as the safety net does.
 
 ## 1.44.0
 
