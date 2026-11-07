@@ -51,7 +51,9 @@ What makes it different, and the direction to keep pushing:
 - `site/`: the website (https://c-dinca.github.io/lootnest/), plain
   HTML, CSS and JS published to GitHub Pages by `.github/workflows/site.yml`
   when `site/**` changes on main. Its hero is a live swap demo
-  (`site.js`). Screenshots in `site/img` come from the harness at 2x.
+  (`site.js`), a game's "Load game" screen with slots. Screenshots in
+  `site/img` come from the harness at 2x with `?anon=1&runs=1`: the site
+  shows no real names, only "Player 1" and "Player 2" (the owner asked).
   A change only to `site/` or docs ships no app, so it needs no VERSION
   bump or release.
 - `design/harness`: a dev-only fixture harness that renders the real UI in
