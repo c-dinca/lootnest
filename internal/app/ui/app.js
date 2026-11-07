@@ -347,7 +347,7 @@
         P.busy = false;
         if (ev.error) toast(ev.error, "error");
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
-        else if (ev.point) toast(`Save point made: ${ev.point.name}`);
+        else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); cue("point", ev.key); }
         if (S.view === "game") render();
         if (S.dialog && S.dialog.kind === "points") renderOverlay();
         break;
@@ -364,7 +364,7 @@
       case "achUnlocked":
         // A game running now unlocked something: its page and the
         // Achievements page read it again, and the window says so.
-        if (!document.hidden && ev.list && ev.list.length) achPop(ev.list, ev.game, ev.player);
+        if (ev.list && ev.list.length) { if (!document.hidden) achPop(ev.list, ev.game, ev.player); unlockSound(ev.list); }
         achAsked.delete(ev.key); S.allAch = null;
         if (S.view === "game" || S.view === "achievements") render();
         break;
@@ -531,6 +531,7 @@
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
       case "toast":
+        if (ev.kind === "error" && S.picker && S.picker.working) S.picker.failed = true;
         toast(ev.text, ev.kind);
         break;
       case "browse": {
@@ -738,7 +739,7 @@
     const el = $("#bp");
     if (el) { el.removeAttribute("id"); el.classList.add("out"); setTimeout(() => el.remove(), 320); }
     api.bigPicture(false).catch(() => {});
-    sfx("back");
+    sfx("close");
   }
   function bpSoon() { if (BP.timer) return; BP.timer = requestAnimationFrame(() => { BP.timer = 0; if (BP.on) renderBP(false); }); }
   const glyph = (b) => `<span class="bp-g bp-g--${b.toLowerCase()}" aria-hidden="true">${b}</span>`;
@@ -921,9 +922,9 @@
     else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
     else if (go === "back") bpBack();
     else if (go === "seat") { actions.seat({ dataset: { player: el.dataset.p } }); sfx("go"); renderBP(false); }
-    else if (go === "tab") { BP.tab = el.dataset.t; BP.detail = null; BP.choose = null; BP.focus = ""; renderBP(true); }
+    else if (go === "tab") { BP.tab = el.dataset.t; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("tab"); renderBP(true); }
     else if (go === "exit") bpClose();
-    else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); renderBP(false); }
+    else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); sfx("toggle"); renderBP(false); }
   }
   function bpBack() {
     if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
@@ -1011,23 +1012,50 @@
   window.addEventListener("gamepadconnected", () => { if (!pad.raf) pad.raf = requestAnimationFrame(padLoop); toast("Controller connected. Press Start for Big Picture."); });
   window.addEventListener("focus", () => { if (!pad.raf && navigator.getGamepads && [...navigator.getGamepads()].some(Boolean)) pad.raf = requestAnimationFrame(padLoop); });
 
-  // Soft sounds for moving and choosing, made here (no files); off with
-  // the button at the bottom of Big Picture.
-  let actx = null;
-  function sfx(kind) {
-    if (!BP.sounds || reduced()) return;
+  // Kenney's Interface Sounds (CC0), inlined at start as {name: base64}
+  // like the fonts. Moving and choosing in Big Picture are off with the
+  // button at its bottom; unlocks, save points and swaps with Settings.
+  const SOUNDS = /*@SOUNDS*/{};
+  const SFX = {
+    move: ["tick_001", 0.3], edge: ["click_004", 0.2, 0.8], tab: ["select_007", 0.3], go: ["select_002", 0.35], back: ["back_002", 0.35],
+    open: ["maximize_008", 0.3], close: ["minimize_008", 0.3], toggle: ["toggle_002", 0.2],
+    unlock: ["confirmation_002", 0.3], rare: ["glass_001", 0.25], point: ["drop_002", 0.3], swap: ["confirmation_001", 0.3],
+  };
+  let actx = null, master = null;
+  const sfxBufs = {}, sfxAt = {};
+  function playSound(kind) {
+    const [name, gain, rate] = SFX[kind] || [], b64 = name && SOUNDS[name];
+    const now = performance.now();
+    if (!b64 || now - (sfxAt[kind] || -1e9) < 45) return;
+    sfxAt[kind] = now;
     try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      const notes = { move: [[880, 0.02]], edge: [[220, 0.03]], tab: [[660, 0.02], [990, 0.02]], go: [[740, 0.025], [1110, 0.03]], back: [[740, 0.025], [520, 0.03]], open: [[523, 0.03], [659, 0.03], [784, 0.04]] }[kind] || [];
-      let t = actx.currentTime;
-      notes.forEach(([f, len]) => {
-        const o = actx.createOscillator(), gn = actx.createGain();
-        o.type = "sine"; o.frequency.value = f;
-        gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.05, t + 0.005); gn.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.06);
-        o.connect(gn).connect(actx.destination); o.start(t); o.stop(t + len + 0.08);
-        t += len + 0.015;
-      });
+      if (!actx) { actx = new AudioContext(); master = actx.createGain(); master.gain.value = 0.7; master.connect(actx.destination); }
+      if (actx.state === "suspended") actx.resume().catch(() => {});
+      sfxBufs[name] = sfxBufs[name] || actx.decodeAudioData(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer);
+      sfxBufs[name].then((buf) => {
+        const src = actx.createBufferSource(), g = actx.createGain();
+        src.buffer = buf; src.playbackRate.value = rate || 1; g.gain.value = gain;
+        src.connect(g).connect(master); src.start();
+      }).catch(() => {});
     } catch (e) { /* no sound */ }
+  }
+  function sfx(kind) { if (BP.sounds && !document.hidden) playSound(kind); }
+  // Go sends no unlocks for a game with an anti-cheat.
+  function unlockSound(list) {
+    if (cfg().settings.soundsOff) return;
+    playSound("unlock");
+    if (list.some((a) => tierOf(a.percent) === "ultra")) setTimeout(() => playSound("rare"), 120);
+  }
+  // Save points and swaps: never for a game with an anti-cheat, as with the
+  // notes over games. A Steam profile game's folder is its scanned one's.
+  function cue(kind, key) {
+    if (cfg().settings.soundsOff) return;
+    const it = libraryItems().find((x) => recentKey(x) === key);
+    const dir = it && (it.f ? it.f.dir : it.exe || ((S.found.games || []).find((f) => it.appId && f.appId === it.appId) || {}).dir);
+    if (!dir) { playSound(kind); return; }
+    const f = S.facts[key];
+    (f ? Promise.resolve(f) : api.gameFacts(dir).then((x) => (S.facts[key] = x || {})))
+      .then((x) => { if (!x.antiCheat) playSound(kind); }).catch(() => {});
   }
 
   // ---------------------------------------------------------- side games --
@@ -2284,6 +2312,8 @@
     const P = S.picker;
     if (!P || !P.working) return;
     const s = session(P.gameId);
+    // The files are in once the session is past loading (or gone, unless it failed).
+    if (!P.swapped && (s ? s.phase !== "loading" : !P.failed)) { P.swapped = true; cue("swap", "game:" + P.gameId); }
     // The picker stays up ("Starting …") until the game is actually running.
     if (!s || s.phase === "playing") { S.picker = null; return; }
     render();
@@ -3395,6 +3425,7 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}`)
         + sub("While you play", "", `
           ${sw("achToastsOff", "Show achievements as they unlock", "For games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, in the colour of the profile playing. It's a window of Lootnest's own: nothing goes into the game. It shows over windowed and borderless games, and over most fullscreen ones; switch a game to borderless if it doesn't. Never for games with an anti-cheat.", !s.achToastsOff, true)}
+          ${sw("soundsOff", "Sounds for unlocks, save points and swaps", "A short sound in Lootnest's window when an achievement unlocks, a save point is made or a profile's files are loaded. Never for games with an anti-cheat.", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, here and over the screen at the bottom right, as it does over a game.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
         + sub("Steam", "", `
@@ -4353,7 +4384,8 @@
     async "report-problem"() { try { await api.reportProblem(); toast("Copied. Paste it into the new issue."); } catch (e) { toast(errText(e), "error"); } },
     "ach-reveal"(el) { S.revealed.add(el.dataset.k); render(); },
     "test-toast"() {
-      achPop([{ name: "This is how an unlock looks", percent: 4.2 }], "", (seated() || {}).id);
+      const demo = [{ name: "This is how an unlock looks", percent: 4.2 }];
+      achPop(demo, "", (seated() || {}).id); unlockSound(demo);
       api.testToast().then(() => toast("A note shows at the bottom right of the screen for five seconds. If none does, Show recent activity says why.")).catch((e) => toast(errText(e), "error")); },
     "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined }); renderOverlay(); } },
     "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },

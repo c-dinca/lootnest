@@ -17,7 +17,10 @@ if (fs.existsSync(cache)) {
     if (m) art[`${m[1]}-${m[2]}`] = `data:image/${m[3] === "png" ? "png" : "jpeg"};base64,` + fs.readFileSync(path.join(cache, f)).toString("base64");
   }
 }
-const js = fs.readFileSync(path.join(ui, "app.js"), "utf8");
+// Like app.go: the sounds inlined into app.js as {name: base64}.
+const sounds = Object.fromEntries(fs.readdirSync(path.join(ui, "sounds")).filter((f) => f.endsWith(".ogg"))
+  .map((f) => [f.slice(0, -4), fs.readFileSync(path.join(ui, "sounds", f)).toString("base64")]));
+const js = fs.readFileSync(path.join(ui, "app.js"), "utf8").replace("/*@SOUNDS*/{}", () => JSON.stringify(sounds));
 const stub = fs.readFileSync(path.join(here, "stub.js"), "utf8");
 const html = fs.readFileSync(path.join(ui, "index.html"), "utf8")
   .replace("/*@CSS*/", () => css)

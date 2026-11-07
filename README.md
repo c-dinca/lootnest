@@ -177,3 +177,5 @@ Bug reports and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md
 ## License
 
 [MIT](LICENSE). Third-party licenses are in [assets/THIRD_PARTY_NOTICES.txt](assets/THIRD_PARTY_NOTICES.txt).
+
+The interface sounds are Kenney's [Interface Sounds](https://opengameart.org/content/interface-sounds) ([kenney.nl](https://www.kenney.nl)), released under CC0.

@@ -237,6 +237,7 @@
     ps_dismissConflict: () => ok(),
     ps_gameFacts: (dir) => ok({ antiCheat: /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "" }),
     ps_bigPicture: () => ok(),
+    ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
         unknown: [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: 1 } }), 120);

@@ -104,6 +104,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ================================================================
+Interface Sounds by Kenney (sounds, in internal/app/ui/sounds)
+================================================================
+Created and distributed by Kenney (https://www.kenney.nl)
+Source: https://opengameart.org/content/interface-sounds
+
+License: Creative Commons Zero, CC0 1.0 (public domain dedication)
+http://creativecommons.org/publicdomain/zero/1.0/
+
+Kenney's own license file is in internal/app/ui/sounds/LICENSE-Kenney.txt.
+
+================================================================
 Bricolage Grotesque (font, in internal/app/ui/fonts)
 ================================================================
 Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
