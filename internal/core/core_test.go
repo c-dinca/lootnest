@@ -639,3 +639,35 @@ func TestProfileInfo(t *testing.T) {
 		t.Fatalf("got %+v %v", info, ok)
 	}
 }
+
+// A new profile can start from a copy of another profile's files, not only
+// the ones on the PC: "Cristian, hardcore" from Cristian's saves while
+// Mihai's are loaded.
+func TestNewProfileCopyFrom(t *testing.T) {
+	f := newFixture(t)
+	f.cfg.Players = append(f.cfg.Players, Player{ID: "p3", Name: "Cristian hardcore", Color: PlayerColors[2]})
+	write(t, f.optFile(), "cristian")
+	if err := f.eng.Activate(f.cfg, "cs2", "p2", ActivateOptions{FirstOwner: "p1", NewProfile: NewFresh}); err != nil {
+		t.Fatal(err)
+	}
+	write(t, f.optFile(), "mihai")
+	if err := f.eng.Activate(f.cfg, "cs2", "p3", ActivateOptions{NewProfile: NewCopy, CopyFrom: "p1"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, f.optFile()); got != "cristian" {
+		t.Fatalf("p3 should start from Cristian's files, got %q", got)
+	}
+	// Mihai's files were saved first, and Cristian's are untouched.
+	if err := f.eng.Activate(f.cfg, "cs2", "p2", ActivateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, f.optFile()); got != "mihai" {
+		t.Fatalf("Mihai's back: %q", got)
+	}
+	if err := f.eng.Activate(f.cfg, "cs2", "p1", ActivateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, f.optFile()); got != "cristian" {
+		t.Fatalf("Cristian's back: %q", got)
+	}
+}

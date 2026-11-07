@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.21.0
+
+- **New profile, right from "Who's playing?"** The last slot makes a profile on the spot. It can be someone new, or another run for yourself, such as "Cristian hardcore". Name it, press Enter, and it's chosen.
+- **Start a profile from anyone's saves.** A profile that hasn't played a game yet can start:
+  - fresh;
+  - from a copy of the files loaded now;
+  - from a copy of any other profile's files for that game, such as Cristian's saves while Mihai's are loaded.
+  The profile it was copied from is never changed.
+- Pressing 1–9 in "Who's playing?" now plays the swap animation too.
+
 ## 1.20.1
 
 - **Players are now Profiles**, as on a console. Each profile has its own settings, saves and achievements in every game:

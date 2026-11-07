@@ -136,6 +136,10 @@
       return ok();
     },
     ps_log: () => ok("10:42 Launched Counter-Strike 2 for Mihai\n10:20 Saved Cristian's files for It Takes Two"),
+    // Saving profiles gives new ones an id, as Go does.
+    ps_savePlayers: (list) => { PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },
+    // A first-timer is asked how to start, as in Go.
+    ps_play: (req) => ok(!req.newProfile && !(profiles[req.gameId] || []).includes(req.playerId) && req.gameId in profiles ? { need: "newMode" } : {}),
     // Each player's profile: saved a while ago, a few MB.
     ps_profileInfo: (gid) => { if (STATE !== "loading") emit({ type: "profileInfo", gameId: gid, info: Object.fromEntries((profiles[gid] || []).map((p, j) => [p, { saved: iso((j + 1) * 22 * h), size: (j + 1) * 7.3 * 1048576 }])) }); return ok(); },
     // Achievements: CS2 from Steam's cache, a folder game from a file on this PC.

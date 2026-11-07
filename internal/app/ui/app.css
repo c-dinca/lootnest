@@ -320,6 +320,16 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .slot:active { transform: translateY(-2px); }
 .slot.in { border-color: var(--player-fill); }
 .slot .ln-avatar { margin-bottom: var(--space-2); }
+/* New profile: the last slot, dashed until it's named. */
+.slot-new { border-style: dashed; background: none; --player-fill: var(--fg-1); --player-on: var(--fg-on-light); --player-wash: var(--glass-ctl); }
+.slot-new-plus { display: grid; place-items: center; width: 120px; height: 120px; margin-bottom: var(--space-2); border: var(--hairline) dashed var(--edge-3); border-radius: var(--radius-round); color: var(--fg-2); }
+.slot-new-plus .ln-icon { width: 36px; height: 36px; }
+.slot-new .slot-label { background: var(--glass-ctl-hover); color: var(--fg-1); }
+.slot-new.editing { cursor: default; padding-bottom: var(--space-5); }
+.slot-new.editing:hover { transform: none; }
+.slot-new.editing .ln-input { width: 100%; }
+.slot-new .error-text:empty { display: none; }
+.slot-new-actions { display: flex; justify-content: flex-end; gap: var(--space-2); justify-self: stretch; }
 .slot .name { font: 750 var(--fs-32)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); overflow-wrap: anywhere; }
 .slot .state { font-size: var(--fs-13); color: var(--fg-2); }
 .slot-label {

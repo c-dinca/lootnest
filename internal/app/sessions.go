@@ -82,6 +82,7 @@ type swapRequest struct {
 	PlayerID   string `json:"playerId"`
 	FirstOwner string `json:"firstOwner"`
 	NewProfile string `json:"newProfile"`
+	CopyFrom   string `json:"copyFrom"` // with NewProfile "copy": whose profile to copy
 	Launch     bool   `json:"launch"`
 	ReqID      string `json:"reqId"` // Steam request waiting for this swap
 	// Cloud answers a "cloud" need: "here" keeps this PC's saves, "cloud"
@@ -170,6 +171,7 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 	err := a.eng.Activate(cfg, g.ID, req.PlayerID, core.ActivateOptions{
 		FirstOwner: req.FirstOwner,
 		NewProfile: req.NewProfile,
+		CopyFrom:   req.CopyFrom,
 		Keep:       cfg.Settings.BackupsToKeep,
 	})
 	if err != nil {
