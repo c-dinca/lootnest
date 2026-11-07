@@ -116,7 +116,18 @@ Numbers that sit in columns use tabular figures (`.ln-num`). Labels are sentence
   - `--ease-out` is `cubic-bezier(.2,.8,.2,1)`, and `--ease-in-out` is used for the skeleton pulse.
   - `--dur-1` (120ms) is for hover and press, and `--dur-2` (180ms) for state changes and toasts.
   - `--dur-3` (280ms) is for the seat changing and a save slot changing hands. Swap motion stays under 320ms in total.
-  - There is no bounce or elastic easing. Step 6 designs the swap moment.
+  - There is no bounce or elastic easing.
+  - **The swap moment** happens in the "Who's playing?" picker. Each player is a save slot with their label in their colour.
+    - Choosing one swaps the saves: the avatar whose files were in slides out to the left and fades (`swap-out`, `--ease-in-out`), while the chosen one slides into the bay from the right (`swap-in`, `--ease-out`).
+    - Both take `--dur-3` (280ms), and the whole swap stays under 320ms.
+    - Under them: "Loading Mihai's files", then "A copy of Cristian's files was made first."
+    - With reduced motion, the chosen avatar fades in and nothing slides.
+  - **Elsewhere:**
+    - slots lift 4px on hover and come in 30ms apart;
+    - covers scale 3% on hover;
+    - buttons move down 1px when pressed;
+    - toasts rise 8px;
+    - pages cross-fade in `--dur-2`.
 
 ## Components
 
@@ -174,4 +185,4 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
 | Settings | On the system (1.16.7) |
 | Dialogs (Add game, first run, the profile editor, confirmations), the right-click menu, older buttons and form controls | On the system (1.16.8) |
-| The "Who's playing?" picker | Old layout on the new tokens; redesigned with the swap moment in Step 6 |
+| The "Who's playing?" picker and the swap moment | On the system (1.17.0) |
