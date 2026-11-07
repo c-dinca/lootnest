@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+
+- **Download covers and artwork** (was "Download covers for games outside Steam") now also gets each game's wide artwork and logo, so games outside Steam get the same page and Library hero as Steam games. Steam games whose art Steam hasn't kept on this PC get it too.
+- Optional **SteamGridDB API key** in Settings: games the Steam store doesn't know get their cover, artwork and logo from SteamGridDB. The key is free and is sent only to SteamGridDB.
+- The Library asks once, clearly, when games have no cover: **Find covers**.
+
 ## 1.7.1
 
 - Updates and news open inside Lootnest: click one on a game's page to read the whole post, with its pictures, headings and lists. Links in it open in your browser; **Open on Steam** shows the original.

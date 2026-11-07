@@ -98,3 +98,68 @@ func TestFindStoreAppLoose(t *testing.T) {
 		t.Fatalf("a two-word name is not shortened to one word: %d %v", id, terms)
 	}
 }
+
+func pngBytes() []byte {
+	return append([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}, make([]byte, 2048)...)
+}
+
+func TestDownloadedArtHeroAndLogo(t *testing.T) {
+	dir := t.TempDir()
+	hero := "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1426210/library_hero.jpg"
+	fetch, _ := fakeStore(t, `{"items":[{"id":1426210,"name":"It Takes Two"}]}`, map[string]bool{hero: true})
+	p, err := DownloadedArt(fetch, nil, dir, "It Takes Two", 0, ArtHero)
+	if err != nil || p != filepath.Join(dir, "ittakestwo-hero.jpg") {
+		t.Fatalf("hero for a game outside Steam, by its store id: %q %v", p, err)
+	}
+	logo := "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/logo.png"
+	png := pngBytes()
+	f2 := func(u string) ([]byte, error) {
+		if u == logo {
+			return png, nil
+		}
+		return fetch(u)
+	}
+	if p, err := DownloadedArt(f2, nil, dir, "Counter-Strike 2", 730, ArtLogo); err != nil || p != filepath.Join(dir, "app730-logo.png") {
+		t.Fatalf("logo by app id, saved as png: %q %v", p, err)
+	}
+	if SavedArt(dir, "Counter-Strike 2", 730, ArtLogo) == "" {
+		t.Fatal("saved art is found again offline")
+	}
+}
+
+func TestDownloadedArtFromSteamGridDB(t *testing.T) {
+	dir := t.TempDir()
+	store, _ := fakeStore(t, `{"items":[]}`, nil) // the store doesn't know the game
+	cdn := "https://cdn2.steamgriddb.com/grid/abc.png"
+	png := pngBytes()
+	fetch := func(u string) ([]byte, error) {
+		if u == cdn {
+			return png, nil
+		}
+		return store(u)
+	}
+	var asked []string
+	grid := &GridDB{Key: "k", Fetch: func(u, bearer string) ([]byte, error) {
+		if bearer != "k" {
+			t.Fatalf("the key goes with every request: %q", bearer)
+		}
+		asked = append(asked, u)
+		switch {
+		case strings.HasPrefix(u, gridAPI+"/search/autocomplete/"):
+			return []byte(`{"success":true,"data":[{"id":42,"name":"Kingdom Two Crowns"}]}`), nil
+		case strings.HasPrefix(u, gridAPI+"/grids/game/42"):
+			return []byte(`{"success":true,"data":[{"url":"` + cdn + `"},{"url":"https://evil.example/x.png"}]}`), nil
+		}
+		return nil, nil
+	}}
+
+	// Without a key: a miss, remembered.
+	if p, _ := DownloadedArt(fetch, nil, dir, "Kingdom Two Crowns", 0, ArtCover); p != "" {
+		t.Fatalf("no key, no cover: %q", p)
+	}
+	// With a key, the miss is asked again, now from SteamGridDB.
+	p, err := DownloadedArt(fetch, grid, dir, "Kingdom Two Crowns", 0, ArtCover)
+	if err != nil || p != filepath.Join(dir, "kingdomtwocrowns.png") {
+		t.Fatalf("cover from SteamGridDB: %q %v (%v)", p, err, asked)
+	}
+}

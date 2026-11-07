@@ -45,7 +45,7 @@
     saveLibraryPref: (key, name, args) => call("ps_saveLibraryPref", key, name, args),
     addLibraryGame: (kind, appId, path) => call("ps_addLibraryGame", kind, appId || 0, path || ""),
     gameIcon: (exe) => call("ps_gameIcon", exe),
-    art: (appId, kind) => call("ps_art", appId, kind),
+    art: (appId, name, key, kind) => call("ps_art", appId || 0, name, key, kind),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -170,6 +170,10 @@
         pendingCovers.delete(ev.key);
         S.covers[ev.key] = ev.url;
         showCover(ev.key);
+        break;
+      case "art":
+        S.art[ev.key] = ev.url;
+        if (S.view === "game" || S.view === "library") render();
         break;
       case "moveInfo": {
         const D = S.dialog && S.dialog.kind === "move" && S.dialog.appId === ev.info.appId ? S.dialog : null;
@@ -329,8 +333,9 @@
     if (cfg().settings.downloadCovers || S.hideCoverHint) return "";
     const n = all.filter((it) => !it.appId).length;
     if (!n) return "";
-    return `<div class="cover-hint"><span>${n === 1 ? "1 game outside Steam has" : n + " games outside Steam have"} no cover. Lootnest can look them up on the Steam store by name; only the name is sent.</span>
-      <button class="btn small" data-action="covers-on">Download covers</button><button class="btn small quiet" data-action="covers-later">Not now</button></div>`;
+    return `<div class="banner"><div><b>Find covers and artwork for ${n === 1 ? "1 game" : n + " games"}</b>
+      <p>Lootnest looks ${n === 1 ? "it" : "them"} up on the Steam store by name, and on SteamGridDB if you add a key in Settings. Only the games' names are sent. Everything found is saved on this PC.</p></div>
+      <div class="row"><button class="btn quiet" data-action="covers-later">Not now</button><button class="btn primary" data-action="covers-on">Find covers</button></div></div>`;
   }
 
   function gridHTML() {
@@ -481,25 +486,28 @@
     return r.player && player(r.player) ? `${pname(r.player)} played ${when}` : `Played ${when}`;
   }
 
-  // Wide art and logos come from Steam's cache on this PC.
+  // Wide art and logos: from Steam's cache on this PC, or downloaded when
+  // "Download covers and artwork" is on.
   function artHTML(it) {
-    const hero = it.appId ? S.art["hero:" + it.appId] : "";
+    const hero = S.art["hero:" + coverKey(it)];
     const c = S.covers[coverKey(it)] || S.icons[coverKey(it)] || "";
     if (hero) return `<div class="art" style="background-image:url('${hero}')"></div>`;
     if (c) return `<div class="art soft" style="background-image:url('${c}')"></div>`;
     return `<div class="art none"></div>`;
   }
   function titleHTML(it, cls) {
-    const logo = it.appId ? S.art["logo:" + it.appId] : "";
+    const logo = S.art["logo:" + coverKey(it)];
     return logo ? `<h1 class="${cls} has-logo"><img src="${logo}" alt="${esc(it.name)}"></h1>` : `<h1 class="${cls}">${esc(it.name)}</h1>`;
   }
   const artWanted = new Set();
-  async function loadArt(appId) {
-    if (!appId || artWanted.has(appId)) return;
-    artWanted.add(appId);
+  async function loadArt(it) {
+    const key = coverKey(it);
+    if (!it || artWanted.has(key)) return;
+    artWanted.add(key);
     try {
-      const [h, l] = await Promise.all([api.art(appId, "hero"), api.art(appId, "logo")]);
-      S.art["hero:" + appId] = h || ""; S.art["logo:" + appId] = l || "";
+      const [h, l] = await Promise.all([api.art(it.appId, it.name, key, "hero"), api.art(it.appId, it.name, key, "logo")]);
+      if (h) S.art["hero:" + key] = h;
+      if (l) S.art["logo:" + key] = l;
       if (h || l) render();
     } catch (e) { /* no art */ }
   }
@@ -520,7 +528,7 @@
     let best = null, at = 0;
     all.forEach((it) => { const r = rec[recentKey(it)]; const t = r ? new Date(r.at).getTime() : 0; if (t > at) { best = it; at = t; } });
     if (!best) return "";
-    loadArt(best.appId);
+    loadArt(best);
     const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
     return `<section class="hero" aria-label="Last played">${artHTML(best)}
       <div class="hero-body">${titleHTML(best, "hero-title")}
@@ -582,7 +590,7 @@
     const P = S.page;
     const it = P && libraryItems().find((x) => x.kind === P.kind && x.id === P.id);
     if (!it) { S.view = "library"; return viewLibrary(); }
-    loadArt(it.appId);
+    loadArt(it);
     const back = `<button class="btn ghost back" data-action="back-library">${icon.back}Library</button>`;
     const facts = [];
     const add = (k, v) => facts.push(`<div><dt>${k}</dt><dd>${v}</dd></div>`);
@@ -1183,9 +1191,12 @@
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
           ${sw("checkUpdates", "Check for updates automatically", "Once a day, Lootnest asks GitHub for its latest version number. Nothing about you or your games is sent.", s.checkUpdates)}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
-          ${sw("downloadCovers", "Download covers for games outside Steam", "Looks each game up on the Steam store by its name and saves the cover on this PC. Only the game's name is sent. Off: those games show their own icon.", s.downloadCovers)}
+          ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}
         </div></section>
         <section class="section"><div class="numbers">
+          <div class="field wide"><label for="s-grid">SteamGridDB API key <span class="hint">(optional)</span></label>
+            <input id="s-grid" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key">
+            <span class="hint">Covers and artwork for games the Steam store doesn't know. Get a free key on steamgriddb.com, under Preferences, API. It's sent only to SteamGridDB.</span></div>
           <div class="field"><label for="s-backups">Backups kept per game</label><input id="s-backups" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}"></div>
           <div class="field"><label for="s-timeout">Seconds to wait for a game to start</label><input id="s-timeout" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}"></div>
           ${st.found ? `<div class="field"><label for="s-steam">Steam account</label><select id="s-steam" data-setting="steamAccountId">
@@ -1218,7 +1229,7 @@
     else s[f] = el.value;
     try {
       await api.saveSettings({ settings: s, autostart });
-      if (f === "downloadCovers") { S.covers = {}; pendingCovers.clear(); }
+      if (f === "downloadCovers" || f === "gridDbKey") { S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); }
       await refresh();
     } catch (e) { toast(errText(e), "error"); await refresh(); }
   }
@@ -1256,7 +1267,7 @@
     async "covers-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.downloadCovers = true;
-      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     "covers-later"() { S.hideCoverHint = true; render(); },
     "update-check"() { S.update = { checking: true }; render(); api.checkUpdate().catch((e) => { S.update = {}; toast(errText(e), "error"); render(); }); },
