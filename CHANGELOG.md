@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0
+
+- **Export profile** on a player's page: one file with their saves and settings in every game they have a profile for, their picture and banner, shelf and play time. Take it to another PC or a friend's, optionally with a password (AES-256).
+- **Import a profile** on **Players** adds that player, or updates them if they're already here. Their games are matched to the ones on this PC (same Steam game, launcher link, exe or name), and games this PC doesn't have yet are added. Everything here is saved first, so an import can be undone like a restore.
+- A profile file and a full backup can't be mixed up: **Restore from a backup** and **Import a profile** each say what a file is and do the right thing with it.
+
 ## 1.12.0
 
 - The Library now finds games from every launcher on your PC:

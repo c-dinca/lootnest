@@ -383,6 +383,7 @@ func (a *App) writeBackup() (string, int64, error) {
 // --------------------------------------------------------------- restore ---
 
 type RestoreInfo struct {
+	Kind         string    `json:"kind,omitempty"` // "" everything, "player" one profile
 	NeedPassword bool      `json:"needPassword,omitempty"`
 	Error        string    `json:"error,omitempty"`
 	File         string    `json:"file"`
@@ -432,7 +433,7 @@ func (a *App) apiRestoreOpen(file, password string) error {
 		}
 		restoreOpen, restoreTmp = ob, tmp
 		m := ob.Manifest
-		info.Computer, info.Created, info.App, info.Players, info.Games = m.Computer, m.Created, m.App, m.Players, m.Games
+		info.Kind, info.Computer, info.Created, info.App, info.Players, info.Games = m.Kind, m.Computer, m.Created, m.App, m.Players, m.Games
 	}()
 	return nil
 }
@@ -453,7 +454,13 @@ func (a *App) apiRestoreCancel() {
 // apiRestoreApply restores the opened backup. Everything as it is now is
 // first saved to backups\before-restore, so a restore can be undone by
 // restoring that file. A "restored" event says when it's done.
-func (a *App) apiRestoreApply() error {
+func (a *App) apiRestoreApply() error { return a.applyOpened(false) }
+
+// apiImportApply adds the opened profile file's player (or updates them),
+// after the same backup of everything; a "restored" event says when.
+func (a *App) apiImportApply() error { return a.applyOpened(true) }
+
+func (a *App) applyOpened(player bool) error {
 	a.mu.Lock()
 	busy := len(a.sessions) > 0
 	a.mu.Unlock()
@@ -482,7 +489,15 @@ func (a *App) apiRestoreApply() error {
 			out["error"] = "Nothing was restored: Lootnest couldn't save what's here now first (" + err.Error() + ")."
 			return
 		}
-		newCfg, err := a.store.Restore(restoreOpen, cfg)
+		var newCfg *core.Config
+		var err error
+		if player {
+			var res core.ImportResult
+			newCfg, res, err = a.store.ImportPlayer(restoreOpen, cfg)
+			out["import"] = res
+		} else {
+			newCfg, err = a.store.Restore(restoreOpen, cfg)
+		}
 		if err != nil {
 			a.logf("ERROR restore: %v (what was here before is in %s)", err, safety)
 			out["error"] = fmt.Sprintf("The restore stopped: %v. What was here before is saved in %s.", err, safety)
@@ -492,7 +507,7 @@ func (a *App) apiRestoreApply() error {
 		a.cfg = newCfg
 		a.firstRun = false
 		a.mu.Unlock()
-		a.logf("Restored a backup from %s (%s); what was here before is in %s", restoreOpen.Manifest.Computer, restoreOpen.Manifest.Created, safety)
+		a.logf("Put in place a backup (%s) from %s (%s); what was here before is in %s", map[bool]string{true: "one player", false: "everything"}[player], restoreOpen.Manifest.Computer, restoreOpen.Manifest.Created, safety)
 		out["ok"], out["safety"] = true, safety
 		dropRestore()
 		a.emitSessions()
@@ -523,4 +538,44 @@ func (a *App) openBackupFolder() error {
 		t = dir
 	}
 	return win.ShellOpen(t)
+}
+
+// apiExportPlayer writes a player's profile to a file in dir (with a
+// password, encrypted). An "exported" event says when it's done.
+func (a *App) apiExportPlayer(playerID, dir, password string) error {
+	if password != "" && utf8.RuneCountInString(password) < 8 {
+		return errors.New("Use at least 8 characters, or no password.")
+	}
+	if st, err := os.Stat(dir); err != nil || !st.IsDir() {
+		return errors.New("Choose a folder to save the profile in.")
+	}
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	p := cfg.Player(playerID)
+	if p == nil {
+		return errors.New("That player doesn't exist.")
+	}
+	go func() {
+		out := map[string]any{}
+		defer func() { a.emit("exported", out) }()
+		opt := core.BackupOptions{}
+		if password != "" {
+			salt := core.NewBackupSalt()
+			key, err := core.BackupKey(password, salt, core.BackupKDFIters)
+			if err != nil {
+				out["error"] = err.Error()
+				return
+			}
+			opt = core.BackupOptions{Key: key, Salt: salt, Iters: core.BackupKDFIters}
+		}
+		path := filepath.Join(dir, core.PlayerFileName(p.Name, time.Now(), password != ""))
+		if _, err := a.store.WritePlayerFile(path, cfg, playerID, a.liveSources(cfg), a.manifest(cfg), opt); err != nil {
+			out["error"] = "Couldn't save the profile: " + err.Error()
+			return
+		}
+		a.logf("Exported %s's profile to %s", p.Name, path)
+		out["file"] = path
+	}()
+	return nil
 }
