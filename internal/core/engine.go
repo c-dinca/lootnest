@@ -116,6 +116,24 @@ func (e *Engine) SaveLiveTo(g *Game, playerID string) error {
 	return nil
 }
 
+// copyProfile starts to's profile for a game as a copy of from's.
+func (e *Engine) copyProfile(g *Game, from, to string, rs []resolved) error {
+	src, dst := e.Store.ProfileDir(from, g.ID), e.Store.ProfileDir(to, g.ID)
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		return err
+	}
+	for _, r := range rs {
+		if err := Mirror(filepath.Join(src, r.entry.ID), filepath.Join(dst, r.entry.ID)); err != nil {
+			return err
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dst, initMarker), []byte(e.now().Format(time.RFC3339)), 0o644); err != nil {
+		return err
+	}
+	e.logf("Started %s's files for %s from a copy of %s's", e.name(to), g.Name, e.name(from))
+	return nil
+}
+
 // restore copies a player's profile into the live locations.
 func (e *Engine) restore(g *Game, playerID string, rs []resolved) error {
 	dir := e.Store.ProfileDir(playerID, g.ID)
@@ -188,7 +206,11 @@ type ActivateOptions struct {
 	FirstOwner string
 	// NewProfile answers ErrNeedNewMode: NewCopy or NewFresh.
 	NewProfile string
-	Keep       int
+	// CopyFrom, with NewCopy, starts the new profile from another profile's
+	// files instead of the ones on the PC: "Cristian, hardcore" from
+	// Cristian's saves while Mihai's are loaded.
+	CopyFrom string
+	Keep     int
 }
 
 // Activate puts playerID's files in place for the game. The files currently
@@ -247,6 +269,18 @@ func (e *Engine) Activate(cfg *Config, gameID, playerID string, opt ActivateOpti
 	} else {
 		switch opt.NewProfile {
 		case NewCopy:
+			if opt.CopyFrom != "" && opt.CopyFrom != active && opt.CopyFrom != playerID && e.HasProfile(opt.CopyFrom, gameID) {
+				if err := e.copyProfile(g, opt.CopyFrom, playerID, rs); err != nil {
+					return err
+				}
+				if _, err := e.Backup(g, opt.Keep); err != nil {
+					return err
+				}
+				if err := e.restore(g, playerID, rs); err != nil {
+					return err
+				}
+				break
+			}
 			if err := e.SaveLiveTo(g, playerID); err != nil {
 				return err
 			}

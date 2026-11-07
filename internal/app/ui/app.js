@@ -1177,6 +1177,22 @@
     return S.d.active[gid] === pid ? "Files loaded now" : hasProfile(gid, pid) ? "Has saves here" : "First time";
   }
 
+  // A new profile from the picker: a new person, or another run of this
+  // game ("Cristian, hardcore"). It starts fresh or from a copy of whose
+  // files are in, as any first-timer does.
+  function newProfileSlot(P) {
+    if (!P.creating) return `<button class="slot slot-new" data-action="np-open">
+        <span class="slot-new-plus" aria-hidden="true">${GI.plus}</span>
+        <span class="name">New profile</span><span class="state">Someone new, or another run</span>
+        <span class="slot-label"><span>Add a profile</span></span></button>`;
+    return `<div class="slot slot-new editing" role="group" aria-label="New profile">
+        <span class="slot-new-plus" aria-hidden="true">${GI.plus}</span>
+        <label class="name" for="np-name">New profile</label>
+        <input id="np-name" class="ln-input" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Name, such as Cristian hardcore" value="${esc(P.newName || "")}">
+        <span class="error-text" id="np-error" role="alert">${esc(P.newError || "")}</span>
+        <div class="slot-new-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="np-cancel">Cancel</button><button class="ln-button ln-button--primary ln-button--sm" data-action="np-create">${P.mode === "load" ? "Make it" : "Make it and play"}</button></div></div>`;
+  }
+
   function viewPicker() {
     const P = S.picker, g = game(P.gameId);
     if (!g) return "";
@@ -1194,7 +1210,7 @@
     if (P.ask === "owner") {
       return `<div class="picker"><div class="picker-head"><div></div><button class="btn quiet" data-action="picker-back">${icon.back}Back</button></div>
         <div class="question"><div><h2>Whose files are in ${esc(g.name)} right now?</h2>
-        <p>This is the first time Lootnest handles this game. The settings and saves on this PC will become that person's profile.</p></div>
+        <p>This is the first time Lootnest handles this game. The settings and saves on this PC become that profile's.</p></div>
         <div class="choices">
           ${cfg().players.map((p) => `<button class="choice" data-action="answer-owner" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>${esc(possessive(p.name))}</b></span></button>`).join("")}
           <button class="choice" data-action="answer-owner" data-player="none"><span class="dot"></span><span><b>Nobody's, or not sure</b><span>They're kept as a backup in case you need them.</span></span></button>
@@ -1215,11 +1231,12 @@
       const ownerName = owner && player(owner) ? possessive(pname(owner)) + " files" : "the current files";
       const n = pname(P.playerId);
       return `<div class="picker"><div class="picker-head"><div></div><button class="btn quiet" data-action="picker-back">${icon.back}Back</button></div>
-        <div class="question"><div><h2>${esc(n)} doesn't have a profile for ${esc(g.name)} yet</h2>
+        <div class="question"><div><h2>${esc(n)} hasn't played ${esc(g.name)} yet</h2>
         <p>Choose what ${esc(n)} starts with. Whatever happens, the files on the PC now are kept.</p></div>
         <div class="choices">
           <button class="choice" data-action="answer-new" data-mode="fresh"><span class="dot" style="background:${esc(color(P.playerId))}"></span><span><b>Start fresh</b><span>Game defaults and no saves, as if ${esc(n)} just installed it.</span></span></button>
-          <button class="choice" data-action="answer-new" data-mode="copy"><span class="dot"></span><span><b>Start from a copy of ${esc(ownerName)}</b><span>Same settings and saves to begin with; changes stay separate from then on.</span></span></button>
+          <button class="choice" data-action="answer-new" data-mode="copy"><span class="dot"${owner && player(owner) ? ` style="background:${esc(color(owner))}"` : ""}></span><span><b>Start from a copy of ${esc(ownerName)}</b><span>Same settings and saves to begin with; changes stay separate from then on.</span></span></button>
+          ${cfg().players.filter((p) => p.id !== owner && p.id !== P.playerId && hasProfile(g.id, p.id)).map((p) => `<button class="choice" data-action="answer-new" data-mode="copy" data-from="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>Start from a copy of ${esc(possessive(p.name))} files</b><span>Their saves as they were when they last played; theirs stay as they are.</span></span></button>`).join("")}
         </div></div><div></div></div>`;
     }
     const ps = cfg().players;
@@ -1232,6 +1249,7 @@
           ${lnAvatar(p, "120")}
           <span class="name">${esc(p.name)}</span><span class="state">${esc(slotState(g.id, p.id))}</span>
           <span class="slot-label"><span>${S.d.active[g.id] === p.id ? "In the game now" : "Play as " + esc(p.name)}</span>${i < 9 ? `<kbd aria-hidden="true">${i + 1}</kbd>` : ""}</span></button>`).join("")}
+        ${ps.length < 8 ? newProfileSlot(P) : ""}
       </div>
       <div class="picker-foot"><span>Press ${ps.length > 1 ? "1–" + Math.min(ps.length, 9) : "1"} to choose, Esc ${P.mode === "steam" ? "to not start the game" : "to cancel"}</span><span>${esc(g.name)}</span></div>
     </div>`;
@@ -1239,7 +1257,7 @@
 
   async function runPick() {
     const P = S.picker;
-    const req = { gameId: P.gameId, playerId: P.playerId, firstOwner: P.owner || "", newProfile: P.newMode || "", reqId: P.reqId || "", cloud: P.cloud || "" };
+    const req = { gameId: P.gameId, playerId: P.playerId, firstOwner: P.owner || "", newProfile: P.newMode || "", copyFrom: P.copyFrom || "", reqId: P.reqId || "", cloud: P.cloud || "" };
     try {
       const res = await (P.mode === "steam" ? api.steamPick(req) : P.mode === "play" ? api.play(req) : api.load(req));
       if (!S.picker) return;
@@ -2511,9 +2529,28 @@
       if (!ok) return;
       try { await api.deleteGame(g.id); toast(`Profiles are off for ${g.name}`); await refresh(); loadFound(); } catch (e) { toast(errText(e), "error"); }
     },
-    pick(el) { S.picker.playerId = el.dataset.player; S.picker.owner = ""; S.picker.newMode = ""; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); },
+    "np-open"() { S.picker.creating = true; S.picker.newError = ""; renderOverlay(); setTimeout(() => { const i = $("#np-name"); if (i) i.focus(); }, 20); },
+    "np-cancel"() { S.picker.creating = false; S.picker.newName = ""; S.picker.newError = ""; renderOverlay(); },
+    async "np-create"() {
+      const P = S.picker, i = $("#np-name"), name = ((i && i.value) || "").trim();
+      if (!P) return;
+      P.newName = name;
+      const fail = (t) => { P.newError = t; renderOverlay(); setTimeout(() => { const x = $("#np-name"); if (x) x.focus(); }, 20); };
+      if (!name) return fail("Give it a name.");
+      if (cfg().players.some((p) => p.name.trim().toLowerCase() === name.toLowerCase())) return fail(`There's already a profile called ${name}.`);
+      const used = new Set(cfg().players.map((p) => p.color.toLowerCase()));
+      const list = cfg().players.map((p) => ({ ...p })).concat([{ id: "", name, color: S.d.colors.find((c) => !used.has(c.toLowerCase())) || S.d.colors[cfg().players.length % S.d.colors.length] }]);
+      try { await api.savePlayers(list); } catch (e) { return fail(errText(e)); }
+      await refresh();
+      const np = cfg().players.find((p) => p.name === name);
+      if (!S.picker || !np) return;
+      S.picker.creating = false; S.picker.newName = ""; S.picker.newError = "";
+      S.picker.playerId = np.id; S.picker.owner = ""; S.picker.newMode = ""; S.picker.copyFrom = ""; S.picker.from = S.d.active[S.picker.gameId] || "";
+      runPick();
+    },
+    pick(el) { S.picker.playerId = el.dataset.player; S.picker.owner = ""; S.picker.newMode = ""; S.picker.copyFrom = ""; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); },
     "answer-owner"(el) { S.picker.owner = el.dataset.player; S.picker.ask = null; runPick(); },
-    "answer-new"(el) { S.picker.newMode = el.dataset.mode; S.picker.ask = null; runPick(); },
+    "answer-new"(el) { S.picker.newMode = el.dataset.mode; S.picker.copyFrom = el.dataset.from || ""; S.picker.ask = null; runPick(); },
     "answer-cloud"(el) { S.picker.cloud = el.dataset.answer; S.picker.ask = null; runPick(); },
     "picker-back"() { S.picker.ask = null; S.picker.owner = ""; S.picker.newMode = ""; render(); },
     "picker-close": closePicker,
@@ -2741,10 +2778,16 @@
       return;
     }
     if (S.picker && !S.picker.working) {
+      // Naming a new profile: Enter makes it, Esc goes back to the slots.
+      if (S.picker.creating && ev.target.id === "np-name") {
+        if (ev.key === "Enter") { ev.preventDefault(); actions["np-create"](); }
+        else if (ev.key === "Escape") { ev.preventDefault(); actions["np-cancel"](); }
+        return;
+      }
       if (ev.key === "Escape") { ev.preventDefault(); if (S.picker.ask) actions["picker-back"](); else closePicker(); return; }
       if (!S.picker.ask && /^[1-9]$/.test(ev.key)) {
         const p = cfg().players[+ev.key - 1];
-        if (p) { ev.preventDefault(); S.picker.playerId = p.id; runPick(); }
+        if (p) { ev.preventDefault(); S.picker.playerId = p.id; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); }
       }
       return;
     }
