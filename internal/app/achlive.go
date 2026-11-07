@@ -228,6 +228,7 @@ func (a *App) apiTestToast() {
 		color = p.Color
 	}
 	a.mu.Unlock()
+	a.logf("Showing a test note at the bottom right of the screen")
 	win.ShowToast(win.Toast{Kicker: "Achievement unlocked", Title: "This is how an unlock looks", Line: "Rare, 4.2% of players have it", Accent: color})
 }
 

@@ -116,12 +116,17 @@ var (
 	toastQueue = make(chan Toast, 16)
 	toastClass *uint16
 	toastProc  uintptr
+	classErr   error // why the window class couldn't be registered, if it couldn't
 
 	// What the window on screen shows; only the toast thread uses them.
 	cur      Toast
 	curDPI   = 96
 	curAlpha = 0
 )
+
+// ToastFailed, when set, is told when a toast couldn't be shown (the
+// window couldn't be made), with the toast, so it can go another way.
+var ToastFailed func(t Toast, err error)
 
 // ShowToast queues a toast; toasts show one after another. It returns at
 // once. When many arrive together, the ones past the queue's room are
@@ -141,7 +146,9 @@ func toastLoop() {
 	toastProc = windows.NewCallback(toastWndProc)
 	wc := wndClassEx{lpfnWndProc: toastProc, hInstance: hinst, lpszClassName: toastClass}
 	wc.cbSize = uint32(unsafe.Sizeof(wc))
-	procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
+	if r, _, e := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
+		classErr = e
+	}
 	for t := range toastQueue {
 		showOne(hinst, t)
 	}
@@ -172,10 +179,17 @@ func showOne(hinst uintptr, t Toast) {
 		wsExNoActivate  = 0x08000000
 	)
 	title, _ := windows.UTF16PtrFromString("Lootnest")
-	hwnd, _, _ := procCreateWindowExW.Call(wsExTopmost|wsExTransparent|wsExToolWindow|wsExLayered|wsExNoActivate,
+	hwnd, _, e := procCreateWindowExW.Call(wsExTopmost|wsExTransparent|wsExToolWindow|wsExLayered|wsExNoActivate,
 		uintptr(unsafe.Pointer(toastClass)), uintptr(unsafe.Pointer(title)), wsPopup,
 		uintptr(x), uintptr(y), uintptr(w), uintptr(h), 0, 0, hinst, 0)
 	if hwnd == 0 {
+		if ToastFailed != nil {
+			err := classErr
+			if err == nil {
+				err = e
+			}
+			ToastFailed(t, err)
+		}
 		return
 	}
 	if procDwmSetWindowAttribute.Find() == nil {

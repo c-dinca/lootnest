@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.46.0
+
+- **Your games in the sidebar**, as in Steam's library.
+  - Every game is in a list under the sections: what's being played now, the last five played, each of your collections, then all of them. Each has its cover, and a dot in the colour of whoever's files are loaded.
+  - **Filter games** narrows the list as you type; the arrow keys move from game to game.
+  - Sort by name, last played or time played. Fold any group.
+- **Fold the sidebar** to a rail of icons with the button at the top, or Ctrl+B. Drag its edge to make it wider or narrower; double-click the edge to reset it. Lootnest remembers both.
+- **The Library as a list**: next to the cover sizes, a list with a row per game, showing when it was last played, how long, and who has a profile, with Play on each row. The Library's filters stay at the top while you scroll.
+- **Motion**: pages slide in when you move between them, covers and blocks come in one after another, and covers lift under the pointer. With Windows set to show fewer animations, they don't move.
+- **Show one**, the button that shows what an unlock looks like over a game, now says what it did. If the note can't be shown over the game, Lootnest writes why in its recent activity and shows it as a Windows notification instead.
+
 ## 1.45.0
 
 Lootnest is now in **beta**: everything it was built to do is in, and the work from here is making it right on as many PCs as possible.
