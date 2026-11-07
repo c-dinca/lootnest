@@ -46,6 +46,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_renameSavePoint", a.apiRenameSavePoint))
 	must(a.w.Bind("ps_deleteSavePoint", a.apiDeleteSavePoint))
 	must(a.w.Bind("ps_branchSavePoint", a.apiBranchSavePoint))
+	must(a.w.Bind("ps_trySave", a.apiTrySave))
 	must(a.w.Bind("ps_achDoctor", a.apiAchDoctor))
 	must(a.w.Bind("ps_setNameInGame", a.apiSetNameInGame))
 	must(a.w.Bind("ps_steamGames", a.apiSteamGames))
@@ -655,6 +656,12 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "updateDir":
 			opt.Title = "Choose the update's folder"
 			opt.Folder = true
+		case "trySaveDir":
+			opt.Title = "Choose the folder with the save to try"
+			opt.Folder = true
+		case "trySaveFile":
+			opt.Title = "Choose the save to try"
+			opt.Filters = []win.FileFilter{{Name: "Saves and archives", Spec: "*.*"}, {Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
 		case "file":
 			opt.Title = "Choose a settings or save file"
 			opt.Filters = []win.FileFilter{{Name: "All files", Spec: "*.*"}}

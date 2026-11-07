@@ -44,6 +44,7 @@ Sharing the PC? Add a profile for each person (Profiles, or **Add someone else**
 
 **Profiles and runs**, per game, when you want them
 - One profile to start with. **New run** on a game's page starts another playthrough with its own saves and settings, from nothing or from a copy of yours.
+- **Try a save** from a friend or a mod site in a run of its own: your settings with their save, and your own saves untouched.
 - Add a profile for everyone who shares the PC: each gets their own settings and saves, on one Windows account and one Steam account.
 - Works with any game that keeps its settings and saves in files. Lootnest finds where most games keep them.
 - Steam's own Play button can ask "Who's playing?" too, after a one-time automatic setup.

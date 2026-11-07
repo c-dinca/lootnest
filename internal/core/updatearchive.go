@@ -1,6 +1,7 @@
 package core
 
 import (
+	"archive/zip"
 	"errors"
 	"fmt"
 	"io"
@@ -32,7 +33,7 @@ func NeedsStaging(src string) bool {
 	return false
 }
 
-// StageUpdate extracts a .7z or .rar into dst (made empty first) and returns
+// StageUpdate extracts a .zip, .7z or .rar into dst (made empty first) and returns
 // dst, to plan as a folder. A password-protected archive can't be read.
 func StageUpdate(src, dst string) (string, error) {
 	_ = os.RemoveAll(dst)
@@ -45,8 +46,10 @@ func StageUpdate(src, dst string) (string, error) {
 		err = stage7z(src, dst)
 	case ".rar":
 		err = stageRar(src, dst)
+	case ".zip":
+		err = stageZip(src, dst)
 	default:
-		err = errors.New("not a .7z or .rar")
+		err = errors.New("not a .zip, .7z or .rar")
 	}
 	if err != nil {
 		_ = os.RemoveAll(dst)
@@ -251,4 +254,30 @@ func CopyVersion(dir string, applied []AppliedUpdate) string {
 		}
 	}
 	return FolderVersion(dir)
+}
+
+func stageZip(src, dst string) error {
+	zr, err := zip.OpenReader(src)
+	if err != nil {
+		return errors.New("that .zip can't be opened; it may be damaged")
+	}
+	defer zr.Close()
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		if f.Flags&0x1 != 0 {
+			return errors.New("that .zip has a password; extract it first, then choose the folder")
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		err = stageFile(dst, f.Name, rc)
+		rc.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

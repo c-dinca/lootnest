@@ -123,7 +123,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.52.0, beta)
+## Where things stand (1.53.0, beta)
 
 These shipped recently, newest last:
 
@@ -310,6 +310,16 @@ These shipped recently, newest last:
   notice about in-folder saves. Home counts them; the game page's block
   is **Saves**, with **Copies on this PC**. The website (`site/`, Pages)
   shipped with it.
+- **1.53** Try a save safely (`core/trysave.go`, `app/trysave.go`,
+  dialog `trysave` from Manage): `Engine.ProfileFromImport` starts a new
+  run (`Player.Of`) as a copy of a profile's files (live if loaded), with
+  one save location holding the brought save: a folder (`importRoot`
+  goes down through an archive's single wrapping folder), one file (joins
+  the folder), or a .zip/.7z/.rar (`StageUpdate` now reads .zip too).
+  Nothing of the source profile changes. On anti-cheat or online-only
+  games "out of swaps by default": profiles are only ever turned on by
+  the user, so there's nothing to take out; the page's anti-cheat note
+  (1.50) says what's swapped.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
@@ -403,7 +413,7 @@ game can only be checked on the owner's PC.
    to any point (the current state is kept), or branch a new run from it.
    This is the research brief's run branching. Copies made while the game
    runs are read back and retried if the game was mid-write.
-2. **Try a save safely**: import a save from a friend or a mod site into a
+2. **Try a save safely** (done in 1.53): import a save from a friend or a mod site into a
    temporary run; the profile's own saves stay untouched; one click back,
    or keep the run.
 3. **Lootnest on a USB stick**: a portable Lootnest carries its profiles;
