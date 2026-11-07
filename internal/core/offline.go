@@ -106,7 +106,7 @@ func FirewallScript(tag, name string, exes []string, block bool) string {
 			base := e[strings.LastIndexAny(e, `\/`)+1:]
 			label := "Lootnest keeps " + name + " offline (" + base + ")"
 			b.WriteString("New-NetFirewallRule -DisplayName " + psQuote(label) + " -Group 'Lootnest' -Description " + psQuote(tag) +
-				" -Direction Outbound -Action Block -Profile Any -Program " + psQuote(e) + " | Out-Null\n")
+				" -Direction Outbound -Action Block -Program " + psQuote(e) + " | Out-Null\n")
 		}
 	}
 	return b.String()

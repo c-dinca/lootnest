@@ -81,3 +81,19 @@ func shellRun(owner uintptr, verbName, exe, args, dir string, show int32) (uint3
 	_ = windows.GetExitCodeProcess(info.hProcess, &code)
 	return code, nil
 }
+
+// LongPath is a path with each part at its full name, not its short 8.3
+// name (C:\Users\RUNNER~1 becomes C:\Users\runneradmin). Windows Firewall
+// takes only the full one. The path as it is when that fails.
+func LongPath(p string) string {
+	u, err := windows.UTF16PtrFromString(p)
+	if err != nil {
+		return p
+	}
+	buf := make([]uint16, 1024)
+	n, err := windows.GetLongPathName(u, &buf[0], uint32(len(buf)))
+	if err != nil || n == 0 || int(n) > len(buf) {
+		return p
+	}
+	return windows.UTF16ToString(buf[:n])
+}

@@ -98,6 +98,10 @@ func TestFirewallRules(t *testing.T) {
 	if err := os.WriteFile(exe, []byte("MZ"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	exe = LongPath(exe) // as the app does: the temp folder has a short name here
+	if strings.Contains(exe, "~") {
+		t.Fatalf("still a short name: %s", exe)
+	}
 	tag := core.OfflineTag("dir:test:" + exe)
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	run := func(script string) string {
