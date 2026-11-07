@@ -26,6 +26,7 @@
     profileInfo: (id) => call("ps_profileInfo", id),
     achievements: (key, appId, dir) => call("ps_achievements", key, appId || 0, dir || ""),
     setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
+    allAchievements: () => call("ps_allAchievements"),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
@@ -89,6 +90,8 @@
     ach: {},          // Library key -> achievements read from this PC (null: none)
     achAll: {},       // Library key -> the full list is open
     achWho: {},       // Library key -> whose achievements are shown
+    allAch: null,     // the Achievements page: every game's, null until read
+    achPage: "",      // whose the Achievements page shows
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     d: null,          // AppState from Go
     view: "home",
@@ -170,6 +173,7 @@
         S.d.active = ev.active || {};
         S.pinfo = {}; // a swap or a session's end writes profiles: read again
         achAsked.clear();
+        S.allAch = null;
         onSessions();
         refresh();
         break;
@@ -227,6 +231,10 @@
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
+        break;
+      case "allAchievements":
+        S.allAch = { games: ev.games || [] };
+        if (S.view === "achievements") render();
         break;
       case "profileInfo":
         S.pinfo[ev.gameId] = ev.info || {};
@@ -366,6 +374,7 @@
     else if (S.view === "player") v.innerHTML = viewPlayer();
     else if (S.view === "settings") v.innerHTML = viewSettings();
     else if (S.view === "cloud") v.innerHTML = viewCloud();
+    else if (S.view === "achievements") v.innerHTML = viewAchievements();
     if (S.animateView && v.firstElementChild) v.firstElementChild.classList.add("enter");
     S.animateView = false;
     v.scrollTop = keepScroll;
@@ -2094,6 +2103,47 @@
     if (n < 1024 * 1024 * 1024) return (n / 1048576).toFixed(n < 10 * 1048576 ? 1 : 0) + " MB";
     return (n / 1073741824).toFixed(1) + " GB";
   }
+  // Achievements: every game's on this PC, for one profile at a time. Games
+  // whose achievements go with the profile show that profile's; the others
+  // (Steam's account, or one set kept on the PC) are shared.
+  let allAchAsked = false;
+  function viewAchievements() {
+    const head = `<header class="lib-head"><div><h1>Achievements</h1><p>Every game's achievements on this PC. Each profile has its own where they go with the profile; Steam's belong to the Steam account.</p></div></header>`;
+    if (!S.allAch) {
+      if (!allAchAsked) { allAchAsked = true; api.allAchievements().catch(() => {}).finally(() => { allAchAsked = false; }); }
+      return `<div class="ach-page ln-root">${head}${lnInline("", "Reading achievements on this PC")}</div>`;
+    }
+    const ps = cfg().players, seat = seated();
+    const who = (ps.find((p) => p.id === S.achPage) || seat || ps[0] || {}).id;
+    const rows = S.allAch.games.map((g) => {
+      const own = g.players ? g.players[who] : null;
+      if (g.players && !own) return null; // this profile hasn't played it
+      const it = itemByKey(g.key);
+      return it ? { g, it, unlocked: own ? own.unlocked : g.unlocked, recent: own ? own.recent : g.recent, shared: !g.players } : null;
+    }).filter(Boolean);
+    const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-page" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
+    if (!rows.length) {
+      return `<div class="ach-page ln-root">${head}${chips}<div class="ln-glass ln-state">${GI.trophy}<div><h3>No achievements found yet</h3>
+        <p>Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.</p></div></div></div>`;
+    }
+    const total = rows.reduce((n, r) => n + r.unlocked, 0), perfect = rows.filter((r) => r.unlocked && r.unlocked === r.g.total).length;
+    const latest = rows.flatMap((r) => (r.recent || []).map((a) => ({ a, r }))).sort((x, y) => new Date(y.a.at || 0) - new Date(x.a.at || 0)).slice(0, 12);
+    const games = rows.slice().sort((x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || x.g.name.localeCompare(y.g.name));
+    const icon = (a) => a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : `<span class="ach-none">${GI.trophy}</span>`;
+    const p = player(who);
+    return `<div class="ach-page ln-root">${head}${chips}
+      <dl class="ln-meta ach-stats">${gpStat(String(total), "unlocked", p)}${gpStat(String(perfect), perfect === 1 ? "game at 100%" : "games at 100%")}${gpStat(String(rows.length), rows.length === 1 ? "game with achievements" : "games with achievements")}</dl>
+      <div class="ach-cols">
+        <section><div class="ln-section-head"><div><h2>Latest unlocked</h2></div></div>
+          ${latest.length ? `<ul class="ach-list">${latest.map(({ a, r }) => `<li class="ach">${icon(a)}<div><b>${esc(a.name)}</b><span>${esc(r.g.name)}${a.at && new Date(a.at).getFullYear() > 2000 ? ", " + esc(ago(a.at)) : ""}</span></div><span></span></li>`).join("")}</ul>` : `<p class="home-hint">Nothing unlocked yet.</p>`}</section>
+        <section><div class="ln-section-head"><div><h2>Games</h2></div></div>
+          <ul class="ach-games">${games.map((r) => { const pct = Math.round((r.unlocked / r.g.total) * 100); return `<li><button data-action="open-sheet" ${itemAttr(r.it)}>
+            <span class="ach-game-name"><b>${esc(r.g.name)}</b>${r.shared ? `<span class="ln-tag">${r.g.source === "steam" ? "Steam account" : "Shared"}</span>` : ""}</span>
+            <span class="ach-bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
+            <span class="ach-game-num ln-num">${r.unlocked} of ${r.g.total}</span></button></li>`; }).join("")}</ul></section>
+      </div></div>`;
+  }
+
   // Cloud saves: each player's saves in a folder a cloud app syncs (or a
   // USB drive), up after every session and down before a game starts.
   const PROVIDERS = [
@@ -2305,6 +2355,7 @@
     "seat-set"(el) { setSeat(el.dataset.player); },
     "ach-all"(el) { S.achAll[el.dataset.key] = !S.achAll[el.dataset.key]; render(); },
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
+    "ach-page"(el) { S.achPage = el.dataset.player; render(); },
     async "ach-shared"(el) {
       const id = el.dataset.game, shared = el.dataset.on === "1", g = game(id);
       if (shared && !(await confirmDialog({ title: "Share one set of achievements?", body: `Everyone who plays ${g ? g.name : "this game"} will see the same achievements, the ones on the PC now. Each profile's own stay with it, and come back if you change your mind.`, ok: "Share one set" }))) return;

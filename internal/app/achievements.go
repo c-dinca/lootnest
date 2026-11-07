@@ -155,3 +155,67 @@ func (a *App) apiSetSharedAchievements(gameID string, shared bool) error {
 	}
 	return nil
 }
+
+// achSummary is one game on the Achievements page: its counts and the
+// latest unlocked, for everyone (or each profile, when they have their own).
+type achSummary struct {
+	Key      string                `json:"key"`
+	Name     string                `json:"name"`
+	Source   string                `json:"source"`
+	Total    int                   `json:"total"`
+	Unlocked int                   `json:"unlocked"`
+	Recent   []core.Achievement    `json:"recent"`
+	Players  map[string]achPerSlot `json:"players,omitempty"`
+}
+
+type achPerSlot struct {
+	Unlocked int                `json:"unlocked"`
+	Recent   []core.Achievement `json:"recent"`
+}
+
+func latestUnlocked(list []core.Achievement, n int) []core.Achievement {
+	out := []core.Achievement{}
+	for _, a := range list { // unlocked come first, newest first
+		if !a.Unlocked || len(out) >= n {
+			break
+		}
+		out = append(out, a)
+	}
+	return out
+}
+
+// apiAllAchievements reads every game's achievements for the Achievements
+// page, off the UI thread, and sends them as an "allAchievements" event.
+func (a *App) apiAllAchievements() {
+	go func() {
+		type item struct {
+			key, name, dir string
+			appID          int
+		}
+		var items []item
+		a.mu.Lock()
+		for _, g := range a.cfg.Games {
+			items = append(items, item{"game:" + g.ID, g.Name, g.Launch.Exe, g.Launch.AppID})
+		}
+		a.mu.Unlock()
+		for _, f := range a.visibleFound(a.libraryGames()) {
+			items = append(items, item{f.Key, f.Name, f.Dir, f.AppID})
+		}
+		out := []achSummary{}
+		for _, it := range items {
+			set := a.achievements(it.key, it.appID, it.dir)
+			if set == nil || set.Total == 0 {
+				continue
+			}
+			s := achSummary{Key: it.key, Name: it.name, Source: set.Source, Total: set.Total, Unlocked: set.Unlocked, Recent: latestUnlocked(set.List, 8)}
+			if len(set.Players) > 0 {
+				s.Players = map[string]achPerSlot{}
+				for pid, ps := range set.Players {
+					s.Players[pid] = achPerSlot{Unlocked: ps.Unlocked, Recent: latestUnlocked(ps.List, 8)}
+				}
+			}
+			out = append(out, s)
+		}
+		a.emit("allAchievements", map[string]any{"games": out})
+	}()
+}
