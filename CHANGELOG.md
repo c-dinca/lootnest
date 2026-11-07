@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.17.2
+
+- **Starting a game no longer flashes the desktop.** Lootnest used to hide its window the moment it started a game, so while the game was still loading you saw the desktop, then the game. Now the picker shows **Starting Counter-Strike 2** (or your game) until the game is actually running, and only then does Lootnest step aside (with **Hide while a game runs** on).
+
 ## 1.17.1
 
 - **Close the game from Lootnest.** While a game runs, its page shows **Close the game**. Lootnest asks the game to quit, as if you closed its window. Once it closes, the player's progress goes back to their profile as usual. If the game has no window to close, Lootnest tells you to quit it from its own menu.
