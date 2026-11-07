@@ -22,7 +22,9 @@ import (
 // ---------------------------------------------------------------------------
 
 const (
-	newsURL = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?count=8&maxlength=240&format=json&feeds=steam_community_announcements&appid="
+	newsURL = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?count=8&maxlength=0&format=json&feeds=steam_community_announcements&appid="
+	// newsFormat changes when saved feeds need reading again (2: full text).
+	newsFormat = 2
 	// Feeds are read again after this long.
 	newsMaxAge = 6 * time.Hour
 )
@@ -32,11 +34,16 @@ type NewsItem struct {
 	URL     string    `json:"url"`
 	Date    time.Time `json:"date"`
 	Summary string    `json:"summary"`
+	// Body is the whole announcement as safe HTML (see NewsHTML), and Image
+	// its first picture, on Steam's image servers.
+	Body  string `json:"body"`
+	Image string `json:"image,omitempty"`
 	// Update marks patch notes: a new version of the game.
 	Update bool `json:"update"`
 }
 
 type GameNews struct {
+	Format  int        `json:"format"`
 	AppID   int        `json:"appId"`
 	Fetched time.Time  `json:"fetched"`
 	Items   []NewsItem `json:"items"`
@@ -78,7 +85,8 @@ func ParseNews(b []byte) ([]NewsItem, error) {
 		if !SafeNewsURL(n.URL) || strings.TrimSpace(n.Title) == "" {
 			continue
 		}
-		it := NewsItem{Title: plainText(n.Title), URL: n.URL, Date: time.Unix(n.Date, 0).UTC(), Summary: plainText(n.Contents)}
+		it := NewsItem{Title: plainText(n.Title), URL: n.URL, Date: time.Unix(n.Date, 0).UTC(),
+			Summary: newsSummary(n.Contents, 240), Body: NewsHTML(n.Contents), Image: newsImage(n.Contents)}
 		for _, t := range n.Tags {
 			if t == "patchnotes" {
 				it.Update = true
@@ -114,7 +122,7 @@ func FetchNews(fetch Fetch, dir string, appID int) (GameNews, error) {
 	path := filepath.Join(dir, strconv.Itoa(appID)+".json")
 	var saved GameNews
 	if b, err := os.ReadFile(path); err == nil && json.Unmarshal(b, &saved) == nil && saved.AppID == appID {
-		if time.Since(saved.Fetched) < newsMaxAge {
+		if saved.Format == newsFormat && time.Since(saved.Fetched) < newsMaxAge {
 			return saved, nil
 		}
 	}
@@ -129,7 +137,7 @@ func FetchNews(fetch Fetch, dir string, appID int) (GameNews, error) {
 	if err != nil {
 		return saved, err
 	}
-	n := GameNews{AppID: appID, Fetched: time.Now().UTC(), Items: items}
+	n := GameNews{Format: newsFormat, AppID: appID, Fetched: time.Now().UTC(), Items: items}
 	if os.MkdirAll(dir, 0o755) == nil {
 		_ = writeJSONAtomic(path, n)
 	}
