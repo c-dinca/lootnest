@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.23.2
+
+- **Achievements show for more games in a folder.** Lootnest finds a game's Steam id in more places:
+  - deeper in its folder, where Unreal games keep it (`<Game>\\Binaries\\Win64\\steam_appid.txt`);
+  - from the id Lootnest already looked up by name for the game's cover or news. Nothing extra goes online for this.
+- **Show recent activity** now names the game and says why when a game shows no achievements, such as "no Steam app id next to the game".
+
 ## 1.23.1
 
 - **Names and pictures for every achievement, with your own Steam Web API key** (optional, in Settings, Online). Without it, Lootnest can show only an id for a game in a folder without a `steam_settings` file, such as "Kill ten". With it, Steam gives the real names, descriptions and pictures.
