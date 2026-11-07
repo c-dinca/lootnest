@@ -148,7 +148,11 @@ func (a *App) apiLaunchFound(key string) error {
 		return err
 	}
 	a.logf("Starting %s", name)
-	return win.StartDetached(path, args, dirOf(path))
+	if err := win.StartDetached(path, args, dirOf(path)); err != nil {
+		return err
+	}
+	a.watchFirstStart("found:" + key)
+	return nil
 }
 
 var (

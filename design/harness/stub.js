@@ -225,7 +225,8 @@
       return ok();
     },
     ps_browse: (id, kind) => {
-      if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
+      if (kind === "installer") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\setup-pbz-update-1.0.3.exe" });
+      else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
       return ok();
     },
@@ -247,6 +248,7 @@
     ps_carryOver: (oldKey) => { setTimeout(() => emit({ type: "carried", old: oldKey, saves: [{ rel: "ProjectPBZ/Saved", size: 7e7, replaced: true }], oldThere: true }), 500); return ok(); },
     ps_deleteOldCopy: (oldKey) => { setTimeout(() => emit({ type: "carried", old: oldKey, deleted: true }), 400); return ok(); },
     ps_updatePlan: (key, path) => {
+      if (/\.exe$/i.test(path)) { setTimeout(() => emit({ type: "updatePlan", key, path, dir: "D:\\Games\\Phantom.Blade.Zero.v1.0.1", free: 412 * 2 ** 30, plan: { kind: "installer", source: path, name: "setup-pbz-update-1.0.3.exe", gameSize: 61 * 2 ** 30, free: 412 * 2 ** 30 } }), 150); return ok(); }
       if (/\.(rar|7z)$/i.test(path)) setTimeout(() => emit({ type: "updatePlan", key, path, opening: true }), 50);
       setTimeout(() => emit({ type: "updatePlan", key, path, dir: "D:\\Games\\Phantom.Blade.Zero.v1.0.1", free: 412 * 2 ** 30,
         check: { have: "1.0.1", from: "1.0.2", to: "1.0.3", state: "skips" }, plan: {
@@ -255,6 +257,11 @@
       return ok();
     },
     ps_updateApply: (key) => { setTimeout(() => emit({ type: "updateDone", key, update: { id: "20261107-190000", source: "PBZ-Update-v1.0302256.zip", added: ["a", "b", "c"], replaced: new Array(12).fill("x"), state: "applied" } }), 600); return ok(); },
+    ps_updateInstaller: (key, path, full) => {
+      ["copying", "installer", "checking"].forEach((step, i) => setTimeout(() => emit({ type: "updateProgress", key, step }), 100 + i * 500));
+      setTimeout(() => emit({ type: "updateDone", key, update: { id: "20261107-191000", kind: "installer", source: "setup-pbz-update-1.0.3.exe", added: ["a", "b"], replaced: new Array(40).fill("x"), state: "applied", noUndo: !full } }), 1700);
+      return ok();
+    },
     ps_updateUndo: (key) => { setTimeout(() => emit({ type: "updateDone", key, undone: true, update: { id: "x", source: "HollowTale-1.2.zip", added: [], replaced: [], state: "undone" } }), 400); return ok(); },
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };
