@@ -76,6 +76,13 @@
   --blur-glass:   blur(32px) saturate(150%);
   --blur-backdrop: blur(100px) saturate(115%);
   --backdrop-opacity: 0.34;
+  --blur-art-soft: blur(24px) saturate(110%);  /* a cover standing in for missing wide art */
+  --scrim-backdrop: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.1), oklch(0.17 0.012 250 / 0.8) 60%, var(--bg-ground));
+  --scrim-art:  /* keeps the title readable over any art */
+    linear-gradient(90deg, oklch(0.12 0.010 250 / 0.8) 0%, oklch(0.12 0.010 250 / 0.45) 40%, transparent 68%),
+    linear-gradient(0deg, oklch(0.12 0.010 250 / 0.6) 0%, oklch(0.12 0.010 250 / 0.3) 40%, transparent 62%),
+    linear-gradient(180deg, oklch(0.12 0.010 250 / 0.45) 0%, transparent 18%);
+  --mask-fade: linear-gradient(180deg, #000 50%, transparent 100%);
   --shadow-overlay: 0 16px 40px -12px oklch(0.05 0.010 250 / 0.6);  /* floating layers only */
 
   /* Players: every player's colour is brought to the same lightness, so text
@@ -98,6 +105,13 @@
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
   --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px;
 
+  /* Page layout */
+  --side-w: 232px;        /* the sidebar */
+  --bar-h: 56px;          /* the top bar, and the brand row in the sidebar */
+  --page-gutter: 40px;
+  --page-max: 1440px;
+  --overlap-bar: 64px;    /* how far the play bar sits up into the game's art */
+
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;
   --icon-sm: 16px; --icon-md: 18px;
@@ -117,6 +131,7 @@
   --dur-2: 180ms;   /* state changes, toasts in */
   --dur-3: 280ms;   /* the seat changing, a save slot changing hands */
   --dur-spin: 700ms;
+  --dur-backdrop: 800ms;  /* the window's colours following the game */
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -151,7 +166,7 @@
 /* The game's art, blurred, lights the window behind every glass surface. */
 .ln-backdrop { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
 .ln-backdrop img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; filter: var(--blur-backdrop); opacity: var(--backdrop-opacity); }
-.ln-backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.1), oklch(0.17 0.012 250 / 0.8) 60%, var(--bg-ground)); }
+.ln-backdrop::after { content: ""; position: absolute; inset: 0; background: var(--scrim-backdrop); }
 
 .ln-glass { background: var(--glass-panel); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
 
@@ -363,11 +378,11 @@
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
 }
 .ln-segmented button:hover, .ln-segmented button[data-force~="hover"] { color: var(--fg-1); background: var(--glass-ctl); }
-.ln-segmented button[aria-checked="true"] { background: var(--glass-ctl-on); border-color: var(--edge-2); color: var(--fg-1); }
+.ln-segmented button[aria-checked="true"], .ln-segmented button[aria-pressed="true"] { background: var(--glass-ctl-on); border-color: var(--edge-2); color: var(--fg-1); }
 .ln-segmented button:focus-visible, .ln-segmented button[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 1px; }
 .ln-segmented button:disabled { color: var(--fg-disabled); background: none; cursor: default; }
 .ln-segmented .ln-count { color: var(--fg-3); font-weight: 600; }
-.ln-segmented button[aria-checked="true"] .ln-count { color: var(--fg-2); }
+.ln-segmented button[aria-checked="true"] .ln-count, .ln-segmented button[aria-pressed="true"] .ln-count { color: var(--fg-2); }
 
 /* ================================================================== toast */
 .ln-toast {

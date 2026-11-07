@@ -162,3 +162,9 @@ The kitchen sink forces states with `data-force="hover|active|focus"`. Nothing i
 - **Step 5:** Home, Library, Players, Cloud saves, Settings, Add game, first run.
 
 Each page's old rules are deleted from `app.css` in the same PR, until `app.css` is gone.
+
+| Page | Status |
+|---|---|
+| Sidebar, backdrop, toasts | On the system (1.16.0) |
+| Game page, profiles on and off, with Cloud save, Shelf and news | On the system (1.16.0) |
+| Home, Library, Players, Cloud saves, Settings, Add game, first run | Old styles, Step 5 |
