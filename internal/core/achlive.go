@@ -161,3 +161,37 @@ func AntiCheat(dir string) string {
 	}
 	return ""
 }
+
+// RarestUnlocked are the n unlocked achievements fewest players have, rarest
+// first (only the ones whose share is known).
+func RarestUnlocked(list []Achievement, n int) []Achievement {
+	var out []Achievement
+	for _, a := range list {
+		if a.Unlocked && a.Percent > 0 {
+			out = append(out, a)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Percent < out[j].Percent })
+	if len(out) > n {
+		out = out[:n]
+	}
+	if out == nil {
+		out = []Achievement{}
+	}
+	return out
+}
+
+// RarityColor is the colour of an achievement's tier ("#RRGGBB"), the same
+// as the app's tier tokens: gold for ultra rare, blue for rare, green for
+// uncommon, silver for common and when it isn't known.
+func RarityColor(percent float64) string {
+	switch Rarity(percent) {
+	case "Ultra rare":
+		return "#F2C14E"
+	case "Rare":
+		return "#6FA8F5"
+	case "Uncommon":
+		return "#5FC28E"
+	}
+	return "#AEB6C2"
+}

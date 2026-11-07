@@ -26,6 +26,7 @@ type Toast struct {
 	Title  string
 	Line   string
 	Accent string
+	Badge  string // the trophy's colour ("#RRGGBB"), the achievement's tier; "" for none
 }
 
 var (
@@ -53,6 +54,9 @@ var (
 	procSelectObject               = gdi32.NewProc("SelectObject")
 	procSetTextColor               = gdi32.NewProc("SetTextColor")
 	procSetBkMode                  = gdi32.NewProc("SetBkMode")
+	procCreatePen                  = gdi32.NewProc("CreatePen")
+	procEllipse                    = gdi32.NewProc("Ellipse")
+	procPolygon                    = gdi32.NewProc("Polygon")
 )
 
 type wndClassEx struct {
@@ -122,6 +126,9 @@ var (
 	cur      Toast
 	curDPI   = 96
 	curAlpha = 0
+	curX     int32 // where the toast comes to rest
+	curY     int32
+	curSlide float64 // how far it still is from there, in pixels (it slides in from the right)
 )
 
 // ToastFailed, when set, is told when a toast couldn't be shown (the
@@ -163,7 +170,7 @@ func showOne(hinst uintptr, t Toast) {
 	procGetMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&mi)))
 	curDPI = monitorDPI(mon)
 	px := func(n int) int32 { return int32(n * curDPI / 96) }
-	w, h := px(360), px(80)
+	w, h := px(380), px(84)
 	x, y := mi.rcWork.right-w-px(24), mi.rcWork.bottom-h-px(24)
 	if mi.rcWork.right == 0 { // no monitor info: the primary screen
 		sw, _, _ := procGetSystemMetrics.Call(0)
@@ -178,10 +185,11 @@ func showOne(hinst uintptr, t Toast) {
 		wsExLayered     = 0x00080000
 		wsExNoActivate  = 0x08000000
 	)
+	curX, curY, curSlide = x, y, float64(px(48))
 	title, _ := windows.UTF16PtrFromString("Lootnest")
 	hwnd, _, e := procCreateWindowExW.Call(wsExTopmost|wsExTransparent|wsExToolWindow|wsExLayered|wsExNoActivate,
 		uintptr(unsafe.Pointer(toastClass)), uintptr(unsafe.Pointer(title)), wsPopup,
-		uintptr(x), uintptr(y), uintptr(w), uintptr(h), 0, 0, hinst, 0)
+		uintptr(x+int32(curSlide)), uintptr(y), uintptr(w), uintptr(h), 0, 0, hinst, 0)
 	if hwnd == 0 {
 		if ToastFailed != nil {
 			err := classErr
@@ -215,6 +223,11 @@ func showOne(hinst uintptr, t Toast) {
 	}
 }
 
+func slideTo(hwnd uintptr) {
+	const swpNoSize, swpNoZOrder, swpNoActivate = 0x1, 0x4, 0x10
+	procSetWindowPos.Call(hwnd, 0, uintptr(curX+int32(curSlide)), uintptr(curY), 0, 0, swpNoSize|swpNoZOrder|swpNoActivate)
+}
+
 func foreground() uintptr {
 	h, _, _ := procGetForegroundWindow.Call()
 	return h
@@ -235,9 +248,18 @@ func toastWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	case wmTimer:
 		switch wp {
 		case timerFade:
-			curAlpha += 40
-			if curAlpha >= toastAlpha {
+			// In: it fades up and slides the last few pixels into place,
+			// fast at first and settling (each step takes 35% of what's left).
+			curAlpha += 34
+			if curAlpha > toastAlpha {
 				curAlpha = toastAlpha
+			}
+			curSlide *= 0.65
+			if curSlide < 0.5 {
+				curSlide = 0
+			}
+			slideTo(hwnd)
+			if curAlpha == toastAlpha && curSlide == 0 {
 				procKillTimer.Call(hwnd, timerFade)
 			}
 			procSetLayeredWindowAttributes.Call(hwnd, 0, uintptr(curAlpha), 2)
@@ -245,6 +267,8 @@ func toastWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 			procKillTimer.Call(hwnd, timerHide)
 			procSetTimer.Call(hwnd, timerFadeOut, toastFadeMs, 0)
 		case timerFadeOut:
+			curSlide += float64(curDPI) / 24 // out: back the way it came
+			slideTo(hwnd)
 			curAlpha -= 30
 			if curAlpha <= 0 {
 				procKillTimer.Call(hwnd, timerFadeOut)
@@ -293,7 +317,7 @@ func paintToast(hwnd uintptr) {
 	hdc, _, _ := procBeginPaint.Call(hwnd, uintptr(unsafe.Pointer(&ps)))
 	defer procEndPaint.Call(hwnd, uintptr(unsafe.Pointer(&ps)))
 	px := func(n int) int32 { return int32(n * curDPI / 96) }
-	w, h := px(360), px(80)
+	w, h := px(380), px(84)
 
 	fill := func(r rect, rgb uint32) {
 		b, _, _ := procCreateSolidBrush.Call(uintptr(colorRef(rgb)))
@@ -325,7 +349,44 @@ func paintToast(hwnd uintptr) {
 		procDeleteObject.Call(f)
 	}
 	l, r := px(20), w-px(16)
-	text(cur.Kicker, rect{l, px(10), r, px(28)}, 12, 400, toastMuted)
-	text(cur.Title, rect{l, px(28), r, px(50)}, 15, 600, toastText)
-	text(cur.Line, rect{l, px(50), r, px(70)}, 12, 400, toastMuted)
+	if cur.Badge != "" {
+		drawTrophy(hdc, px(20), h/2, px(22), hexRGB(cur.Badge, toastText), px)
+		l = px(20) + px(44) + px(14)
+	}
+	text(cur.Kicker, rect{l, px(12), r, px(30)}, 12, 400, toastMuted)
+	text(cur.Title, rect{l, px(30), r, px(52)}, 15, 600, toastText)
+	lineColor := uint32(toastMuted)
+	if cur.Badge != "" {
+		lineColor = hexRGB(cur.Badge, toastMuted) // the tier's colour, as in the app
+	}
+	text(cur.Line, rect{l, px(52), r, px(72)}, 12, 600, lineColor)
+}
+
+// drawTrophy draws a round badge with a trophy in it, in the tier's colour:
+// x is its left edge, cy its middle, rad its radius.
+func drawTrophy(hdc uintptr, x, cy, rad int32, rgb uint32, px func(int) int32) {
+	ring, _, _ := procCreatePen.Call(0 /*PS_SOLID*/, uintptr(px(2)), uintptr(colorRef(rgb)))
+	face, _, _ := procCreateSolidBrush.Call(uintptr(colorRef(0x23252D)))
+	oldPen, _, _ := procSelectObject.Call(hdc, ring)
+	oldBrush, _, _ := procSelectObject.Call(hdc, face)
+	procEllipse.Call(hdc, uintptr(x), uintptr(cy-rad), uintptr(x+2*rad), uintptr(cy+rad))
+	// The cup, its stem and its base, drawn on a 20-unit grid.
+	cx := x + rad
+	u := func(n int) int32 { return int32(n) * rad / 11 }
+	type pt struct{ x, y int32 }
+	cup := []pt{{-7, -8}, {7, -8}, {6, -2}, {3, 2}, {1, 3}, {1, 5}, {4, 5}, {4, 8}, {-4, 8}, {-4, 5}, {-1, 5}, {-1, 3}, {-3, 2}, {-6, -2}}
+	pts := make([]pt, len(cup))
+	for i, p := range cup {
+		pts[i] = pt{cx + u(int(p.x)), cy + u(int(p.y))}
+	}
+	cupPen, _, _ := procCreatePen.Call(0, 1, uintptr(colorRef(rgb)))
+	cupBrush, _, _ := procCreateSolidBrush.Call(uintptr(colorRef(rgb)))
+	procSelectObject.Call(hdc, cupPen)
+	procSelectObject.Call(hdc, cupBrush)
+	procPolygon.Call(hdc, uintptr(unsafe.Pointer(&pts[0])), uintptr(len(pts)))
+	procSelectObject.Call(hdc, oldPen)
+	procSelectObject.Call(hdc, oldBrush)
+	for _, o := range []uintptr{ring, face, cupPen, cupBrush} {
+		procDeleteObject.Call(o)
+	}
 }

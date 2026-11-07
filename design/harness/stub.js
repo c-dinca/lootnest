@@ -218,6 +218,7 @@
       if (STATE !== "loading") emit({ type: "achievements", key, set });
       return ok();
     },
+    ps_testToast: () => ok(),
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
         unknown: [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: 1 } }), 120);
@@ -255,11 +256,13 @@
       return ok();
     },
     ps_allAchievements: () => {
-      const rec = (n, off) => Array.from({ length: n }, (_, i) => ({ id: "A" + i, name: ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist"][i % 6], unlocked: true, at: iso((i + off) * 7 * h) }));
+      const rec = (n, off) => Array.from({ length: n }, (_, i) => ({ id: "A" + i, name: ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist"][i % 6], unlocked: true, at: iso((i + off) * 7 * h), percent: [48.2, 22.5, 7.4, 1.3, 63, 12][(i + off) % 6] }));
+      const rar = (list) => list.map((a, i) => ({ ...a, id: "R" + i })).sort((x, y) => x.percent - y.percent);
+      const named = (n) => [{ name: "Legend of the Gate", percent: 0.8 }, { name: "Ace", percent: 3.1 }, { name: "Speed demon", percent: 6.4 }, { name: "Collector", percent: 18 }].slice(0, n).map((x, i) => ({ id: "S" + i, unlocked: true, ...x }));
       const games = [
-        { key: "game:cs2", name: "Counter-Strike 2", source: "steam", total: 167, unlocked: 61, recent: rec(4, 1) },
-        { key: "game:bg3", name: "Baldur's Gate 3", source: "pc", total: 54, unlocked: 21, recent: rec(3, 2), players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { unlocked: [21, 54, 9][i % 3], recent: rec(3, i + 2) }])) },
-        { key: "steam:1091500", name: "Cyberpunk 2077", source: "steam", total: 57, unlocked: 57, recent: rec(2, 5) },
+        { key: "game:cs2", name: "Counter-Strike 2", source: "steam", total: 167, unlocked: 61, recent: rec(4, 1), rarest: named(2) },
+        { key: "game:bg3", name: "Baldur's Gate 3", source: "pc", total: 54, unlocked: 21, recent: rec(3, 2), players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { unlocked: [21, 54, 9][i % 3], recent: rec(3, i + 2), rarest: rar(rec(3, i + 2)).slice(0, 2) }])) },
+        { key: "steam:1091500", name: "Cyberpunk 2077", source: "steam", total: 57, unlocked: 57, recent: rec(2, 5), rarest: named(4).slice(2) },
       ];
       if (STATE !== "loading") emit({ type: "allAchievements", games });
       return ok();

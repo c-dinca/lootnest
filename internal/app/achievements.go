@@ -204,12 +204,14 @@ type achSummary struct {
 	Total    int                   `json:"total"`
 	Unlocked int                   `json:"unlocked"`
 	Recent   []core.Achievement    `json:"recent"`
+	Rarest   []core.Achievement    `json:"rarest"`
 	Players  map[string]achPerSlot `json:"players,omitempty"`
 }
 
 type achPerSlot struct {
 	Unlocked int                `json:"unlocked"`
 	Recent   []core.Achievement `json:"recent"`
+	Rarest   []core.Achievement `json:"rarest"`
 }
 
 func latestUnlocked(list []core.Achievement, n int) []core.Achievement {
@@ -246,11 +248,11 @@ func (a *App) apiAllAchievements() {
 			if set == nil || set.Total == 0 {
 				continue
 			}
-			s := achSummary{Key: it.key, Name: it.name, Source: set.Source, Total: set.Total, Unlocked: set.Unlocked, Recent: latestUnlocked(set.List, 8)}
+			s := achSummary{Key: it.key, Name: it.name, Source: set.Source, Total: set.Total, Unlocked: set.Unlocked, Recent: latestUnlocked(set.List, 8), Rarest: core.RarestUnlocked(set.List, 3)}
 			if len(set.Players) > 0 {
 				s.Players = map[string]achPerSlot{}
 				for pid, ps := range set.Players {
-					s.Players[pid] = achPerSlot{Unlocked: ps.Unlocked, Recent: latestUnlocked(ps.List, 8)}
+					s.Players[pid] = achPerSlot{Unlocked: ps.Unlocked, Recent: latestUnlocked(ps.List, 8), Rarest: core.RarestUnlocked(ps.List, 3)}
 				}
 			}
 			out = append(out, s)

@@ -62,3 +62,14 @@ func TestAntiCheat(t *testing.T) {
 		t.Fatal("BattlEye")
 	}
 }
+
+func TestRarestUnlocked(t *testing.T) {
+	list := []Achievement{{ID: "a", Unlocked: true, Percent: 40}, {ID: "b", Unlocked: true, Percent: 1.5}, {ID: "c", Unlocked: false, Percent: 0.5}, {ID: "d", Unlocked: true}, {ID: "e", Unlocked: true, Percent: 8}}
+	got := RarestUnlocked(list, 2)
+	if len(got) != 2 || got[0].ID != "b" || got[1].ID != "e" {
+		t.Fatalf("got %+v", got)
+	}
+	if r := RarestUnlocked(nil, 3); r == nil || len(r) != 0 {
+		t.Fatal("empty, not nil")
+	}
+}

@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.47.0, beta)
+## Where things stand (1.48.0, beta)
 
 These shipped recently, newest last:
 
@@ -258,6 +258,13 @@ These shipped recently, newest last:
   with art and version against the latest (`verIn` reads it from the
   patch notes' title), a More menu in `#ctx`, a history drawer
   (`updhist`). `emptyState()` and `.ln-empty` for pages with nothing yet.
+- **1.48** Achievement tiers (`--tier-ultra/rare/uncommon/common`,
+  `tierOf`, `achRow`, `core.RarityColor`), rings (`ring()`), count-up
+  (`countUp`, `data-countup`), `.arrive` animates bars and rings once per
+  page entry, Rarest unlocked (`core.RarestUnlocked`, `rarest` in
+  allAchievements), in-window unlock pops (`achPop`, from `achUnlocked`'s
+  `list`), and the native toast slides in with a trophy badge
+  (`Toast.Badge`, `drawTrophy`).
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
