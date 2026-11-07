@@ -1733,3 +1733,10 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .gpage-note.gp-ac { align-items: flex-start; max-width: 90ch; line-height: var(--lh-snug); }
 .gpage-note.gp-ac .ln-icon { flex: none; margin-top: 1px; }
 .gpage-note .gpage-link { font-size: inherit; }
+
+/* Just you on this PC, with no runs yet: Play is always yours, so the
+   sidebar has no one to seat. */
+.is-single #who-head, .is-single #who { display: none; }
+.gp-newrun { border-style: dashed; color: var(--fg-2); }
+.gp-newrun:hover { color: var(--fg-1); border-style: solid; }
+.gp-newrun .ln-icon { width: 14px; height: 14px; }

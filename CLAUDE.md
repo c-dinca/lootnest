@@ -117,7 +117,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.50.0, beta)
+## Where things stand (1.51.0, beta)
 
 These shipped recently, newest last:
 
@@ -288,6 +288,15 @@ These shipped recently, newest last:
   `AppState.Conflicts`, `conflictBanner()`, `ps_dismissConflict`). The
   anti-cheat note (`antiCheatNote()`, `ps_gameFacts`). Still open: taking
   anti-cheat or online-only games out of swaps by default.
+- **1.51** Solo first (the owner: "one by default, with profiles and
+  runs"): a first start keeps one profile, named from `USERNAME`
+  (`windowsUserName`), with no "who uses this PC" question. In app.js
+  `people()`, `solo()`, `personOf()`; `#app.is-solo` and `.is-single`
+  hide Who's here and auto-seat the only profile. A game's page has a
+  **New run** chip (dialog `newrun`, action `new-run-go`: saves a
+  `Player` with `Of`, then `play-as`, whose picker asks fresh or copy).
+  Lootnest is positioned as the saves vault for anyone; the shared PC
+  is the second use.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:

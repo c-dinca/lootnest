@@ -192,6 +192,11 @@
   // Cristian). It shows under them, with their colour and picture.
   const MAX_PROFILES = 16;
   const parentOf = (p) => (p && p.of && p.of !== p.id && player(p.of)) || null;
+  // Just you: one person on this PC (with or without runs of their own).
+  // The words about who's at the PC and playing as someone else go away.
+  const people = () => cfg().players.filter((p) => !parentOf(p));
+  const solo = () => people().length <= 1;
+  const personOf = (p) => parentOf(p) || p;
   // "hardcore" for "Cristian hardcore" of Cristian.
   const runLabel = (p) => {
     const par = parentOf(p);
@@ -652,13 +657,18 @@
   function renderWho() {
     const playing = {}, seat = seated(), ps = cfg().players;
     (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = s; });
-    $("#who-head").innerHTML = `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu">${GI.swap}${seat ? "Switch" : "Sit down"}</button>` : ""}`;
+    // Just you, with no runs: Play is always yours, nothing to choose.
+    const alone = solo(), single = ps.length <= 1;
+    $("#app").classList.toggle("is-solo", alone);
+    $("#app").classList.toggle("is-single", single);
+    if (single && ps[0] && S.seat !== ps[0].id) { S.seat = ps[0].id; api.setSeat(S.seat).catch(() => {}); }
+    $("#who-head").innerHTML = alone ? `<span>Playing as</span>` : `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu">${GI.swap}${seat ? "Switch" : "Sit down"}</button>` : ""}`;
     $("#who").innerHTML = grouped(ps).map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
       const on = seat && seat.id === p.id;
       return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}${parentOf(p) ? " who-run" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}"
-        title="${on ? `${esc(p.name)} is at the PC. Click to leave the seat empty.` : `Sit ${esc(p.name)} at the PC: Play starts as ${esc(p.name)}.`}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}${on ? ' <span class="ln-tag ln-tag--player">Seated</span>' : ""}</span>
+        title="${alone ? (on ? `Play starts as ${esc(p.name)}.` : `Play as ${esc(p.name)} from now on.`) : on ? `${esc(p.name)} is at the PC. Click to leave the seat empty.` : `Sit ${esc(p.name)} at the PC: Play starts as ${esc(p.name)}.`}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}${on && !single ? ` <span class="ln-tag ln-tag--player">${alone ? "Playing" : "Seated"}</span>` : ""}</span>
         <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></button>`;
     }).join("");
   }
@@ -1829,10 +1839,10 @@
       const stats = [st ? gpStat(hoursValue(st), "Steam account") : ""].join("");
       bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
-        <div class="gpage-state"><b>Profiles off</b><span>Everyone shares the same settings and saves</span></div>
-        <div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}Turn on profiles</button>${details}</div>
+        <div class="gpage-state">${solo() ? `<b>One set of saves</b><span>Keep runs for more than one playthrough</span>` : `<b>Profiles off</b><span>Everyone shares the same settings and saves</span>`}</div>
+        <div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}${solo() ? "Keep runs" : "Turn on profiles"}</button>${details}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = `<p class="gpage-note">Turn on profiles so everyone who plays gets their own settings and saves. ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + (page ? antiCheatNote(it) : "");
+      note = `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + (page ? antiCheatNote(it) : "");
       side = page ? playersPanel(it) + collectionsBlock(it) + gameSavesBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
@@ -1855,7 +1865,9 @@
         const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the profile's files first";
         state = `<div class="gpage-state"><b>${owner && player(owner) ? `${esc(possessive(pname(owner)))} files are loaded` : "Nobody's files yet"}</b><span>${sub}</span></div>`;
       }
-      const chips = !s && others.length ? `<div class="gpage-others"><span class="gpage-others-label">or play as…</span>${others.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" aria-label="Play as ${esc(p.name)}">${lnAvatar(p)}${esc(p.name)}</button>`).join("")}</div>` : "";
+      // A run of whoever's playing: its own saves, from the start or a copy.
+      const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-chip gp-newrun" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}" title="A new playthrough with its own saves, such as a hardcore try">${GI.plus}New run</button>` : "";
+      const chips = !s && (others.length || newRun) ? `<div class="gpage-others">${others.length ? `<span class="gpage-others-label">${solo() ? "or play…" : "or play as…"}</span>` : ""}${others.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" aria-label="Play as ${esc(p.name)}">${lnAvatar(p)}${esc(p.name)}</button>`).join("")}${newRun}</div>` : "";
       const top = ps.filter((p) => pt[p.id]).sort((a, b) => pt[b.id] - pt[a.id]).slice(0, 3);
       const stats = top.map((p) => gpStat(hoursValue(pt[p.id]), esc(p.name), p)).join("") + (st ? gpStat(hoursValue(st), "Steam account") : "");
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${chips}${details}${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
@@ -2141,6 +2153,14 @@
         <div><h2>${esc(D.title)}</h2><p class="sub">${esc(D.body)}</p></div>
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">${esc(D.cancel || "Cancel")}</button>
         <button class="btn primary" data-action="dialog-ok">${esc(D.ok || "OK")}</button></div></div></div>`;
+    } else if (D.kind === "newrun") {
+      const g = game(D.gameId), per = player(D.person);
+      o.innerHTML = g && per ? `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="A new run">
+        <div><h2>A new run of ${esc(g.name)}</h2><p class="sub">A playthrough of its own, with its own saves and settings, such as a hardcore try or new game+. Next, choose to start it from nothing or from a copy of ${esc(possessive(per.name))} saves. Those stay as they are.</p></div>
+        <input type="text" class="ln-input" id="newrun-name" maxlength="24" placeholder="${esc(per.name)} hardcore" value="${esc(D.name || "")}" aria-label="The run's name">
+        <div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
+        <button class="btn primary" data-action="new-run-go" ${D.busy ? "disabled" : ""}>Start the run</button></div></div></div>` : "";
+      setTimeout(() => { const i = $("#newrun-name"); if (i && document.activeElement !== i) i.focus(); }, 20);
     } else if (D.kind === "add") {
       o.innerHTML = viewAddDialog();
     } else if (D.kind === "welcome") {
@@ -2514,8 +2534,9 @@
   function viewWelcome() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Welcome">
-      <div><h2 style="font-size:22px">Who plays on this PC?</h2><p class="sub">Each profile gets a colour and its own settings, saves and achievements in every game you add. Make one per person, or a few for yourself, one per run. You can add more later.</p></div>
+      <div><h2 style="font-size:22px">Welcome to Lootnest</h2><p class="sub">This is your profile. It keeps its own settings, saves and achievements in every game, with a copy made before anything changes. Start runs of your own for a hardcore or new game+ try whenever you like, each with its own saves.</p></div>
       <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, true)).join("")}</div>
+      <p class="hint">Sharing this PC? ${ps.length < 4 ? `<button class="gpage-link" data-action="welcome-add">Add someone else</button>, or later in Profiles.` : "Add more later in Profiles."}</p>
       <div class="dialog-foot"><span class="error-text grow" id="players-error"></span><button class="btn primary" data-action="welcome-done">Continue</button></div>
     </div></div>`;
   }
@@ -4363,6 +4384,23 @@
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },
     "save-players": () => savePlayers(false),
     "welcome-done": () => savePlayers(true),
+    "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); },
+    async "new-run-go"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "newrun" || D.busy) return;
+      const per = player(D.person), inp = $("#newrun-name");
+      const name = ((inp && inp.value) || "").trim() || per.name + " hardcore";
+      if (cfg().players.some((p) => p.name.toLowerCase() === name.toLowerCase())) { D.error = "There's a profile with that name already."; D.name = name; renderOverlay(); return; }
+      D.busy = true; renderOverlay();
+      try {
+        await api.savePlayers([...cfg().players, { id: "", name, color: per.color, of: per.id }]);
+        await refresh();
+        const run = cfg().players.find((p) => p.name === name && p.of === per.id);
+        S.dialog = null; renderOverlay();
+        if (run) actions["play-as"]({ dataset: { game: D.gameId, player: run.id } });
+      } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
+    "welcome-add"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); renderOverlay(); const ins = document.querySelectorAll('[data-field="pname"]'); if (ins.length) ins[ins.length - 1].focus(); },
     "open-data": () => api.open("data").catch((e) => toast(errText(e), "error")),
     "steam-setup": (el) => openSteamSetup(el.dataset.game),
     async "steam-recheck"() { S.hooks = null; renderOverlay(); await loadHooks(); if (S.dialog && S.dialog.kind === "steam") renderOverlay(); render(); },
@@ -4548,6 +4586,7 @@
       return;
     }
     if (ev.key === "Escape" && ev.target.id === "side-q" && ev.target.value) { ev.preventDefault(); ev.target.value = ""; S.sideQ = ""; renderSideGames(); return; }
+    if (ev.key === "Enter" && ev.target.id === "newrun-name") { ev.preventDefault(); actions["new-run-go"](); return; }
     // Enter in a save point's name: make it, or save the new name.
     if (ev.key === "Enter" && (ev.target.id === "pt-new" || ev.target.id === "pt-rename")) {
       ev.preventDefault();
