@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.2
+
+- **Add game** now puts the game in your Library, ready to play, instead of setting it up with profiles. Turn on profiles from its panel when more than one person plays it. A game you add stays in the Library even if a scan doesn't find it; **Remove from the Library** takes it out.
+- Fixed: a game added by its .exe was named after the folder the exe is in, such as "steam", "bin" or "Win64". It's now named after the game's own folder, and folder names like `Game.Name-Tag` become "Game Name".
+
 ## 1.5.1
 
 - Fixed: a game outside Steam showed as "Other" once its profiles were on (GTA V from Epic, for example). It keeps the store it was found in, in its panel and in the Library's filters.

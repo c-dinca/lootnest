@@ -43,6 +43,7 @@
     moveInfo: (appId) => call("ps_moveInfo", appId),
     moveGame: (appId, lib) => call("ps_moveGame", appId, lib),
     saveLibraryPref: (key, name, args) => call("ps_saveLibraryPref", key, name, args),
+    addLibraryGame: (kind, appId, path) => call("ps_addLibraryGame", kind, appId || 0, path || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
     steamVerify: (appId) => call("ps_steamVerify", appId),
@@ -423,7 +424,7 @@
           ${f.source === "steam" && f.appId ? `<button data-action="steam-verify" data-app="${f.appId}">Check the game's files in Steam</button>
           <button data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}">Move to another drive</button>` : ""}
           <hr>
-          <button data-action="found-hide" data-key="${esc(f.key)}">Hide from the library</button></div></aside>`;
+          <button data-action="found-hide" data-key="${esc(f.key)}">${f.added ? "Remove from the Library" : "Hide from the Library"}</button></div></aside>`;
     }
     const g = it.g;
     const owner = S.d.active[g.id];
@@ -753,18 +754,19 @@
   function viewAddDialog() {
     const D = S.dialog;
     const q = (D.q || "").toLowerCase();
-    const added = new Set(cfg().games.filter((g) => g.launch.type === "steam").map((g) => g.launch.appId));
+    const inLibrary = new Set((S.found.games || []).filter((f) => f.appId).map((f) => f.appId)
+      .concat(cfg().games.filter((g) => g.launch.type === "steam").map((g) => g.launch.appId)));
     let list;
     if (!S.d.steam.found) list = `<div class="note">Steam wasn't found on this PC. You can still add any game by choosing its .exe.</div>`;
     else if (!D.steam) list = `<p class="hint">Looking for installed Steam games</p>`;
     else {
       const items = D.steam.filter((g) => !q || g.name.toLowerCase().includes(q));
       list = items.length
-        ? `<div class="steam-list">${items.map((g) => `<button class="steam-item${added.has(g.appId) ? " added" : ""}" data-action="add-steam" data-app="${g.appId}" ${added.has(g.appId) ? "disabled" : ""}><b>${esc(g.name)}</b><span>${added.has(g.appId) ? "Already added" : "Steam"}</span></button>`).join("")}</div>`
+        ? `<div class="steam-list">${items.map((g) => `<button class="steam-item${inLibrary.has(g.appId) ? " added" : ""}" data-action="add-steam" data-app="${g.appId}"><b>${esc(g.name)}</b><span>${inLibrary.has(g.appId) ? "In your Library" : "Steam"}</span></button>`).join("")}</div>`
         : `<p class="hint">No installed Steam game matches “${esc(D.q)}”.</p>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="Add a game">
-      <div class="page-head" style="margin:0"><div><h2>Add a game</h2><p class="sub">Pick an installed Steam game, or any other game by its .exe.</p></div>
+      <div class="page-head" style="margin:0"><div><h2>Add a game</h2><p class="sub">It goes into your Library, ready to play. Turn on profiles from its panel if more than one person plays it.</p></div>
       <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
       ${S.d.steam.found ? `<input type="text" id="steam-q" placeholder="Search your Steam games" value="${esc(D.q || "")}" autocomplete="off">` : ""}
       ${list}
@@ -784,43 +786,26 @@
     }
   }
 
-  async function addSteam(appId) {
-    appId = Number(appId);
+  // Adding a game puts it in the Library, without profiles; its panel then
+  // opens, where profiles can be turned on.
+  async function addToLibrary(kind, appId, path) {
     S.dialog = null; renderOverlay();
     try {
-      const ins = await api.inspectSteam(appId);
-      const g = { id: "", name: ins.name, launch: { type: "steam", appId, args: "" }, processName: ins.processName || "", playerArgs: {}, paths: (ins.proposed || []).map((p) => ({ id: "", path: p })) };
-      if (await addDirect(g)) return;
-      openEditor({ isNew: true, game: g, inspect: ins });
+      const r = await api.addLibraryGame(kind, appId, path);
+      await loadFound();
+      if (S.view !== "library") { S.view = "library"; S.animateView = true; render(); }
+      if (r.gameId) { openSheet("game", r.gameId); return; }
+      toast(`${r.name} is in your Library`);
+      openSheet("found", r.key);
     } catch (e) { toast(errText(e), "error"); }
   }
+
+  const addSteam = (appId) => addToLibrary("steam", Number(appId), "");
 
   async function addExe() {
     const r = await browse("exe");
     if (!r.path) { if (r.error) toast(r.error, "error"); return; }
-    S.dialog = null; renderOverlay();
-    try {
-      const ins = await api.inspectExe(r.path);
-      const g = { id: "", name: ins.name || "", launch: { type: "exe", exe: r.tokenized || r.path, args: "" }, processName: ins.processName, playerArgs: {}, paths: (ins.proposed || []).map((p) => ({ id: "", path: p })) };
-      if (await addDirect(g)) return;
-      openEditor({ isNew: true, game: g, inspect: ins });
-    } catch (e) { toast(errText(e), "error"); }
-  }
-
-  // addDirect adds a game straight away when Lootnest found everything it
-  // needs (the process and at least one save location), like "Add" in the
-  // found list. It returns false when the editor should open instead.
-  async function addDirect(g) {
-    if (!g.name || !g.processName || !g.paths.length) return false;
-    try {
-      const saved = await api.saveGame(g);
-      const n = saved.paths.length;
-      toast(`Added ${saved.name}. Lootnest found ${n === 1 ? "its save location" : n + " save locations"}; click the game to check them.`);
-      await refresh();
-      loadFound();
-      loadHooks().then(render);
-      return true;
-    } catch (e) { return false; }
+    await addToLibrary("exe", 0, r.path);
   }
 
   // ---------------------------------------------------------------- editor --

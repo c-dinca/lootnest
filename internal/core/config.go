@@ -90,6 +90,9 @@ type Config struct {
 	IgnoredFound []string `json:"ignoredFound,omitempty"`
 	// LibraryPrefs: settings for Library games without profiles, by scan key.
 	LibraryPrefs map[string]LibraryPref `json:"libraryPrefs,omitempty"`
+	// AddedGames: games the user added to the Library by hand ("Add game"),
+	// kept even when a scan doesn't find them.
+	AddedGames []FoundGame `json:"addedGames,omitempty"`
 }
 
 // LibraryPref is what the user changed about a Library game that has no

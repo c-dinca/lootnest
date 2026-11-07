@@ -59,6 +59,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_moveInfo", a.apiMoveInfo))
 	must(a.w.Bind("ps_moveGame", a.apiMoveGame))
 	must(a.w.Bind("ps_saveLibraryPref", a.apiSaveLibraryPref))
+	must(a.w.Bind("ps_addLibraryGame", a.apiAddLibraryGame))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))
@@ -429,12 +430,9 @@ func (a *App) apiInspectExe(path string) (Inspect, error) {
 	if err != nil {
 		return Inspect{}, err
 	}
-	base := strings.TrimSuffix(filepath.Base(exe), filepath.Ext(exe))
-	dir := filepath.Dir(exe)
-	name := filepath.Base(dir)
-	if strings.EqualFold(name, "bin") || strings.EqualFold(name, "win64") || strings.EqualFold(name, "x64") || strings.EqualFold(name, "binaries") {
-		name = filepath.Base(filepath.Dir(dir))
-	}
+	_, containers := gameFolders(a.env)
+	f := a.env.ExeGame(exe, containers) // its name, from the game's folder rather than bin, steam or Win64
+	base, name := f.ProcessName, f.Name
 	out := Inspect{ProcessName: base, Name: name, Candidates: []core.ExeCandidate{}}
 	out.Suggestions = a.env.SuggestPaths(name, base, 0)
 	if out.Suggestions == nil {

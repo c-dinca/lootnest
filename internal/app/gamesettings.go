@@ -21,12 +21,9 @@ import (
 // ---------------------------------------------------------------------------
 
 func (a *App) foundByKey(key string) (core.FoundGame, bool) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	for _, f := range a.found {
+	for _, f := range a.libraryGames() {
 		if f.Key == key {
-			list := core.ApplyLibraryPrefs([]core.FoundGame{f}, a.cfg.LibraryPrefs)
-			return list[0], true
+			return f, true
 		}
 	}
 	return core.FoundGame{}, false
