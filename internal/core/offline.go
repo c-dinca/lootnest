@@ -99,7 +99,7 @@ func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + 
 // running it twice leaves one set.
 func FirewallScript(tag, name string, exes []string, block bool) string {
 	var b strings.Builder
-	b.WriteString("$ErrorActionPreference = 'Stop'\n")
+	b.WriteString("$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n")
 	b.WriteString("Get-NetFirewallRule -Group 'Lootnest' -ErrorAction SilentlyContinue | Where-Object { $_.Description -eq " + psQuote(tag) + " } | Remove-NetFirewallRule\n")
 	if block {
 		for _, e := range exes {
