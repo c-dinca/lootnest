@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.16.7
+
+Settings in the new look:
+- **Groups:** General, Games, Online, Updates, Cloud saves and backup, Data, About. They sit side by side on wide windows.
+- **Rows:** each says what it does, with its switch, number or menu on the right.
+- **Online** groups everything that goes online. Each item there stays off until you turn it on.
+- **Updates** shows your version, with Check for updates or Update next to it.
+
 ## 1.16.6
 
 **Cloud saves in the new look:**

@@ -1909,47 +1909,51 @@
       <span class="switch"><input type="checkbox" data-setting="${field}" ${checked ? "checked" : ""}><span></span></span></label>`;
   }
 
+  // Settings: plain on purpose. Groups of rows, each saying what it does,
+  // with its control on the right. Everything online is off until turned on.
   function viewSettings() {
     const s = cfg().settings, st = S.d.steam;
-    return `<div class="page"><div class="page-head"><div><h1>Settings</h1></div></div>
-      <div class="form">
-        <section class="section"><div class="toggles">
+    const group = (title, note, rows) => `<section class="set-group"><div class="ln-section-head ln-section-head--minor"><h2>${title}</h2></div>${note ? `<p class="set-note">${note}</p>` : ""}<div class="bk-card">${rows}</div></section>`;
+    const row = (forId, title, desc, control) => `<div class="bk-row"><div><label for="${forId}"><b>${title}</b></label>${desc ? `<p>${desc}</p>` : ""}</div>${control}</div>`;
+    const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
+    const update = S.update.available
+      ? (S.update.step ? `<button class="ln-button ln-button--primary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Updating</button>` : b("primary", 'data-action="update-now"', `Update to ${esc(S.update.version)}`))
+      : (S.update.checking ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Checking</button>` : b("secondary", 'data-action="update-check"', "Check for updates"));
+    return `<div class="settings-page ln-root">
+      <header class="lib-head"><div><h1>Settings</h1><p>Lootnest ${esc(S.d.version)}. Anything that goes online is off until you turn it on.</p></div></header>
+      <div class="set-grid">
+        ${group("General", "", `
           ${sw("autostart", "Start with Windows", "Lootnest opens quietly in the tray when you sign in, so it's always watching your games.", S.d.autostart)}
           ${sw("closeToTray", "Keep running when the window is closed", "Closing the window leaves Lootnest in the tray. Quit from the tray icon.", s.closeToTray)}
           ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts.", s.hideWhilePlaying)}
+          ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}`)}
+        ${group("Games", "", `
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
-          ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
-          ${sw("checkUpdates", "Check for updates automatically", "Every few hours, Lootnest asks GitHub for its latest version number and tells you with a notification when a new one is out. Nothing about you or your games is sent.", s.checkUpdates)}
-          ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your players, games and profiles stay as they are.", s.autoInstallUpdates) : ""}
+          ${row("s-backups", "Copies kept per game before each swap", "A copy is made before every swap. The oldest go once there are more than this.", `<input id="s-backups" class="ln-input set-num" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}">`)}
+          ${row("s-timeout", "Seconds to wait for a game to start", "", `<input id="s-timeout" class="ln-input set-num" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}">`)}
+          ${st.found ? row("s-steam", "Steam account", st.accountError ? `<span class="error-text">${esc(st.accountError)}</span>` : "", `<select id="s-steam" class="ln-input" data-setting="steamAccountId">
+            <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
+            ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : ""}`)}
+        ${group("Online", "Each of these sends as little as it can, and only once you turn it on.", `
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}
-        </div></section>
-        <section class="section"><div class="section-head"><h2>Cloud saves and backup</h2><p>Your saves in your own cloud, on every PC, and backups of everything.</p></div>
-          <div class="row"><button class="btn" data-action="nav" data-view="cloud">Open Cloud saves</button></div></section>
-        <section class="section"><div class="numbers">
-          <div class="field wide"><label for="s-grid">SteamGridDB API key <span class="hint">(optional)</span></label>
-            <input id="s-grid" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key">
-            <span class="hint">Covers and artwork for games the Steam store doesn't know. Get a free key on steamgriddb.com, under Preferences, API. It's sent only to SteamGridDB.</span></div>
-          <div class="field"><label for="s-backups">Copies kept per game before each swap</label><input id="s-backups" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}"></div>
-          <div class="field"><label for="s-timeout">Seconds to wait for a game to start</label><input id="s-timeout" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}"></div>
-          ${st.found ? `<div class="field"><label for="s-steam">Steam account</label><select id="s-steam" data-setting="steamAccountId">
-            <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
-            ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>
-            ${st.accountError ? `<span class="error-text">${esc(st.accountError)}</span>` : ""}</div>` : ""}
-        </div></section>
-        <section class="section">
-          <div class="section-head"><h2>Data</h2><p class="selectable">Profiles and backups are stored in ${esc(S.d.dataDir)}</p></div>
-          <div class="row"><button class="btn" data-action="open-data">Open data folder</button><button class="btn" data-action="show-log">Show recent activity</button></div>
-          ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}
-        </section>
-        <section class="section">
-          <div class="section-head"><h2>About</h2><p>Lootnest ${esc(S.d.version)}. Uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows.</p></div>
-          <div class="row">${S.update.available
-            ? `<button class="btn primary" data-action="update-now" ${S.update.step ? "disabled" : ""}>${S.update.step ? "Updating" : `Update to ${esc(S.update.version)}`}</button>`
-            : `<button class="btn" data-action="update-check" ${S.update.checking ? "disabled" : ""}>${S.update.checking ? "Checking" : "Check for updates"}</button>`}
-            <button class="btn quiet danger" data-action="quit">Quit Lootnest</button></div>
-        </section>
+          <div class="bk-row set-wide"><div><label for="s-grid"><b>SteamGridDB API key</b> <span class="set-opt">optional</span></label>
+            <p>Covers and artwork for games the Steam store doesn't know. Get a free key on steamgriddb.com, under Preferences, API. It's sent only to SteamGridDB.</p></div>
+            <input id="s-grid" class="ln-input" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key"></div>`)}
+        ${group("Updates", "", `
+          ${sw("checkUpdates", "Check for updates automatically", "Every few hours, Lootnest asks GitHub for its latest version number and tells you with a notification when a new one is out. Nothing about you or your games is sent.", s.checkUpdates)}
+          ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your players, games and profiles stay as they are.", s.autoInstallUpdates) : ""}
+          <div class="bk-row"><div><b>Lootnest ${esc(S.d.version)}</b><p>${S.update.available ? `Version ${esc(S.update.version)} is ready to install.` : "Updates come from Lootnest's releases on GitHub."}</p></div>${update}</div>`)}
+        ${group("Cloud saves and backup", "", `
+          <div class="bk-row"><div><b>Your saves in your own cloud</b><p>On every PC, with backups of everything.</p></div>${b("secondary", 'data-action="nav" data-view="cloud"', "Open Cloud saves")}</div>`)}
+        ${group("Data", "", `
+          <div class="bk-row"><div><b>Data folder</b><p class="selectable">Profiles and backups are stored in ${esc(S.d.dataDir)}</p></div>
+            <div class="gpage-actions">${b("ghost", 'data-action="open-data"', "Open data folder")}${b("ghost", 'data-action="show-log"', "Show recent activity")}</div></div>
+          ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}`)}
+        ${group("About", "", `
+          <div class="bk-row"><div><b>Lootnest ${esc(S.d.version)}</b><p>Uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows.</p></div>
+            ${b("danger", 'data-action="quit"', "Quit Lootnest")}</div>`)}
       </div></div>`;
   }
 
