@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.36.0
+
+- **Will it run here? Now with an answer.** A game's page in the Store says how it should run on this PC:
+  - **Runs great here**, **Runs well here**, **Runs, on low settings**, **May struggle** or **Probably won't run well**;
+  - which part holds it back, such as "The graphics card holds it back";
+  - a bar for the graphics card and the processor, with lines for the minimum and recommended requirements, so you see how far above or below them this PC is.
+- Lootnest knows most graphics cards and processors of the last fifteen years, desktop and laptop, NVIDIA, AMD and Intel, including graphics built into the processor. It compares them using typical benchmark results, so the answer is an estimate. When it doesn't know a part, it says so and shows the names side by side.
+- Memory and free space still count: too little of either lowers the answer.
+
 ## 1.35.0
 
 - **Search from every page.** The **Search** box at the top of the sidebar (Ctrl+K) finds your games as you type and, with the Store on, any game in the store too. Pick one with the arrows and Enter: your games open their page, the others open their prices and requirements. Press Enter to see everything in the Store.

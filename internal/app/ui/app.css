@@ -1195,3 +1195,32 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 /* The sidebar paints above the page, so the search's list can reach over it. */
 .side { position: relative; z-index: 3; }
 #find-results { display: grid; gap: var(--space-10); }
+
+/* Will it run here? The verdict, with a bar per part: the fill is this PC,
+   the two lines are the minimum and recommended requirements. */
+.run-card { --tone: var(--fg-3); display: grid; gap: var(--space-3); padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-left: 3px solid var(--tone); border-radius: var(--radius-panel); background: var(--bg-raised); }
+.run-card--ok { --tone: var(--success); }
+.run-card--mid { --tone: var(--warning); }
+.run-card--low { --tone: var(--danger); }
+.run-head { display: flex; align-items: flex-start; gap: var(--space-3); }
+.run-dot { flex: none; width: 10px; height: 10px; margin-top: 6px; border-radius: var(--radius-round); background: var(--tone); }
+.run-head b { display: block; font: 750 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+.run-head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); line-height: var(--lh-snug); }
+.run-gauges { display: grid; gap: var(--space-2); }
+.run-gauge { --fill: var(--fg-3); display: grid; grid-template-columns: 84px 1fr minmax(120px, auto); align-items: center; gap: var(--space-3); font-size: var(--fs-13); }
+.run-gauge--ok { --fill: var(--success); }
+.run-gauge--mid { --fill: var(--warning); }
+.run-gauge--low { --fill: var(--danger); }
+.run-gauge-label { color: var(--fg-1); font-weight: 600; }
+.run-gauge-val { color: var(--fg-2); text-align: right; }
+.run-bar { position: relative; height: 8px; border-radius: var(--radius-tag); background: var(--bg-well); }
+.run-bar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--have); border-radius: var(--radius-tag); background: var(--fill); }
+.run-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; }
+.run-bar .run-mark--min { left: var(--min); }
+.run-bar .run-mark--rec { left: var(--rec); }
+.run-mark--min { background: var(--fg-3); }
+.run-mark--rec { background: var(--fg-1); }
+.run-legend { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--fs-12); color: var(--fg-2); }
+.run-legend .run-mark { position: static; display: inline-block; height: 12px; margin: 0 0 0 var(--space-2); }
+.run-legend .run-mark:first-child { margin-left: 0; }
+.run-card--unknown .run-head p { color: var(--fg-2); }

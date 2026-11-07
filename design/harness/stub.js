@@ -167,7 +167,15 @@
         deals: appId === 570 ? [] : [{ store: "GameBillet", price: 26.69, retail: 59.99, savings: 56, url: "https://www.cheapshark.com/redirect?dealID=a" }, { store: "Fanatical", price: 27.99, retail: 59.99, savings: 53, url: "https://www.cheapshark.com/redirect?dealID=b" },
           { store: "GOG", price: 59.99, retail: 59.99, savings: 0, url: "https://www.cheapshark.com/redirect?dealID=c" }],
         lowest: appId === 570 ? 0 : 23.99, lowestAt: iso(120 * d), minimum: req(false), recommended: req(true), storeUrl: `https://store.steampowered.com/app/${appId}/` };
-      setTimeout(() => emit({ type: "gameOffer", appId, owned: appId === 1091500 ? "found:steam:1091500" : "", offer,
+      const weak = appId === 2622380, mid = appId === 1086940;
+      const runs = (g, c) => ({ runs: [g, c].includes("below") ? "below" : [g, c].includes("minimum") ? "minimum" : [g, c].includes("recommended") ? "recommended" : "high",
+        limit: g !== "high" && g !== "recommended" ? "Graphics" : "", parts: [
+          { part: "Graphics", have: weak ? 2300 : mid ? 4200 : 13500, min: 3900, rec: 5900, runs: g, known: true },
+          { part: "Processor", have: 29.1, min: 9.2, rec: 13.5, runs: c, known: true },
+          { part: "Memory", have: 16 * 2 ** 30, min: 12 * 2 ** 30, rec: 16 * 2 ** 30, runs: "recommended", known: true },
+          { part: "Storage", have: 412 * 2 ** 30, min: 60 * 2 ** 30, rec: 60 * 2 ** 30, runs: "recommended", known: true }] });
+      const verdict = appId === 570 ? { runs: "", parts: [{ part: "Graphics", have: 13500 }, { part: "Processor", have: 29.1 }, {}, {}] } : weak ? runs("below", "high") : mid ? runs("minimum", "high") : runs("high", "high");
+      setTimeout(() => emit({ type: "gameOffer", appId, owned: appId === 1091500 ? "found:steam:1091500" : "", offer, verdict,
         pc: { cpu: "AMD Ryzen 7 5800X 8-Core Processor", gpu: "NVIDIA GeForce RTX 3070", vram: 8 * 2 ** 30, ram: 16 * 2 ** 30, free: 412 * 2 ** 30, freeOn: "D:", windows: "Windows 11" } }), 200);
       return ok();
     },

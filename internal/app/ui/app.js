@@ -2465,6 +2465,38 @@
   // Sizes in requirements, as in core.ReqBytes.
   const reqBytes = (v) => { const m = /(\d+(?:[.,]\d+)?)\s*(GB|MB|TB)/i.exec(v || ""); if (!m) return 0; const n = parseFloat(m[1].replace(",", ".")); return n * { tb: 2 ** 40, gb: 2 ** 30, mb: 2 ** 20 }[m[2].toLowerCase()]; };
   const gb = (b) => (b >= 2 ** 30 ? `${Math.round(b / 2 ** 30)} GB` : b > 0 ? `${Math.round(b / 2 ** 20)} MB` : "");
+  // "Will it run here?": core.WillItRun's verdict, in words and bars.
+  const RUNS = {
+    high: ["Runs great here", "Above the recommended requirements, so high settings should be fine.", "Above recommended"],
+    recommended: ["Runs well here", "At the recommended requirements: medium to high settings.", "Recommended"],
+    minimum: ["Runs, on low settings", "At the minimum requirements.", "Minimum"],
+    struggles: ["May struggle", "Just under the minimum: expect low settings and slowdowns.", "Under the minimum"],
+    below: ["Probably won't run well", "Well under the minimum requirements.", "Well under"],
+  };
+  const PART = { Graphics: "graphics card", Processor: "processor", Memory: "memory", Storage: "free space" };
+  const runsTone = (r) => (r === "high" || r === "recommended" ? "ok" : r === "minimum" ? "mid" : "low");
+  function runGauge(p) {
+    const top = Math.max(p.have, (p.rec || p.min) * 1.6, p.min) || 1;
+    const pct = (x) => `${Math.max(0, Math.min(100, (x / top) * 100)).toFixed(1)}%`;
+    return `<div class="run-gauge run-gauge--${runsTone(p.runs)}" style="--have:${pct(p.have)};--min:${pct(p.min)};--rec:${pct(p.rec)}">
+      <span class="run-gauge-label">${esc(p.part)}</span>
+      <span class="run-bar" role="img" aria-label="${esc(p.part)}: ${esc(RUNS[p.runs][2])}">${p.min ? `<i class="run-mark run-mark--min"></i>` : ""}${p.rec ? `<i class="run-mark run-mark--rec"></i>` : ""}</span>
+      <span class="run-gauge-val">${esc(RUNS[p.runs][2])}</span></div>`;
+  }
+  function runCard(V) {
+    if (!V || !V.parts) return "";
+    const r = RUNS[V.runs];
+    if (!r) {
+      const g = V.parts[0], c = V.parts[1];
+      const what = !g.have && !c.have ? "this PC's graphics card and processor" : !g.min && !g.rec && !c.min && !c.rec ? "the parts this game asks for" : "these parts";
+      return `<div class="run-card run-card--unknown"><div class="run-head"><span class="run-dot"></span><div><b>Lootnest can't tell</b><p>It doesn't know ${what} well enough to compare. Compare the names below.</p></div></div></div>`;
+    }
+    const limit = V.limit && V.runs !== "high" && V.runs !== "recommended" ? ` The ${PART[V.limit]} holds it back.` : "";
+    const gauges = V.parts.filter((p) => p.known && (p.part === "Graphics" || p.part === "Processor")).map(runGauge).join("");
+    return `<div class="run-card run-card--${runsTone(V.runs)}"><div class="run-head"><span class="run-dot"></span><div><b>${r[0]}</b><p>${r[1]}${limit}</p></div></div>
+      ${gauges ? `<div class="run-gauges">${gauges}</div><p class="run-legend"><i class="run-mark run-mark--min"></i>Minimum<i class="run-mark run-mark--rec"></i>Recommended</p>` : ""}
+      <p class="gpage-hint">An estimate from typical benchmark results; Steam's requirements usually mean 1080p.</p></div>`;
+  }
   function viewOffer() {
     const D = S.dialog, R = S.offers[D.appId];
     const shell = (body, foot) => drawer({ label: `${esc(D.name)}, prices and requirements`, title: esc(D.name), sub: "Prices and requirements", wide: true, body, foot });
@@ -2496,14 +2528,19 @@
       Storage: pc.free ? `${gb(pc.free)} free on ${esc(pc.freeOn)} ${mark(pc.free, "Storage")}` : "",
     };
     const notes = [...(O.minimum || [])].filter((l) => !l.label).map((l) => esc(l.value));
-    const reqs = labels.length ? `<div class="gpage-sub">${gpHead("Will it run here?")}<div class="find-req" role="table" aria-label="Requirements and this PC">
+    const V = R.verdict, vpart = (name) => (V && V.parts ? V.parts.find((p) => p.part === name) : null);
+    const partMark = (name) => { const p = vpart(name); return p && p.known ? `<span class="find-${runsTone(p.runs) === "low" ? "low" : "ok"}">${esc(RUNS[p.runs][2])}</span>` : ""; };
+    mine.Graphics += partMark("Graphics");
+    mine.Processor += partMark("Processor");
+    const reqs = labels.length ? `<div class="gpage-sub">${gpHead("Requirements and this PC")}<div class="find-req" role="table" aria-label="Requirements and this PC">
       <div class="find-req-row find-req-head" role="row"><span role="columnheader"></span><span role="columnheader">Minimum</span><span role="columnheader">Recommended</span><span role="columnheader">This PC</span></div>
       ${labels.map((l) => `<div class="find-req-row" role="row"><b role="rowheader">${esc(l)}</b><span role="cell">${esc(val(O.minimum, l)) || "–"}</span><span role="cell">${esc(val(O.recommended, l)) || "–"}</span><span role="cell">${mine[l] || ""}</span></div>`).join("")}</div>
-      <p class="gpage-hint">${notes.length ? notes.join(". ") + ". " : ""}Lootnest checks memory and free space. For the processor and graphics card, compare the names: a newer or higher model number is usually faster.</p></div>`
+      ${notes.length ? `<p class="gpage-hint">${notes.join(". ")}.</p>` : ""}</div>`
       : `<div class="gpage-sub">${gpHead("Will it run here?")}<p class="gpage-hint">The Steam store lists no requirements for this game.</p></div>`;
     const wiki = `<div class="gpage-sub">${gpHead("Known issues")}<p class="gpage-hint">PCGamingWiki says what's known to go wrong on PC, and how to fix it.</p><div class="gpage-actions">${btn(`data-action="gs-pcgw" data-name="${esc(O.name || D.name)}"`, "Open PCGamingWiki", "ln-button--secondary")}</div></div>`;
     const hero = O.header ? `<img class="find-hero" src="${esc(O.header)}" alt="">` : "";
-    return shell(`${hero}${owned}${prices}${reqs}${wiki}`, `<span class="grow"></span>${btn(`data-action="find-store" data-url="${esc(O.storeUrl)}"`, "Open on Steam", "ln-button--primary")}`);
+    const run = labels.length ? `<div class="gpage-sub">${runCard(V)}</div>` : "";
+    return shell(`${hero}${owned}${run}${prices}${reqs}${wiki}`, `<span class="grow"></span>${btn(`data-action="find-store" data-url="${esc(O.storeUrl)}"`, "Open on Steam", "ln-button--primary")}`);
   }
 
   let allAchAsked = false;
