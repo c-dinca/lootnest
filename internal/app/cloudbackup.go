@@ -40,6 +40,8 @@ type CloudFolder struct {
 }
 
 type BackupInfo struct {
+	Sync      bool          `json:"sync"`   // cloud saves on
+	Locked    bool          `json:"locked"` // the folder has a password this PC doesn't have
 	Dir       string        `json:"dir"`
 	Target    string        `json:"target"` // <dir>\Lootnest
 	Auto      bool          `json:"auto"`
@@ -134,13 +136,20 @@ func (a *App) apiBackupInfo() BackupInfo {
 	a.mu.Lock()
 	s := a.cfg.Settings
 	a.mu.Unlock()
-	info := BackupInfo{Dir: s.BackupDir, Auto: s.BackupAuto, Keep: s.BackupKeep, Encrypted: s.BackupKey != "",
+	info := BackupInfo{Sync: s.CloudSync, Dir: s.BackupDir, Auto: s.BackupAuto, Keep: s.BackupKeep, Encrypted: s.BackupKey != "",
 		Computer: computerName(), Status: loadBackupStatus(), Folders: cloudFolders()}
 	if info.Keep == 0 {
 		info.Keep = 5
 	}
 	if s.BackupDir != "" {
 		info.Target = backupTarget(s.BackupDir)
+		if core.CloudHasKey(s.BackupDir) {
+			key, _, _ := backupKey(s)
+			info.Locked = key == nil || !core.CloudKeyMatches(s.BackupDir, key)
+			info.Encrypted = !info.Locked
+		} else {
+			info.Encrypted = false
+		}
 	}
 	backupMu.Lock()
 	info.Status.Running = backupRunning
@@ -152,6 +161,7 @@ type BackupSettings struct {
 	Dir  string `json:"dir"`
 	Auto bool   `json:"auto"`
 	Keep int    `json:"keep"`
+	Sync bool   `json:"sync"`
 }
 
 // apiSetBackup saves where backups go, whether they're made after each
@@ -178,12 +188,34 @@ func (a *App) apiSetBackup(b BackupSettings) error {
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
 	first := cfg.Settings.BackupDir == "" && b.Dir != ""
-	cfg.Settings.BackupDir, cfg.Settings.BackupAuto, cfg.Settings.BackupKeep = b.Dir, b.Auto, b.Keep
+	if first {
+		b.Auto, b.Sync = true, true // what a cloud folder is for
+	}
+	if b.Dir == "" {
+		b.Sync = false
+	}
+	// A new folder and a password here: the folder's own password wins
+	// (key.json); a folder without one gets this PC's.
+	if s := &cfg.Settings; s.BackupKey != "" && b.Dir != "" && !strings.EqualFold(b.Dir, s.BackupDir) {
+		key, salt, err := backupKey(*s)
+		switch {
+		case err != nil || core.CloudHasKey(b.Dir) && !core.CloudKeyMatches(b.Dir, key):
+			s.BackupKey, s.BackupSalt = "", "" // needs that folder's password
+		case !core.CloudHasKey(b.Dir):
+			if err := core.EnsureCloudKey(b.Dir, key, salt, core.BackupKDFIters); err != nil {
+				return fmt.Errorf("couldn't set the password up in that folder: %w", err)
+			}
+		}
+	}
+	cfg.Settings.BackupDir, cfg.Settings.BackupAuto, cfg.Settings.BackupKeep, cfg.Settings.CloudSync = b.Dir, b.Auto, b.Keep, b.Sync
 	if err := a.saveConfig(cfg); err != nil {
 		return err
 	}
 	if first {
 		go a.runBackup()
+	}
+	if b.Sync {
+		go func() { _ = a.apiSyncNow() }()
 	}
 	return nil
 }
@@ -211,15 +243,29 @@ func (a *App) apiSetBackupPassword(pw string) error {
 		a.mu.Lock()
 		cfg := a.cfg.Clone()
 		a.mu.Unlock()
+		dir := cfg.Settings.BackupDir
+		if dir == "" {
+			out["error"] = "Choose a cloud folder first."
+			return
+		}
 		cfg.Settings.BackupSalt, cfg.Settings.BackupKey = "", ""
-		if pw != "" {
-			salt := core.NewBackupSalt()
-			key, err := core.BackupKey(pw, salt, core.BackupKDFIters)
+		if pw == "" {
+			// The folder isn't encrypted any more: new saves and backups go
+			// up as they are.
+			_ = os.Remove(filepath.Join(core.CloudDir(dir), "key.json"))
+		} else {
+			// The folder's password: the first PC sets it, the others must
+			// use the same one (core.CloudKey checks it).
+			key, err := core.CloudKey(dir, pw)
+			var salt []byte
+			if err == nil {
+				salt, _, err = core.CloudKeyParams(dir)
+			}
 			if err == nil {
 				cfg.Settings.BackupKey, err = protectSecret(base64.StdEncoding.EncodeToString(key))
 			}
 			if err != nil {
-				out["error"] = "Couldn't set the password: " + err.Error()
+				out["error"] = err.Error()
 				return
 			}
 			cfg.Settings.BackupSalt = base64.StdEncoding.EncodeToString(salt)
@@ -360,6 +406,13 @@ func (a *App) writeBackup() (string, int64, error) {
 	key, salt, err := backupKey(s)
 	if err != nil {
 		return "", 0, err
+	}
+	// Like cloud saves, the folder decides whether backups are encrypted.
+	switch {
+	case !core.CloudHasKey(s.BackupDir):
+		key, salt = nil, nil
+	case key == nil || !core.CloudKeyMatches(s.BackupDir, key):
+		return "", 0, errCloudPassword
 	}
 	target := backupTarget(s.BackupDir)
 	if err := os.MkdirAll(target, 0o755); err != nil {

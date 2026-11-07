@@ -526,7 +526,7 @@ func safeBackupName(name string) bool {
 	}
 	parts := strings.Split(name, "/")
 	for _, p := range parts {
-		if p == "" || p == "." || p == ".." || strings.HasSuffix(p, ".") || strings.HasSuffix(p, " ") || windowsDevice(p) {
+		if !safeComponent(p) {
 			return false
 		}
 	}
@@ -550,6 +550,11 @@ func safeBackupName(name string) bool {
 		return len(parts) == 2
 	}
 	return false
+}
+
+// safeComponent is one part of a file name inside a backup.
+func safeComponent(p string) bool {
+	return p != "" && p != "." && p != ".." && !strings.HasSuffix(p, ".") && !strings.HasSuffix(p, " ") && !windowsDevice(p)
 }
 
 // windowsDevice: names Windows reserves for devices (CON, NUL, COM1...),

@@ -126,6 +126,9 @@ type Settings struct {
 	BackupKeep int    `json:"backupKeep,omitempty"`
 	BackupSalt string `json:"backupSalt,omitempty"`
 	BackupKey  string `json:"backupKey,omitempty"`
+	// CloudSync keeps each player's saves in BackupDir up to date and brings
+	// newer ones from another PC before a game starts (cloudsync.go).
+	CloudSync bool `json:"cloudSync,omitempty"`
 }
 
 type Config struct {

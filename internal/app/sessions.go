@@ -73,7 +73,8 @@ func isRunning(g *core.Game) bool {
 
 // Need is returned to the UI when a choice is still required.
 type Need struct {
-	Need string `json:"need,omitempty"` // "owner" | "newMode"
+	Need  string         `json:"need,omitempty"` // "owner" | "newMode" | "cloud"
+	Cloud *CloudConflict `json:"cloud,omitempty"`
 }
 
 type swapRequest struct {
@@ -83,6 +84,9 @@ type swapRequest struct {
 	NewProfile string `json:"newProfile"`
 	Launch     bool   `json:"launch"`
 	ReqID      string `json:"reqId"` // Steam request waiting for this swap
+	// Cloud answers a "cloud" need: "here" keeps this PC's saves, "cloud"
+	// takes the cloud's.
+	Cloud string `json:"cloud"`
 }
 
 // startSwap validates a play/load request and runs it in the background.
@@ -120,7 +124,14 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 	if active == "" && req.FirstOwner == "" {
 		return Need{Need: "owner"}, nil
 	}
-	if active != req.PlayerID && req.FirstOwner != req.PlayerID && !a.eng.HasProfile(req.PlayerID, g.ID) && req.NewProfile == "" {
+	// Cloud saves: newer saves from another PC come down first; saves that
+	// changed on both need the player's choice.
+	plan, conflict := a.beforePlay(cfg, g, req.PlayerID, req.Cloud)
+	if conflict != nil {
+		return Need{Need: "cloud", Cloud: conflict}, nil
+	}
+	fromCloud := plan != nil && (plan.Action == core.SyncDown || plan.Action == core.SyncConflict && req.Cloud == "cloud")
+	if active != req.PlayerID && req.FirstOwner != req.PlayerID && !a.eng.HasProfile(req.PlayerID, g.ID) && req.NewProfile == "" && !fromCloud {
 		return Need{Need: "newMode"}, nil
 	}
 
@@ -136,11 +147,11 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 		_ = a.store.RecordPlay("game:"+g.ID, req.PlayerID, time.Now())
 	}
 
-	go a.runSwap(cfg, g, req)
+	go a.runSwap(cfg, g, req, plan)
 	return Need{}, nil
 }
 
-func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest) {
+func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syncPlan) {
 	who := cfg.PlayerName(req.PlayerID)
 	fail := func(err error) {
 		a.mu.Lock()
@@ -150,6 +161,12 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest) {
 		a.emit("toast", map[string]any{"kind": "error", "text": err.Error()})
 		a.emitSessions()
 	}
+	if err := a.applyBeforePlay(cfg, g, req.PlayerID, req.Cloud, plan); err != nil {
+		a.answerRequest(req.ReqID, "cancel", "")
+		fail(fmt.Errorf("Couldn't bring %s's saves for %s from the cloud, so nothing was changed: %v", who, g.Name, err))
+		return
+	}
+	prev := a.store.LoadState()[g.ID]
 	err := a.eng.Activate(cfg, g.ID, req.PlayerID, core.ActivateOptions{
 		FirstOwner: req.FirstOwner,
 		NewProfile: req.NewProfile,
@@ -159,6 +176,9 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest) {
 		a.answerRequest(req.ReqID, "cancel", "")
 		fail(err)
 		return
+	}
+	if prev != "" && prev != req.PlayerID {
+		go a.syncUp(cfg, g, prev) // their files went back to their profile
 	}
 	if req.ReqID != "" || req.Launch {
 		a.armCloudWatch(g)
@@ -372,6 +392,7 @@ func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
 	} else {
 		a.notify("Saved "+who+"'s "+g.Name, "Settings and saves are stored in "+who+"'s profile.")
 		a.queueBackup()
+		go a.syncUp(cfg, g, playerID)
 	}
 	a.emitSessions()
 }

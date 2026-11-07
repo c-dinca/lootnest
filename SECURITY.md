@@ -61,6 +61,17 @@ Report a vulnerability** on this repository. Don't open a public issue.
   folders again before every swap. Everything on the PC is saved to
   `backups\before-restore` before anything is replaced.
 
+**Cloud saves**
+- Each player's saves for a game are one file in the cloud folder, with
+  the same encryption as backups when the folder has a password. The
+  folder's `key.json` holds the password's salt and an encrypted check, so
+  every PC makes the same key from the same password and a wrong one is
+  refused; the password itself is never stored.
+- Saves that come down are checked like a restore (names, sizes, counts)
+  and only go into the save locations this PC's game already has. The
+  files in place are backed up before they're replaced, and when saves
+  changed on two PCs, the one not kept is saved in that game's backups.
+
 **Building**
 - Lootnest is built with the current Go release (the `toolchain` line in
   `go.mod`), and every build runs `govulncheck`, which fails the build on a
