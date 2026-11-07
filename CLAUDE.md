@@ -105,14 +105,16 @@ What makes it different, and the direction to keep pushing:
 ## Brand
 
 - Obsidian Black `#111217` is the ground.
-- Ice Grey `#DFE5EB` is text and the primary button.
-- Racing Red `#EF233C` is for touches only: the logo gem, the current
-  nav icon, progress, switches that are on, checkboxes, reader marks and
-  the text selection. It is never small text, because it is 4.4:1 on
-  obsidian.
+- Ice Grey `#DFE5EB` is text.
+- Racing Red `#EF233C` fills the primary button, with bold near-black
+  text (`--fg-on-accent`, 4.7:1), and is a touch elsewhere: the logo gem,
+  the current nav icon, progress, switches that are on, checkboxes, the
+  selected segment, reader marks and the text selection. It is never small
+  text, because it is 4.4:1 on obsidian. Play as someone keeps that
+  profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.27.0)
+## Where things stand (1.28.0)
 
 These shipped recently, newest last:
 
@@ -141,6 +143,11 @@ These shipped recently, newest last:
 - **1.27** Profile path suggestions use the Ludusavi manifest
   (`SuggestPaths` via `Env.SaveDB`, `listedSaves` in `suggest.go`) when
   Settings.SaveDB is on; the switch is also in Settings, Online.
+- **1.28** Design pass: the red primary button; drawers (`.ln-drawer`,
+  `drawer()` in app.js) for a game's Manage actions, its full achievement
+  list and Names and colours; achievements at the top of a game's page;
+  the Achievements page with game cards; Cloud saves and Profiles laid out
+  to fill the window.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -201,6 +208,5 @@ for safety.
 - "Will it run?": a game's requirements (PCGamingWiki, Steam) against this
   PC's hardware. Opt-in. The research advises against it: there's no
   reliable requirements database.
-- Racing Red on the large buttons, with bold dark text.
 - Signing in to Microsoft or Google directly for cloud saves (on hold;
   the folder approach works).

@@ -41,9 +41,10 @@
 /* ================================================================ tokens */
 :root {
   /* Colour: the brand's Obsidian Black (#111217) for the window, Ice Grey
-     (#DFE5EB) for text and the primary button, and Racing Red (#EF233C) in
-     touches: the mark, where you are, progress and what's switched on.
-     Red is never small text (4.4:1 on obsidian, under AA's 4.5). */
+     (#DFE5EB) for text, and Racing Red (#EF233C) for the primary button and
+     in touches: the mark, where you are, progress and what's switched on.
+     Red is never small text (4.4:1 on obsidian, under AA's 4.5); on the red
+     button the text is bold and near black (4.7:1). */
   --bg-well:    oklch(0.150 0.010 276);  /* sunk: inputs, wells */
   --bg-ground:  #111217;                 /* the window: Obsidian Black */
   --bg-surface: oklch(0.220 0.011 276);  /* solid panels */
@@ -54,10 +55,12 @@
   --fg-2: oklch(0.790 0.012 248);        /* secondary: 9.7:1 on ground, 8.1:1 on raised */
   --fg-3: oklch(0.700 0.012 248);        /* tertiary: 7.0:1 on ground, 5.8:1 on raised */
   --fg-disabled: oklch(0.500 0.010 248); /* disabled controls (exempt from AA) */
-  --fg-on-light: #111217;                /* text on the Ice Grey primary button: 14.7:1 */
+  --fg-on-light: #111217;                /* text on Ice Grey: 14.7:1 */
 
   --accent:      #EF233C;                /* Racing Red: marks, bars, switches; never small text */
   --accent-wash: oklch(0.612 0.231 22.6 / 0.16);
+  --accent-hover: oklch(0.660 0.230 22.6); /* the red button on hover */
+  --fg-on-accent: oklch(0.140 0.020 20);   /* bold text on Racing Red: 4.7:1, 5.7:1 on hover */
 
   --danger:      oklch(0.80 0.100 35);   /* destructive text and icons: 9.9:1 on ground */
   --danger-wash: oklch(0.80 0.100 35 / 0.12);
@@ -117,6 +120,8 @@
   --bar-h: 56px;          /* the top bar, and the brand row in the sidebar */
   --page-gutter: clamp(32px, 3vw, 64px);  /* pages use the whole window, with room at the edges */
   --overlap-bar: 64px;    /* how far the play bar sits up into the game's art */
+  --drawer-w: 480px;      /* a panel from the right */
+  --drawer-w-wide: 720px; /* one holding a form, such as the profile editor */
 
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;
@@ -195,10 +200,12 @@
 .ln-button--icon { width: var(--ctl-md); padding: 0; }
 .ln-button--icon.ln-button--sm { width: var(--ctl-sm); }
 
-/* Primary: the one non-player action on a page (Save, Scan, Add). */
-.ln-button--primary { background: var(--fg-1); color: var(--fg-on-light); }
-.ln-button--primary:hover, .ln-button--primary[data-force~="hover"] { background: oklch(1 0 0); }
-.ln-button--primary:active, .ln-button--primary[data-force~="active"] { background: var(--fg-2); }
+/* Primary: the one non-player action on a page (Save, Sync now, Play when
+   profiles are off). Racing Red, with bold near-black text. */
+.ln-button--primary { background: var(--accent); color: var(--fg-on-accent); font-weight: 750; }
+.ln-button--primary:hover, .ln-button--primary[data-force~="hover"] { background: var(--accent-hover); }
+.ln-button--primary:active, .ln-button--primary[data-force~="active"] { background: var(--accent); }
+.ln-button--primary .ln-icon { stroke-width: 2; }
 
 /* Secondary: everything else that is a button. */
 .ln-button--secondary { background: var(--glass-ctl); border-color: var(--edge-2); }
@@ -386,7 +393,7 @@
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
 }
 .ln-segmented button:hover, .ln-segmented button[data-force~="hover"] { color: var(--fg-1); background: var(--glass-ctl); }
-.ln-segmented button[aria-checked="true"], .ln-segmented button[aria-pressed="true"] { background: var(--glass-ctl-on); border-color: var(--edge-2); color: var(--fg-1); }
+.ln-segmented button[aria-checked="true"], .ln-segmented button[aria-pressed="true"] { background: var(--glass-ctl-on); border-color: var(--edge-2); color: var(--fg-1); box-shadow: inset 0 -2px 0 var(--accent); }
 .ln-segmented button:focus-visible, .ln-segmented button[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 1px; }
 .ln-segmented button:disabled { color: var(--fg-disabled); background: none; cursor: default; }
 .ln-segmented .ln-count { color: var(--fg-3); font-weight: 600; }
@@ -456,12 +463,36 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 .ln-banner__text p { margin: 2px 0 0; max-width: 72ch; font-size: var(--fs-13); color: var(--fg-2); }
 .ln-banner__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
+/* ================================================================= drawer */
+/* A panel that slides in from the right, over the page: a game's Manage
+   actions, its whole list of achievements, the profile editor. The page
+   stays in view behind it, so you don't lose your place. */
+.scrim.ln-drawer-scrim { place-items: stretch end; padding: 0; }
+.ln-drawer {
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(var(--drawer-w), 100vw); height: 100%;
+  background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  border-left: var(--hairline) solid var(--edge-2); box-shadow: var(--shadow-overlay);
+  color: var(--fg-1); font-family: var(--font-ui);
+  animation: ln-drawer-in var(--dur-3) var(--ease-out);
+}
+.ln-drawer:focus { outline: none; }
+.ln-drawer--wide { --drawer-w: var(--drawer-w-wide); }
+.ln-drawer__head { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-6) var(--space-6) var(--space-5); border-bottom: var(--hairline) solid var(--edge-1); }
+.ln-drawer__head > div { flex: 1; min-width: 0; }
+.ln-drawer__head h2 { margin: 0; font: 700 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); overflow-wrap: anywhere; }
+.ln-drawer__head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
+.ln-drawer__body { overflow: auto; padding: var(--space-5) var(--space-6) var(--space-8); }
+.ln-drawer__body > * + * { margin-top: var(--space-6); }
+.ln-drawer__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6); border-top: var(--hairline) solid var(--edge-1); }
+@keyframes ln-drawer-in { from { opacity: 0; transform: translateX(32px); } }
+
 /* ============================================================ preferences */
 @media (prefers-reduced-motion: reduce) {
   .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tile__cover::after, .ln-tile__cover img { transition-duration: 0.01ms; }
   .ln-button:active, .ln-button[data-force~="active"] { transform: none; }
   .ln-tile:hover .ln-tile__cover img, .ln-tile[data-force~="hover"] .ln-tile__cover img { transform: none; }
-  .ln-toast { animation-name: ln-fade-in; }
+  .ln-toast, .ln-drawer { animation-name: ln-fade-in; }
   .ln-skeleton { animation: none; }
   .ln-spinner { animation-duration: calc(var(--dur-spin) * 3); }
 }
