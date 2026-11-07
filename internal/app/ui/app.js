@@ -62,7 +62,9 @@
   // ---------------------------------------------------------------- state --
   const S = {
     d: null,          // AppState from Go
-    view: "library",
+    view: "home",
+    from: "home",      // the view a game's page goes back to
+    selected: null,    // {kind, id} of the game last opened: the Library's colours follow it
     q: "",             // library search
     filter: "all",     // library filter chip
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
@@ -183,7 +185,7 @@
         break;
       case "art":
         S.art[ev.key] = ev.url;
-        if (S.view === "game" || S.view === "library") render();
+        if (S.view === "game" || S.view === "library" || S.view === "home") render();
         break;
       case "moveInfo": {
         const D = S.dialog && S.dialog.kind === "move" && S.dialog.appId === ev.info.appId ? S.dialog : null;
@@ -210,7 +212,7 @@
       }
       case "news":
         S.news[ev.key] = ev;
-        if (S.view === "game" || S.view === "library") render();
+        if (S.view === "game" || S.view === "library" || S.view === "home") render();
         break;
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
@@ -244,7 +246,7 @@
     if (!S.d) return;
     document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#6C9BD2");
     document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#D9738E");
-    const top = S.view === "edit" || S.view === "game" ? "library" : S.view;
+    const top = S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view;
     document.querySelectorAll(".nav[data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
     const n = libraryItems().length;
     $("#lib-count").textContent = n ? n : "";
@@ -252,7 +254,8 @@
     const v = $("#view");
     const keepScroll = v.scrollTop;
     const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
-    if (S.view === "library") v.innerHTML = viewLibrary();
+    if (S.view === "home") v.innerHTML = viewHome();
+    else if (S.view === "library") v.innerHTML = viewLibrary();
     else if (S.view === "game") v.innerHTML = viewGame();
     else if (S.view === "edit") v.innerHTML = viewEdit();
     else if (S.view === "players") v.innerHTML = viewPlayers();
@@ -289,18 +292,17 @@
     const id = host.dataset.game || host.dataset.key, kind = host.dataset.game ? "game" : "found";
     return libraryItems().find((x) => x.kind === kind && x.id === id) || null;
   }
+  // The colours change when a game is chosen, not as the pointer passes:
+  // Home takes the game played last, a game's page that game, and the
+  // Library the game opened last.
   function defaultBackdrop() {
-    if (S.view === "game" && S.page) return artOf(libraryItems().find((x) => x.kind === S.page.kind && x.id === S.page.id));
-    if (S.view === "library") return artOf(recentItems(libraryItems(), false)[0]);
+    const find = (p) => p && libraryItems().find((x) => x.kind === p.kind && x.id === p.id);
+    if (S.view === "game" && S.page) return artOf(find(S.page));
+    if (S.view === "home") return artOf(recentItems(libraryItems(), false)[0]);
+    if (S.view === "library") return artOf(find(S.selected));
     return "";
   }
   function backdropForView() { clearTimeout(bdTimer); setBackdrop(defaultBackdrop()); }
-  document.addEventListener("mouseover", (ev) => {
-    if (S.view !== "library") return;
-    const card = ev.target.closest(".card, .capsule-wrap, .hero");
-    clearTimeout(bdTimer);
-    bdTimer = setTimeout(() => { const it = card && itemFor(card.querySelector("[data-game], [data-key]")); setBackdrop(it ? artOf(it) || defaultBackdrop() : defaultBackdrop()); }, card ? 160 : 400);
-  });
 
   // ---------------------------------------------------------- right-click --
   function openContext(ev, it) {
@@ -413,7 +415,7 @@
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
     const sizes = [["s", "Small covers"], ["m", "Medium covers"], ["l", "Large covers"]];
-    return `<div class="page wide">${updateBanner()}${libraryHero(all)}${continueShelf(all)}${newsShelf(all)}${head}${hookBanner()}
+    return `<div class="page wide">${head}${hookBanner()}
       <div class="lib-tools"><div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
         <div class="row tools-right"><label class="sort"><span class="hint">Sort by</span><select id="lib-sort" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
         <div class="seg" role="group" aria-label="Cover size">${sizes.map(([k, l], i) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span class="sz sz${i}"></span></button>`).join("")}</div></div></div>
@@ -422,17 +424,45 @@
       <div class="grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
   }
 
+  // Home: what you play, not everything you have. The game played last,
+  // the others played lately, news from them, and a way into the Library.
+  function viewHome() {
+    const all = libraryItems();
+    const hero = libraryHero(all), shelves = continueShelf(all) + newsShelf(all);
+    const hour = new Date().getHours();
+    const hello = hour < 5 ? "Late night" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const body = hero ? hero + shelves : `<div class="empty"><div><h2>Nothing played yet</h2>
+        <p class="sub">Start a game from your Library and it shows up here, with the others you play and their news.</p></div>
+        <button class="btn primary" data-action="nav" data-view="library">Open the Library</button></div>`;
+    return `<div class="page wide">${updateBanner()}${hookBanner()}
+      <div class="home-head"><h1>${hello}</h1><button class="btn quiet" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button></div>
+      ${body}</div>`;
+  }
+
   // Shelves, as in the best launchers: the games played lately, then what's
   // new in them. Both only show what Lootnest actually knows.
   function recentItems(all, skipFirst) {
     const list = all.filter((it) => playedAt(it) > 0).sort((a, b) => playedAt(b) - playedAt(a));
     return skipFirst ? list.slice(1) : list;
   }
+  // Covers for games shown outside the grid (Home), loaded once each.
+  const coverAsked = new Set();
+  async function ensureCover(it) {
+    const key = coverKey(it);
+    if (coverAsked.has(key) || key in S.covers) return;
+    coverAsked.add(key);
+    const can = it.appId || cfg().settings.downloadCovers;
+    let url = "";
+    if (can) { try { url = (await api.cover(it.appId || 0, it.name, key)) || ""; } catch (e) { /* none */ } }
+    if (url) S.covers[key] = url;
+    else if (it.exe && !(key in S.icons)) { try { S.icons[key] = (await api.gameIcon(it.exe)) || ""; } catch (e) { S.icons[key] = ""; } }
+    if (url || S.icons[key]) render();
+  }
+
   function continueShelf(all) {
-    if (S.q || S.filter !== "all") return "";
     const list = recentItems(all, true).slice(0, 8);
     if (!list.length) return "";
-    list.forEach(loadArt);
+    list.forEach((it) => { loadArt(it); ensureCover(it); });
     return `<section class="shelf" aria-label="Continue playing"><h2 class="shelf-title">Continue playing</h2>
       <div class="capsules">${list.map((it) => {
         const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
@@ -451,7 +481,7 @@
     api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
   }
   function newsShelf(all) {
-    if (!cfg().settings.gameNews || S.q || S.filter !== "all") return "";
+    if (!cfg().settings.gameNews) return "";
     const games = recentItems(all, false).slice(0, 8);
     if (!games.length) return "";
     const cards = [];
@@ -604,7 +634,8 @@
     const P = { kind, id, cloud: null };
     const go = () => {
       if (S.view === "library") S.libScroll = $("#view").scrollTop;
-      S.page = P;
+      if (S.view === "library" || S.view === "home") { S.from = S.view; S.fromScroll = $("#view").scrollTop; }
+      S.page = P; S.selected = { kind, id };
       S.view = "game"; S.menuFor = null;
       render(); $("#view").scrollTop = 0;
       $("#view").focus({ preventScroll: true });
@@ -622,8 +653,8 @@
     const find = () => P && document.querySelector(`.cover-btn[data-${P.kind === "game" ? "game" : "key"}="${CSS.escape(P.id)}"] .cover`);
     let card = null;
     transition(() => {
-      S.view = "library"; S.page = null;
-      render(); $("#view").scrollTop = S.libScroll || 0;
+      S.view = S.from === "home" ? "home" : "library"; S.page = null;
+      render(); $("#view").scrollTop = S.fromScroll || 0;
       card = find();
       if (card) card.style.viewTransitionName = "poster";
     }, null, () => { if (card) card.style.viewTransitionName = ""; });
@@ -687,12 +718,11 @@
   }
 
   function libraryHero(all) {
-    if (S.q || S.filter !== "all") return "";
     const rec = S.d.recent || {};
     let best = null, at = 0;
     all.forEach((it) => { const r = rec[recentKey(it)]; const t = r ? new Date(r.at).getTime() : 0; if (t > at) { best = it; at = t; } });
     if (!best) return "";
-    loadArt(best);
+    loadArt(best); ensureCover(best);
     const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
     return `<section class="hero" aria-label="Last played">${artHTML(best)}
       <div class="hero-body">${titleHTML(best, "hero-title")}
@@ -755,7 +785,7 @@
     const it = P && libraryItems().find((x) => x.kind === P.kind && x.id === P.id);
     if (!it) { S.view = "library"; return viewLibrary(); }
     loadArt(it);
-    const back = `<button class="btn ghost back" data-action="back-library">${icon.back}Library</button>`;
+    const back = `<button class="btn ghost back" data-action="back-library">${icon.back}${S.from === "home" ? "Home" : "Library"}</button>`;
     const facts = [];
     const add = (k, v) => facts.push(`<div><dt>${k}</dt><dd>${v}</dd></div>`);
     add("Store", esc(sourceLabel(it.source)));

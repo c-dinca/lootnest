@@ -221,6 +221,9 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .seg .sz { display: block; border: 1.5px solid currentColor; border-radius: 2px; }
 .seg .sz0 { width: 7px; height: 10px; } .seg .sz1 { width: 9px; height: 13px; } .seg .sz2 { width: 11px; height: 16px; }
 
+/* ------------------------------------------------------------------ home */
+.home-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+
 /* --------------------------------------------------------------- shelves */
 .shelf { margin-bottom: 38px; }
 .shelf-title { font-size: 20px; margin: 0 0 14px; }

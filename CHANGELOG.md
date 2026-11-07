@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.0
+
+- **Home** is its own page now, and where Lootnest opens: the game you played last, **Continue playing**, **News from your games**. The **Library** is just your games: search, filters, sort and cover size.
+- The window's colours change when you choose a game, not as the pointer passes over covers: Home takes the game played last, a game's page that game, and the Library the game you opened last.
+- A game's page goes back to where you opened it from (Home or Library), scrolled where you were.
+
 ## 1.9.2
 
 Security hardening, with nothing to change on your side:

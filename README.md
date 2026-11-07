@@ -21,8 +21,8 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 **Library**
 - Every game on the PC in one grid, with search and filters: Steam, Epic, GOG, game folders on every drive, and your shortcuts.
 - Covers come from Steam's own cache on your PC. For the rest, turn on **Download covers and artwork**: covers, wide art and logos from the Steam store, and from SteamGridDB for any other game if you add your free API key.
-- The Library opens on the game you played last, in its own artwork, with a Play button for each player, then **Continue playing** with the other recent games and **News from your games**.
-- The window takes on the colours of the game you point at. Sort by name, recently played or most played, pick the cover size, and right-click a game for everything you can do with it. Ctrl+F finds a game.
+- **Home** opens on the game you played last, in its own artwork, with a Play button for each player, then **Continue playing** with the other recent games and **News from your games**. The **Library** has all your games.
+- The window takes on the colours of the game you choose. Sort by name, recently played or most played, pick the cover size, and right-click a game for everything you can do with it. Ctrl+F finds a game.
 - Lootnest counts how long each player has played each game, shown on the game's page in the players' colours.
 - Every game has its own page: its art, who has a profile, whose files are loaded, and everything else about it. Rename it, add launch options, open its folder, put a shortcut on the desktop, or have Steam check its files. None of this needs profiles.
 - Games without a cover show their own icon, read from the game on your PC.
