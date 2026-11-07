@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.39.0
+
+- **A new copy of the same game.** When a game in a folder is reinstalled as a whole new version, in a new folder or beside the old one, Lootnest notices it's the same game, by its name or Steam id, and asks: **Is this a new copy of Phantom Blade Zero?** It asks on the Updates page and on the new copy's page.
+  - **Carry everything over** moves:
+    - the saves the old copy kept inside its folder, into the same places in the new one. Whatever the new copy had there is kept in backups first. If the old folder is already gone, the newest copy the safety net kept goes in instead;
+    - for a game with profiles, the game now starts from the new copy, and the files of whoever owns it go in;
+    - its playtime, when it was played, its status, collections and settings.
+  - Then **Delete the old folder**, if it's still there, copies its saves to backups first.
+  - **Not the same game** stops asking.
+- **Reinstalling it? Copy its saves first**, on each game on the Updates page, copies all of a game's saves to backups in one click before you reinstall it.
+- Many games keep their saves inside their own folder, Phantom Blade Zero among them, so deleting the folder deletes the saves. Lootnest now covers that from start to end.
+
 ## 1.38.0
 
 - **Updates in .7z and .rar.** **Apply an update** now takes a .7z or .rar as well as a folder or a .zip, so there's nothing to extract first. For an update in parts (.part1.rar, .part2.rar, ...), choose the first part. Lootnest opens it next to the game's folder, shows what it changes, and removes what it opened once the update is in.

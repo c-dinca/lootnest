@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.38.0)
+## Where things stand (1.39.0)
 
 These shipped recently, newest last:
 
@@ -197,6 +197,12 @@ These shipped recently, newest last:
   `bodgit/sevenzip` and `nwaples/rardecode/v2`), versions from names
   (`UpdateVersions`, `FolderVersion`, `CheckVersions`: ok, skips, older,
   same), a version history, and Undo newest first.
+- **1.39** A new copy of the same game (`core/newcopy.go`,
+  `app/newcopy.go`): `copies.json` is a ledger of folder games seen
+  (`First` orders copies), `Matches` by Steam id or name, `CarrySaves`
+  moves in-folder saves, `RekeyGame`/`RekeyConfig` move what's keyed by
+  the Library key, `Engine.Reseat` puts the owner's profile into a game
+  with profiles after its paths are retargeted.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
