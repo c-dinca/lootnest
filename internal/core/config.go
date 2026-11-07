@@ -354,10 +354,10 @@ func ValidateGame(g *Game) error {
 
 func ValidatePlayers(ps []Player) error {
 	if len(ps) < 1 {
-		return errors.New("Keep at least one player.")
+		return errors.New("Keep at least one profile.")
 	}
 	if len(ps) > 8 {
-		return errors.New("Lootnest supports up to 8 players.")
+		return errors.New("Lootnest supports up to 8 profiles.")
 	}
 	names := map[string]bool{}
 	ids := map[string]bool{}
@@ -365,13 +365,13 @@ func ValidatePlayers(ps []Player) error {
 		p := &ps[i]
 		p.Name = strings.TrimSpace(p.Name)
 		if p.Name == "" {
-			return errors.New("Every player needs a name.")
+			return errors.New("Every profile needs a name.")
 		}
 		if len([]rune(p.Name)) > 24 {
 			return fmt.Errorf("%q is too long; keep names under 24 characters.", p.Name)
 		}
 		if names[strings.ToLower(p.Name)] {
-			return fmt.Errorf("Two players are called %s.", p.Name)
+			return fmt.Errorf("Two profiles are called %s.", p.Name)
 		}
 		names[strings.ToLower(p.Name)] = true
 		if p.ID == "" {

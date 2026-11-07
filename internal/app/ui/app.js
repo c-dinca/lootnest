@@ -732,9 +732,9 @@
     if (!U.available) return updatesPrompt();
     if (U.step) {
       return banner(U.step === "installing" ? `Installing Lootnest ${esc(U.version)}` : `Downloading Lootnest ${esc(U.version)}`,
-        U.step === "installing" ? "Lootnest closes and opens again in a few seconds." : "Your players, games and profiles stay as they are.", "", true);
+        U.step === "installing" ? "Lootnest closes and opens again in a few seconds." : "Your profiles, games and saves stay as they are.", "", true);
     }
-    return banner(`Lootnest ${esc(U.version)} is ready to install`, `You have ${esc(S.d.version)}. Updating keeps your players, games and profiles.`,
+    return banner(`Lootnest ${esc(U.version)} is ready to install`, `You have ${esc(S.d.version)}. Updating keeps your profiles, games and saves.`,
       (U.page ? bBtn("ghost", 'data-action="update-notes"', "What's new") : "") + bBtn("primary", 'data-action="update-now"', "Update now"));
   }
 
@@ -1083,7 +1083,7 @@
           + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
         play = lead ? `<button class="ln-button ln-button--play ln-button--lg ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>` : "";
-        const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the player's files first";
+        const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the profile's files first";
         state = `<div class="gpage-state"><b>${owner && player(owner) ? `${esc(possessive(pname(owner)))} files are loaded` : "Nobody's files yet"}</b><span>${sub}</span></div>`;
       }
       const chips = !s && others.length ? `<div class="gpage-others"><span class="gpage-others-label">or play as…</span>${others.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" aria-label="Play as ${esc(p.name)}">${lnAvatar(p)}${esc(p.name)}</button>`).join("")}</div>` : "";
@@ -1174,7 +1174,7 @@
     const at = lastBy({ kind: "game", id: gid }, pid), i = profileInfo(gid, pid);
     if (at) return "Played " + ago(at);
     if (i.saved) return "Saved " + ago(i.saved);
-    return S.d.active[gid] === pid ? "Files loaded now" : hasProfile(gid, pid) ? "Has a profile" : "First time";
+    return S.d.active[gid] === pid ? "Files loaded now" : hasProfile(gid, pid) ? "Has saves here" : "First time";
   }
 
   function viewPicker() {
@@ -1632,7 +1632,7 @@
   function viewWelcome() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Welcome">
-      <div><h2 style="font-size:22px">Who shares this PC?</h2><p class="sub">Each person gets a colour and their own settings and saves in every game you add. You can add more people later.</p></div>
+      <div><h2 style="font-size:22px">Who plays on this PC?</h2><p class="sub">Each profile gets a colour and its own settings, saves and achievements in every game you add. Make one per person, or a few for yourself, one per run. You can add more later.</p></div>
       <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, true)).join("")}</div>
       <div class="dialog-foot"><span class="error-text grow" id="players-error"></span><button class="btn primary" data-action="welcome-done">Continue</button></div>
     </div></div>`;
@@ -1715,7 +1715,7 @@
     const last = st.recent.find((x) => x.it.kind === "game" && !session(x.it.id));
     const body = sectionsOf(p).map((s) => ppSection(s, p, st)).filter(Boolean).join("");
     return `<div class="profile-page ln-root ln-player" style="--player:${esc(p.color)}">
-      <div class="pp-banner">${bannerHTML(p)}<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="nav" data-view="players">${GI.back}Players</button></div>
+      <div class="pp-banner">${bannerHTML(p)}<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="nav" data-view="players">${GI.back}Profiles</button></div>
       <div class="pp-head">${lnAvatar(p, "120")}
         <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}${p.bio ? `<p class="pp-bio">${esc(p.bio).replace(/\n/g, "<br>")}</p>` : ""}</div>
         <div class="pp-actions">${last ? `<button class="ln-button ln-button--play ln-button--lg" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${GI.play}Play ${esc(last.it.name)}</button>` : ""}
@@ -1742,7 +1742,7 @@
       return `<section class="pp-section pp-stats">
         ${stat(st.total ? esc(hours(st.total)) : "None yet", "played with Lootnest")}
         ${stat(String(st.played), st.played === 1 ? "game played" : "games played")}
-        ${stat(String(st.profiles), st.profiles === 1 ? "game with a profile" : "games with a profile")}
+        ${stat(String(st.profiles), st.profiles === 1 ? "game with its saves" : "games with its saves")}
         ${stat(st.streak ? st.streak + (st.streak === 1 ? " day" : " days") : "None", st.best > st.streak ? `in a row now, best ${st.best}` : "in a row")}
         ${stat(st.longest ? esc(hours(st.longest.seconds)) : "None yet", st.longest && itemByKey(st.longest.key) ? "longest session, " + esc(itemByKey(st.longest.key).name) : "longest session")}
         ${stat(st.top ? esc(st.top.name) : "None yet", st.top ? esc(hours(st.topT)) + ", most played" : "most played")}
@@ -1834,9 +1834,9 @@
     const whoRow = ids.length ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ids.map((id) => { const p = player(id); return `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-who" data-key="${esc(key)}" data-player="${esc(id)}" aria-pressed="${id === who}">${lnAvatar(p, "20")}${esc(p.name)}<span class="ln-num">${top.players[id].unlocked}</span></button>`; }).join("")}</div>` : "";
     const g = it.g;
     const note = A.source !== "pc" ? "From Steam, for the account signed in on this PC."
-      : ids.length ? "Each player has their own. They go with their profile when you swap, like their saves."
+      : ids.length ? "Each profile has its own. They go with it when you swap, like its saves."
       : g && g.sharedAchievements ? "Shared by everyone who plays on this PC." : "Saved on this PC next to the game's saves.";
-    const toggle = g && A.source === "pc" ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-shared" data-game="${esc(g.id)}" data-on="${g.sharedAchievements ? "0" : "1"}">${g.sharedAchievements ? "Give each player their own" : "Share one set"}</button>` : "";
+    const toggle = g && A.source === "pc" ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-shared" data-game="${esc(g.id)}" data-on="${g.sharedAchievements ? "0" : "1"}">${g.sharedAchievements ? "Give each profile its own" : "Share one set"}</button>` : "";
     const row = (a) => `<li class="ach${a.unlocked ? "" : " locked"}">${a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : `<span class="ach-none">${GI.trophy}</span>`}
       <div><b>${a.hidden && !a.unlocked ? "Hidden achievement" : esc(a.name)}</b><span>${a.unlocked ? (a.at && new Date(a.at).getFullYear() > 2000 ? "Unlocked " + esc(ago(a.at)) : "Unlocked") : a.hidden ? "Keep playing to find out" : esc(a.description || "Not unlocked yet")}</span></div>
       ${a.percent ? `<span class="ach-pct ln-num" title="Players who have it">${a.percent < 10 ? a.percent.toFixed(1) : Math.round(a.percent)}%</span>` : ""}</li>`;
@@ -1902,8 +1902,8 @@
     if (!ps.length) return "";
     const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0);
     const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
-    return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Players</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
-      const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has a profile" : g ? "No profile yet" : "", lastBy(it, p.id) ? `last ${ago(lastBy(it, p.id))}` : ""].filter(Boolean).join(", ");
+    return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Profiles</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
+      const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has saves here" : g ? "Not played yet" : "", lastBy(it, p.id) ? `last ${ago(lastBy(it, p.id))}` : ""].filter(Boolean).join(", ");
       return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
         <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span>${saved(g, p.id)}</div>
 </div></div>`;
@@ -1979,18 +1979,18 @@
         <span class="pcard-banner">${bannerHTML(p)}</span>
         <span class="pcard-who">${lnAvatar(p, "72")}<span class="pcard-name"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : last ? `${esc(last.it.name)}, ${esc(ago(last.r.at))}` : st.top ? `Most played: ${esc(st.top.name)}` : "No games played yet"}</span></span></span>
         ${covers ? `<span class="pcard-covers" aria-hidden="true">${covers}</span>` : ""}
-        <span class="pcard-nums"><span><b class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</b>played</span><span><b class="ln-num">${st.played}</b>${st.played === 1 ? "game" : "games"}</span><span><b class="ln-num">${st.profiles}</b>with a profile</span></span></button>`;
+        <span class="pcard-nums"><span><b class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</b>played</span><span><b class="ln-num">${st.played}</b>${st.played === 1 ? "game" : "games"}</span><span><b class="ln-num">${st.profiles}</b>with saves</span></span></button>`;
     }).join("");
     return `<div class="players-page ln-root">
-      <header class="lib-head"><div><h1>Players</h1><p>Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div>
+      <header class="lib-head"><div><h1>Profiles</h1><p>Each profile has its own settings, saves and achievements in every game. Make one for everyone who plays, or a few for yourself, one per run.</p></div>
         <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile someone exported from Lootnest on another PC: their saves, picture and play time">Import a profile</button></div></header>
       <div class="pcards">${cards}</div>
-      <section class="players-edit"><div class="ln-section-head"><div><h2>Names and colours</h2><p>A player's colour marks their files, their Play button and their games everywhere in Lootnest.</p></div></div>
+      <section class="players-edit"><div class="ln-section-head"><div><h2>Names and colours</h2><p>A profile's colour marks its files, its Play button and its games everywhere in Lootnest.</p></div></div>
         <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
-        <div class="players-foot">${ps.length < 8 ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add player</button>` : ""}
+        <div class="players-foot">${ps.length < 8 ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add profile</button>` : ""}
           <span class="players-grow"></span><span class="error-text" id="players-error"></span>
           ${dirty ? `<button class="ln-button ln-button--ghost" data-action="reset-players">Discard changes</button>` : ""}
-          <button class="ln-button ln-button--primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save players</button></div>
+          <button class="ln-button ln-button--primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save profiles</button></div>
       </section></div>`;
   }
 
@@ -2006,7 +2006,7 @@
       S.players = null;
       if (welcome) S.dialog = null;
       await refresh();
-      if (!welcome) toast("Players saved");
+      if (!welcome) toast("Profiles saved");
     } catch (e) { const t = $("#players-error"); if (t) t.textContent = errText(e); }
   }
 
@@ -2050,7 +2050,7 @@
             <input id="s-grid" class="ln-input" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key"></div>`)}
         ${group("Updates", "", `
           ${sw("checkUpdates", "Check for updates automatically", "Every few hours, Lootnest asks GitHub for its latest version number and tells you with a notification when a new one is out. Nothing about you or your games is sent.", s.checkUpdates)}
-          ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your players, games and profiles stay as they are.", s.autoInstallUpdates) : ""}
+          ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your profiles, games and saves stay as they are.", s.autoInstallUpdates) : ""}
           <div class="bk-row"><div><b>Lootnest ${esc(S.d.version)}</b><p>${S.update.available ? `Version ${esc(S.update.version)} is ready to install.` : "Updates come from Lootnest's releases on GitHub."}</p></div>${update}</div>`)}
         ${group("Cloud saves and backup", "", `
           <div class="bk-row"><div><b>Your saves in your own cloud</b><p>On every PC, with backups of everything.</p></div>${b("secondary", 'data-action="nav" data-view="cloud"', "Open Cloud saves")}</div>`)}
@@ -2094,7 +2094,7 @@
   function viewCloud() {
     const B = S.backup;
     const head = (actions) => `<header class="lib-head"><div><h1>Cloud saves</h1>
-      <p>Every player's saves go up after each session. On another PC, the newest come down before the game starts.</p></div>${actions ? `<div class="lib-actions">${actions}</div>` : ""}</header>`;
+      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p></div>${actions ? `<div class="lib-actions">${actions}</div>` : ""}</header>`;
     if (!B) { loadBackupInfo(); return `<div class="cloud-page ln-root">${head("")}${lnInline("", "Reading your cloud folder")}</div>`; }
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
     if (!B.dir) {
@@ -2145,7 +2145,7 @@
                 ${b("ghost ln-button--sm", `data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="cloud"`, `Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}`)}</span>` : "<span></span>"}</div>`;
           }).join("")}</div></div>`;
       }).join("")}</div>
-      ${V.players && V.players.length ? `<p class="cs-note">The cloud also has saves for ${esc(V.players.join(", "))}. Add a player with the same name on <b>Players</b> (or import their profile) to use them here.</p>` : ""}`;
+      ${V.players && V.players.length ? `<p class="cs-note">The cloud also has saves for ${esc(V.players.join(", "))}. Add a profile with the same name on <b>Profiles</b> (or import it) to use them here.</p>` : ""}`;
     }
     return `<div class="cloud-page ln-root">${head(B.sync && !B.locked ? b("primary", 'data-action="sync-now"', "Sync now") : "")}
       <div class="cloud-cols">
@@ -2155,7 +2155,7 @@
             <div class="bk-card">
               <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><b class="selectable">${esc(B.target)}</b></div>
                 <div class="gpage-actions">${b("ghost ln-button--sm", 'data-action="backup-pick"', "Change")}${b("ghost ln-button--sm", 'data-action="backup-open"', "Open folder")}</div></div>
-              <label class="toggle"><span><b>Sync saves between PCs</b><p>Each player's saves go up after a session and the newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.</p></span>
+              <label class="toggle"><span><b>Sync saves between PCs</b><p>Each profile's saves go up after a session and the newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.</p></span>
                 <span class="switch"><input type="checkbox" data-backup="sync" ${B.sync ? "checked" : ""}><span></span></span></label>
               ${sw("gameSaves", "Keep versions of games outside Steam", "For games without profiles that aren't on Steam (Steam has its own cloud): a new version of their saves when they change and the game is closed. Restore any version from the game's page.", cfg().settings.gameSaves)}
               ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week. Nothing about you or your games is sent.", cfg().settings.saveDb)}
@@ -2165,7 +2165,7 @@
             </div></section>
           <section><div class="ln-section-head ln-section-head--minor"><h2>Backups of everything</h2></div>
             <div class="bk-card">
-              <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p>Players, games, saves and profiles in one file, to restore on a new PC.</p>`}</div>
+              <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p>Profiles, games and saves in one file, to restore on a new PC.</p>`}</div>
                 ${st.running ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Backing up</button>` : b("secondary ln-button--sm", 'data-action="backup-now"', "Back up now")}</div>
               <label class="toggle"><span><b>Back up after every game session</b><p>And when Lootnest starts, if the last backup is over a day old.</p></span>
                 <span class="switch"><input type="checkbox" data-backup="auto" ${B.auto ? "checked" : ""}><span></span></span></label>
@@ -2210,7 +2210,7 @@
       body = `<div><h2>${r.replaced ? "Updated" : "Added"} ${esc(r.name)}</h2><p class="sub">${r.games === 1 ? "Their saves in 1 game are" : `Their saves in ${r.games} games are`} in place${r.added ? `, ${r.added === 1 ? "1 game was" : r.added + " games were"} added` : ""}.${r.skipped ? ` ${r.skipped === 1 ? "1 save location doesn't" : r.skipped + " save locations don't"} match this PC's game and ${r.skipped === 1 ? "was" : "were"} left out.` : ""}</p></div>
         <p class="hint selectable">What was here before is saved in ${esc(D.done)}. To go back, restore that file.</p>${foot()}`;
     } else if (D.done) {
-      body = `<div><h2>Restored</h2><p class="sub">Players, games and saves from the backup are in place. Before each game's next swap, Lootnest asks whose files are on this PC.</p></div>
+      body = `<div><h2>Restored</h2><p class="sub">Profiles, games and saves from the backup are in place. Before each game's next swap, Lootnest asks whose files are on this PC.</p></div>
         <p class="hint selectable">What was here before is saved in ${esc(D.done)}. To go back, restore that file.</p>${foot()}`;
     } else if (!I || D.busy) {
       body = `<div><h2>${D.applying ? "Restoring" : "Opening the backup"}</h2><p class="sub">${D.applying ? "Saving what's here now, then putting the backup in place." : "Checking every file in it."}</p></div>${foot()}`;
@@ -2222,16 +2222,16 @@
     } else {
       const when = new Date(I.created).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" });
       if (I.kind === "player") {
-        const name = (I.players || [])[0] || "this player";
+        const name = (I.players || [])[0] || "this profile";
         const here = cfg().players.some((p) => p.name.toLowerCase() === name.toLowerCase());
         body = `<div><h2>Import ${esc(possessive(name))} profile?</h2><p class="sub">Exported on ${esc(I.computer || "a PC")}, ${esc(when)}. Their saves in ${I.games === 1 ? "1 game" : I.games + " games"}, picture and play time.</p></div>
-          <p class="sub">${here ? `If this is the same ${esc(name)} as here, their profile is updated with this one; otherwise they're added as another player.` : "They're added as a new player."} Games this PC doesn't have yet are added. Everything here now is saved first, so you can go back.</p>
+          <p class="sub">${here ? `If this is the same ${esc(name)} as here, their profile is updated with this one; otherwise it's added as another profile.` : "It's added as a new profile."} Games this PC doesn't have yet are added. Everything here now is saved first, so you can go back.</p>
           ${foot(`<button class="btn primary" data-action="restore-apply">Import</button>`)}`;
         return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Import a profile">${body}</div></div>`;
       }
       body = `<div><h2>Restore this backup?</h2><p class="sub">Made on ${esc(I.computer || "a PC")}, ${esc(when)}${I.app ? ", Lootnest " + esc(I.app) : ""}.</p></div>
-        <dl class="facts"><div><dt>Players</dt><dd>${esc((I.players || []).join(", ") || "None")}</dd></div><div><dt>Games with profiles</dt><dd>${I.games}</dd></div></dl>
-        <p class="sub">Its players, games, saves, profile pictures and play time replace the ones here. This PC's settings stay. Everything here now is saved first, so you can go back.</p>
+        <dl class="facts"><div><dt>Profiles</dt><dd>${esc((I.players || []).join(", ") || "None")}</dd></div><div><dt>Games with profiles</dt><dd>${I.games}</dd></div></dl>
+        <p class="sub">Its profiles, games, saves, pictures and play time replace the ones here. This PC's settings stay. Everything here now is saved first, so you can go back.</p>
         ${foot(`<button class="btn primary" data-action="restore-apply">Restore</button>`)}`;
     }
     return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Restore a backup">${body}</div></div>`;
@@ -2243,7 +2243,7 @@
     if (D.done) {
       return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Profile exported">
         <div><h2>${esc(possessive(name))} profile is saved</h2><p class="sub selectable">${esc(D.done)}</p></div>
-        <p class="sub">On the other PC, open Lootnest, then <b>Players</b>, <b>Import a profile</b>, and choose this file.</p>
+        <p class="sub">On the other PC, open Lootnest, then <b>Profiles</b>, <b>Import a profile</b>, and choose this file.</p>
         <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">Done</button></div></div></div>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Export a profile">
@@ -2289,11 +2289,11 @@
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
     async "ach-shared"(el) {
       const id = el.dataset.game, shared = el.dataset.on === "1", g = game(id);
-      if (shared && !(await confirmDialog({ title: "Share one set of achievements?", body: `Everyone who plays ${g ? g.name : "this game"} will see the same achievements, the ones on the PC now. Each player's own stay in their profile, and come back if you change your mind.`, ok: "Share one set" }))) return;
+      if (shared && !(await confirmDialog({ title: "Share one set of achievements?", body: `Everyone who plays ${g ? g.name : "this game"} will see the same achievements, the ones on the PC now. Each profile's own stay with it, and come back if you change your mind.`, ok: "Share one set" }))) return;
       try { await api.setSharedAchievements(id, shared); } catch (e) { toast(errText(e), "error"); return; }
       await refresh();
       achAsked.delete("game:" + id);
-      toast(shared ? "Achievements are shared now." : "Each player gets their own achievements from the next swap.");
+      toast(shared ? "Achievements are shared now." : "Each profile gets its own achievements from the next swap.");
     },
     "seat-menu"(el) { seatMenu(el); },
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),

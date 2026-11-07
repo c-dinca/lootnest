@@ -403,7 +403,7 @@ func (a *App) quit(force bool) {
 			return
 		}
 		if len(playing) > 0 {
-			msg := "Still playing: " + strings.Join(playing, ", ") + ".\n\nIf Lootnest quits now, that progress is saved the next time you pick a player for the game in Lootnest. Quit anyway?"
+			msg := "Still playing: " + strings.Join(playing, ", ") + ".\n\nIf Lootnest quits now, that progress is saved the next time you pick a profile for the game in Lootnest. Quit anyway?"
 			if win.MessageBox(a.hwnd, msg, Name, win.MB_YESNO|win.MB_ICONQUESTION|win.MB_DEFBUTTON2) != win.IDYES {
 				return
 			}

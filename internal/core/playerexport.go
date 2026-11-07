@@ -26,7 +26,7 @@ import (
 func (s *Store) ExportPlayer(w io.Writer, cfg *Config, pid string, live []LiveSource, m BackupManifest) error {
 	p := cfg.Player(pid)
 	if p == nil {
-		return errors.New("That player doesn't exist.")
+		return errors.New("That profile doesn't exist.")
 	}
 	theirs := map[string]bool{}
 	for _, g := range cfg.Games {
@@ -148,7 +148,7 @@ type ImportResult struct {
 func (s *Store) ImportPlayer(ob *OpenedBackup, current *Config) (*Config, ImportResult, error) {
 	var res ImportResult
 	if ob.Manifest.Kind != "player" {
-		return nil, res, errors.New("This is a backup of everything, not one player's profile; use Restore from a backup in Settings.")
+		return nil, res, errors.New("This is a backup of everything, not one profile; use Restore from a backup in Settings.")
 	}
 	in, err := ob.Config()
 	if err != nil {
@@ -163,7 +163,7 @@ func (s *Store) ImportPlayer(ob *OpenedBackup, current *Config) (*Config, Import
 	if local := cfg.Player(p.ID); local != nil {
 		res.Replaced = true
 	} else if len(cfg.Players) >= 8 {
-		return nil, res, errors.New("Lootnest supports up to 8 players; remove one first.")
+		return nil, res, errors.New("Lootnest supports up to 8 profiles; remove one first.")
 	}
 	// A different player here with the same name: tell them apart.
 	for n := 2; nameTaken(cfg, p.Name, p.ID); n++ {

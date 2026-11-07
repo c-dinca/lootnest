@@ -100,7 +100,7 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 	}
 	if cfg.Player(req.PlayerID) == nil {
 		a.mu.Unlock()
-		return Need{}, errors.New("That player no longer exists.")
+		return Need{}, errors.New("That profile no longer exists.")
 	}
 	if s := a.sessions[g.ID]; s != nil {
 		a.mu.Unlock()

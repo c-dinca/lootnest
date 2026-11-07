@@ -608,7 +608,7 @@ func (a *App) apiExportPlayer(playerID, dir, password string) error {
 	a.mu.Unlock()
 	p := cfg.Player(playerID)
 	if p == nil {
-		return errors.New("That player doesn't exist.")
+		return errors.New("That profile doesn't exist.")
 	}
 	go func() {
 		out := map[string]any{}
