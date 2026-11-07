@@ -826,3 +826,13 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .cs-row.state-up .cs-state, .cs-row.state-none .cs-state, .cs-row.state-down .cs-state { color: var(--muted); }
 .cs-row.state-conflict .cs-state { color: var(--gold); }
 .cs-row .row { gap: 6px; }
+
+/* A newer Lootnest, in the sidebar above Settings. */
+.side-update { margin-top: auto; padding: 0 0 8px; }
+.side-update:empty { display: none; }
+.side-update:not(:empty) + .nav-bottom { margin-top: 0; }
+.side-update-btn { display: grid; gap: 2px; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--radius-m); background: var(--gold); color: var(--gold-ink); text-align: left; cursor: pointer; }
+.side-update-btn:hover { background: var(--gold-hover); }
+.side-update-btn:disabled { opacity: .8; cursor: default; }
+.side-update-btn b { font-weight: 650; }
+.side-update-btn span { font-size: 12px; opacity: .8; }

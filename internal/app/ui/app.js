@@ -186,6 +186,7 @@
         break;
       }
       case "update":
+        if (ev.available && !ev.manual && S.update.version !== ev.version) toast(`Lootnest ${ev.version} is out. Update from the sidebar.`);
         S.update = Object.assign({}, ev, { checking: false });
         if (ev.manual && ev.upToDate) toast(`Lootnest ${S.d.version} is the latest version.`);
         if (ev.error) toast(ev.error, "error");
@@ -315,6 +316,7 @@
     const n = libraryItems().length;
     $("#lib-count").textContent = n ? n : "";
     renderWho();
+    renderSideUpdate();
     const v = $("#view");
     const keepScroll = v.scrollTop;
     const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
@@ -583,6 +585,15 @@
     return `<div class="banner"><div><b>Keep Lootnest up to date?</b>
       <p>Lootnest checks GitHub every few hours, tells you with a notification when a new version is out, and installs it while it's in the tray and no game is running. Nothing about you or your games is sent.</p></div>
       <div class="row"><button class="btn quiet" data-action="updates-no">Not now</button><button class="btn primary" data-action="updates-yes">Keep it up to date</button></div></div>`;
+  }
+
+  // A newer Lootnest shows in the sidebar on every page, not only on Home.
+  function renderSideUpdate() {
+    const el = $("#side-update"), U = S.update;
+    if (!el) return;
+    el.innerHTML = U.available
+      ? `<button class="side-update-btn" data-action="update-now" ${U.step ? "disabled" : ""}><b>${U.step ? (U.step === "installing" ? "Installing" : "Downloading") : "Update to " + esc(U.version)}</b><span>${U.step ? "Lootnest opens again by itself" : "Your games and profiles stay"}</span></button>`
+      : "";
   }
 
   function updateBanner() {

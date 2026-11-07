@@ -413,6 +413,7 @@ func (a *App) quit(force bool) {
 // show brings the window up and makes sure the web view inside it is
 // visible and sized (it can stay blank if the window was created hidden).
 func (a *App) show() {
+	a.checkIfStale()
 	win.Present(a.hwnd)
 	if a.w != nil {
 		a.w.RefreshView()

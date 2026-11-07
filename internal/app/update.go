@@ -29,7 +29,7 @@ var (
 	updateBusy  bool
 	lastCheck   time.Time
 	notifiedFor string // the version the user was last notified about
-	updateEvery = 6 * time.Hour
+	updateEvery = time.Hour
 	updateRetry = 10 * time.Minute // waiting for a game to close before installing
 )
 
@@ -73,6 +73,21 @@ func (a *App) checkUpdate(manual bool) {
 }
 
 func (a *App) apiCheckUpdate() { go a.checkUpdate(true) }
+
+// checkIfStale checks again when the window opens and the last check is
+// more than 10 minutes old, so a new version shows without waiting for the
+// next hourly check.
+func (a *App) checkIfStale() {
+	a.mu.Lock()
+	on := a.cfg.Settings.CheckUpdates
+	a.mu.Unlock()
+	updateMu.Lock()
+	stale := time.Since(lastCheck) > 10*time.Minute
+	updateMu.Unlock()
+	if on && stale {
+		go a.checkUpdate(false)
+	}
+}
 
 // watchUpdates checks every few hours while "Check for updates
 // automatically" is on, and with "Install updates by themselves" on,
