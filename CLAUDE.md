@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.37.0)
+## Where things stand (1.38.0)
 
 These shipped recently, newest last:
 
@@ -190,8 +190,13 @@ These shipped recently, newest last:
   `ApplyUpdate` / `UndoUpdate` for an update the user brings (folder or
   .zip; the update's own top folder is skipped by `bestPrefix`). Replaced
   files are kept in `backups\updates\<game>\<time>\files`. Lootnest never
-  finds or downloads an update. Not yet: .rar/.7z, installers, rolling a
-  whole folder back.
+  finds or downloads an update. Not yet: installers, rolling a whole
+  folder back.
+- **1.38** .7z and .rar updates (`core/updatearchive.go`: `StageUpdate`
+  into `.lootnest-update-<hash>` beside the game's folder, via
+  `bodgit/sevenzip` and `nwaples/rardecode/v2`), versions from names
+  (`UpdateVersions`, `FolderVersion`, `CheckVersions`: ok, skips, older,
+  same), a version history, and Undo newest first.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
