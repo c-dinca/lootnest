@@ -618,8 +618,8 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Title = "Choose where to save the profile"
 			opt.Folder = true
 		case "update":
-			opt.Title = "Choose the update's .zip"
-			opt.Filters = []win.FileFilter{{Name: "Zip archives (*.zip)", Spec: "*.zip"}}
+			opt.Title = "Choose the update"
+			opt.Filters = []win.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
 		case "updateDir":
 			opt.Title = "Choose the update's folder"
 			opt.Folder = true

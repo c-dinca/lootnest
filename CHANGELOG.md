@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.38.0
+
+- **Updates in .7z and .rar.** **Apply an update** now takes a .7z or .rar as well as a folder or a .zip, so there's nothing to extract first. For an update in parts (.part1.rar, .part2.rar, ...), choose the first part. Lootnest opens it next to the game's folder, shows what it changes, and removes what it opened once the update is in.
+- **Updates in the right order.** Lootnest reads the versions in an update's name, such as "v1.0.2 to v1.0.3" or "Build 16251443", and your copy's version from the last update it applied or from the game folder's name. Before anything changes, it says:
+  - **The next update for your copy**, when it fits;
+  - that the update is for another version than yours, when one would be skipped, since that usually stops a game from starting;
+  - that your copy already has it, or has something newer.
+- **Each game's update history** on the Updates page, such as "1.1 → 1.2", with its version. **Undo** takes updates off one at a time, newest first.
+
 ## 1.37.0
 
 - **Updates**, a new page in the sidebar, for games no store keeps up to date: games in a folder, added by hand, or from Hydra.

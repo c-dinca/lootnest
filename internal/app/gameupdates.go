@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -117,6 +118,7 @@ func (a *App) updatesDir(t updTarget) string {
 // UpdateRow is one game on the Updates page.
 type UpdateRow struct {
 	updTarget
+	Version string               `json:"version,omitempty"` // this copy's, as far as Lootnest knows
 	Newer   *core.NewsItem       `json:"newer,omitempty"`
 	Changed time.Time            `json:"changed"` // when its files last changed, roughly
 	Applied []core.AppliedUpdate `json:"applied"`
@@ -140,6 +142,7 @@ func (a *App) apiUpdates() {
 			if rows[i].Applied == nil {
 				rows[i].Applied = []core.AppliedUpdate{}
 			}
+			rows[i].Version = core.CopyVersion(t.Dir, rows[i].Applied)
 			if t.Exe != "" {
 				rows[i].Changed = newestFile(filepath.Dir(t.Exe))
 			}
@@ -188,11 +191,13 @@ func (a *App) apiUpdatePlan(key, path string) {
 			out["error"] = err.Error()
 			return
 		}
-		p, err := core.PlanUpdate(t.Dir, path)
+		p, err := a.planUpdate(t, path)
 		if err != nil {
 			out["error"] = sentence(err)
 			return
 		}
+		from, to := core.UpdateVersions(p.Name)
+		out["check"] = core.CheckVersions(core.CopyVersion(t.Dir, core.GameUpdates(a.updatesDir(t))), from, to)
 		p.Files = nil // the counts and folders are enough for the page
 		out["plan"], out["dir"], out["free"] = p, t.Dir, win.DiskFree(t.Dir)
 	}()
@@ -213,11 +218,12 @@ func (a *App) apiUpdateApply(key, path string) error {
 		defer func() { a.emit("updateDone", out) }()
 		updMu.Lock()
 		defer updMu.Unlock()
-		p, err := core.PlanUpdate(t.Dir, path) // again: it may have changed since
+		p, err := a.planUpdate(t, path) // again: it may have changed since
 		if err != nil {
 			out["error"] = sentence(err)
 			return
 		}
+		defer clearStaging(t)
 		if free := win.DiskFree(t.Dir); free >= 0 && free < p.Bytes+p.Kept+(64<<20) {
 			out["error"] = fmt.Sprintf("There isn't enough room on %s: the update and the copy of the files it replaces need %s.", strings.ToUpper(filepath.VolumeName(t.Dir)), gb(p.Bytes+p.Kept))
 			return
@@ -237,6 +243,59 @@ func (a *App) apiUpdateApply(key, path string) error {
 		out["update"] = u
 	}()
 	return nil
+}
+
+// stagingDir is where a .7z or .rar update is extracted: next to the game's
+// folder, on the same drive, so there's room and moving files in is quick.
+func stagingDir(t updTarget) string {
+	h := sha1.Sum([]byte(strings.ToLower(t.Dir)))
+	return filepath.Join(filepath.Dir(t.Dir), ".lootnest-update-"+hex.EncodeToString(h[:4]))
+}
+
+func clearStaging(t updTarget) { _ = os.RemoveAll(stagingDir(t)) }
+
+var (
+	stagedMu   sync.Mutex
+	stagedFrom = map[string]string{} // staging folder -> the archive and its time and size it holds
+)
+
+// planUpdate plans an update, extracting a .7z or .rar first (once: the
+// same archive isn't extracted again for Apply).
+func (a *App) planUpdate(t updTarget, path string) (*core.UpdatePlan, error) {
+	if !core.NeedsStaging(path) {
+		p, err := core.PlanUpdate(t.Dir, path)
+		if err == nil {
+			p.Name = filepath.Base(path)
+		}
+		return p, err
+	}
+	st, err := os.Stat(path)
+	if err != nil {
+		return nil, errors.New("Lootnest can't find that update")
+	}
+	stamp := fmt.Sprintf("%s|%d|%d", strings.ToLower(path), st.Size(), st.ModTime().UnixNano())
+	dir := stagingDir(t)
+	stagedMu.Lock()
+	ready := stagedFrom[dir] == stamp && dirExists(dir)
+	stagedMu.Unlock()
+	if !ready {
+		if free := win.DiskFree(filepath.Dir(t.Dir)); free >= 0 && free < st.Size()*3 {
+			return nil, fmt.Errorf("there isn't enough room on %s to open the update", strings.ToUpper(filepath.VolumeName(t.Dir)))
+		}
+		a.emit("updatePlan", map[string]any{"key": t.Key, "path": path, "opening": true})
+		if _, err := core.StageUpdate(path, dir); err != nil {
+			return nil, err
+		}
+		stagedMu.Lock()
+		stagedFrom[dir] = stamp
+		stagedMu.Unlock()
+	}
+	p, err := core.PlanUpdate(t.Dir, dir)
+	if err != nil {
+		return nil, err
+	}
+	p.Source, p.Name, p.Kind = path, filepath.Base(path), strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
+	return p, nil
 }
 
 // keepSavesBeforeUpdate copies the game's saves to backups first.
@@ -275,6 +334,15 @@ func (a *App) apiUpdateUndo(key, id string) error {
 	}
 	if id == "" || id != filepath.Base(id) {
 		return errors.New("unknown update")
+	}
+	for _, u := range core.GameUpdates(a.updatesDir(t)) { // newest first
+		if u.State != "applied" {
+			continue
+		}
+		if u.ID != id {
+			return fmt.Errorf("Undo the newer update first (%s): updates come off one at a time, newest first.", u.Source)
+		}
+		break
 	}
 	go func() {
 		out := map[string]any{"key": key, "undone": true}

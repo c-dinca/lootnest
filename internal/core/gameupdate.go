@@ -43,7 +43,8 @@ type UpdateFile struct {
 // UpdatePlan is what applying an update will do.
 type UpdatePlan struct {
 	Source  string       `json:"source"`
-	Kind    string       `json:"kind"`            // "folder" or "zip"
+	Name    string       `json:"name,omitempty"`  // the update's own name, when Source is a staging folder
+	Kind    string       `json:"kind"`            // "folder", "zip", "7z" or "rar"
 	Skipped string       `json:"skipped"`         // the update's own top folder, not copied as a folder
 	Files   []UpdateFile `json:"files,omitempty"` // every file, sorted
 	Added   int          `json:"added"`
@@ -70,7 +71,9 @@ type AppliedUpdate struct {
 	Replaced []string  `json:"replaced"`
 	Dirs     []string  `json:"dirs,omitempty"` // folders it made, removed on undo when empty
 	Bytes    int64     `json:"bytes"`
-	State    string    `json:"state"` // "applying", "applied", "undone"
+	State    string    `json:"state"`          // "applying", "applied", "undone"
+	From     string    `json:"from,omitempty"` // the versions it was for and brought, from its name
+	To       string    `json:"to,omitempty"`
 	Dir      string    `json:"-"`
 }
 
@@ -170,7 +173,7 @@ func PlanUpdate(gameDir, src string) (*UpdatePlan, error) {
 		}
 		zr.Close()
 	default:
-		return nil, errors.New("choose the update's folder or its .zip; other archives need to be extracted first")
+		return nil, errors.New("choose the update's folder, or its .zip, .7z or .rar")
 	}
 	if err != nil {
 		return nil, err
@@ -300,6 +303,10 @@ func bestPrefix(gameDir string, files []UpdateFile) string {
 func ApplyUpdate(gameDir string, p *UpdatePlan, keepDir, game string, now time.Time) (*AppliedUpdate, error) {
 	u := &AppliedUpdate{ID: filepath.Base(keepDir), Game: game, Source: filepath.Base(p.Source), At: now.UTC(), State: "applying", Dir: keepDir,
 		Added: []string{}, Replaced: []string{}}
+	if p.Name != "" {
+		u.Source = p.Name
+	}
+	u.From, u.To = UpdateVersions(u.Source)
 	if err := os.MkdirAll(filepath.Join(keepDir, "files"), 0o755); err != nil {
 		return nil, err
 	}

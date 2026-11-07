@@ -340,7 +340,10 @@
       }
       case "updatePlan": {
         const D = S.dialog;
-        if (D && D.kind === "update" && D.key === ev.key && D.path === ev.path) { D.busy = false; D.plan = ev.plan || null; D.error = ev.error || ""; D.dir = ev.dir || ""; D.free = ev.free; renderOverlay(); }
+        if (D && D.kind === "update" && D.key === ev.key && D.path === ev.path) {
+          if (ev.opening) { D.opening = true; renderOverlay(); break; }
+          D.busy = false; D.opening = false; D.plan = ev.plan || null; D.check = ev.check || null; D.error = ev.error || ""; D.dir = ev.dir || ""; D.free = ev.free; renderOverlay();
+        }
         break;
       }
       case "updateDone": {
@@ -2418,11 +2421,15 @@
     if (!U.games.length) return `<div class="upd-page ln-root">${head}<p class="find-hint">No games in folders yet. Steam, Epic, GOG and the other launchers keep their own games up to date.</p></div>`;
     const news = U.newsOn ? "" : banner("Find out when a newer version is out", "Lootnest reads each game's patch notes from Steam's news feed and compares their date with your copy's files. Only the game's Steam id, or its name, is sent.", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="news-on">Turn it on</button>`);
     const row = (r) => {
-      const last = (r.applied || []).find((u) => u.state === "applied");
+      const applied = (r.applied || []).filter((u) => u.state === "applied");
+      const last = applied[0];
       const status = r.newer ? `<b class="upd-new">${esc(r.newer.title)}</b><span>Released ${esc(day(r.newer.date))}. Your copy's files are older.</span>`
         : r.noNews ? `<span>Not on the Steam store, so Lootnest can't tell when it has a new version.</span>`
         : U.newsOn ? `<span>Up to date, as far as Steam's news says.</span>` : `<span>Files from ${esc(day(r.changed))}.</span>`;
-      const hist = last ? `<span class="upd-last">Updated ${esc(ago(last.at))} from ${esc(last.source)}. <button class="gpage-link" data-action="upd-undo" data-key="${esc(r.key)}" data-id="${esc(last.id)}" data-name="${esc(r.name)}">Undo</button></span>` : "";
+      const vtxt = (v) => (v ? (v.startsWith("build ") ? "Build " + v.slice(6) : v) : "");
+      const chain = applied.length > 1 ? applied.slice().reverse().map((u) => esc(vtxt(u.to) || u.source)).join(" → ") : "";
+      const hist = last ? `<span class="upd-last">${r.version ? `Version ${esc(vtxt(r.version))}. ` : ""}Updated ${esc(ago(last.at))} from ${esc(last.source)}${chain ? ` (${chain})` : ""}. <button class="gpage-link" data-action="upd-undo" data-key="${esc(r.key)}" data-id="${esc(last.id)}" data-name="${esc(r.name)}">Undo</button></span>`
+        : r.version ? `<span class="upd-last">Version ${esc(vtxt(r.version))}, from its folder's name.</span>` : "";
       return `<li class="upd-row${r.newer ? " upd-row--new" : ""}"><div class="upd-name"><button class="gpage-link upd-title" data-action="upd-open-game" data-key="${esc(r.key)}">${esc(r.name)}</button><span class="upd-src">${esc(sourceLabel(r.source || "folder"))}</span></div>
         <div class="upd-status">${status}${hist}</div>
         <div class="gpage-actions"><button class="ln-button ${r.newer ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="upd-start" data-key="${esc(r.key)}" data-name="${esc(r.name)}">Apply an update</button></div></li>`;
@@ -2435,23 +2442,34 @@
   function viewUpdateDrawer() {
     const D = S.dialog;
     const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${D.busy ? "disabled" : ""}>${label}</button>`;
-    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: "With an update you have, in a folder or a .zip", body, foot });
-    const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}</div>`;
+    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: "With an update you have: a folder, or a .zip, .7z or .rar", body, foot });
+    const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip, .7z or .rar")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}</div>`;
     if (D.done) {
       const u = D.done;
       return shell(D.undone ? `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Undone</b><p>${esc(D.name)} is as it was before the update from ${esc(u.source)}.</p></div></div></div>`
         : `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Updated</b><p>${u.added.length} files added and ${u.replaced.length} replaced, from ${esc(u.source)}. The saves and the old files are kept, so you can undo it.</p></div></div></div>`,
         D.undone ? `<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}` : `${btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
     }
-    const intro = `<p class="gpage-hint">Lootnest doesn't download updates. Choose one you have, and Lootnest shows what it changes before anything happens. .rar and .7z archives need to be extracted first; for an installer (.exe), run it yourself.</p>`;
+    const intro = `<p class="gpage-hint">Lootnest doesn't download updates. Choose one you have, and Lootnest shows what it changes before anything happens. If an update comes in parts (.part1.rar, .part2.rar), choose the first. For an installer (.exe), run it yourself.</p>`;
     if (!D.path) return shell(`${intro}${choose}`);
-    if (D.busy && !D.plan) return shell(lnInline("", "Reading the update"));
+    if (D.busy && !D.plan) return shell(lnInline("", D.opening ? "Opening the archive" : "Reading the update", D.opening ? "A big update takes a minute or two. Nothing in the game's folder changes yet." : ""));
     if (D.error && !D.plan) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     const P = D.plan;
     if (!P) return shell(`${intro}${choose}`);
     const where = P.where.slice(0, 6).map((w) => `<div><dt class="selectable">${w.path ? esc(w.path) : "The game's own folder"}</dt><dd>${w.files} file${w.files === 1 ? "" : "s"}</dd></div>`).join("");
     const room = D.free >= 0 && D.free < P.bytes + P.kept ? `<p class="find-low">There isn't enough room on this drive: it needs ${esc(fmtBytes(P.bytes + P.kept))}.</p>` : "";
-    const body = `<div class="gpage-sub">${gpHead("What it does")}<dl class="ln-facts">
+    const C = D.check || {};
+    const ver = (v) => (v ? esc(v.startsWith("build ") ? "Build " + v.slice(6) : v) : "");
+    const versions = C.to ? `<div class="gpage-sub">${gpHead("Versions")}<dl class="ln-facts">
+        <div><dt>Your copy</dt><dd>${C.have ? ver(C.have) : "Not known"}</dd></div>
+        ${C.from ? `<div><dt>This update is for</dt><dd>${ver(C.from)}</dd></div>` : ""}
+        <div><dt>It brings</dt><dd>${ver(C.to)}</dd></div></dl>
+        ${C.state === "skips" ? `<p class="find-low">This update is for ${ver(C.from)}, and your copy is ${ver(C.have)}. Updates usually need to go in order: apply the one${C.from ? ` that brings ${ver(C.from)}` : "s in between"} first, or the game may not start.</p>`
+          : C.state === "older" ? `<p class="find-low">This update brings ${ver(C.to)}, older than your copy's ${ver(C.have)}.</p>`
+          : C.state === "same" ? `<p class="find-low">Your copy already has ${ver(C.to)}.</p>`
+          : C.state === "ok" ? `<p class="find-ok">The next update for your copy.</p>`
+          : `<p class="gpage-hint">Lootnest reads versions from names, such as "v1.0.2 to v1.0.3". ${C.have ? "" : "Your copy's folder name has none, so it can't check the order."}</p>`}</div>` : "";
+    const body = `${versions}<div class="gpage-sub">${gpHead("What it does")}<dl class="ln-facts">
         <div><dt>Replaces</dt><dd>${P.replace} file${P.replace === 1 ? "" : "s"}</dd></div>
         <div><dt>Adds</dt><dd>${P.added} file${P.added === 1 ? "" : "s"}</dd></div>
         <div><dt>Size</dt><dd>${esc(fmtBytes(P.bytes))}</dd></div></dl>

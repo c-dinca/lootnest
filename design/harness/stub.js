@@ -225,7 +225,7 @@
       return ok();
     },
     ps_browse: (id, kind) => {
-      if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ-Update-v1.0302256.zip" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
+      if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
       return ok();
     },
@@ -234,13 +234,15 @@
         { key: "found:dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", source: "hydra", dir: "D:\\Games\\Phantom.Blade.Zero-InsaneRamZes", changed: iso(9 * d),
           newer: { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true }, applied: [] },
         { key: "found:dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", dir: "D:\\Games\\Hydra\\Hollow Tale", changed: iso(2 * d),
-          applied: [{ id: "20261105-201500", source: "HollowTale-1.2.zip", at: iso(2 * d), added: ["a"], replaced: ["b", "c"], state: "applied" }] },
+          version: "1.2", applied: [{ id: "20261105-201500", source: "HollowTale-1.1-to-1.2.zip", at: iso(2 * d), added: ["a"], replaced: ["b", "c"], state: "applied", from: "1.1", to: "1.2" }, { id: "20261101-101500", source: "HollowTale-1.0-to-1.1.zip", at: iso(6 * d), added: [], replaced: ["b"], state: "applied", from: "1.0", to: "1.1" }] },
         { key: "found:dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", source: "added", dir: "D:\\Games\\Onimusha", changed: iso(20 * d), noNews: true, applied: [] },
       ] }), 120);
       return ok();
     },
     ps_updatePlan: (key, path) => {
-      setTimeout(() => emit({ type: "updatePlan", key, path, dir: "D:\\Games\\Phantom.Blade.Zero-InsaneRamZes", free: 412 * 2 ** 30, plan: {
+      if (/\.(rar|7z)$/i.test(path)) setTimeout(() => emit({ type: "updatePlan", key, path, opening: true }), 50);
+      setTimeout(() => emit({ type: "updatePlan", key, path, dir: "D:\\Games\\Phantom.Blade.Zero.v1.0.1", free: 412 * 2 ** 30,
+        check: { have: "1.0.1", from: "1.0.2", to: "1.0.3", state: "skips" }, plan: {
         source: path, kind: /\.zip$/i.test(path) ? "zip" : "folder", skipped: "PBZ Update v1.0302256", added: 3, replace: 12, bytes: 2.4 * 2 ** 30, kept: 2.1 * 2 ** 30,
         where: [{ path: "ProjectPBZ", files: 14 }, { path: "", files: 1 }], readme: ["README.txt"] } }), 200);
       return ok();
