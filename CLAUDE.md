@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.26.0)
+## Where things stand (1.28.0)
 
 These shipped recently, newest last:
 
@@ -137,7 +137,13 @@ These shipped recently, newest last:
   profiles.
 - **1.25** Per-profile status (playing, up next, finished, 100%, dropped,
   in `shelf.json`) and collections (`Config.Tags`), with Library filters.
-- **1.26** Design pass: the red primary button; drawers (`.ln-drawer`,
+- **1.26** Swap safety: a journal (`swaps.json`, `swapjournal.go`) so a
+  swap cut short is finished on the next start, and `Mirror` reads every
+  copy back before it replaces anything.
+- **1.27** Profile path suggestions use the Ludusavi manifest
+  (`SuggestPaths` via `Env.SaveDB`, `listedSaves` in `suggest.go`) when
+  Settings.SaveDB is on; the switch is also in Settings, Online.
+- **1.28** Design pass: the red primary button; drawers (`.ln-drawer`,
   `drawer()` in app.js) for a game's Manage actions, its full achievement
   list and Names and colours; achievements at the top of a game's page;
   the Achievements page with game cards; Cloud saves and Profiles laid out
@@ -148,14 +154,59 @@ Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Phantom Blade Zero. Ask for the "Show recent activity" log after they
 update. It names each game and says why none were found.
 
+## Next, from the market research (November 2026)
+
+The research brief's conclusion: Lootnest's position is **the PC's vault of
+profiles and saves**. Unified libraries exist (Playnite, GOG Galaxy,
+LaunchBox); per-person and per-run saves with file swaps don't, and
+Playnite's author declined multi-user profiles (Playnite #3364). Steam
+Families separates saves only for games on the Steam Cloud API. The main
+risk is the swap's reliability, Steam Cloud above all, not competitors.
+Position: profiles like a console for the shared PC, with "a safety net for
+games from outside stores" as the growth engine, achievements and runs per
+profile as signature features, and local-first (no account, your own
+cloud) as an attribute. Aim for "Playnite + Lootnest", not a replacement.
+
+Build in this order, safety before new features:
+
+1. **A Steam Cloud-safe swap engine.** Done so far: the Steam Cloud guard
+   (`steamcloud.go`, `app/cloud.go`), the swap journal and verified copies
+   (1.26). Still open: put games with an anti-cheat (EAC, BattlEye,
+   Vanguard) or online-only saves out of swaps by default, with a note on
+   their page; a conflict banner on the game page, not only a toast; a
+   one-click restore of the copy made before each swap.
+2. **Save paths from the Ludusavi manifest.** Done in 1.27. The manifest
+   is downloaded on the user's PC, never shipped with Lootnest: its data
+   comes from PCGamingWiki (CC BY-NC-SA), so bundling it would bind a
+   paid tier. Still open: the manifest's registry entries (saves in the
+   Windows registry) aren't used.
+3. **Save Safety Net** for folder games: a snapshot when the version or
+   exe changes, the folder moves, or before uninstalling; find saves kept
+   inside the game folder (Ren'Py `game/saves`, RPG Maker `www/save`,
+   Unity).
+4. **Achievement Doctor**: a read-only diagnosis of why a game shows no
+   achievements (tool found, path, app id, empty file). Any edit, such as
+   `account_name` per profile, only when asked. Never generate, ship or
+   "repair" anything that affects whether a game starts.
+5. **Run branching**: start a run from a snapshot (NG+, hardcore), with a
+   timeline per run.
+
+Then: import from Playnite (library, playtime, statuses); a page "How
+Lootnest handles your saves" before any public post; a controller seat
+screen; kid profiles (local limits).
+
+Rules from the brief: never say "cracked" in public material (say games
+from outside stores, DRM-free, portable, emulated); no downloads, no
+catalogue, no account, no subscription. Money, if any: free core forever,
+donations, and an optional one-time Supporter for comfort features, never
+for safety.
+
 ## Ideas not started
 
 - Disk space: what each game and profile takes, what can move to another
   drive (Game Mover exists for Steam), and what can go, with a backup first.
 - "Will it run?": a game's requirements (PCGamingWiki, Steam) against this
-  PC's hardware. Opt-in.
+  PC's hardware. Opt-in. The research advises against it: there's no
+  reliable requirements database.
 - Signing in to Microsoft or Google directly for cloud saves (on hold;
   the folder approach works).
-- A market and community research pass, to decide what sets Lootnest
-  apart. The owner is running it in another AI; its findings may come back
-  as the next brief.

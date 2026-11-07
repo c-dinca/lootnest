@@ -32,7 +32,7 @@ The names below are CSS custom properties. Components use only these. Raw colour
 The brand colours (1.19.1):
 - **Obsidian Black** `#111217` is the window.
 - **Ice Grey** `#DFE5EB` is the text.
-- **Racing Red** `#EF233C` is the primary button (1.26) and a touch elsewhere, never a fill for content.
+- **Racing Red** `#EF233C` is the primary button (1.28) and a touch elsewhere, never a fill for content.
 
 The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own, and hue 248 for the greys, Ice Grey's. Contrast is WCAG 2 against the ground and against the raised step.
 

@@ -76,7 +76,7 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 | **SteamGridDB API key** (optional, in Settings) | With covers on, for games the Steam store doesn't know | The game's name or Steam id and your key, to `www.steamgriddb.com`; images come from its CDN and are saved on your PC |
 | **Steam Web API key** (optional, in Settings) | When you open a game's page and its achievements on this PC have no names (a game in a folder, or Steam's partial list); each game's list is kept for a week | The game's Steam app id and your key, to `api.steampowered.com`; the names, descriptions and picture links are saved on your PC |
 | **Show game updates and news** | Only if you turn it on (off by default), when you open a game's page; each feed is read at most every 6 hours | The game's Steam app id to `api.steampowered.com` (for a game outside Steam, first its name to `store.steampowered.com`); an update's pictures load from Steam's image server when you open it |
-| **Find save locations online** (Cloud saves) | Only if you turn it on (off by default), then about once a week | Nothing about you or your games: Lootnest downloads the Ludusavi project's list of where games keep their saves (from PCGamingWiki) from `raw.githubusercontent.com` and keeps it on your PC |
+| **Find save locations online** (Settings, Online, or Cloud saves) | Only if you turn it on (off by default), then about once a week | Nothing about you or your games: Lootnest downloads the Ludusavi project's list of where games keep their saves (from PCGamingWiki) from `raw.githubusercontent.com` and keeps it on your PC |
 
 **Cloud saves and backup** never go online themselves: Lootnest writes the backup file to the folder you choose. If that folder is one OneDrive, Google Drive or Dropbox syncs, that app uploads it, under that app's own terms. With a password, the file is encrypted on your PC first (AES-256-GCM), so the cloud only ever has the encrypted file.
 
@@ -104,7 +104,7 @@ Lootnest swaps files on your PC. Anything that belongs to the Steam account stay
 
 ## Adding a game by hand
 
-If the scan misses a game, use **Add game** and choose the Steam game or the .exe. Lootnest fills in the save locations it finds. Add any others yourself. [PCGamingWiki](https://www.pcgamingwiki.com) lists them for most PC games, in the "Game data" section. Paths can use `%APPDATA%`, `%LOCALAPPDATA%`, `{LOCALLOW}`, `{DOCUMENTS}`, `{SAVEDGAMES}`, `{STEAM}` and `{STEAMUSER}`.
+If the scan misses a game, use **Add game** and choose the Steam game or the .exe. Lootnest fills in the save locations it finds: with **Find save locations online** on, first the ones PCGamingWiki lists for the game, then folders named like it. Add any others yourself. [PCGamingWiki](https://www.pcgamingwiki.com) lists them for most PC games, in the "Game data" section. Paths can use `%APPDATA%`, `%LOCALAPPDATA%`, `{LOCALLOW}`, `{DOCUMENTS}`, `{SAVEDGAMES}`, `{STEAM}` and `{STEAMUSER}`.
 
 Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `profiles\<player>\<game>`
