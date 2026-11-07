@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.30.0
+
+- **Settings, one part at a time.** Settings now has a list on the left, as in Steam: **General**, **Games and swaps**, **Online**, **Updates**, **Cloud saves**, **Data and activity** and **About**. The one you pick fills the right side, and Lootnest opens it again next time. A red dot on **Updates** says a new version is ready.
+- **Panels at the side scroll again.** A long list, such as a game's achievements after **Show all**, could run off the bottom of the window. It now scrolls inside the panel, and the bottom row of buttons stays in view.
+- **More Racing Red.**
+  - The page you're on, in the sidebar and in Settings, has a red bar beside it.
+  - Every page title has a short red stripe under it.
+  - A cover you point at gets a red edge.
+  - News marked **Update** has a red tag.
+  - A game at 100% on the Achievements page has a red edge.
+  - The scrollbar turns red when you point at it.
+
 ## 1.29.0
 
 - **A safety net for games that keep their saves in their own folder.** Many games outside the stores do, such as Ren'Py and RPG Maker games, so reinstalling one, or updating it by replacing its folder, used to take the saves with it. Lootnest now keeps a copy of those saves on this PC whenever they change and the game is closed, the last 5 of them.

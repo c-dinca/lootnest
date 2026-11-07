@@ -62,7 +62,13 @@ The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own,
 - switches and checkboxes that are on;
 - list markers, news dots and link underlines in the reader;
 - the text selection, as a wash;
-- the selected choice in a segmented control, as a 2px line under it.
+- the selected choice in a segmented control, as a 2px line under it;
+- where you are, in the sidebar and in Settings' categories: a 3px bar at the left edge, the icon, and `--accent-wash` behind the label (1.30);
+- a 40 by 3px stripe under every page title (`.lib-head h1`), like a livery;
+- the edge of a cover you point at, 2px;
+- what's new: `.ln-tag--accent`, filled red with bold `--fg-on-accent` text (4.7:1), as on a news item's **Update**;
+- a game at 100% on the Achievements page, as its card's edge;
+- the scrollbar you hold or point at.
 
 Play as someone stays in that profile's colour: players are the colour. The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
 
@@ -202,6 +208,6 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Players and a player's page | On the system (1.16.5) |
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
 | The seat (who's at the PC) | On the system (1.18.0). It lives in the sidebar's **Who's here** rather than the mock's top-right control, so it never covers a page's own actions or the game art. |
-| Settings | On the system (1.16.7) |
+| Settings | On the system (1.16.7). Since 1.30, one category at a time: a list on the left (`.set-nav`, `.set-tab`), as in Steam's settings, and the category's title, line and cards on the right. The open category is kept (`ln.setTab`). |
 | Dialogs (Add game, first run, the profile editor, confirmations), the right-click menu, older buttons and form controls | On the system (1.16.8) |
 | The "Who's playing?" picker and the swap moment | On the system (1.17.0) |

@@ -50,6 +50,8 @@ const shots = [
   ["cloud-setup", "cloud=0", [nav("cloud")]],
   ["cloud-error", "state=error", [nav("cloud")]],
   ["settings", "", [nav("settings")]],
+  ["settings-online", "", [nav("settings"), click('[data-action="set-tab"][data-tab="online"]')]],
+  ["settings-games", "", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]')]],
   ["add-game", "", [nav("library"), click('[data-action="add-game"]')]],
 ];
 const sizes = [[1280, 800, 1], [1920, 1080, 1]];
