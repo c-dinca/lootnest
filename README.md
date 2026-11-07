@@ -115,6 +115,7 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `backup.json` (when the last backup to your folder was made)
 - `sync.json` (what each player's cloud saves were at the last sync)
 - `gamesaves.json` and `savedb.json.gz` (cloud saves of games outside Steam, and the save locations list)
+- `safety-net\` and `safetynet.json` (copies of saves games keep inside their own folder, the last 5 per game)
 - `config.json`
 - `lootnest.log`
 

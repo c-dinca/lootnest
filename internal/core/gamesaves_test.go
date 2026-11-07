@@ -140,3 +140,37 @@ func TestGameVersions(t *testing.T) {
 		t.Fatal("an id with a path is refused")
 	}
 }
+
+func TestInFolder(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "Game")
+	locs := []SaveLocation{
+		{Path: "a", Resolved: filepath.Join(dir, "game", "saves")},
+		{Path: "b", Resolved: filepath.Join(filepath.Dir(dir), "AppData", "Game")},
+		{Path: "c", Resolved: dir},
+	}
+	got := InFolder(locs, dir)
+	if len(got) != 1 || got[0].Path != "a" {
+		t.Fatalf("InFolder = %+v", got)
+	}
+	if InFolder(locs, "") != nil {
+		t.Fatal("no folder, no locations")
+	}
+}
+
+func TestFolderSaves(t *testing.T) {
+	f := newFixture(t)
+	game := filepath.Join(f.root, "Games", "Tale")
+	write(t, filepath.Join(game, "game", "saves", "1-1-LT1.save"), "s")
+	write(t, filepath.Join(game, "Tale", "Saved", "SaveGames", "slot.sav"), "u")
+	write(t, filepath.Join(game, "data", "x.bin"), "not a save")
+	got := map[string]bool{}
+	for _, l := range f.env.FolderSaves(game) {
+		got[l.Resolved] = true
+	}
+	if len(got) != 2 || !got[filepath.Join(game, "game", "saves")] || !got[filepath.Join(game, "Tale", "Saved", "SaveGames")] {
+		t.Fatalf("FolderSaves = %v", got)
+	}
+	if f.env.FolderSaves("") != nil || f.env.FolderSaves("relative") != nil {
+		t.Fatal("needs a folder")
+	}
+}

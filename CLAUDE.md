@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.28.0)
+## Where things stand (1.29.0)
 
 These shipped recently, newest last:
 
@@ -148,6 +148,12 @@ These shipped recently, newest last:
   list and Names and colours; achievements at the top of a game's page;
   the Achievements page with game cards; Cloud saves and Profiles laid out
   to fill the window.
+- **1.29** Save Safety Net (`app/safetynet.go`): in-folder saves of
+  Library games outside the stores are copied to
+  `safety-net\Lootnest\saves\<game>` (the cloud versions format, via a
+  local `core.Cloud`) when they change; restore from the game's page.
+  `Engine.keepVanished` keeps a profile's copy in backups before a save
+  would empty it.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -180,10 +186,11 @@ Build in this order, safety before new features:
    comes from PCGamingWiki (CC BY-NC-SA), so bundling it would bind a
    paid tier. Still open: the manifest's registry entries (saves in the
    Windows registry) aren't used.
-3. **Save Safety Net** for folder games: a snapshot when the version or
-   exe changes, the folder moves, or before uninstalling; find saves kept
-   inside the game folder (Ren'Py `game/saves`, RPG Maker `www/save`,
-   Unity).
+3. **Save Safety Net** for folder games. Done in 1.29: a copy whenever
+   in-folder saves change (Lootnest doesn't uninstall games, and Game
+   Mover moves the whole folder), and a notice when they're gone. Still
+   open: restore a profile's "kept" backup in one click (now it's Open
+   backups).
 4. **Achievement Doctor**: a read-only diagnosis of why a game shows no
    achievements (tool found, path, app id, empty file). Any edit, such as
    `account_name` per profile, only when asked. Never generate, ship or

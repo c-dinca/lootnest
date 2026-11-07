@@ -170,7 +170,7 @@ func Run(opt Options) error {
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		return a.cfg.PlayerName(id)
-	}}
+	}, Warn: func(title, text string) { a.notify(title, text) }}
 
 	cfg, first, err := a.store.LoadConfig()
 	if err != nil {
