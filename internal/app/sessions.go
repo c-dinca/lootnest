@@ -396,3 +396,24 @@ func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
 	}
 	a.emitSessions()
 }
+
+// apiCloseGame asks a running game to quit, as if its window was closed, so
+// it saves and exits the way it normally does. The watcher then finishes
+// the session as usual: the player's progress goes back to their profile.
+func (a *App) apiCloseGame(gameID string) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	g := cfg.Game(gameID)
+	if g == nil {
+		return errors.New("That game no longer exists.")
+	}
+	if !isRunning(g) {
+		return fmt.Errorf("%s isn't running. Lootnest finishes the session in a few seconds.", g.Name)
+	}
+	if win.CloseProcessWindows(procName(g)) == 0 {
+		return fmt.Errorf("Lootnest couldn't close %s. Quit it from the game's own menu; the progress is saved when it closes.", g.Name)
+	}
+	a.logf("Asked %s to close", g.Name)
+	return nil
+}

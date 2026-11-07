@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.1
+
+- **Close the game from Lootnest.** While a game runs, its page shows **Close the game**. Lootnest asks the game to quit, as if you closed its window. Once it closes, the player's progress goes back to their profile as usual. If the game has no window to close, Lootnest tells you to quit it from its own menu.
+- While a game runs, its play bar shows the player's colour instead of a spinner.
+
 ## 1.17.0
 
 The new look is complete, ending with the moment Lootnest is about: **who's playing**.
