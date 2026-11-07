@@ -300,15 +300,19 @@ func (e *Engine) ProfileFromSavePoint(root, id string, g *Game, playerID string)
 	if err := os.MkdirAll(dst, 0o755); err != nil {
 		return err
 	}
+	fail := func(err error) error {
+		_ = os.RemoveAll(dst)
+		return err
+	}
 	for _, l := range locs {
 		if have[l.ID] {
 			if err := Mirror(filepath.Join(dir, "files", l.ID), filepath.Join(dst, l.ID)); err != nil {
-				return err
+				return fail(err)
 			}
 		}
 	}
 	if err := os.WriteFile(filepath.Join(dst, initMarker), []byte(e.now().Format(time.RFC3339)), 0o644); err != nil {
-		return err
+		return fail(err)
 	}
 	e.logf("Started %s's files for %s from the save point %q", e.name(playerID), g.Name, p.Name)
 	return nil

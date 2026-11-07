@@ -2,6 +2,7 @@ package core
 
 import (
 	"archive/zip"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -82,6 +83,7 @@ func TestTrySaveRefusals(t *testing.T) {
 	f := trySaveFixture(t)
 	folder := filepath.Join(f.root, "Downloads", "x")
 	write(t, filepath.Join(folder, "a.txt"), "x")
+	write(t, filepath.Join(folder, "b.txt"), "y")
 	if err := f.eng.ProfileFromImport(f.cfg.Game("cs2"), "r1", "p1", "opt", folder); err == nil {
 		t.Fatal("a folder went into a location that is one file")
 	}
@@ -111,5 +113,94 @@ func TestStageZip(t *testing.T) {
 	}
 	if importRoot(got, filepath.Join(dir, "live")) != filepath.Join(got, "Saves") {
 		t.Fatal("importRoot should go into the archive's one folder")
+	}
+}
+
+func zipOf(t *testing.T, path string, files map[string]string) {
+	t.Helper()
+	out, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw := zip.NewWriter(out)
+	for name, body := range files {
+		w, _ := zw.Create(name)
+		_, _ = w.Write([]byte(body))
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	_ = out.Close()
+}
+
+// A zip with one file is that file: into a location that is one file, and
+// joining the person's files in a folder.
+func TestTrySaveArchiveOfOneFile(t *testing.T) {
+	f := trySaveFixture(t)
+	dir := t.TempDir()
+	zipOf(t, filepath.Join(dir, "opt.zip"), map[string]string{"Friend/opt.ini": "sens=9"})
+	staged, err := StageUpdate(filepath.Join(dir, "opt.zip"), filepath.Join(dir, "a"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.eng.ProfileFromImport(f.cfg.Game("cs2"), "r1", "p1", "opt", staged); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(f.eng.Store.ProfileDir("r1", "cs2"), "opt")) != "sens=9" {
+		t.Fatal("the one file should be the location")
+	}
+
+	zipOf(t, filepath.Join(dir, "slot.zip"), map[string]string{"slot2.sav": "friend slot"})
+	staged, err = StageUpdate(filepath.Join(dir, "slot.zip"), filepath.Join(dir, "b"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.eng.ProfileFromImport(f.cfg.Game("cs2"), "r2", "p2", "cfg", staged); err != nil {
+		t.Fatal(err)
+	}
+	cfg := filepath.Join(f.eng.Store.ProfileDir("r2", "cs2"), "cfg")
+	if read(t, filepath.Join(cfg, "video.txt")) != "p2 video" || read(t, filepath.Join(cfg, "slot2.sav")) != "friend slot" {
+		t.Fatal("the one file should join p2's files, not replace them")
+	}
+}
+
+// A live folder with slot folders: one folder in the import is a slot. A
+// wrapper around what the live folder has is still stepped through.
+func TestImportRootSlot(t *testing.T) {
+	for _, c := range []struct {
+		live, imp []string
+		want      string
+	}{
+		{[]string{"Slot_1/data.sav"}, []string{"Slot_3/data.sav"}, ""},
+		{[]string{"76561198000000000/ER0000.sl2"}, []string{"EldenRing/76561198000000000/ER0000.sl2"}, "EldenRing"},
+		{[]string{"save1.sav", "backup/old.sav"}, []string{"MySave/save1.sav", "MySave/save2.sav"}, "MySave"},
+	} {
+		dir := t.TempDir()
+		live, src := filepath.Join(dir, "live"), filepath.Join(dir, "import")
+		for _, p := range c.live {
+			write(t, filepath.Join(live, p), "mine")
+		}
+		for _, p := range c.imp {
+			write(t, filepath.Join(src, p), "friend")
+		}
+		if got := importRoot(src, live); got != filepath.Join(src, c.want) {
+			t.Errorf("live %v, import %v: importRoot = %s", c.live, c.imp, got)
+		}
+	}
+}
+
+func TestStageMax(t *testing.T) {
+	dir := t.TempDir()
+	zp := filepath.Join(dir, "big.zip")
+	zipOf(t, zp, map[string]string{"save.dat": "more than ten bytes"})
+	out := filepath.Join(dir, "staged")
+	if _, err := StageUpdateMax(zp, out, 10); !errors.Is(err, ErrTooBig) {
+		t.Fatalf("err %v, want ErrTooBig", err)
+	}
+	if _, err := os.Stat(out); err == nil {
+		t.Fatal("a refused archive left files behind")
+	}
+	if _, err := StageUpdateMax(zp, out, 1<<20); err != nil {
+		t.Fatal(err)
 	}
 }

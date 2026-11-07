@@ -2013,7 +2013,7 @@
       <div class="try-pick"><button class="ln-button ln-button--secondary ln-button--sm" data-action="try-browse" data-kind="trySaveDir">Choose a folder</button>
         <button class="ln-button ln-button--ghost ln-button--sm" data-action="try-browse" data-kind="trySaveFile">Choose a file or archive</button></div>
       ${chosen}
-      <label class="try-field"><span>The run's name</span><input type="text" class="ln-input" id="try-name" maxlength="32" placeholder="${esc(per.name)} trying a save" value="${esc(D.name || "")}"></label>
+      <label class="try-field"><span>The run's name</span><input type="text" class="ln-input" id="try-name" maxlength="24" placeholder="${esc(per.name)} trying" value="${esc(D.name || "")}"></label>
       <div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
       <button class="btn primary" data-action="try-go" ${D.busy || !D.src ? "disabled" : ""}>${D.busy ? "Starting the run" : "Start the run"}</button></div></div></div>`;
   }

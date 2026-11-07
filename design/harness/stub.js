@@ -289,7 +289,7 @@
       const base = PLAYERS.find((p) => p.id === from) || PLAYERS[0];
       const per = PLAYERS.find((p) => p.id === base.of) || base;
       const id = "p" + (Date.now() % 100000);
-      PLAYERS.push({ id, name: name || per.name + " trying a save", color: per.color, of: per.id });
+      PLAYERS.push({ id, name: name || [...per.name].slice(0, 17).join("").trim() + " trying", color: per.color, of: per.id });
       (profiles[gid] = profiles[gid] || []).push(id);
       return ok(id);
     },
