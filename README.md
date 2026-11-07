@@ -20,7 +20,7 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 
 **Library**
 - Every game on the PC in one grid, with search and filters: Steam, Epic, GOG, game folders on every drive, and your shortcuts.
-- Covers come from Steam's own cache on your PC. Covers for games outside Steam can be downloaded if you turn that on.
+- Covers come from Steam's own cache on your PC. For the rest, turn on **Download covers and artwork**: covers, wide art and logos from the Steam store, and from SteamGridDB for any other game if you add your free API key.
 - The Library opens on the game you played last, in its own artwork, with a Play button for each player.
 - Every game has its own page: its art, who has a profile, whose files are loaded, and everything else about it. Rename it, add launch options, open its folder, put a shortcut on the desktop, or have Steam check its files. None of this needs profiles.
 - Games without a cover show their own icon, read from the game on your PC.
@@ -66,7 +66,8 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 | --- | --- | --- |
 | **Check for updates** | When you press it, or once a day if **Check for updates automatically** is on (off by default) | A request for the latest Lootnest version, to `api.github.com` |
 | **Update now** | When you press it | Downloads the installer from the GitHub release, and checks its SHA-256 before running it |
-| **Download covers for games outside Steam** | Only if you turn it on (off by default) | The game's name, to `store.steampowered.com`; the cover comes from Steam's image server and is saved on your PC |
+| **Download covers and artwork** | Only if you turn it on (off by default) | The game's name, to `store.steampowered.com`; covers, wide art and logos come from Steam's image server and are saved on your PC |
+| **SteamGridDB API key** (optional, in Settings) | With covers on, for games the Steam store doesn't know | The game's name or Steam id and your key, to `www.steamgriddb.com`; images come from its CDN and are saved on your PC |
 | **Show game updates and news** | Only if you turn it on (off by default), when you open a game's page; each feed is read at most every 6 hours | The game's Steam app id to `api.steampowered.com` (for a game outside Steam, first its name to `store.steampowered.com`); an update's pictures load from Steam's image server when you open it |
 
 ## How profiles work

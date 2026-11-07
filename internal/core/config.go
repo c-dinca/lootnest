@@ -79,6 +79,10 @@ type Settings struct {
 	// GameNews shows each game's latest updates and announcements from
 	// Steam's news feed on its page. Off by default.
 	GameNews bool `json:"gameNews"`
+	// GridDBKey is the user's own SteamGridDB API key (optional): with
+	// DownloadCovers on, art for games the Steam store doesn't know comes
+	// from SteamGridDB.
+	GridDBKey string `json:"gridDbKey,omitempty"`
 }
 
 type Config struct {

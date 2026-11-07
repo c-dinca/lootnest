@@ -106,9 +106,10 @@ func (a *App) apiCover(appID int, name, key string) string {
 	coverFlight[key] = true
 	coverMu.Unlock()
 	if !busy {
+		grid := a.grid()
 		go func() {
 			defer func() { coverMu.Lock(); delete(coverFlight, key); coverMu.Unlock() }()
-			p, err := core.DownloadedCover(fetchURL, dir, name, appID)
+			p, err := core.DownloadedArt(fetchURL, grid, dir, name, appID, core.ArtCover)
 			if err != nil {
 				a.logf("Couldn't download the cover for %s: %v", name, err)
 				return
@@ -195,31 +196,101 @@ func modTime(p string) time.Time {
 
 var (
 	artMu    sync.Mutex
-	artCache = map[string]string{} // "<kind>:<appid>" -> data: URL, or ""
+	artCache = map[string]string{} // "<kind>:<appid>" -> data: URL from Steam's cache, or ""
 )
 
-// apiArt returns a Steam game's wide banner ("hero") or transparent logo
-// ("logo") from Steam's cache on this PC, as a data: URL, or "".
-func (a *App) apiArt(appID int, kind string) string {
-	k := fmt.Sprintf("%s:%d", kind, appID)
-	artMu.Lock()
-	c, ok := artCache[k]
-	artMu.Unlock()
-	if ok {
-		return c
+// fetchAuth is fetchURL with an "Authorization: Bearer" header (SteamGridDB).
+func fetchAuth(u, bearer string) ([]byte, error) {
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
 	}
-	p := ""
-	switch kind {
-	case "hero":
-		p = core.SteamHero(a.env.SteamPath, appID)
-	case "logo":
-		p = core.SteamLogo(a.env.SteamPath, appID)
+	req.Header.Set("User-Agent", Name+"/"+Version)
+	req.Header.Set("Authorization", "Bearer "+bearer)
+	resp, err := coverHTTP.Do(req)
+	if err != nil {
+		return nil, err
 	}
-	if p != "" {
-		c = dataURL(p)
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	case http.StatusNotFound:
+		return nil, nil
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return nil, errors.New("SteamGridDB didn't accept the API key in Settings")
 	}
-	artMu.Lock()
-	artCache[k] = c
-	artMu.Unlock()
-	return c
+	return nil, fmt.Errorf("%s answered %s", req.URL.Host, resp.Status)
+}
+
+// grid is SteamGridDB with the user's key, or nil without one.
+func (a *App) grid() *core.GridDB {
+	a.mu.Lock()
+	key := a.cfg.Settings.GridDBKey
+	a.mu.Unlock()
+	if strings.TrimSpace(key) == "" {
+		return nil
+	}
+	return &core.GridDB{Key: key, Fetch: fetchAuth}
+}
+
+// apiArt returns a game's wide banner ("hero") or transparent logo ("logo")
+// as a data: URL, or "". A Steam game's comes from Steam's cache on this PC.
+// Only with "Download covers and artwork" on, missing art is downloaded in
+// the background and arrives as an "art" event for "<kind>:<key>".
+func (a *App) apiArt(appID int, name, key, kind string) string {
+	if kind != core.ArtHero && kind != core.ArtLogo {
+		return ""
+	}
+	if appID > 0 {
+		k := fmt.Sprintf("%s:%d", kind, appID)
+		artMu.Lock()
+		c, ok := artCache[k]
+		artMu.Unlock()
+		if !ok {
+			p := core.SteamHero(a.env.SteamPath, appID)
+			if kind == core.ArtLogo {
+				p = core.SteamLogo(a.env.SteamPath, appID)
+			}
+			if p != "" {
+				c = dataURL(p)
+			}
+			artMu.Lock()
+			artCache[k] = c
+			artMu.Unlock()
+		}
+		if c != "" {
+			return c
+		}
+	}
+	a.mu.Lock()
+	on := a.cfg.Settings.DownloadCovers
+	a.mu.Unlock()
+	if !on {
+		return ""
+	}
+	dir := coversDir()
+	if p := core.SavedArt(dir, name, appID, kind); p != "" {
+		return dataURL(p)
+	}
+	flight := kind + ":" + key
+	coverMu.Lock()
+	busy := coverFlight[flight]
+	coverFlight[flight] = true
+	coverMu.Unlock()
+	if !busy {
+		grid := a.grid()
+		go func() {
+			defer func() { coverMu.Lock(); delete(coverFlight, flight); coverMu.Unlock() }()
+			p, err := core.DownloadedArt(fetchURL, grid, dir, name, appID, kind)
+			if err != nil {
+				a.logf("Couldn't download the %s for %s: %v", kind, name, err)
+				return
+			}
+			if p != "" {
+				a.emit("art", map[string]any{"key": flight, "url": dataURL(p)})
+			}
+		}()
+	}
+	return ""
 }
