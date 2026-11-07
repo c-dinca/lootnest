@@ -30,9 +30,19 @@ func TestNewerVersion(t *testing.T) {
 func TestParseRelease(t *testing.T) {
 	r, err := ParseRelease([]byte(`{"tag_name":"v1.4.0","html_url":"https://github.com/c-dinca/lootnest/releases/tag/v1.4.0","draft":false,"prerelease":false,
 		"assets":[{"name":"Lootnest.exe","browser_download_url":"x","size":1},
-		{"name":"Lootnest-Setup.exe","browser_download_url":"https://github.com/c-dinca/lootnest/releases/download/v1.4.0/Lootnest-Setup.exe","size":7287808,"digest":"sha256:ABCDEF"}]}`))
-	if err != nil || r.Version != "1.4.0" || r.Size != 7287808 || r.SHA256 != "abcdef" || r.SetupURL == "x" || r.Page == "" {
+		{"name":"Lootnest-Setup.exe","browser_download_url":"https://github.com/c-dinca/lootnest/releases/download/v1.4.0/Lootnest-Setup.exe","size":7287808,"digest":"sha256:ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"}]}`))
+	if err != nil || r.Version != "1.4.0" || r.Size != 7287808 || r.SHA256 != "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" || r.SetupURL == "x" || r.Page == "" {
 		t.Fatalf("%+v %v", r, err)
+	}
+	// An installer elsewhere, or without a checksum, is never offered.
+	for _, asset := range []string{
+		`{"name":"Lootnest-Setup.exe","browser_download_url":"https://evil.example/Lootnest-Setup.exe","size":5,"digest":"sha256:ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"}`,
+		`{"name":"Lootnest-Setup.exe","browser_download_url":"https://github.com/c-dinca/lootnest/releases/download/v1.4.0/Lootnest-Setup.exe","size":5}`,
+	} {
+		r, err := ParseRelease([]byte(`{"tag_name":"v1.4.0","assets":[` + asset + `]}`))
+		if err != nil || r.SetupURL != "" {
+			t.Fatalf("unsafe installer offered: %+v %v", r, err)
+		}
 	}
 	if _, err := ParseRelease([]byte(`{"tag_name":"v2.0.0","prerelease":true}`)); err == nil {
 		t.Fatal("pre-releases aren't offered")

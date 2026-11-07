@@ -381,6 +381,11 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 		return errors.New("The start wait must be between 30 and 1800 seconds.")
 	}
 	s.SteamAccountID = strings.TrimSpace(s.SteamAccountID)
+	key, err := protectSecret(s.GridDBKey)
+	if err != nil {
+		return fmt.Errorf("couldn't save the SteamGridDB key safely: %w", err)
+	}
+	s.GridDBKey = key
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()

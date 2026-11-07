@@ -29,6 +29,16 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      # Known vulnerabilities in Go or the code Lootnest uses fail the build,
+      # Windows code included. go.mod's toolchain line picks the Go release.
+      - name: Check for known vulnerabilities
+        run: |
+          go version
+          # Built with the same Go as Lootnest: an older one can't read its stdlib.
+          GOTOOLCHAIN="$(go env GOVERSION)" go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          GOOS=windows "$(go env GOPATH)/bin/govulncheck" ./...
+          "$(go env GOPATH)/bin/govulncheck" ./internal/core/...
+
       - name: Build
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then

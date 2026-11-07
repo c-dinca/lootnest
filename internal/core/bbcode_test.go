@@ -61,3 +61,19 @@ func TestNewsSummaryAndImage(t *testing.T) {
 		t.Errorf("first image: %q", img)
 	}
 }
+
+func TestAllowedPageRequest(t *testing.T) {
+	for u, want := range map[string]bool{
+		"about:blank":                true,
+		"data:image/png;base64,AAAA": true,
+		"https://clan.akamai.steamstatic.com/images/1/a.png": true,
+		"https://evil.example/x.js":                          false,
+		"http://clan.akamai.steamstatic.com/images/1/a.png":  false,
+		"file:///C:/Windows/win.ini":                         false,
+		"https://steamstatic.com.evil.example/a.png":         false,
+	} {
+		if got := AllowedPageRequest(u); got != want {
+			t.Errorf("AllowedPageRequest(%q) = %v", u, got)
+		}
+	}
+}

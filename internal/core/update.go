@@ -22,6 +22,11 @@ const LatestReleaseURL = "https://api.github.com/repos/c-dinca/lootnest/releases
 // SetupAsset is the release file the in-app update downloads.
 const SetupAsset = "Lootnest-Setup.exe"
 
+// releaseDownloads is where Lootnest's own release files live. An installer
+// anywhere else, or one without a SHA-256 to check it against, is never
+// offered, whatever the release says.
+const releaseDownloads = "https://github.com/c-dinca/lootnest/releases/download/"
+
 type Release struct {
 	Version  string `json:"version"` // "1.4.0"
 	Page     string `json:"page"`    // the release's web page ("What's new")
@@ -53,10 +58,11 @@ func ParseRelease(b []byte) (Release, error) {
 	rel := Release{Version: strings.TrimPrefix(r.Tag, "v"), Page: r.Page}
 	for _, a := range r.Assets {
 		if strings.EqualFold(a.Name, SetupAsset) {
-			rel.SetupURL, rel.Size = a.URL, a.Size
-			if d, ok := strings.CutPrefix(a.Digest, "sha256:"); ok {
-				rel.SHA256 = strings.ToLower(d)
+			d, ok := strings.CutPrefix(a.Digest, "sha256:")
+			if !ok || len(d) != 64 || !strings.HasPrefix(a.URL, releaseDownloads) || a.Size <= 0 {
+				continue
 			}
+			rel.SetupURL, rel.Size, rel.SHA256 = a.URL, a.Size, strings.ToLower(d)
 		}
 	}
 	return rel, nil
