@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.16.8
+
+The rest in the new look: **Add game**, the first-run **Who shares this PC?**, the profile editor, confirmations and the right-click menu.
+- Dialogs are frosted glass over a dimmed window.
+- Buttons, text fields, menus and tabs match the rest of Lootnest.
+- Steam game choices and options use small corners and hairline edges.
+- In the first-run dialog, each player's colours stay on one line.
+
 ## 1.16.7
 
 Settings in the new look:

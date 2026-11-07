@@ -173,4 +173,5 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 | Players and a player's page | On the system (1.16.5) |
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
 | Settings | On the system (1.16.7) |
-| Add game, first run, dialogs | Old layouts on the new tokens (the old variable names point at system tokens), Step 5 |
+| Dialogs (Add game, first run, the profile editor, confirmations), the right-click menu, older buttons and form controls | On the system (1.16.8) |
+| The "Who's playing?" picker | Old layout on the new tokens; redesigned with the swap moment in Step 6 |
