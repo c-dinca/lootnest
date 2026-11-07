@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.14.1
+
+- Fixed: a new version could go unnoticed for hours. With **Check for updates automatically** on, Lootnest now checks every hour instead of every 6, and again whenever you open its window, so a new version shows within minutes.
+- A new version now shows as **Update to …** in the sidebar on every page, not only on Home, and a short message says when one is found.
+
 ## 1.14.0
 
 - **Cloud saves**, a new page under **Library**: every player's saves for every game, in your own cloud.
