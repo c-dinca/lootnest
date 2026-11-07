@@ -128,6 +128,7 @@
       if (STATE === "loading") return ok();
       const f = found.find((x) => x.key === key) || {};
       const info = { key, locations: [], versions: [], source: "" };
+      if (/phantom blade/i.test(f.name || "")) info.local = [{ id: "n1", created: iso(3 * h), computer: "COCONUT", size: 2.3e6 }, { id: "n2", created: iso(2 * d), computer: "COCONUT", size: 2.1e6 }];
       if (f.source === "steam") info.off = "steam";
       else if (!CLOUD) info.off = "nocloud";
       else if (STATE === "error") info.error = "The cloud folder (C:\\Users\\cris\\OneDrive) isn't there. Is the drive connected, and the cloud app running?";
@@ -178,7 +179,7 @@
   // Functions the UI binds by name but the fixtures don't cover.
   ["ps_play", "ps_load", "ps_steamPick", "ps_savePlayers", "ps_saveSettings", "ps_saveGame", "ps_deleteGame", "ps_addFound", "ps_scan", "ps_open",
     "ps_shortcut", "ps_foundShortcut", "ps_launchFound", "ps_setShelf", "ps_syncNow", "ps_syncResolve", "ps_backupNow", "ps_setBackup", "ps_checkUpdate",
-    "ps_setGameSaves", "ps_gameSaveNow", "ps_gameSaveRestore", "ps_restoreOpen", "ps_restoreApply", "ps_restoreCancel", "ps_exportPlayer", "ps_importApply",
+    "ps_setGameSaves", "ps_gameSaveNow", "ps_gameSaveRestore", "ps_gameSaveRestoreLocal", "ps_restoreOpen", "ps_restoreApply", "ps_restoreCancel", "ps_exportPlayer", "ps_importApply",
     "ps_inspectSteam", "ps_inspectExe", "ps_checkPath", "ps_cancelRequest", "ps_ignoreFound", "ps_foundGame", "ps_addLibraryGame", "ps_saveLibraryPref",
     "ps_setAvatar", "ps_removeAvatar", "ps_setBanner", "ps_removeBanner", "ps_setBackupPassword", "ps_moveInfo", "ps_moveGame", "ps_steamVerify",
     "ps_openGameFolder", "ps_applyHooks", "ps_fixBlocked", "ps_copy", "ps_installUpdate", "ps_quit"].forEach((k) => { if (!window[k]) window[k] = all[k]; });

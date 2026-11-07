@@ -169,3 +169,43 @@ func (c *Cloud) RestoreGameVersion(game, id string, locs []SaveLocation, resolve
 	paths, at := locationsAsPaths(all)
 	return readSaves(file, c.Key, paths, at, tmp)
 }
+
+// InFolder keeps the locations inside dir, a game's own folder: the saves a
+// reinstall or an update that replaces the folder would take with it.
+func InFolder(locs []SaveLocation, dir string) []SaveLocation {
+	if dir == "" {
+		return nil
+	}
+	var out []SaveLocation
+	for _, l := range locs {
+		if isWithin(l.Resolved, dir) && !samePath(l.Resolved, dir) {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// engineSaveDirs are where common engines keep saves inside the game's own
+// folder: Ren'Py, RPG Maker MV, RPG Maker VX Ace and MZ, Unreal builds run
+// from their folder, and the usual names.
+var engineSaveDirs = []string{"game/saves", "www/save", "save", "saves", "savegames", "savedata", "*/Saved/SaveGames"}
+
+// FolderSaves finds save folders inside a game's own folder by those names.
+func (e *Env) FolderSaves(dir string) []SaveLocation {
+	if dir == "" || !filepath.IsAbs(dir) {
+		return nil
+	}
+	var out []SaveLocation
+	seen := map[string]bool{}
+	for _, rel := range engineSaveDirs {
+		for _, p := range globAll(filepath.Join(dir, filepath.FromSlash(rel))) {
+			st, err := os.Stat(p)
+			if err != nil || !st.IsDir() || seen[strings.ToLower(p)] || e.CheckSafe(p) != nil {
+				continue
+			}
+			seen[strings.ToLower(p)] = true
+			out = append(out, SaveLocation{Path: e.Tokenize(p), Resolved: p, Size: Size(p)})
+		}
+	}
+	return out
+}

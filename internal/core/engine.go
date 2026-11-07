@@ -34,6 +34,9 @@ type Engine struct {
 	Now   func() time.Time
 	// Name turns a player ID into a display name for the log.
 	Name func(playerID string) string
+	// Warn, when set, tells the user about something they may need to act
+	// on (a notification in the app).
+	Warn func(title, text string)
 }
 
 func (e *Engine) name(id string) string {
@@ -113,6 +116,9 @@ func (e *Engine) saveLive(g *Game, playerID string, rs []resolved) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
+	if err := e.keepVanished(g, playerID, rs); err != nil {
+		return err
+	}
 	for _, r := range rs {
 		if err := Mirror(r.live, filepath.Join(dir, r.entry.ID)); err != nil {
 			return err
@@ -123,6 +129,66 @@ func (e *Engine) saveLive(g *Game, playerID string, rs []resolved) error {
 	}
 	e.logf("Saved %s's files for %s", e.name(playerID), g.Name)
 	return nil
+}
+
+// keepVanished guards against saving "nothing" over a profile: when a
+// location the profile has files for has none on the PC any more (the game
+// was reinstalled, updated by replacing its folder, or its saves deleted),
+// the profile's copy goes to the game's backups first, as a backup owned
+// by the player, so it can be put back.
+func (e *Engine) keepVanished(g *Game, playerID string, rs []resolved) error {
+	dir := e.Store.ProfileDir(playerID, g.ID)
+	var gone []resolved
+	for _, r := range rs {
+		if HasFiles(filepath.Join(dir, r.entry.ID)) && !HasFiles(r.live) {
+			gone = append(gone, r)
+		}
+	}
+	if len(gone) == 0 {
+		return nil
+	}
+	root := filepath.Join(e.Store.BackupsDir(), g.ID)
+	stamp := e.now().Format("20060102-150405")
+	keep := filepath.Join(root, stamp+"-kept")
+	for n := 2; exists(keep); n++ {
+		keep = filepath.Join(root, fmt.Sprintf("%s-kept-%d", stamp, n))
+	}
+	for _, r := range gone {
+		if err := Mirror(filepath.Join(dir, r.entry.ID), filepath.Join(keep, r.entry.ID)); err != nil {
+			return fmt.Errorf("couldn't keep %s's copy of %s first: %w", e.name(playerID), r.entry.Path, err)
+		}
+	}
+	_ = os.WriteFile(filepath.Join(keep, "owner.txt"), []byte(playerID), 0o644)
+	e.logf("%s's files in %s were gone from the PC; their last copy is kept in %s", e.name(playerID), gone[0].live, keep)
+	if e.Warn != nil {
+		e.Warn(fmt.Sprintf("%s's %s saves were gone from the PC", e.name(playerID), g.Name),
+			"Lootnest kept their last copy in the game's backups before saving. If the game was reinstalled or updated, open backups on its page to put it back.")
+	}
+	return nil
+}
+
+// HasFiles reports whether p is a file, or a folder with a file somewhere
+// inside it.
+func HasFiles(p string) bool {
+	st, err := os.Stat(p)
+	if err != nil {
+		return false
+	}
+	if !st.IsDir() {
+		return true
+	}
+	found := false
+	_ = filepath.WalkDir(p, func(_ string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.Type().IsRegular() {
+			found = true
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	return found
 }
 
 // copyProfile starts to's profile for a game as a copy of from's.

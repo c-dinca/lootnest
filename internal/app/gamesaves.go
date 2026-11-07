@@ -248,6 +248,7 @@ func (a *App) watchGameSaves() {
 			a.logf("Save locations list: %v", err)
 		}
 		a.backUpChangedGames()
+		a.safetyNet()
 		time.Sleep(gameSavesEvery)
 	}
 }
@@ -289,14 +290,16 @@ type GameSavesInfo struct {
 	Locations []core.SaveLocation `json:"locations"`
 	Source    string              `json:"source"`
 	Versions  []core.SaveVersion  `json:"versions"`
-	Error     string              `json:"error,omitempty"`
-	Off       string              `json:"off,omitempty"` // why there are none: "steam", "nocloud", "disabled", "locked"
+	// Local are the Save Safety Net's copies on this PC (safetynet.go).
+	Local []core.SaveVersion `json:"local"`
+	Error string             `json:"error,omitempty"`
+	Off   string             `json:"off,omitempty"` // why there are none: "steam", "nocloud", "disabled", "locked"
 }
 
 // apiGameSaves sends a Library game's cloud saves as a "gameSaves" event.
 func (a *App) apiGameSaves(key string) {
 	go func() {
-		info := GameSavesInfo{Key: key, Locations: []core.SaveLocation{}, Versions: []core.SaveVersion{}}
+		info := GameSavesInfo{Key: key, Locations: []core.SaveLocation{}, Versions: []core.SaveVersion{}, Local: []core.SaveVersion{}}
 		defer func() { a.emit("gameSaves", map[string]any{"info": info}) }()
 		f, ok := a.foundByKey(key)
 		if !ok {
@@ -309,6 +312,7 @@ func (a *App) apiGameSaves(key string) {
 		}
 		gl := a.savesOf(f)
 		info.Locations, info.Source = append(info.Locations, gl.Locs...), gl.Source
+		info.Local = append(info.Local, netStore().GameVersions(gameSavesKey(f))...)
 		a.mu.Lock()
 		s := a.cfg.Settings
 		a.mu.Unlock()

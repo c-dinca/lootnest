@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.29.0
+
+- **A safety net for games that keep their saves in their own folder.** Many games outside the stores do, such as Ren'Py and RPG Maker games, so reinstalling one, or updating it by replacing its folder, used to take the saves with it. Lootnest now keeps a copy of those saves on this PC whenever they change and the game is closed, the last 5 of them.
+  - They're on the game's page, under **Copies kept by Lootnest**. **Restore** puts one back; the saves there before are kept in Lootnest's backups first.
+  - If a game's saves are gone from its folder, Lootnest tells you once and keeps more copies from then on, so the ones from before stay.
+  - Lootnest finds them in the save locations you chose, the ones PCGamingWiki lists, and folders such as `game\saves`, `www\save` and `Saved\SaveGames` inside the game's folder.
+  - It's always on. Nothing is sent anywhere, and saves over 1 GB aren't copied.
+- **A profile is never emptied by a reinstall.** If a game's files are gone from the PC when Lootnest saves a session (the game was reinstalled, or its saves deleted), the profile's last copy is kept in the game's backups first, as that profile's, and you get a notification.
+
 ## 1.28.0
 
 - **Racing Red buttons.** The main button on each page, such as **Save**, **Sync now** or **Play** for a game without profiles, is now Racing Red with bold dark text. **Play as** someone keeps that profile's colour.

@@ -74,6 +74,7 @@
     gameSaves: (key) => call("ps_gameSaves", key),
     gameSaveNow: (key) => call("ps_gameSaveNow", key),
     gameSaveRestore: (key, id) => call("ps_gameSaveRestore", key, id),
+    gameSaveRestoreLocal: (key, id) => call("ps_gameSaveRestoreLocal", key, id),
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
@@ -2002,11 +2003,18 @@
     if (!G) { if (!gsAsked.has(it.id)) { gsAsked.add(it.id); api.gameSaves(it.id).catch(() => {}); } return `<section class="gpage-block">${head}${lnInline("", "Looking for its saves")}</section>`; }
     if (G.off === "steam") return "";
     if (G.error) return `<section class="gpage-block">${head}${lnInline("error", esc(G.error))}</section>`;
-    if (G.off === "nocloud") return `<section class="gpage-block">${head}<p>Keep ${esc(possessive(it.name))} saves in your own cloud, with every version to go back to.</p>
-      <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="nav" data-view="cloud">Set up Cloud saves</button></div></section>`;
-    if (G.off === "locked") return `<section class="gpage-block">${head}<p>The cloud folder has a password. Enter it on <b>Cloud saves</b>.</p></section>`;
-    const s = cfg().settings;
     const btn = (cls, attrs, label) => `<button class="ln-button ${cls} ln-button--sm" ${attrs}>${label}</button>`;
+    const when = (v) => esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }));
+    // The Save Safety Net's copies of saves kept inside the game's folder.
+    const lv = G.local || [];
+    const local = lv.length ? `<div class="gpage-sub">${gpHead("Copies kept by Lootnest")}<dl class="ln-facts">${lv.map((v, i) => `<div><dt><span><b>${when(v)}</b>
+        <span class="gpage-hint">${esc(fmtBytes(v.size))}${i === 0 ? ", newest" : ""}</span></span></dt>
+        <dd>${btn("ln-button--ghost", `data-action="gs-restore" data-local="1" data-key="${esc(it.id)}" data-id="${esc(v.id)}" data-when="${esc(v.created)}" ${G.busy ? "disabled" : ""}`, "Restore")}</dd></div>`).join("")}</dl>
+      <p class="gpage-hint">${esc(it.name)} keeps saves inside its own folder, so reinstalling or updating it could take them. Lootnest copies them here when they change and the game is closed.</p></div>` : "";
+    if (G.off === "nocloud") return `<section class="gpage-block">${head}<p>Keep ${esc(possessive(it.name))} saves in your own cloud, with every version to go back to.</p>
+      <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="nav" data-view="cloud">Set up Cloud saves</button></div>${local}</section>`;
+    if (G.off === "locked") return `<section class="gpage-block">${head}<p>The cloud folder has a password. Enter it on <b>Cloud saves</b>.</p>${local}</section>`;
+    const s = cfg().settings;
     const choose = `<div class="gpage-actions">${btn("ln-button--secondary", `data-action="gs-add" data-key="${esc(it.id)}" data-kind="folder"`, G.locations.length ? "Add a folder" : "Choose the save folder")}
       ${btn("ln-button--ghost", `data-action="gs-add" data-key="${esc(it.id)}" data-kind="file"`, G.locations.length ? "Add a file" : "Choose a save file")}
       ${btn("ln-button--ghost", `data-action="gs-pcgw" data-name="${esc(it.name)}"`, "Look it up on PCGamingWiki")}</div>`;
@@ -2033,7 +2041,7 @@
         : `<p class="gpage-hint">No versions yet.${G.off === "disabled" ? "" : " One is made when the saves change and the game is closed."}</p>`}
       ${G.off === "disabled" ? `<p class="gpage-hint">Automatic versions are off on <b>Cloud saves</b>.</p>` : ""}
       ${G.locations.length ? `<div class="gpage-actions">${G.busy ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Saving</button>` : btn("ln-button--secondary", `data-action="gs-now" data-key="${esc(it.id)}"`, "Back up now")}</div>` : ""}</div>` : "";
-    return `<section class="gpage-block">${head}${where}${inCloud}${list}</section>`;
+    return `<section class="gpage-block">${head}${where}${inCloud}${list}${local}</section>`;
   }
 
   // "Saved yesterday, 24 MB": when the game last wrote this player's
@@ -2659,11 +2667,14 @@
     },
     async "gs-restore"(el) {
       const when = new Date(el.dataset.when).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-      const ok = await confirmDialog({ title: "Restore these saves?", body: `The saves from ${when} on ${el.dataset.pc} replace the ones on this PC. The saves here now are kept in Lootnest's backups first.`, ok: "Restore" });
+      const local = !!el.dataset.local;
+      const body = local ? `The copy from ${when} goes back into the game's folder, over the saves there now. Those are kept in Lootnest's backups first.`
+        : `The saves from ${when} on ${el.dataset.pc} replace the ones on this PC. The saves here now are kept in Lootnest's backups first.`;
+      const ok = await confirmDialog({ title: "Restore these saves?", body, ok: "Restore" });
       if (!ok) return;
       const G = S.gsaves[el.dataset.key];
       if (G) G.busy = true; render();
-      try { await api.gameSaveRestore(el.dataset.key, el.dataset.id); } catch (e) { if (G) G.busy = false; toast(errText(e), "error"); render(); }
+      try { await (local ? api.gameSaveRestoreLocal : api.gameSaveRestore)(el.dataset.key, el.dataset.id); } catch (e) { if (G) G.busy = false; toast(errText(e), "error"); render(); }
     },
     async "savedb-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));

@@ -171,3 +171,39 @@ func TestMirrorRefusesADamagedCopy(t *testing.T) {
 		t.Fatal("the damaged copy should be cleaned up")
 	}
 }
+
+func TestVanishedSavesAreKept(t *testing.T) {
+	f := twoProfiles(t) // p1's files in place
+	var warned string
+	f.eng.Warn = func(title, _ string) { warned = title }
+	before := len(f.eng.Backups("cs2"))
+
+	// The game is reinstalled: its settings file is gone, the folder empty.
+	_ = os.Remove(f.optFile())
+	_ = os.Remove(f.cfgFile())
+	if err := f.eng.FinishSession(f.cfg, "cs2", "p1"); err != nil {
+		t.Fatal(err)
+	}
+	bs := f.eng.Backups("cs2")
+	if len(bs) != before+1 || bs[0].Owner != "p1" {
+		t.Fatalf("p1's last copy should be kept as p1's backup: %+v", bs)
+	}
+	if read(t, filepath.Join(bs[0].Dir, "opt")) != "p1 opt" || read(t, filepath.Join(bs[0].Dir, "cfg", "video.txt")) != "p1 cfg" {
+		t.Fatal("the kept copy should hold p1's files")
+	}
+	if warned == "" {
+		t.Fatal("the user should be told")
+	}
+
+	// Once the profile is empty too, nothing more is kept.
+	warned = ""
+	if err := f.eng.FinishSession(f.cfg, "cs2", "p1"); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.eng.Backups("cs2")) != before+1 || warned != "" {
+		t.Fatal("an empty profile has nothing to keep")
+	}
+	if !HasFiles(bs[0].Dir) || HasFiles(filepath.Join(f.root, "nope")) {
+		t.Fatal("HasFiles")
+	}
+}
