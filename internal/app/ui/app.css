@@ -972,3 +972,12 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-game-name { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
 .ach-game-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-14); font-weight: 650; }
 .ach-game-num { text-align: right; font-size: var(--fs-13); color: var(--fg-2); }
+.ach-ms .ln-section-head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
+.ach-ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.ach-ms-grid li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-4); background: var(--glass-panel); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
+.ach-ms-grid b { display: block; font-size: var(--fs-14); font-weight: 650; }
+.ach-ms-grid div > span:not(.ach-bar) { display: block; margin-top: 2px; font-size: var(--fs-12); color: var(--fg-2); }
+.ach-ms-grid .ach-bar { display: block; margin-top: var(--space-2); }
+.ach-ms-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-ctl); background: var(--glass-ctl-active); color: var(--fg-3); }
+.ach-ms-grid li.done .ach-ms-icon { background: var(--accent-wash); color: var(--accent); }
+.ach-ms-grid li:not(.done) b { color: var(--fg-2); }
