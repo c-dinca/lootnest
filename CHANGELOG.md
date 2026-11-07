@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.51.0
+
+- **Lootnest starts with one profile: yours.** It's named after your Windows account, and there's no question about who uses the PC. Rename it, or add someone, in Profiles. Sharing the PC? **Add someone else** is on the first screen too.
+- **Runs, for everyone.** A game's page has **New run**: another playthrough of the game with its own saves and settings, such as "Cristian hardcore" or a new game+. Start it from nothing or from a copy of your saves; yours stay as they are. Switch between your runs from the game's page.
+- **When it's just you**, Who's here is gone from the sidebar and Play needs no choice. It comes back when you add someone.
+- A game without profiles says **Keep runs** instead of asking who plays it.
+
 ## 1.50.0
 
 - **Put back the files from before any swap.** A copy is made before every swap; now you can use them. **Manage, Copies before swaps** (or **See the copies** under the Play bar) lists them, newest first, with whose files each holds.

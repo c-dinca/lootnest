@@ -178,6 +178,14 @@ func Run(opt Options) error {
 		a.loadErr = err.Error()
 		a.logf("ERROR %v", err)
 	}
+	if first && len(cfg.Players) > 1 {
+		// One profile to start with, yours, named as you are in Windows:
+		// add someone else, or runs of your own, whenever you like.
+		cfg.Players = cfg.Players[:1]
+		if n := windowsUserName(); n != "" {
+			cfg.Players[0].Name = n
+		}
+	}
 	a.cfg, a.firstRun = cfg, first
 	a.pending = opt.LaunchGame
 	a.logf("Lootnest %s started (steam: %q)", Version, a.env.SteamPath)
@@ -524,3 +532,18 @@ func (a *App) logf(format string, args ...any) {
 }
 
 func dirOf(p string) string { return filepath.Dir(p) }
+
+// windowsUserName is the signed-in user's name, as a profile's name: up to
+// 24 characters, first letter capitalised ("cris" becomes "Cris").
+func windowsUserName() string {
+	n := strings.TrimSpace(os.Getenv("USERNAME"))
+	if n == "" || strings.EqualFold(n, "user") || strings.EqualFold(n, "admin") || strings.EqualFold(n, "administrator") {
+		return ""
+	}
+	r := []rune(n)
+	if len(r) > 24 {
+		r = r[:24]
+	}
+	r[0] = []rune(strings.ToUpper(string(r[0])))[0]
+	return string(r)
+}

@@ -87,7 +87,7 @@
   };
   const state = () => ({
     version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Player 1", color: "#6C9BD2" }, { id: "p2", name: "Player 2", color: "#D9738E" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS, offline: OFFLINE },
+    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Cris", color: "#6C9BD2" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS, offline: OFFLINE },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],

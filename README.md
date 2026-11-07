@@ -2,7 +2,7 @@
 
 <h1 align="center">Lootnest</h1>
 
-<p align="center">A home for every game on your PC.<br>See them all in one place, play anything, and give everyone who shares the PC their own settings and saves.</p>
+<p align="center">A home for every game on your PC, and a vault for its saves.<br>Every game in one place, a copy of your saves before anything touches them, and runs of a game that each keep their own saves.</p>
 
 <p align="center"><b>In beta.</b> Everything that moves your files makes a copy first.</p>
 
@@ -14,7 +14,9 @@
 
 Lootnest finds the games on your PC (Steam, Epic, GOG and the rest) and puts them in one library. For the games you share, turn on **profiles**: press **Play**, pick who's playing, and Lootnest puts that person's resolution, sensitivity, keybinds and saves in place before the game starts. When the game closes, their progress goes back to their own profile.
 
-It's made for couples, siblings and housemates who share a gaming PC and one Steam account, and keep overwriting each other's settings.
+It starts with one profile: yours, named after your Windows account. Keep **runs** of a game, such as a hardcore try or a new game+, each with its own saves and settings, and switch between them from the game's page. Games from outside the stores get a safety net: their saves are copied whenever they change.
+
+Sharing the PC? Add a profile for each person (Profiles, or **Add someone else** on the first start). Then **Play** asks who's playing, and nobody overwrites anyone else's settings, even on one Windows account and one Steam account.
 
 > **Lootnest was called PlaySwap** until version 1.3. Installing Lootnest over PlaySwap carries over players, games, profiles, backups and the Steam set-up.
 
@@ -39,8 +41,9 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 - **Achievements as they unlock**: for games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, with how rare it is and the playing profile's colour. It's Lootnest's own window, never anything in the game, and never for games with an anti-cheat.
 - **Updates and news**, if you turn it on: each game's page lists its latest updates and patch notes from Steam's news feed. For a game no store keeps up to date, Lootnest says when a newer version than yours is out.
 
-**Profiles**, per game, when you want them
-- Everyone gets their own settings and saves, on one Windows account and one Steam account.
+**Profiles and runs**, per game, when you want them
+- One profile to start with. **New run** on a game's page starts another playthrough with its own saves and settings, from nothing or from a copy of yours.
+- Add a profile for everyone who shares the PC: each gets their own settings and saves, on one Windows account and one Steam account.
 - Works with any game that keeps its settings and saves in files. Lootnest finds where most games keep them.
 - Steam's own Play button can ask "Who's playing?" too, after a one-time automatic setup.
 - Desktop shortcuts that ask every time.
