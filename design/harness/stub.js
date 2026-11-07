@@ -86,7 +86,7 @@
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
   };
   const state = () => ({
-    version: "1.15.1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
+    version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
     config: { version: 2, players: FIRST ? [{ id: "p1", name: "Player 1", color: "#6C9BD2" }, { id: "p2", name: "Player 2", color: "#D9738E" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS, offline: OFFLINE },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
@@ -216,6 +216,11 @@
         : key === "game:bg3" ? { appId: 1086940, source: "pc", total: 12, unlocked: 7, list: mk(12, 7, names),
           players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { source: "pc", total: 12, unlocked: [7, 2, 11, 4, 0, 9][i % 6], list: mk(12, [7, 2, 11, 4, 0, 9][i % 6], names) }])) } : null;
       if (STATE !== "loading") emit({ type: "achievements", key, set });
+      return ok();
+    },
+    ps_saveCheck: () => {
+      setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
+        unknown: [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: 1 } }), 120);
       return ok();
     },
     ps_savePoints: (key) => {

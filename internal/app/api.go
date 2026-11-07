@@ -34,6 +34,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_testToast", a.apiTestToast))
 	must(a.w.Bind("ps_setOffline", a.apiSetOffline))
 	must(a.w.Bind("ps_savePoints", a.apiSavePoints))
+	must(a.w.Bind("ps_saveCheck", a.apiSaveCheck))
+	must(a.w.Bind("ps_reportProblem", a.apiReportProblem))
 	must(a.w.Bind("ps_makeSavePoint", a.apiMakeSavePoint))
 	must(a.w.Bind("ps_restoreSavePoint", a.apiRestoreSavePoint))
 	must(a.w.Bind("ps_renameSavePoint", a.apiRenameSavePoint))
@@ -145,6 +147,7 @@ type SteamStatus struct {
 
 type AppState struct {
 	Version   string                                `json:"version"`
+	Stage     string                                `json:"stage,omitempty"` // "beta"
 	Config    *core.Config                          `json:"config"`
 	FirstRun  bool                                  `json:"firstRun"`
 	LoadError string                                `json:"loadError,omitempty"`
@@ -168,7 +171,7 @@ type AppState struct {
 func (a *App) apiState() AppState {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
-	st := AppState{Version: Version, Config: cfg, FirstRun: a.firstRun, LoadError: a.loadErr, DataDir: DataDir(), Colors: core.PlayerColors}
+	st := AppState{Version: Version, Stage: Stage, Config: cfg, FirstRun: a.firstRun, LoadError: a.loadErr, DataDir: DataDir(), Colors: core.PlayerColors}
 	a.mu.Unlock()
 	st.Active = a.store.LoadState()
 	st.Sessions = a.sessionsSnapshot()

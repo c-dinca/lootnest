@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.45.0
+
+Lootnest is now in **beta**: everything it was built to do is in, and the work from here is making it right on as many PCs as possible.
+
+- **Your saves, on Home.** A short list of how Lootnest looks after the saves of everything in your Library:
+  - games with profiles, with a copy before every swap;
+  - games that keep their saves in their own folder, which the safety net copies;
+  - games with save points;
+  - a game whose saves are gone from its folder, with **Put a copy back**;
+  - games from outside the stores whose saves Lootnest can't find yet, each a link to its page;
+  - whether cloud saves are on.
+- **Report a problem**, in **Settings, About**, copies Lootnest's version and its recent activity for you to paste, and opens a new issue on GitHub in your browser. Lootnest sends nothing itself.
+- **Beta** shows next to Lootnest's name, and in Settings with the version.
+
 ## 1.44.0
 
 - **Save points.** Each game's page has **Save points**: a copy of its saves as they are now, with a name such as "Before the boss", to come back to.

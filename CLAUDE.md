@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.44.0)
+## Where things stand (1.45.0, beta)
 
 These shipped recently, newest last:
 
@@ -240,8 +240,17 @@ These shipped recently, newest last:
   new run (`Player.Of`). Locations: `Engine.SaveLocs` (profile paths
   without achievements) or `savesOf(f)` for Library games. Ctrl+Shift+F5
   (`win/hotkey.go`) is registered only while a game runs (`hotkeyTick`).
+- **1.45** Beta (`app.Stage`, shown by the name and in Settings). Keep
+  VERSION numeric (x.y.z): `core.NewerVersion` only parses that, so a
+  "-beta" version would stop updates. The save check on Home
+  (`app/savecheck.go`, `saveCheckBlock()`), and Report a problem (copies
+  the version and log, opens a new GitHub issue; nothing is sent).
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
+Everything from 1.40 on that touches Windows is unchecked there too:
+installers run and watched, the toast window over games, the firewall
+rules (PowerShell as administrator), Ctrl+Shift+F5, and save points made
+while a game runs.
 1.23.2 fixed achievements not showing for Unreal folder games such as
 Phantom Blade Zero. Ask for the "Show recent activity" log after they
 update. It names each game and says why none were found.
