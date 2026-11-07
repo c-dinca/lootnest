@@ -92,19 +92,20 @@ type SteamStatus struct {
 }
 
 type AppState struct {
-	Version   string                 `json:"version"`
-	Config    *core.Config           `json:"config"`
-	FirstRun  bool                   `json:"firstRun"`
-	LoadError string                 `json:"loadError,omitempty"`
-	Active    map[string]string      `json:"active"`
-	Sessions  []Session              `json:"sessions"`
-	Profiles  map[string][]string    `json:"profiles"`
-	Steam     SteamStatus            `json:"steam"`
-	Autostart bool                   `json:"autostart"`
-	DataDir   string                 `json:"dataDir"`
-	Colors    []string               `json:"colors"`
-	Sources   map[string]string      `json:"sources"` // game id -> where the scan found it
-	Recent    map[string]core.Played `json:"recent"`  // Library key -> last played
+	Version   string                      `json:"version"`
+	Config    *core.Config                `json:"config"`
+	FirstRun  bool                        `json:"firstRun"`
+	LoadError string                      `json:"loadError,omitempty"`
+	Active    map[string]string           `json:"active"`
+	Sessions  []Session                   `json:"sessions"`
+	Profiles  map[string][]string         `json:"profiles"`
+	Steam     SteamStatus                 `json:"steam"`
+	Autostart bool                        `json:"autostart"`
+	DataDir   string                      `json:"dataDir"`
+	Colors    []string                    `json:"colors"`
+	Sources   map[string]string           `json:"sources"`  // game id -> where the scan found it
+	Recent    map[string]core.Played      `json:"recent"`   // Library key -> last played
+	Playtime  map[string]map[string]int64 `json:"playtime"` // Library key -> player -> seconds
 }
 
 func (a *App) apiState() AppState {
@@ -116,6 +117,7 @@ func (a *App) apiState() AppState {
 	st.Sessions = a.sessionsSnapshot()
 	st.Sources = a.gameSources(cfg)
 	st.Recent = a.store.LoadRecent()
+	st.Playtime = a.store.LoadPlaytime()
 	st.Profiles = map[string][]string{}
 	for _, g := range cfg.Games {
 		list := []string{}

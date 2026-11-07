@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.9.0
+
+- The Library has shelves now, like the best launchers: under the game you played last, **Continue playing** shows the other recent games in their wide artwork, and **News from your games** the latest posts from them (with **Show game updates and news** on).
+- The window takes on the colours of the game in focus: the art of the game you point at, blurred, behind everything; on a game's page, that game's.
+- Time played, per player: Lootnest counts how long each person plays each game with profiles, and the game's page shows it as a bar in the players' colours. The Library's hero shows the total.
+- Sort the Library by name, recently played or most played, and choose small, medium or large covers. Both are remembered.
+- Right-click any game for a menu: play as each player, open its page, settings, its folder, Steam's file check, hide or turn off profiles. Arrow keys and Esc work in it.
+- Ctrl+F (or /) jumps to the search box from anywhere.
+- Players in the sidebar show as round initials in their colour; whoever is playing gets a ring and the game's name.
+
 ## 1.8.0
 
 - **Download covers and artwork** (was "Download covers for games outside Steam") now also gets each game's wide artwork and logo, so games outside Steam get the same page and Library hero as Steam games. Steam games whose art Steam hasn't kept on this PC get it too.

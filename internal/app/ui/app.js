@@ -52,6 +52,11 @@
     steamVerify: (appId) => call("ps_steamVerify", appId),
   };
 
+  // Small per-PC preferences (sort, cover size), kept in the WebView's own
+  // storage; the app works the same without it.
+  function pref(k, d) { try { return localStorage.getItem("ln." + k) || d; } catch (e) { return d; } }
+  function setPref(k, v) { try { localStorage.setItem("ln." + k, v); } catch (e) { /* not kept */ } }
+
   // ---------------------------------------------------------------- state --
   const S = {
     d: null,          // AppState from Go
@@ -64,6 +69,9 @@
     news: {},          // cover key -> {items, newer, none, error} from Steam's news feed, or {loading: true}
     page: null,        // the game page: {kind: "game"|"found", id, cloud}
     libScroll: 0,      // where the Library was scrolled to, for coming back
+    sort: pref("sort", "name"),       // Library order: name | recent | played
+    density: pref("density", "m"),    // cover size: s | m | l
+    ctx: null,         // the right-click menu: {x, y, kind, id}
     update: {},        // {available, version, page, upToDate, checking, error, step}
     animateCards: true, // stagger the cards in on the next library render
     animateView: true,  // fade the page in on the next render
@@ -200,7 +208,7 @@
       }
       case "news":
         S.news[ev.key] = ev;
-        if (S.view === "game") render();
+        if (S.view === "game" || S.view === "library") render();
         break;
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
@@ -253,7 +261,83 @@
     if (typing >= 0) { const q = $("#lib-q"); if (q) { q.focus(); q.setSelectionRange(typing, typing); } }
     renderOverlay();
     loadCovers();
+    backdropForView();
   }
+
+  // ------------------------------------------------------------ backdrop --
+  // The window takes on the colours of the game in focus: its art, blurred
+  // far out of shape, behind everything. It follows the game the pointer
+  // rests on in the Library, and the game whose page is open.
+  let bdShown = "", bdFront = 0, bdTimer = 0;
+  function setBackdrop(url) {
+    if (url === bdShown) return;
+    bdShown = url;
+    const layers = document.querySelectorAll("#backdrop .bd");
+    if (layers.length < 2) return;
+    const next = layers[bdFront ^ 1], cur = layers[bdFront];
+    if (url) next.style.backgroundImage = `url("${url}")`;
+    next.classList.toggle("on", !!url);
+    cur.classList.remove("on");
+    bdFront ^= 1;
+  }
+  const artOf = (it) => (it && (S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || S.icons[coverKey(it)])) || "";
+  function itemFor(el) {
+    const host = el && el.closest("[data-game], [data-key]");
+    if (!host) return null;
+    const id = host.dataset.game || host.dataset.key, kind = host.dataset.game ? "game" : "found";
+    return libraryItems().find((x) => x.kind === kind && x.id === id) || null;
+  }
+  function defaultBackdrop() {
+    if (S.view === "game" && S.page) return artOf(libraryItems().find((x) => x.kind === S.page.kind && x.id === S.page.id));
+    if (S.view === "library") return artOf(recentItems(libraryItems(), false)[0]);
+    return "";
+  }
+  function backdropForView() { clearTimeout(bdTimer); setBackdrop(defaultBackdrop()); }
+  document.addEventListener("mouseover", (ev) => {
+    if (S.view !== "library") return;
+    const card = ev.target.closest(".card, .capsule-wrap, .hero");
+    clearTimeout(bdTimer);
+    bdTimer = setTimeout(() => { const it = card && itemFor(card.querySelector("[data-game], [data-key]")); setBackdrop(it ? artOf(it) || defaultBackdrop() : defaultBackdrop()); }, card ? 160 : 400);
+  });
+
+  // ---------------------------------------------------------- right-click --
+  function openContext(ev, it) {
+    const g = it.g, f = it.f;
+    const attr = g ? `data-game="${esc(g.id)}"` : `data-key="${esc(f.key)}"`;
+    const s = g && session(g.id);
+    const items = [];
+    if (!s) {
+      if (g) cfg().players.forEach((p) => items.push(`<button data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>Play as ${esc(p.name)}</button>`));
+      else items.push(`<button data-action="play-found" ${attr}>${icon.play}Play</button>`);
+    }
+    items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, "<hr>");
+    if (g) items.push(`<button data-action="edit-game" ${attr} ${s ? "disabled" : ""}>Edit game</button>`);
+    else items.push(`<button data-action="game-settings" ${attr}>Game settings</button>`);
+    items.push(`<button data-action="open-game-folder" ${attr}>Open the game's folder</button>`);
+    if (it.appId) items.push(`<button data-action="steam-verify" data-app="${it.appId}" ${s ? "disabled" : ""}>Check the game's files</button>`);
+    items.push("<hr>", g ? `<button class="danger" data-action="remove-game" ${attr}>Turn off profiles</button>`
+      : `<button class="danger" data-action="found-hide" ${attr}>${f.added ? "Remove from the Library" : "Hide from the Library"}</button>`);
+    const m = $("#ctx");
+    m.innerHTML = `<div class="ctx-title">${esc(it.name)}</div>${items.join("")}`;
+    m.hidden = false;
+    const r = m.getBoundingClientRect();
+    m.style.left = Math.min(ev.clientX, innerWidth - r.width - 8) + "px";
+    m.style.top = Math.min(ev.clientY, innerHeight - r.height - 8) + "px";
+    const first = m.querySelector("button:not(:disabled)");
+    if (first) first.focus({ preventScroll: true });
+  }
+  function closeContext() { const m = $("#ctx"); if (m && !m.hidden) { m.hidden = true; m.innerHTML = ""; } }
+  document.addEventListener("contextmenu", (ev) => {
+    const host = ev.target.closest(".card, .capsule-wrap");
+    if (!host || S.picker) return;
+    const it = itemFor(host.querySelector("[data-game], [data-key]"));
+    if (!it) return;
+    ev.preventDefault();
+    openContext(ev, it);
+  });
+  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest("#ctx")) closeContext(); }, true);
+  window.addEventListener("blur", closeContext);
+  document.addEventListener("scroll", closeContext, true);
 
   function renderWho() {
     const playing = {};
@@ -261,8 +345,8 @@
     $("#who").innerHTML = cfg().players.map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
-      return `<div class="who-item${s ? " playing" : ""}"><span class="dot" style="background:${esc(p.color)}"></span><span>${esc(p.name)}</span>
-        ${g ? `<span class="what">playing ${esc(g.name)}</span>` : ""}</div>`;
+      return `<div class="who-item${s ? " playing" : ""}" style="--c:${esc(p.color)}"><span class="avatar" aria-hidden="true">${esc(p.name.trim().charAt(0).toUpperCase())}</span><span class="who-name">${esc(p.name)}</span>
+        <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></div>`;
     }).join("");
   }
 
@@ -287,12 +371,23 @@
 
   function shownItems() {
     const q = S.q.trim().toLowerCase();
-    return libraryItems().filter((it) => {
+    const list = libraryItems().filter((it) => {
       if (q && !it.name.toLowerCase().includes(q)) return false;
       if (S.filter === "profiles") return it.kind === "game";
       if (S.filter !== "all") return filterOf(it.source) === S.filter;
       return true;
     });
+    if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
+    else if (S.sort === "played") list.sort((a, b) => totalPlayed(b) - totalPlayed(a) || playedAt(b) - playedAt(a));
+    return list;
+  }
+  const playedAt = (it) => { const r = (S.d.recent || {})[recentKey(it)]; return r ? new Date(r.at).getTime() : 0; };
+  const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
+  const totalPlayed = (it) => Object.values(playtimeOf(it)).reduce((a, b) => a + b, 0);
+  function hours(sec) {
+    if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + " min";
+    const h = sec / 3600;
+    return (h < 10 ? Math.round(h * 10) / 10 : Math.round(h)) + " h";
   }
 
   function viewLibrary() {
@@ -303,7 +398,7 @@
     const chips = [["all", "All"], ["profiles", "With profiles"], ["steam", "Steam"], ["epic", "Epic"], ["gog", "GOG"], ["other", "Other"]];
     const head = `<div class="lib-head"><div class="grow"><h1>Library</h1>
         <p class="sub">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</p></div>
-        <input type="search" id="lib-q" class="search" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games">
+        <input type="search" id="lib-q" class="search" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)">
         <button class="btn" data-action="add-game">${icon.plus}Add game</button>
         <button class="btn quiet" data-action="rescan" ${refreshing ? "disabled" : ""}>${refreshing ? "Scanning" : "Scan again"}</button></div>`;
     if (!all.length && !scanning) {
@@ -311,11 +406,65 @@
         <p class="sub">Lootnest looks in Steam, Epic, GOG, game folders and your shortcuts. Add a game by hand if yours isn't found.</p></div>
         <button class="btn primary" data-action="add-game">${icon.plus}Add a game</button></div></div>`;
     }
-    return `<div class="page wide">${updateBanner()}${libraryHero(all)}${head}${hookBanner()}
-      <div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
+    const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
+    const sizes = [["s", "Small covers"], ["m", "Medium covers"], ["l", "Large covers"]];
+    return `<div class="page wide">${updateBanner()}${libraryHero(all)}${continueShelf(all)}${newsShelf(all)}${head}${hookBanner()}
+      <div class="lib-tools"><div class="filters" role="group" aria-label="Show">${chips.map(([k, l]) => `<button class="chip" data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("")}</div>
+        <div class="row tools-right"><label class="sort"><span class="hint">Sort by</span><select id="lib-sort" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+        <div class="seg" role="group" aria-label="Cover size">${sizes.map(([k, l], i) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span class="sz sz${i}"></span></button>`).join("")}</div></div></div>
       ${scanning ? `<div class="scanning"><span class="spinner"></span>Looking for games on this PC</div>` : ""}
       ${coverHint(all)}
-      <div class="grid" id="grid">${gridHTML()}</div></div>`;
+      <div class="grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
+  }
+
+  // Shelves, as in the best launchers: the games played lately, then what's
+  // new in them. Both only show what Lootnest actually knows.
+  function recentItems(all, skipFirst) {
+    const list = all.filter((it) => playedAt(it) > 0).sort((a, b) => playedAt(b) - playedAt(a));
+    return skipFirst ? list.slice(1) : list;
+  }
+  function continueShelf(all) {
+    if (S.q || S.filter !== "all") return "";
+    const list = recentItems(all, true).slice(0, 8);
+    if (!list.length) return "";
+    list.forEach(loadArt);
+    return `<section class="shelf" aria-label="Continue playing"><h2 class="shelf-title">Continue playing</h2>
+      <div class="capsules">${list.map((it) => {
+        const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
+        const t = totalPlayed(it);
+        const k = coverKey(it), poster = !S.art["hero:" + k] && (S.covers[k] || S.icons[k]);
+        return `<div class="capsule-wrap"><button class="capsule" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}">${artHTML(it)}
+          ${poster ? `<span class="capsule-poster${S.covers[k] ? "" : " icon"}" style="background-image:url('${poster}')"></span>` : ""}
+          <span class="capsule-body"><b>${esc(it.name)}</b><span>${esc(lastPlayed(it))}${t ? `<span class="sep"></span>${esc(hours(t))} in all` : ""}</span></span></button>
+          ${it.kind === "game" && session(it.id) ? "" : `<button class="quick-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${icon.play}</button>`}</div>`;
+      }).join("")}</div></section>`;
+  }
+  function ensureNews(it) {
+    const key = coverKey(it);
+    if (S.news[key] || !cfg().settings.gameNews) return;
+    S.news[key] = { loading: true };
+    api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
+  }
+  function newsShelf(all) {
+    if (!cfg().settings.gameNews || S.q || S.filter !== "all") return "";
+    const games = recentItems(all, false).slice(0, 8);
+    if (!games.length) return "";
+    const cards = [];
+    games.forEach((it) => {
+      ensureNews(it);
+      const N = S.news[coverKey(it)];
+      ((N && N.items) || []).slice(0, 3).forEach((n, i) => cards.push({ it, n, i }));
+    });
+    if (!cards.length) return "";
+    cards.sort((a, b) => new Date(b.n.date) - new Date(a.n.date));
+    return `<section class="shelf" aria-label="News from your games"><h2 class="shelf-title">News from your games</h2>
+      <div class="news-cards">${cards.slice(0, 6).map(({ it, n, i }) => {
+        const pic = n.image || S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || "";
+        return `<button class="news-card" data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
+          <span class="news-pic"${pic ? ` style="background-image:url('${esc(pic)}')"` : ""}></span>
+          <span class="news-card-body"><span class="news-game">${n.update ? '<span class="dot"></span>' : ""}${esc(it.name)}<span class="news-when">${esc(day(n.date))}</span></span>
+          <b>${esc(n.title)}</b></span></button>`;
+      }).join("")}</div></section>`;
   }
 
   function updateBanner() {
@@ -420,6 +569,7 @@
         el.src = ic;
       } else el.remove();
     });
+    if (!bdShown) backdropForView();
   }
 
   // ------------------------------------------------------------ game page --
@@ -532,7 +682,7 @@
     const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
     return `<section class="hero" aria-label="Last played">${artHTML(best)}
       <div class="hero-body">${titleHTML(best, "hero-title")}
-        <p class="hero-when">${esc(lastPlayed(best))}</p>
+        <p class="hero-when">${esc(lastPlayed(best))}${totalPlayed(best) ? `<span class="sep"></span>${esc(hours(totalPlayed(best)))} played in all` : ""}</p>
         <div class="hero-play">${playButtons(best, false)}<button class="btn ghost" data-action="open-sheet" ${attr}>Details</button></div>
       </div></section>`;
   }
@@ -620,6 +770,12 @@
       add("Profiles", withProfile.length
         ? withProfile.map((p) => `<span class="who"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</span>`).join("")
         : "On; nobody has played yet");
+      const pt = playtimeOf(it), total = totalPlayed(it);
+      if (total) {
+        const ps = cfg().players.filter((p) => pt[p.id]);
+        add("Time played", `<div class="playtime"><div class="pt-bar">${ps.map((p) => `<span style="flex:${pt[p.id]};background:${esc(p.color)}" title="${esc(p.name)}: ${esc(hours(pt[p.id]))}"></span>`).join("")}</div>
+          <div class="pt-legend">${ps.map((p) => `<span class="who"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)} <b>${esc(hours(pt[p.id]))}</b></span>`).join("")}</div></div>`);
+      }
       add("Loaded now", owner && player(owner) ? `<span class="who"><span class="dot" style="background:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files</span>` : "Nobody's files yet");
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap",
@@ -1249,6 +1405,7 @@
     play: (el) => openPicker(el.dataset.game, "play"),
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
+    density(el) { S.density = el.dataset.size; setPref("density", S.density); render(); },
     "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
     "open-link": (el) => api.open("link", el.dataset.url).catch((e) => toast(errText(e), "error")),
     "read-news"(el) { S.dialog = { kind: "news", key: el.dataset.key, i: +el.dataset.i }; renderOverlay(); setTimeout(() => { const b = $(".reader .btn.quiet.icon"); if (b) b.focus({ preventScroll: true }); }, 30); },
@@ -1444,6 +1601,7 @@
       return;
     }
     if (el.dataset.action !== "menu" && S.menuFor && !el.closest(".menu")) S.menuFor = null;
+    if (el.closest("#ctx")) closeContext();
     const f = actions[el.dataset.action];
     if (f) f(el, ev);
   });
@@ -1481,10 +1639,28 @@
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
+    if (el.id === "lib-sort") { S.sort = el.value; setPref("sort", S.sort); render(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 
   document.addEventListener("keydown", (ev) => {
+    if (!$("#ctx").hidden) {
+      if (ev.key === "Escape") { ev.preventDefault(); closeContext(); return; }
+      if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+        ev.preventDefault();
+        const b = [...document.querySelectorAll("#ctx button:not(:disabled)")];
+        const i = b.indexOf(document.activeElement);
+        b[(i + (ev.key === "ArrowDown" ? 1 : b.length - 1)) % b.length].focus();
+        return;
+      }
+    }
+    // Ctrl+F or / finds a game.
+    if (!S.picker && !S.dialog && ((ev.ctrlKey && ev.key.toLowerCase() === "f") || (ev.key === "/" && !ev.target.closest("input, textarea, select")))) {
+      ev.preventDefault();
+      if (S.view !== "library") { S.view = "library"; S.page = null; render(); }
+      const q = $("#lib-q"); if (q) { q.focus(); q.select(); }
+      return;
+    }
     if (S.picker && !S.picker.working) {
       if (ev.key === "Escape") { ev.preventDefault(); if (S.picker.ask) actions["picker-back"](); else closePicker(); return; }
       if (!S.picker.ask && /^[1-9]$/.test(ev.key)) {

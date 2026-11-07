@@ -313,6 +313,7 @@ func (a *App) tick() {
 			if s.missed < 2 { // ignore quick restarts (launcher -> game)
 				continue
 			}
+			go a.store.AddPlaytime("game:"+g.ID, s.PlayerID, time.Since(s.Since))
 			s.Phase = "saving"
 			changed = true
 			finishes = append(finishes, finish{cfg.Clone(), cfg.Game(g.ID), s.PlayerID})
