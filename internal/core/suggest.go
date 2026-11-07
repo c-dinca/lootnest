@@ -48,9 +48,12 @@ func nameMatches(dirName string, keys []string) bool {
 	return false
 }
 
-// SuggestPaths looks in the usual save/config locations for folders named
-// like the game.
-func (e *Env) SuggestPaths(gameName, installDirName string, appID int) []Suggestion {
+// SuggestPaths finds a game's save and settings locations: first the ones
+// the save locations list (Ludusavi's, from PCGamingWiki) names for it, then
+// Steam's folders for it, then folders in the usual places named like the
+// game. installDir is the game's folder, or just its name.
+func (e *Env) SuggestPaths(gameName, installDir string, appID int) []Suggestion {
+	installDirName := filepath.Base(installDir)
 	keys := []string{norm(gameName), norm(installDirName)}
 	// "Counter-Strike 2" -> also try without trailing numbers/editions
 	if f := strings.Fields(gameName); len(f) > 1 {
@@ -97,6 +100,10 @@ func (e *Env) SuggestPaths(gameName, installDirName string, appID int) []Suggest
 			s.Modified = st.ModTime().Format(time.RFC3339)
 		}
 		out = append(out, s)
+	}
+
+	for _, abs := range e.listedSaves(gameName, installDir, appID) {
+		push(abs, "Listed on PCGamingWiki")
 	}
 
 	if appID > 0 && e.SteamUser != nil {
@@ -220,4 +227,45 @@ func FindExe(dir, processName string) string {
 		return nil
 	})
 	return found
+}
+
+// listedSaves is where the save locations list says the game keeps its saves
+// and settings, as they exist on this PC. Files that share a folder become
+// that folder, so a profile swaps one location instead of each file, unless
+// the folder is the game's own install folder (or holds it).
+func (e *Env) listedSaves(gameName, installDir string, appID int) []string {
+	if e.SaveDB == nil {
+		return nil
+	}
+	dg := e.SaveDB().Find(appID, gameName, filepath.Base(installDir))
+	if dg == nil {
+		return nil
+	}
+	base := ""
+	if filepath.IsAbs(installDir) {
+		base = installDir
+	}
+	locs := e.FindSaves(dg, base)
+	files := map[string]int{}
+	for _, l := range locs {
+		if st, err := os.Stat(l.Resolved); err == nil && !st.IsDir() {
+			files[strings.ToLower(filepath.Dir(l.Resolved))]++
+		}
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, l := range locs {
+		p := l.Resolved
+		if st, err := os.Stat(p); err == nil && !st.IsDir() {
+			dir := filepath.Dir(p)
+			if files[strings.ToLower(dir)] > 1 && e.CheckSafe(dir) == nil && (base == "" || !isWithin(base, dir)) {
+				p = dir
+			}
+		}
+		if k := strings.ToLower(p); !seen[k] {
+			seen[k] = true
+			out = append(out, p)
+		}
+	}
+	return out
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.27.0
+
+- **The right save locations for new games, from PCGamingWiki.** With **Find save locations online** on, Lootnest now uses PCGamingWiki's list (from the Ludusavi project) to fill in where a game keeps its saves and settings when you add it or the Library finds it, for profiles as well as cloud saves. Before, only cloud saves used it, and profiles looked for folders named like the game.
+  - The list's locations come first, marked **Listed on PCGamingWiki**, then Steam's folders for the game, then folders named like it.
+  - Saves kept inside the game's own folder are found too, such as Ren'Py's `game\saves`. The game's folder itself is never swapped.
+  - Several save files in one folder become that folder, so a profile swaps one location instead of each file.
+- **Find save locations online is now in Settings, Online**, too, so you can turn it on without setting up cloud saves. When it's turned on, the Library looks for games again with the new list.
+- Games you already set up keep the locations they have.
+
 ## 1.26.0
 
 - **Swaps that can't be cut in half.** Loading a profile's files takes a few steps. If Lootnest closed or the PC turned off in the middle, the files on the PC could be a mix of two profiles, and the next swap would save that mix over someone's profile. Lootnest now writes down whose files are going in before it changes anything. When it starts again, it finishes that swap first, and says so. Nothing saves the files in place until it has.
