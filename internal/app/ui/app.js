@@ -777,9 +777,7 @@
   }
 
   // ------------------------------------------------------------ game page --
-  // A game opens as its own page: the game's wide art, its cover, a Play
-  // button per player, and everything else about it. Opening it from the
-  // Library carries the cover from the grid into the page.
+  // A game opens as its own page, with a short cross-fade (--dur-2).
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function transition(update, before, after) {
     if (!document.startViewTransition || reduced()) { update(); if (after) after(); return; }
@@ -800,8 +798,7 @@
       render(); $("#view").scrollTop = 0;
       $("#view").focus({ preventScroll: true });
     };
-    const cover = fromEl && fromEl.querySelector(".cover");
-    transition(() => { if (cover) cover.style.viewTransitionName = ""; go(); }, () => { if (cover) cover.style.viewTransitionName = "poster"; });
+    transition(go);
     const g = kind === "game" && game(id);
     if (g && g.launch.type === "steam") {
       api.cloudStatus(id).then((st) => { P.cloud = st; if (S.page === P && S.view === "game") render(); }).catch(() => {});
@@ -810,14 +807,10 @@
 
   function backToLibrary() {
     const P = S.page;
-    const find = () => P && document.querySelector(`.cover-btn[data-${P.kind === "game" ? "game" : "key"}="${CSS.escape(P.id)}"] .cover`);
-    let card = null;
     transition(() => {
       S.view = S.from === "home" ? "home" : "library"; S.page = null;
       render(); $("#view").scrollTop = S.fromScroll || 0;
-      card = find();
-      if (card) card.style.viewTransitionName = "poster";
-    }, null, () => { if (card) card.style.viewTransitionName = ""; });
+    });
   }
 
   // When something was last played, in words.
@@ -1124,10 +1117,15 @@
     const P = S.picker, g = game(P.gameId);
     if (!g) return "";
     if (P.working) {
-      const c = color(P.playerId);
-      return `<div class="picker" style="--c:${esc(c)}"><div class="picker-head"><div></div></div>
-        <div class="working"><div class="big" style="color:${esc(c)}">${esc(pname(P.playerId))}</div>
-        <div class="bar" style="--c:${esc(c)}"></div><p class="hint">${P.mode !== "load" ? `Loading ${esc(possessive(pname(P.playerId)))} files and starting ${esc(g.name)}` : `Loading ${esc(possessive(pname(P.playerId)))} files`}</p></div><div></div></div>`;
+      const to = player(P.playerId), from = P.from && P.from !== P.playerId && player(P.from);
+      const s = session(g.id);
+      const line = s && s.phase === "launching" ? `Starting ${esc(g.name)}` : P.mode !== "load" ? `Loading ${esc(possessive(pname(P.playerId)))} files and starting ${esc(g.name)}` : `Loading ${esc(possessive(pname(P.playerId)))} files`;
+      return `<div class="picker ln-root" role="dialog" aria-label="${esc(line)}"><div class="picker-head"><div></div></div>
+        <div class="swap" aria-live="polite">
+          <div class="swap-bay">${from ? `<div class="swap-out" aria-hidden="true">${lnAvatar(from, "120")}</div>` : ""}<div class="swap-in">${to ? lnAvatar(to, "120") : ""}</div></div>
+          <div class="swap-text"><b>${esc(pname(P.playerId))}</b><p><span class="ln-spinner" aria-hidden="true"></span>${line}</p>
+            ${from ? `<p class="swap-safe">${GI.copy}A copy of ${esc(possessive(from.name))} files was made first.</p>` : `<p class="swap-safe">${GI.copy}A copy is made before every swap.</p>`}</div>
+        </div><div></div></div>`;
     }
     if (P.ask === "owner") {
       return `<div class="picker"><div class="picker-head"><div></div><button class="btn quiet" data-action="picker-back">${icon.back}Back</button></div>
@@ -1161,15 +1159,15 @@
         </div></div><div></div></div>`;
     }
     const ps = cfg().players;
-    return `<div class="picker" role="dialog" tabindex="-1" aria-label="Who's playing ${esc(g.name)}?">
+    return `<div class="picker ln-root" role="dialog" tabindex="-1" aria-label="Who's playing ${esc(g.name)}?">
       <div class="picker-head"><div><h1>Who's playing ${esc(g.name)}?</h1>
         <p class="hint">${P.mode === "steam" ? "Steam is starting the game. Their settings and saves load first." : P.mode === "play" ? "Their settings and saves load before the game starts." : "Their settings and saves are loaded; the game isn't started."}</p></div>
-        <button class="btn quiet" data-action="picker-close">${P.mode === "steam" ? "Don't start" : "Cancel"}</button></div>
+        <button class="ln-button ln-button--ghost" data-action="picker-close">${P.mode === "steam" ? "Don't start" : "Cancel"}</button></div>
       <div class="slots">
-        ${ps.map((p, i) => `<button class="slot" style="--c:${esc(p.color)}" data-action="pick" data-player="${esc(p.id)}">
-          <span class="initial" aria-hidden="true">${esc(p.name.trim().charAt(0).toUpperCase())}</span>
-          ${i < 9 ? `<span class="key" aria-hidden="true">${i + 1}</span>` : ""}
-          <span class="name">${esc(p.name)}</span><span class="state">${esc(slotState(g.id, p.id))}</span></button>`).join("")}
+        ${ps.map((p, i) => `<button class="slot ln-player${S.d.active[g.id] === p.id ? " in" : ""}" style="--player:${esc(p.color)}" data-action="pick" data-player="${esc(p.id)}">
+          ${lnAvatar(p, "120")}
+          <span class="name">${esc(p.name)}</span><span class="state">${esc(slotState(g.id, p.id))}</span>
+          <span class="slot-label"><span>${S.d.active[g.id] === p.id ? "In the game now" : "Play as " + esc(p.name)}</span>${i < 9 ? `<kbd aria-hidden="true">${i + 1}</kbd>` : ""}</span></button>`).join("")}
       </div>
       <div class="picker-foot"><span>Press ${ps.length > 1 ? "1–" + Math.min(ps.length, 9) : "1"} to choose, Esc ${P.mode === "steam" ? "to not start the game" : "to cancel"}</span><span>${esc(g.name)}</span></div>
     </div>`;
@@ -2338,7 +2336,7 @@
       s.gameNews = true;
       try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
-    "play-as"(el) { openPicker(el.dataset.game, "play"); S.picker.playerId = el.dataset.player; runPick(); },
+    "play-as"(el) { openPicker(el.dataset.game, "play"); S.picker.playerId = el.dataset.player; S.picker.from = S.d.active[el.dataset.game] || ""; runPick(); },
     async "play-found"(el) {
       const f = (S.found.games || []).find((x) => x.key === el.dataset.key);
       if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
@@ -2383,7 +2381,7 @@
       if (!ok) return;
       try { await api.deleteGame(g.id); toast(`Profiles are off for ${g.name}`); await refresh(); loadFound(); } catch (e) { toast(errText(e), "error"); }
     },
-    pick(el) { S.picker.playerId = el.dataset.player; S.picker.owner = ""; S.picker.newMode = ""; runPick(); },
+    pick(el) { S.picker.playerId = el.dataset.player; S.picker.owner = ""; S.picker.newMode = ""; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); },
     "answer-owner"(el) { S.picker.owner = el.dataset.player; S.picker.ask = null; runPick(); },
     "answer-new"(el) { S.picker.newMode = el.dataset.mode; S.picker.ask = null; runPick(); },
     "answer-cloud"(el) { S.picker.cloud = el.dataset.answer; S.picker.ask = null; runPick(); },

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.17.0
+
+The new look is complete, ending with the moment Lootnest is about: **who's playing**.
+- **The "Who's playing?" picker** sits over the game's colours. Each player is a save slot:
+  - their picture or initial, their name, and whether they have a profile;
+  - a label in their colour, with the key to press: 1, 2, 3…
+  - The slot of whoever's files are in the game says so.
+- **When you choose someone**, the save that was in slides out and theirs slides in. Under it: "Loading Mihai's files", and "A copy of Cristian's files was made first."
+- **Opening a game** from the Library or Home cross-fades quickly instead of sliding a cover across.
+- With Windows' animation effects off, nothing slides. Things only fade.
+
 ## 1.16.8
 
 The rest in the new look: **Add game**, the first-run **Who shares this PC?**, the profile editor, confirmations and the right-click menu.

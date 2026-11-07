@@ -111,7 +111,7 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
    the middle, the Library and game pages use the whole width. */
 .page { max-width: 1040px; margin-inline: auto; }
 .page.wide { max-width: none; }
-.enter { animation: fade .22s var(--ease); }
+.enter { animation: fade var(--dur-2) var(--ease-out); }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 @keyframes fade { from { opacity: 0; } }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
@@ -223,10 +223,7 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .reader .dialog-foot { padding: 14px 24px; border-top: 1px solid var(--line); }
 
 /* The cover travels from the Library into the game's page and back. */
-::view-transition-group(poster) { animation-duration: .44s; animation-timing-function: var(--ease); }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .24s; }
-::view-transition-image-pair(poster) { isolation: isolate; }
-::view-transition-old(poster), ::view-transition-new(poster) { animation-duration: .44s; height: 100%; object-fit: cover; overflow: hidden; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--dur-2); animation-timing-function: var(--ease-out); }
 
 /* ---------------------------------------------------------------- forms */
 .form { display: grid; gap: 28px; padding-bottom: 48px; }
@@ -281,62 +278,86 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .log { background: var(--panel); border-radius: var(--radius-m); padding: 12px 14px; font: 12px/1.6 "Cascadia Mono", Consolas, monospace; color: var(--muted); max-height: 260px; overflow: auto; white-space: pre-wrap; user-select: text; }
 
 /* ----------------------------------------------------------------- picker */
-.picker { position: fixed; inset: 0; z-index: 50; background: var(--ink); display: grid; grid-template-rows: auto 1fr auto; animation: fade .2s var(--ease); }
+/* Who's playing: one save slot per player over the game's art. Choosing
+   one is the swap moment: the save that was in slides out and the chosen
+   one slides into the bay, in under 320ms (DESIGN.md, motion). */
+.picker {
+  position: fixed; inset: 0; z-index: 50; display: grid; grid-template-rows: auto 1fr auto;
+  background: var(--glass-chrome); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  animation: fade var(--dur-2) var(--ease-out);
+}
 .picker:focus { outline: none; }
-.picker-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px; }
-.picker-head h1 { font-size: 24px; }
-.picker-head .hint { margin-top: 4px; }
-.slots { display: flex; min-height: 0; }
+.picker-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-6) var(--page-gutter); }
+.picker-head h1 { margin: 0; font: 750 var(--fs-32)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+.picker-head .hint { margin-top: var(--space-2); font-size: var(--fs-14); color: var(--fg-2); }
+.slots { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: var(--space-5); padding: 0 var(--page-gutter); min-height: 0; overflow: auto; }
 .slot {
-  --c: var(--p1);
-  flex: 1 1 0; border: 0; padding: 0 clamp(20px, 3vw, 40px) clamp(28px, 5vh, 56px); cursor: pointer; text-align: left;
-  display: flex; flex-direction: column; justify-content: flex-end; gap: 10px;
-  background: color-mix(in srgb, var(--c) 70%, var(--ink)); color: #fff; position: relative; overflow: hidden;
-  transition: flex-grow .3s var(--ease), background .2s var(--ease);
-  animation: slotIn .36s var(--ease) both;
+  position: relative; display: grid; justify-items: center; align-content: start; gap: var(--space-2);
+  width: clamp(200px, 16vw, 260px); padding: var(--space-8) var(--space-5) 0; overflow: hidden;
+  background: var(--glass-panel); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel);
+  color: var(--fg-1); font: inherit; text-align: center; cursor: pointer;
+  transition: transform var(--dur-2) var(--ease-out), border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+  animation: slot-in var(--dur-3) var(--ease-out) both;
 }
-.slot:nth-child(2) { animation-delay: .04s; }
-.slot:nth-child(3) { animation-delay: .08s; }
-.slot:nth-child(n+4) { animation-delay: .12s; }
-@keyframes slotIn { from { opacity: 0; transform: translateY(14px); } }
-.slot:hover, .slot:focus-visible { flex-grow: 1.4; background: color-mix(in srgb, var(--c) 86%, var(--ink)); outline: none; border-radius: 0; }
-.slot .key {
-  position: absolute; top: clamp(20px, 4vh, 36px); left: clamp(20px, 3vw, 40px);
-  width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,.5);
-  display: grid; place-items: center; font-weight: 600; font-size: 15px; color: rgba(255,255,255,.9);
+.slot:nth-child(2) { animation-delay: 30ms; } .slot:nth-child(3) { animation-delay: 60ms; } .slot:nth-child(n+4) { animation-delay: 90ms; }
+@keyframes slot-in { from { opacity: 0; transform: translateY(12px); } }
+.slot:hover, .slot:focus-visible { transform: translateY(-4px); border-color: var(--player-fill); background: var(--player-wash); outline: none; }
+.slot:focus-visible { box-shadow: 0 0 0 var(--focus-width) var(--focus-ring); }
+.slot:active { transform: translateY(-2px); }
+.slot.in { border-color: var(--player-fill); }
+.slot .ln-avatar { margin-bottom: var(--space-2); }
+.slot .name { font: 750 var(--fs-32)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); overflow-wrap: anywhere; }
+.slot .state { font-size: var(--fs-13); color: var(--fg-2); }
+.slot-label {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); justify-self: stretch;
+  margin: var(--space-6) calc(-1 * var(--space-5)) 0; padding: var(--space-3) var(--space-4);
+  background: var(--player-fill); color: var(--player-on); font-weight: 700; font-size: var(--fs-14);
 }
-.slot .name { font: 760 clamp(44px, 7.5vw, 92px)/0.92 var(--font-display); font-stretch: 78%; letter-spacing: -0.03em; overflow-wrap: anywhere; }
-.slot .state { font-size: 14px; color: rgba(255,255,255,.82); font-weight: 500; }
-.slot .initial {
-  position: absolute; right: -0.06em; top: -0.2em; font: 800 clamp(240px, 38vw, 500px)/1 var(--font-display); font-stretch: 75%;
-  color: rgba(255,255,255,.07); pointer-events: none; letter-spacing: -0.06em;
-}
-.picker-foot { padding: 16px 28px 20px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 13px; }
+.slot-label kbd { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: var(--radius-tag); font: 700 var(--fs-12)/1 var(--font-ui); }
+.picker-foot { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--page-gutter) var(--space-5); font-size: var(--fs-13); color: var(--fg-2); }
 
-.question { align-self: center; justify-self: center; width: min(640px, calc(100% - 48px)); display: grid; gap: 18px; padding-bottom: 6vh; animation: rise .24s var(--ease); }
+/* The swap */
+.swap { align-self: center; justify-self: center; display: grid; justify-items: center; gap: var(--space-6); padding-bottom: 8vh; }
+.swap-bay { position: relative; display: grid; place-items: center; width: 280px; height: 140px; }
+.swap-in, .swap-out { grid-area: 1 / 1; }
+.swap-in { animation: swap-in var(--dur-3) var(--ease-out) both; }
+.swap-out { animation: swap-out var(--dur-3) var(--ease-in-out) both; }
+@keyframes swap-in { from { opacity: 0; transform: translateX(72px) scale(.92); } }
+@keyframes swap-out { to { opacity: 0; transform: translateX(-72px) scale(.92); } }
+.swap-text { display: grid; justify-items: center; gap: var(--space-2); text-align: center; }
+.swap-text b { font: 750 clamp(var(--fs-40), 5vw, var(--fs-56))/1 var(--font-title); letter-spacing: var(--track-title); }
+.swap-text p { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--fs-15); color: var(--fg-1); }
+.swap-text .swap-safe { font-size: var(--fs-13); color: var(--fg-2); }
+.swap-safe .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+@media (prefers-reduced-motion: reduce) {
+  .swap-out { display: none; }
+  .swap-in { animation-name: fade; }
+  .slot, .slot:hover, .slot:focus-visible, .slot:active { animation: none; transform: none; }
+}
+
+.question { align-self: center; justify-self: center; width: min(640px, calc(100% - 48px)); display: grid; gap: 18px; padding-bottom: 6vh; animation: rise var(--dur-2) var(--ease-out); }
 .question h2 { font-size: 28px; }
 .question p { color: var(--muted); }
 .choices { display: grid; gap: 10px; }
 .choice span { color: var(--muted); font-size: 13px; }
 .choice .dot { width: 14px; height: 14px; }
-.choice.on { border-color: var(--gold); }
-.choice.on .dot { background: var(--gold); }
+.choice.on { border-color: var(--fg-1); }
+.choice.on .dot { background: var(--fg-1); }
 
 /* Game Mover: how much of the game is copied. */
 .mover { display: grid; gap: 10px; }
 .meter { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
-.meter i { display: block; height: 100%; border-radius: 4px; background: var(--gold); transition: width .25s var(--ease); }
+.meter i { display: block; height: 100%; border-radius: 4px; background: var(--fg-1); transition: width var(--dur-2) var(--ease-out); }
 
 /* Loading a player's files: their name and a steady progress line. */
-.working { align-self: center; justify-self: center; display: grid; justify-items: center; gap: 22px; padding-bottom: 8vh; animation: rise .24s var(--ease); }
-.working .big { font: 760 clamp(44px, 7vw, 80px)/1 var(--font-display); font-stretch: 80%; letter-spacing: -0.03em; }
 .bar { width: 240px; height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .bar::after { content: ""; display: block; width: 35%; height: 100%; border-radius: 3px; background: var(--c, var(--gold)); animation: slide 1.2s var(--ease) infinite; }
 @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 
 /* A dialog redrawn in place keeps still; only opening one animates. */
 #overlay.still .scrim, #overlay.still .dialog,
-#overlay.still .picker, #overlay.still .slot, #overlay.still .question, #overlay.still .working { animation: none; }
+#overlay.still .picker, #overlay.still .slot, #overlay.still .question, #overlay.still .swap-in { animation: none; }
+#overlay.still .swap-out { display: none; }
 
 /* ----------------------------------------------------------------- modal */
 @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.985); } }
