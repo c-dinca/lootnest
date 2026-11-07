@@ -117,7 +117,7 @@
     ps_cover: (appId, name, key) => (STATE === "offline" ? offline() : ok(art(appOf(appId, name), "cover"))),
     ps_art: (appId, name, key, kind) => (STATE === "offline" ? ok("") : ok(art(appOf(appId, name), kind))),
     ps_gameIcon: () => ok(""),
-    ps_gameNews: (key) => { if (STATE === "offline") emit({ type: "news", key, error: "Couldn't reach Steam's news feed.", items: [] }); else if (STATE !== "loading") emit({ type: "news", key, items: NEWS }); return ok(); },
+    ps_gameNews: (key) => { if (STATE === "offline") emit({ type: "news", key, error: "Couldn't reach Steam's news feed.", items: [] }); else if (STATE !== "loading") emit({ type: "news", key, items: NEWS, newer: /phantom/i.test(key) ? { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true } : undefined }); return ok(); },
     ps_cloudStatus: () => ok({ state: "overlap", count: 1 }),
     ps_steamSetup: () => ok({ games: [], steamRunning: false }),
     ps_backupInfo: () => ok({
@@ -224,7 +224,29 @@
       if (STATE !== "loading") emit({ type: "allAchievements", games });
       return ok();
     },
-    ps_browse: (id) => { emit({ type: "browse", reqId: id, cancelled: true }); return ok(); },
+    ps_browse: (id, kind) => {
+      if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ-Update-v1.0302256.zip" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
+      else emit({ type: "browse", reqId: id, cancelled: true });
+      return ok();
+    },
+    ps_updates: () => {
+      setTimeout(() => emit({ type: "updates", newsOn: true, games: [
+        { key: "found:dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", source: "hydra", dir: "D:\\Games\\Phantom.Blade.Zero-InsaneRamZes", changed: iso(9 * d),
+          newer: { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true }, applied: [] },
+        { key: "found:dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", dir: "D:\\Games\\Hydra\\Hollow Tale", changed: iso(2 * d),
+          applied: [{ id: "20261105-201500", source: "HollowTale-1.2.zip", at: iso(2 * d), added: ["a"], replaced: ["b", "c"], state: "applied" }] },
+        { key: "found:dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", source: "added", dir: "D:\\Games\\Onimusha", changed: iso(20 * d), noNews: true, applied: [] },
+      ] }), 120);
+      return ok();
+    },
+    ps_updatePlan: (key, path) => {
+      setTimeout(() => emit({ type: "updatePlan", key, path, dir: "D:\\Games\\Phantom.Blade.Zero-InsaneRamZes", free: 412 * 2 ** 30, plan: {
+        source: path, kind: /\.zip$/i.test(path) ? "zip" : "folder", skipped: "PBZ Update v1.0302256", added: 3, replace: 12, bytes: 2.4 * 2 ** 30, kept: 2.1 * 2 ** 30,
+        where: [{ path: "ProjectPBZ", files: 14 }, { path: "", files: 1 }], readme: ["README.txt"] } }), 200);
+      return ok();
+    },
+    ps_updateApply: (key) => { setTimeout(() => emit({ type: "updateDone", key, update: { id: "20261107-190000", source: "PBZ-Update-v1.0302256.zip", added: ["a", "b", "c"], replaced: new Array(12).fill("x"), state: "applied" } }), 600); return ok(); },
+    ps_updateUndo: (key) => { setTimeout(() => emit({ type: "updateDone", key, undone: true, update: { id: "x", source: "HollowTale-1.2.zip", added: [], replaced: [], state: "undone" } }), 400); return ok(); },
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };
   // Everything else answers quietly (the harness never changes anything).

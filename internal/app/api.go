@@ -92,6 +92,10 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_findGames", a.apiFindGames))
 	must(a.w.Bind("ps_gameOffer", a.apiGameOffer))
 	must(a.w.Bind("ps_storeFront", a.apiStoreFront))
+	must(a.w.Bind("ps_updates", a.apiUpdates))
+	must(a.w.Bind("ps_updatePlan", a.apiUpdatePlan))
+	must(a.w.Bind("ps_updateApply", a.apiUpdateApply))
+	must(a.w.Bind("ps_updateUndo", a.apiUpdateUndo))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
@@ -612,6 +616,12 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Folder = true
 		case "exportDir":
 			opt.Title = "Choose where to save the profile"
+			opt.Folder = true
+		case "update":
+			opt.Title = "Choose the update's .zip"
+			opt.Filters = []win.FileFilter{{Name: "Zip archives (*.zip)", Spec: "*.zip"}}
+		case "updateDir":
+			opt.Title = "Choose the update's folder"
 			opt.Folder = true
 		case "file":
 			opt.Title = "Choose a settings or save file"
