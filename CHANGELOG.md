@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.23.0
+
+- **Lootnest milestones**, for any game, even one with no achievements of its own. They're on the Achievements page, for each profile:
+  - first session, 10 and 100 hours in all;
+  - 7 and 30 days in a row;
+  - 5 and 25 different games;
+  - a 4-hour session;
+  - 50 hours in your most played game;
+  - 100 achievements unlocked, and a game at 100%.
+- Each one not reached yet shows how far along it is, such as "44 of 50 h".
+- They're worked out from what Lootnest already counts for each profile, so they include play before this version.
+
 ## 1.22.0
 
 - **Achievements in the sidebar**: one page with every game's achievements on this PC, for one profile at a time.

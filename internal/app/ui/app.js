@@ -2106,6 +2106,31 @@
   // Achievements: every game's on this PC, for one profile at a time. Games
   // whose achievements go with the profile show that profile's; the others
   // (Steam's account, or one set kept on the PC) are shared.
+  // Lootnest's own milestones, for any game, from what Lootnest already
+  // counts for each profile: time, days in a row, games, sessions and the
+  // achievements read on this PC.
+  function milestones(p, rows) {
+    const st = playerStats(p), h = st.total / 3600, unlocked = rows.reduce((n, r) => n + r.unlocked, 0);
+    const perfect = rows.filter((r) => r.unlocked && r.unlocked === r.g.total).length;
+    const top = st.top && st.topT ? st.topT / 3600 : 0;
+    const longest = st.longest ? st.longest.seconds / 3600 : 0;
+    const m = (name, desc, cur, goal, unit) => ({ name, desc, cur: Math.min(cur, goal), goal, unit, done: cur >= goal });
+    return [
+      m("First session", "Play a game through Lootnest", st.sessions, 1, ""),
+      m("Ten hours in", "Play for 10 hours in all", h, 10, "h"),
+      m("A hundred hours", "Play for 100 hours in all", h, 100, "h"),
+      m("Regular", "Play 7 days in a row", st.best, 7, "days"),
+      m("Every day for a month", "Play 30 days in a row", st.best, 30, "days"),
+      m("Explorer", "Play 5 different games", st.played, 5, "games"),
+      m("Wide library", "Play 25 different games", st.played, 25, "games"),
+      m("Marathon", "Play for 4 hours in one go", longest, 4, "h"),
+      m(st.top ? "Devoted to " + st.top.name : "Devoted", "Play one game for 50 hours", top, 50, "h"),
+      m("Collector", "Unlock 100 achievements", unlocked, 100, ""),
+      m("Completionist", "Get every achievement in a game", perfect, 1, ""),
+    ];
+  }
+  const fmtGoal = (x) => (x.unit === "h" ? Math.floor(x.cur) + " of " + x.goal + " h" : Math.floor(x.cur) + " of " + x.goal + (x.unit ? " " + x.unit : ""));
+
   let allAchAsked = false;
   function viewAchievements() {
     const head = `<header class="lib-head"><div><h1>Achievements</h1><p>Every game's achievements on this PC. Each profile has its own where they go with the profile; Steam's belong to the Steam account.</p></div></header>`;
@@ -2127,6 +2152,10 @@
         <p>Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.</p></div></div></div>`;
     }
     const total = rows.reduce((n, r) => n + r.unlocked, 0), perfect = rows.filter((r) => r.unlocked && r.unlocked === r.g.total).length;
+    const ms = who && player(who) ? milestones(player(who), rows) : [];
+    const msDone = ms.filter((x) => x.done).length;
+    const msHTML = ms.length ? `<section class="ach-ms"><div class="ln-section-head"><div><h2>Lootnest milestones</h2><p>${msDone} of ${ms.length}, for any game, from the time ${esc(pname(who))} plays through Lootnest.</p></div></div>
+      <ul class="ach-ms-grid">${ms.map((x) => `<li class="${x.done ? "done" : ""}"><span class="ach-ms-icon">${GI.trophy}</span><div><b>${esc(x.name)}</b><span>${x.done ? esc(x.desc) : esc(x.desc) + ". " + esc(fmtGoal(x))}</span>${x.done ? "" : `<span class="ach-bar" aria-hidden="true"><span style="width:${Math.round((x.cur / x.goal) * 100)}%"></span></span>`}</div></li>`).join("")}</ul></section>` : "";
     const latest = rows.flatMap((r) => (r.recent || []).map((a) => ({ a, r }))).sort((x, y) => new Date(y.a.at || 0) - new Date(x.a.at || 0)).slice(0, 12);
     const games = rows.slice().sort((x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || x.g.name.localeCompare(y.g.name));
     const icon = (a) => a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : `<span class="ach-none">${GI.trophy}</span>`;
@@ -2141,7 +2170,7 @@
             <span class="ach-game-name"><b>${esc(r.g.name)}</b>${r.shared ? `<span class="ln-tag">${r.g.source === "steam" ? "Steam account" : "Shared"}</span>` : ""}</span>
             <span class="ach-bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
             <span class="ach-game-num ln-num">${r.unlocked} of ${r.g.total}</span></button></li>`; }).join("")}</ul></section>
-      </div></div>`;
+      </div>${msHTML}</div>`;
   }
 
   // Cloud saves: each player's saves in a folder a cloud app syncs (or a
