@@ -363,6 +363,7 @@ func Documents() string  { return KnownFolder(windows.FOLDERID_Documents) }
 func SavedGames() string { return KnownFolder(windows.FOLDERID_SavedGames) }
 func LocalLow() string   { return KnownFolder(windows.FOLDERID_LocalAppDataLow) }
 func Desktop() string    { return KnownFolder(windows.FOLDERID_Desktop) }
+func Pictures() string   { return KnownFolder(windows.FOLDERID_Pictures) }
 func StartMenuPrograms() string {
 	return KnownFolder(windows.FOLDERID_Programs)
 }

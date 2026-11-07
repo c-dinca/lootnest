@@ -47,6 +47,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_deleteSavePoint", a.apiDeleteSavePoint))
 	must(a.w.Bind("ps_branchSavePoint", a.apiBranchSavePoint))
 	must(a.w.Bind("ps_trySave", a.apiTrySave))
+	must(a.w.Bind("ps_saveRecap", a.apiSaveRecap))
 	must(a.w.Bind("ps_achDoctor", a.apiAchDoctor))
 	must(a.w.Bind("ps_setNameInGame", a.apiSetNameInGame))
 	must(a.w.Bind("ps_steamGames", a.apiSteamGames))

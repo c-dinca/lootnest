@@ -81,7 +81,9 @@
   shelf.p1 = { "game:cs2": { status: "playing", rating: 4, updated: iso(d) }, "steam:1091500": { status: "playing", updated: iso(2 * d) }, "game:ittakestwo": { status: "finished", rating: 5, note: "Best co-op game", updated: iso(20 * d) } };
   const sessions = STATE === "playing" && games[0] ? [{ gameId: "cs2", playerId: ids[ids.length > 1 ? 1 : 0], phase: "playing", since: iso(40 * 60e3) }] : [];
   const days = {};
-  for (let i = 0; i < 120; i++) if (Math.sin(i * 1.7) > 0.2) { const t = new Date(now - i * d); days[t.toISOString().slice(0, 10)] = { "game:cs2": Math.round(Math.abs(Math.sin(i)) * 9000) }; }
+  // Most of a year, across a few games, for the profile page and the recap.
+  const dayGames = ["game:cs2", "game:bg3", "game:bg3", "steam:1091500", "game:ittakestwo", "steam:413150", "game:bg3"];
+  for (let i = 0; i < 300; i++) if (Math.sin(i * 1.7) > 0.2) { const t = new Date(now - i * d); days[t.toISOString().slice(0, 10)] = { [dayGames[(i * 5) % dayGames.length]]: Math.round(Math.abs(Math.sin(i)) * 9000) + 1200 }; }
 
   const settings = {
     startMinimized: false, closeToTray: true, hideWhilePlaying: true, watchOutsideLaunches: true, notifications: true,
@@ -282,6 +284,7 @@
       return ok();
     },
     // A run to try a save in: a profile of the person, as Go makes it.
+    ps_saveRecap: (name, year) => ok("C:\\Users\\you\\Pictures\\Lootnest\\" + name + " in " + year + ".png"),
     ps_trySave: (gid, from, loc, src, name) => {
       const base = PLAYERS.find((p) => p.id === from) || PLAYERS[0];
       const per = PLAYERS.find((p) => p.id === base.of) || base;
