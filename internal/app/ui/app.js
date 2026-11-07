@@ -1978,23 +1978,27 @@
     const f = (B.folders || []).find((x) => x.path.toLowerCase() === (B.dir || "").toLowerCase());
     return f ? f.name : "Your folder";
   }
+  // Cloud saves: where the saves go, every game's state for each player,
+  // and the backups of everything.
   function viewCloud() {
     const B = S.backup;
-    if (!B) { loadBackupInfo(); return `<div class="page"><div class="page-head"><div><h1>Cloud saves</h1></div></div></div>`; }
+    const head = (actions) => `<header class="lib-head"><div><h1>Cloud saves</h1>
+      <p>Every player's saves go up after each session. On another PC, the newest come down before the game starts.</p></div>${actions ? `<div class="lib-actions">${actions}</div>` : ""}</header>`;
+    if (!B) { loadBackupInfo(); return `<div class="cloud-page ln-root">${head("")}${lnInline("", "Reading your cloud folder")}</div>`; }
+    const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
     if (!B.dir) {
-      const tiles = PROVIDERS.map((pv) => {
+      const rows = PROVIDERS.map((pv) => {
         const found = (B.folders || []).filter((f) => pv.match.test(f.name));
-        return `<div class="cs-tile"><b>${esc(pv.name)}</b>
-          ${found.length ? found.map((f) => `<span class="hint selectable">${esc(f.path)}</span><button class="btn primary" data-action="backup-use" data-dir="${esc(f.path)}">Use ${esc(f.name)}</button>`).join("")
-            : `<span class="hint">Install ${esc(pv.name)} and sign in with ${esc(pv.account)}, then come back here.</span><button class="btn" data-action="open-download" data-url="${esc(pv.url)}">Get ${esc(pv.name)}</button>`}</div>`;
+        return found.length
+          ? found.map((f) => `<div class="cs-option"><div><b>${esc(pv.name)}</b><span class="selectable">${esc(f.path)}</span></div>${b("primary", `data-action="backup-use" data-dir="${esc(f.path)}"`, "Use " + esc(f.name))}</div>`).join("")
+          : `<div class="cs-option"><div><b>${esc(pv.name)}</b><span>Install ${esc(pv.name)} and sign in with ${esc(pv.account)}, then come back here.</span></div>${b("secondary", `data-action="open-download" data-url="${esc(pv.url)}"`, "Get " + esc(pv.name))}</div>`;
       }).join("");
-      return `<div class="page"><div class="page-head"><div><h1>Cloud saves</h1>
-        <p class="sub">Every player's saves for every game, in your own cloud: they go up after each session, and on another PC the newest come down before the game starts.</p></div></div>
-        <h2 class="shelf-title">Where should your saves go?</h2>
-        <div class="cs-tiles">${tiles}
-          <div class="cs-tile"><b>USB drive or another folder</b><span class="hint">A drive you carry between PCs, a NAS, or any folder.</span><button class="btn" data-action="backup-pick">Choose a folder</button></div></div>
-        <p class="hint" style="margin-top:14px">Lootnest writes the files to that folder; the cloud app uploads them with your account. Signing in to Microsoft or Google right in Lootnest, without their apps, comes in a later version.</p>
-        <div class="bk-restore"><button class="btn quiet" data-action="restore-pick">Restore from a backup</button><span class="hint">On a new PC, or to go back.</span></div></div>`;
+      return `<div class="cloud-page ln-root">${head("")}
+        <section class="cloud-setup"><div class="ln-section-head"><div><h2>Where should your saves go?</h2><p>Lootnest writes the files to that folder, and the cloud app uploads them with your account.</p></div></div>
+          <div class="cs-options">${rows}
+            <div class="cs-option"><div><b>USB drive or another folder</b><span>A drive you carry between PCs, a NAS, or any folder.</span></div>${b("secondary", 'data-action="backup-pick"', "Choose a folder")}</div></div>
+          <p class="cs-note">Signing in to Microsoft or Google right in Lootnest, without their apps, comes in a later version.</p>
+          <div class="bk-restore">${b("ghost", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back.</span></div></section></div>`;
     }
     const st = B.status, V = S.saves;
     const last = st.running ? "Backing up now" : st.last ? `Last backup ${esc(ago(st.last))}, ${esc(fmtBytes(st.size))}` : "No backup yet";
@@ -2002,16 +2006,15 @@
     const label = { same: "Up to date", up: "Changed here, not uploaded yet", none: "Not in the cloud yet", down: "Newer on another PC", conflict: "Changed on two PCs" };
     let games = "";
     if (B.locked || (V && V.locked)) {
-      games = `<div class="banner"><div><b>This cloud folder has a password</b><p>Saves from your other PC are encrypted. Enter the same password to sync them here.</p></div>
-        <div class="row"><button class="btn primary" data-action="backup-pw" data-on="1">Enter the password</button></div></div>`;
+      games = banner("This cloud folder has a password", "Saves from your other PC are encrypted. Enter the same password to sync them here.", b("primary", 'data-action="backup-pw" data-on="1"', "Enter the password"));
     } else if (!B.sync) {
       games = `<p class="hint">Sync is off: only backups of everything are made.</p>`;
     } else if (!V) {
-      games = `<p class="hint">Checking every game's saves…</p>`;
+      games = lnInline("", "Checking every game's saves");
     } else if (V.error) {
-      games = `<p class="error-text">${esc(V.error)}</p>`;
+      games = lnInline("error", esc(V.error));
     } else if (!V.games.length) {
-      games = `<p class="hint">No saves yet. Turn on profiles for a game, play it, and its saves go up here.</p>`;
+      games = `<div class="ln-glass ln-state">${GI.save}<div><h3>No saves yet</h3><p>Turn on profiles for a game, play it, and its saves go up here.</p></div></div>`;
     } else {
       const byGame = {};
       V.games.forEach((x) => { (byGame[x.gameId] = byGame[x.gameId] || []).push(x); });
@@ -2025,39 +2028,41 @@
             const pl = player(x.playerId);
             if (!pl) return "";
             const where = x.computer ? `${x.state === "same" ? "Last from" : "From"} ${esc(x.computer)}, ${esc(ago(x.changed))}` : "";
-            return `<div class="cs-row state-${esc(x.state)}">${avatarHTML(pl, "sm")}<span class="cs-who">${esc(pl.name)}</span>
-              <span class="cs-state">${esc(label[x.state] || "")}</span><span class="hint">${where}</span>
-              ${x.state === "conflict" ? `<span class="row"><button class="btn small" data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="here">Keep this PC's</button>
-                <button class="btn small quiet" data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="cloud">Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}</button></span>` : ""}</div>`;
+            return `<div class="cs-row state-${esc(x.state)}">${lnAvatar(pl, "20")}<span class="cs-who">${esc(pl.name)}</span>
+              <span class="cs-state">${esc(label[x.state] || "")}</span><span class="cs-where">${where}</span>
+              ${x.state === "conflict" ? `<span class="cs-fix">${b("secondary ln-button--sm", `data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="here"`, "Keep this PC's")}
+                ${b("ghost ln-button--sm", `data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="cloud"`, `Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}`)}</span>` : "<span></span>"}</div>`;
           }).join("")}</div></div>`;
       }).join("")}</div>
-      ${V.players && V.players.length ? `<p class="hint" style="margin-top:12px">The cloud also has saves for ${esc(V.players.join(", "))}. Add a player with the same name on <b>Players</b> (or import their profile) to use them here.</p>` : ""}`;
+      ${V.players && V.players.length ? `<p class="cs-note">The cloud also has saves for ${esc(V.players.join(", "))}. Add a player with the same name on <b>Players</b> (or import their profile) to use them here.</p>` : ""}`;
     }
-    return `<div class="page"><div class="page-head"><div><h1>Cloud saves</h1>
-        <p class="sub">Every player's saves go up after each session; on another PC, the newest come down before the game starts.</p></div>
-        ${B.sync && !B.locked ? `<button class="btn primary" data-action="sync-now">Sync now</button>` : ""}</div>
-      <div class="bk-card">
-        <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><b class="selectable">${esc(B.target)}</b></div>
-          <div class="row"><button class="btn quiet" data-action="backup-pick">Change</button><button class="btn quiet" data-action="backup-open">Open folder</button></div></div>
-        <label class="toggle"><span><b style="font-weight:500">Sync saves between PCs</b><p>Each player's saves go up after a session and the newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.</p></span>
-          <span class="switch"><input type="checkbox" data-backup="sync" ${B.sync ? "checked" : ""}><span></span></span></label>
-        ${sw("gameSaves", "Keep versions of games outside Steam", "For games without profiles that aren't on Steam (Steam has its own cloud): a new version of their saves when they change and the game is closed. Restore any version from the game's page.", cfg().settings.gameSaves)}
-        ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week. Nothing about you or your games is sent.", cfg().settings.saveDb)}
-        <div class="bk-row"><div><b style="font-weight:500">${B.locked ? "Has a password" : B.encrypted ? "Encrypted with your password" : "Not encrypted"}</b>
-          <p class="hint">${B.encrypted ? "Only someone with the password can open these files. Use the same password on every PC." : B.locked ? "Enter it to sync on this PC." : "Anyone who can open the folder can read the saves. A password encrypts them (AES-256), on every PC that uses this folder."}</p></div>
-          <div class="row">${B.encrypted ? `<button class="btn quiet" data-action="backup-pw" data-on="1">Change password</button><button class="btn quiet" data-action="backup-pw" data-on="0">Remove password</button>` : `<button class="btn" data-action="backup-pw" data-on="1">${B.locked ? "Enter the password" : "Set a password"}</button>`}</div></div>
-      </div>
-      <section class="pp-section" style="padding:32px 0 0"><h2 class="shelf-title">Games</h2>${games}</section>
-      <section class="pp-section" style="padding:32px 0 0"><h2 class="shelf-title">Backups of everything</h2>
-        <div class="bk-card">
-          <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p class="hint">Players, games, saves and profiles in one file, to restore on a new PC.</p>`}</div>
-            <button class="btn" data-action="backup-now" ${st.running ? "disabled" : ""}>${st.running ? "Backing up" : "Back up now"}</button></div>
-          <label class="toggle"><span><b style="font-weight:500">Back up after every game session</b><p>And when Lootnest starts, if the last backup is over a day old.</p></span>
-            <span class="switch"><input type="checkbox" data-backup="auto" ${B.auto ? "checked" : ""}><span></span></span></label>
-          <div class="bk-row"><label for="bk-keep" style="font-weight:500">Backups this PC keeps</label><input id="bk-keep" type="number" min="1" max="50" data-backup="keep" value="${B.keep}" style="width:90px"></div>
-        </div>
-        <div class="bk-restore"><button class="btn quiet" data-action="restore-pick">Restore from a backup</button><span class="hint">On a new PC, or to go back. What's here now is saved first.</span></div></section>
-    </div>`;
+    return `<div class="cloud-page ln-root">${head(B.sync && !B.locked ? b("primary", 'data-action="sync-now"', "Sync now") : "")}
+      <div class="cloud-cols">
+        <section><div class="ln-section-head"><div><h2>Games</h2></div></div>${games}</section>
+        <aside class="cloud-side">
+          <section><div class="ln-section-head ln-section-head--minor"><h2>Where</h2></div>
+            <div class="bk-card">
+              <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><b class="selectable">${esc(B.target)}</b></div>
+                <div class="gpage-actions">${b("ghost ln-button--sm", 'data-action="backup-pick"', "Change")}${b("ghost ln-button--sm", 'data-action="backup-open"', "Open folder")}</div></div>
+              <label class="toggle"><span><b>Sync saves between PCs</b><p>Each player's saves go up after a session and the newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.</p></span>
+                <span class="switch"><input type="checkbox" data-backup="sync" ${B.sync ? "checked" : ""}><span></span></span></label>
+              ${sw("gameSaves", "Keep versions of games outside Steam", "For games without profiles that aren't on Steam (Steam has its own cloud): a new version of their saves when they change and the game is closed. Restore any version from the game's page.", cfg().settings.gameSaves)}
+              ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week. Nothing about you or your games is sent.", cfg().settings.saveDb)}
+              <div class="bk-row"><div><b>${B.locked ? "Has a password" : B.encrypted ? "Encrypted with your password" : "Not encrypted"}</b>
+                <p>${B.encrypted ? "Only someone with the password can open these files. Use the same password on every PC." : B.locked ? "Enter it to sync on this PC." : "Anyone who can open the folder can read the saves. A password encrypts them (AES-256), on every PC that uses this folder."}</p></div>
+                <div class="gpage-actions">${B.encrypted ? b("ghost ln-button--sm", 'data-action="backup-pw" data-on="1"', "Change password") + b("ghost ln-button--sm", 'data-action="backup-pw" data-on="0"', "Remove password") : b("secondary ln-button--sm", 'data-action="backup-pw" data-on="1"', B.locked ? "Enter the password" : "Set a password")}</div></div>
+            </div></section>
+          <section><div class="ln-section-head ln-section-head--minor"><h2>Backups of everything</h2></div>
+            <div class="bk-card">
+              <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p>Players, games, saves and profiles in one file, to restore on a new PC.</p>`}</div>
+                ${st.running ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Backing up</button>` : b("secondary ln-button--sm", 'data-action="backup-now"', "Back up now")}</div>
+              <label class="toggle"><span><b>Back up after every game session</b><p>And when Lootnest starts, if the last backup is over a day old.</p></span>
+                <span class="switch"><input type="checkbox" data-backup="auto" ${B.auto ? "checked" : ""}><span></span></span></label>
+              <div class="bk-row"><label for="bk-keep"><b>Backups this PC keeps</b></label><input id="bk-keep" class="ln-input" type="number" min="1" max="50" data-backup="keep" value="${B.keep}" style="width:88px"></div>
+            </div>
+            <div class="bk-restore">${b("ghost ln-button--sm", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back. What's here now is saved first.</span></div></section>
+        </aside>
+      </div></div>`;
   }
   async function saveBackup(change) {
     const B = S.backup;

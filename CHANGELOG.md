@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.16.6
+
+**Cloud saves in the new look:**
+- It uses the whole window, in two columns:
+  - **Games** on the left: each player's state, with a coloured dot (up to date, newer elsewhere, changed on two PCs) and which PC the saves came from.
+  - **Where** and **Backups of everything** on the right.
+- Choosing a folder is now a list: OneDrive, Google Drive, Dropbox, iCloud Drive, or a USB drive or another folder.
+- Switches and setting rows are redone, on Settings too.
+- The pages that aren't redone yet (Settings, dialogs, the profile editor) now share the new colours and type. The gold is gone.
+
 ## 1.16.5
 
 **Players in the new look:**
