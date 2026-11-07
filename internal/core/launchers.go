@@ -54,6 +54,43 @@ var battleNetCodes = map[string]string{
 	"odin": "ODIN", "viper": "VIPR", "zeus": "ZEUS", "lazarus": "LAZR", "fore": "FORE", "auks": "AUKS", "anbs": "ANBS",
 }
 
+// launcherApps are the launchers and store apps themselves, never games.
+var launcherApps = []string{"battle.net", "blizzard battle.net", "blizzard app", "ubisoft connect", "uplay", "ea app", "ea desktop", "origin",
+	"riot client", "riot vanguard", "rockstar games launcher", "rockstar games social club", "social club", "amazon games",
+	"epic games launcher", "epic online services", "gog galaxy", "itch", "xbox", "steam", "playnite", "lootnest", "playswap"}
+
+// IsLauncherApp says whether a program's name is a launcher's, not a game's:
+// the name itself, or with "beta", "launcher", "client" or a note in
+// brackets after it.
+func IsLauncherApp(name string) bool {
+	n := strings.Join(strings.Fields(strings.ToLower(name)), " ")
+	for _, l := range launcherApps {
+		if n == l {
+			return true
+		}
+		if rest, ok := strings.CutPrefix(n, l+" "); ok {
+			switch {
+			case strings.HasPrefix(rest, "("), rest == "beta", rest == "launcher", rest == "app", rest == "client", rest == "desktop", rest == "helper":
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// tooBroadDir: an install folder that holds many programs, such as a drive
+// or Program Files, is never one game.
+func tooBroadDir(dir string) bool {
+	if filepath.Dir(dir) == dir || len(dir) <= 3 {
+		return true
+	}
+	switch strings.ToLower(filepath.Base(dir)) {
+	case "program files", "program files (x86)", "programdata", "windows", "users", "appdata", "local", "roaming", "games", "steamapps", "common":
+		return true
+	}
+	return false
+}
+
 // LauncherGames picks the games of known launchers out of the installed
 // programs.
 func LauncherGames(entries []UninstallEntry) []FoundGame {
@@ -61,7 +98,7 @@ func LauncherGames(entries []UninstallEntry) []FoundGame {
 	for _, e := range entries {
 		name := strings.TrimSpace(e.DisplayName)
 		dir := filepath.Clean(strings.Trim(strings.TrimSpace(e.InstallLocation), `"`))
-		if name == "" || e.InstallLocation == "" || !isDir(dir) {
+		if name == "" || e.InstallLocation == "" || IsLauncherApp(name) || tooBroadDir(dir) || !isDir(dir) {
 			continue
 		}
 		un := e.UninstallString
@@ -85,7 +122,7 @@ func LauncherGames(entries []UninstallEntry) []FoundGame {
 			f.Source, f.Exe, f.Args = "riot", client, "--launch-product="+product+" --launch-patchline="+patch
 		case strings.Contains(strings.ToLower(un), "blizzard uninstaller") && blizzardUID.MatchString(un):
 			uid := strings.ToLower(blizzardUID.FindStringSubmatch(un)[1])
-			if uid == "battle.net" || uid == "bna" || uid == "agent" {
+			if strings.HasPrefix(uid, "battle.net") || strings.HasPrefix(uid, "bna") || uid == "agent" {
 				continue
 			}
 			f.Source = "battlenet"

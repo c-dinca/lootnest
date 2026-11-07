@@ -136,3 +136,47 @@ func TestEpicLaunchURI(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
+
+func TestLaunchersAreNotGames(t *testing.T) {
+	for name, want := range map[string]bool{
+		"Battle.net": true, "battle.net": true, "Ubisoft Connect": true, "EA app": true, "Riot Client": true,
+		"Rockstar Games Launcher": true, "Epic Games Launcher": true, "GOG GALAXY": true, "Steam": true, "Battle.net (Beta)": true,
+		"Mega Man Battle Network Legacy Collection Vol. 1": false, "SteamWorld Dig": false, "Origins": false,
+		"Xbox Game Bar": false, "Diablo IV": false,
+	} {
+		if IsLauncherApp(name) != want {
+			t.Errorf("IsLauncherApp(%q) = %v", name, !want)
+		}
+	}
+	root := t.TempDir()
+	bnet := filepath.Join(root, "Battle.net")
+	fakeGame(t, bnet, "Battle.net.exe")
+	pf := filepath.Join(root, "Program Files (x86)")
+	fakeGame(t, pf, "something.exe")
+	got := LauncherGames([]UninstallEntry{
+		{Key: "Battle.net", DisplayName: "Battle.net", InstallLocation: bnet,
+			UninstallString: `"C:\ProgramData\Battle.net\Agent\Blizzard Uninstaller.exe" --lang=enUS --uid=battle.net --displayname="Battle.net"`},
+		{Key: "Odd", DisplayName: "Some Game", InstallLocation: pf,
+			UninstallString: `"C:\ProgramData\Battle.net\Agent\Blizzard Uninstaller.exe" --uid=odd`},
+	})
+	if len(got) != 0 {
+		t.Fatalf("Battle.net itself and Program Files aren't games: %+v", got)
+	}
+	// One an earlier version saved is dropped from the Library.
+	saved := []FoundGame{{Key: "dir:" + bnet, Name: "Battle.net", Source: "battlenet", Dir: bnet}}
+	if out := MergeFound(saved, nil, func(string) bool { return true }); len(out) != 0 {
+		t.Fatalf("%+v", out)
+	}
+}
+
+func TestStoreNameMatch(t *testing.T) {
+	fetch := func(u string) ([]byte, error) {
+		return []byte(`{"items":[{"id":1798010,"name":"Mega Man Battle Network Legacy Collection Vol. 1"},{"id":220,"name":"Half-Life 2: Deluxe"}]}`), nil
+	}
+	if id, _ := FindStoreApp(fetch, "Battle.net"); id != 0 {
+		t.Fatalf("a name inside another game's name isn't that game: %d", id)
+	}
+	if id, _ := FindStoreApp(fetch, "Half-Life 2"); id != 220 {
+		t.Fatalf("a name the store's starts with still matches: %d", id)
+	}
+}
