@@ -171,6 +171,16 @@ func Run(opt Options) error {
 	if opt.MigrateErr != nil {
 		a.logf("Couldn't move PlaySwap's data to the Lootnest folder yet (%v); using %s for now", opt.MigrateErr, DataDir())
 	}
+	// A swap cut short when Lootnest closed or the PC turned off is done
+	// again first, before anything saves the files in place.
+	var recovered []string
+	if err == nil && !first {
+		var rerr error
+		recovered, rerr = a.eng.RecoverSwaps(a.cfg, a.cfg.Settings.BackupsToKeep)
+		if rerr != nil {
+			a.logf("ERROR %v", rerr)
+		}
+	}
 	// Games set up by older versions to swap Steam's whole folder for them
 	// (with Steam Cloud's records): swap the folders inside it instead.
 	if err == nil && !first {
@@ -241,6 +251,15 @@ func Run(opt Options) error {
 
 	a.tray = win.NewTray(a.hwnd, dpi)
 	a.tray.Add(Name)
+	if len(recovered) > 0 {
+		names := make([]string, len(recovered))
+		a.mu.Lock()
+		for i, id := range recovered {
+			names[i] = a.gameName(id)
+		}
+		a.mu.Unlock()
+		a.notify("Finished an interrupted swap", "Lootnest closed in the middle of loading a profile's files for "+strings.Join(names, ", ")+". It's finished now, and nobody's saves were changed.")
+	}
 
 	if !opt.StartHidden || opt.LaunchGame != "" {
 		a.show()
