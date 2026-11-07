@@ -109,6 +109,10 @@ func FirewallScript(tag, name string, exes []string, block bool) string {
 				" -Direction Outbound -Action Block -Program " + psQuote(e) + " | Out-Null\n")
 		}
 	}
+	// No rules to take away is fine: without this, Get-NetFirewallRule's
+	// silenced "none found" makes PowerShell end with exit code 1. A real
+	// error stops the script before here, with exit code 1.
+	b.WriteString("exit 0\n")
 	return b.String()
 }
 

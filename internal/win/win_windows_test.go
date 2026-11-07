@@ -125,4 +125,7 @@ func TestFirewallRules(t *testing.T) {
 	if got := run(count); got != "0" {
 		t.Fatalf("rules after letting it online: %s", got)
 	}
+	// Letting it online again when its rules are already gone (taken out in
+	// Windows' own settings) succeeds too.
+	run(core.FirewallScript(tag, "Lootnest Test Game", nil, false))
 }

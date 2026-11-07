@@ -52,6 +52,9 @@ func TestFirewallScript(t *testing.T) {
 	if strings.Contains(un, "New-NetFirewallRule") {
 		t.Fatal("unblock must only remove")
 	}
+	if !strings.HasSuffix(un, "exit 0\n") || !strings.HasSuffix(s, "exit 0\n") {
+		t.Fatal("the script must end in success when there's nothing to take away")
+	}
 	enc := EncodePowerShell("hé")
 	raw, _ := base64.StdEncoding.DecodeString(enc)
 	u := make([]uint16, len(raw)/2)
