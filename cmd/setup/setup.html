@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Lootnest setup</title>
 <style>
-:root { --ink:#141312; --panel:#1b1a18; --raised:#23211e; --line:#2f2c28; --text:#ece8e1; --muted:#a29b91; --dim:#6f6961; --bad:#e0776b; --gold:#e0a458; --gold-ink:#1a1408; --focus:#e0a458;
+:root { --ink:#111217; --panel:#191a20; --raised:#22232a; --line:#2e3038; --text:#DFE5EB; --muted:#a9b0b8; --dim:#8a919a; --bad:#f0907f; --gold:#DFE5EB; --gold-ink:#111217; --focus:#DFE5EB; --red:#EF233C;
   --font:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif; --display:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif; color-scheme:dark; }
 * { box-sizing:border-box; }
 html,body { margin:0; height:100%; }
@@ -20,7 +20,7 @@ h1 { font:600 26px/1.2 var(--display); margin:0; }
 .sub { color:var(--muted); margin:6px 0 0; max-width:52ch; }
 .opts { display:grid; gap:2px; }
 .opt { display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start; padding:10px 0; cursor:pointer; }
-.opt input { margin:3px 0 0; width:16px; height:16px; accent-color:var(--gold); }
+.opt input { margin:3px 0 0; width:16px; height:16px; accent-color:var(--red); }
 .opt p { margin:2px 0 0; color:var(--muted); font-size:13px; }
 .where { color:var(--dim); font-size:12.5px; user-select:text; }
 .foot { display:flex; gap:10px; justify-content:flex-end; align-items:center; padding:16px 36px 20px; border-top:1px solid var(--line); }
@@ -31,7 +31,7 @@ h1 { font:600 26px/1.2 var(--display); margin:0; }
 .btn.primary:hover { background:#ebb46c; border-color:#ebb46c; }
 .btn:disabled { opacity:.5; cursor:default; }
 .bar { width:100%; max-width:360px; height:3px; border-radius:3px; background:var(--line); overflow:hidden; }
-.bar::after { content:""; display:block; width:40%; height:100%; border-radius:3px; background:var(--gold); animation:slide 1.2s cubic-bezier(.2,.7,.3,1) infinite; }
+.bar::after { content:""; display:block; width:40%; height:100%; border-radius:3px; background:var(--red); animation:slide 1.2s cubic-bezier(.2,.7,.3,1) infinite; }
 @keyframes slide { from { transform:translateX(-100%); } to { transform:translateX(250%); } }
 @media (prefers-reduced-motion: reduce) { .bar::after { animation:none; width:100%; } .main { animation:none; } }
 </style>
@@ -42,7 +42,7 @@ h1 { font:600 26px/1.2 var(--display); margin:0; }
 "use strict";
 (function () {
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const mark = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#23211e"/><path d="M7 17a9 8 0 0 0 18 0" fill="none" stroke="#e0a458" stroke-width="3.2" stroke-linecap="round"/><path d="M11.5 10.5 14 7h4l2.5 3.5L16 17z" fill="#e0a458"/></svg>';
+  const mark = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#22232a"/><path d="M7 17a9 8 0 0 0 18 0" fill="none" stroke="#DFE5EB" stroke-width="3.2" stroke-linecap="round"/><path d="M11.5 10.5 14 7h4l2.5 3.5L16 17z" fill="#EF233C"/></svg>';
   let info = null, step = "options", error = "";
   const opts = { desktop: true, autostart: true, launch: true };
 
