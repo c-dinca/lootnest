@@ -240,6 +240,74 @@ and never links to unofficial sources, hidden or not. Money, if any: free core f
 donations, and an optional one-time Supporter for comfort features, never
 for safety.
 
+## Agreed with the owner, next up (November 2026)
+
+These came after the research brief, in conversation with the owner. Build
+them one per PR, in this order unless the owner says otherwise.
+
+**The achievement overlay.** No injection, no reading game memory: a
+separate always-on-top window, as Xbox Game Bar or a desktop companion
+app does. It shows over windowed and borderless games, and over most
+"fullscreen" ones on Windows 10 and 11 (fullscreen optimizations); not
+over true exclusive fullscreen, where it says to switch to borderless.
+Off by default for games with an anti-cheat (EAC, BattlEye, Vanguard).
+WebView2 can do a transparent background (`PutDefaultBackgroundColor`
+with alpha 0 in `third_party/go-webview2`). Window behaviour over a real
+game can only be checked on the owner's PC.
+1. **Unlock toasts**: while a game runs, watch its achievement files
+   (Steam's cache and the tools' files) and show "Achievement unlocked"
+   with the name, its rarity (Steam's public global percentages, no key
+   needed) and the profile's colour.
+2. **The panel** on a hotkey (Ctrl+Shift+A, not Shift+Tab, Steam's):
+   the seated profile's achievements for this game, progress, rarity,
+   hidden ones covered until clicked, the profile's own notes per
+   achievement, "Find a guide" in the browser.
+3. **Tracking**: pin up to 3 achievements to a small corner HUD, with the
+   session's time.
+4. Later, live match data where the game offers it officially: CS2 and
+   Dota 2 Game State Integration, League's local Live Client Data API.
+
+**Things only Lootnest can do** (they need the swap engine and profiles):
+1. **Save points and a time machine**: a hotkey during play copies the
+   save files as a named point ("before the boss"), with a screenshot.
+   Each game gets a timeline (time, playtime, achievements then): rewind
+   to any point (the current state is kept), or branch a new run from it.
+   This is the research brief's run branching. Copies made while the game
+   runs are read back and retried if the game was mid-write.
+2. **Try a save safely**: import a save from a friend or a mod site into a
+   temporary run; the profile's own saves stay untouched; one click back,
+   or keep the run.
+3. **Lootnest on a USB stick**: a portable Lootnest carries its profiles;
+   on a friend's PC it swaps your saves in and theirs back afterwards,
+   with a copy first, installing nothing.
+4. **What do we play tonight?**: from who's seated (co-op games none of
+   them finished when two sit), the time they have, Up next, and a
+   backlog roulette.
+5. **Your year in games**: a yearly recap per profile and per household,
+   across every store and folder game, as an image made on the PC to
+   share.
+
+**For games from outside stores** (repacks, folders, emulated). Only what's
+already on the PC, as always:
+1. The overlay above: most Steam emulators have no overlay or toasts.
+2. **The profile's name in the game**: when the owner asks, write the
+   profile's name and id into the emulator's own settings file (Goldberg
+   `configs.user.ini` / `account_name.txt` and the like), so LAN friends
+   see the right name and each run has its own identity.
+3. **Achievement Doctor** (research step 4).
+4. **Your version against the latest**: read the version from the folder
+   name ("v1.0.3") and compare with the latest update in Steam's news;
+   on an update the safety net keeps the saves, and optionally the old
+   game folder, to go back.
+5. **Remove a folder game cleanly**: copy its saves first, then delete the
+   folder; reinstalled later, its saves come back.
+6. **Block a game from going online**: a Windows Firewall rule for its exe.
+7. **Import achievement history** from Hydra and Achievement Watcher.
+
+The line, which holds for all of these: Lootnest never shows where to get
+games (no sources, official-looking or hidden), never bypasses DRM, and
+never generates, ships or "repairs" anything that makes a game start.
+
 ## Ideas not started
 
 - Disk space: what each game and profile takes, what can move to another
