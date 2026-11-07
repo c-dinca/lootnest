@@ -208,10 +208,20 @@
       const mk = (n, got, names) => names.slice(0, n).map((nm, i) => ({ id: "ACH_" + i, name: nm, description: "Do the thing number " + (i + 1), unlocked: i < got, at: i < got ? iso((i + 1) * 9 * h) : undefined, percent: [62.4, 31, 12.8, 4.2, 0.9, 48, 22, 7.5][i % 8], hidden: i === n - 1 }));
       const names = ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist", "Collector", "Completionist", "Speed demon", "Old friends", "Last one standing", "Secret ending"];
       const set = key === "game:cs2" ? { appId: 730, source: "steam", total: 12, unlocked: 5, list: mk(12, 5, names) }
+        : key === "dir:d:\\games\\onimusha" ? null
         : key.startsWith("dir:") ? { appId: 1091500, source: "pc", total: 12, unlocked: 3, list: mk(12, 3, names) }
         : key === "game:bg3" ? { appId: 1086940, source: "pc", total: 12, unlocked: 7, list: mk(12, 7, names),
           players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { source: "pc", total: 12, unlocked: [7, 2, 11, 4, 0, 9][i % 6], list: mk(12, [7, 2, 11, 4, 0, 9][i % 6], names) }])) } : null;
       if (STATE !== "loading") emit({ type: "achievements", key, set });
+      return ok();
+    },
+    ps_achDoctor: (key) => {
+      setTimeout(() => emit({ type: "achDoctor", key, steps: [
+        { state: "ok", title: "It's Steam game 2134500", detail: "Lootnest found its Steam id from steam_appid.txt, or a tool's settings, next to the game." },
+        { state: "ok", title: "Goldberg (GSE) is next to the game", detail: "Lootnest reads the achievement files it keeps.", path: "D:\\Games\\Onimusha" },
+        { state: "warn", title: "No achievement file yet", detail: "Tools usually write it when the first achievement unlocks. Lootnest looked in 17 places, such as C:\\Users\\cris\\AppData\\Roaming\\Goldberg SteamEmu Saves\\2134500\\achievements.json." },
+        { state: "warn", title: "Achievements show by their ids", detail: "For their names, descriptions and pictures, add your free Steam Web API key in Settings, Online." },
+      ], nameInGame: { name: "goldberg", settings: "D:\\Games\\Onimusha\\steam_settings" } }), 250);
       return ok();
     },
     ps_allAchievements: () => {

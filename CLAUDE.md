@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.41.0)
+## Where things stand (1.42.0)
 
 These shipped recently, newest last:
 
@@ -219,6 +219,12 @@ These shipped recently, newest last:
   `Settings.AchRarity` (opt-in) reads Steam's public global percentages
   (`globalPercent`, kept 3 days) into `Achievement.Percent`. The seat is
   sent to Go (`ps_setSeat`) for the colour.
+- **1.42** Achievement Doctor (`core/achdoctor.go`, `app/achdoctor.go`,
+  drawer `achdoc`): `DetectTool`, `Env.AchievementFiles`, steps as
+  `DoctorStep` (ok, warn, fail, info). `SetToolAccountName` writes
+  `account_name` in `steam_settings\configs.user.ini` (and the legacy
+  `force_account_name.txt` if present), with a copy kept first; only from
+  the button.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -325,11 +331,11 @@ game can only be checked on the owner's PC.
 **For games from outside stores** (repacks, folders, emulated). Only what's
 already on the PC, as always:
 1. The overlay above: most Steam emulators have no overlay or toasts.
-2. **The profile's name in the game**: when the owner asks, write the
+2. **The profile's name in the game** (by hand from the check in 1.42; per swap still open): when the owner asks, write the
    profile's name and id into the emulator's own settings file (Goldberg
    `configs.user.ini` / `account_name.txt` and the like), so LAN friends
    see the right name and each run has its own identity.
-3. **Achievement Doctor** (research step 4).
+3. **Achievement Doctor** (research step 4). Done in 1.42.
 4. **Your version against the latest**: read the version from the folder
    name ("v1.0.3") and compare with the latest update in Steam's news;
    on an update the safety net keeps the saves, and optionally the old

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.42.0
+
+- **Why no achievements? An achievement check.** A game from outside the stores with no achievements on its page now has **Check why**. Games that have achievements get **Check**. It goes through each step and says which one is missing:
+  - which Steam game it is, and where Lootnest found its id;
+  - the Steam-compatible tool next to the game, and whether Lootnest reads its files;
+  - the achievement file that tool keeps: where it is, when it was written, and how many it has unlocked, or that it isn't there yet;
+  - where the names and pictures come from, or that a Steam Web API key would add them;
+  - whether each profile has its own;
+  - whether toasts show over it.
+  It only looks. Nothing changes unless you press a button.
+- **Your profile's name in the game.** For a game with a Goldberg-style tool (a steam_settings folder), the check shows the name the game uses, which is also what friends see on LAN. **Use Cristian's name** sets it to the seated profile's name. Its settings files are copied to backups first.
+
 ## 1.41.0
 
 - **Achievements as they unlock.** While you play a game whose achievements a Steam-compatible tool keeps on this PC (a game in a folder, from Hydra, or added by hand), a small note shows over the game the moment one unlocks: its name, how rare it is, and the colour of the profile playing.

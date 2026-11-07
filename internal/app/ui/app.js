@@ -85,6 +85,8 @@
     updateInstaller: (key, path, full) => call("ps_updateInstaller", key, path, !!full),
     setSeat: (id) => call("ps_setSeat", id || ""),
     testToast: () => call("ps_testToast"),
+    achDoctor: (key, appId, dir, name) => call("ps_achDoctor", key, appId || 0, dir || "", name),
+    setNameInGame: (key, dir, pid) => call("ps_setNameInGame", key, dir || "", pid),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
@@ -106,6 +108,7 @@
   const S = {
     pinfo: {},        // game id -> player id -> {saved, size} of their profile
     ach: {},          // Library key -> achievements read from this PC (null: none)
+    doctor: {},       // Library key -> Achievement Doctor's check (achDoctor event)
     achWho: {},       // Library key -> whose achievements are shown
     setTab: pref("setTab", "general"), // the Settings category open
     allAch: null,     // the Achievements page: every game's, null until read
@@ -280,6 +283,10 @@
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
+        break;
+      case "achDoctor":
+        S.doctor[ev.key] = ev;
+        if (S.dialog && S.dialog.kind === "achdoc") renderOverlay();
         break;
       case "achUnlocked":
         // A game running now unlocked something: its page and the
@@ -1340,6 +1347,27 @@
     if (!it) return "";
     return drawer({ label: `Manage ${esc(it.name)}`, title: esc(it.name), sub: it.kind === "found" ? "Profiles are off for this game" : "Its files, shortcuts and how it starts", body: `<div class="gpage-manage-list">${manageGroups(it)}</div>`, menu: true });
   }
+  // Achievement Doctor: games whose achievements a tool keeps on this PC.
+  const docWorth = (it) => !(it.kind === "found" && (storeKept(it.source) || it.appId > 0));
+  function docDir(it) { return it.f ? it.f.dir : it.exe; }
+  function viewAchDoctor() {
+    const it = dialogItem(S.dialog);
+    if (!it) return "";
+    const key = recentKey(it), R = S.doctor[key];
+    const shell = (body, foot) => drawer({ label: `Check ${esc(possessive(it.name))} achievements`, title: "Achievement check", sub: `${esc(it.name)}, step by step. Lootnest only looks; nothing changes unless you press a button below.`, body, foot });
+    if (!R) return shell(lnInline("", "Checking", "Looking next to the game and where tools keep their files"));
+    if (R.error) return shell(lnInline("error", esc(R.error)));
+    const tone = { ok: "ok", warn: "mid", fail: "low", info: "" };
+    const steps = (R.steps || []).map((x) => `<li class="doc-step run-card${tone[x.state] ? " run-card--" + tone[x.state] : ""}"><div class="run-head"><span class="run-dot"></span><div><b>${esc(x.title)}</b><p>${esc(x.detail)}</p>
+        ${x.path ? `<p class="doc-path selectable">${esc(x.path)}</p>` : ""}</div></div></li>`).join("");
+    const bad = (R.steps || []).find((x) => x.state === "fail") || (R.steps || []).find((x) => x.state === "warn");
+    const N = R.nameInGame;
+    const seat = (S.seat && player(S.seat)) || null;
+    const nameBlock = N ? `<div class="gpage-sub">${gpHead("The name in the game")}<p class="gpage-hint">The tool shows ${N.name ? `<b class="selectable">${esc(N.name)}</b>` : "its own default name"} in the game, and to friends on LAN. ${seat ? `Set it to ${esc(possessive(seat.name))} name; its settings are kept in backups first.` : "Sit down in Who's here to set it to your profile's name."}</p>
+        ${seat && seat.name !== N.name ? `<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="doc-name" ${itemAttr(it)} data-player="${esc(seat.id)}">Use ${esc(possessive(seat.name))} name</button></div>` : ""}</div>` : "";
+    return shell(`<p class="gpage-hint">${bad ? `Most likely: ${esc(bad.title.charAt(0).toLowerCase() + bad.title.slice(1))}.` : "Everything Lootnest checks is in place."}</p><ol class="doc-steps">${steps}</ol>${nameBlock}`,
+      `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)}>Check again</button>`);
+  }
   function viewAchDrawer() {
     const it = dialogItem(S.dialog);
     if (!it) return "";
@@ -1561,6 +1589,8 @@
       o.innerHTML = viewManage();
     } else if (D.kind === "achievements") {
       o.innerHTML = viewAchDrawer();
+    } else if (D.kind === "achdoc") {
+      o.innerHTML = viewAchDoctor();
     } else if (D.kind === "offer") {
       o.innerHTML = viewOffer();
     } else if (D.kind === "update") {
@@ -2138,14 +2168,19 @@
   // On the game's page: the latest unlocked, and the whole list in a panel.
   function achievementsBlock(it) {
     const X = achFor(it);
-    if (!X) return "";
+    if (!X) {
+      // Read and none found: for a game from outside the stores, say why.
+      if (S.ach[recentKey(it)] !== null || !docWorth(it)) return "";
+      return `<section class="gpage-block gp-ach">${gpHead("Achievements")}<p>None found on this PC for ${esc(it.name)}.</p>
+        <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button></div></section>`;
+    }
     const { key, who, A, pct } = X;
     const list = A.list.filter((a) => a.unlocked).slice(0, 6);
     return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(possessive(pname(who))) + " achievements" : "Achievements"}</h2></div>
         <span class="ach-count"><b class="ln-num">${A.unlocked}</b> of <span class="ln-num">${A.total}</span>, ${pct}%</span></div>
       ${X.whoRow}${X.bar}
       ${list.length ? `<ul class="ach-list ach-grid">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
-      <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p><div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-all" ${itemAttr(it)} aria-haspopup="dialog">Show all ${A.total}</button>${X.toggle}</div></div></section>`;
+      <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p><div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-all" ${itemAttr(it)} aria-haspopup="dialog">Show all ${A.total}</button>${docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : ""}${X.toggle}</div></div></section>`;
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
@@ -2996,6 +3031,27 @@
     play: (el) => { const p = seated(); if (p) actions["play-as"]({ dataset: { game: el.dataset.game, player: p.id } }); else openPicker(el.dataset.game, "play"); },
     seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
     "seat-set"(el) { setSeat(el.dataset.player); },
+    "ach-doctor"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const key = recentKey(it);
+      delete S.doctor[key];
+      const open = S.dialog && S.dialog.kind === "achdoc";
+      S.dialog = { kind: "achdoc", ik: it.kind, iid: it.id };
+      renderOverlay(); if (!open) focusDrawer();
+      api.achDoctor(key, it.appId, docDir(it), it.name).catch((e) => { S.doctor[key] = { error: errText(e) }; renderOverlay(); });
+    },
+    async "doc-name"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      try { await api.setNameInGame(recentKey(it), docDir(it), el.dataset.player); toast(`The name in ${it.name} is now ${pname(el.dataset.player)}`); actions["ach-doctor"](el); }
+      catch (e) { toast(errText(e), "error"); }
+    },
+    async "show-log-nav"() {
+      S.dialog = null; renderOverlay(); S.setTab = "data"; S.view = "settings"; S.menuFor = null; S.animateView = true;
+      try { S.logText = (await api.log()) || "Nothing yet."; } catch (e) { S.logText = errText(e); }
+      render(); $("#view").scrollTop = 0;
+    },
     "ach-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "achievements", ik: it.kind, iid: it.id }; renderOverlay(); focusDrawer(); } },
     manage(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "manage", ik: it.kind, iid: it.id }; renderOverlay(); focusDrawer(); } },
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
