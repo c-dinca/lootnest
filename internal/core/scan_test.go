@@ -76,6 +76,11 @@ func TestPrettyName(t *testing.T) {
 		"Cyberpunk 2077":            "Cyberpunk 2077",
 		"Elden_Ring":                "Elden Ring",
 		"Stray":                     "Stray",
+		"Phantom.Blade.Zero-Tag":    "Phantom Blade Zero",
+		"The.Witcher.3.Wild.Hunt":   "The Witcher 3 Wild Hunt",
+		"Spider-Man":                "Spider-Man",
+		"Spider-Man.Miles.Morales":  "Spider-Man Miles Morales",
+		"Half-Life 2":               "Half-Life 2",
 	} {
 		if got := prettyName(in); got != want {
 			t.Errorf("prettyName(%q) = %q", in, want)
@@ -233,5 +238,48 @@ func TestLibraryPrefs(t *testing.T) {
 	}
 	if _, err := CleanLibraryPref(LibraryPref{Args: "-a\n-b"}); err == nil {
 		t.Fatal("launch options on two lines are refused")
+	}
+}
+
+func TestExeGame(t *testing.T) {
+	f := newFixture(t)
+	games := filepath.Join(f.root, "D", "Games")
+	exe := filepath.Join(games, "Phantom.Blade.Zero-Tag", "steam", "PBZ.exe")
+	write(t, exe, "exe")
+	write(t, filepath.Join(games, "Phantom.Blade.Zero-Tag", "PBZ", "Content", "Paks", "pak0.pak"), "data")
+	g := f.env.ExeGame(exe, []string{games})
+	if g.Name != "Phantom Blade Zero" {
+		t.Fatalf("the game is named after its folder, not the steam folder inside it: %q", g.Name)
+	}
+	if !samePath(g.Dir, filepath.Join(games, "Phantom.Blade.Zero-Tag")) || g.ProcessName != "PBZ" || g.Source != "added" {
+		t.Fatalf("got %+v", g)
+	}
+	if g.Key != "dir:"+strings.ToLower(filepath.Join(games, "Phantom.Blade.Zero-Tag")) {
+		t.Fatalf("the key must match the scan's key for the same folder: %s", g.Key)
+	}
+
+	// An exe straight inside a games folder is named after itself.
+	loose := filepath.Join(games, "Tiny_Game.exe")
+	write(t, loose, "exe")
+	if g := f.env.ExeGame(loose, []string{games}); g.Name != "Tiny Game" || !samePath(g.Dir, games) {
+		t.Fatalf("got %+v", g)
+	}
+}
+
+func TestMergeAdded(t *testing.T) {
+	found := []FoundGame{{Key: "dir:d:/games/x", Name: "X", Source: "epic", Exe: "d:/games/x/x.exe", ProcessName: "x"}}
+	added := []FoundGame{
+		{Key: "dir:d:/games/x", Name: "X", Source: "added", Exe: "d:/games/x/bin/real.exe", ProcessName: "real"},
+		{Key: "dir:d:/games/a", Name: "A", Source: "added", Exe: "d:/games/a/a.exe"},
+	}
+	out := MergeAdded(found, added)
+	if len(out) != 2 || out[0].Name != "A" || !out[0].Added {
+		t.Fatalf("added games join the list, sorted: %+v", out)
+	}
+	if out[1].Source != "epic" || out[1].Exe != "d:/games/x/bin/real.exe" || out[1].ProcessName != "real" || !out[1].Added {
+		t.Fatalf("a game the scan also found keeps its store but uses the exe the user picked: %+v", out[1])
+	}
+	if found[0].Exe != "d:/games/x/x.exe" {
+		t.Fatal("the scan results must not change")
 	}
 }

@@ -3,6 +3,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,10 +34,45 @@ func (a *App) scanPC() []core.FoundGame {
 		}
 	}
 
-	// Folders that hold games but are not games themselves.
+	roots, containers := gameFolders(env)
+	all = append(all, core.ScanFolders(roots, containers)...)
+
+	// Shortcuts the user made (common for games installed by hand).
+	windir := strings.ToLower(win.WindowsDir())
+	for lnk, target := range win.ResolveShortcuts(win.ShortcutFiles()) {
+		if !strings.EqualFold(filepath.Ext(target), ".exe") || (windir != "" && strings.HasPrefix(strings.ToLower(target), windir)) {
+			continue
+		}
+		if _, err := os.Stat(target); err != nil {
+			continue
+		}
+		base := strings.ToLower(filepath.Base(target))
+		if base == "steam.exe" || strings.Contains(base, "launcher") || strings.Contains(base, "unins") || strings.Contains(base, "setup") ||
+			strings.Contains(base, "install") || base == "lootnest.exe" {
+			continue
+		}
+		root := core.GameRoot(target, containers)
+		skip := false
+		for _, c := range containers {
+			if strings.EqualFold(filepath.Clean(root), filepath.Clean(c)) {
+				skip = true
+				break
+			}
+		}
+		if skip || core.SkipShortcut(target, root) || !core.LooksLikeGame(root) {
+			continue
+		}
+		name := strings.TrimSuffix(filepath.Base(lnk), filepath.Ext(lnk))
+		all = append(all, core.FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(root)), Name: name, Source: "shortcut", Exe: target, Dir: root})
+	}
+	return env.FinishFound(all)
+}
+
+// gameFolders lists the folders the scan looks inside (roots) and the
+// folders that hold games but are not games themselves (containers).
+func gameFolders(env *core.Env) (roots, containers []string) {
 	home := os.Getenv("USERPROFILE")
-	containers := []string{home, win.Desktop(), win.Documents(), win.ProgramFiles(), win.ProgramFilesX86(), win.WindowsDir()}
-	var roots []string
+	containers = []string{home, win.Desktop(), win.Documents(), win.ProgramFiles(), win.ProgramFilesX86(), win.WindowsDir()}
 	gameDirNames := []string{"Games", "Game", "Jocuri", "Gaming", "Juegos", "Jeux", "Spiele", "Epic Games", "GOG Games",
 		`GOG Galaxy\Games`, "PC Games"}
 	for _, d := range win.FixedDrives() {
@@ -73,37 +109,19 @@ func (a *App) scanPC() []core.FoundGame {
 	for _, lib := range core.SteamLibraries(env.SteamPath) {
 		containers = append(containers, lib, filepath.Join(lib, "steamapps"), filepath.Join(lib, "steamapps", "common"))
 	}
-	all = append(all, core.ScanFolders(roots, containers)...)
+	return roots, containers
+}
 
-	// Shortcuts the user made (common for games installed by hand).
-	windir := strings.ToLower(win.WindowsDir())
-	for lnk, target := range win.ResolveShortcuts(win.ShortcutFiles()) {
-		if !strings.EqualFold(filepath.Ext(target), ".exe") || (windir != "" && strings.HasPrefix(strings.ToLower(target), windir)) {
-			continue
-		}
-		if _, err := os.Stat(target); err != nil {
-			continue
-		}
-		base := strings.ToLower(filepath.Base(target))
-		if base == "steam.exe" || strings.Contains(base, "launcher") || strings.Contains(base, "unins") || strings.Contains(base, "setup") ||
-			strings.Contains(base, "install") || base == "lootnest.exe" {
-			continue
-		}
-		root := core.GameRoot(target, containers)
-		skip := false
-		for _, c := range containers {
-			if strings.EqualFold(filepath.Clean(root), filepath.Clean(c)) {
-				skip = true
-				break
-			}
-		}
-		if skip || core.SkipShortcut(target, root) || !core.LooksLikeGame(root) {
-			continue
-		}
-		name := strings.TrimSuffix(filepath.Base(lnk), filepath.Ext(lnk))
-		all = append(all, core.FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(root)), Name: name, Source: "shortcut", Exe: target, Dir: root})
+// libraryGames is every game in the Library without profiles: what the scan
+// found plus what the user added by hand, with their names and launch
+// options applied. a.mu must not be held.
+func (a *App) libraryGames() []core.FoundGame {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.found == nil {
+		a.found = a.store.LoadLibrary()
 	}
-	return env.FinishFound(all)
+	return core.ApplyLibraryPrefs(core.MergeAdded(a.found, a.cfg.AddedGames), a.cfg.LibraryPrefs)
 }
 
 // visibleFound hides games already in Lootnest and ones the user dismissed.
@@ -152,9 +170,7 @@ func (a *App) isFoundGame(g *core.Game, f core.FoundGame) bool {
 // gameSources says where each game with profiles came from (epic, gog, ...),
 // from the scan result it was added from. Games added by hand have none.
 func (a *App) gameSources(cfg *core.Config) map[string]string {
-	a.mu.Lock()
-	found := append([]core.FoundGame{}, a.found...)
-	a.mu.Unlock()
+	found := a.libraryGames()
 	out := map[string]string{}
 	for i := range cfg.Games {
 		g := &cfg.Games[i]
@@ -216,11 +232,8 @@ type FoundState struct {
 }
 
 func (a *App) apiFound() FoundState {
+	list := a.libraryGames()
 	a.mu.Lock()
-	if a.found == nil {
-		a.found = a.store.LoadLibrary() // asked before the first scan started
-	}
-	list := core.ApplyLibraryPrefs(a.found, a.cfg.LibraryPrefs)
 	scanning := a.scanning || a.found == nil // nil: never scanned on this PC
 	a.mu.Unlock()
 	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: a.visibleFound(list)}
@@ -233,6 +246,13 @@ func (a *App) apiIgnoreFound(key string) error {
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
 	cfg.IgnoredFound = append(cfg.IgnoredFound, key)
+	kept := cfg.AddedGames[:0]
+	for _, g := range cfg.AddedGames {
+		if g.Key != key {
+			kept = append(kept, g)
+		}
+	}
+	cfg.AddedGames = kept
 	return a.saveConfig(cfg)
 }
 
@@ -257,9 +277,7 @@ func gameFromFound(f core.FoundGame) core.Game {
 }
 
 func (a *App) apiFoundGame(key string) (core.FoundGame, error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	for _, f := range a.found {
+	for _, f := range a.libraryGames() {
 		if f.Key == key {
 			return f, nil
 		}
@@ -274,9 +292,7 @@ func (a *App) apiAddFound(keys []string) (AddResult, error) {
 	for _, k := range keys {
 		want[k] = true
 	}
-	a.mu.Lock()
-	found := core.ApplyLibraryPrefs(a.found, a.cfg.LibraryPrefs) // names and launch options carry over
-	a.mu.Unlock()
+	found := a.libraryGames() // names and launch options carry over
 	for _, f := range found {
 		if !want[f.Key] {
 			continue
@@ -299,4 +315,95 @@ func (a *App) apiAddFound(keys []string) (AddResult, error) {
 		a.autoHooks()
 	}
 	return res, nil
+}
+
+type AddedGame struct {
+	Key    string `json:"key,omitempty"`    // the Library game to open
+	GameID string `json:"gameId,omitempty"` // or the game with profiles it already is
+	Name   string `json:"name"`
+}
+
+// apiAddLibraryGame adds a game to the Library by hand, without profiles:
+// an installed Steam game (kind "steam", appID) or any game by its exe
+// (kind "exe", path). A game already there is just shown again.
+func (a *App) apiAddLibraryGame(kind string, appID int, path string) (AddedGame, error) {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	var f core.FoundGame
+	switch kind {
+	case "steam":
+		for _, g := range cfg.Games {
+			if g.Launch.Type == "steam" && g.Launch.AppID == appID {
+				return AddedGame{GameID: g.ID, Name: g.Name}, nil
+			}
+		}
+		var sg *core.SteamGame
+		for _, g := range core.InstalledSteamGames(a.env.SteamPath) {
+			if g.AppID == appID {
+				g := g
+				sg = &g
+				break
+			}
+		}
+		if sg == nil {
+			return AddedGame{}, errors.New("That Steam game isn't installed.")
+		}
+		f = core.FoundGame{Key: fmt.Sprintf("steam:%d", appID), Name: sg.Name, Source: "steam", AppID: appID, Dir: sg.InstallDir,
+			Suggestions: []core.Suggestion{}, Paths: []string{}}
+		if c := core.ProcessCandidates(sg.InstallDir); len(c) > 0 {
+			f.ProcessName = c[0].Name
+		}
+	case "exe":
+		exe, err := a.env.ResolveExe(path)
+		if err != nil {
+			return AddedGame{}, err
+		}
+		_, containers := gameFolders(a.env)
+		f = a.env.ExeGame(exe, containers)
+		for i := range cfg.Games {
+			if a.isFoundGame(&cfg.Games[i], f) {
+				return AddedGame{GameID: cfg.Games[i].ID, Name: cfg.Games[i].Name}, nil
+			}
+		}
+	default:
+		return AddedGame{}, errors.New("unknown kind of game")
+	}
+
+	// Show it again if it was hidden, and remember it so scans keep it.
+	ignored := cfg.IgnoredFound[:0]
+	for _, k := range cfg.IgnoredFound {
+		if k != f.Key {
+			ignored = append(ignored, k)
+		}
+	}
+	cfg.IgnoredFound = ignored
+	known := false
+	for _, g := range a.libraryGames() {
+		if g.Key == f.Key && !g.Added && (f.Source == "steam" || g.Exe == f.Exe) {
+			known = true // the scan already has it, exactly like this
+			f.Name = g.Name
+		}
+	}
+	if !known {
+		replaced := false
+		for i := range cfg.AddedGames {
+			if cfg.AddedGames[i].Key == f.Key {
+				cfg.AddedGames[i], replaced = f, true
+			}
+		}
+		if !replaced {
+			cfg.AddedGames = append(cfg.AddedGames, f)
+		}
+	}
+	if err := a.saveConfig(cfg); err != nil {
+		return AddedGame{}, err
+	}
+	a.logf("Added %s to the Library (%s)", f.Name, f.Key)
+	for _, g := range a.libraryGames() {
+		if g.Key == f.Key {
+			f.Name = g.Name // with the user's own name for it, if any
+		}
+	}
+	return AddedGame{Key: f.Key, Name: f.Name}, nil
 }

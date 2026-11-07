@@ -96,12 +96,12 @@ func (a *App) moveBlocker(appID int) string {
 			names = append(names, procName(&g))
 		}
 	}
-	for _, f := range a.found {
+	a.mu.Unlock()
+	for _, f := range a.libraryGames() {
 		if f.AppID == appID && f.ProcessName != "" {
 			names = append(names, strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")))
 		}
 	}
-	a.mu.Unlock()
 	if procs, err := win.ProcessNames(); err == nil {
 		for _, n := range names {
 			if n != "" && procs[n] {

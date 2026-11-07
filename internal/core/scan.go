@@ -27,6 +27,73 @@ type FoundGame struct {
 	Args string `json:"args,omitempty"`
 	// ScanName is the name the scan found, when the user renamed the game.
 	ScanName string `json:"scanName,omitempty"`
+	// Added marks a game the user added to the Library by hand.
+	Added bool `json:"added,omitempty"`
+}
+
+// MergeAdded puts the games the user added by hand into the scan results.
+// A game the scan also found keeps the scan's details (such as its store),
+// but the exe the user picked.
+func MergeAdded(found, added []FoundGame) []FoundGame {
+	out := append([]FoundGame{}, found...)
+	for _, a := range added {
+		matched := false
+		for i := range out {
+			if out[i].Key == a.Key {
+				if a.Exe != "" {
+					out[i].Exe, out[i].ProcessName = a.Exe, a.ProcessName
+				}
+				out[i].Added = true
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			a.Added = true
+			out = append(out, a)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
+	return out
+}
+
+// genericDirs are folder names inside a game's folder that never name the
+// game: an exe in D:\Games\Hades\steam belongs to "Hades", not "steam".
+var genericDirs = map[string]bool{
+	"bin": true, "bin32": true, "bin64": true, "binaries": true, "win32": true, "win64": true, "x86": true, "x64": true,
+	"game": true, "retail": true, "shipping": true, "release": true, "client": true, "app": true, "windows": true,
+	"windowsnoeditor": true, "steam": true, "epic": true, "gog": true, "exe": true,
+}
+
+// ExeGame describes a game the user added to the Library by its exe: its
+// folder, a name for it, and the save locations profiles would use.
+func (e *Env) ExeGame(exe string, containers []string) FoundGame {
+	exe = filepath.Clean(exe)
+	root := GameRoot(exe, containers)
+	for i := 0; i < 4 && genericDirs[strings.ToLower(filepath.Base(root))]; i++ {
+		parent := filepath.Dir(root)
+		if parent == root || isContainer(parent, containers) {
+			break
+		}
+		root = parent
+	}
+	process := strings.TrimSuffix(filepath.Base(exe), filepath.Ext(exe))
+	name := prettyName(filepath.Base(root))
+	if isContainer(root, containers) || genericDirs[strings.ToLower(filepath.Base(root))] {
+		root = filepath.Dir(exe) // an exe straight in D:\Games: the exe names the game
+		name = prettyName(process)
+	}
+	f := FoundGame{Key: "dir:" + strings.ToLower(root), Name: name, Source: "added", Exe: e.Tokenize(exe), Dir: root, ProcessName: process}
+	f.Suggestions = e.SuggestPaths(f.Name, filepath.Base(root), 0)
+	if f.Suggestions == nil {
+		f.Suggestions = []Suggestion{}
+	}
+	f.Paths = ProposePaths(f.Suggestions, nil)
+	if f.Paths == nil {
+		f.Paths = []string{}
+	}
+	f.Ready = len(f.Paths) > 0
+	return f
 }
 
 // ApplyLibraryPrefs returns the list with the user's names and launch
@@ -390,6 +457,14 @@ func ScanFolders(roots []string, containers []string) []FoundGame {
 
 // prettyName turns "Hollow.Knight.v1.5-GOG" style folder names into a title.
 func prettyName(s string) string {
+	// "Words.Joined.By.Dots-Tag": what follows the last hyphen isn't part of
+	// the title (a version, store or packager tag). Names with spaces, or
+	// with a hyphen inside the title ("Spider-Man.2"), are left alone.
+	if !strings.Contains(s, " ") && strings.Count(s, ".") >= 2 {
+		if i := strings.LastIndex(s, "-"); i > 0 && i > strings.LastIndex(s, ".") {
+			s = s[:i]
+		}
+	}
 	s = strings.NewReplacer(".", " ", "_", " ").Replace(s)
 	f := strings.Fields(s)
 	var keep []string
