@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.49.0
+
+- **Big Picture**: Lootnest as a console's screen, on the whole screen, for playing from the sofa with a controller.
+  - Open it with the controller button at the top of the sidebar, with F11, from the tray icon, or by pressing **Start** on a controller.
+  - **Home** has rows to move through: Continue playing on wide art, your collections, and your games. The background takes on the art of the game in focus.
+  - Choose a game for its own screen, with **Play** as whoever's sitting down and **Play as someone else**.
+  - **Library** has every game, **Achievements** a ring for each game, and **Profiles** lets whoever's at the PC sit down.
+  - Controls: the stick or the D-pad to move (hold to keep moving), **A** to choose, **B** to go back, **Y** to play as someone else, **LB** and **RB** to switch tabs, **Start** to leave. On a keyboard: the arrows, Enter, Escape, Q and E.
+  - Soft sounds as you move and choose, made by Lootnest itself; turn them off at the bottom of the screen.
+- Connecting a controller says that Start opens Big Picture.
+
 ## 1.48.0
 
 - **Achievements, the way you know them from consoles.**

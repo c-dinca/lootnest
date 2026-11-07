@@ -371,7 +371,7 @@ func (a *App) trayMenu() {
 			items = append(items, win.MenuItem{Text: fmt.Sprintf("%s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID)), Disabled: true, ID: 9999})
 		}
 	}
-	items = append(items, win.MenuItem{ID: 1, Text: "Open Lootnest"}, win.MenuItem{Sep: true})
+	items = append(items, win.MenuItem{ID: 1, Text: "Open Lootnest"}, win.MenuItem{ID: 3, Text: "Big Picture"}, win.MenuItem{Sep: true})
 	games := a.cfg.Games
 	for i, g := range games {
 		if i >= 15 {
@@ -394,6 +394,9 @@ func (a *App) trayMenu() {
 		a.show()
 	case id == 2:
 		a.quit(false)
+	case id == 3:
+		a.show()
+		a.emit("bigPicture", map[string]any{"on": true})
 	case id >= 100 && id-100 < len(ids):
 		a.requestLaunch(ids[id-100], "")
 	}

@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.48.0, beta)
+## Where things stand (1.49.0, beta)
 
 These shipped recently, newest last:
 
@@ -265,6 +265,13 @@ These shipped recently, newest last:
   allAchievements), in-window unlock pops (`achPop`, from `achUnlocked`'s
   `list`), and the native toast slides in with a trophy badge
   (`Toast.Badge`, `drawTrophy`).
+- **1.49** Big Picture (`BP`, `bpOpen`, `renderBP`, `bpScreen`, `#bp`
+  above the app at z-index 45, under the picker): tabs, rows and grid,
+  game detail, Who's playing; `bpMove` is spatial navigation over
+  `[data-bp]`; the Gamepad API loop (`padLoop`: Start toggles, A B Y,
+  LB RB, stick and D-pad with repeat); WebAudio `sfx`; F11.
+  `win.SetFullscreen` (borderless on the window's monitor), `ps_bigPicture`,
+  tray item "Big Picture".
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
