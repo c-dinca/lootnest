@@ -241,6 +241,9 @@ func Run(opt Options) error {
 		a.autoHooks()
 		go a.watchUpdates()
 		go a.cleanupLegacy()
+		cleanRestoreLeftovers()
+		time.Sleep(time.Minute)
+		a.backupIfDue()
 	}()
 	go func() {
 		time.Sleep(20 * time.Second)

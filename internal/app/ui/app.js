@@ -53,6 +53,13 @@
     setBanner: (id, path) => call("ps_setBanner", id, path),
     removeBanner: (id) => call("ps_removeBanner", id),
     setShelf: (id, key, e) => call("ps_setShelf", id, key, e),
+    backupInfo: () => call("ps_backupInfo"),
+    setBackup: (b) => call("ps_setBackup", b),
+    setBackupPassword: (pw) => call("ps_setBackupPassword", pw),
+    backupNow: () => call("ps_backupNow"),
+    restoreOpen: (file, pw) => call("ps_restoreOpen", file, pw || ""),
+    restoreApply: () => call("ps_restoreApply"),
+    restoreCancel: () => call("ps_restoreCancel"),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -224,6 +231,27 @@
         const D = S.dialog && S.dialog.kind === "profile" ? S.dialog : null;
         if (D) { D.busy = false; if (!ev.error && ev.type === "banner") D.p.banner = "image"; if (!ev.error && ev.type === "avatar") D.p.avatar = true; }
         if (ev.error) toast(ev.error, "error");
+        refresh();
+        break;
+      }
+      case "backup": {
+        const D = S.dialog;
+        if (ev.password && D && D.kind === "backup-pw") {
+          if (ev.error) { D.busy = false; D.error = ev.error; renderOverlay(); }
+          else { const on = D.on; S.dialog = null; renderOverlay(); toast(on ? "Backups are encrypted from now on" : "Backups aren't encrypted any more"); api.backupNow().catch(() => {}); }
+        }
+        if (ev.done && S.backupAsked) { S.backupAsked = false; if (ev.error) toast(ev.error, "error"); else toast("Backed up"); }
+        loadBackupInfo();
+        break;
+      }
+      case "restoreInfo": {
+        const D = S.dialog;
+        if (D && D.kind === "restore") { D.busy = false; D.info = ev.info; D.error = ev.info.error || (ev.info.needPassword && D.triedPassword ? "That password doesn't open this backup." : ""); renderOverlay(); setTimeout(() => { const f = $("#rs-pw"); if (f) f.focus(); }, 30); }
+        break;
+      }
+      case "restored": {
+        const D = S.dialog;
+        if (D && D.kind === "restore") { D.busy = false; if (ev.ok) { D.done = ev.safety; } else D.error = ev.error; renderOverlay(); }
         refresh();
         break;
       }
@@ -1024,6 +1052,10 @@
       o.innerHTML = viewBlocked();
     } else if (D.kind === "move") {
       o.innerHTML = viewMove();
+    } else if (D.kind === "backup-pw") {
+      o.innerHTML = viewBackupPassword();
+    } else if (D.kind === "restore") {
+      o.innerHTML = viewRestore();
     } else if (D.kind === "shelf-note") {
       o.innerHTML = viewShelfNote();
     } else if (D.kind === "profile") {
@@ -1683,11 +1715,12 @@
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}
         </div></section>
+        ${backupSection()}
         <section class="section"><div class="numbers">
           <div class="field wide"><label for="s-grid">SteamGridDB API key <span class="hint">(optional)</span></label>
             <input id="s-grid" type="password" autocomplete="off" spellcheck="false" data-setting="gridDbKey" value="${esc(s.gridDbKey || "")}" placeholder="Paste your key">
             <span class="hint">Covers and artwork for games the Steam store doesn't know. Get a free key on steamgriddb.com, under Preferences, API. It's sent only to SteamGridDB.</span></div>
-          <div class="field"><label for="s-backups">Backups kept per game</label><input id="s-backups" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}"></div>
+          <div class="field"><label for="s-backups">Copies kept per game before each swap</label><input id="s-backups" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}"></div>
           <div class="field"><label for="s-timeout">Seconds to wait for a game to start</label><input id="s-timeout" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}"></div>
           ${st.found ? `<div class="field"><label for="s-steam">Steam account</label><select id="s-steam" data-setting="steamAccountId">
             <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
@@ -1707,6 +1740,93 @@
             <button class="btn quiet danger" data-action="quit">Quit Lootnest</button></div>
         </section>
       </div></div>`;
+  }
+
+  // ---------------------------------------------------------------- backup --
+  // Backups go to a folder a cloud app syncs; Lootnest writes the file and
+  // the app uploads it.
+  async function loadBackupInfo() {
+    try { S.backup = await api.backupInfo(); } catch (e) { return; }
+    if (S.view === "settings" && !S.dialog) render();
+  }
+  function fmtBytes(n) {
+    if (n < 1024 * 1024) return Math.max(1, Math.round(n / 1024)) + " KB";
+    if (n < 1024 * 1024 * 1024) return (n / 1048576).toFixed(n < 10 * 1048576 ? 1 : 0) + " MB";
+    return (n / 1073741824).toFixed(1) + " GB";
+  }
+  function backupSection() {
+    const B = S.backup;
+    if (!B) { loadBackupInfo(); return `<section class="section"><div class="section-head"><h2>Backup</h2></div></section>`; }
+    const head = `<div class="section-head"><h2>Backup</h2><p>A copy of every player's saves and profiles, your games and Lootnest's settings, in a folder that OneDrive, Google Drive or Dropbox syncs. Lootnest writes the file there; your cloud app uploads it.</p></div>`;
+    const restore = `<div class="bk-restore"><button class="btn quiet" data-action="restore-pick">Restore from a backup</button>
+      <span class="hint">On a new PC, or to go back. What's here now is saved first.</span></div>`;
+    if (!B.dir) {
+      return `<section class="section">${head}
+        <div class="bk-choices">${B.folders.map((f) => `<button class="bk-choice" data-action="backup-use" data-dir="${esc(f.path)}"><b>${esc(f.name)}</b><span>${esc(f.path)}</span></button>`).join("")}
+          <button class="bk-choice" data-action="backup-pick"><b>Another folder</b><span>A USB drive, a NAS, any folder</span></button></div>
+        ${B.folders.length ? "" : `<p class="hint">No OneDrive, Google Drive or Dropbox folder found on this PC. Install one of them, or choose any folder.</p>`}
+        ${restore}</section>`;
+    }
+    const st = B.status;
+    const last = st.running ? "Backing up now" : st.last ? `Last backup ${esc(ago(st.last))}, ${esc(fmtBytes(st.size))}` : "No backup yet";
+    const failed = st.error && (!st.last || new Date(st.errorAt) > new Date(st.last));
+    return `<section class="section">${head}
+      <div class="bk-card">
+        <div class="bk-row"><div class="bk-where"><span class="label">Backups go to</span><b class="selectable">${esc(B.target)}</b></div>
+          <div class="row"><button class="btn quiet" data-action="backup-pick">Change</button><button class="btn quiet" data-action="backup-open">Open folder</button></div></div>
+        <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>
+          ${failed ? `<p class="error-text">${esc(st.error)}</p>` : ""}</div>
+          <button class="btn" data-action="backup-now" ${st.running ? "disabled" : ""}>${st.running ? "Backing up" : "Back up now"}</button></div>
+        <label class="toggle"><span><b style="font-weight:500">Back up after every game session</b><p>And when Lootnest starts, if the last backup is over a day old.</p></span>
+          <span class="switch"><input type="checkbox" data-backup="auto" ${B.auto ? "checked" : ""}><span></span></span></label>
+        <div class="bk-row"><div><b style="font-weight:500">${B.encrypted ? "Encrypted with your password" : "Not encrypted"}</b>
+          <p class="hint">${B.encrypted ? "Only someone with the password can open these backups. Without it, nobody can, Lootnest included." : "Anyone who can open the folder can read the backups. A password encrypts them (AES-256)."}</p></div>
+          <div class="row">${B.encrypted ? `<button class="btn quiet" data-action="backup-pw" data-on="1">Change password</button><button class="btn quiet" data-action="backup-pw" data-on="0">Remove password</button>` : `<button class="btn" data-action="backup-pw" data-on="1">Set a password</button>`}</div></div>
+        <div class="bk-row"><label for="bk-keep" style="font-weight:500">Backups this PC keeps</label><input id="bk-keep" type="number" min="1" max="50" data-backup="keep" value="${B.keep}" style="width:90px"></div>
+      </div>
+      ${restore}</section>`;
+  }
+  async function saveBackup(change) {
+    const B = S.backup;
+    try { await api.setBackup({ dir: B.dir, auto: B.auto, keep: B.keep, ...change }); } catch (e) { toast(errText(e), "error"); }
+    loadBackupInfo();
+  }
+  function viewBackupPassword() {
+    const D = S.dialog;
+    if (!D.on) {
+      return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Remove the password">
+        <div><h2>Remove the backup password?</h2><p class="sub">New backups won't be encrypted. Backups already made keep their password.</p></div>
+        <div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="backup-pw-save" ${D.busy ? "disabled" : ""}>Remove password</button></div></div></div>`;
+    }
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Backup password">
+      <div><h2>Backup password</h2><p class="sub">Backups are encrypted with it. Lootnest remembers it for this Windows account, so backups keep being made by themselves. You need it to restore on another PC.</p></div>
+      <div class="field"><label for="bk-pw">Password <span class="hint">at least 8 characters</span></label><input id="bk-pw" type="password" autocomplete="new-password" maxlength="200"></div>
+      <div class="field"><label for="bk-pw2">The same password again</label><input id="bk-pw2" type="password" autocomplete="new-password" maxlength="200"></div>
+      <p class="warn">If you forget it, nobody can open these backups, Lootnest included. Keep it in a password manager.</p>
+      <div class="dialog-foot"><span class="error-text grow" id="bk-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="backup-pw-save" ${D.busy ? "disabled" : ""}>${D.busy ? "Setting" : "Set password"}</button></div></div></div>`;
+  }
+  function viewRestore() {
+    const D = S.dialog, I = D.info;
+    const foot = (btn) => `<div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="restore-close">${D.done ? "Close" : "Cancel"}</button>${btn || ""}</div>`;
+    let body;
+    if (D.done) {
+      body = `<div><h2>Restored</h2><p class="sub">Players, games and saves from the backup are in place. Before each game's next swap, Lootnest asks whose files are on this PC.</p></div>
+        <p class="hint selectable">What was here before is saved in ${esc(D.done)}. To go back, restore that file.</p>${foot()}`;
+    } else if (!I || D.busy) {
+      body = `<div><h2>${D.applying ? "Restoring" : "Opening the backup"}</h2><p class="sub">${D.applying ? "Saving what's here now, then putting the backup in place." : "Checking every file in it."}</p></div>${foot()}`;
+    } else if (I.needPassword) {
+      body = `<div><h2>This backup has a password</h2><p class="sub selectable">${esc(D.file)}</p></div>
+        <div class="field"><label for="rs-pw">Password</label><input id="rs-pw" type="password" autocomplete="current-password" maxlength="200"></div>${foot(`<button class="btn primary" data-action="restore-pw">Open</button>`)}`;
+    } else if (I.error) {
+      body = `<div><h2>Can't restore this file</h2><p class="sub">${esc(I.error)}</p></div>${foot()}`;
+    } else {
+      const when = new Date(I.created).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" });
+      body = `<div><h2>Restore this backup?</h2><p class="sub">Made on ${esc(I.computer || "a PC")}, ${esc(when)}${I.app ? ", Lootnest " + esc(I.app) : ""}.</p></div>
+        <dl class="facts"><div><dt>Players</dt><dd>${esc((I.players || []).join(", ") || "None")}</dd></div><div><dt>Games with profiles</dt><dd>${I.games}</dd></div></dl>
+        <p class="sub">Its players, games, saves, profile pictures, shelf and play time replace the ones here. This PC's settings stay. Everything here now is saved first, so you can go back.</p>
+        ${foot(`<button class="btn primary" data-action="restore-apply">Restore</button>`)}`;
+    }
+    return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Restore a backup">${body}</div></div>`;
   }
 
   async function saveSetting(el) {
@@ -1818,6 +1938,45 @@
       S.dialog = null; renderOverlay();
       await setShelf(D.pid, D.k, { note: note.trim() });
     },
+    "backup-use"(el) { saveBackup({ dir: el.dataset.dir, auto: true }).then(() => toast("Backing up to " + el.dataset.dir)); },
+    async "backup-pick"() {
+      const r = await browse("backupDir");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      const first = !S.backup.dir;
+      await saveBackup({ dir: r.path, ...(first ? { auto: true } : {}) });
+    },
+    "backup-open": () => api.open("backupFolder").catch((e) => toast(errText(e), "error")),
+    async "backup-now"() { S.backupAsked = true; try { await api.backupNow(); } catch (e) { S.backupAsked = false; toast(errText(e), "error"); } loadBackupInfo(); },
+    "backup-pw"(el) { S.dialog = { kind: "backup-pw", on: el.dataset.on === "1" }; renderOverlay(); setTimeout(() => { const f = $("#bk-pw"); if (f) f.focus(); }, 30); },
+    async "backup-pw-save"() {
+      const D = S.dialog;
+      let pw = "";
+      if (D.on) {
+        pw = $("#bk-pw").value;
+        if (pw !== $("#bk-pw2").value) { $("#bk-error").textContent = "The two passwords aren't the same."; return; }
+        if ([...pw].length < 8) { $("#bk-error").textContent = "Use at least 8 characters."; return; }
+      }
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.setBackupPassword(pw); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
+    async "restore-pick"() {
+      const r = await browse("backup");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      S.dialog = { kind: "restore", file: r.path, busy: true }; renderOverlay();
+      try { await api.restoreOpen(r.path, ""); } catch (e) { S.dialog.busy = false; S.dialog.info = { error: errText(e) }; renderOverlay(); }
+    },
+    async "restore-pw"() {
+      const D = S.dialog, pw = $("#rs-pw").value;
+      if (!pw) return;
+      D.busy = true; D.triedPassword = true; D.error = ""; renderOverlay();
+      try { await api.restoreOpen(D.file, pw); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
+    async "restore-apply"() {
+      const D = S.dialog;
+      D.busy = true; D.applying = true; D.error = ""; renderOverlay();
+      try { await api.restoreApply(); } catch (e) { D.busy = false; D.applying = false; D.error = errText(e); renderOverlay(); }
+    },
+    "restore-close"() { const D = S.dialog; S.dialog = null; renderOverlay(); if (D && !D.done) api.restoreCancel().catch(() => {}); },
     density(el) { S.density = el.dataset.size; setPref("density", S.density); render(); },
     "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
     "open-link": (el) => api.open("link", el.dataset.url).catch((e) => toast(errText(e), "error")),
@@ -2073,6 +2232,8 @@
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
+    if (el.dataset.backup === "auto") { saveBackup({ auto: el.checked }); return; }
+    if (el.dataset.backup === "keep") { saveBackup({ keep: parseInt(el.value, 10) || 0 }); return; }
     if (el.id === "lib-sort") { S.sort = el.value; setPref("sort", S.sort); render(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
@@ -2109,6 +2270,8 @@
       if (S.view === "game" && !ev.target.closest("input, textarea, select")) backToLibrary();
     }
     if (ev.key === "Enter" && S.dialog && S.dialog.kind === "welcome" && ev.target.dataset.field === "pname") savePlayers(true);
+    if (ev.key === "Enter" && ev.target.id === "rs-pw") actions["restore-pw"]();
+    if (ev.key === "Enter" && ev.target.id === "bk-pw2") actions["backup-pw-save"]();
   });
 
   // block browser shortcuts that make no sense in an app window

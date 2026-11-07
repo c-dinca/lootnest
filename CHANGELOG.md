@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0
+
+- **Backup** in Settings: a copy of every player's saves and profiles, your games, profile pictures, shelf and play time, in a folder you choose. Lootnest finds OneDrive, Google Drive, Dropbox and iCloud Drive folders on your PC, so it's one click; any other folder (a USB drive, a NAS) works too. Lootnest only writes the file there; your cloud app uploads it.
+- Backups are made after every game session (and when Lootnest starts, if the last one is over a day old), or with **Back up now**. Each PC keeps its own last 5 (you choose how many), so two PCs can share one folder.
+- **Set a password** to encrypt backups (AES-256). Lootnest remembers it for your Windows account so backups keep being made by themselves; you need it to restore on another PC. If you forget it, nobody can open those backups.
+- **Restore from a backup**, on a new PC or to go back: Lootnest shows where and when it was made and who's in it, saves everything here first (in `backups\before-restore`, so a restore can be undone), then puts the backup's players, games and saves in place. This PC's settings stay. Before each game's next swap, Lootnest asks whose files are on this PC, so nothing here is saved over someone's profile by mistake.
+
 ## 1.10.0
 
 - **Home** is its own page now, and where Lootnest opens: the game you played last, **Continue playing**, **News from your games**. The **Library** is just your games: search, filters, sort and cover size.

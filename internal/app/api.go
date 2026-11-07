@@ -67,6 +67,13 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_setBanner", a.apiSetBanner))
 	must(a.w.Bind("ps_removeBanner", a.apiRemoveBanner))
 	must(a.w.Bind("ps_setShelf", a.apiSetShelf))
+	must(a.w.Bind("ps_backupInfo", a.apiBackupInfo))
+	must(a.w.Bind("ps_setBackup", a.apiSetBackup))
+	must(a.w.Bind("ps_setBackupPassword", a.apiSetBackupPassword))
+	must(a.w.Bind("ps_backupNow", a.apiBackupNow))
+	must(a.w.Bind("ps_restoreOpen", a.apiRestoreOpen))
+	must(a.w.Bind("ps_restoreApply", a.apiRestoreApply))
+	must(a.w.Bind("ps_restoreCancel", a.apiRestoreCancel))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
@@ -414,6 +421,10 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
 	checkNow := s.CheckUpdates && !cfg.Settings.CheckUpdates
+	// Backups have their own calls (cloudbackup.go); what the page sends
+	// back for them is ignored.
+	old := cfg.Settings
+	s.BackupDir, s.BackupAuto, s.BackupKeep, s.BackupSalt, s.BackupKey = old.BackupDir, old.BackupAuto, old.BackupKeep, old.BackupSalt, old.BackupKey
 	cfg.Settings = s
 	if err := a.saveConfig(cfg); err != nil {
 		return err
@@ -554,6 +565,12 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "image":
 			opt.Title = "Choose a picture"
 			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.gif)", Spec: "*.png;*.jpg;*.jpeg;*.gif"}}
+		case "backup":
+			opt.Title = "Choose a Lootnest backup"
+			opt.Filters = []win.FileFilter{{Name: "Lootnest backups (*.zip, *.lnbak)", Spec: "*.zip;*.lnbak"}}
+		case "backupDir":
+			opt.Title = "Choose where backups go"
+			opt.Folder = true
 		case "file":
 			opt.Title = "Choose a settings or save file"
 			opt.Filters = []win.FileFilter{{Name: "All files", Spec: "*.*"}}
@@ -659,6 +676,8 @@ func (a *App) apiOpen(kind, arg string) error {
 	switch kind {
 	case "data":
 		target = DataDir()
+	case "backupFolder":
+		return a.openBackupFolder()
 	case "backups":
 		target = filepath.Join(a.store.BackupsDir(), filepath.Base(arg))
 	case "profile":
