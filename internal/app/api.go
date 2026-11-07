@@ -32,6 +32,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_saveSettings", a.apiSaveSettings))
 	must(a.w.Bind("ps_setSeat", a.apiSetSeat))
 	must(a.w.Bind("ps_testToast", a.apiTestToast))
+	must(a.w.Bind("ps_setOffline", a.apiSetOffline))
 	must(a.w.Bind("ps_achDoctor", a.apiAchDoctor))
 	must(a.w.Bind("ps_setNameInGame", a.apiSetNameInGame))
 	must(a.w.Bind("ps_steamGames", a.apiSteamGames))

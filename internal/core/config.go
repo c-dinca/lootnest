@@ -177,6 +177,9 @@ type Config struct {
 	// AddedGames: games the user added to the Library by hand ("Add game"),
 	// kept even when a scan doesn't find them.
 	AddedGames []FoundGame `json:"addedGames,omitempty"`
+	// Offline: games kept from going online by Windows Firewall rules
+	// Lootnest made (Library key -> the programs blocked), core/offline.go.
+	Offline map[string][]string `json:"offline,omitempty"`
 }
 
 // LibraryPref is what the user changed about a Library game that has no

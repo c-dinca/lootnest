@@ -87,12 +87,14 @@
   };
   const state = () => ({
     version: "1.15.1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Player 1", color: "#6C9BD2" }, { id: "p2", name: "Player 2", color: "#D9738E" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS },
+    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Player 1", color: "#6C9BD2" }, { id: "p2", name: "Player 2", color: "#D9738E" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS, offline: OFFLINE },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime, steamTime, avatars: {}, banners: {}, shelf,
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
+
+  const OFFLINE = {};
 
   const TAGS = { "game:cs2": ["Co-op", "Shooters"], "game:ittakestwo": ["Co-op", "For the kids"], "steam:413150": ["Co-op", "Weekend", "For the kids"],
     "steam:1091500": ["Weekend"], "dir:c:\\games\\hades ii": ["Weekend"], "dir:c:\\gog games\\hollow knight": ["Weekend"], "game:bg3": ["Co-op", "Weekend"] };
@@ -213,6 +215,10 @@
         : key === "game:bg3" ? { appId: 1086940, source: "pc", total: 12, unlocked: 7, list: mk(12, 7, names),
           players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { source: "pc", total: 12, unlocked: [7, 2, 11, 4, 0, 9][i % 6], list: mk(12, [7, 2, 11, 4, 0, 9][i % 6], names) }])) } : null;
       if (STATE !== "loading") emit({ type: "achievements", key, set });
+      return ok();
+    },
+    ps_setOffline: (key, on) => {
+      setTimeout(() => { if (on) OFFLINE[key] = ["D:\\Games\\Onimusha\\Onimusha.exe", "D:\\Games\\Onimusha\\CrashReporter.exe"]; else delete OFFLINE[key]; emit({ type: "offline", key, on }); }, 300);
       return ok();
     },
     ps_achDoctor: (key) => {

@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.42.0)
+## Where things stand (1.43.0)
 
 These shipped recently, newest last:
 
@@ -225,6 +225,13 @@ These shipped recently, newest last:
   `account_name` in `steam_settings\configs.user.ini` (and the legacy
   `force_account_name.txt` if present), with a copy kept first; only from
   the button.
+- **1.43** Keep a game offline (`core/offline.go`, `app/offline.go`):
+  `GameExes` (main first, no redists, up to 30), `FirewallScript`
+  (PowerShell `New-NetFirewallRule`, group "Lootnest", description
+  `OfflineTag(key)`, always removing the game's old rules first) run via
+  `-EncodedCommand` with `win.RunElevatedAndWait` (runas).
+  `Config.Offline` records what's blocked. Only for games Lootnest
+  starts itself (exe launch).
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -342,7 +349,7 @@ already on the PC, as always:
    game folder, to go back.
 5. **Remove a folder game cleanly**: copy its saves first, then delete the
    folder; reinstalled later, its saves come back.
-6. **Block a game from going online**: a Windows Firewall rule for its exe.
+6. **Block a game from going online**: a Windows Firewall rule for its exe. Done in 1.43.
 7. **Import achievement history** from Hydra and Achievement Watcher.
 
 The line, which holds for all of these: Lootnest never shows where to get
