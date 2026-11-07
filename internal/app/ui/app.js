@@ -1194,7 +1194,9 @@
     const P = S.picker;
     if (!P || !P.working) return;
     const s = session(P.gameId);
-    if (!s || s.phase === "launching" || s.phase === "playing") S.picker = null;
+    // The picker stays up ("Starting …") until the game is actually running.
+    if (!s || s.phase === "playing") { S.picker = null; return; }
+    render();
   }
 
   // ---------------------------------------------------------------- dialogs --

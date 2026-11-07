@@ -190,14 +190,10 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 			s.Phase = "launching"
 			s.deadline = time.Now().Add(time.Duration(cfg.Settings.StartTimeoutSeconds) * time.Second)
 		}
-		hide := cfg.Settings.HideWhilePlaying
 		a.mu.Unlock()
 		a.answerRequest(req.ReqID, "run", "")
 		a.logf("Steam is starting %s for %s", g.Name, who)
 		a.emitSessions()
-		if hide {
-			a.ui(func() { win.ShowWindow(a.hwnd, win.SW_HIDE) })
-		}
 		return
 	}
 	if !req.Launch {
@@ -219,12 +215,8 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 		s.Phase = "launching"
 		s.deadline = time.Now().Add(time.Duration(cfg.Settings.StartTimeoutSeconds) * time.Second)
 	}
-	hide := cfg.Settings.HideWhilePlaying
 	a.mu.Unlock()
 	a.emitSessions()
-	if hide {
-		a.ui(func() { win.ShowWindow(a.hwnd, win.SW_HIDE) })
-	}
 }
 
 func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error {
@@ -288,6 +280,7 @@ func (a *App) tick() {
 	}
 	var finishes []finish
 	var notes [][2]string
+	hide := false // a game Lootnest started is now up: the window steps aside
 
 	a.mu.Lock()
 	cfg := a.cfg
@@ -321,6 +314,9 @@ func (a *App) tick() {
 				s.Phase = "playing"
 				s.Since = time.Now()
 				changed = true
+				// Hidden only now, once the game is running, so the window
+				// doesn't vanish to the desktop while the game is loading.
+				hide = hide || cfg.Settings.HideWhilePlaying
 				c := cfg.Clone()
 				go a.checkCloudWatch(c, c.Game(g.ID), s.PlayerID)
 			} else if time.Now().After(s.deadline) {
@@ -352,6 +348,9 @@ func (a *App) tick() {
 
 	if changed {
 		a.emitSessions()
+	}
+	if hide {
+		a.ui(func() { win.ShowWindow(a.hwnd, win.SW_HIDE) })
 	}
 	for _, n := range notes {
 		a.notify(n[0], n[1])
