@@ -24,6 +24,7 @@
     load: (r) => call("ps_load", r),
     closeGame: (id) => call("ps_closeGame", id),
     profileInfo: (id) => call("ps_profileInfo", id),
+    achievements: (key, appId, dir) => call("ps_achievements", key, appId || 0, dir || ""),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
@@ -84,6 +85,8 @@
   // ---------------------------------------------------------------- state --
   const S = {
     pinfo: {},        // game id -> player id -> {saved, size} of their profile
+    ach: {},          // Library key -> achievements read from this PC (null: none)
+    achAll: {},       // Library key -> the full list is open
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     d: null,          // AppState from Go
     view: "home",
@@ -217,6 +220,10 @@
       case "art":
         S.art[ev.key] = ev.url;
         if (S.view === "game" || S.view === "library" || S.view === "home") render();
+        break;
+      case "achievements":
+        S.ach[ev.key] = ev.set || null;
+        if (S.view === "game") render();
         break;
       case "profileInfo":
         S.pinfo[ev.gameId] = ev.info || {};
@@ -978,6 +985,7 @@
     back: gsvg('<path d="M12 4.75 6.75 10 12 15.25"/>'),
     swap: gsvg('<path d="M4 7h11.5M12.75 4.25 15.5 7l-2.75 2.75M16 13H4.5M7.25 10.25 4.5 13l2.75 2.75"/>'),
     tick: gsvg('<path d="M5 10.5l3.25 3.25L15 7"/>'),
+    trophy: gsvg('<path d="M6.5 3.75h7v4.5a3.5 3.5 0 0 1-7 0z"/><path d="M6.5 5.25H4.25v1a2.5 2.5 0 0 0 2.4 2.5M13.5 5.25h2.25v1a2.5 2.5 0 0 1-2.4 2.5M10 11.75v2.5M7 16.25h6"/>'),
     play: gsvg('<path d="M6.5 4.4v11.2a.9.9 0 0 0 1.37.77l9.05-5.6a.9.9 0 0 0 0-1.54L7.87 3.63A.9.9 0 0 0 6.5 4.4z"/>', true),
     load: gsvg('<path d="M10 3.5v8.25M6.75 8.5 10 11.75l3.25-3.25"/><path d="M3.75 13v2.25c0 .7.55 1.25 1.25 1.25h10c.7 0 1.25-.55 1.25-1.25V13"/>'),
     ask: gsvg('<path d="M5.25 3.75h9.5c.83 0 1.5.67 1.5 1.5v6.5c0 .83-.67 1.5-1.5 1.5H9.5l-3.75 3v-3h-.5c-.83 0-1.5-.67-1.5-1.5v-6.5c0-.83.67-1.5 1.5-1.5z"/><path d="M8.5 7.1a1.6 1.6 0 1 1 2.25 1.46c-.45.2-.75.6-.75 1.1v.1M10 11.6v.01"/>'),
@@ -1053,7 +1061,7 @@
         f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged") : "",
         f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
       ]);
-      side = page ? playersPanel(it) + gameSavesBlock(it) : "";
+      side = page ? playersPanel(it) + achievementsBlock(it) + gameSavesBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
@@ -1098,7 +1106,7 @@
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
         overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.`,
       }[P.cloud.state];
-      side = page ? playersPanel(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
+      side = page ? playersPanel(it) + achievementsBlock(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
       news = page ? newsHTML(it) : "";
     }
     const back = page ? `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${S.from === "home" ? "Home" : "Library"}</button>` : "";
@@ -1799,6 +1807,30 @@
   // the cloud folder (Steam games have Steam Cloud; games with profiles sync
   // each player's saves).
   const gsAsked = new Set();
+  // Achievements: read from this PC (Steam's library cache, or the file a
+  // Steam-compatible tool keeps next to the game's saves). The latest
+  // unlocked first; the whole list on request.
+  const achAsked = new Set();
+  function achievementsBlock(it) {
+    const key = recentKey(it);
+    if (!achAsked.has(key)) {
+      achAsked.add(key);
+      const dir = it.f ? it.f.dir : it.exe;
+      if (it.appId || dir) api.achievements(key, it.appId, dir).catch(() => {});
+    }
+    const A = S.ach[key];
+    if (!A || !A.total) return "";
+    const all = S.achAll[key], list = all ? A.list : A.list.filter((a) => a.unlocked).slice(0, 5);
+    const pct = Math.round((A.unlocked / A.total) * 100);
+    const row = (a) => `<li class="ach${a.unlocked ? "" : " locked"}">${a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : `<span class="ach-none">${GI.trophy}</span>`}
+      <div><b>${a.hidden && !a.unlocked ? "Hidden achievement" : esc(a.name)}</b><span>${a.unlocked ? (a.at && new Date(a.at).getFullYear() > 2000 ? "Unlocked " + esc(ago(a.at)) : "Unlocked") : a.hidden ? "Keep playing to find out" : esc(a.description || "Not unlocked yet")}</span></div>
+      ${a.percent ? `<span class="ach-pct ln-num" title="Players who have it">${a.percent < 10 ? a.percent.toFixed(1) : Math.round(a.percent)}%</span>` : ""}</li>`;
+    return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>Achievements</h2></div><span class="ach-count ln-num">${A.unlocked} of ${A.total}</span></div>
+      <div class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${A.total}" aria-valuenow="${A.unlocked}" aria-label="${A.unlocked} of ${A.total} achievements"><span style="width:${pct}%"></span></div>
+      ${list.length ? `<ul class="ach-list">${list.map(row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
+      <p class="gpage-hint">${A.source === "pc" ? "Saved on this PC next to the game's saves." : "From Steam, for the account signed in on this PC."}</p>
+      ${A.list.length > list.length || all ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-all" data-key="${esc(key)}">${all ? "Show fewer" : `Show all ${A.total}`}</button></div>` : ""}</section>`;
+  }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
     const head = gpHead("Cloud save");
@@ -2238,6 +2270,7 @@
     play: (el) => { const p = seated(); if (p) actions["play-as"]({ dataset: { game: el.dataset.game, player: p.id } }); else openPicker(el.dataset.game, "play"); },
     seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
     "seat-set"(el) { setSeat(el.dataset.player); },
+    "ach-all"(el) { S.achAll[el.dataset.key] = !S.achAll[el.dataset.key]; render(); },
     "seat-menu"(el) { seatMenu(el); },
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),

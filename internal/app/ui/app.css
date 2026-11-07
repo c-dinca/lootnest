@@ -583,6 +583,20 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-group[data-g="Shortcuts"] { order: 3; }
 .gpage-group[data-g="Danger"] { order: 4; }
 
+/* Achievements beside the game: a count, a bar, the latest unlocked. */
+.gp-ach .ln-section-head { align-items: baseline; }
+.ach-count { font-size: var(--fs-13); color: var(--fg-2); }
+.ach-bar { height: 6px; background: var(--glass-ctl-active); border-radius: var(--radius-tag); overflow: hidden; }
+.ach-bar span { display: block; height: 100%; background: var(--fg-1); }
+.ach-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.ach { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.ach img, .ach-none { width: 40px; height: 40px; border-radius: var(--radius-ctl); object-fit: cover; }
+.ach-none { display: grid; place-items: center; background: var(--glass-ctl-active); color: var(--fg-3); }
+.ach.locked img { filter: grayscale(1); opacity: .5; }
+.ach b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-14); font-weight: 650; }
+.ach div > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-12); color: var(--fg-2); }
+.ach.locked b { color: var(--fg-2); }
+.ach-pct { font-size: var(--fs-12); color: var(--fg-3); }
 .gp-split { display: flex; gap: 2px; height: 6px; margin-bottom: var(--space-3); }
 .gp-split span { border-radius: 1px; background: var(--player-fill); }
 .gp-people { border-top: var(--hairline) solid var(--edge-1); }

@@ -138,6 +138,15 @@
     ps_log: () => ok("10:42 Launched Counter-Strike 2 for Mihai\n10:20 Saved Cristian's files for It Takes Two"),
     // Each player's profile: saved a while ago, a few MB.
     ps_profileInfo: (gid) => { if (STATE !== "loading") emit({ type: "profileInfo", gameId: gid, info: Object.fromEntries((profiles[gid] || []).map((p, j) => [p, { saved: iso((j + 1) * 22 * h), size: (j + 1) * 7.3 * 1048576 }])) }); return ok(); },
+    // Achievements: CS2 from Steam's cache, a folder game from a file on this PC.
+    ps_achievements: (key) => {
+      const mk = (n, got, names) => names.slice(0, n).map((nm, i) => ({ id: "ACH_" + i, name: nm, description: "Do the thing number " + (i + 1), unlocked: i < got, at: i < got ? iso((i + 1) * 9 * h) : undefined, percent: [62.4, 31, 12.8, 4.2, 0.9, 48, 22, 7.5][i % 8], hidden: i === n - 1 }));
+      const names = ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist", "Collector", "Completionist", "Speed demon", "Old friends", "Last one standing", "Secret ending"];
+      const set = key === "game:cs2" ? { appId: 730, source: "steam", total: 12, unlocked: 5, list: mk(12, 5, names) }
+        : key.startsWith("dir:") ? { appId: 1091500, source: "pc", total: 12, unlocked: 3, list: mk(12, 3, names) } : null;
+      if (STATE !== "loading") emit({ type: "achievements", key, set });
+      return ok();
+    },
     ps_browse: (id) => { emit({ type: "browse", reqId: id, cancelled: true }); return ok(); },
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };

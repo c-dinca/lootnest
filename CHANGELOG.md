@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.19.0
+
+- **Achievements on every game's page**, for games from Steam and for games in a folder:
+  - how many are unlocked, the latest five with when you got them, and **Show all** for the rest;
+  - Steam games read Steam's own library cache on this PC, with names, pictures and how rare each one is;
+  - other games read the achievements file a Steam-compatible tool keeps next to the game's saves (Goldberg and GSE, CODEX, RUNE, OnlineFix, RLD, SKIDROW, CreamAPI, EMPRESS), with names from the game's `steam_settings` when it has them.
+- Nothing goes online for this: everything is read from this PC. **Show recent activity** in Settings lists where each game's achievements were found.
+
 ## 1.18.0
 
 - **Who's at the PC.** Click your name under **Who's here** in the sidebar, or use **Switch**, and Lootnest keeps you in the seat:
