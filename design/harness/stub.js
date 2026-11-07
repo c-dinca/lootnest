@@ -82,7 +82,7 @@
   const settings = {
     startMinimized: false, closeToTray: true, hideWhilePlaying: true, watchOutsideLaunches: true, notifications: true,
     backupsToKeep: 10, startTimeoutSeconds: 180, steamAccountId: "", autoSteamHooks: true, downloadCovers: true, checkUpdates: true,
-    gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD,
+    gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
   };
   const state = () => ({
@@ -126,6 +126,34 @@
       folders: [{ name: "OneDrive", path: "C:\\Users\\cris\\OneDrive" }, { name: "Google Drive", path: "G:\\My Drive" }],
     }),
     ps_savesStatus: () => { if (STATE !== "loading") emit({ type: "savesStatus", status: STATE === "error" ? { error: "The cloud folder (C:\\Users\\cris\\OneDrive) isn't there.", games: [], players: [] } : { games: [{ gameId: "cs2", playerId: "p1", state: "same", computer: "COCONUT", changed: iso(h) }, { gameId: "cs2", playerId: ids[1] || "p1", state: "conflict", computer: "LAPTOP", changed: iso(d) }, { gameId: "bg3", playerId: "p1", state: "down", computer: "LAPTOP", changed: iso(3 * h) }], players: [] } }); return ok(); },
+    ps_findGames: (term) => {
+      const cap = (id) => `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/capsule_231x87.jpg`;
+      const all = [
+        { appId: 1245620, name: "ELDEN RING", image: cap(1245620), price: { currency: "EUR", initial: 5999, final: 2999, discount: 50 } },
+        { appId: 2622380, name: "ELDEN RING NIGHTREIGN", image: cap(2622380), price: { currency: "EUR", initial: 3999, final: 3999 } },
+        { appId: 1091500, name: "Cyberpunk 2077", image: cap(1091500), price: { currency: "EUR", initial: 5999, final: 2999, discount: 50 }, owned: "found:steam:1091500" },
+        { appId: 570, name: "Dota 2", image: cap(570) },
+      ];
+      setTimeout(() => {
+        if (STATE === "offline") emit({ type: "findGames", q: term, error: "Couldn't reach the Steam store. Check the connection and try again." });
+        else emit({ type: "findGames", q: term, hits: all.filter((h) => h.name.toLowerCase().includes(term.trim().toLowerCase().split(" ")[0]) || term.trim().length < 2) });
+      }, 150);
+      return ok();
+    },
+    ps_gameOffer: (appId, name) => {
+      const req = (rec) => [{ value: "Requires a 64-bit processor and operating system" }, { label: "OS", value: rec ? "Windows 10/11" : "Windows 10" },
+        { label: "Processor", value: rec ? "INTEL CORE I7-8700K or AMD RYZEN 5 3600X" : "INTEL CORE I5-8400 or AMD RYZEN 3 3300X" },
+        { label: "Memory", value: rec ? "16 GB RAM" : "12 GB RAM" }, { label: "Graphics", value: rec ? "NVIDIA GEFORCE GTX 1070 8 GB or AMD RADEON RX VEGA 56 8 GB" : "NVIDIA GEFORCE GTX 1060 3 GB or AMD RADEON RX 580 4 GB" },
+        { label: "DirectX", value: "Version 12" }, { label: "Storage", value: "60 GB available space" }];
+      const offer = { appId, name, header: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`, free: appId === 570,
+        steam: appId === 570 ? null : { currency: "EUR", initial: 5999, final: 2999, discount: 50 },
+        deals: appId === 570 ? [] : [{ store: "GameBillet", price: 26.69, retail: 59.99, savings: 56, url: "https://www.cheapshark.com/redirect?dealID=a" }, { store: "Fanatical", price: 27.99, retail: 59.99, savings: 53, url: "https://www.cheapshark.com/redirect?dealID=b" },
+          { store: "GOG", price: 59.99, retail: 59.99, savings: 0, url: "https://www.cheapshark.com/redirect?dealID=c" }],
+        lowest: appId === 570 ? 0 : 23.99, lowestAt: iso(120 * d), minimum: req(false), recommended: req(true), storeUrl: `https://store.steampowered.com/app/${appId}/` };
+      setTimeout(() => emit({ type: "gameOffer", appId, owned: appId === 1091500 ? "found:steam:1091500" : "", offer,
+        pc: { cpu: "AMD Ryzen 7 5800X 8-Core Processor", gpu: "NVIDIA GeForce RTX 3070", vram: 8 * 2 ** 30, ram: 16 * 2 ** 30, free: 412 * 2 ** 30, freeOn: "D:", windows: "Windows 11" } }), 200);
+      return ok();
+    },
     ps_gameSaves: (key) => {
       if (STATE === "loading") return ok();
       const f = found.find((x) => x.key === key) || {};

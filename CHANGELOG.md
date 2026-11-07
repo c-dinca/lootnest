@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.34.0
+
+- **Find games**, a new page in the sidebar. Look up any game, installed or not, and open it to see:
+  - **its prices**: on Steam in your currency, and in other official stores such as GOG, Humble and Fanatical (from CheapShark, which lists authorized stores only, in US dollars), with the discount and the lowest price it has had;
+  - **will it run here?**: its minimum and recommended requirements beside this PC's processor, graphics card, memory and free space. Lootnest says whether the memory and the space are enough; for the processor and graphics card, you see the names side by side;
+  - a link to its **PCGamingWiki** page, for known problems and fixes.
+- **Open** takes you to that store's page in your browser. Games already on this PC are marked, and **Open its page** takes you to them in the Library.
+- It's off until you turn it on, on the page itself or in **Settings, Online**. Only what you type, or the game's Steam id, is sent. Your hardware is read on this PC and never sent.
+
 ## 1.33.0
 
 - **Games installed with Hydra are in the Library.** Lootnest reads Hydra's own list of the games it installed on this PC, like it does for itch.io or GOG, and shows them with Hydra as their store. Pick **Hydra** in the store filter to see only those.
