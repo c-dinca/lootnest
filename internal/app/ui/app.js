@@ -100,6 +100,10 @@
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
+    gameBackups: (id) => call("ps_gameBackups", id),
+    restoreBackup: (id, bid) => call("ps_restoreBackup", id, bid),
+    dismissConflict: (id) => call("ps_dismissConflict", id),
+    gameFacts: (dir) => call("ps_gameFacts", dir || ""),
     deleteOldCopy: (oldKey) => call("ps_deleteOldCopy", oldKey),
     keepSavesNow: (key) => call("ps_keepSavesNow", key),
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
@@ -120,6 +124,7 @@
     ach: {},          // Library key -> achievements read from this PC (null: none)
     doctor: {},       // Library key -> Achievement Doctor's check (achDoctor event)
     points: {},       // Library key -> its save points (savePoints event)
+    facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)
     sideSort: pref("sideSort", "name"), // name, recent or played
@@ -1206,6 +1211,39 @@
       ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
       <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
   }
+  // What Steam Cloud replaced in a session, on the game's page until read.
+  function conflictBanner(g) {
+    const c = (S.d.conflicts || {})[g.id];
+    if (!c) return "";
+    const who = pname(c.player) || "Someone";
+    const when = new Date(c.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return `<div class="gp-conflict">${banner(`Steam Cloud replaced ${esc(possessive(who))} files on ${esc(when)}`,
+      `${esc(who)}'s profile stayed as it was. That session's files, from Steam Cloud, are kept as a copy, so nothing was lost. Turn Steam Cloud off for ${esc(g.name)} in its Steam properties if this keeps happening.`,
+      bBtn("secondary", `data-action="copies" data-game="${esc(g.id)}"`, "See the copies") + bBtn("ghost", `data-action="conflict-ok" data-game="${esc(g.id)}"`, "Got it"))}</div>`;
+  }
+  // A game that ships with an anti-cheat: what Lootnest does and doesn't do.
+  function antiCheatNote(it) {
+    const key = recentKey(it), dir = it.f ? it.f.dir : it.exe;
+    if (!dir) return "";
+    if (!(key in S.facts)) { S.facts[key] = null; api.gameFacts(dir).then((f) => { S.facts[key] = f || {}; if (f && f.antiCheat && S.view === "game") render(); }).catch(() => { S.facts[key] = {}; }); }
+    const f = S.facts[key];
+    if (!f || !f.antiCheat) return "";
+    return `<p class="gpage-note gp-ac">${GI.shield || GI.copy}Ships with ${esc(f.antiCheat)}. Lootnest never touches the game's own files: profiles swap only its settings and saves, and no notes show over it. Progress kept on the game's servers stays with the account.</p>`;
+  }
+  // The copies made before each swap, with Put back on each.
+  function viewCopies() {
+    const D = S.dialog, g = game(D.gameId);
+    if (!g) return "";
+    const list = D.list;
+    const when = (w) => (w ? new Date(w).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "");
+    const body = !list ? lnInline("", "Reading the copies") : !list.length ? `<p>No copies yet. One is made before every swap.</p>`
+      : `<ol class="pt-list pt-list--all">${list.map((b, i) => { const p = player(b.owner);
+        return `<li class="pt-row"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main"><b>${esc(when(b.when) || b.id)}${i === 0 ? " (newest)" : ""}</b>
+          <span class="pt-facts">${p ? `<span><span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span>${esc(possessive(p.name))} files</span>` : "<span>Whose isn't known</span>"}<span>${esc(fmtBytes(b.size || 0))}</span></span></div>
+          <div class="pt-actions">${p ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="copy-put-back" data-game="${esc(g.id)}" data-id="${esc(b.id)}" data-owner="${esc(b.owner)}" data-when="${esc(when(b.when))}" ${D.busy ? "disabled" : ""}>Put back</button>` : ""}</div></li>`; }).join("")}</ol>`;
+    return drawer({ label: `${esc(g.name)} copies`, title: "Copies before swaps", sub: `${esc(g.name)}, newest first`, body,
+      foot: `<p class="gpage-hint ln-drawer__note">Put back gives a copy's files back to the profile they belong to. What's there now is copied first, so it can be undone too.</p><button class="ln-button ln-button--ghost ln-button--sm" data-action="open-backups" data-game="${esc(g.id)}">Open the folder</button>` });
+  }
   // A page with nothing in it yet: what it's for, and the way to fill it.
   function emptyState(ic, title, text, actions, extra) {
     return `<section class="ln-empty"><div class="ln-empty__icon" aria-hidden="true">${ic}</div><h2>${title}</h2><p>${text}</p>
@@ -1717,6 +1755,7 @@
     back: gsvg('<path d="M12 4.75 6.75 10 12 15.25"/>'),
     swap: gsvg('<path d="M4 7h11.5M12.75 4.25 15.5 7l-2.75 2.75M16 13H4.5M7.25 10.25 4.5 13l2.75 2.75"/>'),
     tick: gsvg('<path d="M5 10.5l3.25 3.25L15 7"/>'),
+    shield: gsvg('<path d="M10 3.25 15.5 5.5v4.25c0 3.25-2.25 5.75-5.5 7-3.25-1.25-5.5-3.75-5.5-7V5.5z"/>'),
     lock: gsvg('<rect x="5.5" y="9" width="9" height="7" rx="1.5"/><path d="M7.25 9V7a2.75 2.75 0 0 1 5.5 0v2"/>'),
     trophy: gsvg('<path d="M6.5 3.75h7v4.5a3.5 3.5 0 0 1-7 0z"/><path d="M6.5 5.25H4.25v1a2.5 2.5 0 0 0 2.4 2.5M13.5 5.25h2.25v1a2.5 2.5 0 0 1-2.4 2.5M10 11.75v2.5M7 16.25h6"/>'),
     play: gsvg('<path d="M6.5 4.4v11.2a.9.9 0 0 0 1.37.77l9.05-5.6a.9.9 0 0 0 0-1.54L7.87 3.63A.9.9 0 0 0 6.5 4.4z"/>', true),
@@ -1793,7 +1832,7 @@
         <div class="gpage-state"><b>Profiles off</b><span>Everyone shares the same settings and saves</span></div>
         <div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}Turn on profiles</button>${details}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = `<p class="gpage-note">Turn on profiles so everyone who plays gets their own settings and saves. ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>`;
+      note = `<p class="gpage-note">Turn on profiles so everyone who plays gets their own settings and saves. ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + (page ? antiCheatNote(it) : "");
       side = page ? playersPanel(it) + collectionsBlock(it) + gameSavesBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
@@ -1820,7 +1859,7 @@
       const top = ps.filter((p) => pt[p.id]).sort((a, b) => pt[b.id] - pt[a.id]).slice(0, 3);
       const stats = top.map((p) => gpStat(hoursValue(pt[p.id]), esc(p.name), p)).join("") + (st ? gpStat(hoursValue(st), "Steam account") : "");
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${chips}${details}${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = `<p class="gpage-note">${GI.copy}A copy is made before every swap.</p>`;
+      note = (page ? conflictBanner(g) : "") + `<p class="gpage-note">${GI.copy}A copy is made before every swap. <button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See the copies</button></p>` + (page ? antiCheatNote(it) : "");
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
@@ -1872,7 +1911,7 @@
     ]) + gpGroup("Game files", [
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
-      gpRow(`data-action="open-backups" data-game="${esc(g.id)}"`, GI.history, "Open backups", "A copy is made before every swap"),
+      gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Put back the files from before any swap"),
       g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged", { disabled: s }) : "",
       g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries", { disabled: s }) : "",
     ]) + gpGroup("Online", [offlineRow(it)])
@@ -2131,6 +2170,8 @@
       o.innerHTML = viewManage();
     } else if (D.kind === "achievements") {
       o.innerHTML = viewAchDrawer();
+    } else if (D.kind === "copies") {
+      o.innerHTML = viewCopies();
     } else if (D.kind === "updhist") {
       o.innerHTML = viewUpdHistory();
     } else if (D.kind === "points") {
@@ -4041,6 +4082,28 @@
       renderOverlay();
       try { await api.updateUndo(el.dataset.key, el.dataset.id); } catch (e) { S.dialog.busy = false; S.dialog.error = errText(e); renderOverlay(); }
     },
+    async copies(el) {
+      const id = el.dataset.game;
+      S.dialog = { kind: "copies", gameId: id, list: null }; renderOverlay(); focusDrawer();
+      try { const l = await api.gameBackups(id); if (S.dialog && S.dialog.kind === "copies") { S.dialog.list = l || []; renderOverlay(); } } catch (e) { toast(errText(e), "error"); }
+    },
+    async "copy-put-back"(el) {
+      const back = S.dialog && S.dialog.kind === "copies" ? { ...S.dialog } : null;
+      const g = game(el.dataset.game), who = pname(el.dataset.owner);
+      const loaded = g && S.d.active[g.id] === el.dataset.owner;
+      const ok = await confirmDialog({ title: `Put back ${possessive(who)} files from ${el.dataset.when}?`,
+        body: loaded ? `${who}'s files are loaded now, so the copy goes into the game's folders. The files there now are copied first.` : `The copy goes into ${possessive(who)} profile, and comes in the next time ${who} plays. ${who}'s profile as it is now is copied first.`, ok: "Put it back" });
+      if (back) { S.dialog = back; renderOverlay(); }
+      if (!ok) return;
+      if (S.dialog) { S.dialog.busy = true; renderOverlay(); }
+      try {
+        await api.restoreBackup(el.dataset.game, el.dataset.id);
+        toast(`${possessive(who)} files from ${el.dataset.when} are back.`);
+        const l = await api.gameBackups(el.dataset.game);
+        if (S.dialog && S.dialog.kind === "copies") { S.dialog.busy = false; S.dialog.list = l || []; renderOverlay(); }
+      } catch (e) { if (S.dialog) { S.dialog.busy = false; renderOverlay(); } toast(errText(e), "error"); }
+    },
+    async "conflict-ok"(el) { try { await api.dismissConflict(el.dataset.game); await refresh(); } catch (e) { toast(errText(e), "error"); } },
     "upd-filter"(el) { S.updFilter = el.dataset.f === S.updFilter ? "all" : el.dataset.f; render(); },
     "upd-refresh"() { S.updChecking = true; S.copies = null; render(); api.updates().catch((e) => { S.updChecking = false; toast(errText(e), "error"); render(); }); },
     "upd-notes"(el) {

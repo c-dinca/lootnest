@@ -117,7 +117,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.49.1, beta)
+## Where things stand (1.50.0, beta)
 
 These shipped recently, newest last:
 
@@ -280,6 +280,14 @@ These shipped recently, newest last:
   ends in `exit 0` so "no rules left" isn't a failure). Tokenized paths
   keep the PC's separator after the token (`%APPDATA%\Game` on Windows);
   compare them with `filepath.ToSlash` in tests.
+- **1.50** Safety you can see (research step 1's open items):
+  `Engine.RestoreBackup` puts a pre-swap copy back for its owner (live if
+  loaded, else the profile; what's there is copied first, no pruning),
+  drawer `copies` (`ps_gameBackups`, `ps_restoreBackup`). Steam Cloud
+  replacements are kept in `conflicts.json` (`noteConflict`,
+  `AppState.Conflicts`, `conflictBanner()`, `ps_dismissConflict`). The
+  anti-cheat note (`antiCheatNote()`, `ps_gameFacts`). Still open: taking
+  anti-cheat or online-only games out of swaps by default.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
@@ -307,10 +315,9 @@ Build in this order, safety before new features:
 
 1. **A Steam Cloud-safe swap engine.** Done so far: the Steam Cloud guard
    (`steamcloud.go`, `app/cloud.go`), the swap journal and verified copies
-   (1.26). Still open: put games with an anti-cheat (EAC, BattlEye,
-   Vanguard) or online-only saves out of swaps by default, with a note on
-   their page; a conflict banner on the game page, not only a toast; a
-   one-click restore of the copy made before each swap.
+   (1.26), a conflict banner, one-click restore of the pre-swap copies,
+   and an anti-cheat note on the page (1.50). Still open: online-only
+   saves out of swaps by default.
 2. **Save paths from the Ludusavi manifest.** Done in 1.27. The manifest
    is downloaded on the user's PC, never shipped with Lootnest: its data
    comes from PCGamingWiki (CC BY-NC-SA), so bundling it would bind a

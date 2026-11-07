@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.50.0
+
+- **Put back the files from before any swap.** A copy is made before every swap; now you can use them. **Manage, Copies before swaps** (or **See the copies** under the Play bar) lists them, newest first, with whose files each holds.
+  - **Put back** gives a copy's files back to that profile: into the game's folders if their files are loaded, else into their profile for the next time they play.
+  - What's there now is copied first, so putting a copy back can be undone too.
+- **When Steam Cloud replaces a profile's files**, the game's page now says so until you've read it: when it happened, that the profile stayed as it was, and where that session's files are kept. Before, it was only a passing message.
+- **Games with an anti-cheat** (Easy Anti-Cheat, BattlEye) say so on their page, with what Lootnest does there: it never touches the game's own files, swaps only its settings and saves, and shows no notes over it.
+
 ## 1.49.1
 
 - **Keep it offline works.** Windows Firewall refused the rules for a game in some folders, and **Let it go online again** said the firewall didn't take the change when the rules were already gone. Both are fixed.

@@ -80,6 +80,7 @@ func (a *App) checkCloudWatch(cfg *core.Config, g *core.Game, playerID string) {
 		cloudMu.Unlock()
 		who := cfg.PlayerName(playerID)
 		a.logf("Steam Cloud replaced %d of %s's files for %s with its own copy: %v", len(replaced), who, g.Name, replaced)
+		a.noteConflict(g.ID, playerID, replaced)
 		a.notify("Steam Cloud replaced "+who+"'s files",
 			g.Name+" is using Steam Cloud's copy. When it closes, Lootnest keeps "+who+"'s profile as it was and saves this session's files as a backup.")
 		a.emit("toast", map[string]any{"kind": "error", "text": "Steam Cloud replaced " + who + "'s files in " + g.Name + " with its own copy. " + who + "'s profile stays as it was; this session is kept as a backup."})
