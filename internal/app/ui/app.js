@@ -94,6 +94,8 @@
     renameSavePoint: (key, id, name) => call("ps_renameSavePoint", key, id, name),
     deleteSavePoint: (key, id) => call("ps_deleteSavePoint", key, id),
     branchSavePoint: (key, id, name) => call("ps_branchSavePoint", key, id, name || ""),
+    saveCheck: (fresh) => call("ps_saveCheck", !!fresh),
+    reportProblem: () => call("ps_reportProblem"),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
@@ -291,6 +293,10 @@
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
+        break;
+      case "saveCheck":
+        S.saveCheck = ev.check || null;
+        if (S.view === "home") render();
         break;
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
@@ -825,7 +831,7 @@
       <div class="gpage-body">${head.bar}${head.note}${banners ? `<div class="home-banners">${banners}</div>` : ""}
         <div class="home-cols">
           <div>${continueShelf(recent.slice(1), allBtn)}</div>
-          <aside class="gpage-aside">${playersBlock(all)}</aside>
+          <aside class="gpage-aside">${playersBlock(all)}${saveCheckBlock()}</aside>
         </div>
         ${homeNews(recent)}
       </div></div>`;
@@ -882,6 +888,23 @@
   }
 
   // Each player and the game they played last: one click to carry on.
+  // Your saves: how Lootnest looks after them, from the save check.
+  let saveCheckAsked = false;
+  function saveCheckBlock() {
+    if (!saveCheckAsked) { saveCheckAsked = true; api.saveCheck(false).catch(() => {}); }
+    const C = S.saveCheck;
+    if (!C) return "";
+    const line = (tone, text) => `<li class="sc-line sc-line--${tone}"><span class="run-dot" aria-hidden="true"></span><span>${text}</span></li>`;
+    const n = (k, one, many) => (k === 1 ? one : many.replace("#", k));
+    const lines = [];
+    if (C.profiles) lines.push(line("ok", n(C.profiles, "1 game with profiles: a copy before every swap.", "# games with profiles: a copy before every swap.")));
+    if (C.net) lines.push(line("ok", n(C.net, "1 game keeps its saves in its folder, and Lootnest keeps a copy.", "# games keep their saves in their folder, and Lootnest keeps a copy of each.")));
+    if (C.points) lines.push(line("ok", n(C.points, "1 game has save points.", "# games have save points.")));
+    (C.gone || []).forEach((g) => lines.push(line("low", `${esc(g.name)}'s saves are gone from its folder. <button class="gpage-link" data-action="open-sheet" data-key="${esc(g.key)}">Put a copy back</button>`)));
+    if (C.unknownN) lines.push(line("mid", `${n(C.unknownN, "1 game", "# games")} from outside the stores: Lootnest doesn't know where ${C.unknownN === 1 ? "it keeps its" : "they keep their"} saves. ${(C.unknown || []).map((g) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(g.key)}">${esc(g.name)}</button>`).join(", ")}${C.unknownN > (C.unknown || []).length ? ", and more" : ""}`));
+    lines.push(line(C.cloud ? "ok" : "", C.cloud ? "Cloud saves are on." : `Cloud saves are off. <button class="gpage-link" data-action="nav" data-view="cloud">Set them up</button> to have them on every PC.`));
+    return `<section class="home-block sc"><div class="ln-section-head"><div><h2>Your saves</h2></div></div><ul class="sc-lines">${lines.join("")}</ul></section>`;
+  }
   function playersBlock(all) {
     const ps = cfg().players;
     if (!ps.length) return "";
@@ -2484,7 +2507,7 @@
       : (S.update.checking ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Checking</button>` : b("secondary", 'data-action="update-check"', "Check for updates"));
     const card = (rows) => `<div class="bk-card">${rows}</div>`;
     const sub = (title, note, rows) => `<section class="set-sub"><div class="ln-section-head ln-section-head--minor"><h2>${title}</h2></div>${note ? `<p class="set-note">${note}</p>` : ""}${card(rows)}</section>`;
-    const versionRow = `<div class="bk-row set-version"><div><b>Lootnest ${esc(S.d.version)}</b><p>${S.update.available ? `Version ${esc(S.update.version)} is ready to install.` : "Updates come from Lootnest's releases on GitHub."}</p></div>${update}</div>`;
+    const versionRow = `<div class="bk-row set-version"><div><b>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}</b><p>${S.update.available ? `Version ${esc(S.update.version)} is ready to install.` : "Updates come from Lootnest's releases on GitHub."}</p></div>${update}</div>`;
     // One category at a time, picked on the left, as in Steam's settings.
     const tabs = [
       ["general", "General", GI.sliders, "How Lootnest starts, closes and tells you things.", () => card(`
@@ -2527,14 +2550,15 @@
           <div class="bk-row"><div><b>Data folder</b><p class="selectable">Profiles and backups are stored in ${esc(S.d.dataDir)}</p></div>${b("secondary", 'data-action="open-data"', "Open data folder")}</div>
           <div class="bk-row"><div><b>Recent activity</b><p>Every swap, save and scan, with the reason when something didn't work. Useful when you ask for help.</p></div>${b("secondary", 'data-action="show-log"', "Show recent activity")}</div>
           ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}`)],
-      ["about", "About", GI.info, "The version, and how to leave.", () => card(`
+      ["about", "About", GI.info, "The version, how to tell us about a problem, and how to leave.", () => card(`
           ${versionRow}
+          <div class="bk-row"><div><b>Lootnest is in beta</b><p>Everything that moves your files makes a copy first. If something doesn't work as it should, Report a problem copies the version and the recent activity for you to paste, and opens a new issue on GitHub in your browser. Lootnest sends nothing itself. Read it before you post: it names your games and folders.</p></div>${b("secondary", 'data-action="report-problem"', "Report a problem")}</div>
           <div class="bk-row"><div><b>Uninstalling</b><p>Lootnest uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows. Your profiles and backups stay in the data folder.</p></div></div>
           <div class="bk-row"><div><b>Quit Lootnest</b><p>It stops watching your games until you open it again.</p></div>${b("danger", 'data-action="quit"', "Quit Lootnest")}</div>`)],
     ];
     const cur = tabs.find((t) => t[0] === S.setTab) || tabs[0];
     return `<div class="settings-page ln-root">
-      <header class="lib-head"><div><h1>Settings</h1><p>Lootnest ${esc(S.d.version)}. Anything that goes online is off until you turn it on.</p></div></header>
+      <header class="lib-head"><div><h1>Settings</h1><p>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}. Anything that goes online is off until you turn it on.</p></div></header>
       <div class="set-layout">
         <nav class="set-nav" aria-label="Settings">${tabs.map(([k, label, ic]) => `<button class="set-tab" data-action="set-tab" data-tab="${k}"${k === cur[0] ? ' aria-current="true"' : ""}>${ic}<span>${label}</span>${k === "updates" && S.update.available ? '<span class="set-dot" aria-label="An update is ready"></span>' : ""}</button>`).join("")}</nav>
         <section class="set-panel" aria-labelledby="set-title"><div class="set-panel-head"><h2 id="set-title">${cur[1]}</h2><p>${cur[3]}</p></div>${cur[4]()}</section>
@@ -3355,6 +3379,7 @@
       try { await api.deleteOldCopy(el.dataset.old); } catch (e) { C.busy = false; toast(errText(e), "error"); render(); }
     },
     async "upd-keep"(el) { try { await api.keepSavesNow(el.dataset.key); toast("Copying its saves"); } catch (e) { toast(errText(e), "error"); } },
+    async "report-problem"() { try { await api.reportProblem(); toast("Copied. Paste it into the new issue."); } catch (e) { toast(errText(e), "error"); } },
     "test-toast"() { api.testToast().catch((e) => toast(errText(e), "error")); },
     "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined }); renderOverlay(); } },
     "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },

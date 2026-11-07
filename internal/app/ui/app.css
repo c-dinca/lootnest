@@ -1270,3 +1270,14 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .pt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-1); }
 .pt-list--all .pt-row { grid-template-columns: auto 1fr; }
 .pt-list--all .pt-actions { grid-column: 2; justify-content: flex-start; }
+
+/* Beta, next to the name in the sidebar. */
+.brand-stage { padding: var(--space-1) var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/1 var(--font-ui); letter-spacing: normal; color: var(--fg-2); }
+
+/* Your saves, on Home: a line per thing Lootnest looks after. */
+.sc-lines { display: grid; gap: var(--space-3); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+.sc-line { --tone: var(--fg-3); display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); font-size: var(--fs-14); color: var(--fg-1); line-height: var(--lh-snug); }
+.sc-line .run-dot { margin-top: 5px; }
+.sc-line--ok { --tone: var(--success); }
+.sc-line--mid { --tone: var(--warning); }
+.sc-line--low { --tone: var(--danger); }

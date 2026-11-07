@@ -62,7 +62,21 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 	if !ok {
 		return t, errFoundGone
 	}
-	for _, l := range a.savesOf(f).Locs {
+	locs := a.savesOf(f).Locs
+	if f.Dir != "" {
+		// And the folders engines keep saves in inside the game's folder,
+		// as the safety net does.
+		for _, l := range a.netLocs(f) {
+			dup := false
+			for _, k := range locs {
+				dup = dup || strings.EqualFold(k.Resolved, l.Resolved) || isInside(l.Resolved, k.Resolved) || isInside(k.Resolved, l.Resolved)
+			}
+			if !dup {
+				locs = append(locs, l)
+			}
+		}
+	}
+	for _, l := range locs {
 		t.locs = append(t.locs, core.SaveLoc{ID: core.LocID(l.Path), Live: l.Resolved, Path: l.Path})
 	}
 	if len(t.locs) == 0 {
