@@ -529,6 +529,27 @@
       </div></section>`;
   }
 
+  const day = (d) => new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: new Date(d).getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+
+  // An update or announcement, read inside Lootnest. Its body is HTML that
+  // Lootnest made safe in Go (core.NewsHTML): only known elements, images
+  // from Steam's servers, links that open in the browser.
+  function viewReader() {
+    const D = S.dialog;
+    const n = ((S.news[D.key] || {}).items || [])[D.i];
+    if (!n) return "";
+    const it = libraryItems().find((x) => coverKey(x) === D.key);
+    return `<div class="scrim" data-action="scrim"><article class="dialog reader" role="dialog" aria-modal="true" aria-label="${esc(n.title)}">
+      <header class="reader-head"><div>
+        <p class="reader-meta">${n.update ? '<span class="dot"></span>Update' : "News"}<span>${esc(new Date(n.date).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }))}</span>${it ? `<span>${esc(it.name)}</span>` : ""}</p>
+        <h2>${esc(n.title)}</h2></div>
+        <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></header>
+      <div class="reader-body selectable">${n.body || `<p>${esc(n.summary)}</p>`}</div>
+      <footer class="dialog-foot"><button class="btn quiet" data-action="open-news" data-url="${esc(n.url)}">Open on Steam</button>
+        <button class="btn" data-action="dialog-cancel">Close</button></footer>
+    </article></div>`;
+  }
+
   // Updates and news from Steam's feed for the game (opt-in).
   const storeKept = (src) => src === "steam" || src === "epic" || src === "gog";
   function newsHTML(it) {
@@ -546,13 +567,14 @@
     if (!N || N.loading) return `<section class="news">${head}<p class="hint">Reading Steam's news for ${esc(it.name)}</p></section>`;
     if (N.none) return `<section class="news">${head}<p class="hint">${esc(it.name)} isn't on the Steam store, so there's no news feed for it.</p></section>`;
     if (N.error) return `<section class="news">${head}<p class="hint">${esc(N.error)}</p></section>`;
-    const items = (N.items || []).slice(0, 5);
-    const day = (d) => new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: new Date(d).getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+    const items = (N.items || []).slice(0, 6);
     const newer = N.newer ? `<div class="newer"><b>A newer version is out</b><p>${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.</p></div>` : "";
     return `<section class="news">${head}${newer}
-      ${items.length ? `<ul class="news-list">${items.map((n) => `<li><button data-action="open-news" data-url="${esc(n.url)}">
-        <span class="news-date">${esc(day(n.date))}</span><span class="news-title">${n.update ? '<span class="dot" title="Update"></span>' : ""}${esc(n.title)}</span>
-        ${n.summary ? `<span class="news-sum">${esc(n.summary)}</span>` : ""}</button></li>`).join("")}</ul>` : `<p class="hint">Steam has no news for this game yet.</p>`}
+      ${items.length ? `<ul class="news-list">${items.map((n, i) => `<li><button data-action="read-news" data-key="${esc(key)}" data-i="${i}">
+        <span class="news-date">${esc(day(n.date))}</span>
+        <span class="news-text"><span class="news-title">${n.update ? '<span class="dot" title="Update"></span>' : ""}${esc(n.title)}</span>
+        ${n.summary ? `<span class="news-sum">${esc(n.summary)}</span>` : ""}</span>
+        ${n.image ? `<span class="news-thumb" style="background-image:url('${esc(n.image)}')"></span>` : ""}</button></li>`).join("")}</ul>` : `<p class="hint">Steam has no news for this game yet.</p>`}
     </section>`;
   }
 
@@ -779,6 +801,9 @@
       o.innerHTML = viewBlocked();
     } else if (D.kind === "move") {
       o.innerHTML = viewMove();
+    } else if (D.kind === "news") {
+      o.innerHTML = viewReader();
+      if (!$("#overlay").classList.contains("still")) { const b = $(".reader-body"); if (b) b.scrollTop = 0; }
     } else if (D.kind === "game-settings") {
       o.innerHTML = viewGameSettings();
     }
@@ -1214,6 +1239,8 @@
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
     "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
+    "open-link": (el) => api.open("link", el.dataset.url).catch((e) => toast(errText(e), "error")),
+    "read-news"(el) { S.dialog = { kind: "news", key: el.dataset.key, i: +el.dataset.i }; renderOverlay(); setTimeout(() => { const b = $(".reader .btn.quiet.icon"); if (b) b.focus({ preventScroll: true }); }, 30); },
     async "news-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.gameNews = true;

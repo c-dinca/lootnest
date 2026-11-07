@@ -624,6 +624,12 @@ func (a *App) apiOpen(kind, arg string) error {
 	case "pcgw":
 		target = "https://www.pcgamingwiki.com/w/index.php?search=" + url.QueryEscape(arg)
 		return win.ShellOpen(target)
+	case "link": // a link inside an announcement: web pages only, in the browser
+		u := core.SafeLink(arg)
+		if u == "" {
+			return errors.New("That link can't be opened.")
+		}
+		return win.ShellOpen(u)
 	case "news": // a game's patch notes or announcement, on Steam's own site only
 		if !core.SafeNewsURL(arg) {
 			return errors.New("That isn't a Steam news page.")
