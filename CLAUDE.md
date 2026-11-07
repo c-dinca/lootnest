@@ -345,6 +345,14 @@ while a game runs.
 Phantom Blade Zero. Ask for the "Show recent activity" log after they
 update. It names each game and says why none were found.
 
+## Roadmap
+
+`docs/ROADMAP.md` is the plan for the bigger features the owner asked for
+(plugins, mods, controllers, game details, timeline and captures, UI, GOG
+and itch.io, updates found in Downloads), each phased with sizes, its
+key constraint and what Lootnest won't do, plus the order of work. Read
+it before starting any of them.
+
 ## Next, from the market research (November 2026)
 
 The research brief's conclusion: Lootnest's position is **the PC's vault of
