@@ -562,3 +562,40 @@ func TestPlaytime(t *testing.T) {
 		t.Fatalf("got %+v", pt)
 	}
 }
+
+func TestSteamActivity(t *testing.T) {
+	user := t.TempDir()
+	write(t, filepath.Join(user, "config", "localconfig.vdf"), `"UserLocalConfigStore"
+{
+	"Software"
+	{
+		"Valve"
+		{
+			"Steam"
+			{
+				"apps"
+				{
+					"730"
+					{
+						"LastPlayed"		"1793840047"
+						"Playtime"		"24720"
+						"LaunchOptions"		"-novid"
+					}
+					"1091500"
+					{
+						"Playtime2wks"		"0"
+					}
+				}
+			}
+		}
+	}
+}
+`)
+	a := SteamActivity(user)
+	if len(a) != 1 || a[730].Minutes != 24720 || a[730].LastPlayed.Unix() != 1793840047 {
+		t.Fatalf("got %+v", a)
+	}
+	if len(SteamActivity("")) != 0 {
+		t.Fatal("no Steam, nothing")
+	}
+}

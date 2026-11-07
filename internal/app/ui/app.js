@@ -378,12 +378,15 @@
       return true;
     });
     if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
-    else if (S.sort === "played") list.sort((a, b) => totalPlayed(b) - totalPlayed(a) || playedAt(b) - playedAt(a));
+    else if (S.sort === "played") list.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || playedAt(b) - playedAt(a));
     return list;
   }
   const playedAt = (it) => { const r = (S.d.recent || {})[recentKey(it)]; return r ? new Date(r.at).getTime() : 0; };
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
   const totalPlayed = (it) => Object.values(playtimeOf(it)).reduce((a, b) => a + b, 0);
+  const steamTime = (it) => (S.d.steamTime || {})[recentKey(it)] || 0;
+  // How much a game has been played: Lootnest's own count, or Steam's.
+  const playedText = (it) => totalPlayed(it) ? hours(totalPlayed(it)) + " played in all" : steamTime(it) ? hours(steamTime(it)) + " on Steam" : "";
   function hours(sec) {
     if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + " min";
     const h = sec / 3600;
@@ -431,11 +434,11 @@
     return `<section class="shelf" aria-label="Continue playing"><h2 class="shelf-title">Continue playing</h2>
       <div class="capsules">${list.map((it) => {
         const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
-        const t = totalPlayed(it);
+        const t = playedText(it);
         const k = coverKey(it), poster = !S.art["hero:" + k] && (S.covers[k] || S.icons[k]);
         return `<div class="capsule-wrap"><button class="capsule" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}">${artHTML(it)}
           ${poster ? `<span class="capsule-poster${S.covers[k] ? "" : " icon"}" style="background-image:url('${poster}')"></span>` : ""}
-          <span class="capsule-body"><b>${esc(it.name)}</b><span>${esc(lastPlayed(it))}${t ? `<span class="sep"></span>${esc(hours(t))} in all` : ""}</span></span></button>
+          <span class="capsule-body"><b>${esc(it.name)}</b><span>${esc(lastPlayed(it))}${t ? `<span class="sep"></span>${esc(t)}` : ""}</span></span></button>
           ${it.kind === "game" && session(it.id) ? "" : `<button class="quick-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${icon.play}</button>`}</div>`;
       }).join("")}</div></section>`;
   }
@@ -467,9 +470,18 @@
       }).join("")}</div></section>`;
   }
 
+  // Asked once: keep Lootnest up to date by itself, or not.
+  function updatesPrompt() {
+    const s = cfg().settings;
+    if (s.updatesAsked || s.checkUpdates || S.update.available) return "";
+    return `<div class="banner"><div><b>Keep Lootnest up to date?</b>
+      <p>Lootnest checks GitHub every few hours, tells you with a notification when a new version is out, and installs it while it's in the tray and no game is running. Nothing about you or your games is sent.</p></div>
+      <div class="row"><button class="btn quiet" data-action="updates-no">Not now</button><button class="btn primary" data-action="updates-yes">Keep it up to date</button></div></div>`;
+  }
+
   function updateBanner() {
     const U = S.update;
-    if (!U.available) return "";
+    if (!U.available) return updatesPrompt();
     if (U.step) {
       return `<div class="banner"><div><b>${U.step === "installing" ? `Installing Lootnest ${esc(U.version)}` : `Downloading Lootnest ${esc(U.version)}`}</b>
         <p>${U.step === "installing" ? "Lootnest closes and opens again in a few seconds." : "Your players, games and profiles stay as they are."}</p></div><div class="bar" aria-hidden="true"></div></div>`;
@@ -682,7 +694,7 @@
     const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
     return `<section class="hero" aria-label="Last played">${artHTML(best)}
       <div class="hero-body">${titleHTML(best, "hero-title")}
-        <p class="hero-when">${esc(lastPlayed(best))}${totalPlayed(best) ? `<span class="sep"></span>${esc(hours(totalPlayed(best)))} played in all` : ""}</p>
+        <p class="hero-when">${esc(lastPlayed(best))}${playedText(best) ? `<span class="sep"></span>${esc(playedText(best))}` : ""}</p>
         <div class="hero-play">${playButtons(best, false)}<button class="btn ghost" data-action="open-sheet" ${attr}>Details</button></div>
       </div></section>`;
   }
@@ -747,6 +759,7 @@
     add("Store", esc(sourceLabel(it.source)));
     const lp = lastPlayed(it);
     if (lp) add("Last played", esc(lp));
+    if (steamTime(it)) add("On Steam", `${esc(hours(steamTime(it)))} on this Steam account`);
     let list, note = "";
     if (it.kind === "found") {
       const f = it.f;
@@ -1345,7 +1358,8 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
-          ${sw("checkUpdates", "Check for updates automatically", "Once a day, Lootnest asks GitHub for its latest version number. Nothing about you or your games is sent.", s.checkUpdates)}
+          ${sw("checkUpdates", "Check for updates automatically", "Every few hours, Lootnest asks GitHub for its latest version number and tells you with a notification when a new one is out. Nothing about you or your games is sent.", s.checkUpdates)}
+          ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your players, games and profiles stay as they are.", s.autoInstallUpdates) : ""}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}
         </div></section>
@@ -1427,6 +1441,16 @@
       try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     "covers-later"() { S.hideCoverHint = true; render(); },
+    async "updates-yes"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.checkUpdates = true; s.autoInstallUpdates = true; s.updatesAsked = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); toast("Lootnest keeps itself up to date. You can change this in Settings."); api.checkUpdate().catch(() => {}); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "updates-no"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.updatesAsked = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); } catch (e) { toast(errText(e), "error"); }
+    },
     "update-check"() { S.update = { checking: true }; render(); api.checkUpdate().catch((e) => { S.update = {}; toast(errText(e), "error"); render(); }); },
     async "update-now"() {
       try { await api.installUpdate(); } catch (e) { toast(errText(e), "error"); }

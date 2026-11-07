@@ -44,7 +44,7 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 
 **Stays out of the way**
 - Lives in the tray and notices games started outside Lootnest.
-- Updates itself: **Settings > Check for updates**, then **Update now**.
+- Keeps itself up to date if you let it (it asks once): a notification when a new version is out, installed while Lootnest is in the tray and no game is running. Or **Settings > Check for updates**, then **Update now**.
 
 **Coming next:** Game Mover for games outside Steam, cloud backup of profiles, and achievements.
 
@@ -66,7 +66,7 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 
 | What | When | What is sent |
 | --- | --- | --- |
-| **Check for updates** | When you press it, or once a day if **Check for updates automatically** is on (off by default) | A request for the latest Lootnest version, to `api.github.com` |
+| **Check for updates** | When you press it, or every 6 hours if **Check for updates automatically** is on (off until you answer "Keep Lootnest up to date?") | A request for the latest Lootnest version, to `api.github.com` |
 | **Update now** | When you press it | Downloads the installer from the GitHub release, and checks its SHA-256 before running it |
 | **Download covers and artwork** | Only if you turn it on (off by default) | The game's name, to `store.steampowered.com`; covers, wide art and logos come from Steam's image server and are saved on your PC |
 | **SteamGridDB API key** (optional, in Settings) | With covers on, for games the Steam store doesn't know | The game's name or Steam id and your key, to `www.steamgriddb.com`; images come from its CDN and are saved on your PC |
