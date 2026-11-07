@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.31.0)
+## Where things stand (1.32.0)
 
 These shipped recently, newest last:
 
@@ -159,6 +159,8 @@ These shipped recently, newest last:
   the current page's bar, page-title stripes, cover hover, `ln-tag--accent`.
 - **1.31** Library: a Recent games shelf on wide art (`recentShelf()`),
   as in Steam's library, above the filters and the grid.
+- **1.32** Library: a shelf for each collection (`collectionShelves()`,
+  up to six), then an All games heading over the filters.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
