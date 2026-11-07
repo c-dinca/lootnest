@@ -55,12 +55,67 @@ func (a *App) apiSaveLibraryPref(key, name, args string) error {
 	if cfg.LibraryPrefs == nil {
 		cfg.LibraryPrefs = map[string]core.LibraryPref{}
 	}
-	if p == (core.LibraryPref{}) {
+	p.Saves = cfg.LibraryPrefs[key].Saves // set on the game's page, not here
+	if p.Empty() {
 		delete(cfg.LibraryPrefs, key)
 	} else {
 		cfg.LibraryPrefs[key] = p
 	}
 	return a.saveConfig(cfg)
+}
+
+// apiSetGameSaves sets the save folders and files of a Library game for its
+// cloud saves (none: Lootnest finds them again).
+func (a *App) apiSetGameSaves(key string, paths []string) error {
+	f, ok := a.foundByKey(key)
+	if !ok {
+		return errFoundGone
+	}
+	var saves []string
+	for _, raw := range paths {
+		r, err := a.env.Resolve(raw) // refuses drives, the user folder, AppData itself, ...
+		if err != nil {
+			return err
+		}
+		if _, err := os.Stat(r); err != nil {
+			return fmt.Errorf("%s doesn't exist.", r)
+		}
+		if isInside(r, DataDir()) {
+			return errors.New("Lootnest's own data folder can't be a game's save folder.")
+		}
+		t := a.env.Tokenize(r)
+		dup := false
+		for _, s := range saves {
+			dup = dup || strings.EqualFold(s, t)
+		}
+		if !dup {
+			saves = append(saves, t)
+		}
+	}
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	if cfg.LibraryPrefs == nil {
+		cfg.LibraryPrefs = map[string]core.LibraryPref{}
+	}
+	p := cfg.LibraryPrefs[key]
+	p.Saves = saves
+	p, err := core.CleanLibraryPref(p)
+	if err != nil {
+		return err
+	}
+	if p.Empty() {
+		delete(cfg.LibraryPrefs, key)
+	} else {
+		cfg.LibraryPrefs[key] = p
+	}
+	if err := a.saveConfig(cfg); err != nil {
+		return err
+	}
+	st := loadGamesaves()
+	delete(st, gameSavesKey(f)) // read them again
+	saveGamesaves(st)
+	return nil
 }
 
 // steamInstallDir is where Steam installed a game, or "".

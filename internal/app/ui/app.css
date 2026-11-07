@@ -840,10 +840,12 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 /* A game's cloud save (games outside Steam) */
 .gp-saves { display: grid; gap: 10px; }
 .gs-locs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.gs-locs li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: var(--radius-s); background: var(--panel); font-size: 12.5px; overflow-wrap: anywhere; }
+.gs-locs li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: var(--radius-s); background: var(--panel); font-size: 12.5px; overflow-wrap: anywhere; }
 .gs-locs .hint { flex: none; }
 .gs-versions { list-style: none; margin: 0; padding: 0; display: grid; border-radius: var(--radius-m); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
 .gs-versions li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; }
 .gs-versions li + li { border-top: 1px solid var(--line); }
 .gs-versions li > span { display: grid; gap: 1px; }
 .gs-versions b { font-weight: 500; }
+.link-btn { padding: 0; border: 0; background: none; color: var(--gold); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.link-btn:hover { color: var(--gold-hover); }

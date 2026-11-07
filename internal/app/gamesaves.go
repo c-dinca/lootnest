@@ -111,6 +111,18 @@ func (a *App) savesOf(f core.FoundGame) gameLocs {
 	if f.Dir != "" {
 		base = f.Dir
 	}
+	// The ones the user chose come first.
+	if len(f.Saves) > 0 {
+		var locs []core.SaveLocation
+		for _, p := range f.Saves {
+			if r, err := a.env.Resolve(p); err == nil {
+				if _, err := os.Stat(r); err == nil {
+					locs = append(locs, core.SaveLocation{Path: p, Resolved: r, Size: core.Size(r)})
+				}
+			}
+		}
+		return gameLocs{locs, "you"}
+	}
 	if db := loadSaveDB(); db != nil {
 		names := []string{f.Name, f.ScanName}
 		if base != "" {

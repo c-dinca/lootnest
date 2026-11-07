@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.1
+
+- **Choose the save folder** (or a save file) in a game's **Cloud save** section, for games Lootnest can't find the saves of by itself, such as a game you added by hand or one too new for PCGamingWiki's list. Its saves go to the cloud from then on, no profiles needed. **Look it up on PCGamingWiki** opens the game's page there, which says where it keeps them.
+- For games whose saves Lootnest found, **Choose them yourself** replaces them with the folders you pick, and you can add or remove folders and files.
+
 ## 1.15.0
 
 - **Cloud saves for games outside Steam**, like a launcher's cloud saves:

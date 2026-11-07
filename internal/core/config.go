@@ -159,7 +159,13 @@ type Config struct {
 type LibraryPref struct {
 	Name string `json:"name,omitempty"`
 	Args string `json:"args,omitempty"`
+	// Saves are the save folders and files the user chose for the game's
+	// cloud saves (tokenized), when Lootnest couldn't find them.
+	Saves []string `json:"saves,omitempty"`
 }
+
+// Empty says whether the pref changes nothing.
+func (p LibraryPref) Empty() bool { return p.Name == "" && p.Args == "" && len(p.Saves) == 0 }
 
 // CleanLibraryPref trims a game's settings and checks they're sensible.
 func CleanLibraryPref(p LibraryPref) (LibraryPref, error) {
@@ -173,6 +179,14 @@ func CleanLibraryPref(p LibraryPref) (LibraryPref, error) {
 	}
 	if strings.ContainsAny(p.Name+p.Args, "\r\n\t\x00") {
 		return p, errors.New("Names and launch options must fit on one line.")
+	}
+	if len(p.Saves) > 10 {
+		return p, errors.New("Choose up to 10 save folders or files.")
+	}
+	for _, s := range p.Saves {
+		if s == "" || len(s) > 400 || strings.ContainsAny(s, "\r\n\x00") {
+			return p, errors.New("invalid save location")
+		}
 	}
 	return p, nil
 }

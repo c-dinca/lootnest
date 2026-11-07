@@ -68,6 +68,7 @@
     gameSaves: (key) => call("ps_gameSaves", key),
     gameSaveNow: (key) => call("ps_gameSaveNow", key),
     gameSaveRestore: (key, id) => call("ps_gameSaveRestore", key, id),
+    setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
@@ -1662,14 +1663,20 @@
     if (G.off === "locked") return `<div class="gp-saves">${head}<p class="sub">The cloud folder has a password. Enter it on <b>Cloud saves</b>.</p></div>`;
     const s = cfg().settings;
     let where;
+    const choose = `<div class="row"><button class="btn" data-action="gs-add" data-key="${esc(it.id)}" data-kind="folder">${G.locations.length ? "Add a folder" : "Choose the save folder"}</button>
+      <button class="btn quiet" data-action="gs-add" data-key="${esc(it.id)}" data-kind="file">${G.locations.length ? "Add a file" : "Choose a save file"}</button>
+      <button class="btn quiet" data-action="gs-pcgw" data-name="${esc(it.name)}">Look it up on PCGamingWiki</button></div>`;
     if (!G.locations.length) {
-      where = `<p class="sub">Lootnest doesn't know where ${esc(it.name)} keeps its saves.</p>
-        ${s.saveDb ? `<p class="hint">It isn't in PCGamingWiki's list, and no folder is named like it. Turn on profiles to choose the folders yourself.</p>`
-          : `<p class="hint">With <b>Find save locations online</b> on, Lootnest uses PCGamingWiki's list of where over 20,000 games keep their saves.</p>
-             <div class="row"><button class="btn" data-action="savedb-on">Find save locations online</button></div>`}`;
+      where = `<p class="sub">${G.source === "you" ? `Choose where ${esc(it.name)} keeps its saves.` : `Lootnest doesn't know where ${esc(it.name)} keeps its saves yet. Choose the folder, and its saves go to the cloud from then on.`}</p>
+        <p class="hint">Usually in Documents, Saved Games, or AppData (Roaming, Local or LocalLow), in a folder named after the game or its studio. PCGamingWiki's page for the game says where.</p>
+        ${choose}
+        ${s.saveDb ? "" : `<p class="hint">Or turn on <b>Find save locations online</b>: Lootnest then uses PCGamingWiki's list of where over 20,000 games keep their saves. <button class="link-btn" data-action="savedb-on">Turn it on</button></p>`}`;
     } else {
-      where = `<ul class="gs-locs">${G.locations.map((l) => `<li class="selectable" title="${esc(l.resolved)}">${esc(l.path)}<span class="hint">${esc(fmtBytes(l.size || 0))}</span></li>`).join("")}</ul>
-        <p class="hint">${G.source === "list" ? "Found with PCGamingWiki's list of save locations." : "Folders named like the game; turn on Find save locations online for PCGamingWiki's list."}</p>`;
+      const yours = G.source === "you";
+      where = `<ul class="gs-locs">${G.locations.map((l) => `<li class="selectable" title="${esc(l.resolved)}"><span>${esc(l.path)}</span><span class="hint">${esc(fmtBytes(l.size || 0))}${yours ? ` <button class="link-btn" data-action="gs-remove" data-key="${esc(it.id)}" data-path="${esc(l.path)}" aria-label="Remove">Remove</button>` : ""}</span></li>`).join("")}</ul>
+        <p class="hint">${yours ? "Chosen by you." : G.source === "list" ? "Found with PCGamingWiki's list of save locations." : "Folders named like the game."}
+          ${yours ? "" : `<button class="link-btn" data-action="gs-own" data-key="${esc(it.id)}">Choose them yourself</button>`}</p>
+        ${yours ? choose : ""}`;
     }
     const vs = G.versions || [];
     const list = G.locations.length || vs.length ? `${vs.length ? `<ul class="gs-versions">${vs.map((v, i) => `<li><span><b>${esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }))}</b>
@@ -2147,6 +2154,22 @@
       S.dialog = null; renderOverlay();
       await setShelf(D.pid, D.k, { note: note.trim() });
     },
+    async "gs-add"(el) {
+      const key = el.dataset.key, G = S.gsaves[key] || {};
+      const r = await browse(el.dataset.kind === "file" ? "file" : "folder");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      const now = G.source === "you" ? (G.locations || []).map((l) => l.path) : [];
+      try { await api.setGameSaves(key, [...now, r.tokenized || r.path]); await refresh(); delete S.gsaves[key]; gsAsked.delete(key); render(); }
+      catch (e) { toast(errText(e), "error"); }
+    },
+    async "gs-remove"(el) {
+      const key = el.dataset.key, G = S.gsaves[key] || {};
+      const rest = (G.locations || []).map((l) => l.path).filter((p) => p !== el.dataset.path);
+      try { await api.setGameSaves(key, rest); await refresh(); delete S.gsaves[key]; gsAsked.delete(key); render(); }
+      catch (e) { toast(errText(e), "error"); }
+    },
+    "gs-own"(el) { const G = S.gsaves[el.dataset.key]; if (G) { G.source = "you"; G.locations = []; G.versions = G.versions || []; render(); } },
+    "gs-pcgw"(el) { api.open("pcgw", el.dataset.name).catch((e) => toast(errText(e), "error")); },
     async "gs-now"(el) {
       const G = S.gsaves[el.dataset.key];
       if (G) G.busy = true; render();
