@@ -76,6 +76,9 @@ type Settings struct {
 	// CheckUpdates asks GitHub once a day whether a newer Lootnest exists.
 	// Off by default; "Check now" in Settings works either way.
 	CheckUpdates bool `json:"checkUpdates"`
+	// GameNews shows each game's latest updates and announcements from
+	// Steam's news feed on its page. Off by default.
+	GameNews bool `json:"gameNews"`
 }
 
 type Config struct {

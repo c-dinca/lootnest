@@ -62,6 +62,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_addLibraryGame", a.apiAddLibraryGame))
 	must(a.w.Bind("ps_gameIcon", a.apiGameIcon))
 	must(a.w.Bind("ps_art", a.apiArt))
+	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))
@@ -623,6 +624,11 @@ func (a *App) apiOpen(kind, arg string) error {
 	case "pcgw":
 		target = "https://www.pcgamingwiki.com/w/index.php?search=" + url.QueryEscape(arg)
 		return win.ShellOpen(target)
+	case "news": // a game's patch notes or announcement, on Steam's own site only
+		if !core.SafeNewsURL(arg) {
+			return errors.New("That isn't a Steam news page.")
+		}
+		return win.ShellOpen(arg)
 	case "release": // the newer release's page ("What's new"); only Lootnest's own
 		updateMu.Lock()
 		page := updateFound.Page

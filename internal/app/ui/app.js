@@ -46,6 +46,7 @@
     addLibraryGame: (kind, appId, path) => call("ps_addLibraryGame", kind, appId || 0, path || ""),
     gameIcon: (exe) => call("ps_gameIcon", exe),
     art: (appId, kind) => call("ps_art", appId, kind),
+    gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
     steamVerify: (appId) => call("ps_steamVerify", appId),
@@ -60,6 +61,7 @@
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
     icons: {},         // cover key -> the game exe's icon as a data: URL, or "" (shown when there's no cover)
     art: {},           // "hero:<appid>" / "logo:<appid>" -> Steam's wide art and logo, or ""
+    news: {},          // cover key -> {items, newer, none, error} from Steam's news feed, or {loading: true}
     page: null,        // the game page: {kind: "game"|"found", id, cloud}
     libScroll: 0,      // where the Library was scrolled to, for coming back
     update: {},        // {available, version, page, upToDate, checking, error, step}
@@ -192,6 +194,10 @@
         refresh();
         break;
       }
+      case "news":
+        S.news[ev.key] = ev;
+        if (S.view === "game") render();
+        break;
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
@@ -523,6 +529,33 @@
       </div></section>`;
   }
 
+  // Updates and news from Steam's feed for the game (opt-in).
+  const storeKept = (src) => src === "steam" || src === "epic" || src === "gog";
+  function newsHTML(it) {
+    const head = `<h2 class="gp-sub">Updates and news</h2>`;
+    if (!cfg().settings.gameNews) {
+      return `<section class="news">${head}<p class="hint">See this game's latest updates and patch notes from Steam's news feed${storeKept(it.source) ? "" : ", and find out when a newer version than yours is out"}. Only the game's Steam id, or its name, is sent.</p>
+        <div><button class="btn small" data-action="news-on">Show updates and news</button></div></section>`;
+    }
+    const key = coverKey(it);
+    const N = S.news[key];
+    if (!N) {
+      S.news[key] = { loading: true };
+      api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
+    }
+    if (!N || N.loading) return `<section class="news">${head}<p class="hint">Reading Steam's news for ${esc(it.name)}</p></section>`;
+    if (N.none) return `<section class="news">${head}<p class="hint">${esc(it.name)} isn't on the Steam store, so there's no news feed for it.</p></section>`;
+    if (N.error) return `<section class="news">${head}<p class="hint">${esc(N.error)}</p></section>`;
+    const items = (N.items || []).slice(0, 5);
+    const day = (d) => new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: new Date(d).getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+    const newer = N.newer ? `<div class="newer"><b>A newer version is out</b><p>${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.</p></div>` : "";
+    return `<section class="news">${head}${newer}
+      ${items.length ? `<ul class="news-list">${items.map((n) => `<li><button data-action="open-news" data-url="${esc(n.url)}">
+        <span class="news-date">${esc(day(n.date))}</span><span class="news-title">${n.update ? '<span class="dot" title="Update"></span>' : ""}${esc(n.title)}</span>
+        ${n.summary ? `<span class="news-sum">${esc(n.summary)}</span>` : ""}</button></li>`).join("")}</ul>` : `<p class="hint">Steam has no news for this game yet.</p>`}
+    </section>`;
+  }
+
   function viewGame() {
     const P = S.page;
     const it = P && libraryItems().find((x) => x.kind === P.kind && x.id === P.id);
@@ -588,7 +621,7 @@
         </div>
       </div>
       <div class="gp-body">
-        <dl class="facts">${facts.join("")}</dl>
+        <div class="gp-side"><dl class="facts">${facts.join("")}</dl>${newsHTML(it)}</div>
         <div class="gp-manage">${list}</div>
       </div></div>`;
   }
@@ -1124,6 +1157,7 @@
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}
           ${sw("checkUpdates", "Check for updates automatically", "Once a day, Lootnest asks GitHub for its latest version number. Nothing about you or your games is sent.", s.checkUpdates)}
+          ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("downloadCovers", "Download covers for games outside Steam", "Looks each game up on the Steam store by its name and saves the cover on this PC. Only the game's name is sent. Off: those games show their own icon.", s.downloadCovers)}
         </div></section>
         <section class="section"><div class="numbers">
@@ -1179,6 +1213,12 @@
     play: (el) => openPicker(el.dataset.game, "play"),
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
+    "open-news": (el) => api.open("news", el.dataset.url).catch((e) => toast(errText(e), "error")),
+    async "news-on"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.gameNews = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); } catch (e) { toast(errText(e), "error"); }
+    },
     "play-as"(el) { openPicker(el.dataset.game, "play"); S.picker.playerId = el.dataset.player; runPick(); },
     async "play-found"(el) {
       const f = (S.found.games || []).find((x) => x.key === el.dataset.key);
