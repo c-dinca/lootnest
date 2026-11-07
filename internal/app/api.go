@@ -89,6 +89,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_gameSaveNow", a.apiGameSaveNow))
 	must(a.w.Bind("ps_gameSaveRestore", a.apiGameSaveRestore))
 	must(a.w.Bind("ps_gameSaveRestoreLocal", a.apiGameSaveRestoreLocal))
+	must(a.w.Bind("ps_findGames", a.apiFindGames))
+	must(a.w.Bind("ps_gameOffer", a.apiGameOffer))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
@@ -748,6 +750,8 @@ func (a *App) apiOpen(kind, arg string) error {
 			return errors.New("That link can't be opened.")
 		}
 		return win.ShellOpen(u)
+	case "store": // a game's page in a store, from Find games
+		return openStore(arg)
 	case "news": // a game's patch notes or announcement, on Steam's own site only
 		if !core.SafeNewsURL(arg) {
 			return errors.New("That isn't a Steam news page.")

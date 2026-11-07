@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.33.0)
+## Where things stand (1.34.0)
 
 These shipped recently, newest last:
 
@@ -167,6 +167,12 @@ These shipped recently, newest last:
   `syndtr/goleveldb`). `FoundGame.SteamID` carries the Steam id Hydra
   knows, for save locations and achievements. Only games already on the
   PC; Lootnest never offers Hydra's downloads or sources.
+- **1.34** Find games (`core/findgames.go`, `app/findgames.go`, view
+  `find`, drawer `offer`): Steam storesearch and appdetails (prices in the
+  Windows country's currency, requirements), CheapShark for other official
+  stores and the lowest price ever, this PC's CPU, GPU, RAM and free space
+  (`win/hw.go`). Opt-in (`Settings.FindGames`). Links open only the Steam
+  store and CheapShark's deal redirect (`SafeStoreLink`).
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -217,7 +223,9 @@ screen; kid profiles (local limits).
 
 Rules from the brief: never say "cracked" in public material (say games
 from outside stores, DRM-free, portable, emulated); no downloads, no
-catalogue, no account, no subscription. Money, if any: free core forever,
+account, no subscription. The owner chose to add Find games (1.34)
+against the brief's "no catalogue": it stays official stores only, opt-in,
+and never links to unofficial sources, hidden or not. Money, if any: free core forever,
 donations, and an optional one-time Supporter for comfort features, never
 for safety.
 
@@ -225,8 +233,8 @@ for safety.
 
 - Disk space: what each game and profile takes, what can move to another
   drive (Game Mover exists for Steam), and what can go, with a backup first.
-- "Will it run?": a game's requirements (PCGamingWiki, Steam) against this
-  PC's hardware. Opt-in. The research advises against it: there's no
-  reliable requirements database.
+- "Will it run?" as a verdict: 1.34 shows Steam's requirements beside this
+  PC and checks memory and space only. A CPU and GPU verdict would need a
+  benchmark database; there's no reliable free one.
 - Signing in to Microsoft or Google directly for cloud saves (on hold;
   the folder approach works).

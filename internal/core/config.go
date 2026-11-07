@@ -115,6 +115,10 @@ type Settings struct {
 	// GameNews shows each game's latest updates and announcements from
 	// Steam's news feed on its page. Off by default.
 	GameNews bool `json:"gameNews"`
+	// FindGames turns on the Find games page: any game, with its prices in
+	// the official stores (Steam, CheapShark) and its requirements. Off by
+	// default; only the search words or a game's Steam id are sent.
+	FindGames bool `json:"findGames,omitempty"`
 	// AutoInstallUpdates installs a newer Lootnest found by the automatic
 	// check by itself, while the window is closed to the tray and no game
 	// is running. UpdatesAsked: the user answered "Keep Lootnest up to date?".

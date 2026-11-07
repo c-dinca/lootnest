@@ -75,6 +75,8 @@
     gameSaveNow: (key) => call("ps_gameSaveNow", key),
     gameSaveRestore: (key, id) => call("ps_gameSaveRestore", key, id),
     gameSaveRestoreLocal: (key, id) => call("ps_gameSaveRestoreLocal", key, id),
+    findGames: (q) => call("ps_findGames", q),
+    gameOffer: (appId, name) => call("ps_gameOffer", appId, name),
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
@@ -99,6 +101,8 @@
     tag: "",          // the Library's collection filter ("" for all)
     status: "",       // the Library's status filter ("" for any)
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
+    find: { q: "", hits: null, error: "" }, // Find games: the search and what came back
+    offers: {},       // Steam app id -> {offer, pc, owned} or {error}, for Find games
     d: null,          // AppState from Go
     view: "home",
     from: "home",      // the view a game's page goes back to
@@ -313,6 +317,17 @@
         loadBackupInfo();
         break;
       }
+      case "findGames": {
+        if (ev.q !== S.find.q) break; // an older search
+        S.find.hits = ev.hits || null; S.find.error = ev.error || "";
+        const r = $("#find-results"); if (r) r.innerHTML = findResults();
+        break;
+      }
+      case "gameOffer": {
+        S.offers[ev.appId] = ev;
+        if (S.dialog && S.dialog.kind === "offer" && S.dialog.appId === ev.appId) renderOverlay();
+        break;
+      }
       case "gameSaves": {
         if (ev.info) { S.gsaves[ev.info.key] = ev.info; if (S.view === "game") render(); break; }
         if (ev.error) toast(ev.error, "error");
@@ -393,6 +408,7 @@
     const v = $("#view");
     const keepScroll = v.scrollTop;
     const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
+    const findTyping = document.activeElement && document.activeElement.id === "find-q" ? document.activeElement.selectionStart : -1;
     if (S.view === "home") v.innerHTML = viewHome();
     else if (S.view === "library") v.innerHTML = viewLibrary();
     else if (S.view === "game") v.innerHTML = viewGame();
@@ -402,10 +418,12 @@
     else if (S.view === "settings") v.innerHTML = viewSettings();
     else if (S.view === "cloud") v.innerHTML = viewCloud();
     else if (S.view === "achievements") v.innerHTML = viewAchievements();
+    else if (S.view === "find") v.innerHTML = viewFind();
     if (S.animateView && v.firstElementChild) v.firstElementChild.classList.add("enter");
     S.animateView = false;
     v.scrollTop = keepScroll;
     if (typing >= 0) { const q = $("#lib-q"); if (q) { q.focus(); q.setSelectionRange(typing, typing); } }
+    if (findTyping >= 0) { const q = $("#find-q"); if (q) { q.focus(); q.setSelectionRange(findTyping, findTyping); } }
     renderOverlay();
     loadCovers();
     backdropForView();
@@ -1458,6 +1476,8 @@
       o.innerHTML = viewManage();
     } else if (D.kind === "achievements") {
       o.innerHTML = viewAchDrawer();
+    } else if (D.kind === "offer") {
+      o.innerHTML = viewOffer();
     } else if (D.kind === "profiles") {
       o.innerHTML = viewProfilesDrawer();
     }
@@ -2270,6 +2290,7 @@
             <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
             ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : `<div class="bk-row"><div><b>Steam isn't on this PC</b><p>Steam games show up here once it's installed.</p></div></div>`}`)],
       ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
+          ${sw("findGames", "Find games", "The Find games page looks any game up on the Steam store, with its requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}`)
@@ -2342,6 +2363,75 @@
     ];
   }
   const fmtGoal = (x) => (x.unit === "h" ? Math.floor(x.cur) + " of " + x.goal + " h" : Math.floor(x.cur) + " of " + x.goal + (x.unit ? " " + x.unit : ""));
+
+  // ------------------------------------------------------------ find games --
+  // Any game, installed or not: its price in the official stores and its
+  // requirements beside this PC. Opt-in, in Settings, Online.
+  const money = (n, cur) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: cur }).format(n); } catch (e) { return n.toFixed(2) + " " + cur; } };
+  const cents = (p) => (p ? money(p.final / 100, p.currency) : "");
+  const offTag = (pct) => (pct > 0 ? `<span class="ln-tag ln-tag--accent">${pct}% off</span>` : "");
+  function viewFind() {
+    const on = cfg().settings.findGames;
+    const search = on ? `<div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="find-q" class="ln-input" placeholder="Search for a game" value="${esc(S.find.q)}" autocomplete="off" spellcheck="false" aria-label="Search for a game"></label></div>` : "";
+    const head = `<header class="lib-head"><div><h1>Find games</h1><p>Any game, with its price in the official stores and how its requirements compare with this PC.</p></div>${search}</header>`;
+    if (!on) return `<div class="find-page ln-root">${head}<section class="find-off"><h2>Look up any game</h2>
+      <p>Find games asks the Steam store for the game and its requirements, and CheapShark for its price in other official stores, such as GOG, Humble and Fanatical. Only what you type, or the game's Steam id, is sent. Lootnest opens the store you choose in your browser.</p>
+      <button class="ln-button ln-button--primary" data-action="find-on">Turn on Find games</button></section></div>`;
+    return `<div class="find-page ln-root">${head}<div id="find-results">${findResults()}</div></div>`;
+  }
+  function findResults() {
+    const F = S.find;
+    if (!F.q.trim()) return `<p class="find-hint">Type a game's name. Games already on this PC are marked.</p>`;
+    if (F.error) return lnInline("error", esc(F.error));
+    if (!F.hits) return lnInline("", "Looking it up");
+    if (!F.hits.length) return `<p class="find-hint">The Steam store has nothing called "${esc(F.q)}".</p>`;
+    return `<ul class="find-grid">${F.hits.map((h) => `<li><button class="find-card" data-action="find-open" data-app="${h.appId}" data-name="${esc(h.name)}">
+      ${h.image ? `<img src="${esc(h.image)}" alt="" loading="lazy">` : `<span class="find-noimg"></span>`}
+      <span class="find-card-body"><b>${esc(h.name)}</b><span class="find-card-meta">${h.price ? `<span class="ln-num">${esc(cents(h.price))}</span>${offTag(h.price.discount)}` : ""}${h.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`).join("")}</ul>`;
+  }
+  // Sizes in requirements, as in core.ReqBytes.
+  const reqBytes = (v) => { const m = /(\d+(?:[.,]\d+)?)\s*(GB|MB|TB)/i.exec(v || ""); if (!m) return 0; const n = parseFloat(m[1].replace(",", ".")); return n * { tb: 2 ** 40, gb: 2 ** 30, mb: 2 ** 20 }[m[2].toLowerCase()]; };
+  const gb = (b) => (b >= 2 ** 30 ? `${Math.round(b / 2 ** 30)} GB` : b > 0 ? `${Math.round(b / 2 ** 20)} MB` : "");
+  function viewOffer() {
+    const D = S.dialog, R = S.offers[D.appId];
+    const shell = (body, foot) => drawer({ label: `${esc(D.name)}, prices and requirements`, title: esc(D.name), sub: "Prices and requirements", wide: true, body, foot });
+    if (!R) return shell(lnInline("", "Getting prices and requirements"));
+    if (R.error || !R.offer) return shell(lnInline("error", esc(R.error || "Couldn't get this game.")));
+    const O = R.offer, pc = R.pc || {};
+    const btn = (attrs, label, cls = "ln-button--ghost") => `<button class="ln-button ${cls} ln-button--sm" ${attrs}>${label}</button>`;
+    const owned = R.owned ? `<div class="find-owned"><p><b>On this PC.</b> It's in your Library.</p>${btn(`data-action="find-library" data-owned="${esc(R.owned)}"`, "Open its page", "ln-button--secondary")}</div>` : "";
+    const steam = O.free ? "Free to play" : O.steam ? `<span class="ln-num">${esc(cents(O.steam))}</span>${offTag(O.steam.discount)}` : "Not for sale";
+    const deals = (O.deals || []).filter((d) => d.store !== "Steam");
+    const prices = `<div class="gpage-sub">${gpHead("Prices")}<dl class="ln-facts">
+      <div><dt><b>Steam</b></dt><dd>${steam}${btn(`data-action="find-store" data-url="${esc(O.storeUrl)}"`, "Open")}</dd></div>
+      ${deals.map((d) => `<div><dt>${esc(d.store)}</dt><dd><span class="ln-num">${esc(money(d.price, "USD"))}</span>${offTag(d.savings)}${btn(`data-action="find-store" data-url="${esc(d.url)}"`, "Open")}</dd></div>`).join("")}</dl>
+      ${O.free ? "" : `<p class="gpage-hint">${deals.length ? "Other stores' prices are in US dollars, from CheapShark, which lists authorized stores only." : "No other store sells it, according to CheapShark."}${O.lowest ? ` Lowest price ever: ${esc(money(O.lowest, "USD"))}${O.lowestAt ? ", " + esc(new Date(O.lowestAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })) : ""}.` : ""}</p>`}</div>`;
+    const val = (list, label) => ((list || []).find((l) => l.label === label) || {}).value || "";
+    const known = ["OS", "Processor", "Memory", "Graphics", "Storage"];
+    const labels = [...known, ...new Set([...(O.minimum || []), ...(O.recommended || [])].map((l) => l.label).filter((l) => l && !known.includes(l)))].filter((l) => val(O.minimum, l) || val(O.recommended, l));
+    const mark = (have, label) => {
+      const need = (w) => reqBytes(val(w, label));
+      const min = need(O.minimum), rec = need(O.recommended);
+      if (!have || !min) return "";
+      return have >= (rec || min) ? `<span class="find-ok">Enough</span>` : have >= min ? `<span class="find-ok">Meets the minimum</span>` : `<span class="find-low">Below the minimum</span>`;
+    };
+    const mine = {
+      OS: esc(pc.windows || ""),
+      Processor: esc(pc.cpu || ""),
+      Graphics: esc(pc.gpu || "") + (pc.vram ? `, ${gb(pc.vram)}` : ""),
+      Memory: pc.ram ? `${gb(pc.ram)} ${mark(pc.ram, "Memory")}` : "",
+      Storage: pc.free ? `${gb(pc.free)} free on ${esc(pc.freeOn)} ${mark(pc.free, "Storage")}` : "",
+    };
+    const notes = [...(O.minimum || [])].filter((l) => !l.label).map((l) => esc(l.value));
+    const reqs = labels.length ? `<div class="gpage-sub">${gpHead("Will it run here?")}<div class="find-req" role="table" aria-label="Requirements and this PC">
+      <div class="find-req-row find-req-head" role="row"><span role="columnheader"></span><span role="columnheader">Minimum</span><span role="columnheader">Recommended</span><span role="columnheader">This PC</span></div>
+      ${labels.map((l) => `<div class="find-req-row" role="row"><b role="rowheader">${esc(l)}</b><span role="cell">${esc(val(O.minimum, l)) || "–"}</span><span role="cell">${esc(val(O.recommended, l)) || "–"}</span><span role="cell">${mine[l] || ""}</span></div>`).join("")}</div>
+      <p class="gpage-hint">${notes.length ? notes.join(". ") + ". " : ""}Lootnest checks memory and free space. For the processor and graphics card, compare the names: a newer or higher model number is usually faster.</p></div>`
+      : `<div class="gpage-sub">${gpHead("Will it run here?")}<p class="gpage-hint">The Steam store lists no requirements for this game.</p></div>`;
+    const wiki = `<div class="gpage-sub">${gpHead("Known issues")}<p class="gpage-hint">PCGamingWiki says what's known to go wrong on PC, and how to fix it.</p><div class="gpage-actions">${btn(`data-action="gs-pcgw" data-name="${esc(O.name || D.name)}"`, "Open PCGamingWiki", "ln-button--secondary")}</div></div>`;
+    const hero = O.header ? `<img class="find-hero" src="${esc(O.header)}" alt="">` : "";
+    return shell(`${hero}${owned}${prices}${reqs}${wiki}`, `<span class="grow"></span>${btn(`data-action="find-store" data-url="${esc(O.storeUrl)}"`, "Open on Steam", "ln-button--primary")}`);
+  }
 
   let allAchAsked = false;
   function viewAchievements() {
@@ -2730,6 +2820,26 @@
       if (G) G.busy = true; render();
       try { await (local ? api.gameSaveRestoreLocal : api.gameSaveRestore)(el.dataset.key, el.dataset.id); } catch (e) { if (G) G.busy = false; toast(errText(e), "error"); render(); }
     },
+    async "find-on"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.findGames = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); setTimeout(() => { const q = $("#find-q"); if (q) q.focus(); }, 30); } catch (e) { toast(errText(e), "error"); }
+    },
+    "find-open"(el) {
+      const appId = +el.dataset.app;
+      S.dialog = { kind: "offer", appId, name: el.dataset.name };
+      const R = S.offers[appId];
+      if (!R || R.error) { delete S.offers[appId]; api.gameOffer(appId, el.dataset.name).catch((e) => { S.offers[appId] = { error: errText(e) }; renderOverlay(); }); }
+      renderOverlay(); focusDrawer();
+    },
+    "find-store"(el) { api.open("store", el.dataset.url).catch((e) => toast(errText(e), "error")); },
+    "find-library"(el) {
+      const o = el.dataset.owned || "", [kind, ...rest] = o.split(":"), id = rest.join(":");
+      const it = libraryItems().find((x) => (kind === "game" ? x.kind === "game" : x.kind === "found") && x.id === id);
+      if (!it) { toast("That game isn't in the Library any more.", "error"); return; }
+      S.dialog = null; renderOverlay();
+      openSheet(it.kind, it.id, null);
+    },
     async "savedb-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.saveDb = true;
@@ -3038,6 +3148,7 @@
     if (f) f(el, ev);
   });
 
+  let findTimer = 0;
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (S.dialog && S.dialog.kind === "profile") {
@@ -3049,6 +3160,15 @@
       else if (f === "bannerY") { const a = $(".pe-pbanner .art"); if (a) a.style.backgroundPosition = `center ${el.value}%`; }
       else if (f === "banner" || f === "avatarGame") renderOverlay();
       if (el.id === "pe-q") { D.q = el.value; renderOverlay(); }
+      return;
+    }
+    if (el.id === "find-q") {
+      S.find.q = el.value; S.find.hits = null; S.find.error = "";
+      clearTimeout(findTimer);
+      const r = $("#find-results");
+      if (!el.value.trim()) { if (r) r.innerHTML = findResults(); return; }
+      if (r) r.innerHTML = findResults();
+      findTimer = setTimeout(() => { api.findGames(S.find.q).catch((e) => { S.find.error = errText(e); const r2 = $("#find-results"); if (r2) r2.innerHTML = findResults(); }); }, 350);
       return;
     }
     if (el.id === "lib-q") {

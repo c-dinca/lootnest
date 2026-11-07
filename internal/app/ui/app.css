@@ -1121,3 +1121,38 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .gp-tag-add { display: flex; gap: var(--space-2); }
 .gp-tag-add .ln-input { flex: 1; min-width: 0; height: var(--ctl-sm); }
 .ach-who .ln-chip .ln-num { margin-left: 2px; color: var(--fg-2); font-size: var(--fs-12); }
+
+/* Find games: any game, its prices and requirements. */
+.find-page { display: grid; gap: var(--space-6); align-content: start; padding: var(--space-8) var(--page-gutter) var(--space-12); }
+.find-page .lib-actions { flex: 1 1 320px; max-width: 480px; }
+.find-page .ln-search { width: 100%; }
+.find-off { display: grid; gap: var(--space-3); justify-items: start; max-width: 640px; padding: var(--space-6); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); }
+.find-off h2 { margin: 0; font-size: var(--fs-18); }
+.find-off p { margin: 0; color: var(--fg-2); font-size: var(--fs-14); line-height: var(--lh-body); }
+.find-hint { margin: 0; color: var(--fg-2); font-size: var(--fs-14); }
+.find-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+.find-card { display: grid; width: 100%; padding: 0; overflow: hidden; border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-1); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out); }
+.find-card:hover { border-color: var(--accent); background: var(--bg-raised); }
+.find-card:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.find-card img, .find-noimg { display: block; width: 100%; aspect-ratio: 231 / 87; object-fit: cover; background: var(--bg-well); }
+.find-card-body { display: grid; gap: var(--space-2); padding: var(--space-3); }
+.find-card-body b { font-size: var(--fs-14); font-weight: 600; line-height: var(--lh-snug); }
+.find-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-height: 20px; font-size: var(--fs-13); color: var(--fg-2); }
+.find-hero { display: block; width: 100%; max-width: 460px; border-radius: var(--radius-panel); } /* Steam's header art, at its own size */
+.find-owned { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-raised); }
+.find-owned p { margin: 0; font-size: var(--fs-13); color: var(--fg-2); }
+.find-owned b { color: var(--fg-1); }
+.ln-drawer__body > .gpage-sub, .ln-drawer__body > .find-owned, .ln-drawer__body > .find-hero { margin-bottom: var(--space-5); }
+.ln-drawer__body .ln-facts dd { display: flex; align-items: center; gap: var(--space-2); }
+.find-req { border-top: var(--hairline) solid var(--edge-1); font-size: var(--fs-13); }
+.find-req-row { display: grid; grid-template-columns: minmax(84px, 0.7fr) 1fr 1fr 1fr; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); line-height: var(--lh-snug); }
+.find-req-row > * { min-width: 0; overflow-wrap: anywhere; color: var(--fg-2); }
+.find-req-row > b { color: var(--fg-1); font-weight: 600; }
+.find-req-head > span { color: var(--fg-3); font-size: var(--fs-12); }
+.find-ok, .find-low { display: block; margin-top: var(--space-1); font-size: var(--fs-12); font-weight: 600; }
+.find-ok { color: var(--success); }
+.find-low { color: var(--warning); }
+@media (max-width: 640px) {
+  .find-req-row { grid-template-columns: 1fr 1fr; }
+  .find-req-head { display: none; }
+}
