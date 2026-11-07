@@ -7,7 +7,7 @@
 - A game's page goes back to where you opened it from (Home or Library), scrolled where you were.
 - **Player profiles.** Click a player (in the sidebar or on **Players**) for their page:
   - a banner (their colour, their own picture or a game's art), their picture (or a game's cover), name, a line and a few words about them;
-  - **Into right now**: the game they're on, with a note;
+  - **Currently playing**: a game they pick, with a note;
   - their numbers: time played, games played, finished, days in a row, longest session, most played;
   - **Favourite games** (up to six, in their order), **Activity** (a square a day for the last six months, the last 7 and 30 days, top games), **Shelf**, **Collection** (where their games come from) and **Played lately**;
   - a **Play** button for the last game they played.

@@ -1372,7 +1372,7 @@
   // picture, a few words, the game they're into, their numbers, activity,
   // shelf (playing, up next, finished, stopped) and collection.
   const SECTIONS = [
-    ["now", "Into right now", "The game you're into, with a word on it"],
+    ["now", "Currently playing", "A game you're playing, with a note"],
     ["stats", "Numbers", "Time played, games, finished, streak, longest session"],
     ["favorites", "Favourite games", "Up to six games, in your order"],
     ["activity", "Activity", "When you played, the last six months"],
@@ -1458,7 +1458,7 @@
       loadArt(it); ensureCover(it);
       const t = (playtimeOf(it) || {})[p.id] || 0, e = st.shelf[recentKey(it)] || {};
       return `<section class="pp-section pp-now"><button class="now-card" data-action="open-sheet" ${itemAttr(it)}>
-        ${artHTML(it)}<span class="now-text"><span class="now-label">Into right now</span><b>${esc(it.name)}</b>
+        ${artHTML(it)}<span class="now-text"><span class="now-label">Currently playing</span><b>${esc(it.name)}</b>
         ${p.nowNote ? `<span class="now-note">${esc(p.nowNote)}</span>` : ""}
         <span class="now-meta">${t ? `<span>${esc(hours(t))} played</span>` : ""}${e.rating ? `<span class="stars" aria-label="${e.rating} of 5 stars">${stars(e.rating)}</span>` : ""}</span></span></button></section>`;
     }
@@ -1567,7 +1567,7 @@
     const D = S.dialog, p = player(D.pid), it = itemByKey(D.k);
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Note">
       <div><h2>${esc(p ? p.name : "")}'s note on ${esc(it ? it.name : "this game")}</h2><p class="sub">Only people using this PC see it.</p></div>
-      <textarea id="sn-text" rows="6" maxlength="500" placeholder="What you thought, where you got to, what to try next">${esc(D.note || "")}</textarea>
+      <textarea id="sn-text" rows="6" maxlength="500" placeholder="Your note">${esc(D.note || "")}</textarea>
       <div class="dialog-foot"><span class="error-text grow" id="sn-error"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="shelf-note-save">Save note</button></div>
     </div></div>`;
   }
@@ -1595,10 +1595,10 @@
     } else if (tab === "about") {
       body = `
       <div class="field"><label for="pe-name">Name</label><input id="pe-name" type="text" maxlength="24" value="${esc(p.name)}" data-pe="name"></div>
-      <div class="field"><label for="pe-tag">A line about you</label><input id="pe-tag" type="text" maxlength="80" value="${esc(p.tagline || "")}" placeholder="Support main. Never the driver." data-pe="tagline"></div>
-      <div class="field"><label for="pe-bio">About <span class="hint">up to 300 characters</span></label><textarea id="pe-bio" rows="4" maxlength="300" placeholder="What you play, who you play with, the game you'd take to an island" data-pe="bio">${esc(p.bio || "")}</textarea></div>
-      <div class="field"><label for="pe-now">Into right now</label><select id="pe-now" data-pe="now">${gameOptions(p.now || "", "Nothing in particular")}</select>
-        <input type="text" maxlength="80" value="${esc(p.nowNote || "")}" placeholder="A word on it: “Act 3, finally”" data-pe="nowNote" aria-label="A word on it" style="margin-top:8px"></div>`;
+      <div class="field"><label for="pe-tag">Tagline</label><input id="pe-tag" type="text" maxlength="80" value="${esc(p.tagline || "")}" placeholder="Optional" data-pe="tagline"></div>
+      <div class="field"><label for="pe-bio">About <span class="hint">up to 300 characters</span></label><textarea id="pe-bio" rows="4" maxlength="300" placeholder="Optional" data-pe="bio">${esc(p.bio || "")}</textarea></div>
+      <div class="field"><label for="pe-now">Currently playing</label><select id="pe-now" data-pe="now">${gameOptions(p.now || "", "None")}</select>
+        <input type="text" maxlength="80" value="${esc(p.nowNote || "")}" placeholder="A note (optional)" data-pe="nowNote" aria-label="A word on it" style="margin-top:8px"></div>`;
     } else if (tab === "showcase") {
       const q = (D.q || "").toLowerCase(), fav = p.favorites || [];
       const games = libraryItems().filter((it) => !q || it.name.toLowerCase().includes(q));
@@ -1634,7 +1634,7 @@
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
     const cards = cfg().players.map((p) => { const st = playerStats(p); return `<button class="pcard" data-action="open-player" data-player="${esc(p.id)}" style="--c:${esc(p.color)}">
         <span class="pcard-banner">${bannerHTML(p)}</span>${avatarHTML(p, "lg")}
-        <span class="pcard-body"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : "No line about them yet"}</span>
+        <span class="pcard-body"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : st.recent[0] ? "Played " + esc(st.recent[0].it.name) + " " + esc(ago(st.recent[0].r.at)) : "No games played yet"}</span>
         <span class="pcard-nums"><span><b>${st.total ? esc(hours(st.total)) : "0 h"}</b> played</span><span><b>${st.shelfN.playing || 0}</b> playing</span><span><b>${st.shelfN.finished || 0}</b> finished</span></span></span></button>`; }).join("");
     return `<div class="page"><div class="page-head"><div><h1>Players</h1><p class="sub">Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div></div>
       <div class="pcards">${cards}</div>
