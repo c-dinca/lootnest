@@ -31,8 +31,8 @@ The names below are CSS custom properties. Components use only these. Raw colour
 
 The brand colours (1.19.1):
 - **Obsidian Black** `#111217` is the window.
-- **Ice Grey** `#DFE5EB` is the text and the primary button.
-- **Racing Red** `#EF233C` is a touch, never a fill for content.
+- **Ice Grey** `#DFE5EB` is the text.
+- **Racing Red** `#EF233C` is the primary button (1.26) and a touch elsewhere, never a fill for content.
 
 The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own, and hue 248 for the greys, Ice Grey's. Contrast is WCAG 2 against the ground and against the raised step.
 
@@ -47,21 +47,24 @@ The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own,
 | `--fg-2` | `oklch(0.790 0.012 248)` | Secondary text | 9.7:1 | 8.1:1 |
 | `--fg-3` | `oklch(0.700 0.012 248)` | Tertiary: dates, counts | 7.0:1 | 5.8:1 |
 | `--fg-disabled` | `oklch(0.500 0.010 248)` | Disabled controls (exempt) | 3.1:1 | 2.6:1 |
-| `--accent` | `#EF233C` Racing Red | Marks, bars, switches | 4.4:1 | 3.7:1 |
+| `--accent` | `#EF233C` Racing Red | The primary button, marks, bars, switches | 4.4:1 | 3.7:1 |
+| `--accent-hover` | `oklch(0.660 0.230 22.6)` | The primary button on hover | | |
+| `--fg-on-accent` | `oklch(0.140 0.020 20)` | Bold text on the primary button | 4.7:1 on red, 5.7:1 on hover | |
 | `--danger` | `oklch(0.80 0.100 35)` | Destructive | 9.9:1 | 8.3:1 |
 | `--success` | `oklch(0.82 0.110 155)` | Done | 11.4:1 | |
 | `--warning` | `oklch(0.86 0.110 85)` | Needs attention | 12.4:1 | |
 | `--edge-1/2/3` | white at 8 / 14 / 26% | Hairline, control edge, hover edge | | |
 
-**Racing Red, in touches only.** It passes the 3:1 that non-text UI needs, but not AA's 4.5:1 for small text, so it is never text and never a button with text on it. It marks:
+**Racing Red: the primary button, and touches.** It passes the 3:1 that non-text UI needs, but not AA's 4.5:1 for small text, so it is never text. The primary button (Save, Sync now, Play when profiles are off) is filled with it, with bold near-black text, `--fg-on-accent`, at 4.7:1 (5.7:1 on hover). White on it would be 4.2:1, so never white. Elsewhere it marks:
 - the gem in the logo and the app icon;
 - the icon of the page you're on;
 - progress (achievement bars, loading bars);
 - switches and checkboxes that are on;
 - list markers, news dots and link underlines in the reader;
-- the text selection, as a wash.
+- the text selection, as a wash;
+- the selected choice in a segmented control, as a 2px line under it.
 
-The primary button stays Ice Grey with Obsidian text (14.7:1). The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
+Play as someone stays in that profile's colour: players are the colour. The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
 
 ### Players
 
@@ -160,6 +163,7 @@ The kitchen sink forces states with `data-force="hover|active|focus"`. Nothing i
 | Section header | `.ln-section-head`, `--minor` | 24px title with a count and an action, or a 13px label for groups | Every label names the content under it. A label never decorates. |
 | Action list | `.ln-list`, `.ln-row`, `--danger` | Default, hover, focus, disabled | Hairline-ruled rows grouped by intent: Profiles, Game files, Shortcuts, Danger. |
 | Segmented control | `.ln-segmented` | `role="radiogroup"`; selected, hover, focus, disabled, counts | Switches between views ("Everyone / Mine / With profiles"). The arrow keys move the choice. |
+| Drawer | `.ln-drawer`, `--wide`, in `.scrim.ln-drawer-scrim` | Head (title, one line, Close), a body that scrolls, an optional foot. `data-menu`: each action in it closes it first | A panel from the right, over the page, so you keep your place: a game's **Manage** actions, its whole list of achievements, **Names and colours**. Escape and the scrim close it, and focus goes back to what opened it. It slides in 32px in `--dur-3`, and fades with reduced motion. |
 | Toast | `.ln-toast`, `--success`, `--error` | Player toast with an avatar; one optional ghost action | Says what happened, with the same words as the action. An error says why, and what to do. |
 | Empty / loading / error | `.ln-state`, `--error`, `--inline` | Block or inline. A spinner, an icon, a title, one line and actions | Each says what is going on and what to do next. It is never bare text. |
 | Banner | `.ln-banner` | Title, one line and actions; a spinner while something runs | A notice that needs a decision. There's no coloured side edge. |
