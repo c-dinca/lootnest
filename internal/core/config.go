@@ -161,6 +161,9 @@ type Config struct {
 	IgnoredFound []string `json:"ignoredFound,omitempty"`
 	// LibraryPrefs: settings for Library games without profiles, by scan key.
 	LibraryPrefs map[string]LibraryPref `json:"libraryPrefs,omitempty"`
+	// Tags are the user's collections: Library key -> the collections a
+	// game is in ("Co-op", "For the kids"), in the order they were added.
+	Tags map[string][]string `json:"tags,omitempty"`
 	// AddedGames: games the user added to the Library by hand ("Add game"),
 	// kept even when a scan doesn't find them.
 	AddedGames []FoundGame `json:"addedGames,omitempty"`
@@ -658,4 +661,75 @@ func (s *Store) AddPlaytime(key, playerID string, d time.Duration) error {
 	}
 	pt[key][playerID] += int64(d / time.Second)
 	return writeJSONAtomic(s.PlaytimePath(), pt)
+}
+
+// MaxTagsPerGame and MaxTags keep collections a handful, not a database.
+const (
+	MaxTagsPerGame = 8
+	MaxTags        = 64
+)
+
+// CleanTags checks a game's collections: names trimmed, at most 24
+// characters, no duplicates (whatever their case), at most MaxTagsPerGame.
+func CleanTags(tags []string) ([]string, error) {
+	out := []string{}
+	seen := map[string]bool{}
+	for _, t := range tags {
+		t = strings.Join(strings.Fields(t), " ")
+		if t == "" {
+			continue
+		}
+		if len([]rune(t)) > 24 {
+			return nil, fmt.Errorf("Keep collection names under 24 characters (%q is longer).", t)
+		}
+		if seen[strings.ToLower(t)] {
+			continue
+		}
+		seen[strings.ToLower(t)] = true
+		out = append(out, t)
+	}
+	if len(out) > MaxTagsPerGame {
+		return nil, fmt.Errorf("A game can be in up to %d collections.", MaxTagsPerGame)
+	}
+	return out, nil
+}
+
+// SetTags puts a game (by Library key) in these collections; none takes it
+// out of all of them. The same name in another case reuses the existing one.
+func (c *Config) SetTags(key string, tags []string) error {
+	if key == "" || len(key) > 400 || strings.ContainsAny(key, "\r\n\x00") {
+		return errors.New("invalid game")
+	}
+	tags, err := CleanTags(tags)
+	if err != nil {
+		return err
+	}
+	known := map[string]string{}
+	for k, ts := range c.Tags {
+		if k == key {
+			continue
+		}
+		for _, t := range ts {
+			known[strings.ToLower(t)] = t
+		}
+	}
+	for i, t := range tags {
+		if have, ok := known[strings.ToLower(t)]; ok {
+			tags[i] = have
+		} else {
+			known[strings.ToLower(t)] = t
+		}
+	}
+	if len(known) > MaxTags {
+		return fmt.Errorf("Lootnest keeps up to %d collections.", MaxTags)
+	}
+	if c.Tags == nil {
+		c.Tags = map[string][]string{}
+	}
+	if len(tags) == 0 {
+		delete(c.Tags, key)
+	} else {
+		c.Tags[key] = tags
+	}
+	return nil
 }

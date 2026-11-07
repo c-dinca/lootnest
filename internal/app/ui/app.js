@@ -27,6 +27,8 @@
     achievements: (key, appId, dir, name) => call("ps_achievements", key, appId || 0, dir || "", name || ""),
     setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
     allAchievements: () => call("ps_allAchievements"),
+    setTags: (key, tags) => call("ps_setTags", key, tags),
+    setShelf: (pid, key, e) => call("ps_setShelf", pid, key, e),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
@@ -92,6 +94,9 @@
     achWho: {},       // Library key -> whose achievements are shown
     allAch: null,     // the Achievements page: every game's, null until read
     achPage: "",      // whose the Achievements page shows
+    statusWho: {},    // Library key -> whose status the game page shows
+    tag: "",          // the Library's collection filter ("" for all)
+    status: "",       // the Library's status filter ("" for any)
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     d: null,          // AppState from Go
     view: "home",
@@ -541,6 +546,11 @@
       if (q && !it.name.toLowerCase().includes(q)) return false;
       if (S.filter === "profiles" && it.kind !== "game") return false;
       if (S.store !== "all" && filterOf(it.source) !== S.store) return false;
+      if (S.tag && !tagsOf(it).includes(S.tag)) return false;
+      if (S.status) {
+        const pid = S.who || (seated() || {}).id;
+        if (pid ? statusOf(it, pid) !== S.status : !cfg().players.some((p) => statusOf(it, p.id) === S.status)) return false;
+      }
       if (S.who && !playedOrOwned(it, S.who)) return false;
       return true;
     });
@@ -548,6 +558,13 @@
     else if (S.sort === "played") list.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || playedAt(b) - playedAt(a));
     return list;
   }
+  // Collections (the user's own, for everyone) and each profile's status.
+  const STATUSES = [["playing", "Playing"], ["next", "Up next"], ["finished", "Finished"], ["complete", "100%"], ["stopped", "Dropped"]];
+  const statusName = (k) => (STATUSES.find((x) => x[0] === k) || [k, k])[1];
+  const tagsOf = (it) => (cfg().tags || {})[recentKey(it)] || [];
+  const allTags = () => [...new Set(Object.values(cfg().tags || {}).flat())].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  const shelfOf = (it, pid) => ((S.d.shelf || {})[pid] || {})[recentKey(it)] || {};
+  const statusOf = (it, pid) => shelfOf(it, pid).status || "";
   // A player's games: the ones they have a profile in, or played last.
   const playedOrOwned = (it, pid) => (it.kind === "game" && hasProfile(it.id, pid)) || !!lastBy(it, pid);
   // When a player's profile for a game was last saved, and its size, read
@@ -604,6 +621,8 @@
         <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}</div>${who}</div>
         <div class="lib-tools-side">
           <select id="lib-store" class="ln-input" aria-label="Store">${stores.map(([k, l]) => `<option value="${k}" ${S.store === k ? "selected" : ""}>${l}</option>`).join("")}</select>
+          ${allTags().length || S.tag ? `<select id="lib-tag" class="ln-input" aria-label="Collection"><option value="">All collections</option>${allTags().map((t) => `<option value="${esc(t)}" ${S.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>` : ""}
+          <select id="lib-status" class="ln-input" aria-label="Status"><option value="">Any status</option>${STATUSES.map(([k, l]) => `<option value="${k}" ${S.status === k ? "selected" : ""}>${l}</option>`).join("")}</select>
           <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>
           <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}"><span style="--h:${h}px"></span></button>`).join("")}</div>
         </div></div>
@@ -1096,7 +1115,7 @@
         f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged") : "",
         f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
       ]);
-      side = page ? playersPanel(it) + achievementsBlock(it) + gameSavesBlock(it) : "";
+      side = page ? playersPanel(it) + collectionsBlock(it) + achievementsBlock(it) + gameSavesBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
@@ -1141,7 +1160,7 @@
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
         overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.`,
       }[P.cloud.state];
-      side = page ? playersPanel(it) + achievementsBlock(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
+      side = page ? playersPanel(it) + collectionsBlock(it) + achievementsBlock(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
       news = page ? newsHTML(it) : "";
     }
     const back = page ? `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${S.from === "home" ? "Home" : "Library"}</button>` : "";
@@ -1872,6 +1891,24 @@
   // the cloud folder (Steam games have Steam Cloud; games with profiles sync
   // each player's saves).
   const gsAsked = new Set();
+  // Status and collections: where the game is for one profile (playing,
+  // finished, 100%), and which of the user's collections it's in.
+  function collectionsBlock(it) {
+    const key = recentKey(it), ps = grouped();
+    if (!ps.length) return "";
+    const seat = seated(), owner = it.g && S.d.active[it.g.id];
+    const who = (ps.find((p) => p.id === S.statusWho[key]) || (seat && ps.find((p) => p.id === seat.id)) || ps.find((p) => p.id === owner) || ps[0]).id;
+    const st = statusOf(it, who), tags = tagsOf(it), others = allTags().filter((t) => !tags.includes(t));
+    const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose status">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="status-who" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(parentOf(p) ? runLabel(p) : p.name)}${statusOf(it, p.id) ? `<span class="ln-num">${esc(statusName(statusOf(it, p.id)))}</span>` : ""}</button>`).join("")}</div>` : "";
+    return `<section class="gpage-block gp-coll"><div class="ln-section-head"><div><h2>Status</h2></div></div>${chips}
+      <div class="ln-segmented gp-status" role="group" aria-label="${esc(possessive(pname(who)))} status">${STATUSES.map(([k, l]) => `<button data-action="set-status" data-key="${esc(key)}" data-player="${esc(who)}" data-status="${k}" aria-pressed="${st === k}">${l}</button>`).join("")}</div>
+      <div class="ln-section-head ln-section-head--minor"><h2>Collections</h2></div>
+      <div class="gp-tags">${tags.map((t) => `<span class="ln-tag gp-tag">${esc(t)}<button data-action="tag-remove" data-key="${esc(key)}" data-tag="${esc(t)}" aria-label="Take it out of ${esc(t)}">${GI.x}</button></span>`).join("") || `<span class="gpage-hint">In no collection yet.</span>`}</div>
+      ${tags.length < 8 ? `<div class="gp-tag-add"><input id="tag-new" class="ln-input" type="text" maxlength="24" list="tag-list" autocomplete="off" placeholder="Add to a collection, such as Co-op" data-key="${esc(key)}">
+        <datalist id="tag-list">${others.map((t) => `<option value="${esc(t)}"></option>`).join("")}</datalist>
+        <button class="ln-button ln-button--secondary ln-button--sm" data-action="tag-add" data-key="${esc(key)}">Add</button></div>` : ""}</section>`;
+  }
+
   // Achievements: read from this PC (Steam's library cache, or the file a
   // Steam-compatible tool keeps next to the game's saves). The latest
   // unlocked first; the whole list on request.
@@ -2430,6 +2467,27 @@
     "ach-all"(el) { S.achAll[el.dataset.key] = !S.achAll[el.dataset.key]; render(); },
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
     "ach-page"(el) { S.achPage = el.dataset.player; render(); },
+    "status-who"(el) { S.statusWho[el.dataset.key] = el.dataset.player; render(); },
+    async "set-status"(el) {
+      const { key, player: pid, status } = el.dataset, cur = ((S.d.shelf || {})[pid] || {})[key] || {};
+      const next = cur.status === status ? "" : status; // pressing it again clears it
+      try { await api.setShelf(pid, key, { status: next, rating: cur.rating || 0, note: cur.note || "" }); } catch (e) { toast(errText(e), "error"); return; }
+      await refresh();
+    },
+    async "tag-add"(el) {
+      const key = el.dataset.key, i = $("#tag-new"), t = ((i && i.value) || "").trim();
+      if (!t) { if (i) i.focus(); return; }
+      const it = itemByKey(key), cur = it ? tagsOf(it) : [];
+      try { await api.setTags(key, cur.concat([t])); } catch (e) { toast(errText(e), "error"); return; }
+      await refresh();
+      const n = $("#tag-new"); if (n) n.focus();
+    },
+    async "tag-remove"(el) {
+      const key = el.dataset.key, it = itemByKey(key);
+      try { await api.setTags(key, (it ? tagsOf(it) : []).filter((t) => t !== el.dataset.tag)); } catch (e) { toast(errText(e), "error"); return; }
+      if (S.tag === el.dataset.tag && !Object.entries(cfg().tags || {}).some(([k, ts]) => k !== key && ts.includes(el.dataset.tag))) S.tag = "";
+      await refresh();
+    },
     async "ach-shared"(el) {
       const id = el.dataset.game, shared = el.dataset.on === "1", g = game(id);
       if (shared && !(await confirmDialog({ title: "Share one set of achievements?", body: `Everyone who plays ${g ? g.name : "this game"} will see the same achievements, the ones on the PC now. Each profile's own stay with it, and come back if you change your mind.`, ok: "Share one set" }))) return;
@@ -2891,10 +2949,13 @@
     if (el.dataset.backup === "keep") { saveBackup({ keep: parseInt(el.value, 10) || 0 }); return; }
     if (el.id === "lib-sort") { S.sort = el.value; setPref("sort", S.sort); render(); return; }
     if (el.id === "lib-store") { S.store = el.value; render(); return; }
+    if (el.id === "lib-tag") { S.tag = el.value; render(); return; }
+    if (el.id === "lib-status") { S.status = el.value; render(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 
   document.addEventListener("keydown", (ev) => {
+    if (ev.target.id === "tag-new" && ev.key === "Enter") { ev.preventDefault(); actions["tag-add"]({ dataset: { key: ev.target.dataset.key } }); return; }
     if (!$("#ctx").hidden) {
       if (ev.key === "Escape") { ev.preventDefault(); closeContext(); return; }
       if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {

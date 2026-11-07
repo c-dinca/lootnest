@@ -104,3 +104,15 @@ func (a *App) updatePlayer(playerID string, set func(*core.Player)) error {
 	set(p)
 	return a.saveConfig(cfg)
 }
+
+// apiSetTags puts a Library game in the user's collections ("Co-op", "For
+// the kids"); an empty list takes it out of all of them.
+func (a *App) apiSetTags(key string, tags []string) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	if err := cfg.SetTags(key, tags); err != nil {
+		return err
+	}
+	return a.saveConfig(cfg)
+}

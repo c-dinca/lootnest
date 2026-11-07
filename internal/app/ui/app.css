@@ -998,3 +998,15 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .player.player-run { padding-left: var(--space-8); }
 .player-of { width: auto; min-width: 170px; }
 .player-same { font-size: var(--fs-13); color: var(--fg-2); }
+
+/* Status and collections on a game's page. */
+.gp-status { flex-wrap: wrap; }
+.gp-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.gp-tag { display: inline-flex; align-items: center; gap: 4px; padding-right: 2px; }
+.gp-tag button { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: var(--radius-tag); background: none; color: var(--fg-2); cursor: pointer; }
+.gp-tag button:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
+.gp-tag button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); }
+.gp-tag .ln-icon { width: 12px; height: 12px; }
+.gp-tag-add { display: flex; gap: var(--space-2); }
+.gp-tag-add .ln-input { flex: 1; min-width: 0; height: var(--ctl-sm); }
+.ach-who .ln-chip .ln-num { margin-left: 2px; color: var(--fg-2); font-size: var(--fs-12); }

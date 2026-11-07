@@ -16,7 +16,7 @@ import (
 // ---------------------------------------------------------------------------
 
 // ShelfStatuses are the places a game can have on a player's shelf.
-var ShelfStatuses = []string{"playing", "next", "finished", "stopped"}
+var ShelfStatuses = []string{"playing", "next", "finished", "complete", "stopped"}
 
 // ShelfEntry is one player's take on one game.
 type ShelfEntry struct {
