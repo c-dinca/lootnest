@@ -140,6 +140,18 @@ func newEnv(a *App) *core.Env {
 			}
 			return core.SteamUserDir(steamPath, configured, active)
 		},
+		SaveDB: func() *core.SaveDB {
+			if a == nil {
+				return nil
+			}
+			a.mu.Lock()
+			on := a.cfg != nil && a.cfg.Settings.SaveDB
+			a.mu.Unlock()
+			if !on {
+				return nil
+			}
+			return loadSaveDB()
+		},
 		DataDir:        DataDir(),
 		ExtraProtected: extra,
 	}

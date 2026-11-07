@@ -459,6 +459,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 				return
 			}
 			a.emit("gameSaves", map[string]any{"changed": true})
+			a.startScan() // the games found so far get the list's locations
 			a.backUpChangedGames()
 		}()
 	}
@@ -512,7 +513,7 @@ func (a *App) apiInspectSteam(appID int) (Inspect, error) {
 	} else if len(out.Candidates) > 0 {
 		out.ProcessName = out.Candidates[0].Name
 	}
-	out.Suggestions = a.env.SuggestPaths(game.Name, filepath.Base(game.InstallDir), appID)
+	out.Suggestions = a.env.SuggestPaths(game.Name, game.InstallDir, appID)
 	if out.Candidates == nil {
 		out.Candidates = []core.ExeCandidate{}
 	}
@@ -535,7 +536,11 @@ func (a *App) apiInspectExe(path string) (Inspect, error) {
 	f := a.env.ExeGame(exe, containers) // its name, from the game's folder rather than bin, steam or Win64
 	base, name := f.ProcessName, f.Name
 	out := Inspect{ProcessName: base, Name: name, Candidates: []core.ExeCandidate{}}
-	out.Suggestions = a.env.SuggestPaths(name, base, 0)
+	dir := f.Dir
+	if dir == "" {
+		dir = base
+	}
+	out.Suggestions = a.env.SuggestPaths(name, dir, 0)
 	if out.Suggestions == nil {
 		out.Suggestions = []core.Suggestion{}
 	}

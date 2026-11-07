@@ -27,6 +27,9 @@ type Env struct {
 	// ExtraProtected are more folders that may never be (or contain) a game path,
 	// e.g. Program Files, Windows, Desktop.
 	ExtraProtected []string
+	// SaveDB is the list of where games keep their saves (savedb.go), or
+	// nil when "Find save locations online" is off or it isn't downloaded.
+	SaveDB func() *SaveDB
 }
 
 var envVarRe = regexp.MustCompile(`%([A-Za-z0-9_()]+)%`)

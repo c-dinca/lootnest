@@ -112,7 +112,7 @@ What makes it different, and the direction to keep pushing:
   obsidian.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.26.0)
+## Where things stand (1.27.0)
 
 These shipped recently, newest last:
 
@@ -138,6 +138,9 @@ These shipped recently, newest last:
 - **1.26** Swap safety: a journal (`swaps.json`, `swapjournal.go`) so a
   swap cut short is finished on the next start, and `Mirror` reads every
   copy back before it replaces anything.
+- **1.27** Profile path suggestions use the Ludusavi manifest
+  (`SuggestPaths` via `Env.SaveDB`, `listedSaves` in `suggest.go`) when
+  Settings.SaveDB is on; the switch is also in Settings, Online.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -165,8 +168,11 @@ Build in this order, safety before new features:
    Vanguard) or online-only saves out of swaps by default, with a note on
    their page; a conflict banner on the game page, not only a toast; a
    one-click restore of the copy made before each swap.
-2. **Save paths from the Ludusavi manifest** (19,000+ games), with folder
-   scanning as the fallback. Check the manifest's licence first.
+2. **Save paths from the Ludusavi manifest.** Done in 1.27. The manifest
+   is downloaded on the user's PC, never shipped with Lootnest: its data
+   comes from PCGamingWiki (CC BY-NC-SA), so bundling it would bind a
+   paid tier. Still open: the manifest's registry entries (saves in the
+   Windows registry) aren't used.
 3. **Save Safety Net** for folder games: a snapshot when the version or
    exe changes, the folder moves, or before uninstalling; find saves kept
    inside the game folder (Ren'Py `game/saves`, RPG Maker `www/save`,

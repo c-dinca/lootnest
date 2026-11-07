@@ -90,7 +90,7 @@ func (e *Env) ExeGame(exe string, containers []string) FoundGame {
 		name = prettyName(process)
 	}
 	f := FoundGame{Key: "dir:" + strings.ToLower(root), Name: name, Source: "added", Exe: e.Tokenize(exe), Dir: root, ProcessName: process}
-	f.Suggestions = e.SuggestPaths(f.Name, filepath.Base(root), 0)
+	f.Suggestions = e.SuggestPaths(f.Name, root, 0)
 	if f.Suggestions == nil {
 		f.Suggestions = []Suggestion{}
 	}
@@ -331,7 +331,7 @@ func (e *Env) ScanSteam() []FoundGame {
 		} else if c := ProcessCandidates(g.InstallDir); len(c) > 0 {
 			f.ProcessName = c[0].Name
 		}
-		f.Suggestions = e.SuggestPaths(g.Name, filepath.Base(g.InstallDir), g.AppID)
+		f.Suggestions = e.SuggestPaths(g.Name, g.InstallDir, g.AppID)
 		f.Paths = ProposePaths(f.Suggestions, preset)
 		f.Ready = f.ProcessName != "" && len(f.Paths) > 0
 		out = append(out, f)
@@ -525,7 +525,7 @@ func (e *Env) FinishFound(list []FoundGame) []FoundGame {
 					f.ProcessName = strings.TrimSuffix(filepath.Base(f.Exe), filepath.Ext(f.Exe))
 				}
 			}
-			f.Suggestions = e.SuggestPaths(f.Name, filepath.Base(f.Dir), 0)
+			f.Suggestions = e.SuggestPaths(f.Name, f.Dir, 0)
 			f.Paths = ProposePaths(f.Suggestions, nil)
 			f.Ready = f.ProcessName != "" && f.Exe != "" && len(f.Paths) > 0
 			if f.Exe != "" {
