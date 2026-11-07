@@ -78,6 +78,8 @@ func (a *App) achRunning(procs map[string]bool) []achRun {
 }
 
 func (a *App) achTick(procs map[string]bool) {
+	running := a.achRunning(procs)
+	a.hotkeyTick(running)
 	a.mu.Lock()
 	off := a.cfg.Settings.AchToastsOff
 	a.mu.Unlock()
@@ -86,7 +88,7 @@ func (a *App) achTick(procs map[string]bool) {
 		return
 	}
 	here := map[string]bool{}
-	for _, r := range a.achRunning(procs) {
+	for _, r := range running {
 		here[r.key] = true
 		l := achLives[r.key]
 		if l == nil {

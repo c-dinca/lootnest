@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.44.0
+
+- **Save points.** Each game's page has **Save points**: a copy of its saves as they are now, with a name such as "Before the boss", to come back to.
+  - **Ctrl+Shift+F5** makes one while you play, with a note over the game when it's done. Lootnest holds those keys only while a game runs, and **Settings, Games and swaps** turns them off.
+  - Each point says when it was made, whose saves they are, how long had been played and how many achievements were unlocked by then.
+  - **Go back to it** puts those saves back. The saves as they are now are kept as a point first, so going back never loses anything. Lootnest waits for the game to be closed.
+  - **New run from it**, for a game with profiles, starts a new run of that person from that moment: a profile of its own, such as a hardcore try from the last boss. Everyone else's saves stay as they are.
+  - Rename or delete points from **Show all**.
+  - A copy made while the game runs is checked against the saves afterwards, and made again if the game was writing to them.
+- For games without profiles, save points use the save locations from the game's **Cloud save** section.
+
 ## 1.43.0
 
 - **Keep a game offline.** **Manage, Keep it offline** has Windows Firewall stop a game from connecting to the internet and to other PCs on your network. It's for games Lootnest starts itself: games in a folder, from Hydra, or added by hand.

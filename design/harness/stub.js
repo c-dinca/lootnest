@@ -95,6 +95,7 @@
   });
 
   const OFFLINE = {};
+  const POINTS = {};
 
   const TAGS = { "game:cs2": ["Co-op", "Shooters"], "game:ittakestwo": ["Co-op", "For the kids"], "steam:413150": ["Co-op", "Weekend", "For the kids"],
     "steam:1091500": ["Weekend"], "dir:c:\\games\\hades ii": ["Weekend"], "dir:c:\\gog games\\hollow knight": ["Weekend"], "game:bg3": ["Co-op", "Weekend"] };
@@ -217,6 +218,24 @@
       if (STATE !== "loading") emit({ type: "achievements", key, set });
       return ok();
     },
+    ps_savePoints: (key) => {
+      if (!POINTS[key]) POINTS[key] = key === "game:bg3" ? [
+        { id: "20261107-201500", name: "Before the Netherbrain", created: iso(40 * 60e3), player: "p1", playtime: 312000, unlocked: 21, size: 9e7, locs: ["a"] },
+        { id: "20261107-195000", name: "Before going back to Act 2 start", created: iso(70 * 60e3), player: "p1", playtime: 310000, unlocked: 20, size: 9e7, locs: ["a"], auto: true },
+        { id: "20261104-210000", name: "Act 2 start", created: iso(3 * d), player: "p1", playtime: 250000, unlocked: 14, size: 8e7, locs: ["a"] },
+        { id: "20261101-180000", name: "Honour mode, gate", created: iso(6 * d), player: "p2", playtime: 90000, unlocked: 6, size: 6e7, locs: ["a"] },
+      ] : [];
+      setTimeout(() => emit({ type: "savePoints", key, points: POINTS[key], player: "p1", running: false, profiles: key.startsWith("game:") }), 80);
+      return ok();
+    },
+    ps_makeSavePoint: (key, name) => {
+      const p = { id: "20261107-213000", name: name || "Save point, 7 Nov, 21:30", created: new Date().toISOString(), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"] };
+      setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, 400);
+      return ok();
+    },
+    ps_restoreSavePoint: (key, id) => { setTimeout(() => emit({ type: "savePointMade", key, restored: id, point: (POINTS[key] || []).find((p) => p.id === id) }), 400); return ok(); },
+    ps_deleteSavePoint: (key, id) => { POINTS[key] = (POINTS[key] || []).filter((p) => p.id !== id); api.ps_savePoints(key); return ok(); },
+    ps_branchSavePoint: () => ok("p1"),
     ps_setOffline: (key, on) => {
       setTimeout(() => { if (on) OFFLINE[key] = ["D:\\Games\\Onimusha\\Onimusha.exe", "D:\\Games\\Onimusha\\CrashReporter.exe"]; else delete OFFLINE[key]; emit({ type: "offline", key, on }); }, 300);
       return ok();

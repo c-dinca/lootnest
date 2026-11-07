@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.43.0)
+## Where things stand (1.44.0)
 
 These shipped recently, newest last:
 
@@ -232,6 +232,14 @@ These shipped recently, newest last:
   `-EncodedCommand` with `win.RunElevatedAndWait` (runas).
   `Config.Offline` records what's blocked. Only for games Lootnest
   starts itself (exe launch).
+- **1.44** Save points (`core/savepoints.go`, `app/savepoints.go`, block
+  `savePointsBlock`, drawer `points`): `savepoints\<game>\<id>` with
+  `point.json` and `files\<loc id>`; `MakeSavePoint` compares stamps
+  before and after each copy and tries again while the game writes;
+  `RestoreSavePoint` after an Auto point; `ProfileFromSavePoint` starts a
+  new run (`Player.Of`). Locations: `Engine.SaveLocs` (profile paths
+  without achievements) or `savesOf(f)` for Library games. Ctrl+Shift+F5
+  (`win/hotkey.go`) is registered only while a game runs (`hotkeyTick`).
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -316,7 +324,7 @@ game can only be checked on the owner's PC.
    Dota 2 Game State Integration, League's local Live Client Data API.
 
 **Things only Lootnest can do** (they need the swap engine and profiles):
-1. **Save points and a time machine**: a hotkey during play copies the
+1. **Save points and a time machine** (done in 1.44, without the screenshot): a hotkey during play copies the
    save files as a named point ("before the boss"), with a screenshot.
    Each game gets a timeline (time, playtime, achievements then): rewind
    to any point (the current state is kept), or branch a new run from it.
