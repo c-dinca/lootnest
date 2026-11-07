@@ -1,90 +1,82 @@
 <!doctype html>
 <!--
-  Lootnest · Chosen remix: C "Couch" layout and seat, B "Save Slot" colours, glass surfaces.
+  Lootnest · Chosen direction: C "Couch" (the seat, one Play, "or play as…"), B "Save Slot"
+  colours (graphite slate, player labels), glass over the game's own art.
   Game page, profiles on, Mihai seated and loaded.
 
+  Shape: small radii by role (3 / 4 / 6px, full only for avatars), 1px hairline edges,
+  no drop shadows, no pills. The art is full-bleed, not a rounded banner.
+
   Banned defaults knowingly used:
-  - Glass (backdrop blur): the owner asked for it. It is structural, not decoration: the
-    chrome and panels are frosted over the game's own art, so each game page takes the
-    game's light while text sits on a fill opaque enough to keep AA (checked on the shots).
-  - Rounded surface panels: only the hero card, the time panel and the action lists.
+  - Glass (backdrop blur): asked for by the owner. The chrome and the play bar are frosted
+    over the game's own art, so each game page takes that game's light. Fills stay opaque
+    enough for AA; prefers-reduced-transparency turns every glass step solid.
   - "or play as…": the spec's own copy.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Counter-Strike 2 · Lootnest (remix)</title>
+<title>Counter-Strike 2 · Lootnest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* ── Colour: B's graphite slate, low chroma so it never reads as navy ── */
-  --slate-h: 250;
-  --ground:   oklch(0.17 0.012 var(--slate-h));
-  --surface:  oklch(0.21 0.012 var(--slate-h));
-  --raised:   oklch(0.25 0.012 var(--slate-h));
-  --hover:    oklch(0.29 0.012 var(--slate-h));
-  --shade:    oklch(0.10 0.01 var(--slate-h));
+  /* ── Colour: graphite slate (from B) ──────────────────────────── */
+  --h: 250;
+  --ground:  oklch(0.17 0.012 var(--h));
+  --surface: oklch(0.21 0.012 var(--h));
+  --raised:  oklch(0.25 0.012 var(--h));
+  --hover:   oklch(0.29 0.012 var(--h));
+  --ink:     oklch(0.95 0.006 var(--h));
+  --ink-2:   oklch(0.80 0.012 var(--h));
+  --ink-3:   oklch(0.70 0.012 var(--h));
+  --danger:  oklch(0.80 0.10 35);
+  --line:    oklch(1 0 0 / 0.08);     /* hairline on glass */
+  --line-2:  oklch(1 0 0 / 0.14);     /* control edge */
+  --focus:   var(--ink);
 
-  --ink:      oklch(0.95 0.006 var(--slate-h));
-  --ink-2:    oklch(0.80 0.012 var(--slate-h));   /* secondary */
-  --ink-3:    oklch(0.72 0.012 var(--slate-h));   /* tertiary (dates) */
-  --danger:   oklch(0.80 0.10 35);
+  /* ── Glass ────────────────────────────────────────────────────── */
+  --glass-chrome: oklch(0.15 0.012 var(--h) / 0.62);
+  --glass-bar:    oklch(0.17 0.012 var(--h) / 0.70);
+  --glass-panel:  oklch(0.19 0.012 var(--h) / 0.58);
+  --glass-ctl:    oklch(1 0 0 / 0.06);
+  --glass-ctl-hover: oklch(1 0 0 / 0.11);
+  --blur:   blur(32px) saturate(150%);
+  --backdrop-blur: 100px;
+  --backdrop-opacity: 0.34;
 
-  /* ── Glass: frosted slate over the game's art ──────────────────── */
-  --glass:        oklch(0.17 0.012 var(--slate-h) / 0.62);   /* hero card */
-  --glass-chrome: oklch(0.17 0.012 var(--slate-h) / 0.5);    /* sidebar, seat bar */
-  --glass-panel:  oklch(0.21 0.012 var(--slate-h) / 0.64);   /* panels and lists */
-  --glass-raised: oklch(0.30 0.012 var(--slate-h) / 0.55);   /* chips, icon tiles */
-  --glass-hover:  oklch(0.36 0.012 var(--slate-h) / 0.55);
-  --glass-edge:   inset 0 0 0 1px oklch(1 0 0 / 0.07), inset 0 1px 0 oklch(1 0 0 / 0.06);
-  --blur:         blur(28px) saturate(150%);
-  --blur-chrome:  blur(40px) saturate(140%);
-  --backdrop-blur: 90px;
-  --backdrop-opacity: 0.30;
-
-  /* ── Players: B's label colours (fill · text on fill) ──────────── */
-  --label-l: 0.72; --label-c: 0.12; --label-ink-l: 0.20; --label-ink-c: 0.03;
-  --mihai:       oklch(var(--label-l) var(--label-c) 5);
-  --mihai-hover: oklch(0.76 var(--label-c) 5);
-  --mihai-on:    oklch(var(--label-ink-l) var(--label-ink-c) 5);
-  --cristian:    oklch(var(--label-l) var(--label-c) 250);
-  --cristian-on: oklch(var(--label-ink-l) var(--label-ink-c) 250);
-
-  /* System focus: ink, never a player colour */
-  --focus:         var(--ink);
+  /* ── Players: label colours (from B) ──────────────────────────── */
+  --mihai:       oklch(0.72 0.12 5);
+  --mihai-hover: oklch(0.77 0.12 5);
+  --mihai-on:    oklch(0.20 0.03 5);
+  --cristian:    oklch(0.72 0.12 250);
+  --cristian-on: oklch(0.20 0.03 250);
 
   /* ── Type ─────────────────────────────────────────────────────── */
-  --font-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
-  --font-ui:      "Figtree", system-ui, sans-serif;
-  /* scale 1.25 on 15: 13 / 15 / 19 / 24 / 30 / 48 / 64 (16 = body, per relaxed density) */
-  --t-13: 13px; --t-15: 15px; --t-16: 16px; --t-19: 19px; --t-24: 24px; --t-30: 30px; --t-48: 48px; --t-64: 64px;
+  --display: "Bricolage Grotesque", "Figtree", sans-serif;
+  --ui: "Figtree", sans-serif;
+  --t-12: 12px; --t-13: 13px; --t-14: 14px; --t-15: 15px; --t-18: 18px; --t-24: 24px; --t-40: 40px; --t-56: 56px;
 
-  /* ── Space (4px steps) ────────────────────────────────────────── */
-  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
-  --target: 48px;
-  --sidebar-w: 248px;
-  --topbar-h: 80px;
-  --gutter: var(--s-10);
-  --col-gap: var(--s-8);
-  --page-max: 1520px;
-  --overlap: 128px;
+  /* ── Space: 4px base ──────────────────────────────────────────── */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s12: 48px;
+  --side-w: 232px;
+  --bar-h: 56px;
+  --gutter: 40px;
+  --page-max: 1440px;
+  --target: 40px;
 
-  /* ── Radius ───────────────────────────────────────────────────── */
-  --r-s: 8px; --r-m: 14px; --r-l: 24px; --r-full: 999px;
+  /* ── Radius: by role, small ───────────────────────────────────── */
+  --r-tag: 3px;    /* tags, keys */
+  --r-ctl: 4px;    /* buttons, rows, inputs */
+  --r-panel: 6px;  /* glass panels, the play bar */
+  --r-full: 999px; /* avatars only */
 
-  /* ── Depth: soft, offset, dark. Never a glow ──────────────────── */
-  --shadow-art:    0 18px 40px -14px oklch(0.06 0.01 var(--slate-h) / 0.85), 0 4px 10px -4px oklch(0.06 0.01 var(--slate-h) / 0.6);
-  --shadow-raised: 0 6px 16px -6px oklch(0.06 0.01 var(--slate-h) / 0.8), 0 1px 2px oklch(0.06 0.01 var(--slate-h) / 0.5);
-  --shadow-pressed: 0 2px 6px -3px oklch(0.06 0.01 var(--slate-h) / 0.8);
-
-  /* ── Motion: warm, unhurried ──────────────────────────────────── */
-  --ease: cubic-bezier(.22, .8, .28, 1);
-  --dur-hover: 220ms;
-  --dur-press: 120ms;
-  --dur-wash: 300ms;    /* seat change: the seat chip and Play cross-fade */
+  /* ── Motion ───────────────────────────────────────────────────── */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-fast: 140ms;
+  --t-seat: 280ms;   /* seat change: Play and the seat chip cross-fade */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -92,345 +84,226 @@ html, body { margin: 0; }
 body {
   background: var(--ground);
   color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--t-16);
-  line-height: 1.45;
+  font: 500 var(--t-14)/1.45 var(--ui);
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "ss01" 0;
-  transition: background-color var(--dur-wash) var(--ease), color var(--dur-wash) var(--ease);
 }
-/* The game's art, blurred, lights the whole window behind the glass */
-.backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.backdrop img { position: absolute; inset: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(var(--backdrop-blur)) saturate(120%); opacity: var(--backdrop-opacity); }
-.backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.2) 0%, oklch(0.17 0.012 250 / 0.75) 55%, var(--ground) 100%); }
-.glass { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-edge); }
 button, a { font: inherit; color: inherit; }
 button { border: 0; background: none; padding: 0; cursor: pointer; text-align: left; }
 a { text-decoration: none; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-ctl); }
 .num { font-variant-numeric: tabular-nums; }
-.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
-/* ── Shell ─────────────────────────────────────────────────────── */
-.app {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
-  grid-template-rows: var(--topbar-h) auto;
-  min-height: 100vh;
-  position: relative; z-index: 1;
-}
+/* The game's art, blurred, lights the window behind every glass surface */
+.backdrop { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.backdrop img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; filter: blur(var(--backdrop-blur)) saturate(115%); opacity: var(--backdrop-opacity); }
+.backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.1), oklch(0.17 0.012 250 / 0.8) 60%, var(--ground)); }
 
-/* Seat bar: the top of the window */
-.topbar {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
-  align-items: center;
-  position: sticky; top: 0; z-index: 3;
+.app { position: relative; display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100vh; }
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+.side {
+  position: sticky; top: 0; height: 100vh; z-index: 3;
+  display: flex; flex-direction: column;
+  padding: 0 var(--s3) var(--s3);
   background: var(--glass-chrome);
-  -webkit-backdrop-filter: var(--blur-chrome); backdrop-filter: var(--blur-chrome);
-  box-shadow: inset 0 -1px 0 oklch(1 0 0 / 0.06);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border-right: 1px solid var(--line);
 }
-.brand {
-  display: flex; align-items: center; gap: 10px;
-  padding-left: 28px;
-  font-family: var(--font-display);
-  font-size: var(--t-19);
-  font-weight: 650;
-  font-variation-settings: "opsz" 24;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-.brand svg { width: 22px; height: 22px; }
-.topbar-main {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 var(--gutter);
-  max-width: calc(var(--page-max) + 2 * var(--gutter));
-}
-
-.topbar-main .ghost { margin-left: -14px; }
-.ghost {
-  display: inline-flex; align-items: center; gap: var(--s-2);
-  height: var(--target);
-  padding: 0 var(--s-5) 0 var(--s-3);
-  border-radius: var(--r-full);
+.brand { display: flex; align-items: center; gap: 10px; height: var(--bar-h); padding: 0 var(--s2); font: 700 var(--t-15)/1 var(--display); letter-spacing: -0.01em; }
+.brand svg { width: 20px; height: 20px; }
+.nav { display: grid; gap: 1px; margin-top: var(--s2); }
+.nav a, .who a {
+  display: flex; align-items: center; gap: var(--s3);
+  height: 36px; padding: 0 var(--s2);
+  border-radius: var(--r-ctl);
   color: var(--ink-2);
-  font-weight: 600;
-  font-size: var(--t-15);
-  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.ghost:hover { background: var(--glass-panel); color: var(--ink); }
+.nav a:hover, .who a:hover { background: var(--glass-ctl); color: var(--ink); }
+.nav a[aria-current] { background: var(--glass-ctl-hover); color: var(--ink); font-weight: 650; }
+.nav .count { margin-left: auto; font-size: var(--t-12); color: var(--ink-3); }
+.side-h { margin: var(--s6) var(--s2) var(--s1); font-size: var(--t-12); font-weight: 650; color: var(--ink-3); }
+.who { display: grid; gap: 1px; }
+.who a { color: var(--ink); }
+.who .tag { margin-left: auto; font-size: var(--t-12); color: var(--ink-2); padding: 1px 6px; border-radius: var(--r-tag); border: 1px solid var(--line-2); }
+.side .foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: var(--s2); }
+
+.av {
+  display: inline-grid; place-items: center; flex: none;
+  width: 22px; height: 22px; border-radius: var(--r-full);
+  font: 700 11px/1 var(--display);
+}
+.av.m { background: var(--mihai); color: var(--mihai-on); }
+.av.c { background: var(--cristian); color: var(--cristian-on); }
+
+/* ── Main ──────────────────────────────────────────────────────── */
+main { position: relative; min-width: 0; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  height: var(--bar-h); padding: 0 var(--gutter);
+  background: linear-gradient(180deg, oklch(0.12 0.01 250 / 0.55), transparent);
+}
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 10px 0 6px; margin-left: -6px;
+  border-radius: var(--r-ctl);
+  color: var(--ink);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.btn-ghost:hover { background: var(--glass-ctl-hover); }
 
 .seat {
-  display: flex; align-items: center; gap: var(--s-3);
-  height: 56px;
-  padding: 4px 4px 4px 4px;
-  border-radius: var(--r-full);
-  background: var(--glass-panel);
-  box-shadow: var(--glass-edge);
-}
-.seat-who { display: flex; align-items: center; gap: var(--s-3); padding-right: var(--s-2); }
-.seat-who .avatar { width: 48px; height: 48px; font-size: var(--t-19); }
-.seat-name { font-weight: 650; font-size: var(--t-16); line-height: 1.2; }
-.seat-name small { display: block; font-weight: 500; font-size: var(--t-13); color: var(--ink-2); }
-.btn-switch {
-  display: inline-flex; align-items: center; gap: var(--s-2);
-  height: var(--target);
-  padding: 0 var(--s-5) 0 var(--s-4);
-  border-radius: var(--r-full);
-  background: var(--glass-raised);
-  box-shadow: var(--glass-edge), var(--shadow-raised);
-  font-weight: 650; font-size: var(--t-15);
-  transition: background-color var(--dur-hover) var(--ease), box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
-}
-.btn-switch:hover { background: var(--glass-hover); }
-.btn-switch:active { box-shadow: var(--shadow-pressed); transform: translateY(1px); }
-
-/* Avatars */
-.avatar {
-  display: inline-grid; place-items: center;
-  width: 32px; height: 32px; flex: none;
-  border-radius: var(--r-full);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--t-15);
-  font-variation-settings: "opsz" 24;
-  line-height: 1;
-}
-.avatar.mihai    { background: var(--mihai);    color: var(--mihai-on); }
-.avatar.cristian { background: var(--cristian); color: var(--cristian-on); }
-
-/* Sidebar */
-.sidebar {
-  display: flex; flex-direction: column;
-  padding: var(--s-2) var(--s-4) var(--s-6);
-  position: sticky; top: var(--topbar-h);
-  height: calc(100vh - var(--topbar-h));
+  display: flex; align-items: center; gap: var(--s3);
+  height: 40px; padding: 0 4px 0 var(--s3);
+  border-radius: var(--r-panel);
   background: var(--glass-chrome);
-  -webkit-backdrop-filter: var(--blur-chrome); backdrop-filter: var(--blur-chrome);
-  box-shadow: inset -1px 0 0 oklch(1 0 0 / 0.06);
-  padding-top: var(--s-4);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line);
 }
-.nav { display: grid; gap: 2px; }
-.nav a, .here a {
-  display: flex; align-items: center; gap: 14px;
-  height: var(--target);
-  padding: 0 var(--s-3);
-  border-radius: var(--r-m);
-  color: var(--ink-2);
-  font-weight: 550;
-  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
+.seat .av { width: 24px; height: 24px; font-size: 12px; }
+.seat-name { font-weight: 650; }
+.btn {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  height: 32px; padding: 0 var(--s3);
+  border-radius: var(--r-ctl);
+  background: var(--glass-ctl);
+  border: 1px solid var(--line-2);
+  font-weight: 650; font-size: var(--t-13);
+  transition: background-color var(--t-fast) var(--ease);
 }
-.nav a:hover, .here a:hover { background: var(--glass-panel); color: var(--ink); }
-.nav a[aria-current="page"] { background: var(--glass-panel); color: var(--ink); font-weight: 650; }
-.nav .count { margin-left: auto; font-size: var(--t-13); color: var(--ink-2); font-weight: 600; }
-.side-h {
-  margin: var(--s-8) var(--s-3) var(--s-2);
-  font-size: var(--t-13); font-weight: 650; color: var(--ink-2);
-}
-.here { display: grid; gap: 2px; }
-.here a { color: var(--ink); gap: var(--s-3); padding-left: 6px; }
-.here .tag { margin-left: auto; font-size: var(--t-13); color: var(--ink-2); font-weight: 550; }
-.sidebar .settings { margin-top: auto; }
+.btn:hover { background: var(--glass-ctl-hover); }
+.btn svg { width: 16px; height: 16px; }
 
-/* ── Page ──────────────────────────────────────────────────────── */
-main {
-  padding: var(--s-2) var(--gutter) var(--s-16);
-  min-width: 0;
-}
-.page { max-width: var(--page-max); }
-
-.art {
+/* Hero: full-bleed art under the top bar, fading into the page */
+.hero {
   position: relative;
-  height: clamp(240px, 44vh, 520px);
-  border-radius: var(--r-l);
-  overflow: hidden;
-  background: var(--glass-panel);
-  box-shadow: var(--shadow-art);
+  margin-top: calc(-1 * var(--bar-h));
+  height: clamp(340px, 58vh, 640px);
 }
-.art img { width: 100%; height: 100%; object-fit: cover; object-position: 72% 30%; display: block; }
-.art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, oklch(0.10 0.01 250 / 0.55) 100%); }
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--col-gap);
+.hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 25%; -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%); mask-image: linear-gradient(180deg, #000 50%, transparent 100%); }
+.hero::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, oklch(0.12 0.01 250 / 0.75) 0%, oklch(0.12 0.01 250 / 0.35) 38%, transparent 62%),
+    linear-gradient(180deg, oklch(0.12 0.01 250 / 0.45) 0%, transparent 18%);
+  -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%); mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
 }
-
-/* Hero row */
-.hero { margin-top: calc(-1 * var(--overlap)); position: relative; z-index: 1; align-items: start; padding: 0 var(--s-6); }
-.card { border-radius: var(--r-l); padding: var(--s-8); }
-.play-block { grid-column: 1 / span 7; }
-.aside { grid-column: 8 / span 5; margin-top: var(--overlap); padding-top: var(--s-6); }
-
+.hero-text {
+  position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--s8) + 88px);
+  z-index: 1; max-width: var(--page-max);
+}
 h1 {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--t-48);
-  font-weight: 700;
-  font-variation-settings: "opsz" 96, "wdth" 100;
-  letter-spacing: -0.012em;
-  line-height: 1.02;
-  margin-left: -2px;    /* optical: the C's bowl */
+  font: 750 var(--t-56)/1 var(--display);
+  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
-.meta { margin: var(--s-3) 0 0; color: var(--ink-2); font-size: var(--t-15); font-weight: 500; }
-.meta .dot { margin: 0 var(--s-2); }
+.meta { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); color: var(--ink-2); font-size: var(--t-13); }
+.meta .sep { width: 1px; height: 12px; background: var(--line-2); }
 
-.play-row { display: flex; align-items: center; gap: var(--s-6); margin-top: var(--s-8); flex-wrap: wrap; }
-.btn-play {
-  display: inline-flex; align-items: center; gap: var(--s-3);
-  height: 64px;
-  padding: 0 var(--s-8) 0 var(--s-6);
-  border-radius: var(--r-m);
-  background: var(--mihai);
-  color: var(--mihai-on);
-  font-size: var(--t-19);
-  font-weight: 700;
-  letter-spacing: -0.005em;
-  box-shadow: var(--shadow-raised);
-  transition: background-color var(--dur-hover) var(--ease), box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
+.page { position: relative; padding: 0 var(--gutter) var(--s12); max-width: calc(var(--page-max) + 2 * var(--gutter)); }
+
+/* Play bar: the one glass slab that overlaps the art */
+.playbar {
+  position: relative; z-index: 1;
+  margin-top: -88px;
+  display: grid; grid-template-columns: auto auto 1fr auto; align-items: center;
+  min-height: 88px; padding: var(--s5) var(--s6);
+  border-radius: var(--r-panel);
+  background: var(--glass-bar);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line);
 }
-.btn-play svg { width: 22px; height: 22px; fill: currentColor; stroke: none; }
-.btn-play:hover { background: var(--mihai-hover); }
-.btn-play:active { box-shadow: var(--shadow-pressed); transform: translateY(1px); }
-
-.loaded { display: grid; gap: 2px; }
-.loaded-title { margin: 0; font-size: var(--t-19); font-weight: 650; line-height: 1.25; display: flex; align-items: baseline; gap: var(--s-2); }
-.loaded-title .sep { color: var(--ink-3); font-weight: 400; }
-.loaded-sub { margin: 0; font-size: var(--t-15); color: var(--ink-2); }
-
-.others { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-6); flex-wrap: wrap; }
-.others-label { color: var(--ink-2); font-size: var(--t-15); font-weight: 500; }
-.face {
-  display: inline-flex; align-items: center; gap: var(--s-3);
-  height: var(--target);
-  padding: 0 var(--s-5) 0 var(--s-2);
-  border-radius: var(--r-full);
-  background: var(--glass-raised);
-  box-shadow: var(--glass-edge), var(--shadow-raised);
-  font-weight: 600; font-size: var(--t-15);
-  transition: background-color var(--dur-hover) var(--ease), box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
+.play {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 48px; padding: 0 var(--s6) 0 var(--s5);
+  border-radius: var(--r-ctl);
+  background: var(--mihai); color: var(--mihai-on);
+  font: 700 var(--t-15)/1 var(--ui);
+  transition: background-color var(--t-fast) var(--ease), color var(--t-seat) var(--ease);
 }
-.face:hover { background: var(--glass-hover); }
-.face:active { box-shadow: var(--shadow-pressed); transform: translateY(1px); }
+.play:hover { background: var(--mihai-hover); }
+.play:active { transform: translateY(1px); }
+.play svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.state { padding: 0 var(--s6); margin-left: var(--s6); border-left: 1px solid var(--line); }
+.state b { display: block; font-weight: 700; font-size: var(--t-15); }
+.state span { color: var(--ink-2); font-size: var(--t-13); }
+.others { display: flex; align-items: center; gap: var(--s2); padding-left: var(--s6); border-left: 1px solid var(--line); justify-self: start; }
+.others-label { color: var(--ink-2); font-size: var(--t-13); margin-right: var(--s1); }
+.face { height: 36px; padding: 0 var(--s3) 0 6px; gap: var(--s2); font-size: var(--t-14); }
+.face .av { width: 24px; height: 24px; font-size: 12px; }
+.stats { display: flex; gap: var(--s6); }
+.stat { text-align: right; }
+.stat b { display: block; font: 700 var(--t-18)/1.1 var(--ui); }
+.stat b small { font-size: var(--t-13); color: var(--ink-2); font-weight: 600; margin-left: 2px; }
+.stat span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-12); color: var(--ink-2); }
+.stat .dot { width: 8px; height: 8px; border-radius: 2px; }
+.stat + .stat { padding-left: var(--s6); border-left: 1px solid var(--line); }
 
-.reassure {
-  display: flex; align-items: center; gap: var(--s-2);
-  margin: var(--s-5) 0 0;
-  color: var(--ink-2); font-size: var(--t-15);
-}
-.reassure svg { width: 18px; height: 18px; }
+.reassure { display: flex; align-items: center; gap: var(--s2); margin: var(--s3) 0 0 var(--s1); color: var(--ink-2); font-size: var(--t-13); }
+.reassure svg { width: 16px; height: 16px; }
 
-/* Aside: time in this game */
-.panel { background: var(--glass-panel); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-edge); border-radius: var(--r-l); padding: var(--s-6); }
-.h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--t-19);
-  font-weight: 650;
-  font-variation-settings: "opsz" 24;
-  letter-spacing: -0.01em;
-}
-.bar { display: flex; gap: 3px; height: 8px; margin: var(--s-5) 0 var(--s-2); }
-.bar span { border-radius: var(--r-full); }
-.bar .m { flex: 44; background: var(--mihai); }
-.bar .c { flex: 22; background: var(--cristian); }
-.people { list-style: none; margin: 0; padding: 0; }
-.people li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; column-gap: var(--s-3); min-height: 56px; }
-.people .name { font-weight: 650; line-height: 1.2; }
-.people .when { display: block; font-size: var(--t-13); color: var(--ink-2); font-weight: 500; }
-.people .hrs { font-size: var(--t-19); font-weight: 650; text-align: right; }
-.people .hrs small { font-size: var(--t-15); color: var(--ink-2); font-weight: 550; margin-left: 3px; }
-.account {
-  display: grid; grid-template-columns: 1fr auto; column-gap: var(--s-3); align-items: baseline;
-  margin-top: var(--s-3); padding-top: var(--s-4);
-  background: linear-gradient(var(--glass-raised), var(--glass-raised)) top / 100% 1px no-repeat; /* tonal rule, not a border */
-}
-.account p { margin: 0; font-size: var(--t-15); color: var(--ink-2); }
-.account .hrs { font-size: var(--t-15); color: var(--ink); font-weight: 650; }
-.account .hrs small { font-size: var(--t-13); color: var(--ink-2); font-weight: 550; margin-left: 3px; }
-
-.cloud { display: grid; grid-template-columns: 20px 1fr; column-gap: var(--s-3); }
-.cloud svg { margin-top: 2px; color: var(--ink-2); }
-.cloud h3 { margin: 0; font-size: var(--t-15); font-weight: 650; }
-.cloud p { margin: 2px 0 0; font-size: var(--t-15); color: var(--ink-2); max-width: 50ch; text-wrap: pretty; }
-
-/* Actions */
-.actions { margin-top: var(--s-16); row-gap: var(--s-10); }
-.actions .col { display: grid; gap: var(--s-10); align-content: start; }
-.actions .col-a { grid-column: 1 / span 6; }
-.actions .col-b { grid-column: 7 / span 6; }
-.group .h2 { margin: 0 0 var(--s-3); }
-.rows { background: var(--glass-panel); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-edge); border-radius: var(--r-m); padding: 6px; display: grid; gap: 2px; }
+/* Below the fold: management */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 320px; gap: var(--s10); margin-top: var(--s10); align-items: start; }
+.group + .group { margin-top: var(--s8); }
+.group h2 { margin: 0 0 var(--s2); font: 650 var(--t-13)/1 var(--ui); color: var(--ink-2); }
+.list { border-top: 1px solid var(--line); }
 .row {
-  display: grid; grid-template-columns: 40px 1fr; align-items: center; column-gap: var(--s-4);
-  width: 100%;
-  min-height: 64px;
-  padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
-  border-radius: var(--r-s);
-  transition: background-color var(--dur-hover) var(--ease);
+  display: grid; grid-template-columns: 18px 1fr; column-gap: var(--s3); align-items: start;
+  width: 100%; padding: 11px var(--s2); margin: 0;
+  border-bottom: 1px solid var(--line);
+  transition: background-color var(--t-fast) var(--ease);
 }
-.row .ico {
-  display: grid; place-items: center;
-  width: 40px; height: 40px;
-  border-radius: var(--r-s);
-  background: var(--glass-raised);
-  color: var(--ink-2);
-  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
-}
-.row:hover { background: oklch(1 0 0 / 0.06); }
-.row:hover .ico { background: var(--glass-hover); color: var(--ink); }
-.row b { display: block; font-weight: 600; line-height: 1.3; }
-.row span.sub { display: block; font-size: var(--t-15); color: var(--ink-2); line-height: 1.35; }
-.row.danger { color: var(--danger); }
-.row.danger .ico { color: var(--danger); }
-.row.danger .sub { color: var(--ink-2); }
+.row svg { margin-top: 1px; color: var(--ink-2); }
+.row:hover { background: var(--glass-ctl); }
+.row:hover svg { color: var(--ink); }
+.row b { display: block; font-weight: 650; font-size: var(--t-14); line-height: 1.35; }
+.row span { display: block; color: var(--ink-2); font-size: var(--t-13); }
+.row.danger, .row.danger svg { color: var(--danger); }
 
-/* News: tertiary */
-.news { margin-top: var(--s-2); }
-.news h2 { margin: 0 0 var(--s-1); font-size: var(--t-15); font-weight: 650; color: var(--ink-2); }
-.news ul { list-style: none; margin: 0 calc(-1 * var(--s-2)); padding: 0; }
-.news a {
-  display: grid; grid-template-columns: 64px 1fr; column-gap: var(--s-4); align-items: baseline;
-  min-height: 44px; padding: 10px var(--s-2);
-  border-radius: var(--r-s);
-  font-size: var(--t-15); color: var(--ink-2);
-  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
-}
-.news a:hover { background: var(--glass-panel); color: var(--ink); }
-.news time { font-size: var(--t-13); color: var(--ink-3); font-weight: 550; }
+.aside .block + .block { margin-top: var(--s8); }
+.aside h2 { margin: 0 0 var(--s3); font: 650 var(--t-13)/1 var(--ui); color: var(--ink-2); }
+.aside p { margin: 0; color: var(--ink-2); font-size: var(--t-13); line-height: 1.5; text-wrap: pretty; }
+.split { display: flex; gap: 2px; height: 6px; margin-bottom: var(--s3); }
+.split span { border-radius: 1px; }
+.people { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.people li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; column-gap: var(--s3); height: 40px; border-bottom: 1px solid var(--line); font-size: var(--t-13); }
+.people time { color: var(--ink-2); }
+.people b { text-align: right; font-weight: 700; }
+.people .all span, .people .all b { color: var(--ink-2); font-weight: 500; }
+.news { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.news a { display: grid; grid-template-columns: 48px 1fr; gap: var(--s3); padding: 9px 0; border-bottom: 1px solid var(--line); font-size: var(--t-13); color: var(--ink); }
+.news a:hover { color: var(--ink); background: var(--glass-ctl); }
+.news time { color: var(--ink-3); }
 
-/* ── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 1360px) {
-  :root { --sidebar-w: 224px; --gutter: var(--s-8); --col-gap: var(--s-6); }
-  .play-block { grid-column: 1 / span 7; }
-  .aside { grid-column: 8 / span 5; }
+  :root { --gutter: 32px; --side-w: 216px; }
+  .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .aside { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s10); }
+  .aside .block + .block { margin-top: 0; }
+}
+@media (max-width: 1360px), (max-height: 760px) {
+  .stats .stat:nth-child(3) { display: none; }
 }
 @media (min-width: 1800px) {
-  :root { --sidebar-w: 272px; --gutter: var(--s-12); }
-  h1 { font-size: var(--t-64); }
+  :root { --gutter: 56px; --side-w: 256px; }
+  h1 { font-size: 72px; }
 }
-@media (max-height: 760px) {
-  :root { --topbar-h: 72px; --overlap: 112px; }
-  .card { padding: var(--s-6) var(--s-8); }
-  .play-row { margin-top: var(--s-6); }
-  .others { margin-top: var(--s-4); }
-}
-
 @media (prefers-reduced-transparency: reduce) {
-  :root { --glass: var(--ground); --glass-chrome: var(--ground); --glass-panel: var(--surface); --glass-raised: var(--raised); --glass-hover: var(--hover); }
+  :root { --glass-chrome: var(--ground); --glass-bar: var(--surface); --glass-panel: var(--surface); }
   .backdrop { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-  .btn-play:active, .btn-switch:active, .face:active { transform: none; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+  .play:active { transform: none; }
 }
 </style>
 </head>
 <body>
-<div class="backdrop" aria-hidden="true"><img src="../harness/.cache/730-hero.jpg" alt=""></div>
-
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-mark" viewBox="0 0 20 20"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></symbol>
   <symbol id="i-home" viewBox="0 0 20 20"><path d="M3.5 9 10 3.75 16.5 9v6.75a.75.75 0 0 1-.75.75H12.5v-4.5h-5v4.5H4.25a.75.75 0 0 1-.75-.75z"/></symbol>
@@ -453,26 +326,11 @@ h1 {
   <symbol id="i-power" viewBox="0 0 20 20"><path d="M10 3.25v6.25"/><path d="M6.4 5.75a5.75 5.75 0 1 0 7.2 0"/></symbol>
   <symbol id="i-copy" viewBox="0 0 20 20"><rect x="7.25" y="7.25" width="9" height="9" rx="1.75"/><path d="M12.75 7.25V5.5c0-.97-.78-1.75-1.75-1.75H5.5c-.97 0-1.75.78-1.75 1.75V11c0 .97.78 1.75 1.75 1.75h1.75"/></symbol>
 </svg>
+<div class="backdrop" aria-hidden="true"><img src="../harness/.cache/730-hero.jpg" alt=""></div>
 
 <div class="app">
-
-  <!-- Seat bar -->
-  <header class="topbar">
+  <nav class="side" aria-label="Main">
     <div class="brand"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>Lootnest</div>
-    <div class="topbar-main">
-      <a class="ghost" href="#library"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg>Back to Library</a>
-      <div class="seat" role="group" aria-label="Seat">
-        <div class="seat-who">
-          <span class="avatar mihai" aria-hidden="true">M</span>
-          <span class="seat-name">Mihai's seat</span>
-        </div>
-        <button class="btn-switch" type="button"><svg class="i" aria-hidden="true"><use href="#i-switch"/></svg>Switch</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Sidebar -->
-  <nav class="sidebar" aria-label="Main">
     <div class="nav">
       <a href="#home"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg>Home</a>
       <a href="#library" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-library"/></svg>Library<span class="count num">13</span></a>
@@ -480,109 +338,94 @@ h1 {
       <a href="#players"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg>Players</a>
     </div>
     <p class="side-h">Who's here</p>
-    <div class="here">
-      <a href="#p-mihai"><span class="avatar mihai" aria-hidden="true">M</span>Mihai<span class="tag">Seated</span></a>
-      <a href="#p-cristian"><span class="avatar cristian" aria-hidden="true">C</span>Cristian</a>
+    <div class="who">
+      <a href="#p-mihai"><span class="av m" aria-hidden="true">M</span>Mihai<span class="tag">Seated</span></a>
+      <a href="#p-cristian"><span class="av c" aria-hidden="true">C</span>Cristian</a>
     </div>
-    <div class="nav settings">
+    <div class="nav foot">
       <a href="#settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
     </div>
   </nav>
 
   <main>
+    <header class="topbar">
+      <a class="btn-ghost" href="#library"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg>Library</a>
+      <div class="seat" role="group" aria-label="Seat">
+        <span class="av m" aria-hidden="true">M</span>
+        <span class="seat-name">Mihai's seat</span>
+        <button class="btn" type="button"><svg class="i" aria-hidden="true"><use href="#i-switch"/></svg>Switch</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="title">
+      <img src="../harness/.cache/730-hero.jpg" alt="">
+      <div class="hero-text">
+        <h1 id="title">Counter-Strike 2</h1>
+        <div class="meta"><span>Steam</span><span class="sep" aria-hidden="true"></span><span>Profiles on for Mihai and Cristian</span></div>
+      </div>
+    </section>
+
     <div class="page">
-
-      <div class="art"><img src="../harness/.cache/730-hero.jpg" alt=""></div>
-
-      <section class="grid hero" aria-labelledby="game-title">
-        <div class="play-block card glass">
-          <h1 id="game-title">Counter-Strike 2</h1>
-          <p class="meta">Steam<span class="dot" aria-hidden="true">·</span>Profiles on for Mihai and Cristian</p>
-
-          <div class="play-row">
-            <button class="btn-play" type="button"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Play as Mihai</button>
-            <div class="loaded">
-              <p class="loaded-title">Your save is in<span class="sep" aria-hidden="true">·</span><span class="num">44 h</span></p>
-              <p class="loaded-sub">Mihai's files are loaded. Played yesterday.</p>
-            </div>
-          </div>
-
-          <div class="others">
-            <span class="others-label" id="others-label">or play as…</span>
-            <button class="face" type="button" aria-label="Play as Cristian"><span class="avatar cristian" aria-hidden="true">C</span>Cristian</button>
-          </div>
-          <p class="reassure"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>A copy is made before every swap.</p>
+      <section class="playbar" aria-label="Play">
+        <button class="play" type="button"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Play as Mihai</button>
+        <div class="state"><b>Your save is in</b><span>Mihai's files are loaded</span></div>
+        <div class="others">
+          <span class="others-label">or play as…</span>
+          <button class="btn face" type="button" aria-label="Play as Cristian"><span class="av c" aria-hidden="true">C</span>Cristian</button>
         </div>
+        <div class="stats">
+          <div class="stat"><b class="num">44<small>h</small></b><span><i class="dot" style="background:var(--mihai)"></i>Mihai</span></div>
+          <div class="stat"><b class="num">22<small>h</small></b><span><i class="dot" style="background:var(--cristian)"></i>Cristian</span></div>
+          <div class="stat"><b class="num">412<small>h</small></b><span>Steam account</span></div>
+        </div>
+      </section>
+      <p class="reassure"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>A copy is made before every swap.</p>
 
-        <div class="aside">
-          <div class="panel">
-            <h2 class="h2">Time in this game</h2>
-            <div class="bar" aria-hidden="true"><span class="m"></span><span class="c"></span></div>
+      <div class="cols">
+        <div>
+          <section class="group"><h2>Profiles</h2><div class="list">
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-load"/></svg><span><b>Load someone's files</b><span>Without starting the game</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-ask"/></svg><span><b>Ask who's playing in Steam</b><span>When the game starts from Steam's Play button</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg><span><b>Edit game</b><span>How it starts and what profiles swap</span></span></button>
+          </div></section>
+          <section class="group"><h2>Shortcuts</h2><div class="list">
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-desktop"/></svg><span><b>Create desktop shortcut</b><span>Asks who's playing every time</span></span></button>
+          </div></section>
+          <section class="group"><h2>Danger</h2><div class="list">
+            <button class="row danger" type="button"><svg class="i" aria-hidden="true"><use href="#i-power"/></svg><span><b>Turn off profiles</b></span></button>
+          </div></section>
+        </div>
+        <div>
+          <section class="group"><h2>Game files</h2><div class="list">
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span><b>Open the game's folder</b><span>Where it's installed</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg><span><b>Open the save folder</b><span>The files profiles swap</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-history"/></svg><span><b>Open backups</b><span>A copy is made before every swap</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><b>Check the game's files</b><span>Steam downloads any that are missing or damaged</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-drive"/></svg><span><b>Move to another drive</b><span>To another of your Steam libraries</span></span></button>
+          </div></section>
+        </div>
+        <aside class="aside">
+          <section class="block">
+            <h2>Last played</h2>
             <ul class="people">
-              <li><span class="avatar mihai" aria-hidden="true">M</span><span><span class="name">Mihai</span><span class="when">Played yesterday</span></span><span class="hrs num">44<small>h</small></span></li>
-              <li><span class="avatar cristian" aria-hidden="true">C</span><span><span class="name">Cristian</span><span class="when">Played 5 hours ago</span></span><span class="hrs num">22<small>h</small></span></li>
+              <li><span class="av m" aria-hidden="true">M</span><span>Mihai</span><time>Yesterday</time></li>
+              <li><span class="av c" aria-hidden="true">C</span><span>Cristian</span><time>5 hours ago</time></li>
             </ul>
-            <div class="account">
-              <p>Steam account, all players</p>
-              <span class="hrs num">412<small>h</small></span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="grid actions" aria-label="Manage this game">
-        <div class="col col-a">
-          <div class="group">
-            <h2 class="h2">Profiles</h2>
-            <div class="rows">
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-load"/></svg></span><span><b>Load someone's files</b><span class="sub">Without starting the game</span></span></button>
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-ask"/></svg></span><span><b>Ask who's playing in Steam</b><span class="sub">When the game starts from Steam's Play button</span></span></button>
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></span><span><b>Edit game</b><span class="sub">How it starts and what profiles swap</span></span></button>
-            </div>
-          </div>
-          <div class="group">
-            <h2 class="h2">Shortcuts</h2>
-            <div class="rows">
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-desktop"/></svg></span><span><b>Create desktop shortcut</b><span class="sub">Asks who's playing every time</span></span></button>
-            </div>
-          </div>
-          <div class="group">
-            <h2 class="h2">Danger</h2>
-            <div class="rows">
-              <button class="row danger" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-power"/></svg></span><span><b>Turn off profiles</b></span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="col col-b">
-          <div class="group">
-            <h2 class="h2">Game files</h2>
-            <div class="rows">
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg></span><span><b>Open the game's folder</b><span class="sub">Where it's installed</span></span></button>
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg></span><span><b>Open the save folder</b><span class="sub">The files profiles swap</span></span></button>
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-history"/></svg></span><span><b>Open backups</b><span class="sub">A copy is made before every swap</span></span></button>
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></span><span><b>Check the game's files</b><span class="sub">Steam downloads any that are missing or damaged</span></span></button>
-              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-drive"/></svg></span><span><b>Move to another drive</b><span class="sub">To another of your Steam libraries</span></span></button>
-            </div>
-          </div>
-          <div class="cloud">
-            <svg class="i" aria-hidden="true"><use href="#i-cloud"/></svg>
-            <div>
-              <h3>Steam Cloud</h3>
-              <p>Syncs 1 of the files profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.</p>
-            </div>
-          </div>
-          <div class="news">
+          </section>
+          <section class="block">
+            <h2>Steam Cloud</h2>
+            <p>Syncs 1 of the files profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.</p>
+          </section>
+          <section class="block">
             <h2>Updates and news</h2>
-            <ul>
-              <li><a href="#n1"><time class="num" datetime="2026-11-12">12 Nov</time><span>Release notes for 11/12/2026</span></a></li>
-              <li><a href="#n2"><time class="num" datetime="2026-11-05">5 Nov</time><span>Armory Pass update</span></a></li>
-              <li><a href="#n3"><time class="num" datetime="2026-10-29">29 Oct</time><span>Premier Season 3 begins</span></a></li>
+            <ul class="news">
+              <li><a href="#n1"><time class="num">12 Nov</time><span>Release notes for 11/12/2026</span></a></li>
+              <li><a href="#n2"><time class="num">5 Nov</time><span>Armory Pass update</span></a></li>
+              <li><a href="#n3"><time class="num">29 Oct</time><span>Premier Season 3 begins</span></a></li>
             </ul>
-          </div>
-        </div>
-      </section>
-
+          </section>
+        </aside>
+      </div>
     </div>
   </main>
 </div>
