@@ -2,3 +2,5 @@ dist/
 cmd/setup/payload/
 *.syso
 *.exe
+design/harness/.cache/
+design/harness/dist/
