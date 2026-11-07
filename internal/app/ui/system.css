@@ -414,6 +414,20 @@
 .ln-state--inline h3 { font-size: var(--fs-14); font-weight: 600; }
 .ln-state--inline p { font-size: var(--fs-13); margin-top: 0; }
 
+/* ================================================================= banner */
+/* A notice that needs a decision (an update, Steam's launch options). */
+.ln-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--glass-panel); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel);
+}
+.ln-banner > .ln-spinner { width: var(--icon-md); height: var(--icon-md); color: var(--fg-2); }
+.ln-banner__text { flex: 1 1 360px; min-width: 0; }
+.ln-banner__text b { display: block; font-size: var(--fs-15); font-weight: 650; }
+.ln-banner__text p { margin: 2px 0 0; max-width: 72ch; font-size: var(--fs-13); color: var(--fg-2); }
+.ln-banner__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
 /* ============================================================ preferences */
 @media (prefers-reduced-motion: reduce) {
   .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tile__cover::after, .ln-tile__cover img { transition-duration: 0.01ms; }
