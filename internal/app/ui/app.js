@@ -52,7 +52,6 @@
     removeAvatar: (id) => call("ps_removeAvatar", id),
     setBanner: (id, path) => call("ps_setBanner", id, path),
     removeBanner: (id) => call("ps_removeBanner", id),
-    setShelf: (id, key, e) => call("ps_setShelf", id, key, e),
     backupInfo: () => call("ps_backupInfo"),
     setBackup: (b) => call("ps_setBackup", b),
     setBackupPassword: (pw) => call("ps_setBackupPassword", pw),
@@ -1238,8 +1237,6 @@
       o.innerHTML = viewRestore();
     } else if (D.kind === "export") {
       o.innerHTML = viewExport();
-    } else if (D.kind === "shelf-note") {
-      o.innerHTML = viewShelfNote();
     } else if (D.kind === "profile") {
       const q = $("#pe-q"), pos = q && document.activeElement === q ? q.selectionStart : -1;
       o.innerHTML = viewProfileEditor();
@@ -1586,24 +1583,20 @@
 
   // ------------------------------------------------------------ profiles --
   // Each player's own page, which they arrange themselves: a banner, their
-  // picture, a few words, the game they're into, their numbers, activity,
-  // shelf (playing, up next, finished, stopped) and collection.
+  // picture, a few words, the game they're into, their numbers, activity
+  // and collection.
   const SECTIONS = [
     ["now", "Currently playing", "A game you're playing, with a note"],
-    ["stats", "Numbers", "Time played, games, finished, streak, longest session"],
+    ["stats", "Numbers", "Time played, games, streak, longest session"],
     ["favorites", "Favourite games", "Up to six games, in your order"],
     ["activity", "Activity", "When you played, the last six months"],
-    ["shelf", "Shelf", "Playing, up next, finished and stopped, with your ratings"],
     ["collection", "Collection", "Where your games come from"],
     ["recent", "Played lately", "The last games you played"],
   ];
-  const SHELF = [["playing", "Playing"], ["next", "Up next"], ["finished", "Finished"], ["stopped", "Stopped"]];
   const sectionsOf = (p) => { const known = SECTIONS.map((s) => s[0]), on = (p.sections || []).filter((s) => known.includes(s)); return on.length ? on : known; };
-  const shelfOf = (pid) => (S.d.shelf || {})[pid] || {};
   const daysOf = (pid) => ((S.d.activity || {}).days || {})[pid] || {};
   const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const daySum = (day) => Object.values(day || {}).reduce((a, b) => a + b, 0);
-  const stars = (n) => "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n);
 
   const avatarHTML = (p, cls) => {
     const u = (S.d.avatars || {})[p.id];
@@ -1624,9 +1617,6 @@
       .sort((a, b) => new Date(b.r.at) - new Date(a.r.at));
     played = Math.max(played, recent.length);
     const profiles = cfg().games.filter((g) => hasProfile(g.id, p.id)).length;
-    const shelf = shelfOf(p.id), shelfN = {};
-    Object.values(shelf).forEach((e) => { if (e.status) shelfN[e.status] = (shelfN[e.status] || 0) + 1; });
-    const rated = Object.values(shelf).filter((e) => e.rating).length;
     // Streaks: days in a row with some play, counted to today (or yesterday).
     const days = daysOf(p.id), keys = Object.keys(days).filter((k) => daySum(days[k]) > 0).sort();
     let best = 0, run = 0, prev = null;
@@ -1638,8 +1628,8 @@
     }
     const act = S.d.activity || {};
     const longest = (act.longest || {})[p.id], sessions = (act.sessions || {})[p.id] || 0;
-    const sources = new Set(items.filter((it) => ((playtimeOf(it) || {})[p.id] || 0) > 0 || shelf[recentKey(it)] || recent.some((x) => x.it === it)).map((it) => sourceLabel(it.source)));
-    return { total, top, topT, recent, profiles, played, shelf, shelfN, rated, streak, best, longest, sessions, sources };
+    const sources = new Set(items.filter((it) => ((playtimeOf(it) || {})[p.id] || 0) > 0 || recent.some((x) => x.it === it)).map((it) => sourceLabel(it.source)));
+    return { total, top, topT, recent, profiles, played, streak, best, longest, sessions, sources };
   }
 
   function bannerHTML(p) {
@@ -1674,18 +1664,18 @@
       const it = p.now && itemByKey(p.now);
       if (!it) return "";
       loadArt(it); ensureCover(it);
-      const t = (playtimeOf(it) || {})[p.id] || 0, e = st.shelf[recentKey(it)] || {};
+      const t = (playtimeOf(it) || {})[p.id] || 0;
       return `<section class="pp-section pp-now"><button class="now-card" data-action="open-sheet" ${itemAttr(it)}>
         ${artHTML(it)}<span class="now-text"><span class="now-label">Currently playing</span><b>${esc(it.name)}</b>
         ${p.nowNote ? `<span class="now-note">${esc(p.nowNote)}</span>` : ""}
-        <span class="now-meta">${t ? `<span>${esc(hours(t))} played</span>` : ""}${e.rating ? `<span class="stars" aria-label="${e.rating} of 5 stars">${stars(e.rating)}</span>` : ""}</span></span></button></section>`;
+        <span class="now-meta">${t ? `<span>${esc(hours(t))} played</span>` : ""}</span></span></button></section>`;
     }
     if (s === "stats") {
       const stat = (v, l) => `<div class="pstat"><b>${v}</b><span>${l}</span></div>`;
       return `<section class="pp-section pp-stats">
         ${stat(st.total ? esc(hours(st.total)) : "None yet", "played with Lootnest")}
         ${stat(String(st.played), st.played === 1 ? "game played" : "games played")}
-        ${stat(String(st.shelfN.finished || 0), "finished")}
+        ${stat(String(st.profiles), st.profiles === 1 ? "game with a profile" : "games with a profile")}
         ${stat(st.streak ? st.streak + (st.streak === 1 ? " day" : " days") : "None", st.best > st.streak ? `in a row now, best ${st.best}` : "in a row")}
         ${stat(st.longest ? esc(hours(st.longest.seconds)) : "None yet", st.longest && itemByKey(st.longest.key) ? "longest session, " + esc(itemByKey(st.longest.key).name) : "longest session")}
         ${stat(st.top ? esc(st.top.name) : "None yet", st.top ? esc(hours(st.topT)) + ", most played" : "most played")}
@@ -1694,26 +1684,15 @@
     if (s === "favorites") {
       const favs = (p.favorites || []).map(itemByKey).filter(Boolean);
       favs.forEach(ensureCover);
-      return sec("Favourite games", favs.length ? `<div class="grid size-l">${favs.map((it) => cardHTML(it, -1)).join("")}</div>`
+      return sec("Favourite games", favs.length ? `<div class="lib-grid size-l">${favs.map((it) => cardHTML(it)).join("")}</div>`
         : `<p class="hint">Pick up to six games to show here: <b>Edit profile</b>, then <b>Showcase</b>.</p>`);
     }
     if (s === "activity") return sec("Activity", activityHTML(p, st));
-    if (s === "shelf") {
-      const tab = S.shelfTab && SHELF.some((x) => x[0] === S.shelfTab) ? S.shelfTab : (SHELF.find((x) => st.shelfN[x[0]]) || SHELF[0])[0];
-      const list = Object.entries(st.shelf).filter(([, e]) => e.status === tab).map(([k, e]) => ({ it: itemByKey(k), e })).filter((x) => x.it)
-        .sort((a, b) => new Date(b.e.updated) - new Date(a.e.updated));
-      list.forEach((x) => ensureCover(x.it));
-      const tabs = `<div class="segt" role="tablist">${SHELF.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-action="shelf-tab" data-tab="${k}">${l}<span class="n">${st.shelfN[k] || 0}</span></button>`).join("")}</div>`;
-      return sec("Shelf", list.length ? `<div class="shelf-grid">${list.map(({ it, e }) => `<button class="shelf-card" data-action="open-sheet" ${itemAttr(it)}>
-          <div class="cover">${coverHTML(it)}</div><b>${esc(it.name)}</b>${e.rating ? `<span class="stars" aria-label="${e.rating} of 5 stars">${stars(e.rating)}</span>` : ""}
-          ${e.note ? `<span class="shelf-note">${esc(e.note)}</span>` : ""}</button>`).join("")}</div>`
-        : `<p class="hint">Nothing here yet. On a game's page, <b>Shelf</b> says where it stands for you: playing, up next, finished or stopped.</p>`, tabs);
-    }
     if (s === "collection") {
       const items = libraryItems(), by = {};
       items.forEach((it) => {
         const t = (playtimeOf(it) || {})[p.id] || 0;
-        if (!t && !st.shelf[recentKey(it)] && !st.recent.some((x) => x.it === it)) return;
+        if (!t && !st.recent.some((x) => x.it === it)) return;
         const l = sourceLabel(it.source);
         by[l] = by[l] || { n: 0, t: 0 }; by[l].n++; by[l].t += t;
       });
@@ -1722,7 +1701,7 @@
       return sec("Collection", rows.length ? `<ul class="bars">${rows.map(([l, v]) => `<li><span class="bl">${esc(l)}</span>
           <span class="bt"><span style="width:${Math.max(4, (v.n / max) * 100)}%"></span></span><span class="bv">${v.n} ${v.n === 1 ? "game" : "games"}${v.t ? ", " + esc(hours(v.t)) : ""}</span></li>`).join("")}</ul>
           <p class="hint">${items.length} games in the Library on this PC, from ${new Set(items.map((it) => sourceLabel(it.source))).size} places.</p>`
-        : `<p class="hint">Games you play or put on your shelf show up here, by where they come from.</p>`);
+        : `<p class="hint">Games you play show up here, by where they come from.</p>`);
     }
     if (s === "recent") {
       if (!st.recent.length) return "";
@@ -1805,8 +1784,8 @@
     return `<section class="gpage-block">${head}${where}${inCloud}${list}</section>`;
   }
 
-  // Everyone who plays this game: their time, where it stands for them
-  // (the Shelf: status, rating, a note) and whose files are loaded.
+  // Everyone who plays this game: their time, when they played, and whose
+  // files are loaded.
   function playersPanel(it) {
     const k = recentKey(it), pt = playtimeOf(it), rec = (S.d.recent || {})[k];
     const g = it.g, owner = g && S.d.active[g.id];
@@ -1815,34 +1794,12 @@
     const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0);
     const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
     return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Players</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
-      const e = shelfOf(p.id)[k] || {};
       const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has a profile" : g ? "No profile yet" : "", rec && rec.player === p.id ? `last ${ago(rec.at)}` : ""].filter(Boolean).join(", ");
       return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
         <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span></div>
-          <div class="gpage-rate" role="group" aria-label="${esc(p.name)}'s rating">${[1, 2, 3, 4, 5].map((n) => `<button data-action="shelf-rate" data-player="${esc(p.id)}" data-k="${esc(k)}" data-n="${n}" aria-label="${n} ${n === 1 ? "star" : "stars"}" aria-pressed="${(e.rating || 0) >= n}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.9l2.15 4.5 4.9.6-3.6 3.4.95 4.85L10 13.9l-4.4 2.35.95-4.85-3.6-3.4 4.9-.6z"/></svg></button>`).join("")}</div></div>
-        <div class="gp-person-ctl"><div class="ln-segmented" role="group" aria-label="${esc(p.name)}: where this game stands">${SHELF.map(([s, l]) => `<button data-action="shelf-set" data-player="${esc(p.id)}" data-k="${esc(k)}" data-status="${s}" aria-pressed="${e.status === s}">${l}</button>`).join("")}</div>
-          <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-note" data-player="${esc(p.id)}" data-k="${esc(k)}">${e.note ? "Edit note" : "Add a note"}</button></div>
-        ${e.note ? `<p class="gpage-shelf-note">${esc(e.note)}</p>` : ""}</div>`;
+</div></div>`;
     }).join("")}</div></section>`;
   }
-  async function setShelf(pid, k, change) {
-    const sh = (S.d.shelf = S.d.shelf || {});
-    const mine = (sh[pid] = sh[pid] || {});
-    const e = { status: "", rating: 0, note: "", ...(mine[k] || {}), ...change };
-    if (!e.status && !e.rating && !e.note) delete mine[k]; else mine[k] = { ...e, updated: new Date().toISOString() };
-    render();
-    try { await api.setShelf(pid, k, { status: e.status, rating: e.rating, note: e.note }); }
-    catch (err) { toast(errText(err), "error"); refresh(); }
-  }
-  function viewShelfNote() {
-    const D = S.dialog, p = player(D.pid), it = itemByKey(D.k);
-    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Note">
-      <div><h2>${esc(p ? p.name : "")}'s note on ${esc(it ? it.name : "this game")}</h2><p class="sub">Only people using this PC see it.</p></div>
-      <textarea id="sn-text" rows="6" maxlength="500" placeholder="Your note">${esc(D.note || "")}</textarea>
-      <div class="dialog-foot"><span class="error-text grow" id="sn-error"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="shelf-note-save">Save note</button></div>
-    </div></div>`;
-  }
-
   function viewProfileEditor() {
     const D = S.dialog, p = D.p, tab = D.tab || "look";
     const tabs = [["look", "Look"], ["about", "About"], ["showcase", "Showcase"], ["page", "Page"]];
@@ -1906,11 +1863,11 @@
     const cards = cfg().players.map((p) => { const st = playerStats(p); return `<button class="pcard" data-action="open-player" data-player="${esc(p.id)}" style="--c:${esc(p.color)}">
         <span class="pcard-banner">${bannerHTML(p)}</span>${avatarHTML(p, "lg")}
         <span class="pcard-body"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : st.recent[0] ? "Played " + esc(st.recent[0].it.name) + " " + esc(ago(st.recent[0].r.at)) : "No games played yet"}</span>
-        <span class="pcard-nums"><span><b>${st.total ? esc(hours(st.total)) : "0 h"}</b> played</span><span><b>${st.shelfN.playing || 0}</b> playing</span><span><b>${st.shelfN.finished || 0}</b> finished</span></span></span></button>`; }).join("");
+        <span class="pcard-nums"><span><b>${st.total ? esc(hours(st.total)) : "0 h"}</b> played</span><span><b>${st.played}</b> ${st.played === 1 ? "game" : "games"}</span><span><b>${st.profiles}</b> with a profile</span></span></span></button>`; }).join("");
     return `<div class="page"><div class="page-head"><div><h1>Players</h1><p class="sub">Everyone who plays on this PC. Their colour shows whose files are loaded in each game.</p></div></div>
       <div class="pcards">${cards}</div>
       <div class="row" style="margin-top:14px"><button class="btn quiet" data-action="restore-pick" data-mode="import">Import a profile</button>
-        <span class="hint">A profile someone exported from Lootnest on another PC: their saves, picture, shelf and play time.</span></div>
+        <span class="hint">A profile someone exported from Lootnest on another PC: their saves, picture and play time.</span></div>
       <h2 class="shelf-title" style="margin-top:36px">Names and colours</h2>
       <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, false)).join("")}</div>
       <div class="row" style="margin-top:14px">${ps.length < 8 ? `<button class="btn" data-action="add-player">${icon.plus}Add player</button>` : ""}</div>
@@ -2139,14 +2096,14 @@
       if (I.kind === "player") {
         const name = (I.players || [])[0] || "this player";
         const here = cfg().players.some((p) => p.name.toLowerCase() === name.toLowerCase());
-        body = `<div><h2>Import ${esc(possessive(name))} profile?</h2><p class="sub">Exported on ${esc(I.computer || "a PC")}, ${esc(when)}. Their saves in ${I.games === 1 ? "1 game" : I.games + " games"}, picture, shelf and play time.</p></div>
+        body = `<div><h2>Import ${esc(possessive(name))} profile?</h2><p class="sub">Exported on ${esc(I.computer || "a PC")}, ${esc(when)}. Their saves in ${I.games === 1 ? "1 game" : I.games + " games"}, picture and play time.</p></div>
           <p class="sub">${here ? `If this is the same ${esc(name)} as here, their profile is updated with this one; otherwise they're added as another player.` : "They're added as a new player."} Games this PC doesn't have yet are added. Everything here now is saved first, so you can go back.</p>
           ${foot(`<button class="btn primary" data-action="restore-apply">Import</button>`)}`;
         return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Import a profile">${body}</div></div>`;
       }
       body = `<div><h2>Restore this backup?</h2><p class="sub">Made on ${esc(I.computer || "a PC")}, ${esc(when)}${I.app ? ", Lootnest " + esc(I.app) : ""}.</p></div>
         <dl class="facts"><div><dt>Players</dt><dd>${esc((I.players || []).join(", ") || "None")}</dd></div><div><dt>Games with profiles</dt><dd>${I.games}</dd></div></dl>
-        <p class="sub">Its players, games, saves, profile pictures, shelf and play time replace the ones here. This PC's settings stay. Everything here now is saved first, so you can go back.</p>
+        <p class="sub">Its players, games, saves, profile pictures and play time replace the ones here. This PC's settings stay. Everything here now is saved first, so you can go back.</p>
         ${foot(`<button class="btn primary" data-action="restore-apply">Restore</button>`)}`;
     }
     return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Restore a backup">${body}</div></div>`;
@@ -2162,7 +2119,7 @@
         <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">Done</button></div></div></div>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Export a profile">
-      <div><h2>Export ${esc(possessive(name))} profile</h2><p class="sub">One file with their saves in every game they have a profile for, their picture, banner, shelf and play time, to take to another PC.</p></div>
+      <div><h2>Export ${esc(possessive(name))} profile</h2><p class="sub">One file with their saves in every game they have a profile for, their picture, banner and play time, to take to another PC.</p></div>
       <div class="field"><label for="ex-pw">Password <span class="hint">optional, at least 8 characters</span></label><input id="ex-pw" type="password" autocomplete="new-password" maxlength="200"></div>
       <div class="field"><label for="ex-pw2">The same password again</label><input id="ex-pw2" type="password" autocomplete="new-password" maxlength="200"></div>
       <p class="hint">With a password, the file is encrypted (AES-256) and needs it to be imported.</p>
@@ -2259,25 +2216,6 @@
       const ps = cfg().players.map((x) => (x.id === p.id ? p : x));
       try { await api.savePlayers(ps); S.dialog = null; S.players = null; await refresh(); toast("Profile saved"); }
       catch (e) { const t = $("#pe-error"); if (t) t.textContent = errText(e); }
-    },
-    "shelf-tab"(el) { S.shelfTab = el.dataset.tab; render(); },
-    "shelf-set"(el) {
-      const cur = (shelfOf(el.dataset.player)[el.dataset.k] || {}).status;
-      setShelf(el.dataset.player, el.dataset.k, { status: cur === el.dataset.status ? "" : el.dataset.status });
-    },
-    "shelf-rate"(el) {
-      const cur = (shelfOf(el.dataset.player)[el.dataset.k] || {}).rating || 0, n = +el.dataset.n;
-      setShelf(el.dataset.player, el.dataset.k, { rating: cur === n ? 0 : n });
-    },
-    "shelf-note"(el) {
-      S.dialog = { kind: "shelf-note", pid: el.dataset.player, k: el.dataset.k, note: (shelfOf(el.dataset.player)[el.dataset.k] || {}).note || "" };
-      renderOverlay(); setTimeout(() => { const t = $("#sn-text"); if (t) t.focus(); }, 30);
-    },
-    async "shelf-note-save"() {
-      const D = S.dialog, note = $("#sn-text").value;
-      if (note.trim().length > 500) { $("#sn-error").textContent = "Keep the note under 500 characters."; return; }
-      S.dialog = null; renderOverlay();
-      await setShelf(D.pid, D.k, { note: note.trim() });
     },
     async "gs-add"(el) {
       const key = el.dataset.key, G = S.gsaves[key] || {};

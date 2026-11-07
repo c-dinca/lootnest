@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.16.4
+
+- **Shelf is gone.** Playing / Up next / Finished / Stopped, the ratings and the notes are removed from game pages and player pages. What you had saved stays in Lootnest's data folder, untouched.
+- On a game page, **Players** shows each player's time, when they last played, and whose files are loaded.
+- On a player's page, **Numbers** shows the games with their profile instead of "finished". The players list shows games played and games with a profile.
+- **Fixes:**
+  - Favourite games on a player's page show as a cover grid again.
+  - **Played lately** lines up with the rest of the page.
+
 ## 1.16.3
 
 Fuller, wider pages:
