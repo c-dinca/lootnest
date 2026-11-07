@@ -39,4 +39,4 @@ Swap logic, file handling, the Go/IPC API and data models. The redesign is the U
 
 ## Open decisions
 - **The seat.** Decided in 1.18.0: a seat that stays until someone switches, or until Lootnest quits. Every Play is the seated player's, and the picker is the exception. With nobody seated, Play asks every time, as before.
-- **Achievements.** In the nav as "soon": show it with intent, or hide it until it exists?
+- **Achievements.** Decided in 1.19.0: read from this PC (Steam's library cache and the files Steam-compatible tools keep), shown on each game's page. Next: each player's own, by swapping the achievements folder with their profile.
