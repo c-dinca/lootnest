@@ -87,6 +87,7 @@
     testToast: () => call("ps_testToast"),
     achDoctor: (key, appId, dir, name) => call("ps_achDoctor", key, appId || 0, dir || "", name),
     setNameInGame: (key, dir, pid) => call("ps_setNameInGame", key, dir || "", pid),
+    setOffline: (key, on) => call("ps_setOffline", key, !!on),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),
@@ -283,6 +284,11 @@
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
+        break;
+      case "offline":
+        if (ev.error) toast(ev.error, "error");
+        else toast(ev.on ? "Kept offline. Windows Firewall blocks it from connecting." : "It can go online again.");
+        refresh();
         break;
       case "achDoctor":
         S.doctor[ev.key] = ev;
@@ -1246,6 +1252,7 @@
     const art = hero ? `<img class="gpage-art" src="${hero}" alt="">` : cover ? `<img class="gpage-art soft" src="${cover}" alt="">` : "";
     const rec = (S.d.recent || {})[recentKey(it)];
     const meta = [esc(sourceLabel(it.source))];
+    if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
     const st = steamTime(it);
     let bar, note = "", side, news;
     const details = page ? "" : `<button class="ln-button ln-button--ghost" data-action="open-sheet" ${itemAttr(it)}>Details</button>`;
@@ -1311,6 +1318,15 @@
   }
   // The Manage panel: what you can do with a game besides playing it,
   // grouped by intent. Each row closes the panel and does its one thing.
+  // Keep it offline: Windows Firewall rules for games Lootnest starts itself.
+  const isOffline = (it) => !!(cfg().offline || {})[recentKey(it)];
+  const offlineWorth = (it) => (it.kind === "found" ? !it.appId && !(it.f && it.f.uri) && !storeKept(it.source) : it.g.launch.type === "exe");
+  function offlineRow(it) {
+    if (!offlineWorth(it)) return "";
+    const n = ((cfg().offline || {})[recentKey(it)] || []).length;
+    return isOffline(it) ? gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="0"`, GI.globe, "Let it go online again", `Windows Firewall blocks ${n === 1 ? "its program" : n + " of its programs"} now`)
+      : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall stops it connecting to the internet");
+  }
   function manageGroups(it) {
     if (it.kind === "found") {
       const f = it.f;
@@ -1320,6 +1336,7 @@
           f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged") : "",
           f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
         ])
+        + gpGroup("Online", [offlineRow(it)])
         + gpGroup("Shortcuts", [gpRow(`data-action="found-shortcut" data-key="${esc(f.key)}"`, GI.desktop, "Create desktop shortcut", "Starts the game directly")])
         + gpGroup("Danger", [gpRow(`data-action="found-hide" data-key="${esc(f.key)}"`, GI.hide, f.added ? "Remove from the Library" : "Hide from the Library", "", { danger: true })]);
     }
@@ -1334,7 +1351,8 @@
       gpRow(`data-action="open-backups" data-game="${esc(g.id)}"`, GI.history, "Open backups", "A copy is made before every swap"),
       g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged", { disabled: s }) : "",
       g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries", { disabled: s }) : "",
-    ]) + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "Asks who's playing every time")])
+    ]) + gpGroup("Online", [offlineRow(it)])
+      + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "Asks who's playing every time")])
       + gpGroup("Danger", [gpRow(`data-action="remove-game" data-game="${esc(g.id)}"`, GI.power, "Turn off profiles", "", { danger: true })]);
   }
   // A panel from the right. menu: each action in it closes it first.
@@ -3031,6 +3049,16 @@
     play: (el) => { const p = seated(); if (p) actions["play-as"]({ dataset: { game: el.dataset.game, player: p.id } }); else openPicker(el.dataset.game, "play"); },
     seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
     "seat-set"(el) { setSeat(el.dataset.player); },
+    async "offline-toggle"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const on = el.dataset.on === "1";
+      const ok = await confirmDialog(on
+        ? { title: `Keep ${it.name} offline?`, body: "Windows Firewall will stop its programs from connecting to the internet, and to other PCs on your network. Online play, updates from inside the game and anything else online stop working until you let it go online again. Windows asks first, as administrator.", ok: "Keep it offline" }
+        : { title: `Let ${it.name} go online again?`, body: "Lootnest takes away the Windows Firewall rules it made for this game. Windows asks first, as administrator.", ok: "Let it go online" });
+      if (!ok) return;
+      try { await api.setOffline(recentKey(it), on); toast("Waiting for Windows' prompt"); } catch (e) { toast(errText(e), "error"); }
+    },
     "ach-doctor"(el) {
       const it = itemFor(el);
       if (!it) return;

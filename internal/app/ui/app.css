@@ -641,6 +641,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-manage-list { display: grid; gap: var(--space-6); }
 .gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"] { order: 1; }
 .gpage-group[data-g="Game files"] { order: 2; }
+.gpage-group[data-g="Online"] { order: 3; }
 .gpage-group[data-g="Shortcuts"] { order: 3; }
 .gpage-group[data-g="Danger"] { order: 4; }
 
@@ -1251,3 +1252,4 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .doc-steps { display: grid; gap: var(--space-2); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
 .doc-step .run-head b { font: 650 var(--fs-15)/var(--lh-tight) var(--font-ui); letter-spacing: normal; }
 .doc-path { font-size: var(--fs-12); color: var(--fg-3); word-break: break-all; }
+.gpage-meta svg { width: var(--fs-14); height: var(--fs-14); margin-right: var(--space-1); vertical-align: -2px; }

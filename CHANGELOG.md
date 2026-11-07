@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.43.0
+
+- **Keep a game offline.** **Manage, Keep it offline** has Windows Firewall stop a game from connecting to the internet and to other PCs on your network. It's for games Lootnest starts itself: games in a folder, from Hydra, or added by hand.
+  - Lootnest finds the game's programs in its folder: the game itself, its launcher and its helpers, without installers and uninstallers. It makes one rule for each, up to 30.
+  - Windows asks first, as administrator. The rules are in the **Lootnest** group, so you can see them in Windows' own firewall settings too.
+  - The game's page says **Kept offline**. **Let it go online again** takes the rules away.
+- In the Manage panel, the actions to do with going online are in a group of their own.
+
 ## 1.42.0
 
 - **Why no achievements? An achievement check.** A game from outside the stores with no achievements on its page now has **Check why**. Games that have achievements get **Check**. It goes through each step and says which one is missing:
