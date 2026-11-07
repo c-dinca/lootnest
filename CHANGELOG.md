@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.36.1
+
+- A game's news no longer shows bits of code such as `[p align="justify"]` in the short text under its title.
+
 ## 1.36.0
 
 - **Will it run here? Now with an answer.** A game's page in the Store says how it should run on this PC:
