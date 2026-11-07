@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.46.0, beta)
+## Where things stand (1.47.0, beta)
 
 These shipped recently, newest last:
 
@@ -253,6 +253,11 @@ These shipped recently, newest last:
   `--rise`), view transitions on nav, `staggerIn()`. The Library's list
   view (`S.density === "list"`, `listRowHTML`). `win.ToastFailed` logs why
   a toast couldn't be shown and falls back to the tray.
+- **1.47** The Updates page (`viewUpdates`, `updCard`, `updState`: new,
+  ok, dim, low): stat filters (`S.updFilter`), a Needs a look band, cards
+  with art and version against the latest (`verIn` reads it from the
+  patch notes' title), a More menu in `#ctx`, a history drawer
+  (`updhist`). `emptyState()` and `.ln-empty` for pages with nothing yet.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
