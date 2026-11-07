@@ -139,6 +139,10 @@ func (a *App) apiLaunchFound(key string) error {
 		a.logf("Starting %s through Steam", name)
 		return win.StartDetached(a.env.SteamPath+`\steam.exe`, strings.TrimSpace(fmt.Sprintf("-applaunch %d %s", appID, args)), a.env.SteamPath)
 	}
+	if f.URI != "" && core.SafeLaunchURI(f.URI) {
+		a.logf("Starting %s through its launcher", name)
+		return win.ShellOpen(f.URI)
+	}
 	path, err := a.env.ResolveExe(exe)
 	if err != nil {
 		return err

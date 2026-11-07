@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.12.0
+
+- The Library now finds games from every launcher on your PC:
+  - Xbox and PC Game Pass;
+  - EA app;
+  - Ubisoft Connect;
+  - Battle.net;
+  - Riot Games;
+  - Amazon Games;
+  - Rockstar Games;
+  - itch.io.
+
+  Each store with games gets its own filter.
+- Games a launcher must start (Ubisoft Connect, Battle.net, Xbox, Amazon Games, and now Epic too) start through that launcher, the same as pressing Play there, so sign-in, the overlay and cloud saves keep working. In **Edit game** you can still choose to start a game from its .exe.
+- Lootnest only opens the launch links of those launchers, nothing else, and only reads what each launcher already keeps on the PC; nothing goes online.
+
 ## 1.11.0
 
 - **Backup** in Settings: a copy of every player's saves and profiles, your games, profile pictures, shelf and play time, in a folder you choose. Lootnest finds OneDrive, Google Drive, Dropbox and iCloud Drive folders on your PC, so it's one click; any other folder (a USB drive, a NAS) works too. Lootnest only writes the file there; your cloud app uploads it.

@@ -636,7 +636,7 @@ func (a *App) apiShortcut(gameID string) (string, error) {
 	lnk := filepath.Join(desktop, strings.TrimSpace(badFileChars.ReplaceAllString(g.Name, " "))+" (Lootnest).lnk")
 	icon, iconIdx := a.exePath, 0
 	switch g.Launch.Type {
-	case "exe":
+	case "exe", "uri":
 		if exe, err := a.env.ResolveExe(g.Launch.Exe); err == nil {
 			icon = exe
 		}

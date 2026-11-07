@@ -225,6 +225,11 @@ func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error 
 			return err
 		}
 		return win.StartDetached(exe, args, dirOf(exe))
+	case "uri":
+		if !core.SafeLaunchURI(g.Launch.URI) {
+			return errors.New("Lootnest can't start this game through its launcher; choose its .exe in Edit game")
+		}
+		return win.ShellOpen(g.Launch.URI)
 	}
 	return fmt.Errorf("unknown launch type %q", g.Launch.Type)
 }

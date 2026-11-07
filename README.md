@@ -19,7 +19,7 @@ It's made for couples, siblings and housemates who share a gaming PC and one Ste
 ## Features
 
 **Library**
-- Every game on the PC in one grid, with search and filters: Steam, Epic, GOG, game folders on every drive, and your shortcuts.
+- Every game on the PC in one grid, with search and a filter for each store: Steam, Epic, GOG, Xbox and PC Game Pass, EA app, Ubisoft Connect, Battle.net, Riot, Amazon Games, Rockstar, itch.io, game folders on every drive, and your shortcuts. Games a launcher must start (Ubisoft, Battle.net, Xbox, Amazon, Epic) start through it, like from the launcher.
 - Covers come from Steam's own cache on your PC. For the rest, turn on **Download covers and artwork**: covers, wide art and logos from the Steam store, and from SteamGridDB for any other game if you add your free API key.
 - **Home** opens on the game you played last, in its own artwork, with a Play button for each player, then **Continue playing** with the other recent games and **News from your games**. The **Library** has all your games.
 - The window takes on the colours of the game you choose. Sort by name, recently played or most played, pick the cover size, and right-click a game for everything you can do with it. Ctrl+F finds a game.

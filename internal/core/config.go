@@ -56,10 +56,12 @@ type PathEntry struct {
 }
 
 type Launch struct {
-	// Type is "steam" or "exe".
+	// Type is "steam", "exe" or "uri" (started through its launcher's link,
+	// see SafeLaunchURI; Exe is then the game's own exe, for its icon).
 	Type  string `json:"type"`
 	AppID int    `json:"appId,omitempty"`
 	Exe   string `json:"exe,omitempty"`
+	URI   string `json:"uri,omitempty"`
 	Args  string `json:"args,omitempty"`
 }
 
@@ -285,6 +287,10 @@ func ValidateGame(g *Game) error {
 	case "exe":
 		if strings.TrimSpace(g.Launch.Exe) == "" {
 			return errors.New("Choose the game's .exe file.")
+		}
+	case "uri":
+		if !SafeLaunchURI(g.Launch.URI) {
+			return errors.New("Lootnest can't start this game through its launcher; choose its .exe instead.")
 		}
 	default:
 		return errors.New("Choose how the game is launched.")
