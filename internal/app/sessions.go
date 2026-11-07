@@ -366,6 +366,7 @@ func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
 		a.emit("toast", map[string]any{"kind": "error", "text": err.Error()})
 	} else {
 		a.notify("Saved "+who+"'s "+g.Name, "Settings and saves are stored in "+who+"'s profile.")
+		a.queueBackup()
 	}
 	a.emitSessions()
 }

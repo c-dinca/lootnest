@@ -114,6 +114,16 @@ type Settings struct {
 	// DownloadCovers on, art for games the Steam store doesn't know comes
 	// from SteamGridDB.
 	GridDBKey string `json:"gridDbKey,omitempty"`
+	// Backups to a folder the user picks (usually one a cloud app syncs):
+	// BackupDir is that folder (backups go in <dir>\Lootnest), BackupAuto
+	// makes one after each session, BackupKeep is how many this PC keeps.
+	// With a password, BackupSalt (base64) and BackupKey (the key made from
+	// the password, DPAPI-encrypted) encrypt them; the password isn't kept.
+	BackupDir  string `json:"backupDir,omitempty"`
+	BackupAuto bool   `json:"backupAuto,omitempty"`
+	BackupKeep int    `json:"backupKeep,omitempty"`
+	BackupSalt string `json:"backupSalt,omitempty"`
+	BackupKey  string `json:"backupKey,omitempty"`
 }
 
 type Config struct {

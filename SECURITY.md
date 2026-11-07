@@ -44,6 +44,23 @@ Report a vulnerability** on this repository. Don't open a public issue.
 - A SteamGridDB API key is encrypted for your Windows account with DPAPI
   before it's written to `config.json`; another user or PC can't read it.
 
+**Backups**
+- A backup is one file in the folder you choose; Lootnest never uploads it.
+  It holds every player's profiles, the save files in place, profile
+  pictures and Lootnest's own lists, and is first written as `.partial`,
+  then renamed, so a sync app never picks up half a file.
+- With a password, it's encrypted with AES-256-GCM, in 1 MiB chunks, each
+  bound to its position and to whether it's the last one, so a changed,
+  reordered or cut-off file is refused instead of restored. The key comes
+  from the password through PBKDF2-SHA256 (600,000 rounds, random salt).
+  Only that key is kept (DPAPI-encrypted, for automatic backups), never
+  the password.
+- Restoring checks every file name first: only Lootnest's own files and
+  folders, no paths outside them, no device names, within size and count
+  limits. Games in the backup are checked like ones you add, and their
+  folders again before every swap. Everything on the PC is saved to
+  `backups\before-restore` before anything is replaced.
+
 **Building**
 - Lootnest is built with the current Go release (the `toolchain` line in
   `go.mod`), and every build runs `govulncheck`, which fails the build on a
