@@ -1,0 +1,433 @@
+<!doctype html>
+<!--
+  Lootnest · Chosen direction: C "Couch" (the seat, one Play, "or play as…"), B "Save Slot"
+  colours (graphite slate, player labels), glass over the game's own art.
+  Game page, profiles on, Mihai seated and loaded.
+
+  Shape: small radii by role (3 / 4 / 6px, full only for avatars), 1px hairline edges,
+  no drop shadows, no pills. The art is full-bleed, not a rounded banner.
+
+  Banned defaults knowingly used:
+  - Glass (backdrop blur): asked for by the owner. The chrome and the play bar are frosted
+    over the game's own art, so each game page takes that game's light. Fills stay opaque
+    enough for AA; prefers-reduced-transparency turns every glass step solid.
+  - "or play as…": the spec's own copy.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counter-Strike 2 · Lootnest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* ── Colour: graphite slate (from B) ──────────────────────────── */
+  --h: 250;
+  --ground:  oklch(0.17 0.012 var(--h));
+  --surface: oklch(0.21 0.012 var(--h));
+  --raised:  oklch(0.25 0.012 var(--h));
+  --hover:   oklch(0.29 0.012 var(--h));
+  --ink:     oklch(0.95 0.006 var(--h));
+  --ink-2:   oklch(0.80 0.012 var(--h));
+  --ink-3:   oklch(0.70 0.012 var(--h));
+  --danger:  oklch(0.80 0.10 35);
+  --line:    oklch(1 0 0 / 0.08);     /* hairline on glass */
+  --line-2:  oklch(1 0 0 / 0.14);     /* control edge */
+  --focus:   var(--ink);
+
+  /* ── Glass ────────────────────────────────────────────────────── */
+  --glass-chrome: oklch(0.15 0.012 var(--h) / 0.62);
+  --glass-bar:    oklch(0.17 0.012 var(--h) / 0.70);
+  --glass-panel:  oklch(0.19 0.012 var(--h) / 0.58);
+  --glass-ctl:    oklch(1 0 0 / 0.06);
+  --glass-ctl-hover: oklch(1 0 0 / 0.11);
+  --blur:   blur(32px) saturate(150%);
+  --backdrop-blur: 100px;
+  --backdrop-opacity: 0.34;
+
+  /* ── Players: label colours (from B) ──────────────────────────── */
+  --mihai:       oklch(0.72 0.12 5);
+  --mihai-hover: oklch(0.77 0.12 5);
+  --mihai-on:    oklch(0.20 0.03 5);
+  --cristian:    oklch(0.72 0.12 250);
+  --cristian-on: oklch(0.20 0.03 250);
+
+  /* ── Type ─────────────────────────────────────────────────────── */
+  --display: "Bricolage Grotesque", "Figtree", sans-serif;
+  --ui: "Figtree", sans-serif;
+  --t-12: 12px; --t-13: 13px; --t-14: 14px; --t-15: 15px; --t-18: 18px; --t-24: 24px; --t-40: 40px; --t-56: 56px;
+
+  /* ── Space: 4px base ──────────────────────────────────────────── */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s12: 48px;
+  --side-w: 232px;
+  --bar-h: 56px;
+  --gutter: 40px;
+  --page-max: 1440px;
+  --target: 40px;
+
+  /* ── Radius: by role, small ───────────────────────────────────── */
+  --r-tag: 3px;    /* tags, keys */
+  --r-ctl: 4px;    /* buttons, rows, inputs */
+  --r-panel: 6px;  /* glass panels, the play bar */
+  --r-full: 999px; /* avatars only */
+
+  /* ── Motion ───────────────────────────────────────────────────── */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-fast: 140ms;
+  --t-seat: 280ms;   /* seat change: Play and the seat chip cross-fade */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font: 500 var(--t-14)/1.45 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+button, a { font: inherit; color: inherit; }
+button { border: 0; background: none; padding: 0; cursor: pointer; text-align: left; }
+a { text-decoration: none; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-ctl); }
+.num { font-variant-numeric: tabular-nums; }
+svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The game's art, blurred, lights the window behind every glass surface */
+.backdrop { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.backdrop img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; filter: blur(var(--backdrop-blur)) saturate(115%); opacity: var(--backdrop-opacity); }
+.backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.1), oklch(0.17 0.012 250 / 0.8) 60%, var(--ground)); }
+
+.app { position: relative; display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100vh; }
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+.side {
+  position: sticky; top: 0; height: 100vh; z-index: 3;
+  display: flex; flex-direction: column;
+  padding: 0 var(--s3) var(--s3);
+  background: var(--glass-chrome);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border-right: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; height: var(--bar-h); padding: 0 var(--s2); font: 700 var(--t-15)/1 var(--display); letter-spacing: -0.01em; }
+.brand svg { width: 20px; height: 20px; }
+.nav { display: grid; gap: 1px; margin-top: var(--s2); }
+.nav a, .who a {
+  display: flex; align-items: center; gap: var(--s3);
+  height: 36px; padding: 0 var(--s2);
+  border-radius: var(--r-ctl);
+  color: var(--ink-2);
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.nav a:hover, .who a:hover { background: var(--glass-ctl); color: var(--ink); }
+.nav a[aria-current] { background: var(--glass-ctl-hover); color: var(--ink); font-weight: 650; }
+.nav .count { margin-left: auto; font-size: var(--t-12); color: var(--ink-3); }
+.side-h { margin: var(--s6) var(--s2) var(--s1); font-size: var(--t-12); font-weight: 650; color: var(--ink-3); }
+.who { display: grid; gap: 1px; }
+.who a { color: var(--ink); }
+.who .tag { margin-left: auto; font-size: var(--t-12); color: var(--ink-2); padding: 1px 6px; border-radius: var(--r-tag); border: 1px solid var(--line-2); }
+.side .foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: var(--s2); }
+
+.av {
+  display: inline-grid; place-items: center; flex: none;
+  width: 22px; height: 22px; border-radius: var(--r-full);
+  font: 700 11px/1 var(--display);
+}
+.av.m { background: var(--mihai); color: var(--mihai-on); }
+.av.c { background: var(--cristian); color: var(--cristian-on); }
+
+/* ── Main ──────────────────────────────────────────────────────── */
+main { position: relative; min-width: 0; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  height: var(--bar-h); padding: 0 var(--gutter);
+  background: linear-gradient(180deg, oklch(0.12 0.01 250 / 0.55), transparent);
+}
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 10px 0 6px; margin-left: -6px;
+  border-radius: var(--r-ctl);
+  color: var(--ink);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.btn-ghost:hover { background: var(--glass-ctl-hover); }
+
+.seat {
+  display: flex; align-items: center; gap: var(--s3);
+  height: 40px; padding: 0 4px 0 var(--s3);
+  border-radius: var(--r-panel);
+  background: var(--glass-chrome);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line);
+}
+.seat .av { width: 24px; height: 24px; font-size: 12px; }
+.seat-name { font-weight: 650; }
+.btn {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  height: 32px; padding: 0 var(--s3);
+  border-radius: var(--r-ctl);
+  background: var(--glass-ctl);
+  border: 1px solid var(--line-2);
+  font-weight: 650; font-size: var(--t-13);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.btn:hover { background: var(--glass-ctl-hover); }
+.btn svg { width: 16px; height: 16px; }
+
+/* Hero: full-bleed art under the top bar, fading into the page */
+.hero {
+  position: relative;
+  margin-top: calc(-1 * var(--bar-h));
+  height: clamp(340px, 58vh, 640px);
+}
+.hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 25%; -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%); mask-image: linear-gradient(180deg, #000 50%, transparent 100%); }
+.hero::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, oklch(0.12 0.01 250 / 0.75) 0%, oklch(0.12 0.01 250 / 0.35) 38%, transparent 62%),
+    linear-gradient(180deg, oklch(0.12 0.01 250 / 0.45) 0%, transparent 18%);
+  -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%); mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
+}
+.hero-text {
+  position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--s8) + 88px);
+  z-index: 1; max-width: var(--page-max);
+}
+h1 {
+  margin: 0;
+  font: 750 var(--t-56)/1 var(--display);
+  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.meta { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); color: var(--ink-2); font-size: var(--t-13); }
+.meta .sep { width: 1px; height: 12px; background: var(--line-2); }
+
+.page { position: relative; padding: 0 var(--gutter) var(--s12); max-width: calc(var(--page-max) + 2 * var(--gutter)); }
+
+/* Play bar: the one glass slab that overlaps the art */
+.playbar {
+  position: relative; z-index: 1;
+  margin-top: -88px;
+  display: grid; grid-template-columns: auto auto 1fr auto; align-items: center;
+  min-height: 88px; padding: var(--s5) var(--s6);
+  border-radius: var(--r-panel);
+  background: var(--glass-bar);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line);
+}
+.play {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 48px; padding: 0 var(--s6) 0 var(--s5);
+  border-radius: var(--r-ctl);
+  background: var(--mihai); color: var(--mihai-on);
+  font: 700 var(--t-15)/1 var(--ui);
+  transition: background-color var(--t-fast) var(--ease), color var(--t-seat) var(--ease);
+}
+.play:hover { background: var(--mihai-hover); }
+.play:active { transform: translateY(1px); }
+.play svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.state { padding: 0 var(--s6); margin-left: var(--s6); border-left: 1px solid var(--line); }
+.state b { display: block; font-weight: 700; font-size: var(--t-15); }
+.state span { color: var(--ink-2); font-size: var(--t-13); }
+.others { display: flex; align-items: center; gap: var(--s2); padding-left: var(--s6); border-left: 1px solid var(--line); justify-self: start; }
+.others-label { color: var(--ink-2); font-size: var(--t-13); margin-right: var(--s1); }
+.face { height: 36px; padding: 0 var(--s3) 0 6px; gap: var(--s2); font-size: var(--t-14); }
+.face .av { width: 24px; height: 24px; font-size: 12px; }
+.stats { display: flex; gap: var(--s6); }
+.stat { text-align: right; }
+.stat b { display: block; font: 700 var(--t-18)/1.1 var(--ui); }
+.stat b small { font-size: var(--t-13); color: var(--ink-2); font-weight: 600; margin-left: 2px; }
+.stat span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-12); color: var(--ink-2); }
+.stat .dot { width: 8px; height: 8px; border-radius: 2px; }
+.stat + .stat { padding-left: var(--s6); border-left: 1px solid var(--line); }
+
+.reassure { display: flex; align-items: center; gap: var(--s2); margin: var(--s3) 0 0 var(--s1); color: var(--ink-2); font-size: var(--t-13); }
+.reassure svg { width: 16px; height: 16px; }
+
+/* Below the fold: management */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 320px; gap: var(--s10); margin-top: var(--s10); align-items: start; }
+.group + .group { margin-top: var(--s8); }
+.group h2 { margin: 0 0 var(--s2); font: 650 var(--t-13)/1 var(--ui); color: var(--ink-2); }
+.list { border-top: 1px solid var(--line); }
+.row {
+  display: grid; grid-template-columns: 18px 1fr; column-gap: var(--s3); align-items: start;
+  width: 100%; padding: 11px var(--s2); margin: 0;
+  border-bottom: 1px solid var(--line);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.row svg { margin-top: 1px; color: var(--ink-2); }
+.row:hover { background: var(--glass-ctl); }
+.row:hover svg { color: var(--ink); }
+.row b { display: block; font-weight: 650; font-size: var(--t-14); line-height: 1.35; }
+.row span { display: block; color: var(--ink-2); font-size: var(--t-13); }
+.row.danger, .row.danger svg { color: var(--danger); }
+
+.aside .block + .block { margin-top: var(--s8); }
+.aside h2 { margin: 0 0 var(--s3); font: 650 var(--t-13)/1 var(--ui); color: var(--ink-2); }
+.aside p { margin: 0; color: var(--ink-2); font-size: var(--t-13); line-height: 1.5; text-wrap: pretty; }
+.split { display: flex; gap: 2px; height: 6px; margin-bottom: var(--s3); }
+.split span { border-radius: 1px; }
+.people { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.people li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; column-gap: var(--s3); height: 40px; border-bottom: 1px solid var(--line); font-size: var(--t-13); }
+.people time { color: var(--ink-2); }
+.people b { text-align: right; font-weight: 700; }
+.people .all span, .people .all b { color: var(--ink-2); font-weight: 500; }
+.news { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.news a { display: grid; grid-template-columns: 48px 1fr; gap: var(--s3); padding: 9px 0; border-bottom: 1px solid var(--line); font-size: var(--t-13); color: var(--ink); }
+.news a:hover { color: var(--ink); background: var(--glass-ctl); }
+.news time { color: var(--ink-3); }
+
+@media (max-width: 1360px) {
+  :root { --gutter: 32px; --side-w: 216px; }
+  .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .aside { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s10); }
+  .aside .block + .block { margin-top: 0; }
+}
+@media (max-width: 1360px), (max-height: 760px) {
+  .stats .stat:nth-child(3) { display: none; }
+}
+@media (min-width: 1800px) {
+  :root { --gutter: 56px; --side-w: 256px; }
+  h1 { font-size: 72px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-chrome: var(--ground); --glass-bar: var(--surface); --glass-panel: var(--surface); }
+  .backdrop { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+  .play:active { transform: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 20 20"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></symbol>
+  <symbol id="i-home" viewBox="0 0 20 20"><path d="M3.5 9 10 3.75 16.5 9v6.75a.75.75 0 0 1-.75.75H12.5v-4.5h-5v4.5H4.25a.75.75 0 0 1-.75-.75z"/></symbol>
+  <symbol id="i-library" viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="5.25" height="5.25" rx="1.25"/><rect x="11.25" y="3.5" width="5.25" height="5.25" rx="1.25"/><rect x="3.5" y="11.25" width="5.25" height="5.25" rx="1.25"/><rect x="11.25" y="11.25" width="5.25" height="5.25" rx="1.25"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 20 20"><path d="M6 15.5h8.25a3.25 3.25 0 0 0 .45-6.47A4.75 4.75 0 0 0 5.6 8.55 3.5 3.5 0 0 0 6 15.5z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 20 20"><circle cx="7.75" cy="7" r="2.75"/><path d="M2.75 16.25c.45-2.65 2.45-4.25 5-4.25s4.55 1.6 5 4.25"/><path d="M13 4.6a2.5 2.5 0 0 1 0 4.8"/><path d="M14.5 12.25c1.5.4 2.5 1.65 2.75 3.5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 20 20"><path d="M3.5 6.25h7.25M15.25 6.25h1.25M3.5 13.75h1.25M9.25 13.75h7.25"/><circle cx="13" cy="6.25" r="2.25"/><circle cx="7" cy="13.75" r="2.25"/></symbol>
+  <symbol id="i-back" viewBox="0 0 20 20"><path d="M12 4.75 6.75 10 12 15.25"/></symbol>
+  <symbol id="i-play" viewBox="0 0 20 20"><path d="M6.5 4.4v11.2a.9.9 0 0 0 1.37.77l9.05-5.6a.9.9 0 0 0 0-1.54L7.87 3.63A.9.9 0 0 0 6.5 4.4z"/></symbol>
+  <symbol id="i-switch" viewBox="0 0 20 20"><path d="M4 7h11.5M12.75 4.25 15.5 7l-2.75 2.75M16 13H4.5M7.25 10.25 4.5 13l2.75 2.75"/></symbol>
+  <symbol id="i-load" viewBox="0 0 20 20"><path d="M10 3.5v8.25M6.75 8.5 10 11.75l3.25-3.25"/><path d="M3.75 13v2.25c0 .7.55 1.25 1.25 1.25h10c.7 0 1.25-.55 1.25-1.25V13"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 20 20"><path d="M5.25 3.75h9.5c.83 0 1.5.67 1.5 1.5v6.5c0 .83-.67 1.5-1.5 1.5H9.5l-3.75 3v-3h-.5c-.83 0-1.5-.67-1.5-1.5v-6.5c0-.83.67-1.5 1.5-1.5z"/><path d="M8.5 7.1a1.6 1.6 0 1 1 2.25 1.46c-.45.2-.75.6-.75 1.1v.1"/><path d="M10 11.6v.01"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 20 20"><path d="M12.75 4.25a1.77 1.77 0 0 1 2.5 2.5L7.5 14.5l-3.25.75.75-3.25z"/><path d="M11.5 5.5l3 3"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 20 20"><path d="M3.5 6c0-.83.67-1.5 1.5-1.5h2.9l1.6 1.75H15c.83 0 1.5.67 1.5 1.5v6.75c0 .83-.67 1.5-1.5 1.5H5c-.83 0-1.5-.67-1.5-1.5z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 20 20"><path d="M4.75 3.75h8.4l2.6 2.6v8.9c0 .55-.45 1-1 1H4.75c-.55 0-1-.45-1-1V4.75c0-.55.45-1 1-1z"/><path d="M7 3.75v3.5h5.25v-3.5M6.75 16.25v-4.5h6.5v4.5"/></symbol>
+  <symbol id="i-history" viewBox="0 0 20 20"><path d="M4 10a6 6 0 1 0 1.76-4.24"/><path d="M4 3.75V6.5h2.75"/><path d="M10 7v3.25l2.25 1.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 20 20"><path d="M10 3.25 15.75 5.4v4.35c0 3.35-2.4 5.85-5.75 7-3.35-1.15-5.75-3.65-5.75-7V5.4z"/><path d="M7.4 10.1l1.85 1.85 3.4-3.6"/></symbol>
+  <symbol id="i-drive" viewBox="0 0 20 20"><rect x="3.25" y="10.5" width="13.5" height="5.75" rx="1.5"/><path d="M4.75 10.5 6.2 5.3a1.5 1.5 0 0 1 1.45-1.05h4.7A1.5 1.5 0 0 1 13.8 5.3l1.45 5.2"/><path d="M13.25 13.4v.01M10.75 13.4v.01"/></symbol>
+  <symbol id="i-desktop" viewBox="0 0 20 20"><rect x="3.25" y="3.75" width="13.5" height="9.5" rx="1.5"/><path d="M7.25 16.5h5.5M10 13.25v3.25"/></symbol>
+  <symbol id="i-power" viewBox="0 0 20 20"><path d="M10 3.25v6.25"/><path d="M6.4 5.75a5.75 5.75 0 1 0 7.2 0"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 20 20"><rect x="7.25" y="7.25" width="9" height="9" rx="1.75"/><path d="M12.75 7.25V5.5c0-.97-.78-1.75-1.75-1.75H5.5c-.97 0-1.75.78-1.75 1.75V11c0 .97.78 1.75 1.75 1.75h1.75"/></symbol>
+</svg>
+<div class="backdrop" aria-hidden="true"><img src="../harness/.cache/730-hero.jpg" alt=""></div>
+
+<div class="app">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>Lootnest</div>
+    <div class="nav">
+      <a href="#home"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg>Home</a>
+      <a href="#library" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-library"/></svg>Library<span class="count num">13</span></a>
+      <a href="#cloud"><svg class="i" aria-hidden="true"><use href="#i-cloud"/></svg>Cloud saves</a>
+      <a href="#players"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg>Players</a>
+    </div>
+    <p class="side-h">Who's here</p>
+    <div class="who">
+      <a href="#p-mihai"><span class="av m" aria-hidden="true">M</span>Mihai<span class="tag">Seated</span></a>
+      <a href="#p-cristian"><span class="av c" aria-hidden="true">C</span>Cristian</a>
+    </div>
+    <div class="nav foot">
+      <a href="#settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="topbar">
+      <a class="btn-ghost" href="#library"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg>Library</a>
+      <div class="seat" role="group" aria-label="Seat">
+        <span class="av m" aria-hidden="true">M</span>
+        <span class="seat-name">Mihai's seat</span>
+        <button class="btn" type="button"><svg class="i" aria-hidden="true"><use href="#i-switch"/></svg>Switch</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="title">
+      <img src="../harness/.cache/730-hero.jpg" alt="">
+      <div class="hero-text">
+        <h1 id="title">Counter-Strike 2</h1>
+        <div class="meta"><span>Steam</span><span class="sep" aria-hidden="true"></span><span>Profiles on for Mihai and Cristian</span></div>
+      </div>
+    </section>
+
+    <div class="page">
+      <section class="playbar" aria-label="Play">
+        <button class="play" type="button"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Play as Mihai</button>
+        <div class="state"><b>Your save is in</b><span>Mihai's files are loaded</span></div>
+        <div class="others">
+          <span class="others-label">or play as…</span>
+          <button class="btn face" type="button" aria-label="Play as Cristian"><span class="av c" aria-hidden="true">C</span>Cristian</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><b class="num">44<small>h</small></b><span><i class="dot" style="background:var(--mihai)"></i>Mihai</span></div>
+          <div class="stat"><b class="num">22<small>h</small></b><span><i class="dot" style="background:var(--cristian)"></i>Cristian</span></div>
+          <div class="stat"><b class="num">412<small>h</small></b><span>Steam account</span></div>
+        </div>
+      </section>
+      <p class="reassure"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>A copy is made before every swap.</p>
+
+      <div class="cols">
+        <div>
+          <section class="group"><h2>Profiles</h2><div class="list">
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-load"/></svg><span><b>Load someone's files</b><span>Without starting the game</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-ask"/></svg><span><b>Ask who's playing in Steam</b><span>When the game starts from Steam's Play button</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg><span><b>Edit game</b><span>How it starts and what profiles swap</span></span></button>
+          </div></section>
+          <section class="group"><h2>Shortcuts</h2><div class="list">
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-desktop"/></svg><span><b>Create desktop shortcut</b><span>Asks who's playing every time</span></span></button>
+          </div></section>
+          <section class="group"><h2>Danger</h2><div class="list">
+            <button class="row danger" type="button"><svg class="i" aria-hidden="true"><use href="#i-power"/></svg><span><b>Turn off profiles</b></span></button>
+          </div></section>
+        </div>
+        <div>
+          <section class="group"><h2>Game files</h2><div class="list">
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span><b>Open the game's folder</b><span>Where it's installed</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg><span><b>Open the save folder</b><span>The files profiles swap</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-history"/></svg><span><b>Open backups</b><span>A copy is made before every swap</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><b>Check the game's files</b><span>Steam downloads any that are missing or damaged</span></span></button>
+            <button class="row" type="button"><svg class="i" aria-hidden="true"><use href="#i-drive"/></svg><span><b>Move to another drive</b><span>To another of your Steam libraries</span></span></button>
+          </div></section>
+        </div>
+        <aside class="aside">
+          <section class="block">
+            <h2>Last played</h2>
+            <ul class="people">
+              <li><span class="av m" aria-hidden="true">M</span><span>Mihai</span><time>Yesterday</time></li>
+              <li><span class="av c" aria-hidden="true">C</span><span>Cristian</span><time>5 hours ago</time></li>
+            </ul>
+          </section>
+          <section class="block">
+            <h2>Steam Cloud</h2>
+            <p>Syncs 1 of the files profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.</p>
+          </section>
+          <section class="block">
+            <h2>Updates and news</h2>
+            <ul class="news">
+              <li><a href="#n1"><time class="num">12 Nov</time><span>Release notes for 11/12/2026</span></a></li>
+              <li><a href="#n2"><time class="num">5 Nov</time><span>Armory Pass update</span></a></li>
+              <li><a href="#n3"><time class="num">29 Oct</time><span>Premier Season 3 begins</span></a></li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
