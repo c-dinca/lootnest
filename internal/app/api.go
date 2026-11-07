@@ -103,9 +103,10 @@ type AppState struct {
 	Autostart bool                        `json:"autostart"`
 	DataDir   string                      `json:"dataDir"`
 	Colors    []string                    `json:"colors"`
-	Sources   map[string]string           `json:"sources"`  // game id -> where the scan found it
-	Recent    map[string]core.Played      `json:"recent"`   // Library key -> last played
-	Playtime  map[string]map[string]int64 `json:"playtime"` // Library key -> player -> seconds
+	Sources   map[string]string           `json:"sources"`   // game id -> where the scan found it
+	Recent    map[string]core.Played      `json:"recent"`    // Library key -> last played
+	Playtime  map[string]map[string]int64 `json:"playtime"`  // Library key -> player -> seconds
+	SteamTime map[string]int64            `json:"steamTime"` // Library key -> seconds Steam counts for the account
 }
 
 func (a *App) apiState() AppState {
@@ -118,6 +119,29 @@ func (a *App) apiState() AppState {
 	st.Sources = a.gameSources(cfg)
 	st.Recent = a.store.LoadRecent()
 	st.Playtime = a.store.LoadPlaytime()
+	st.SteamTime = map[string]int64{}
+	// Steam's own record of what was played and when, so the Library's
+	// shelves fill in for games started from Steam too.
+	for id, p := range a.steamActivity() {
+		keys := []string{fmt.Sprintf("steam:%d", id)}
+		for _, g := range cfg.Games {
+			if g.Launch.Type == "steam" && g.Launch.AppID == id {
+				keys = append(keys, "game:"+g.ID)
+			}
+		}
+		for _, k := range keys {
+			if p.Minutes > 0 {
+				st.SteamTime[k] = int64(p.Minutes) * 60
+			}
+			if rec := st.Recent[k]; !p.LastPlayed.IsZero() && p.LastPlayed.After(rec.At) {
+				who := rec.Player // Lootnest started it: Steam's time is a few minutes later
+				if p.LastPlayed.After(rec.At.Add(30 * time.Minute)) {
+					who = "" // started from Steam since: nobody knows who played
+				}
+				st.Recent[k] = core.Played{At: p.LastPlayed, Player: who}
+			}
+		}
+	}
 	st.Profiles = map[string][]string{}
 	for _, g := range cfg.Games {
 		list := []string{}

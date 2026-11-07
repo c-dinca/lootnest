@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -494,4 +495,45 @@ func HasWrapper(opts string, appID int) bool {
 	l := strings.ToLower(opts)
 	return (strings.Contains(l, "lootnest") || strings.Contains(l, "playswap")) &&
 		strings.Contains(l, fmt.Sprintf("--steam %d", appID)) && strings.Contains(l, "%command%")
+}
+
+// SteamPlay is what Steam itself remembers about a game on this PC.
+type SteamPlay struct {
+	LastPlayed time.Time
+	Minutes    int // total time played on the account, as Steam counts it
+}
+
+// SteamActivity reads, from Steam's localconfig.vdf for the account in
+// use, when each game was last played and for how long in all. It covers
+// games started from Steam as well as from Lootnest; nothing goes online.
+func SteamActivity(steamUserDir string) map[int]SteamPlay {
+	out := map[int]SteamPlay{}
+	if steamUserDir == "" {
+		return out
+	}
+	b, err := os.ReadFile(filepath.Join(steamUserDir, "config", "localconfig.vdf"))
+	if err != nil {
+		return out
+	}
+	m, err := ParseVDF(string(b))
+	if err != nil {
+		return out
+	}
+	apps := vdfMap(vdfMap(vdfMap(vdfMap(vdfMap(m, "UserLocalConfigStore"), "Software"), "Valve"), "Steam"), "apps")
+	for k, v := range apps {
+		id, err := strconv.Atoi(k)
+		app, ok := v.(map[string]any)
+		if err != nil || !ok || id <= 0 {
+			continue
+		}
+		var p SteamPlay
+		if t, err := strconv.ParseInt(vdfStr(app, "LastPlayed"), 10, 64); err == nil && t > 0 {
+			p.LastPlayed = time.Unix(t, 0).UTC()
+		}
+		p.Minutes, _ = strconv.Atoi(vdfStr(app, "Playtime"))
+		if !p.LastPlayed.IsZero() || p.Minutes > 0 {
+			out[id] = p
+		}
+	}
+	return out
 }

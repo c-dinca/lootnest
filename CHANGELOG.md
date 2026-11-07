@@ -3,6 +3,7 @@
 ## 1.9.1
 
 - Lootnest can keep itself up to date. It asks once, **Keep Lootnest up to date?**; with yes, it checks every 6 hours, shows a Windows notification when a new version is out, and installs it by itself while it's in the tray and no game is running. Both are in Settings (**Check for updates automatically**, **Install updates by themselves**).
+- Fixed: the Library's hero and shelves stayed empty until a game had been started from Lootnest. They now also use what Steam remembers on this PC: when each Steam game was last played and how many hours it has on the account ("412 h on Steam"), shown on the hero, the shelves and the game's page, and used by **Most played**.
 - Fixed: on a big or maximised window, a game's page and Settings stayed in the left half. Pages now grow with the window: a game's page uses the whole width (centred on very wide screens), Settings and Players are a centred column, and covers, shelves and titles get bigger on large screens.
 
 ## 1.9.0

@@ -294,3 +294,27 @@ func (a *App) apiArt(appID int, name, key, kind string) string {
 	}
 	return ""
 }
+
+var (
+	activityMu   sync.Mutex
+	activityAt   time.Time // localconfig.vdf's time when last read
+	activityPath string
+	activityData map[int]core.SteamPlay
+)
+
+// steamActivity is core.SteamActivity, read again only when Steam changed
+// its settings file.
+func (a *App) steamActivity() map[int]core.SteamPlay {
+	dir, err := a.env.SteamUser()
+	if err != nil {
+		return nil
+	}
+	p := filepath.Join(dir, "config", "localconfig.vdf")
+	t := modTime(p)
+	activityMu.Lock()
+	defer activityMu.Unlock()
+	if p != activityPath || !t.Equal(activityAt) || activityData == nil {
+		activityData, activityAt, activityPath = core.SteamActivity(dir), t, p
+	}
+	return activityData
+}

@@ -378,12 +378,15 @@
       return true;
     });
     if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
-    else if (S.sort === "played") list.sort((a, b) => totalPlayed(b) - totalPlayed(a) || playedAt(b) - playedAt(a));
+    else if (S.sort === "played") list.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || playedAt(b) - playedAt(a));
     return list;
   }
   const playedAt = (it) => { const r = (S.d.recent || {})[recentKey(it)]; return r ? new Date(r.at).getTime() : 0; };
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
   const totalPlayed = (it) => Object.values(playtimeOf(it)).reduce((a, b) => a + b, 0);
+  const steamTime = (it) => (S.d.steamTime || {})[recentKey(it)] || 0;
+  // How much a game has been played: Lootnest's own count, or Steam's.
+  const playedText = (it) => totalPlayed(it) ? hours(totalPlayed(it)) + " played in all" : steamTime(it) ? hours(steamTime(it)) + " on Steam" : "";
   function hours(sec) {
     if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + " min";
     const h = sec / 3600;
@@ -431,11 +434,11 @@
     return `<section class="shelf" aria-label="Continue playing"><h2 class="shelf-title">Continue playing</h2>
       <div class="capsules">${list.map((it) => {
         const attr = it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`;
-        const t = totalPlayed(it);
+        const t = playedText(it);
         const k = coverKey(it), poster = !S.art["hero:" + k] && (S.covers[k] || S.icons[k]);
         return `<div class="capsule-wrap"><button class="capsule" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}">${artHTML(it)}
           ${poster ? `<span class="capsule-poster${S.covers[k] ? "" : " icon"}" style="background-image:url('${poster}')"></span>` : ""}
-          <span class="capsule-body"><b>${esc(it.name)}</b><span>${esc(lastPlayed(it))}${t ? `<span class="sep"></span>${esc(hours(t))} in all` : ""}</span></span></button>
+          <span class="capsule-body"><b>${esc(it.name)}</b><span>${esc(lastPlayed(it))}${t ? `<span class="sep"></span>${esc(t)}` : ""}</span></span></button>
           ${it.kind === "game" && session(it.id) ? "" : `<button class="quick-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${icon.play}</button>`}</div>`;
       }).join("")}</div></section>`;
   }
@@ -691,7 +694,7 @@
     const attr = best.kind === "game" ? `data-game="${esc(best.id)}"` : `data-key="${esc(best.id)}"`;
     return `<section class="hero" aria-label="Last played">${artHTML(best)}
       <div class="hero-body">${titleHTML(best, "hero-title")}
-        <p class="hero-when">${esc(lastPlayed(best))}${totalPlayed(best) ? `<span class="sep"></span>${esc(hours(totalPlayed(best)))} played in all` : ""}</p>
+        <p class="hero-when">${esc(lastPlayed(best))}${playedText(best) ? `<span class="sep"></span>${esc(playedText(best))}` : ""}</p>
         <div class="hero-play">${playButtons(best, false)}<button class="btn ghost" data-action="open-sheet" ${attr}>Details</button></div>
       </div></section>`;
   }
@@ -756,6 +759,7 @@
     add("Store", esc(sourceLabel(it.source)));
     const lp = lastPlayed(it);
     if (lp) add("Last played", esc(lp));
+    if (steamTime(it)) add("On Steam", `${esc(hours(steamTime(it)))} on this Steam account`);
     let list, note = "";
     if (it.kind === "found") {
       const f = it.f;
