@@ -60,6 +60,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_moveGame", a.apiMoveGame))
 	must(a.w.Bind("ps_saveLibraryPref", a.apiSaveLibraryPref))
 	must(a.w.Bind("ps_addLibraryGame", a.apiAddLibraryGame))
+	must(a.w.Bind("ps_gameIcon", a.apiGameIcon))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))

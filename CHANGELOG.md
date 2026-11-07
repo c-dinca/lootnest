@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.3
+
+- Every game has a picture now. A game without a cover shows its own icon, taken from its .exe on your PC (nothing goes online), over a soft wash of the icon's colours.
+- Covers from the Steam store (with **Download covers for games outside Steam** on) are found for more games: when the full name isn't on the store, Lootnest tries it without its last word or two, such as "Deluxe Edition".
+
 ## 1.5.2
 
 - **Add game** now puts the game in your Library, ready to play, instead of setting it up with profiles. Turn on profiles from its panel when more than one person plays it. A game you add stays in the Library even if a scan doesn't find it; **Remove from the Library** takes it out.
