@@ -479,7 +479,13 @@
     return list;
   }
   // A player's games: the ones they have a profile in, or played last.
-  const playedOrOwned = (it, pid) => (it.kind === "game" && hasProfile(it.id, pid)) || ((S.d.recent || {})[recentKey(it)] || {}).player === pid;
+  const playedOrOwned = (it, pid) => (it.kind === "game" && hasProfile(it.id, pid)) || !!lastBy(it, pid);
+  // When this player last started the game ("" if they never have).
+  function lastBy(it, pid) {
+    const r = (S.d.recent || {})[recentKey(it)];
+    if (!r || !pid) return "";
+    return (r.players || {})[pid] || (r.player === pid ? r.at : "");
+  }
   const playedAt = (it) => { const r = (S.d.recent || {})[recentKey(it)]; return r ? new Date(r.at).getTime() : 0; };
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
   const totalPlayed = (it) => Object.values(playtimeOf(it)).reduce((a, b) => a + b, 0);
@@ -610,9 +616,11 @@
     const rec = S.d.recent || {};
     const lastOf = {};
     Object.entries(rec).forEach(([k, r]) => {
-      if (!r.player) return;
-      const t = new Date(r.at).getTime();
-      if (!lastOf[r.player] || t > lastOf[r.player].t) lastOf[r.player] = { t, k, at: r.at };
+      const by = Object.assign({}, r.player ? { [r.player]: r.at } : {}, r.players || {});
+      Object.entries(by).forEach(([pid, at]) => {
+        const t = new Date(at).getTime();
+        if (!lastOf[pid] || t > lastOf[pid].t) lastOf[pid] = { t, k, at };
+      });
     });
     // Games without profiles don't record who played; then the game they
     // have the most time in stands in.
@@ -1024,7 +1032,7 @@
           + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
         play = lead ? `<button class="ln-button ln-button--play ln-button--lg ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>` : "";
-        const sub = owner && rec && rec.player === owner ? `Played ${esc(ago(rec.at))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the player's files first";
+        const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the player's files first";
         state = `<div class="gpage-state"><b>${owner && player(owner) ? `${esc(possessive(pname(owner)))} files are loaded` : "Nobody's files yet"}</b><span>${sub}</span></div>`;
       }
       const chips = !s && others.length ? `<div class="gpage-others"><span class="gpage-others-label">or play as…</span>${others.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" aria-label="Play as ${esc(p.name)}">${lnAvatar(p)}${esc(p.name)}</button>`).join("")}</div>` : "";
@@ -1109,10 +1117,12 @@
     render();
   }
 
+  // A slot's line: when they last played it (whose files are in shows on
+  // the slot's label), else whether they have a profile yet.
   function slotState(gid, pid) {
-    if (S.d.active[gid] === pid) return "Files loaded now";
-    if (hasProfile(gid, pid)) return "Has a profile";
-    return "First time";
+    const at = lastBy({ kind: "game", id: gid }, pid);
+    if (at) return "Played " + ago(at);
+    return S.d.active[gid] === pid ? "Files loaded now" : hasProfile(gid, pid) ? "Has a profile" : "First time";
   }
 
   function viewPicker() {
@@ -1617,7 +1627,8 @@
     const items = libraryItems();
     let total = 0, top = null, topT = 0, played = 0;
     items.forEach((it) => { const t = (playtimeOf(it) || {})[p.id] || 0; total += t; if (t) played++; if (t > topT) { top = it; topT = t; } });
-    const recent = items.map((it) => ({ it, r: (S.d.recent || {})[recentKey(it)] })).filter((x) => x.r && x.r.player === p.id)
+    // Their own last time in each game, not whoever played it last.
+    const recent = items.map((it) => ({ it, r: { at: lastBy(it, p.id), player: p.id } })).filter((x) => x.r.at)
       .sort((a, b) => new Date(b.r.at) - new Date(a.r.at));
     played = Math.max(played, recent.length);
     const profiles = cfg().games.filter((g) => hasProfile(g.id, p.id)).length;
@@ -1791,14 +1802,14 @@
   // Everyone who plays this game: their time, when they played, and whose
   // files are loaded.
   function playersPanel(it) {
-    const k = recentKey(it), pt = playtimeOf(it), rec = (S.d.recent || {})[k];
+    const pt = playtimeOf(it);
     const g = it.g, owner = g && S.d.active[g.id];
     const ps = cfg().players;
     if (!ps.length) return "";
     const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0);
     const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
     return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Players</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
-      const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has a profile" : g ? "No profile yet" : "", rec && rec.player === p.id ? `last ${ago(rec.at)}` : ""].filter(Boolean).join(", ");
+      const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has a profile" : g ? "No profile yet" : "", lastBy(it, p.id) ? `last ${ago(lastBy(it, p.id))}` : ""].filter(Boolean).join(", ");
       return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
         <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span></div>
 </div></div>`;

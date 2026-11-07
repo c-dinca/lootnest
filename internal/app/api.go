@@ -179,7 +179,7 @@ func (a *App) apiState() AppState {
 				if p.LastPlayed.After(rec.At.Add(30 * time.Minute)) {
 					who = "" // started from Steam since: nobody knows who played
 				}
-				st.Recent[k] = core.Played{At: p.LastPlayed, Player: who}
+				st.Recent[k] = core.Played{At: p.LastPlayed, Player: who, Players: rec.Players}
 			}
 		}
 	}
