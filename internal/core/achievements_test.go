@@ -107,3 +107,63 @@ func TestSteamCacheAndMerge(t *testing.T) {
 		t.Fatalf("%+v %d %d", m, total, n)
 	}
 }
+
+// Each player keeps their own achievements: the folder a Steam-compatible
+// tool keeps them in goes with their profile, like their saves.
+func TestAchievementsSwapPerPlayer(t *testing.T) {
+	f := newFixture(t)
+	ach := filepath.Join(f.appdata, "GSE Saves", "730", "achievements.json")
+	stats := filepath.Join(f.appdata, "GSE Saves", "730", "stats", "kills")
+	write(t, f.optFile(), "sens=1.2")
+	write(t, ach, `{"A":{"earned":true,"earned_time":1762500000}}`)
+	write(t, stats, "41")
+	// Cristian's files and achievements are on the PC; Mihai starts fresh.
+	if err := f.eng.Activate(f.cfg, "cs2", "p2", ActivateOptions{FirstOwner: "p1", NewProfile: NewFresh}); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, ach) != "<missing>" || read(t, stats) != "<missing>" {
+		t.Fatal("Mihai should start without Cristian's achievements")
+	}
+	g := f.cfg.Game("cs2")
+	if u, ok := f.eng.ProfileUnlocks("p1", g); !ok || len(u) != 1 {
+		t.Fatalf("Cristian's achievements are in his profile: %v %v", u, ok)
+	}
+	// Mihai unlocks B; going back to Cristian brings his own back.
+	write(t, ach, `{"B":{"earned":true,"earned_time":1762600000}}`)
+	if err := f.eng.Activate(f.cfg, "cs2", "p1", ActivateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, ach); got != `{"A":{"earned":true,"earned_time":1762500000}}` || read(t, stats) != "41" {
+		t.Fatalf("Cristian's achievements back: %s", got)
+	}
+	if u, ok := f.eng.ProfileUnlocks("p2", g); !ok || len(u) != 1 {
+		t.Fatalf("Mihai's achievements saved: %v", u)
+	}
+	// Shared: the folder isn't touched.
+	g.SharedAchievements = true
+	if err := f.eng.Activate(f.cfg, "cs2", "p2", ActivateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, stats) != "41" {
+		t.Fatal("shared achievements stay put")
+	}
+}
+
+// When the game already swaps a folder inside the achievements folder (its
+// saves), only the achievements file goes with the profile.
+func TestAchievementsSwapFileWhenFolderOverlaps(t *testing.T) {
+	f := newFixture(t)
+	base := filepath.Join(f.appdata, "GSE Saves", "730")
+	f.cfg.Games[0].Paths = []PathEntry{{ID: "saves", Path: "%APPDATA%/GSE Saves/730/remote"}}
+	write(t, filepath.Join(base, "remote", "save.dat"), "c")
+	write(t, filepath.Join(base, "achievements.json"), `{"A":{"earned":true}}`)
+	if err := f.eng.Activate(f.cfg, "cs2", "p2", ActivateOptions{FirstOwner: "p1", NewProfile: NewFresh}); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(base, "achievements.json")) != "<missing>" {
+		t.Fatal("the file goes with Cristian's profile")
+	}
+	if u, ok := f.eng.ProfileUnlocks("p1", f.cfg.Game("cs2")); !ok || len(u) != 1 {
+		t.Fatalf("read from the profile: %v %v", u, ok)
+	}
+}

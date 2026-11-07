@@ -79,6 +79,10 @@ type Game struct {
 	// Steam starts the game itself. Needed when an anti-cheat (FACEIT AC)
 	// refuses to let any other program start the game.
 	SteamDirect bool `json:"steamDirect,omitempty"`
+	// SharedAchievements keeps one set of achievements for everyone, as
+	// before 1.20. Off (the default), the folder a Steam-compatible tool
+	// keeps them in is swapped with each player's profile.
+	SharedAchievements bool `json:"sharedAchievements,omitempty"`
 }
 
 // UsesSteamWrapper reports whether Steam's Play button should go through

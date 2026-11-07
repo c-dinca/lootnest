@@ -72,6 +72,7 @@ func (e *Engine) resolveAll(g *Game) ([]resolved, error) {
 		}
 		out = append(out, resolved{p, live})
 	}
+	out = append(out, e.achievementEntries(g, out)...)
 	// Two entries must not overlap, or mirroring one would wipe the other.
 	for i := range out {
 		for j := range out {

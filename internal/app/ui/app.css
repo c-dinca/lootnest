@@ -588,6 +588,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 /* Achievements beside the game: a count, a bar, the latest unlocked. */
 .gp-ach .ln-section-head { align-items: baseline; }
 .ach-count { font-size: var(--fs-13); color: var(--fg-2); }
+.ach-who { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ach-who .ln-num { margin-left: 2px; color: var(--fg-2); font-size: var(--fs-12); }
 .ach-bar { height: 6px; background: var(--glass-ctl-active); border-radius: var(--radius-tag); overflow: hidden; }
 .ach-bar span { display: block; height: 100%; background: var(--accent); }
 .ach-list { display: grid; margin: 0; padding: 0; list-style: none; }

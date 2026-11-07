@@ -25,6 +25,7 @@
     closeGame: (id) => call("ps_closeGame", id),
     profileInfo: (id) => call("ps_profileInfo", id),
     achievements: (key, appId, dir) => call("ps_achievements", key, appId || 0, dir || ""),
+    setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
@@ -87,6 +88,7 @@
     pinfo: {},        // game id -> player id -> {saved, size} of their profile
     ach: {},          // Library key -> achievements read from this PC (null: none)
     achAll: {},       // Library key -> the full list is open
+    achWho: {},       // Library key -> whose achievements are shown
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     d: null,          // AppState from Go
     view: "home",
@@ -167,6 +169,7 @@
         S.d.sessions = ev.sessions || [];
         S.d.active = ev.active || {};
         S.pinfo = {}; // a swap or a session's end writes profiles: read again
+        achAsked.clear();
         onSessions();
         refresh();
         break;
@@ -1818,18 +1821,30 @@
       const dir = it.f ? it.f.dir : it.exe;
       if (it.appId || dir) api.achievements(key, it.appId, dir).catch(() => {});
     }
-    const A = S.ach[key];
-    if (!A || !A.total) return "";
+    const top = S.ach[key];
+    if (!top || !top.total) return "";
+    // Each player's own (they go with their profile): whose to show is the
+    // one picked here, else whoever's at the PC, else whose files are in.
+    const ids = top.players ? cfg().players.map((p) => p.id).filter((id) => top.players[id]) : [];
+    const seat = seated(), owner = it.g && S.d.active[it.g.id];
+    const who = ids.includes(S.achWho[key]) ? S.achWho[key] : seat && ids.includes(seat.id) ? seat.id : ids.includes(owner) ? owner : ids[0];
+    const A = who ? top.players[who] : top;
     const all = S.achAll[key], list = all ? A.list : A.list.filter((a) => a.unlocked).slice(0, 5);
-    const pct = Math.round((A.unlocked / A.total) * 100);
+    const pct = A.total ? Math.round((A.unlocked / A.total) * 100) : 0;
+    const whoRow = ids.length ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ids.map((id) => { const p = player(id); return `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-who" data-key="${esc(key)}" data-player="${esc(id)}" aria-pressed="${id === who}">${lnAvatar(p, "20")}${esc(p.name)}<span class="ln-num">${top.players[id].unlocked}</span></button>`; }).join("")}</div>` : "";
+    const g = it.g;
+    const note = A.source !== "pc" ? "From Steam, for the account signed in on this PC."
+      : ids.length ? "Each player has their own. They go with their profile when you swap, like their saves."
+      : g && g.sharedAchievements ? "Shared by everyone who plays on this PC." : "Saved on this PC next to the game's saves.";
+    const toggle = g && A.source === "pc" ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-shared" data-game="${esc(g.id)}" data-on="${g.sharedAchievements ? "0" : "1"}">${g.sharedAchievements ? "Give each player their own" : "Share one set"}</button>` : "";
     const row = (a) => `<li class="ach${a.unlocked ? "" : " locked"}">${a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : `<span class="ach-none">${GI.trophy}</span>`}
       <div><b>${a.hidden && !a.unlocked ? "Hidden achievement" : esc(a.name)}</b><span>${a.unlocked ? (a.at && new Date(a.at).getFullYear() > 2000 ? "Unlocked " + esc(ago(a.at)) : "Unlocked") : a.hidden ? "Keep playing to find out" : esc(a.description || "Not unlocked yet")}</span></div>
       ${a.percent ? `<span class="ach-pct ln-num" title="Players who have it">${a.percent < 10 ? a.percent.toFixed(1) : Math.round(a.percent)}%</span>` : ""}</li>`;
-    return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>Achievements</h2></div><span class="ach-count ln-num">${A.unlocked} of ${A.total}</span></div>
-      <div class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${A.total}" aria-valuenow="${A.unlocked}" aria-label="${A.unlocked} of ${A.total} achievements"><span style="width:${pct}%"></span></div>
+    return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(possessive(pname(who))) + " achievements" : "Achievements"}</h2></div><span class="ach-count ln-num">${A.unlocked} of ${A.total}</span></div>
+      ${whoRow}<div class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${A.total}" aria-valuenow="${A.unlocked}" aria-label="${A.unlocked} of ${A.total} achievements"><span style="width:${pct}%"></span></div>
       ${list.length ? `<ul class="ach-list">${list.map(row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
-      <p class="gpage-hint">${A.source === "pc" ? "Saved on this PC next to the game's saves." : "From Steam, for the account signed in on this PC."}</p>
-      ${A.list.length > list.length || all ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-all" data-key="${esc(key)}">${all ? "Show fewer" : `Show all ${A.total}`}</button></div>` : ""}</section>`;
+      <p class="gpage-hint">${note}</p>
+      ${A.list.length > list.length || all || toggle ? `<div class="gpage-actions">${A.list.length > list.length || all ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-all" data-key="${esc(key)}">${all ? "Show fewer" : `Show all ${A.total}`}</button>` : ""}${toggle}</div>` : ""}</section>`;
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
@@ -2271,6 +2286,15 @@
     seat(el) { const p = el.dataset.player; setSeat(S.seat === p ? "" : p); },
     "seat-set"(el) { setSeat(el.dataset.player); },
     "ach-all"(el) { S.achAll[el.dataset.key] = !S.achAll[el.dataset.key]; render(); },
+    "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
+    async "ach-shared"(el) {
+      const id = el.dataset.game, shared = el.dataset.on === "1", g = game(id);
+      if (shared && !(await confirmDialog({ title: "Share one set of achievements?", body: `Everyone who plays ${g ? g.name : "this game"} will see the same achievements, the ones on the PC now. Each player's own stay in their profile, and come back if you change your mind.`, ok: "Share one set" }))) return;
+      try { await api.setSharedAchievements(id, shared); } catch (e) { toast(errText(e), "error"); return; }
+      await refresh();
+      achAsked.delete("game:" + id);
+      toast(shared ? "Achievements are shared now." : "Each player gets their own achievements from the next swap.");
+    },
     "seat-menu"(el) { seatMenu(el); },
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),

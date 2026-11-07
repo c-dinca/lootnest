@@ -8,6 +8,13 @@ Per-player profiles. Each person in the household gets their own settings and sa
 
 "Who's playing" and "whose files are loaded right now" are the product's identity. Players show up everywhere in their own colour (sidebar, Play, loaded state, shelf, cloud saves). Someone should recognise Lootnest by how players appear, not by its logo.
 
+## Profiles, like a console's (the direction from 1.20)
+A profile is a save slot with a name, not only a person, like the profiles on a PlayStation. That serves two kinds of user with the same mechanism:
+- **More than one person** on one PC, each with their own settings, saves and achievements.
+- **One person with more than one run** of the same game: "Cristian, 100%", "Cristian, hardcore", "Cristian, new game+". Each has its own saves, settings and achievements, and switching is one click.
+
+Completionists, people who replay and people who keep a clean save for each playthrough count as much as the couch.
+
 ## Who uses it, and when
 - **The household.** Siblings, partners, parents and kids sharing one gaming PC, at home, in the evening, often from a couch or desk with the window maximised.
   - One person usually sets it up: adds players, turns on profiles per game, chooses a cloud folder.
@@ -29,7 +36,7 @@ Per-player profiles. Each person in the household gets their own settings and sa
 ## Constraints that stay
 - **Never lose user data.** Every swap, restore and import keeps a copy first. The UI must make that reassurance visible at high-stakes moments.
 - **No network without opt-in.** Every online feature is off until turned on, and listed in the README's Privacy table.
-- **Nothing piracy-specific.**
+- **Nothing that gets or runs a game for you.** No downloads, no cracks, no DRM bypass. Reading the files other tools already left on the PC (achievements, saves) is fine: Lootnest works with whatever's installed, however it got there.
 - **Accessibility.** WCAG AA contrast, visible focus, full keyboard use, and respect for reduced motion.
 - **Fonts.** Must be licensed for bundling in a desktop app (e.g. SIL OFL). They're embedded in the exe; nothing loads from the internet.
 - **Copy voice.** Plain, specific and calm: "Load someone's files", "A copy is made before every swap". No hype, no filler, no emoji.
