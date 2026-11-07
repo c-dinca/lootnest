@@ -17,19 +17,23 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Save Safety Net. Games outside the stores often keep their saves inside
-// their own folder (Ren'Py's game\saves, RPG Maker's www\save), so
-// reinstalling them, or updating one by replacing its folder, takes the
-// saves with it. Lootnest keeps a copy of those saves on this PC whenever
-// they change and the game is closed, in the same versions format as cloud
-// saves (safety-net\Lootnest\saves\<game>), with no setting and nothing sent
-// anywhere. When a game's saves are gone from its folder, the user is told
-// and can put a copy back from the game's page.
+// Save Safety Net. Lootnest keeps copies of the saves of every Library game
+// outside Steam on this PC whenever they change and the game is closed, in
+// the same versions format as cloud saves (safety-net\Lootnest\saves\<game>),
+// with no setting and nothing sent anywhere: the saves it knows of (chosen,
+// from the list, or folders named like the game) and the ones inside the
+// game's own folder (Ren'Py's game\saves, RPG Maker's www\save), which a
+// reinstall or an update that replaces the folder would take with it. When
+// a game's in-folder saves are gone, the user is told, more copies are kept
+// from then on, and a copy can be put back from the game's page.
 // ---------------------------------------------------------------------------
 
 const (
 	netKeep    = 5       // copies kept per game
 	netMaxSize = 1 << 30 // saves bigger than this aren't copied
+	// A save location outside the game's folder bigger than this is left
+	// out: a folder named like the game can hold caches or mods too.
+	vaultLocMax = 256 << 20
 )
 
 var netMu sync.Mutex // one safety net pass (or restore) at a time
@@ -51,6 +55,10 @@ type netEntry struct {
 	// before stay while the game makes new saves.
 	Gone bool `json:"gone,omitempty"`
 	Keep int  `json:"keep,omitempty"`
+	// Folder: the last copy had saves from inside the game's folder. Before
+	// 1.52 every copy did; Hash without Folder is read as one.
+	Folder bool `json:"folder,omitempty"`
+	Vault  bool `json:"vault,omitempty"` // written from 1.52 on
 }
 
 func loadNet() map[string]netEntry {
@@ -71,6 +79,9 @@ func saveNet(st map[string]netEntry) {
 // netLocs are a game's save locations inside its own folder: the known ones
 // (chosen, or from the list) and the folders engines use there.
 func (a *App) netLocs(f core.FoundGame) []core.SaveLocation {
+	if f.Dir == "" {
+		return nil
+	}
 	locs := core.InFolder(a.savesOf(f).Locs, f.Dir)
 	for _, l := range a.env.FolderSaves(f.Dir) {
 		dup := false
@@ -80,6 +91,34 @@ func (a *App) netLocs(f core.FoundGame) []core.SaveLocation {
 		if !dup {
 			locs = append(locs, l)
 		}
+	}
+	return locs
+}
+
+// vaultLocs are every save location of a game the safety net copies: the
+// in-folder ones and the others Lootnest knows of, without duplicates or
+// folders inside one another.
+func (a *App) vaultLocs(f core.FoundGame) []core.SaveLocation {
+	locs := a.netLocs(f)
+	for _, l := range a.savesOf(f).Locs {
+		if l.Size > vaultLocMax {
+			continue // more than saves: caches, mods, a whole game
+		}
+		dup := false
+		for _, k := range locs {
+			dup = dup || strings.EqualFold(k.Resolved, l.Resolved) || isInside(l.Resolved, k.Resolved)
+		}
+		if dup {
+			continue
+		}
+		// A known folder that holds in-folder ones replaces them.
+		kept := locs[:0]
+		for _, k := range locs {
+			if !isInside(k.Resolved, l.Resolved) {
+				kept = append(kept, k)
+			}
+		}
+		locs = append(kept, l)
 	}
 	return locs
 }
@@ -94,8 +133,8 @@ func withFiles(locs []core.SaveLocation) []core.SaveLocation {
 	return out
 }
 
-// safetyNet makes a copy of each Library game's in-folder saves that
-// changed, and tells the user when a game's saves are gone from its folder.
+// safetyNet makes a copy of each Library game's saves that changed, and
+// tells the user when a game's saves are gone from its folder.
 func (a *App) safetyNet() {
 	netMu.Lock()
 	defer netMu.Unlock()
@@ -104,7 +143,7 @@ func (a *App) safetyNet() {
 	c := netStore()
 	changed := false
 	for _, f := range a.visibleFound(a.libraryGames()) {
-		if !gameSavesOn(f) || f.Dir == "" || !dirExists(f.Dir) {
+		if !gameSavesOn(f) || (f.Dir != "" && !dirExists(f.Dir)) {
 			continue
 		}
 		if f.ProcessName != "" && procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
@@ -112,21 +151,23 @@ func (a *App) safetyNet() {
 		}
 		key := gameSavesKey(f)
 		e := st[key]
-		locs := withFiles(a.netLocs(f))
-		if len(locs) == 0 {
-			if e.Hash != "" && !e.Gone {
-				e.Gone = true
-				e.Keep = len(c.GameVersions(key)) + netKeep
-				st[key], changed = e, true
-				a.logf("Safety net: %s's saves are gone from %s; copies are in %s", f.Name, f.Dir, c.Root)
-				a.notify(f.Name+"'s saves are gone from its folder",
-					"If it was reinstalled or updated, Lootnest has a copy from "+e.At.Local().Format("2 Jan, 15:04")+". Put it back from the game's page.")
-			}
-			continue
+		inFolder := len(withFiles(a.netLocs(f))) > 0
+		locs := withFiles(a.vaultLocs(f))
+		hadFolder := e.Hash != "" && (e.Folder || !e.Vault)
+		if hadFolder && !inFolder && !e.Gone {
+			e.Gone = true
+			e.Keep = len(c.GameVersions(key)) + netKeep
+			st[key], changed = e, true
+			a.logf("Safety net: %s's saves are gone from %s; copies are in %s", f.Name, f.Dir, c.Root)
+			a.notify(f.Name+"'s saves are gone from its folder",
+				"If it was reinstalled or updated, Lootnest has a copy from "+e.At.Local().Format("2 Jan, 15:04")+". Put it back from the game's page.")
 		}
-		if e.Gone {
+		if e.Gone && inFolder {
 			e.Gone = false
 			st[key], changed = e, true
+		}
+		if len(locs) == 0 {
+			continue
 		}
 		var size int64
 		for _, l := range locs {
@@ -156,9 +197,13 @@ func (a *App) safetyNet() {
 					continue
 				}
 				e.At = v.Created
-				a.logf("Safety net: kept a copy of %s's saves from its folder (%d bytes)", f.Name, v.Size)
+				a.logf("Safety net: kept a copy of %s's saves (%d bytes)", f.Name, v.Size)
 			}
 			e.Hash = hash
+			if !e.Gone {
+				e.Folder = inFolder
+			}
+			e.Vault = true
 		}
 		st[key], changed = e, true
 	}
@@ -182,7 +227,7 @@ func (a *App) apiGameSaveRestoreLocal(key, id string) error {
 		defer func() { a.emit("gameSaves", out); a.apiGameSaves(key) }()
 		netMu.Lock()
 		defer netMu.Unlock()
-		if err := a.restoreVersion(netStore(), f, id, a.netLocs(f)); err != nil {
+		if err := a.restoreVersion(netStore(), f, id, a.vaultLocs(f)); err != nil {
 			out["error"] = err.Error()
 			return
 		}
