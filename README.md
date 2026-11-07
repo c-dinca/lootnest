@@ -2,11 +2,11 @@
 
 <h1 align="center">Lootnest</h1>
 
-<p align="center">A home for every game on your PC, and a vault for its saves.<br>Every game in one place, a copy of your saves before anything touches them, and runs of a game that each keep their own saves.</p>
+<p align="center">A free, open-source game manager for Windows.<br>Every game on your PC in one place, and the tools around them: save copies, runs, profiles, save points and achievements.</p>
 
 <p align="center"><b>In beta.</b> Everything that moves your files makes a copy first.</p>
 
-<p align="center"><a href="../../releases/latest"><b>Download for Windows</b></a> · <a href="https://c-dinca.github.io/lootnest/">Website</a> · <a href="CHANGELOG.md">What's new</a></p>
+<p align="center"><a href="../../releases/latest"><b>Download for Windows</b></a>&nbsp;&nbsp;&nbsp;<a href="https://c-dinca.github.io/lootnest/">Website</a>&nbsp;&nbsp;&nbsp;<a href="CHANGELOG.md">What's new</a></p>
 
 ---
 
@@ -17,6 +17,16 @@ Lootnest finds the games on your PC (Steam, Epic, GOG and the rest) and puts the
 It starts with one profile: yours, named after your Windows account. Keep **runs** of a game, such as a hardcore try or a new game+, each with its own saves and settings, and switch between them from the game's page. Games from outside the stores get a safety net: their saves are copied whenever they change.
 
 Sharing the PC? Add a profile for each person (Profiles, or **Add someone else** on the first start). Then **Play** asks who's playing, and nobody overwrites anyone else's settings, even on one Windows account and one Steam account.
+
+## Why I made this
+
+I'm one person, a software engineer who plays a lot of games, and Lootnest is my personal project. My games were spread over half a dozen launchers and folders, my saves lived wherever each game felt like putting them, and one bad sync or a second playthrough could cost me a hundred hours. I wanted one place for all of it.
+
+Lootnest isn't trying to replace Steam, Epic, GOG or any store. You keep buying and installing games where you always have. Lootnest sits next to them: every game in one place, with the tools I kept wishing I had around them.
+
+I build it with Claude as a coding partner. It isn't vibe coded: I design it, I read the changes, every change that touches your files copies them first, and nothing ships until the tests pass on Windows itself.
+
+It's free, for everyone, and it stays free. No account, no ads, no telemetry, and it works offline.
 
 > **Lootnest was called PlaySwap** until version 1.3. Installing Lootnest over PlaySwap carries over players, games, profiles, backups and the Steam set-up.
 
