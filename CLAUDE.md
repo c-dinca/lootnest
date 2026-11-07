@@ -75,8 +75,11 @@ What makes it different, and the direction to keep pushing:
   - `node --check internal/app/ui/app.js`
 
   For UI changes, also screenshot the change in the harness and look at it.
-- CI is one `build` job (`.github/workflows/build.yml`, including
-  govulncheck). The owner wants PRs merged as soon as CI is green. Open them
+- CI has a `windows` job (windows-latest: `go test ./internal/core/
+  ./internal/win/` on NTFS, with the Windows-only tests in
+  `core/swap_windows_test.go` and `win/win_windows_test.go`) and the
+  `build` job (govulncheck, the exe, releases), which waits for it.
+  `docs/TESTING.md` is the checklist for a real PC. The owner wants PRs merged as soon as CI is green. Open them
   as drafts, mark them ready, then squash-merge.
 - Commits are authored by **Cristian Dinca
   <93765979+c-dinca@users.noreply.github.com>** and end with
@@ -114,7 +117,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.49.0, beta)
+## Where things stand (1.49.1, beta)
 
 These shipped recently, newest last:
 
@@ -272,6 +275,11 @@ These shipped recently, newest last:
   LB RB, stick and D-pad with repeat); WebAudio `sfx`; F11.
   `win.SetFullscreen` (borderless on the window's monitor), `ps_bigPicture`,
   tray item "Big Picture".
+- **1.49.1** The Windows CI job. It found that Keep it offline failed
+  (firewall rules need full, not 8.3, paths: `win.LongPath`; the script
+  ends in `exit 0` so "no rules left" isn't a failure). Tokenized paths
+  keep the PC's separator after the token (`%APPDATA%\Game` on Windows);
+  compare them with `filepath.ToSlash` in tests.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:

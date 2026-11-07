@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.49.1
+
+- **Keep it offline works.** Windows Firewall refused the rules for a game in some folders, and **Let it go online again** said the firewall didn't take the change when the rules were already gone. Both are fixed.
+- **Lootnest is now tested on Windows itself** before every release:
+  - the swap while a game still holds its save open, saves marked read-only, and save folders with very long paths;
+  - the note over a game, the Ctrl+Shift+F5 key, and running as administrator;
+  - Windows Firewall rules.
+- A checklist for trying Lootnest on your own PC is in `docs/TESTING.md`.
+
 ## 1.49.0
 
 - **Big Picture**: Lootnest as a console's screen, on the whole screen, for playing from the sofa with a controller.
