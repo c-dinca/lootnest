@@ -79,6 +79,9 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_savesStatus", a.apiSavesStatus))
 	must(a.w.Bind("ps_syncNow", a.apiSyncNow))
 	must(a.w.Bind("ps_syncResolve", a.apiSyncResolve))
+	must(a.w.Bind("ps_gameSaves", a.apiGameSaves))
+	must(a.w.Bind("ps_gameSaveNow", a.apiGameSaveNow))
+	must(a.w.Bind("ps_gameSaveRestore", a.apiGameSaveRestore))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
@@ -430,12 +433,24 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	// back for them is ignored.
 	old := cfg.Settings
 	s.BackupDir, s.BackupAuto, s.BackupKeep, s.BackupSalt, s.BackupKey = old.BackupDir, old.BackupAuto, old.BackupKeep, old.BackupSalt, old.BackupKey
+	s.CloudSync = old.CloudSync
+	saveDBOn := s.SaveDB && !old.SaveDB
 	cfg.Settings = s
 	if err := a.saveConfig(cfg); err != nil {
 		return err
 	}
 	if checkNow {
 		go a.checkUpdate(false)
+	}
+	if saveDBOn {
+		go func() {
+			if err := a.refreshSaveDB(true); err != nil {
+				a.emit("toast", map[string]any{"kind": "error", "text": err.Error()})
+				return
+			}
+			a.emit("gameSaves", map[string]any{"changed": true})
+			a.backUpChangedGames()
+		}()
 	}
 	if err := win.SetAutostart(Name, fmt.Sprintf(`"%s" --tray`, a.exePath), p.Autostart); err != nil {
 		return fmt.Errorf("couldn't change the startup setting: %w", err)
