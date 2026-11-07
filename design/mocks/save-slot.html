@@ -1,0 +1,362 @@
+<!doctype html>
+<!--
+  Direction B. Save Slot. Lootnest game page, profiles on, Mihai's files loaded.
+  Banned defaults knowingly used:
+  - One heading set in small secondary text above the bay headline ("In the bay"): sentence case, not tracked caps,
+    because the bay is new vocabulary and needs its name printed once next to it.
+  - The page uses one 10px radius on more than one object (pane, bay, slots, cartridge). They are all the same
+    physical family; controls are 6px and avatars are circles, so the radius is not uniform across the UI.
+  Fonts: Archivo variable (wdth 62..125) and Atkinson Hyperlegible Next, both served by Google Fonts.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counter-Strike 2 · Lootnest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Atkinson+Hyperlegible+Next:wght@200..800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* ground and tonal layers (graphite slate, hue 250, low chroma) */
+  --slot-well: oklch(0.13 0.01 250);      /* the bay */
+  --slot-ground: oklch(0.17 0.012 250);
+  --slot-surface: oklch(0.21 0.012 250);
+  --slot-raised: oklch(0.25 0.012 250);
+  --slot-active: oklch(0.29 0.012 250);
+  --slot-contact: oklch(0.32 0.012 250);
+  --slot-ink: oklch(0.95 0.006 250);
+  --slot-ink-2: oklch(0.78 0.012 250);    /* AA on surface 0.21 and on the well */
+  --slot-danger: oklch(0.80 0.10 35);
+  --slot-danger-wash: oklch(0.27 0.04 35);
+  --slot-focus: oklch(0.95 0.006 250);
+
+  /* players: label sticker and the primary for the player in the bay */
+  --h-cristian: 250;
+  --h-mihai: 5;
+  --label-l: 0.72; --label-c: 0.12;
+  --label-ink-l: 0.20; --label-ink-c: 0.03;
+
+  /* type */
+  --font-label: "Archivo", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --wide: 125%;
+  --t-13: 13px; --t-15: 15px; --t-18: 18px; --t-22: 22px; --t-27: 27px; --t-40: 40px; --t-56: 56px;
+
+  /* 8px grid */
+  --g1: 8px; --g2: 16px; --g3: 24px; --g4: 32px; --g5: 40px; --g6: 48px; --g8: 64px;
+
+  /* radius */
+  --r-slot: 10px;
+  --r-ctl: 6px;
+  --r-sticker: 4px;
+
+  /* sizes */
+  --sidebar: 240px;
+  --slot-w: 288px;
+  --slot-h: 176px;
+  --row-h: 56px;
+  --btn-h: 48px;
+  --btn-h-sm: 40px;
+
+  /* motion */
+  --slide-dur: 180ms;
+  --slide-ease: cubic-bezier(.2,.8,.2,1);
+  --hover-dur: 120ms;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--slot-ground);
+  color: var(--slot-ink);
+  font: 400 var(--t-15)/24px var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: left; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--slot-focus); outline-offset: 2px; border-radius: var(--r-ctl); }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.app { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100%; }
+
+/* ---------- sidebar ---------- */
+.side { display: flex; flex-direction: column; padding: var(--g3) var(--g2) var(--g2); position: sticky; top: 0; height: 100vh; }
+.mark { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 var(--g1); margin-bottom: var(--g3); }
+.mark .glyph { width: 16px; height: 20px; background: var(--slot-ink); border-radius: 0 4px 4px 4px; position: relative; }
+.mark .glyph::after { content: ""; position: absolute; left: 0; top: 0; width: 10px; height: 7px; background: var(--slot-ground); border-radius: 0 0 2px 0; }
+.mark b { font: 700 var(--t-15)/24px var(--font-label); font-stretch: var(--wide); letter-spacing: 0.01em; }
+.nav { display: grid; gap: 2px; }
+.nav a { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 var(--g1) 0 12px; border-radius: var(--r-ctl); color: var(--slot-ink-2); transition: background var(--hover-dur), color var(--hover-dur); }
+.nav a:hover { background: var(--slot-surface); color: var(--slot-ink); }
+.nav a[aria-current] { background: var(--slot-raised); color: var(--slot-ink); }
+.nav .count { margin-left: auto; font-size: var(--t-13); color: var(--slot-ink-2); }
+.side h2 { font: 600 var(--t-13)/16px var(--font-body); color: var(--slot-ink-2); padding: 0 12px; margin: var(--g4) 0 var(--g1); }
+.who { display: grid; gap: 2px; }
+.who a { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: var(--r-ctl); }
+.who a:hover { background: var(--slot-surface); }
+.av { --h: 0; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: oklch(var(--label-l) var(--label-c) var(--h)); color: oklch(var(--label-ink-l) var(--label-ink-c) var(--h));
+  font: 700 12px/1 var(--font-label); font-stretch: var(--wide); }
+.side .bottom { margin-top: auto; }
+
+/* ---------- pane ---------- */
+.pane { background: var(--slot-surface); margin: var(--g1) var(--g1) var(--g1) 0; border-radius: var(--r-slot); padding: var(--g3) var(--g5) var(--g8); min-width: 0; }
+.wrap { max-width: 1280px; margin: 0 auto; }
+.back { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px 0 6px; margin-left: -6px; border-radius: var(--r-ctl); color: var(--slot-ink-2); font-size: var(--t-13); font-weight: 600; transition: background var(--hover-dur), color var(--hover-dur); }
+.back:hover { background: var(--slot-raised); color: var(--slot-ink); }
+
+/* game header: the cartridge */
+.game { display: flex; align-items: center; gap: var(--g3); margin: var(--g2) 0 var(--g4); }
+.cart { width: 96px; height: 120px; flex: none; background: var(--slot-raised); border-radius: 0 var(--r-slot) var(--r-slot) var(--r-slot); padding: var(--g1) var(--g1) 0; display: flex; flex-direction: column; }
+.cart img { display: block; width: 80px; height: 88px; object-fit: cover; object-position: 50% 72%; border-radius: 0 var(--r-sticker) var(--r-sticker) var(--r-sticker); }
+.cart .grip { flex: 1; display: grid; align-content: center; gap: 3px; padding: 0 var(--g2); }
+.cart .grip i { display: block; height: 2px; border-radius: 1px; background: var(--slot-contact); }
+.game h1 { font: 700 var(--t-40)/48px var(--font-label); font-stretch: var(--wide); letter-spacing: -0.01em; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--g1) var(--g3); margin-top: var(--g1); color: var(--slot-ink-2); }
+.meta span { display: inline-flex; align-items: center; gap: var(--g1); }
+.meta strong { color: var(--slot-ink); font-weight: 600; }
+
+/* ---------- the bay ---------- */
+.deck { display: grid; grid-template-columns: minmax(0, 1fr) var(--slot-w); column-gap: var(--g3); }
+.bay { background: var(--slot-well); border-radius: var(--r-slot); padding: var(--g3); display: grid; grid-template-columns: var(--slot-w) minmax(0, 1fr); column-gap: var(--g4); align-items: stretch; }
+.bay-text { display: flex; flex-direction: column; min-width: 0; padding-top: var(--g1); }
+.bay-text .kicker { display: flex; align-items: center; gap: var(--g1); font-size: var(--t-13); line-height: 16px; font-weight: 600; color: var(--slot-ink-2); }
+.bay-text .kicker .pip { width: 8px; height: 8px; border-radius: 50%; background: oklch(var(--label-l) var(--label-c) var(--h-mihai)); }
+.bay-text h2 { font: 700 var(--t-27)/32px var(--font-label); font-stretch: var(--wide); margin-top: var(--g1); letter-spacing: -0.005em; }
+.bay-text p { color: var(--slot-ink-2); margin-top: var(--g1); max-width: 40ch; }
+.bay-text .go { margin-top: auto; padding-top: var(--g2); }
+
+.btn { display: inline-flex; align-items: center; gap: 10px; height: var(--btn-h); padding: 0 var(--g3) 0 20px; border-radius: var(--r-ctl); font-weight: 700; font-size: var(--t-15); white-space: nowrap; transition: background var(--hover-dur), transform var(--hover-dur); }
+.btn svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.btn:active { transform: translateY(1px); }
+.btn-player { --h: var(--h-mihai); background: oklch(var(--label-l) var(--label-c) var(--h)); color: oklch(var(--label-ink-l) var(--label-ink-c) var(--h)); }
+.btn-player:hover { background: oklch(0.77 0.12 var(--h)); }
+.btn-quiet { height: var(--btn-h-sm); padding: 0 var(--g2) 0 14px; background: var(--slot-raised); color: var(--slot-ink); font-weight: 600; }
+.btn-quiet:hover { background: var(--slot-active); }
+
+/* the slot: a physical object */
+.slot { --h: 0; position: relative; width: var(--slot-w); height: var(--slot-h); background: var(--slot-raised); border-radius: 0 var(--r-slot) var(--r-slot) var(--r-slot); display: flex; flex-direction: column; }
+.slot .label { height: 56px; width: calc(100% - var(--g5)); border-radius: 0 0 var(--r-sticker) 0; background: oklch(var(--label-l) var(--label-c) var(--h)); color: oklch(var(--label-ink-l) var(--label-ink-c) var(--h)); display: flex; flex-direction: column; justify-content: center; padding: 0 var(--g2); }
+.slot .label b { font: 700 var(--t-22)/24px var(--font-label); font-stretch: var(--wide); }
+.slot .data { display: grid; grid-template-columns: auto 1fr; column-gap: var(--g4); align-items: end; padding: 0 var(--g2) var(--g2); margin-top: auto; }
+.slot .num { font: 600 var(--t-27)/32px var(--font-body); letter-spacing: -0.01em; }
+.slot .num em { font-style: normal; font-size: var(--t-15); font-weight: 600; color: var(--slot-ink-2); margin-left: 2px; }
+.slot .data dt { font-size: var(--t-13); line-height: 16px; color: var(--slot-ink-2); }
+.slot .data dd { font-weight: 600; line-height: 24px; }
+.slot .data .col { display: flex; flex-direction: column-reverse; }
+
+.bay .slot { animation: slide-in var(--slide-dur) var(--slide-ease) both; }
+@keyframes slide-in { from { transform: translateX(var(--g4)); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .bay .slot { animation: fade-in var(--slide-dur) linear both; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  * { transition-duration: 0ms !important; }
+}
+
+.rack { padding-top: var(--g3); display: flex; flex-direction: column; }
+.rack .slot { background: var(--slot-raised); }
+
+.under { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) var(--slot-w); column-gap: var(--g3); align-items: center; margin-top: var(--g2); }
+.copy-note { display: flex; align-items: center; gap: var(--g1); padding-left: var(--g3); color: var(--slot-ink-2); }
+.copy-note svg { color: var(--slot-ink); }
+.under .btn-quiet { justify-self: start; }
+
+/* ---------- actions and details ---------- */
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--slot-w); column-gap: var(--g3); margin-top: var(--g6); align-items: start; }
+.group + .group { margin-top: var(--g4); }
+.group h3, .aside h3 { font: 600 var(--t-13)/16px var(--font-body); color: var(--slot-ink-2); margin-bottom: var(--g1); display: flex; align-items: center; gap: var(--g1); }
+.rows { display: grid; margin: 0 calc(var(--g1) * -1); }
+.row { display: flex; align-items: center; gap: 12px; min-height: var(--row-h); padding: var(--g1); border-radius: var(--r-ctl); transition: background var(--hover-dur); width: 100%; }
+.row:hover { background: var(--slot-raised); }
+.row .ic { width: 32px; height: 32px; border-radius: var(--r-ctl); display: grid; place-items: center; background: var(--slot-raised); color: var(--slot-ink); flex: none; transition: background var(--hover-dur); }
+.row:hover .ic { background: var(--slot-active); }
+.row .t { display: flex; flex-direction: column; min-width: 0; }
+.row .t b { font-weight: 600; line-height: 24px; }
+.row .t small { font-size: var(--t-13); line-height: 16px; color: var(--slot-ink-2); }
+.row.danger { color: var(--slot-danger); }
+.row.danger .ic { background: var(--slot-danger-wash); color: var(--slot-danger); }
+.row.danger:hover { background: var(--slot-danger-wash); }
+.row.danger:hover .ic { background: oklch(0.32 0.05 35); }
+
+.aside { color: var(--slot-ink-2); }
+.aside .cloud p { font-size: var(--t-13); line-height: 20px; color: var(--slot-ink-2); }
+.aside .news { margin-top: var(--g4); }
+.news ol { list-style: none; display: grid; }
+.news a { display: grid; grid-template-columns: 48px 1fr; gap: var(--g1); padding: var(--g1); margin: 0 calc(var(--g1) * -1); border-radius: var(--r-ctl); font-size: var(--t-13); line-height: 16px; transition: background var(--hover-dur); }
+.news a:hover { background: var(--slot-raised); }
+.news time { color: var(--slot-ink-2); }
+.news span { color: var(--slot-ink); }
+
+/* ---------- narrower windows (1280 at 150%, 1280 at 100%) ---------- */
+@media (max-width: 1360px) {
+  :root { --sidebar: 216px; --slot-w: 272px; }
+  .pane { padding-left: var(--g4); padding-right: var(--g4); }
+  .bay { column-gap: var(--g3); }
+}
+@media (max-height: 760px) {
+  .game { margin: var(--g1) 0 var(--g3); }
+  .cart { width: 80px; height: 104px; }
+  .cart img { width: 64px; height: 72px; }
+  .game h1 { font-size: var(--t-40); }
+}
+@media (min-width: 1800px) {
+  :root { --slot-w: 320px; --slot-h: 216px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 20 20"><path d="M3.5 8.5 10 3.5l6.5 5V16a.5.5 0 0 1-.5.5h-3.5v-5h-5v5H4a.5.5 0 0 1-.5-.5z"/></symbol>
+    <symbol id="i-library" viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="5" height="5" rx="1"/><rect x="11.5" y="3.5" width="5" height="5" rx="1"/><rect x="3.5" y="11.5" width="5" height="5" rx="1"/><rect x="11.5" y="11.5" width="5" height="5" rx="1"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 20 20"><path d="M6 15.5a3.5 3.5 0 0 1-.4-7A4.5 4.5 0 0 1 14.3 7.6 3.5 3.5 0 0 1 14 15.5z"/></symbol>
+    <symbol id="i-players" viewBox="0 0 20 20"><circle cx="7.5" cy="7" r="2.75"/><path d="M2.75 16c.5-2.6 2.4-4 4.75-4s4.25 1.4 4.75 4"/><path d="M12.5 4.4a2.75 2.75 0 0 1 0 5.2M14.5 12.3c1.4.5 2.4 1.7 2.75 3.7"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 2.75v2M10 15.25v2M17.25 10h-2M4.75 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3 4.9 4.9"/></symbol>
+    <symbol id="i-back" viewBox="0 0 20 20"><path d="M12 5 7 10l5 5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M4.5 2.9v10.2a.6.6 0 0 0 .9.5l8-5.1a.6.6 0 0 0 0-1L5.4 2.4a.6.6 0 0 0-.9.5z"/></symbol>
+    <symbol id="i-load" viewBox="0 0 20 20"><path d="M4.5 3.5h7l4 4v9h-11z"/><path d="M10 8v5.5M7.5 11 10 13.5 12.5 11"/></symbol>
+    <symbol id="i-ask" viewBox="0 0 20 20"><path d="M3.5 5a1.5 1.5 0 0 1 1.5-1.5h10A1.5 1.5 0 0 1 16.5 5v7a1.5 1.5 0 0 1-1.5 1.5H9l-3.5 3v-3H5A1.5 1.5 0 0 1 3.5 12z"/><path d="M8.25 7.25a1.75 1.75 0 1 1 2.5 1.6c-.5.25-.75.6-.75 1.15M10 11.9v.1"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 20 20"><path d="M12.5 4.5l3 3L8 15H5v-3z"/><path d="M11 6l3 3"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 20 20"><path d="M2.75 5.5A1.5 1.5 0 0 1 4.25 4h3.5l1.75 2h6.25a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H4.25a1.5 1.5 0 0 1-1.5-1.5z"/></symbol>
+    <symbol id="i-save" viewBox="0 0 20 20"><path d="M2.75 5.5A1.5 1.5 0 0 1 4.25 4h3.5l1.75 2h6.25a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H4.25a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M8 9.5h4v4H8z"/></symbol>
+    <symbol id="i-backup" viewBox="0 0 20 20"><path d="M3.75 10a6.25 6.25 0 1 0 1.8-4.4"/><path d="M3.5 3.5v2.75h2.75"/><path d="M10 6.75V10l2.25 1.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 20 20"><path d="M10 2.75 16 5v4.5c0 3.5-2.6 6.4-6 7.75-3.4-1.35-6-4.25-6-7.75V5z"/><path d="M7.25 10l2 2 3.5-3.75"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 20 20"><rect x="2.75" y="10.5" width="14.5" height="5.5" rx="1.5"/><path d="M5.5 13.25h.01M10 2.75v5M7.75 5.5 10 7.75l2.25-2.25"/></symbol>
+    <symbol id="i-shortcut" viewBox="0 0 20 20"><rect x="2.75" y="3.5" width="14.5" height="10" rx="1.5"/><path d="M7 16.5h6M10 13.5v3"/><path d="M8 10.5l4-4M9 6.5h3v3"/></symbol>
+    <symbol id="i-off" viewBox="0 0 20 20"><path d="M10 3v6.5"/><path d="M6.2 5.6a6 6 0 1 0 7.6 0"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 20 20"><rect x="7" y="7" width="9.5" height="9.5" rx="1.5"/><path d="M13 7V5a1.5 1.5 0 0 0-1.5-1.5h-6.5A1.5 1.5 0 0 0 3.5 5v6.5A1.5 1.5 0 0 0 5 13h2"/></symbol>
+    <symbol id="i-steam" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.25"/><circle cx="12.5" cy="8" r="2"/><path d="M3.5 11.75 8 13.5M10.75 9.25 8.5 12.5"/><circle cx="8" cy="13.5" r="1.25"/></symbol>
+    <symbol id="i-time" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.25"/><path d="M10 6v4l2.5 1.75"/></symbol>
+    <symbol id="i-slot" viewBox="0 0 20 20"><path d="M4.5 2.75h9.5a1.5 1.5 0 0 1 1.5 1.5v11.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M4.5 7.5h6.5V2.75M8 14v-1.5M11 14v-1.5"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="side" aria-label="Lootnest">
+    <div class="mark"><span class="glyph" aria-hidden="true"></span><b>Lootnest</b></div>
+    <nav class="nav" aria-label="Main">
+      <a href="#"><svg class="i"><use href="#i-home"/></svg>Home</a>
+      <a href="#" aria-current="page"><svg class="i"><use href="#i-library"/></svg>Library<span class="count">13</span></a>
+      <a href="#"><svg class="i"><use href="#i-cloud"/></svg>Cloud saves</a>
+      <a href="#"><svg class="i"><use href="#i-players"/></svg>Players</a>
+    </nav>
+    <h2>Who's here</h2>
+    <div class="who">
+      <a href="#"><span class="av" style="--h: var(--h-cristian)" aria-hidden="true">C</span>Cristian</a>
+      <a href="#"><span class="av" style="--h: var(--h-mihai)" aria-hidden="true">M</span>Mihai</a>
+    </div>
+    <nav class="nav bottom" aria-label="App">
+      <a href="#"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
+    </nav>
+  </aside>
+
+  <main class="pane">
+    <div class="wrap">
+      <a class="back" href="#" aria-label="Back to Library"><svg class="i"><use href="#i-back"/></svg>Library</a>
+
+      <header class="game">
+        <div class="cart" aria-hidden="true">
+          <img src="../harness/.cache/730-cover.jpg" alt="">
+          <div class="grip"><i></i><i></i><i></i></div>
+        </div>
+        <div>
+          <h1>Counter-Strike 2</h1>
+          <div class="meta">
+            <span><svg class="i"><use href="#i-steam"/></svg>Steam</span>
+            <span><svg class="i"><use href="#i-time"/></svg><span><strong>412 h</strong> on this Steam account, everyone together</span></span>
+          </div>
+        </div>
+      </header>
+
+      <section class="deck" aria-label="Whose files are in the game">
+        <div class="bay">
+          <article class="slot in" style="--h: var(--h-mihai)" aria-label="Mihai's save slot, in the game now">
+            <div class="label"><b>Mihai</b></div>
+            <dl class="data">
+              <div class="col"><dt>in this game</dt><dd class="num">44<em>h</em></dd></div>
+              <div class="col"><dt>last saved</dt><dd>Yesterday</dd></div>
+            </dl>
+          </article>
+          <div class="bay-text">
+            <div class="kicker"><span class="pip" aria-hidden="true"></span>In the bay</div>
+            <h2>Mihai's save is in</h2>
+            <p>Starts with Mihai's saves and settings.</p>
+            <div class="go">
+              <button class="btn btn-player" type="button"><svg aria-hidden="true"><use href="#i-play"/></svg>Play as Mihai</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rack">
+          <article class="slot" style="--h: var(--h-cristian)" aria-label="Cristian's save slot, waiting">
+            <div class="label"><b>Cristian</b></div>
+            <dl class="data">
+              <div class="col"><dt>in this game</dt><dd class="num">22<em>h</em></dd></div>
+              <div class="col"><dt>last saved</dt><dd>5 hours ago</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <div class="under">
+          <p class="copy-note"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>A copy is made before every swap.</p>
+          <button class="btn btn-quiet" type="button"><svg aria-hidden="true"><use href="#i-play"/></svg>Play as Cristian</button>
+        </div>
+      </section>
+
+      <div class="lower">
+        <div>
+          <section class="group" aria-labelledby="g-profiles">
+            <h3 id="g-profiles">Profiles</h3>
+            <div class="rows">
+              <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-load"/></svg></span><span class="t"><b>Load someone's files</b><small>Without starting the game</small></span></button>
+              <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-ask"/></svg></span><span class="t"><b>Ask who's playing in Steam</b><small>When the game starts from Steam's Play button</small></span></button>
+              <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-edit"/></svg></span><span class="t"><b>Edit game</b><small>How it starts and what profiles swap</small></span></button>
+            </div>
+          </section>
+          <section class="group" aria-labelledby="g-shortcuts">
+            <h3 id="g-shortcuts">Shortcuts</h3>
+            <div class="rows">
+              <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-shortcut"/></svg></span><span class="t"><b>Create desktop shortcut</b><small>Asks who's playing every time</small></span></button>
+            </div>
+          </section>
+          <section class="group" aria-labelledby="g-danger">
+            <h3 id="g-danger">Danger</h3>
+            <div class="rows">
+              <button class="row danger" type="button"><span class="ic"><svg class="i"><use href="#i-off"/></svg></span><span class="t"><b>Turn off profiles</b></span></button>
+            </div>
+          </section>
+        </div>
+
+        <section class="group" aria-labelledby="g-files">
+          <h3 id="g-files">Game files</h3>
+          <div class="rows">
+            <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-folder"/></svg></span><span class="t"><b>Open the game's folder</b><small>Where it's installed</small></span></button>
+            <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-save"/></svg></span><span class="t"><b>Open the save folder</b><small>The files profiles swap</small></span></button>
+            <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-backup"/></svg></span><span class="t"><b>Open backups</b><small>A copy is made before every swap</small></span></button>
+            <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-check"/></svg></span><span class="t"><b>Check the game's files</b><small>Steam downloads any that are missing or damaged</small></span></button>
+            <button class="row" type="button"><span class="ic"><svg class="i"><use href="#i-drive"/></svg></span><span class="t"><b>Move to another drive</b><small>To another of your Steam libraries</small></span></button>
+          </div>
+        </section>
+
+        <div class="aside">
+          <section class="cloud" aria-labelledby="g-cloud">
+            <h3 id="g-cloud">Steam Cloud</h3>
+            <p>Syncs 1 of the files profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.</p>
+          </section>
+          <section class="news" aria-labelledby="g-news">
+            <h3 id="g-news">Updates and news</h3>
+            <ol>
+              <li><a href="#"><time datetime="2026-11-12">12 Nov</time><span>Release notes for 11/12/2026</span></a></li>
+              <li><a href="#"><time datetime="2026-11-05">5 Nov</time><span>Armory Pass update</span></a></li>
+              <li><a href="#"><time datetime="2026-10-29">29 Oct</time><span>Premier Season 3 begins</span></a></li>
+            </ol>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

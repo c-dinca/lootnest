@@ -1,0 +1,559 @@
+<!doctype html>
+<!--
+  Lootnest · Direction C, "Couch" · game page, profiles on, Mihai seated and loaded.
+  The shell is tinted in the seated player's hue (Mihai, OKLCH hue 4). Every text step was
+  checked on every tinted surface (ratios noted next to the tokens below).
+
+  Banned defaults knowingly used:
+  - Rounded surface panels: only for the two things that are lists you act on (the action
+    groups) and the time panel. Hero copy, the loaded state, Steam Cloud and news sit on the
+    ground with no panel, so not every block is a card.
+  - "or play as…" uses an ellipsis: it is the spec's own copy and reads as an unfinished
+    sentence the faces complete.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counter-Strike 2 · Lootnest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* ── Seat: the room takes the seated player's hue ─────────────── */
+  --seat-h: 4;          /* Mihai, #D9738E → oklch(0.68 0.13 4) */
+  --seat-c-ground: 0.025;
+  --seat-c-surface: 0.03;
+
+  /* Room (contrast of ink / secondary / tertiary measured on each) */
+  --room-ground:   oklch(0.16 var(--seat-c-ground) var(--seat-h));   /* ink 17.8 · sec 10.4 · ter 7.8 */
+  --room-surface:  oklch(0.20 var(--seat-c-surface) var(--seat-h));  /* ink 16.7 · sec 9.7 · ter 7.3 */
+  --room-raised:   oklch(0.24 var(--seat-c-surface) var(--seat-h));  /* ink 15.2 · sec 8.8 · ter 6.6 */
+  --room-hover:    oklch(0.28 var(--seat-c-surface) var(--seat-h));  /* ink 13.5 · sec 7.8 · ter 5.9 */
+  --room-shade:    oklch(0.09 0.03 var(--seat-h));
+
+  --ink:           oklch(0.97 0.01 var(--seat-h));
+  --ink-2:         oklch(0.80 0.02 var(--seat-h));   /* secondary, ≥ 7.8:1 on every room step */
+  --ink-3:         oklch(0.72 0.02 var(--seat-h));   /* tertiary (dates), ≥ 5.9:1 */
+  --danger:        oklch(0.80 0.10 32);              /* 8.0:1 on raised; label + icon, never colour alone */
+
+  /* Players (fill · text-on-fill). Text on fill ≥ 6.6:1 */
+  --mihai:         oklch(0.70 0.13 4);
+  --mihai-on:      oklch(0.18 0.03 4);
+  --cristian:      oklch(0.72 0.10 253);
+  --cristian-on:   oklch(0.18 0.03 253);
+
+  /* System focus: ink, never a player colour */
+  --focus:         var(--ink);
+
+  /* ── Type ─────────────────────────────────────────────────────── */
+  --font-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --font-ui:      "Figtree", system-ui, sans-serif;
+  /* scale 1.25 on 15: 13 / 15 / 19 / 24 / 30 / 48 / 64 (16 = body, per relaxed density) */
+  --t-13: 13px; --t-15: 15px; --t-16: 16px; --t-19: 19px; --t-24: 24px; --t-30: 30px; --t-48: 48px; --t-64: 64px;
+
+  /* ── Space (4px steps) ────────────────────────────────────────── */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+  --target: 48px;
+  --sidebar-w: 248px;
+  --topbar-h: 80px;
+  --gutter: var(--s-10);
+  --col-gap: var(--s-8);
+  --page-max: 1520px;
+
+  /* ── Radius ───────────────────────────────────────────────────── */
+  --r-s: 8px; --r-m: 14px; --r-l: 24px; --r-full: 999px;
+
+  /* ── Depth: soft, offset, dark. Never a glow ──────────────────── */
+  --shadow-art:    0 18px 40px -14px oklch(0.06 0.03 var(--seat-h) / 0.85), 0 4px 10px -4px oklch(0.06 0.03 var(--seat-h) / 0.6);
+  --shadow-raised: 0 6px 16px -6px oklch(0.06 0.03 var(--seat-h) / 0.8), 0 1px 2px oklch(0.06 0.03 var(--seat-h) / 0.5);
+  --shadow-pressed: 0 2px 6px -3px oklch(0.06 0.03 var(--seat-h) / 0.8);
+
+  /* ── Motion: warm, unhurried ──────────────────────────────────── */
+  --ease: cubic-bezier(.22, .8, .28, 1);
+  --dur-hover: 220ms;
+  --dur-press: 120ms;
+  --dur-wash: 300ms;    /* seat change: colour wash across the shell */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--room-ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-16);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01" 0;
+  transition: background-color var(--dur-wash) var(--ease), color var(--dur-wash) var(--ease);
+}
+button, a { font: inherit; color: inherit; }
+button { border: 0; background: none; padding: 0; cursor: pointer; text-align: left; }
+a { text-decoration: none; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.num { font-variant-numeric: tabular-nums; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Shell ─────────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: var(--topbar-h) auto;
+  min-height: 100vh;
+}
+
+/* Seat bar: the top of the window */
+.topbar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  align-items: center;
+  position: sticky; top: 0; z-index: 2;
+  background: var(--room-ground);
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding-left: 28px;
+  font-family: var(--font-display);
+  font-size: var(--t-19);
+  font-weight: 650;
+  font-variation-settings: "opsz" 24;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.brand svg { width: 22px; height: 22px; }
+.topbar-main {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--gutter);
+  max-width: calc(var(--page-max) + 2 * var(--gutter));
+}
+
+.topbar-main .ghost { margin-left: -14px; }
+.ghost {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  height: var(--target);
+  padding: 0 var(--s-5) 0 var(--s-3);
+  border-radius: var(--r-full);
+  color: var(--ink-2);
+  font-weight: 600;
+  font-size: var(--t-15);
+  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
+}
+.ghost:hover { background: var(--room-surface); color: var(--ink); }
+
+.seat {
+  display: flex; align-items: center; gap: var(--s-3);
+  height: 56px;
+  padding: 4px 4px 4px 4px;
+  border-radius: var(--r-full);
+  background: var(--room-surface);
+}
+.seat-who { display: flex; align-items: center; gap: var(--s-3); padding-right: var(--s-2); }
+.seat-who .avatar { width: 48px; height: 48px; font-size: var(--t-19); }
+.seat-name { font-weight: 650; font-size: var(--t-16); line-height: 1.2; }
+.seat-name small { display: block; font-weight: 500; font-size: var(--t-13); color: var(--ink-2); }
+.btn-switch {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  height: var(--target);
+  padding: 0 var(--s-5) 0 var(--s-4);
+  border-radius: var(--r-full);
+  background: var(--room-raised);
+  box-shadow: var(--shadow-raised);
+  font-weight: 650; font-size: var(--t-15);
+  transition: background-color var(--dur-hover) var(--ease), box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
+}
+.btn-switch:hover { background: var(--room-hover); }
+.btn-switch:active { box-shadow: var(--shadow-pressed); transform: translateY(1px); }
+
+/* Avatars */
+.avatar {
+  display: inline-grid; place-items: center;
+  width: 32px; height: 32px; flex: none;
+  border-radius: var(--r-full);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-15);
+  font-variation-settings: "opsz" 24;
+  line-height: 1;
+}
+.avatar.mihai    { background: var(--mihai);    color: var(--mihai-on); }
+.avatar.cristian { background: var(--cristian); color: var(--cristian-on); }
+
+/* Sidebar */
+.sidebar {
+  display: flex; flex-direction: column;
+  padding: var(--s-2) var(--s-4) var(--s-6);
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+}
+.nav { display: grid; gap: 2px; }
+.nav a, .here a {
+  display: flex; align-items: center; gap: 14px;
+  height: var(--target);
+  padding: 0 var(--s-3);
+  border-radius: var(--r-m);
+  color: var(--ink-2);
+  font-weight: 550;
+  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
+}
+.nav a:hover, .here a:hover { background: var(--room-surface); color: var(--ink); }
+.nav a[aria-current="page"] { background: var(--room-surface); color: var(--ink); font-weight: 650; }
+.nav .count { margin-left: auto; font-size: var(--t-13); color: var(--ink-2); font-weight: 600; }
+.side-h {
+  margin: var(--s-8) var(--s-3) var(--s-2);
+  font-size: var(--t-13); font-weight: 650; color: var(--ink-2);
+}
+.here { display: grid; gap: 2px; }
+.here a { color: var(--ink); gap: var(--s-3); padding-left: 6px; }
+.here .tag { margin-left: auto; font-size: var(--t-13); color: var(--ink-2); font-weight: 550; }
+.sidebar .settings { margin-top: auto; }
+
+/* ── Page ──────────────────────────────────────────────────────── */
+main {
+  padding: var(--s-2) var(--gutter) var(--s-16);
+  min-width: 0;
+}
+.page { max-width: var(--page-max); }
+
+.art {
+  position: relative;
+  height: clamp(200px, calc(36vh - 20px), 460px);
+  border-radius: var(--r-l);
+  overflow: hidden;
+  background: var(--room-surface);
+  box-shadow: var(--shadow-art);
+}
+.art img { width: 100%; height: 100%; object-fit: cover; object-position: 72% 30%; display: block; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--col-gap);
+}
+
+/* Hero row */
+.hero { margin-top: var(--s-8); align-items: start; }
+.play-block { grid-column: 1 / span 7; }
+.aside { grid-column: 8 / span 5; }
+
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-48);
+  font-weight: 700;
+  font-variation-settings: "opsz" 96, "wdth" 100;
+  letter-spacing: -0.012em;
+  line-height: 1.02;
+  margin-left: -2px;    /* optical: the C's bowl */
+}
+.meta { margin: var(--s-3) 0 0; color: var(--ink-2); font-size: var(--t-15); font-weight: 500; }
+.meta .dot { margin: 0 var(--s-2); }
+
+.play-row { display: flex; align-items: center; gap: var(--s-6); margin-top: var(--s-8); flex-wrap: wrap; }
+.btn-play {
+  display: inline-flex; align-items: center; gap: var(--s-3);
+  height: 64px;
+  padding: 0 var(--s-8) 0 var(--s-6);
+  border-radius: var(--r-m);
+  background: var(--mihai);
+  color: var(--mihai-on);
+  font-size: var(--t-19);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  box-shadow: var(--shadow-raised);
+  transition: background-color var(--dur-hover) var(--ease), box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
+}
+.btn-play svg { width: 22px; height: 22px; fill: currentColor; stroke: none; }
+.btn-play:hover { background: oklch(0.74 0.13 4); }
+.btn-play:active { box-shadow: var(--shadow-pressed); transform: translateY(1px); }
+
+.loaded { display: grid; gap: 2px; }
+.loaded-title { margin: 0; font-size: var(--t-19); font-weight: 650; line-height: 1.25; display: flex; align-items: baseline; gap: var(--s-2); }
+.loaded-title .sep { color: var(--ink-3); font-weight: 400; }
+.loaded-sub { margin: 0; font-size: var(--t-15); color: var(--ink-2); }
+
+.others { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-6); flex-wrap: wrap; }
+.others-label { color: var(--ink-2); font-size: var(--t-15); font-weight: 500; }
+.face {
+  display: inline-flex; align-items: center; gap: var(--s-3);
+  height: var(--target);
+  padding: 0 var(--s-5) 0 var(--s-2);
+  border-radius: var(--r-full);
+  background: var(--room-raised);
+  box-shadow: var(--shadow-raised);
+  font-weight: 600; font-size: var(--t-15);
+  transition: background-color var(--dur-hover) var(--ease), box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
+}
+.face:hover { background: var(--room-hover); }
+.face:active { box-shadow: var(--shadow-pressed); transform: translateY(1px); }
+
+.reassure {
+  display: flex; align-items: center; gap: var(--s-2);
+  margin: var(--s-5) 0 0;
+  color: var(--ink-2); font-size: var(--t-15);
+}
+.reassure svg { width: 18px; height: 18px; }
+
+/* Aside: time in this game */
+.panel { background: var(--room-surface); border-radius: var(--r-l); padding: var(--s-6); }
+.h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-19);
+  font-weight: 650;
+  font-variation-settings: "opsz" 24;
+  letter-spacing: -0.01em;
+}
+.bar { display: flex; gap: 3px; height: 8px; margin: var(--s-5) 0 var(--s-2); }
+.bar span { border-radius: var(--r-full); }
+.bar .m { flex: 44; background: var(--mihai); }
+.bar .c { flex: 22; background: var(--cristian); }
+.people { list-style: none; margin: 0; padding: 0; }
+.people li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; column-gap: var(--s-3); min-height: 56px; }
+.people .name { font-weight: 650; line-height: 1.2; }
+.people .when { display: block; font-size: var(--t-13); color: var(--ink-2); font-weight: 500; }
+.people .hrs { font-size: var(--t-19); font-weight: 650; text-align: right; }
+.people .hrs small { font-size: var(--t-15); color: var(--ink-2); font-weight: 550; margin-left: 3px; }
+.account {
+  display: grid; grid-template-columns: 1fr auto; column-gap: var(--s-3); align-items: baseline;
+  margin-top: var(--s-3); padding-top: var(--s-4);
+  background: linear-gradient(var(--room-raised), var(--room-raised)) top / 100% 1px no-repeat; /* tonal rule, not a border */
+}
+.account p { margin: 0; font-size: var(--t-15); color: var(--ink-2); }
+.account .hrs { font-size: var(--t-15); color: var(--ink); font-weight: 650; }
+.account .hrs small { font-size: var(--t-13); color: var(--ink-2); font-weight: 550; margin-left: 3px; }
+
+.cloud { display: grid; grid-template-columns: 20px 1fr; column-gap: var(--s-3); }
+.cloud svg { margin-top: 2px; color: var(--ink-2); }
+.cloud h3 { margin: 0; font-size: var(--t-15); font-weight: 650; }
+.cloud p { margin: 2px 0 0; font-size: var(--t-15); color: var(--ink-2); max-width: 50ch; text-wrap: pretty; }
+
+/* Actions */
+.actions { margin-top: var(--s-16); row-gap: var(--s-10); }
+.actions .col { display: grid; gap: var(--s-10); align-content: start; }
+.actions .col-a { grid-column: 1 / span 6; }
+.actions .col-b { grid-column: 7 / span 6; }
+.group .h2 { margin: 0 0 var(--s-3); }
+.rows { background: var(--room-surface); border-radius: var(--r-m); padding: 6px; display: grid; gap: 2px; }
+.row {
+  display: grid; grid-template-columns: 40px 1fr; align-items: center; column-gap: var(--s-4);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
+  border-radius: var(--r-s);
+  transition: background-color var(--dur-hover) var(--ease);
+}
+.row .ico {
+  display: grid; place-items: center;
+  width: 40px; height: 40px;
+  border-radius: var(--r-s);
+  background: var(--room-raised);
+  color: var(--ink-2);
+  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
+}
+.row:hover { background: var(--room-raised); }
+.row:hover .ico { background: var(--room-hover); color: var(--ink); }
+.row b { display: block; font-weight: 600; line-height: 1.3; }
+.row span.sub { display: block; font-size: var(--t-15); color: var(--ink-2); line-height: 1.35; }
+.row.danger { color: var(--danger); }
+.row.danger .ico { color: var(--danger); }
+.row.danger .sub { color: var(--ink-2); }
+
+/* News: tertiary */
+.news { margin-top: var(--s-2); }
+.news h2 { margin: 0 0 var(--s-1); font-size: var(--t-15); font-weight: 650; color: var(--ink-2); }
+.news ul { list-style: none; margin: 0 calc(-1 * var(--s-2)); padding: 0; }
+.news a {
+  display: grid; grid-template-columns: 64px 1fr; column-gap: var(--s-4); align-items: baseline;
+  min-height: 44px; padding: 10px var(--s-2);
+  border-radius: var(--r-s);
+  font-size: var(--t-15); color: var(--ink-2);
+  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease);
+}
+.news a:hover { background: var(--room-surface); color: var(--ink); }
+.news time { font-size: var(--t-13); color: var(--ink-3); font-weight: 550; }
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 1360px) {
+  :root { --sidebar-w: 224px; --gutter: var(--s-8); --col-gap: var(--s-6); }
+  .play-block { grid-column: 1 / span 7; }
+  .aside { grid-column: 8 / span 5; }
+}
+@media (min-width: 1800px) {
+  :root { --sidebar-w: 272px; --gutter: var(--s-12); }
+  h1 { font-size: var(--t-64); }
+}
+@media (max-height: 760px) {
+  :root { --topbar-h: 72px; }
+  .hero { margin-top: var(--s-6); }
+  .play-row { margin-top: var(--s-6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  .btn-play:active, .btn-switch:active, .face:active { transform: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 20 20"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></symbol>
+  <symbol id="i-home" viewBox="0 0 20 20"><path d="M3.5 9 10 3.75 16.5 9v6.75a.75.75 0 0 1-.75.75H12.5v-4.5h-5v4.5H4.25a.75.75 0 0 1-.75-.75z"/></symbol>
+  <symbol id="i-library" viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="5.25" height="5.25" rx="1.25"/><rect x="11.25" y="3.5" width="5.25" height="5.25" rx="1.25"/><rect x="3.5" y="11.25" width="5.25" height="5.25" rx="1.25"/><rect x="11.25" y="11.25" width="5.25" height="5.25" rx="1.25"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 20 20"><path d="M6 15.5h8.25a3.25 3.25 0 0 0 .45-6.47A4.75 4.75 0 0 0 5.6 8.55 3.5 3.5 0 0 0 6 15.5z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 20 20"><circle cx="7.75" cy="7" r="2.75"/><path d="M2.75 16.25c.45-2.65 2.45-4.25 5-4.25s4.55 1.6 5 4.25"/><path d="M13 4.6a2.5 2.5 0 0 1 0 4.8"/><path d="M14.5 12.25c1.5.4 2.5 1.65 2.75 3.5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 20 20"><path d="M3.5 6.25h7.25M15.25 6.25h1.25M3.5 13.75h1.25M9.25 13.75h7.25"/><circle cx="13" cy="6.25" r="2.25"/><circle cx="7" cy="13.75" r="2.25"/></symbol>
+  <symbol id="i-back" viewBox="0 0 20 20"><path d="M12 4.75 6.75 10 12 15.25"/></symbol>
+  <symbol id="i-play" viewBox="0 0 20 20"><path d="M6.5 4.4v11.2a.9.9 0 0 0 1.37.77l9.05-5.6a.9.9 0 0 0 0-1.54L7.87 3.63A.9.9 0 0 0 6.5 4.4z"/></symbol>
+  <symbol id="i-switch" viewBox="0 0 20 20"><path d="M4 7h11.5M12.75 4.25 15.5 7l-2.75 2.75M16 13H4.5M7.25 10.25 4.5 13l2.75 2.75"/></symbol>
+  <symbol id="i-load" viewBox="0 0 20 20"><path d="M10 3.5v8.25M6.75 8.5 10 11.75l3.25-3.25"/><path d="M3.75 13v2.25c0 .7.55 1.25 1.25 1.25h10c.7 0 1.25-.55 1.25-1.25V13"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 20 20"><path d="M5.25 3.75h9.5c.83 0 1.5.67 1.5 1.5v6.5c0 .83-.67 1.5-1.5 1.5H9.5l-3.75 3v-3h-.5c-.83 0-1.5-.67-1.5-1.5v-6.5c0-.83.67-1.5 1.5-1.5z"/><path d="M8.5 7.1a1.6 1.6 0 1 1 2.25 1.46c-.45.2-.75.6-.75 1.1v.1"/><path d="M10 11.6v.01"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 20 20"><path d="M12.75 4.25a1.77 1.77 0 0 1 2.5 2.5L7.5 14.5l-3.25.75.75-3.25z"/><path d="M11.5 5.5l3 3"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 20 20"><path d="M3.5 6c0-.83.67-1.5 1.5-1.5h2.9l1.6 1.75H15c.83 0 1.5.67 1.5 1.5v6.75c0 .83-.67 1.5-1.5 1.5H5c-.83 0-1.5-.67-1.5-1.5z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 20 20"><path d="M4.75 3.75h8.4l2.6 2.6v8.9c0 .55-.45 1-1 1H4.75c-.55 0-1-.45-1-1V4.75c0-.55.45-1 1-1z"/><path d="M7 3.75v3.5h5.25v-3.5M6.75 16.25v-4.5h6.5v4.5"/></symbol>
+  <symbol id="i-history" viewBox="0 0 20 20"><path d="M4 10a6 6 0 1 0 1.76-4.24"/><path d="M4 3.75V6.5h2.75"/><path d="M10 7v3.25l2.25 1.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 20 20"><path d="M10 3.25 15.75 5.4v4.35c0 3.35-2.4 5.85-5.75 7-3.35-1.15-5.75-3.65-5.75-7V5.4z"/><path d="M7.4 10.1l1.85 1.85 3.4-3.6"/></symbol>
+  <symbol id="i-drive" viewBox="0 0 20 20"><rect x="3.25" y="10.5" width="13.5" height="5.75" rx="1.5"/><path d="M4.75 10.5 6.2 5.3a1.5 1.5 0 0 1 1.45-1.05h4.7A1.5 1.5 0 0 1 13.8 5.3l1.45 5.2"/><path d="M13.25 13.4v.01M10.75 13.4v.01"/></symbol>
+  <symbol id="i-desktop" viewBox="0 0 20 20"><rect x="3.25" y="3.75" width="13.5" height="9.5" rx="1.5"/><path d="M7.25 16.5h5.5M10 13.25v3.25"/></symbol>
+  <symbol id="i-power" viewBox="0 0 20 20"><path d="M10 3.25v6.25"/><path d="M6.4 5.75a5.75 5.75 0 1 0 7.2 0"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 20 20"><rect x="7.25" y="7.25" width="9" height="9" rx="1.75"/><path d="M12.75 7.25V5.5c0-.97-.78-1.75-1.75-1.75H5.5c-.97 0-1.75.78-1.75 1.75V11c0 .97.78 1.75 1.75 1.75h1.75"/></symbol>
+</svg>
+
+<div class="app">
+
+  <!-- Seat bar -->
+  <header class="topbar">
+    <div class="brand"><svg class="i" aria-hidden="true"><use href="#i-mark"/></svg>Lootnest</div>
+    <div class="topbar-main">
+      <a class="ghost" href="#library"><svg class="i" aria-hidden="true"><use href="#i-back"/></svg>Back to Library</a>
+      <div class="seat" role="group" aria-label="Seat">
+        <div class="seat-who">
+          <span class="avatar mihai" aria-hidden="true">M</span>
+          <span class="seat-name">Mihai's seat</span>
+        </div>
+        <button class="btn-switch" type="button"><svg class="i" aria-hidden="true"><use href="#i-switch"/></svg>Switch</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" aria-label="Main">
+    <div class="nav">
+      <a href="#home"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg>Home</a>
+      <a href="#library" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-library"/></svg>Library<span class="count num">13</span></a>
+      <a href="#cloud"><svg class="i" aria-hidden="true"><use href="#i-cloud"/></svg>Cloud saves</a>
+      <a href="#players"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg>Players</a>
+    </div>
+    <p class="side-h">Who's here</p>
+    <div class="here">
+      <a href="#p-mihai"><span class="avatar mihai" aria-hidden="true">M</span>Mihai<span class="tag">Seated</span></a>
+      <a href="#p-cristian"><span class="avatar cristian" aria-hidden="true">C</span>Cristian</a>
+    </div>
+    <div class="nav settings">
+      <a href="#settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page">
+
+      <div class="art"><img src="../harness/.cache/730-hero.jpg" alt=""></div>
+
+      <section class="grid hero" aria-labelledby="game-title">
+        <div class="play-block">
+          <h1 id="game-title">Counter-Strike 2</h1>
+          <p class="meta">Steam<span class="dot" aria-hidden="true">·</span>Profiles on for Mihai and Cristian</p>
+
+          <div class="play-row">
+            <button class="btn-play" type="button"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Play as Mihai</button>
+            <div class="loaded">
+              <p class="loaded-title">Your save is in<span class="sep" aria-hidden="true">·</span><span class="num">44 h</span></p>
+              <p class="loaded-sub">Mihai's files are loaded. Played yesterday.</p>
+            </div>
+          </div>
+
+          <div class="others">
+            <span class="others-label" id="others-label">or play as…</span>
+            <button class="face" type="button" aria-label="Play as Cristian"><span class="avatar cristian" aria-hidden="true">C</span>Cristian</button>
+          </div>
+          <p class="reassure"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>A copy is made before every swap.</p>
+        </div>
+
+        <div class="aside">
+          <div class="panel">
+            <h2 class="h2">Time in this game</h2>
+            <div class="bar" aria-hidden="true"><span class="m"></span><span class="c"></span></div>
+            <ul class="people">
+              <li><span class="avatar mihai" aria-hidden="true">M</span><span><span class="name">Mihai</span><span class="when">Played yesterday</span></span><span class="hrs num">44<small>h</small></span></li>
+              <li><span class="avatar cristian" aria-hidden="true">C</span><span><span class="name">Cristian</span><span class="when">Played 5 hours ago</span></span><span class="hrs num">22<small>h</small></span></li>
+            </ul>
+            <div class="account">
+              <p>On this Steam account, everyone together</p>
+              <span class="hrs num">412<small>h</small></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid actions" aria-label="Manage this game">
+        <div class="col col-a">
+          <div class="group">
+            <h2 class="h2">Profiles</h2>
+            <div class="rows">
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-load"/></svg></span><span><b>Load someone's files</b><span class="sub">Without starting the game</span></span></button>
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-ask"/></svg></span><span><b>Ask who's playing in Steam</b><span class="sub">When the game starts from Steam's Play button</span></span></button>
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></span><span><b>Edit game</b><span class="sub">How it starts and what profiles swap</span></span></button>
+            </div>
+          </div>
+          <div class="group">
+            <h2 class="h2">Shortcuts</h2>
+            <div class="rows">
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-desktop"/></svg></span><span><b>Create desktop shortcut</b><span class="sub">Asks who's playing every time</span></span></button>
+            </div>
+          </div>
+          <div class="group">
+            <h2 class="h2">Danger</h2>
+            <div class="rows">
+              <button class="row danger" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-power"/></svg></span><span><b>Turn off profiles</b></span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col col-b">
+          <div class="group">
+            <h2 class="h2">Game files</h2>
+            <div class="rows">
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg></span><span><b>Open the game's folder</b><span class="sub">Where it's installed</span></span></button>
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg></span><span><b>Open the save folder</b><span class="sub">The files profiles swap</span></span></button>
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-history"/></svg></span><span><b>Open backups</b><span class="sub">A copy is made before every swap</span></span></button>
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></span><span><b>Check the game's files</b><span class="sub">Steam downloads any that are missing or damaged</span></span></button>
+              <button class="row" type="button"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-drive"/></svg></span><span><b>Move to another drive</b><span class="sub">To another of your Steam libraries</span></span></button>
+            </div>
+          </div>
+          <div class="cloud">
+            <svg class="i" aria-hidden="true"><use href="#i-cloud"/></svg>
+            <div>
+              <h3>Steam Cloud</h3>
+              <p>Syncs 1 of the files profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.</p>
+            </div>
+          </div>
+          <div class="news">
+            <h2>Updates and news</h2>
+            <ul>
+              <li><a href="#n1"><time class="num" datetime="2026-11-12">12 Nov</time><span>Release notes for 11/12/2026</span></a></li>
+              <li><a href="#n2"><time class="num" datetime="2026-11-05">5 Nov</time><span>Armory Pass update</span></a></li>
+              <li><a href="#n3"><time class="num" datetime="2026-10-29">29 Oct</time><span>Premier Season 3 begins</span></a></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
