@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.16.5
+
+**Players in the new look:**
+- **A card for each person:**
+  - their banner;
+  - what they played last, or the game they've played most;
+  - the covers of the games they played lately;
+  - their hours, games, and games with a profile.
+- **Names and colours** is below the cards. Each row has the player's avatar, their name and their colours.
+- **A player's own page** takes their colour:
+  - Play is in their colour;
+  - the activity map and the bars use it too;
+  - the numbers are larger and easier to scan.
+
 ## 1.16.4
 
 - **Shelf is gone.** Playing / Up next / Finished / Stopped, the ratings and the notes are removed from game pages and player pages. What you had saved stays in Lootnest's data folder, untouched.
