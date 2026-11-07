@@ -694,3 +694,27 @@ func TestPlayerRuns(t *testing.T) {
 		}
 	}
 }
+
+func TestCollections(t *testing.T) {
+	c := DefaultConfig()
+	if err := c.SetTags("game:cs2", []string{" Co-op ", "co-op", "", "For the  kids"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := c.Tags["game:cs2"]; len(got) != 2 || got[0] != "Co-op" || got[1] != "For the kids" {
+		t.Fatalf("%q", got)
+	}
+	// The same name in another case joins the existing collection.
+	if err := c.SetTags("steam:1", []string{"CO-OP"}); err != nil || c.Tags["steam:1"][0] != "Co-op" {
+		t.Fatalf("%v %q", err, c.Tags["steam:1"])
+	}
+	if err := c.SetTags("steam:1", nil); err != nil || c.Tags["steam:1"] != nil {
+		t.Fatal("taken out of all")
+	}
+	if _, err := CleanTags([]string{strings.Repeat("x", 25)}); err == nil {
+		t.Fatal("too long")
+	}
+	e := ShelfEntry{Status: "complete"}
+	if err := e.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}

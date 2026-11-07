@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.25.0
+
+- **Status, for each profile.** On a game's page, set where it is for you: **Playing**, **Up next**, **Finished**, **100%** or **Dropped**. Each profile and each run has its own, and the buttons show everyone's at a glance. Press it again to clear it.
+- **Collections.** Put a game in your own collections, such as "Co-op", "For the kids" or "Weekend": type a name on its page, or pick one you already have. They're shared by everyone on the PC.
+- **The Library filters by both:**
+  - **All collections** shows the games in one collection;
+  - **Any status** shows the games at that status, for the profile picked above the grid, or for the one at the PC.
+- Statuses set on the old Shelf (before 1.16.4) come back, since they were never deleted.
+
 ## 1.24.0
 
 - **Profiles grouped by person, as on a console.** A profile can be **a run for** someone: "Cristian hardcore" and "Cristian 100%" are Cristian's runs. Each has its own saves, settings and achievements, as any profile does.
