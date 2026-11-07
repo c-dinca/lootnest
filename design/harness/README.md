@@ -9,7 +9,12 @@ screenshotted without Windows. Dev only: nothing here is built into the app
 node design/harness/fetch-art.mjs   # once: Steam art for the fixtures, into .cache/ (not committed)
 node design/harness/build.mjs       # dist/page.html, put together like app.go's pageHTML
 node design/harness/shoot.mjs before [filter]   # screenshots into design/before/
+node design/harness/shoot-ks.mjs    # the kitchen sink (dist/kitchen-sink.html) into design/system/
 ```
+
+`dist/kitchen-sink.html` shows every component of `internal/app/ui/system.css`
+in every state (see DESIGN.md). It is built from `kitchen-sink.js`,
+`kitchen-sink.css` and `icons.svg`.
 
 Open `dist/page.html` in a browser to click around. The scenario comes from
 the URL: `?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1`.

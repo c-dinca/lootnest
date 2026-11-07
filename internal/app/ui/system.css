@@ -1,0 +1,411 @@
+/* Lootnest design system. DESIGN.md explains every token and component.
+   Tokens first, then components. Components are prefixed ln- so they can
+   live next to the old styles in app.css while pages move over one by one.
+   No raw colours, sizes or durations below the token block. */
+
+@font-face {
+  font-family: "Bricolage";
+  font-style: normal;
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-display: block;
+  src: url("data:font/woff2;base64,@FONT:bricolage-latin@") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Bricolage";
+  font-style: normal;
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-display: block;
+  src: url("data:font/woff2;base64,@FONT:bricolage-latin-ext@") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: block;
+  src: url("data:font/woff2;base64,@FONT:figtree-latin@") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: block;
+  src: url("data:font/woff2;base64,@FONT:figtree-latin-ext@") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ================================================================ tokens */
+:root {
+  /* Colour: graphite slate, hue 250 at low chroma so it never reads as navy. */
+  --bg-well:    oklch(0.13 0.010 250);   /* sunk: inputs, wells */
+  --bg-ground:  oklch(0.17 0.012 250);   /* the window */
+  --bg-surface: oklch(0.21 0.012 250);   /* solid panels */
+  --bg-raised:  oklch(0.25 0.012 250);   /* raised controls */
+  --bg-active:  oklch(0.29 0.012 250);   /* selected */
+
+  --fg-1: oklch(0.95 0.006 250);         /* text: 16.5:1 on ground, 13.8:1 on raised */
+  --fg-2: oklch(0.80 0.012 250);         /* secondary: 10.2:1 on ground, 8.6:1 on raised */
+  --fg-3: oklch(0.70 0.012 250);         /* tertiary: 7.2:1 on ground, 6.0:1 on raised */
+  --fg-disabled: oklch(0.52 0.010 250);  /* disabled controls (exempt from AA; 3.5:1 on ground) */
+  --fg-on-light: oklch(0.20 0.012 250);  /* text on the light primary button: 15.6:1 */
+
+  --danger:      oklch(0.80 0.100 35);   /* destructive text and icons: 9.9:1 on ground */
+  --danger-wash: oklch(0.80 0.100 35 / 0.12);
+  --success:     oklch(0.82 0.110 155);
+  --warning:     oklch(0.86 0.110 85);
+
+  --edge-1: oklch(1 0 0 / 0.08);         /* hairline between things */
+  --edge-2: oklch(1 0 0 / 0.14);         /* control edge */
+  --edge-3: oklch(1 0 0 / 0.26);         /* control edge on hover */
+  --focus-ring: var(--fg-1);
+
+  /* Glass: frosted slate over the game's art. Each step falls back to its
+     solid twin under prefers-reduced-transparency. */
+  --glass-chrome:  oklch(0.15 0.012 250 / 0.62);  /* sidebar, top bar */
+  --glass-bar:     oklch(0.17 0.012 250 / 0.70);  /* the play bar */
+  --glass-panel:   oklch(0.19 0.012 250 / 0.58);  /* panels on art */
+  --glass-overlay: oklch(0.21 0.012 250 / 0.86);  /* toasts, menus, dialogs */
+  --glass-ctl:        oklch(1 0 0 / 0.06);
+  --glass-ctl-hover:  oklch(1 0 0 / 0.10);
+  --glass-ctl-active: oklch(1 0 0 / 0.04);
+  --glass-ctl-on:     oklch(1 0 0 / 0.13);        /* a selected segment */
+  --blur-glass:   blur(32px) saturate(150%);
+  --blur-backdrop: blur(100px) saturate(115%);
+  --backdrop-opacity: 0.34;
+  --shadow-overlay: 0 16px 40px -12px oklch(0.05 0.010 250 / 0.6);  /* floating layers only */
+
+  /* Players: every player's colour is brought to the same lightness, so text
+     on it always passes AA (6.9:1 or better at rest, 6.0:1 pressed), whatever
+     colour they picked. */
+  --player-l: 0.72;
+  --player-c: 0.12;
+  --player-on-l: 0.20;
+  --player-on-c: 0.03;
+
+  /* Type. Bricolage Grotesque for titles, Figtree for everything else. */
+  --font-ui: "Figtree", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-title: "Bricolage", "Figtree", sans-serif;
+  --fs-12: 12px; --fs-13: 13px; --fs-14: 14px; --fs-15: 15px; --fs-18: 18px;
+  --fs-24: 24px; --fs-32: 32px; --fs-40: 40px; --fs-56: 56px; --fs-72: 72px;
+  --lh-tight: 1.1; --lh-snug: 1.3; --lh-body: 1.5;
+  --track-title: -0.02em;
+
+  /* Space: 4px steps. */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+  /* Sizes */
+  --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;
+  --icon-sm: 16px; --icon-md: 18px;
+  --hairline: 1px;
+  --focus-width: 2px;
+
+  /* Radius by role. Never one radius for everything. */
+  --radius-tag: 3px;      /* tags, keys, small marks */
+  --radius-ctl: 4px;      /* buttons, rows, inputs, tiles */
+  --radius-panel: 6px;    /* glass panels, toasts, dialogs */
+  --radius-round: 999px;  /* avatars only */
+
+  /* Motion: quick and mechanical, never bouncy. */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --dur-1: 120ms;   /* hover, press */
+  --dur-2: 180ms;   /* state changes, toasts in */
+  --dur-3: 280ms;   /* the seat changing, a save slot changing hands */
+  --dur-spin: 700ms;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-chrome: var(--bg-ground);
+    --glass-bar: var(--bg-surface);
+    --glass-panel: var(--bg-surface);
+    --glass-overlay: var(--bg-raised);
+    --backdrop-opacity: 0;
+  }
+}
+
+/* ============================================================== base bits */
+.ln-root {
+  font: 500 var(--fs-14)/var(--lh-body) var(--font-ui);
+  color: var(--fg-1);
+  -webkit-font-smoothing: antialiased;
+}
+.ln-num { font-variant-numeric: tabular-nums; }
+.ln-icon { width: var(--icon-md); height: var(--icon-md); flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* A player's colour, set inline as style="--player: #d9738e", becomes a set
+   of tokens every player-aware component reads. */
+.ln-player {
+  --player-fill:        oklch(from var(--player) var(--player-l) min(c, var(--player-c)) h);
+  --player-fill-hover:  oklch(from var(--player) calc(var(--player-l) + 0.05) min(c, var(--player-c)) h);
+  --player-fill-active: oklch(from var(--player) calc(var(--player-l) - 0.04) min(c, var(--player-c)) h);
+  --player-on:          oklch(from var(--player) var(--player-on-l) min(c, var(--player-on-c)) h);
+  --player-wash:        oklch(from var(--player) var(--player-l) min(c, var(--player-c)) h / 0.16);
+}
+
+/* The game's art, blurred, lights the window behind every glass surface. */
+.ln-backdrop { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.ln-backdrop img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; filter: var(--blur-backdrop); opacity: var(--backdrop-opacity); }
+.ln-backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.1), oklch(0.17 0.012 250 / 0.8) 60%, var(--bg-ground)); }
+
+.ln-glass { background: var(--glass-panel); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
+
+/* ================================================================ buttons */
+.ln-button {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: var(--ctl-md); padding: 0 var(--space-4);
+  border: var(--hairline) solid transparent; border-radius: var(--radius-ctl);
+  background: none; color: var(--fg-1);
+  font: 650 var(--fs-14)/1 var(--font-ui);
+  white-space: nowrap; cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.ln-button .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.ln-button:focus-visible, .ln-button[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.ln-button:active:not(:disabled), .ln-button[data-force~="active"] { transform: translateY(1px); }
+.ln-button--sm { height: var(--ctl-sm); padding: 0 var(--space-3); font-size: var(--fs-13); }
+.ln-button--lg { height: var(--ctl-lg); padding: 0 var(--space-6) 0 var(--space-5); font-size: var(--fs-15); font-weight: 700; }
+.ln-button--icon { width: var(--ctl-md); padding: 0; }
+.ln-button--icon.ln-button--sm { width: var(--ctl-sm); }
+
+/* Primary: the one non-player action on a page (Save, Scan, Add). */
+.ln-button--primary { background: var(--fg-1); color: var(--fg-on-light); }
+.ln-button--primary:hover, .ln-button--primary[data-force~="hover"] { background: oklch(1 0 0); }
+.ln-button--primary:active, .ln-button--primary[data-force~="active"] { background: var(--fg-2); }
+
+/* Secondary: everything else that is a button. */
+.ln-button--secondary { background: var(--glass-ctl); border-color: var(--edge-2); }
+.ln-button--secondary:hover, .ln-button--secondary[data-force~="hover"] { background: var(--glass-ctl-hover); border-color: var(--edge-3); }
+.ln-button--secondary:active, .ln-button--secondary[data-force~="active"] { background: var(--glass-ctl-active); }
+
+/* Ghost: navigation and quiet actions (Back, Later, Close). */
+.ln-button--ghost { color: var(--fg-2); }
+.ln-button--ghost:hover, .ln-button--ghost[data-force~="hover"] { background: var(--glass-ctl-hover); color: var(--fg-1); }
+.ln-button--ghost:active, .ln-button--ghost[data-force~="active"] { background: var(--glass-ctl-active); }
+
+/* Destructive: text and icon in the danger colour; the confirm step fills. */
+.ln-button--danger { color: var(--danger); border-color: var(--edge-2); }
+.ln-button--danger:hover, .ln-button--danger[data-force~="hover"] { background: var(--danger-wash); border-color: var(--danger); }
+.ln-button--danger:active, .ln-button--danger[data-force~="active"] { background: var(--glass-ctl-active); }
+
+/* Play as someone: the player's own colour. Needs .ln-player on it or above. */
+.ln-button--play { background: var(--player-fill); color: var(--player-on); transition: background-color var(--dur-3) var(--ease-out), color var(--dur-3) var(--ease-out); }
+.ln-button--play .ln-icon { fill: currentColor; stroke: none; }
+.ln-button--play:hover, .ln-button--play[data-force~="hover"] { background: var(--player-fill-hover); }
+.ln-button--play:active, .ln-button--play[data-force~="active"] { background: var(--player-fill-active); }
+
+.ln-button:disabled, .ln-button[aria-disabled="true"] {
+  background: var(--glass-ctl-active); border-color: var(--edge-1); color: var(--fg-disabled);
+  cursor: default; transform: none;
+}
+.ln-button--ghost:disabled, .ln-button--ghost[aria-disabled="true"] { background: none; border-color: transparent; }
+
+/* Loading: the label stays (the button keeps its width), a spinner joins it. */
+.ln-button[aria-busy="true"] { cursor: progress; pointer-events: none; }
+.ln-button[aria-busy="true"] .ln-icon { display: none; }
+
+.ln-spinner {
+  width: var(--icon-sm); height: var(--icon-sm); flex: none;
+  border-radius: var(--radius-round);
+  border: 2px solid color-mix(in oklch, currentColor 28%, transparent); border-top-color: currentColor;
+  animation: ln-spin var(--dur-spin) linear infinite;
+}
+@keyframes ln-spin { to { transform: rotate(360deg); } }
+
+/* ========================================================== avatars, chips */
+.ln-avatar {
+  --size: 24px;
+  display: inline-grid; place-items: center; flex: none; overflow: hidden;
+  width: var(--size); height: var(--size); border-radius: var(--radius-round);
+  background: var(--player-fill); color: var(--player-on);
+  font: 700 calc(var(--size) * 0.46)/1 var(--font-title);
+}
+.ln-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ln-avatar--20 { --size: 20px; }
+.ln-avatar--32 { --size: 32px; }
+.ln-avatar--48 { --size: 48px; }
+.ln-avatar--72 { --size: 72px; }
+
+/* A player you can pick: "or play as… Cristian". */
+.ln-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: 36px; padding: 0 var(--space-3) 0 6px;
+  border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-ctl);
+  background: var(--glass-ctl); color: var(--fg-1);
+  font: 600 var(--fs-14)/1 var(--font-ui); cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.ln-chip:hover, .ln-chip[data-force~="hover"] { background: var(--glass-ctl-hover); border-color: var(--edge-3); }
+.ln-chip:active, .ln-chip[data-force~="active"] { background: var(--glass-ctl-active); }
+.ln-chip:focus-visible, .ln-chip[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.ln-chip[aria-pressed="true"] { background: var(--player-wash); border-color: var(--player-fill); }
+.ln-chip:disabled { color: var(--fg-disabled); background: none; border-color: var(--edge-1); cursor: default; }
+.ln-chip:disabled .ln-avatar { opacity: 0.5; }
+.ln-chip-note { color: var(--fg-2); font-weight: 500; font-size: var(--fs-13); }
+
+.ln-tag {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  height: 20px; padding: 0 6px;
+  border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag);
+  color: var(--fg-2); font: 600 var(--fs-12)/1 var(--font-ui); white-space: nowrap;
+}
+.ln-tag--player { border-color: transparent; background: var(--player-fill); color: var(--player-on); }
+.ln-mark { width: 8px; height: 8px; flex: none; border-radius: 2px; background: var(--player-fill); }
+
+/* ============================================================== game tile */
+.ln-tile {
+  display: grid; gap: var(--space-2); align-content: start;
+  width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left;
+  cursor: pointer; font: inherit;
+}
+.ln-tile__cover {
+  position: relative; overflow: hidden;
+  aspect-ratio: 2 / 3; border-radius: var(--radius-ctl);
+  background: var(--bg-surface);
+}
+.ln-tile__cover::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 0 0 var(--hairline) var(--edge-1);
+  transition: box-shadow var(--dur-1) var(--ease-out);
+}
+.ln-tile__cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--dur-2) var(--ease-out); }
+.ln-tile:hover .ln-tile__cover::after, .ln-tile[data-force~="hover"] .ln-tile__cover::after { box-shadow: inset 0 0 0 var(--hairline) var(--edge-3); }
+.ln-tile:hover .ln-tile__cover img, .ln-tile[data-force~="hover"] .ln-tile__cover img { transform: scale(1.03); }
+.ln-tile:active .ln-tile__cover img, .ln-tile[data-force~="active"] .ln-tile__cover img { transform: scale(1.01); }
+.ln-tile:focus-visible, .ln-tile[data-force~="focus"] { outline: none; }
+.ln-tile:focus-visible .ln-tile__cover, .ln-tile[data-force~="focus"] .ln-tile__cover { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+
+/* Who has a profile: a colour code along the bottom of the cover, one bar
+   per player; the player whose files are loaded gets the tall bar. */
+.ln-tile__owners { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; gap: 2px; z-index: 1; }
+.ln-tile__owners span { flex: 1; height: 3px; background: var(--player-fill); }
+.ln-tile__owners span[data-loaded] { height: 6px; }
+.ln-tile__badge { position: absolute; top: var(--space-2); left: var(--space-2); z-index: 1; }
+
+.ln-tile__title { font: 650 var(--fs-14)/var(--lh-snug) var(--font-ui); color: var(--fg-1); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ln-tile__meta { display: flex; align-items: center; gap: 6px; margin-top: -4px; font-size: var(--fs-13); color: var(--fg-2); }
+
+/* No art: the title is set in type on a quiet cover, never a broken image. */
+.ln-tile__none {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--bg-raised);
+}
+.ln-tile__none b { font: 750 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); overflow-wrap: anywhere; }
+.ln-tile__none span { font-size: var(--fs-12); color: var(--fg-3); }
+
+/* ================================================================ skeleton */
+.ln-skeleton { background: var(--glass-ctl-hover); border-radius: var(--radius-tag); animation: ln-pulse 1.4s var(--ease-in-out) infinite alternate; }
+.ln-tile .ln-skeleton { border-radius: var(--radius-ctl); }
+@keyframes ln-pulse { from { opacity: 1; } to { opacity: 0.45; } }
+
+/* ========================================================== metadata block */
+/* Facts you scan, not a table you read: a value, then what it is. */
+.ln-meta { display: flex; flex-wrap: wrap; margin: 0; }
+.ln-meta__item { display: grid; gap: 2px; padding: 0 var(--space-6); border-left: var(--hairline) solid var(--edge-1); }
+.ln-meta__item:first-child { padding-left: 0; border-left: 0; }
+.ln-meta dt { order: 2; display: flex; align-items: center; gap: 6px; font-size: var(--fs-12); color: var(--fg-2); }
+.ln-meta dd { order: 1; margin: 0; font: 700 var(--fs-18)/var(--lh-tight) var(--font-ui); font-variant-numeric: tabular-nums; color: var(--fg-1); }
+.ln-meta dd small { margin-left: 2px; font-size: var(--fs-13); font-weight: 600; color: var(--fg-2); }
+.ln-meta dd.ln-meta__text { font-size: var(--fs-15); font-weight: 650; }
+
+/* The same facts as rows, for side columns. */
+.ln-facts { margin: 0; border-top: var(--hairline) solid var(--edge-1); }
+.ln-facts > div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--space-3); min-height: 40px; border-bottom: var(--hairline) solid var(--edge-1); font-size: var(--fs-13); }
+.ln-facts dt { display: flex; align-items: center; gap: var(--space-2); color: var(--fg-1); }
+.ln-facts dd { margin: 0; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+
+/* ========================================================= section header */
+.ln-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin: 0 0 var(--space-4); }
+.ln-section-head h2 { margin: 0; font: 700 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+.ln-section-head .ln-count { margin-left: var(--space-2); font: 600 var(--fs-15)/1 var(--font-ui); color: var(--fg-3); letter-spacing: 0; }
+.ln-section-head p { margin: var(--space-1) 0 0; color: var(--fg-2); font-size: var(--fs-13); }
+.ln-section-head--minor { margin-bottom: var(--space-2); }
+.ln-section-head--minor h2 { font: 650 var(--fs-13)/1 var(--font-ui); letter-spacing: 0; color: var(--fg-2); }
+
+/* Lists of actions, ruled by hairlines. */
+.ln-list { border-top: var(--hairline) solid var(--edge-1); }
+.ln-row {
+  display: grid; grid-template-columns: var(--icon-md) 1fr; column-gap: var(--space-3); align-items: start;
+  width: 100%; padding: 11px var(--space-2); margin: 0;
+  border: 0; border-bottom: var(--hairline) solid var(--edge-1); background: none; color: var(--fg-1);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+.ln-row .ln-icon { margin-top: 1px; color: var(--fg-2); }
+.ln-row:hover, .ln-row[data-force~="hover"] { background: var(--glass-ctl); }
+.ln-row:hover .ln-icon, .ln-row[data-force~="hover"] .ln-icon { color: var(--fg-1); }
+.ln-row:focus-visible, .ln-row[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-ctl); }
+.ln-row b { display: block; font-weight: 650; line-height: var(--lh-snug); }
+.ln-row span span { display: block; color: var(--fg-2); font-size: var(--fs-13); }
+.ln-row--danger, .ln-row--danger .ln-icon { color: var(--danger); }
+.ln-row:disabled { color: var(--fg-disabled); cursor: default; background: none; }
+.ln-row:disabled .ln-icon, .ln-row:disabled span span { color: var(--fg-disabled); }
+
+/* ======================================================= segmented control */
+.ln-segmented {
+  display: inline-flex; gap: 2px; padding: 2px;
+  border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel);
+  background: var(--glass-ctl-active);
+}
+.ln-segmented button {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 var(--space-3);
+  border: var(--hairline) solid transparent; border-radius: var(--radius-ctl);
+  background: none; color: var(--fg-2);
+  font: 600 var(--fs-13)/1 var(--font-ui); cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.ln-segmented button:hover, .ln-segmented button[data-force~="hover"] { color: var(--fg-1); background: var(--glass-ctl); }
+.ln-segmented button[aria-checked="true"] { background: var(--glass-ctl-on); border-color: var(--edge-2); color: var(--fg-1); }
+.ln-segmented button:focus-visible, .ln-segmented button[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 1px; }
+.ln-segmented button:disabled { color: var(--fg-disabled); background: none; cursor: default; }
+.ln-segmented .ln-count { color: var(--fg-3); font-weight: 600; }
+.ln-segmented button[aria-checked="true"] .ln-count { color: var(--fg-2); }
+
+/* ================================================================== toast */
+.ln-toast {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: var(--space-3);
+  width: min(420px, 100%); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-overlay);
+  animation: ln-toast-in var(--dur-2) var(--ease-out);
+}
+.ln-toast p { margin: 0; font-size: var(--fs-14); line-height: var(--lh-snug); }
+.ln-toast p span { display: block; color: var(--fg-2); font-size: var(--fs-13); }
+.ln-toast > .ln-icon { color: var(--fg-2); }
+.ln-toast--success > .ln-icon { color: var(--success); }
+.ln-toast--error > .ln-icon { color: var(--danger); }
+.ln-toast:not(:has(.ln-button)) { grid-template-columns: auto 1fr; padding-right: var(--space-4); }
+@keyframes ln-toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ======================================== empty, loading and error states */
+/* Each says what is going on and what to do, in the interface's voice. */
+.ln-state { display: grid; grid-template-columns: auto 1fr; column-gap: var(--space-4); align-items: start; max-width: 560px; padding: var(--space-6); }
+.ln-state > .ln-icon, .ln-state > .ln-spinner { width: 24px; height: 24px; margin-top: 2px; color: var(--fg-2); }
+.ln-state h3 { margin: 0; font: 650 var(--fs-15)/var(--lh-snug) var(--font-ui); }
+.ln-state p { margin: var(--space-1) 0 0; color: var(--fg-2); font-size: var(--fs-14); max-width: 52ch; text-wrap: pretty; }
+.ln-state .ln-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.ln-state--error > .ln-icon { color: var(--danger); }
+.ln-state--inline { padding: var(--space-3) 0; grid-template-columns: auto 1fr; column-gap: var(--space-3); }
+.ln-state--inline > .ln-spinner, .ln-state--inline > .ln-icon { width: var(--icon-sm); height: var(--icon-sm); margin-top: 2px; }
+.ln-state--inline h3 { font-size: var(--fs-14); font-weight: 600; }
+.ln-state--inline p { font-size: var(--fs-13); margin-top: 0; }
+
+/* ============================================================ preferences */
+@media (prefers-reduced-motion: reduce) {
+  .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tile__cover::after, .ln-tile__cover img { transition-duration: 0.01ms; }
+  .ln-button:active, .ln-button[data-force~="active"] { transform: none; }
+  .ln-tile:hover .ln-tile__cover img, .ln-tile[data-force~="hover"] .ln-tile__cover img { transform: none; }
+  .ln-toast { animation-name: ln-fade-in; }
+  .ln-skeleton { animation: none; }
+  .ln-spinner { animation-duration: calc(var(--dur-spin) * 3); }
+}
+@keyframes ln-fade-in { from { opacity: 0; } }
