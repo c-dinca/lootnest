@@ -243,17 +243,28 @@ func (a *App) startScan() {
 }
 
 type FoundState struct {
-	Scanning   bool             `json:"scanning"`   // first scan, nothing to show yet
-	Refreshing bool             `json:"refreshing"` // a scan is updating the saved library
-	Games      []core.FoundGame `json:"games"`
+	Scanning   bool              `json:"scanning"`   // first scan, nothing to show yet
+	Refreshing bool              `json:"refreshing"` // a scan is updating the saved library
+	Games      []core.FoundGame  `json:"games"`
+	Hidden     map[string]string `json:"hidden"` // names of hidden games the library still has, by key
 }
 
 func (a *App) apiFound() FoundState {
 	list := a.libraryGames()
 	a.mu.Lock()
 	scanning := a.scanning || a.found == nil // nil: never scanned on this PC
+	ignored := map[string]bool{}
+	for _, k := range a.cfg.IgnoredFound {
+		ignored[k] = true
+	}
 	a.mu.Unlock()
-	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: a.visibleFound(list)}
+	hidden := map[string]string{}
+	for _, f := range list {
+		if ignored[f.Key] {
+			hidden[f.Key] = f.Name
+		}
+	}
+	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: a.visibleFound(list), Hidden: hidden}
 }
 
 func (a *App) apiScan() { a.startScan() }
@@ -271,6 +282,26 @@ func (a *App) apiIgnoreFound(key string) error {
 	}
 	cfg.AddedGames = kept
 	return a.saveConfig(cfg)
+}
+
+// apiUnhideFound shows a hidden game in the Library again. The library
+// still holds it, so no scan is needed.
+func (a *App) apiUnhideFound(key string) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	cfg.IgnoredFound = withoutKey(cfg.IgnoredFound, key)
+	return a.saveConfig(cfg)
+}
+
+func withoutKey(keys []string, key string) []string {
+	out := []string{}
+	for _, k := range keys {
+		if k != key {
+			out = append(out, k)
+		}
+	}
+	return out
 }
 
 type AddResult struct {
@@ -390,13 +421,7 @@ func (a *App) apiAddLibraryGame(kind string, appID int, path string) (AddedGame,
 	}
 
 	// Show it again if it was hidden, and remember it so scans keep it.
-	ignored := cfg.IgnoredFound[:0]
-	for _, k := range cfg.IgnoredFound {
-		if k != f.Key {
-			ignored = append(ignored, k)
-		}
-	}
-	cfg.IgnoredFound = ignored
+	cfg.IgnoredFound = withoutKey(cfg.IgnoredFound, f.Key)
 	known := false
 	for _, g := range a.libraryGames() {
 		if g.Key == f.Key && !g.Added && (f.Source == "steam" || g.Exe == f.Exe) {

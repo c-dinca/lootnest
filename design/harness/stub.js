@@ -1,11 +1,13 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
   const N = q.get("games") || "13", P = +(q.get("players") || 2), STATE = q.get("state") || "normal";
   const CLOUD = q.get("cloud") !== "0", FIRST = q.get("first") === "1";
+  // ?hidden=1: two games hidden from the Library.
+  const HIDDEN = q.get("hidden") === "1" ? { "steam:1245620": "Elden Ring", "dir:d:\\games\\old racer": "Old Racer" } : {};
   const now = Date.now(), h = 3600e3, d = 24 * h;
   const iso = (ms) => new Date(now - ms).toISOString();
   const ART = window.__ART || {};
@@ -93,7 +95,7 @@
   };
   const state = () => ({
     version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Cris", color: "#6C9BD2" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS, offline: OFFLINE },
+    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Cris", color: "#6C9BD2" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, offline: OFFLINE },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
@@ -123,7 +125,7 @@
   const api = {
     ps_ready: () => ok({}),
     ps_state: () => (STATE === "loading" ? new Promise((r) => setTimeout(() => r(state()), 60)) : ok(state())),
-    ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [] } : { scanning: false, refreshing: false, games: found }),
+    ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN }),
     ps_cover: (appId, name, key) => (STATE === "offline" ? offline() : ok(art(appOf(appId, name), "cover"))),
     ps_art: (appId, name, key, kind) => (STATE === "offline" ? ok("") : ok(art(appOf(appId, name), kind))),
     ps_gameIcon: () => ok(""),
@@ -343,7 +345,7 @@
   ["ps_play", "ps_load", "ps_steamPick", "ps_savePlayers", "ps_saveSettings", "ps_saveGame", "ps_deleteGame", "ps_addFound", "ps_scan", "ps_open",
     "ps_shortcut", "ps_foundShortcut", "ps_launchFound", "ps_setShelf", "ps_syncNow", "ps_syncResolve", "ps_backupNow", "ps_setBackup", "ps_checkUpdate",
     "ps_setGameSaves", "ps_gameSaveNow", "ps_gameSaveRestore", "ps_gameSaveRestoreLocal", "ps_restoreOpen", "ps_restoreApply", "ps_restoreCancel", "ps_exportPlayer", "ps_importApply",
-    "ps_inspectSteam", "ps_inspectExe", "ps_checkPath", "ps_cancelRequest", "ps_ignoreFound", "ps_foundGame", "ps_addLibraryGame", "ps_saveLibraryPref",
+    "ps_inspectSteam", "ps_inspectExe", "ps_checkPath", "ps_cancelRequest", "ps_ignoreFound", "ps_unhideFound", "ps_foundGame", "ps_addLibraryGame", "ps_saveLibraryPref",
     "ps_setAvatar", "ps_removeAvatar", "ps_setBanner", "ps_removeBanner", "ps_setBackupPassword", "ps_moveInfo", "ps_moveGame", "ps_steamVerify",
     "ps_openGameFolder", "ps_applyHooks", "ps_fixBlocked", "ps_copy", "ps_installUpdate", "ps_quit"].forEach((k) => { if (!window[k]) window[k] = all[k]; });
   window.__harness = { players: PLAYERS, found, games };

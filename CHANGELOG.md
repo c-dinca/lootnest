@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.56.0
+
+- **Games a scan finds show up at once.** Home, the sidebar and the Library's count update as soon as a scan ends, on any page. Scan again says how many new games it found, or that there were none.
+- **Hide can be undone.** Hiding a game from the Library shows a note with Undo. The note stays while the pointer or the keyboard is on it.
+- Settings, Games and swaps lists the games you hid, each with Show again.
+- Right-click works on every game in the sidebar, in the Library's list, in Recent games and on Home, not only on covers. The menu also has Create desktop shortcut.
+
 ## 1.55.4
 
 - **On your own, you're always the one playing.** With runs of your own and nobody else, Lootnest seats you from the start. Clicking yourself or a run in the sidebar makes Play start as that one, and the seat is never left empty. Big Picture's Profiles tab uses the same words.

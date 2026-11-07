@@ -42,6 +42,7 @@
     found: () => call("ps_found"),
     scan: () => call("ps_scan"),
     ignoreFound: (k) => call("ps_ignoreFound", k),
+    unhideFound: (k) => call("ps_unhideFound", k),
     addFound: (keys) => call("ps_addFound", keys),
     foundGame: (k) => call("ps_foundGame", k),
     applyHooks: (restart) => call("ps_applyHooks", restart),
@@ -232,7 +233,8 @@
   };
 
   // --------------------------------------------------------------- toasts --
-  function toast(text, kind) {
+  // act: { label, run } adds a button, such as Undo.
+  function toast(text, kind, act) {
     const el = document.createElement("div");
     el.className = "ln-toast ln-root" + (kind === "error" ? " ln-toast--error" : " ln-toast--success");
     el.setAttribute("role", kind === "error" ? "alert" : "status");
@@ -240,8 +242,24 @@
     const p = document.createElement("p");
     p.textContent = text;
     el.appendChild(p);
+    if (act) {
+      const b = document.createElement("button");
+      b.className = "ln-button ln-button--ghost ln-button--sm";
+      b.textContent = act.label;
+      b.addEventListener("click", () => { el.remove(); act.run(); });
+      el.appendChild(b);
+    }
     $("#toasts").appendChild(el);
-    setTimeout(() => el.remove(), kind === "error" ? 7000 : 3800);
+    // The toast stays while the pointer or the keyboard is on it.
+    let timer = 0;
+    const arm = () => { clearTimeout(timer); timer = setTimeout(() => el.remove(), kind === "error" ? 7000 : act ? 8000 : 3800); };
+    const hold = () => clearTimeout(timer);
+    const release = () => setTimeout(() => { if (!el.matches(":hover, :focus-within")) arm(); });
+    el.addEventListener("pointerenter", hold);
+    el.addEventListener("focusin", hold);
+    el.addEventListener("pointerleave", release);
+    el.addEventListener("focusout", release);
+    arm();
   }
 
   // ---------------------------------------------------------------- events --
@@ -627,7 +645,8 @@
     items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, "<hr>");
     if (g) items.push(`<button data-action="edit-game" ${attr} ${s ? "disabled" : ""}>Edit game</button>`);
     else items.push(`<button data-action="game-settings" ${attr}>Game settings</button>`);
-    items.push(`<button data-action="open-game-folder" ${attr}>Open the game's folder</button>`);
+    items.push(`<button data-action="open-game-folder" ${attr}>Open the game's folder</button>`,
+      `<button data-action="${g ? "shortcut" : "found-shortcut"}" ${attr}>Create desktop shortcut</button>`);
     if (it.appId) items.push(`<button data-action="steam-verify" data-app="${it.appId}" ${s ? "disabled" : ""}>Check the game's files</button>`);
     items.push("<hr>", g ? `<button class="danger" data-action="remove-game" ${attr}>Turn off profiles</button>`
       : `<button class="danger" data-action="found-hide" ${attr}>${f.added ? "Remove from the Library" : "Hide from the Library"}</button>`);
@@ -642,9 +661,9 @@
   }
   function closeContext() { const m = $("#ctx"); if (m && !m.hidden) { m.hidden = true; m.innerHTML = ""; } }
   document.addEventListener("contextmenu", (ev) => {
-    const host = ev.target.closest(".card, .capsule-wrap");
-    if (!host || S.picker) return;
-    const it = itemFor(host.querySelector("[data-game], [data-key]"));
+    const host = ev.target.closest(".card, .lib-cap, .lib-row, .sg-row, .ln-tile, .tn-card, .now-card");
+    if (!host || S.picker || BP.on) return;
+    const it = itemFor(host.matches("[data-game], [data-key]") ? host : host.querySelector("[data-game], [data-key]"));
     if (!it) return;
     ev.preventDefault();
     openContext(ev, it);
@@ -2129,7 +2148,13 @@
 
   async function loadFound() {
     try { S.found = await api.found(); } catch (e) { /* not ready */ }
-    if (S.view === "library" && !S.picker) render();
+    if (S.rescanning && !S.found.refreshing) {
+      const n = (S.found.games || []).filter((f) => !S.rescanning.has(f.key)).length;
+      S.rescanning = null;
+      toast(n ? `Found ${n} new game${n === 1 ? "" : "s"}` : "No new games found");
+    }
+    if (!S.picker && !S.dialog && ["home", "library", "game"].includes(S.view)) render();
+    else { $("#lib-count").textContent = libraryItems().length || ""; renderSideGames(); }
   }
 
   // ---------------------------------------------------------------- picker --
@@ -3348,7 +3373,7 @@
   // Settings: plain on purpose. Groups of rows, each saying what it does,
   // with its control on the right. Everything online is off until turned on.
   function viewSettings() {
-    const s = cfg().settings, st = S.d.steam;
+    const s = cfg().settings, st = S.d.steam, hidden = Object.entries((S.found && S.found.hidden) || {});
     const row = (forId, title, desc, control) => `<div class="bk-row"><div><label for="${forId}"><b>${title}</b></label>${desc ? `<p>${desc}</p>` : ""}</div>${control}</div>`;
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
     const update = S.update.available
@@ -3376,7 +3401,9 @@
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${st.found ? row("s-steam", "Steam account", st.accountError ? `<span class="error-text">${esc(st.accountError)}</span>` : "The account on this PC whose Steam launch options Lootnest sets.", `<select id="s-steam" class="ln-input" data-setting="steamAccountId">
             <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
-            ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : `<div class="bk-row"><div><b>Steam isn't on this PC</b><p>Steam games show up here once it's installed.</p></div></div>`}`)],
+            ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : `<div class="bk-row"><div><b>Steam isn't on this PC</b><p>Steam games show up here once it's installed.</p></div></div>`}`)
+        + (hidden.length ? sub("Hidden games", "Games you hid from the Library. Scans leave them out until you show them again.", hidden.map(([k, name]) =>
+          `<div class="bk-row"><div><b>${esc(name)}</b></div>${b("secondary", `data-action="found-unhide" data-key="${esc(k)}"`, "Show again")}</div>`).join("")) : "")],
       ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
           ${sw("findGames", "Store", "The Store page, and the search in the sidebar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}
@@ -4757,7 +4784,7 @@
       } catch (e) { toast(errText(e), "error"); }
       S.hooksBusy = false; render(); if (S.dialog) renderOverlay();
     },
-    rescan() { S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [] }; render(); api.scan(); },
+    rescan() { S.rescanning = new Set((S.found.games || []).map((f) => f.key)); S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [] }; render(); api.scan(); },
     async "add-all"() {
       const keys = (S.found.games || []).filter((f) => f.ready).map((f) => f.key);
       await addFound(keys);
@@ -4776,7 +4803,16 @@
     },
     async "found-hide"(el) {
       if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
-      try { await api.ignoreFound(el.dataset.key); S.found.games = S.found.games.filter((f) => f.key !== el.dataset.key); render(); } catch (e) { toast(errText(e), "error"); }
+      const key = el.dataset.key, f = (S.found.games || []).find((x) => x.key === key);
+      try { await api.ignoreFound(key); } catch (e) { toast(errText(e), "error"); return; }
+      S.found.games = S.found.games.filter((x) => x.key !== key);
+      await loadFound();
+      await refresh();
+      // A game added by hand leaves the Library for good; a scanned one can come back.
+      if (f && !f.added) toast(`${f.name} is hidden from the Library.`, "success", { label: "Undo", run: () => actions["found-unhide"]({ dataset: { key } }) });
+    },
+    async "found-unhide"(el) {
+      try { await api.unhideFound(el.dataset.key); await loadFound(); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     async "show-log"() { try { S.logText = (await api.log()) || "Nothing yet."; } catch (e) { S.logText = errText(e); } render(); },
     quit: () => api.quit(),
