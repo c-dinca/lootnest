@@ -1726,3 +1726,10 @@ option { background: var(--bg-surface); color: var(--fg-1); }
   .bp, .bp.out, .bp-arrive > *, .bp-detail-text, .bp-tab[aria-current="true"]::after { animation: none; }
   .bp-tile, .bp-btn, .bp-person, .bp-achcard, .bp-bg-l { transition: none; }
 }
+
+/* Safety you can see on a game's page. */
+.gp-conflict { margin: var(--space-4) 0 0; }
+.gp-conflict .ln-banner { border-left: 3px solid var(--warning); }
+.gpage-note.gp-ac { align-items: flex-start; max-width: 90ch; line-height: var(--lh-snug); }
+.gpage-note.gp-ac .ln-icon { flex: none; margin-top: 1px; }
+.gpage-note .gpage-link { font-size: inherit; }

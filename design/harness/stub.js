@@ -88,6 +88,7 @@
   const state = () => ({
     version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
     config: { version: 2, players: FIRST ? [{ id: "p1", name: "Player 1", color: "#6C9BD2" }, { id: "p2", name: "Player 2", color: "#D9738E" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], tags: TAGS, offline: OFFLINE },
+    conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime, steamTime, avatars: {}, banners: {}, shelf,
@@ -219,6 +220,14 @@
       return ok();
     },
     ps_testToast: () => ok(),
+    ps_gameBackups: (id) => ok([
+      { id: "20261107-201500", when: iso(40 * 60e3), owner: "p2", size: 15e6 },
+      { id: "20261107-181000", when: iso(3 * h), owner: "p1", size: 7.3e6 },
+      { id: "20261106-210000", when: iso(d), owner: "p2", size: 14e6 },
+    ]),
+    ps_restoreBackup: () => ok({ owner: "p1", where: "profile" }),
+    ps_dismissConflict: () => ok(),
+    ps_gameFacts: (dir) => ok({ antiCheat: /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "" }),
     ps_bigPicture: () => ok(),
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],

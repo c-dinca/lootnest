@@ -36,6 +36,10 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_savePoints", a.apiSavePoints))
 	must(a.w.Bind("ps_saveCheck", a.apiSaveCheck))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
+	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
+	must(a.w.Bind("ps_restoreBackup", a.apiRestoreBackup))
+	must(a.w.Bind("ps_dismissConflict", a.apiDismissConflict))
+	must(a.w.Bind("ps_gameFacts", a.apiGameFacts))
 	must(a.w.Bind("ps_reportProblem", a.apiReportProblem))
 	must(a.w.Bind("ps_makeSavePoint", a.apiMakeSavePoint))
 	must(a.w.Bind("ps_restoreSavePoint", a.apiRestoreSavePoint))
@@ -167,6 +171,7 @@ type AppState struct {
 	Banners   map[string]string                     `json:"banners"`   // player id -> banner picture as a data: URL
 	Shelf     map[string]map[string]core.ShelfEntry `json:"shelf"`     // player id -> Library key -> their take
 	Activity  core.Activity                         `json:"activity"`  // time played per day
+	Conflicts map[string]SteamCloudNote             `json:"conflicts"` // game id -> what Steam Cloud replaced, until dismissed
 }
 
 func (a *App) apiState() AppState {
@@ -176,6 +181,9 @@ func (a *App) apiState() AppState {
 	a.mu.Unlock()
 	st.Active = a.store.LoadState()
 	st.Sessions = a.sessionsSnapshot()
+	conflictMu.Lock()
+	st.Conflicts = loadConflicts()
+	conflictMu.Unlock()
 	st.Sources = a.gameSources(cfg)
 	st.Recent = a.store.LoadRecent()
 	st.Playtime = a.store.LoadPlaytime()
