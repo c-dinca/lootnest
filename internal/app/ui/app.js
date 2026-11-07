@@ -22,6 +22,7 @@
     browse: (id, kind, start) => call("ps_browse", id, kind, start || ""),
     play: (r) => call("ps_play", r),
     load: (r) => call("ps_load", r),
+    closeGame: (id) => call("ps_closeGame", id),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
@@ -1018,8 +1019,9 @@
       const pt = playtimeOf(it);
       let play, state;
       if (s) {
-        play = `<span class="gpage-session ln-player" style="--player:${esc(color(s.playerId))}" role="status"><span class="ln-spinner" aria-hidden="true"></span>${esc(sessionText(s))}</span>`;
-        state = `<div class="gpage-state"><b>${esc(possessive(pname(s.playerId)))} files are loaded</b><span>Their progress goes back to their profile when the game closes</span></div>`;
+        play = `<span class="gpage-session ln-player" style="--player:${esc(color(s.playerId))}" role="status">${s.phase === "playing" ? '<span class="ln-mark ln-player" style="--player:' + esc(color(s.playerId)) + '"></span>' : '<span class="ln-spinner" aria-hidden="true"></span>'}${esc(sessionText(s))}</span>`;
+        state = `<div class="gpage-state"><b>${esc(possessive(pname(s.playerId)))} files are loaded</b><span>Their progress goes back to their profile when the game closes</span></div>`
+          + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
         play = lead ? `<button class="ln-button ln-button--play ln-button--lg ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>` : "";
         const sub = owner && rec && rec.player === owner ? `Played ${esc(ago(rec.at))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the player's files first";
@@ -2343,6 +2345,14 @@
       try { await api.launchFound(el.dataset.key); toast(`Starting ${f ? f.name : "the game"}`); } catch (e) { toast(errText(e), "error"); }
     },
     filter(el) { S.filter = el.dataset.filter; render(); },
+    async "close-game"(el) {
+      const g = game(el.dataset.game), s = g && session(g.id);
+      if (!g) return;
+      const n = s ? pname(s.playerId) : "";
+      const ok = await confirmDialog({ title: `Close ${g.name}?`, body: `The game is asked to quit, as if you closed its window. Anything it hasn't saved yet may be lost.${n ? ` Once it closes, ${n}'s progress goes back to their profile.` : ""}`, ok: "Close the game" });
+      if (!ok) return;
+      try { await api.closeGame(g.id); toast(`Asked ${g.name} to close`); } catch (e) { toast(errText(e), "error"); }
+    },
     who(el) { S.who = S.who === el.dataset.player ? "" : el.dataset.player; render(); },
     async "covers-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
