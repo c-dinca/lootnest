@@ -114,7 +114,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.35.0)
+## Where things stand (1.36.0)
 
 These shipped recently, newest last:
 
@@ -178,6 +178,12 @@ These shipped recently, newest last:
   top sellers; CheapShark best deals with Metacritic 75 or more). The
   sidebar search (`#gq`, Ctrl+K, `renderGq()`) shows Library matches, then
   store hits.
+- **1.36** Will it run here? (`core/perf.go`): rough GPU and CPU scores
+  (`gpuScores`, Intel and Ryzen tables by generation, laptop factors),
+  `WillItRun` gives high, recommended, minimum, struggles or below from
+  the weakest of graphics and processor (memory and space only lower it),
+  shown as `runCard()` with bars in the offer drawer. Add new cards and
+  chips to the tables as they come out.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 1.23.2 fixed achievements not showing for Unreal folder games such as
@@ -238,8 +244,7 @@ for safety.
 
 - Disk space: what each game and profile takes, what can move to another
   drive (Game Mover exists for Steam), and what can go, with a backup first.
-- "Will it run?" as a verdict: 1.34 shows Steam's requirements beside this
-  PC and checks memory and space only. A CPU and GPU verdict would need a
-  benchmark database; there's no reliable free one.
+- Better "Will it run?" data: 1.36 uses Lootnest's own rough score tables
+  (`core/perf.go`). They need updating as new parts ship.
 - Signing in to Microsoft or Google directly for cloud saves (on hold;
   the folder approach works).

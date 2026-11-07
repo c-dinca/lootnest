@@ -112,7 +112,8 @@ func (a *App) apiGameOffer(appID int, name string) error {
 	go func() {
 		out := map[string]any{"appId": appID}
 		defer func() { a.emit("gameOffer", out) }()
-		out["pc"] = a.pcSpecs()
+		pc := a.pcSpecs()
+		out["pc"] = pc
 		byID, byName := a.ownedIndex()
 		out["owned"] = ownedOf(byID, byName, appID, name)
 		findMu.Lock()
@@ -120,6 +121,7 @@ func (a *App) apiGameOffer(appID int, name string) error {
 		findMu.Unlock()
 		if ok && time.Since(c.at) < findKeep {
 			out["offer"] = c.offer
+			out["verdict"] = core.WillItRun(pc, c.offer.Minimum, c.offer.Recommended)
 			return
 		}
 		o, err := core.FindOffer(fetchURL, appID, storeCountry(), sharkStores())
@@ -132,6 +134,7 @@ func (a *App) apiGameOffer(appID int, name string) error {
 		findOffers[appID] = findCached{o, time.Now()}
 		findMu.Unlock()
 		out["offer"] = o
+		out["verdict"] = core.WillItRun(pc, o.Minimum, o.Recommended)
 	}()
 	return nil
 }
