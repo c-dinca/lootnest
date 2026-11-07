@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.14.0
+
+- **Cloud saves**, a new page under **Library**: every player's saves for every game, in your own cloud.
+  - Choose OneDrive, Google Drive, Dropbox or iCloud Drive (Lootnest finds the ones installed on your PC, or tells you where to get them), or a USB drive or any folder.
+  - Saves go up after each session. On another PC with the same cloud folder, the newest come down before the game starts, like Steam Cloud, for every game and every launcher.
+  - If a player's saves changed on two PCs since they last synced, Lootnest asks which to keep; the other copy is kept in that game's backups.
+  - Players are matched across PCs by name, and games by their Steam game, launcher link or name, so a game added on each PC on its own still syncs.
+  - The page shows every game and player: up to date, changed here, newer on another PC, or changed on both, with **Sync now**.
+- The password now belongs to the cloud folder: set it once, and enter the same one on your other PCs. Saves and backups in the folder are encrypted (AES-256); a PC without the password can't read them.
+- Backups of everything (and **Restore**) moved to the Cloud saves page; Settings links to it.
+- Signing in to Microsoft or Google right in Lootnest, without their apps, comes in a later version.
+
 ## 1.13.0
 
 - **Export profile** on a player's page: one file with their saves and settings in every game they have a profile for, their picture and banner, shelf and play time. Take it to another PC or a friend's, optionally with a password (AES-256).

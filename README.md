@@ -76,7 +76,7 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 | **SteamGridDB API key** (optional, in Settings) | With covers on, for games the Steam store doesn't know | The game's name or Steam id and your key, to `www.steamgriddb.com`; images come from its CDN and are saved on your PC |
 | **Show game updates and news** | Only if you turn it on (off by default), when you open a game's page; each feed is read at most every 6 hours | The game's Steam app id to `api.steampowered.com` (for a game outside Steam, first its name to `store.steampowered.com`); an update's pictures load from Steam's image server when you open it |
 
-**Backup** (Settings) never goes online itself: Lootnest writes the backup file to the folder you choose. If that folder is one OneDrive, Google Drive or Dropbox syncs, that app uploads it, under that app's own terms. With a password, the file is encrypted on your PC first (AES-256-GCM), so the cloud only ever has the encrypted file.
+**Cloud saves and backup** never go online themselves: Lootnest writes the backup file to the folder you choose. If that folder is one OneDrive, Google Drive or Dropbox syncs, that app uploads it, under that app's own terms. With a password, the file is encrypted on your PC first (AES-256-GCM), so the cloud only ever has the encrypted file.
 
 ## How profiles work
 
@@ -111,6 +111,7 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `avatars` and `banners` (pictures for player profiles)
 - `shelf.json` and `activity.json` (each player's shelf and time played per day)
 - `backup.json` (when the last backup to your folder was made)
+- `sync.json` (what each player's cloud saves were at the last sync)
 - `config.json`
 - `lootnest.log`
 
