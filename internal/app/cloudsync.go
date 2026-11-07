@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,8 +52,23 @@ func (a *App) profileDirs(pid string, g *core.Game) func(core.PathEntry) string 
 	return func(pe core.PathEntry) string { return filepath.Join(dir, pe.ID) }
 }
 
+// syncGame is g with the locations cloud saves carries: its own paths and
+// each profile's achievements (all: every place they could go, to bring
+// them down to a PC that has none yet).
+func (a *App) syncGame(g *core.Game, all bool) *core.Game {
+	c := *g
+	c.Paths = a.eng.SyncPaths(g, all)
+	return &c
+}
+
 func (a *App) liveDirs(g *core.Game) func(core.PathEntry) string {
 	return func(pe core.PathEntry) string {
+		if strings.HasPrefix(pe.Path, core.AchToken) {
+			if p := a.eng.AchLive(g, pe.ID); p != "" {
+				return p
+			}
+			return filepath.Join(os.TempDir(), "lootnest-unresolved", pe.ID) // never exists
+		}
 		p, err := a.env.Resolve(pe.Path)
 		if err != nil {
 			return filepath.Join(os.TempDir(), "lootnest-unresolved", pe.ID) // never exists
@@ -89,7 +105,7 @@ func (a *App) planSync(c *core.Cloud, cfg *core.Config, g *core.Game, pid string
 	}
 	var err error
 	if p.Active || a.eng.HasProfile(pid, g.ID) {
-		if p.Local, err = core.SyncHash(g, dirs); err != nil {
+		if p.Local, err = core.SyncHash(a.syncGame(g, false), dirs); err != nil {
 			return nil, err
 		}
 	}
@@ -148,7 +164,7 @@ func (a *App) upload(c *core.Cloud, cfg *core.Config, g *core.Game, pid string, 
 	if p.Meta != nil {
 		version = p.Meta.Version + 1
 	}
-	meta, err := c.Upload(p.CloudPID, pl, g, a.profileDirs(pid, g), p.Local, version)
+	meta, err := c.Upload(p.CloudPID, pl, a.syncGame(g, false), a.profileDirs(pid, g), p.Local, version)
 	if err != nil {
 		a.logf("ERROR uploading %s's %s saves: %v", pl.Name, g.Name, err)
 		return
@@ -176,7 +192,7 @@ func (a *App) syncDown(c *core.Cloud, cfg *core.Config, g *core.Game, pid string
 			return fmt.Errorf("couldn't keep the saves here first: %w", err)
 		}
 	}
-	skipped, err := c.Download(p.CloudPID, g, dirs, tmp)
+	skipped, err := c.Download(p.CloudPID, a.syncGame(g, true), dirs, tmp)
 	if err != nil {
 		return err
 	}
@@ -184,7 +200,7 @@ func (a *App) syncDown(c *core.Cloud, cfg *core.Config, g *core.Game, pid string
 		_ = os.MkdirAll(a.store.ProfileDir(pid, g.ID), 0o755)
 		_ = os.WriteFile(filepath.Join(a.store.ProfileDir(pid, g.ID), ".initialized"), []byte(time.Now().Format(time.RFC3339)), 0o644)
 	}
-	local, _ := core.SyncHash(g, dirs)
+	local, _ := core.SyncHash(a.syncGame(g, false), dirs)
 	a.saveRecord(pid, p.Key, local, p.Meta.Hash)
 	a.logf("Cloud saves: brought %s's %s from %s%s", cfg.PlayerName(pid), g.Name, p.Meta.Computer,
 		map[bool]string{true: fmt.Sprintf(" (%d save locations this PC's game doesn't have were left out)", skipped), false: ""}[skipped > 0])
@@ -197,7 +213,7 @@ func (a *App) keepCloudAside(c *core.Cloud, g *core.Game, p *syncPlan) {
 	dir := filepath.Join(a.store.BackupsDir(), g.ID, time.Now().Format("20060102-150405")+"-cloud-"+p.Meta.Computer)
 	tmp := filepath.Join(DataDir(), "sync-tmp-"+time.Now().Format("150405.000"))
 	defer os.RemoveAll(tmp)
-	if _, err := c.Download(p.CloudPID, g, func(pe core.PathEntry) string { return filepath.Join(dir, pe.ID) }, tmp); err != nil {
+	if _, err := c.Download(p.CloudPID, a.syncGame(g, true), func(pe core.PathEntry) string { return filepath.Join(dir, pe.ID) }, tmp); err != nil {
 		a.logf("ERROR keeping the cloud's %s saves: %v", g.Name, err)
 	}
 }
@@ -455,7 +471,7 @@ func (a *App) apiSyncResolve(gameID, pid, answer string) error {
 				return
 			}
 		}
-		local, _ := core.SyncHash(g, a.profileDirs(pid, g))
+		local, _ := core.SyncHash(a.syncGame(g, false), a.profileDirs(pid, g))
 		p.Local = local
 		a.upload(c, cfg, g, pid, p)
 	}()
