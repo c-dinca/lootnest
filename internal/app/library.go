@@ -130,6 +130,7 @@ func (a *App) apiLaunchFound(key string) error {
 		return errFoundGone
 	}
 	name, exe, appID, args := f.Name, f.Exe, f.AppID, f.Args
+	_ = a.store.RecordPlay(key, "", time.Now())
 	if appID > 0 {
 		if a.env.SteamPath == "" {
 			return errors.New("Steam wasn't found on this PC")
@@ -190,4 +191,35 @@ func modTime(p string) time.Time {
 		return st.ModTime()
 	}
 	return time.Time{}
+}
+
+var (
+	artMu    sync.Mutex
+	artCache = map[string]string{} // "<kind>:<appid>" -> data: URL, or ""
+)
+
+// apiArt returns a Steam game's wide banner ("hero") or transparent logo
+// ("logo") from Steam's cache on this PC, as a data: URL, or "".
+func (a *App) apiArt(appID int, kind string) string {
+	k := fmt.Sprintf("%s:%d", kind, appID)
+	artMu.Lock()
+	c, ok := artCache[k]
+	artMu.Unlock()
+	if ok {
+		return c
+	}
+	p := ""
+	switch kind {
+	case "hero":
+		p = core.SteamHero(a.env.SteamPath, appID)
+	case "logo":
+		p = core.SteamLogo(a.env.SteamPath, appID)
+	}
+	if p != "" {
+		c = dataURL(p)
+	}
+	artMu.Lock()
+	artCache[k] = c
+	artMu.Unlock()
+	return c
 }

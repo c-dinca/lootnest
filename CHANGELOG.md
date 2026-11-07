@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0
+
+- A new look. Deep blue-graphite instead of brown, game titles set in Bricolage Grotesque (built in, nothing is downloaded), and each player's colour used for their own Play button, the same as on the "Who's playing?" screen.
+- The Library opens on the game played last, in Steam's wide artwork for it, with **Play as** buttons for each player, or **Play** for games without profiles.
+- Every game has its own page instead of a side panel: its artwork and cover, a Play button per player, what Lootnest knows about it (store, who has a profile, whose files are loaded, Steam Cloud, when it was last played) and everything you can do with it. The cover moves from the Library into the page when you open it, and back when you return (turned off with Windows' animation effects). Esc goes back.
+- Cards in the Library show a dot for each player with a profile, and a round Play button on the cover.
+
 ## 1.5.3
 
 - Every game has a picture now. A game without a cover shows its own icon, taken from its .exe on your PC (nothing goes online), over a soft wash of the icon's colours.

@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 )
 
 const ConfigVersion = 1
@@ -399,4 +400,46 @@ func writeJSONAtomic(path string, v any) error {
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+// Played is when a game was last started from Lootnest, and by whom.
+type Played struct {
+	At     time.Time `json:"at"`
+	Player string    `json:"player,omitempty"`
+}
+
+func (s *Store) RecentPath() string { return filepath.Join(s.Dir, "recent.json") }
+
+// LoadRecent returns when each game was last played, by Library key
+// ("game:<id>" for games with profiles, the scan key for the others).
+func (s *Store) LoadRecent() map[string]Played {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := map[string]Played{}
+	if b, err := os.ReadFile(s.RecentPath()); err == nil {
+		_ = json.Unmarshal(b, &out)
+	}
+	return out
+}
+
+// RecordPlay notes that a game was just started. Only the 200 most recent
+// games are kept.
+func (s *Store) RecordPlay(key, playerID string, at time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rec := map[string]Played{}
+	if b, err := os.ReadFile(s.RecentPath()); err == nil {
+		_ = json.Unmarshal(b, &rec)
+	}
+	rec[key] = Played{At: at, Player: playerID}
+	if len(rec) > 200 {
+		oldest := ""
+		for k, p := range rec {
+			if oldest == "" || p.At.Before(rec[oldest].At) {
+				oldest = k
+			}
+		}
+		delete(rec, oldest)
+	}
+	return writeJSONAtomic(s.RecentPath(), rec)
 }

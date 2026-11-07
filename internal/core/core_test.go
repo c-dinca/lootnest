@@ -4,10 +4,12 @@ import (
 	"errors"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func write(t *testing.T, p, s string) {
@@ -508,5 +510,43 @@ func TestOldPlayerColorsMapped(t *testing.T) {
 	got, _, _ := store.LoadConfig()
 	if got.Players[0].Color != PlayerColors[0] || got.Players[1].Color != PlayerColors[1] {
 		t.Fatalf("colours not mapped: %+v", got.Players)
+	}
+}
+
+func TestSteamHeroAndLogo(t *testing.T) {
+	steam := t.TempDir()
+	cache := filepath.Join(steam, "appcache", "librarycache")
+	writeJPEG(t, filepath.Join(cache, "1091500", "library_600x900.jpg"), 600, 900)
+	writeJPEG(t, filepath.Join(cache, "1091500", "library_hero.jpg"), 1920, 620)
+	writeJPEG(t, filepath.Join(cache, "1091500", "library_hero_blur.jpg"), 1920, 620)
+	writeJPEG(t, filepath.Join(cache, "1091500", "header.jpg"), 460, 215)
+	logo := filepath.Join(cache, "1091500", "logo.png")
+	_ = os.MkdirAll(filepath.Dir(logo), 0o755)
+	f, _ := os.Create(logo)
+	_ = png.Encode(f, image.NewNRGBA(image.Rect(0, 0, 640, 260)))
+	f.Close()
+	if got := SteamHero(steam, 1091500); got != filepath.Join(cache, "1091500", "library_hero.jpg") {
+		t.Errorf("hero: %q", got)
+	}
+	if got := SteamLogo(steam, 1091500); got != logo {
+		t.Errorf("logo: %q", got)
+	}
+	if SteamHero(steam, 730) != "" || SteamLogo(steam, 730) != "" {
+		t.Error("a game without art has none")
+	}
+}
+
+func TestRecentPlays(t *testing.T) {
+	s := &Store{Dir: t.TempDir()}
+	if len(s.LoadRecent()) != 0 {
+		t.Fatal("nothing played yet")
+	}
+	t0 := time.Date(2026, 11, 7, 10, 0, 0, 0, time.UTC)
+	_ = s.RecordPlay("game:cs2", "p1", t0)
+	_ = s.RecordPlay("steam:1091500", "", t0.Add(time.Hour))
+	_ = s.RecordPlay("game:cs2", "p2", t0.Add(2*time.Hour))
+	r := s.LoadRecent()
+	if len(r) != 2 || r["game:cs2"].Player != "p2" || !r["game:cs2"].At.Equal(t0.Add(2*time.Hour)) {
+		t.Fatalf("got %+v", r)
 	}
 }

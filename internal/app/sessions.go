@@ -132,6 +132,9 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 	a.sessions[g.ID] = &Session{GameID: g.ID, PlayerID: req.PlayerID, Phase: "loading", Since: time.Now(), viaPlay: req.Launch}
 	a.mu.Unlock()
 	a.emitSessions()
+	if req.Launch {
+		_ = a.store.RecordPlay("game:"+g.ID, req.PlayerID, time.Now())
+	}
 
 	go a.runSwap(cfg, g, req)
 	return Need{}, nil
@@ -278,6 +281,7 @@ func (a *App) tick() {
 			}
 			a.sessions[g.ID] = &Session{GameID: g.ID, PlayerID: owner, Phase: "playing", Outside: true, Since: time.Now()}
 			changed = true
+			go a.store.RecordPlay("game:"+g.ID, owner, time.Now())
 			a.logf("%s started outside Lootnest; %s's files are loaded", g.Name, cfg.PlayerName(owner))
 			who := cfg.PlayerName(owner)
 			if g.Launch.Type == "steam" && g.SteamDirect {
