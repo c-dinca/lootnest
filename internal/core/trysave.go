@@ -3,8 +3,10 @@ package core
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -47,11 +49,17 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 	if lst, err := os.Stat(target.live); err == nil {
 		liveIsFile = !lst.IsDir()
 	}
-	if st.IsDir() && liveIsFile {
-		return fmt.Errorf("%s keeps that save as a single file; choose a file, not a folder", g.Name)
-	}
 	if st.IsDir() {
-		src = importRoot(src, target.live)
+		if one := onlyFile(src); one != "" && (liveIsFile || filepath.Dir(one) == importRoot(src, target.live)) {
+			src = one
+		} else if liveIsFile {
+			return fmt.Errorf("%s keeps that save as a single file; choose a file, not a folder", g.Name)
+		} else {
+			src = importRoot(src, target.live)
+		}
+		if st, err = os.Stat(src); err != nil {
+			return err
+		}
 	}
 
 	active := e.Store.LoadState()[g.ID]
@@ -118,22 +126,53 @@ func looksLikeFile(p string) bool {
 	return ext != "" && len(ext) <= 6 && !strings.ContainsAny(ext, " ")
 }
 
+// onlyFile is the path of the one regular file under dir, at any depth,
+// or "" when dir holds none or more than one.
+func onlyFile(dir string) string {
+	one := ""
+	n := 0
+	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err == nil && d.Type().IsRegular() {
+			one, n = p, n+1
+		}
+		if n > 1 {
+			return fs.SkipAll
+		}
+		return nil
+	})
+	if n != 1 {
+		return ""
+	}
+	return one
+}
+
 // importRoot is the folder inside src that matches a save folder: an
 // archive often holds one folder around the saves ("MySave/slot1.sav").
 // It goes down through single folders the live folder has no entry for.
+// When the live folder holds only folders (save slots), it goes down only
+// into a folder holding something the live folder has, so a lone slot
+// stays a slot.
 func importRoot(src, live string) string {
 	have := map[string]bool{}
+	slots := false
 	if es, err := os.ReadDir(live); err == nil {
+		slots = len(es) > 0
 		for _, e := range es {
+			slots = slots && e.IsDir()
 			have[strings.ToLower(e.Name())] = true
 		}
 	}
+	known := func(e os.DirEntry) bool { return have[strings.ToLower(e.Name())] }
 	for i := 0; i < 4; i++ {
 		es, err := os.ReadDir(src)
-		if err != nil || len(es) != 1 || !es[0].IsDir() || have[strings.ToLower(es[0].Name())] {
+		if err != nil || len(es) != 1 || !es[0].IsDir() || known(es[0]) {
 			return src
 		}
-		src = filepath.Join(src, es[0].Name())
+		next := filepath.Join(src, es[0].Name())
+		if kids, _ := os.ReadDir(next); slots && !slices.ContainsFunc(kids, known) {
+			return src
+		}
+		src = next
 	}
 	return src
 }

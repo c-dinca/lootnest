@@ -55,18 +55,18 @@ func (a *App) apiTrySave(gameID, from, locID, src, name string) (string, error) 
 	case ".zip", ".7z", ".rar":
 		dir := filepath.Join(DataDir(), "try-"+time.Now().Format("150405.000"))
 		defer os.RemoveAll(dir)
-		staged, err := core.StageUpdate(src, dir)
+		staged, err := core.StageUpdateMax(src, dir, 2<<30)
+		if errors.Is(err, core.ErrTooBig) {
+			return "", errors.New("That's too big to be a save.")
+		}
 		if err != nil {
 			return "", fmt.Errorf("Couldn't open %s: %v", filepath.Base(src), err)
 		}
 		src = staged
 	}
-	name = strings.TrimSpace(name)
+	name = trimRunes(name, 24)
 	if name == "" {
-		name = person.Name + " trying a save"
-	}
-	if r := []rune(name); len(r) > 32 {
-		name = string(r[:32])
+		name = freeName(trimRunes(person.Name, 24-len(" trying"))+" trying", cfg.Players)
 	}
 	for _, p := range cfg.Players {
 		if strings.EqualFold(p.Name, name) {

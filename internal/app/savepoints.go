@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -248,12 +249,15 @@ func (a *App) apiBranchSavePoint(key, id, name string) (string, error) {
 			person = up
 		}
 	}
-	name = strings.TrimSpace(name)
+	name = trimRunes(name, 24)
 	if name == "" {
-		name = person.Name + " from " + p.Name
-	}
-	if r := []rune(name); len(r) > 32 {
-		name = string(r[:32])
+		head := person.Name + " from "
+		if room := 24 - len([]rune(head)); room >= 4 {
+			name = head + trimWords(p.Name, room)
+		} else {
+			name = trimRunes(person.Name+" "+p.Name, 24)
+		}
+		name = freeName(name, cfg.Players)
 	}
 	run := core.Player{ID: core.NewID("p"), Name: name, Color: person.Color, Of: person.ID}
 	players := append(append([]core.Player{}, cfg.Players...), run)
@@ -264,6 +268,7 @@ func (a *App) apiBranchSavePoint(key, id, name string) (string, error) {
 		return "", err
 	}
 	if err := a.apiSavePlayers(players); err != nil {
+		_ = os.RemoveAll(a.store.ProfileDir(run.ID, t.game.ID))
 		return "", err
 	}
 	a.logf("New run %s of %s in %s, from the save point %q", run.Name, person.Name, t.name, p.Name)

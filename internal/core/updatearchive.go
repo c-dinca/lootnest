@@ -33,21 +33,35 @@ func NeedsStaging(src string) bool {
 	return false
 }
 
+// ErrTooBig is StageUpdateMax's answer for an archive that holds more than
+// its limit.
+var ErrTooBig = errors.New("the archive holds more than the limit")
+
 // StageUpdate extracts a .zip, .7z or .rar into dst (made empty first) and returns
 // dst, to plan as a folder. A password-protected archive can't be read.
 func StageUpdate(src, dst string) (string, error) {
+	return StageUpdateMax(src, dst, 0)
+}
+
+// StageUpdateMax is StageUpdate with a limit on the bytes extracted (0 for
+// none), checked against the sizes the archive lists and again as it's read.
+func StageUpdateMax(src, dst string, max int64) (string, error) {
 	_ = os.RemoveAll(dst)
 	if err := os.MkdirAll(dst, 0o755); err != nil {
 		return "", err
 	}
+	var left *int64
+	if max > 0 {
+		left = &max
+	}
 	var err error
 	switch strings.ToLower(filepath.Ext(src)) {
 	case ".7z":
-		err = stage7z(src, dst)
+		err = stage7z(src, dst, left)
 	case ".rar":
-		err = stageRar(src, dst)
+		err = stageRar(src, dst, left)
 	case ".zip":
-		err = stageZip(src, dst)
+		err = stageZip(src, dst, left)
 	default:
 		err = errors.New("not a .zip, .7z or .rar")
 	}
@@ -58,7 +72,9 @@ func StageUpdate(src, dst string) (string, error) {
 	return dst, nil
 }
 
-func stageFile(dst, name string, r io.Reader) error {
+// stageFile writes one file, taking what it writes from *left when left
+// isn't nil.
+func stageFile(dst, name string, r io.Reader, left *int64) error {
 	rel, err := updateRel(name)
 	if err != nil {
 		return err
@@ -71,14 +87,22 @@ func stageFile(dst, name string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(f, r) // the archive checks its own CRC as it's read
+	if left != nil {
+		r = io.LimitReader(r, *left+1)
+	}
+	n, err := io.Copy(f, r) // the archive checks its own CRC as it's read
 	if cerr := f.Close(); err == nil {
 		err = cerr
+	}
+	if left != nil {
+		if *left -= n; *left < 0 && err == nil {
+			err = ErrTooBig
+		}
 	}
 	return err
 }
 
-func stage7z(src, dst string) error {
+func stage7z(src, dst string, left *int64) error {
 	r, err := sevenzip.OpenReader(src)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "password") {
@@ -87,6 +111,15 @@ func stage7z(src, dst string) error {
 		return errors.New("that .7z can't be opened; it may be damaged or incomplete")
 	}
 	defer r.Close()
+	if left != nil {
+		rest := uint64(*left)
+		for _, f := range r.File {
+			if f.UncompressedSize > rest {
+				return ErrTooBig
+			}
+			rest -= f.UncompressedSize
+		}
+	}
 	for _, f := range r.File {
 		if f.FileInfo().IsDir() {
 			continue
@@ -95,7 +128,7 @@ func stage7z(src, dst string) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", f.Name, err)
 		}
-		err = stageFile(dst, f.Name, rc)
+		err = stageFile(dst, f.Name, rc, left)
 		rc.Close()
 		if err != nil {
 			return fmt.Errorf("%s: %w", f.Name, err)
@@ -104,7 +137,7 @@ func stage7z(src, dst string) error {
 	return nil
 }
 
-func stageRar(src, dst string) error {
+func stageRar(src, dst string, left *int64) error {
 	r, err := rardecode.OpenReader(src)
 	if err != nil {
 		return errors.New("that .rar can't be opened; it may be damaged, or a part of it missing")
@@ -124,7 +157,10 @@ func stageRar(src, dst string) error {
 		if h.IsDir {
 			continue
 		}
-		if err := stageFile(dst, h.Name, r); err != nil {
+		if left != nil && !h.UnKnownSize && h.UnPackedSize > *left {
+			return ErrTooBig
+		}
+		if err := stageFile(dst, h.Name, r, left); err != nil {
 			return fmt.Errorf("%s: %w", h.Name, err)
 		}
 	}
@@ -256,12 +292,21 @@ func CopyVersion(dir string, applied []AppliedUpdate) string {
 	return FolderVersion(dir)
 }
 
-func stageZip(src, dst string) error {
+func stageZip(src, dst string, left *int64) error {
 	zr, err := zip.OpenReader(src)
 	if err != nil {
 		return errors.New("that .zip can't be opened; it may be damaged")
 	}
 	defer zr.Close()
+	if left != nil {
+		rest := uint64(*left)
+		for _, f := range zr.File {
+			if f.UncompressedSize64 > rest {
+				return ErrTooBig
+			}
+			rest -= f.UncompressedSize64
+		}
+	}
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
@@ -273,7 +318,7 @@ func stageZip(src, dst string) error {
 		if err != nil {
 			return err
 		}
-		err = stageFile(dst, f.Name, rc)
+		err = stageFile(dst, f.Name, rc, left)
 		rc.Close()
 		if err != nil {
 			return err

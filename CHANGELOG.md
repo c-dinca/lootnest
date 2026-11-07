@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.55.2
+
+- **Starting a run from a save point works again.** The name Lootnest gives the new run, such as "Ana from Before the boss", now fits the 24 characters a profile's name can have, and gets a number at the end when another profile has it. Before, a long or repeated name made the run fail to start.
+- **Try a save works for people with longer names.** The run's name is now, for example, "Alexandra trying", shortened to fit when needed and numbered when it's taken, and the name box stops at 24 characters.
+- A folder, .zip, .7z or .rar with one save file in it now counts as that file. It can go where the game keeps a single save file, and in a save folder it joins your files instead of taking the place of the whole folder.
+- When a save brought to Try a save holds one folder, and the game's save folder holds only folders (save slots), it's kept as a slot of its own.
+- If starting a run from a save point fails, its half-made files are removed.
+- Try a save doesn't open an archive that holds more than 2 GB: that's too big to be a save.
+
 ## 1.55.1
 
 - **Putting saves back is safer.** When you put back a copy from **Copies on this PC** or from the cloud folder, Lootnest now first copies every save location that copy will write to, including ones the game doesn't use on this PC yet. Before, only the locations the game knew of here were copied first.

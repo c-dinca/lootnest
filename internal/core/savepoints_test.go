@@ -80,3 +80,32 @@ func TestSavePointNothingToKeep(t *testing.T) {
 		t.Fatal("nothing left behind")
 	}
 }
+
+// A branch that can't copy a point's files leaves no profile folder.
+func TestSavePointBranchFails(t *testing.T) {
+	f := newFixture(t)
+	g := f.cfg.Game("cs2")
+	write(t, f.optFile(), "before the boss")
+	locs, err := f.eng.SaveLocs(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := f.eng.Store.SavePointsDir("game:cs2")
+	p, err := MakeSavePoint(root, locs, SavePoint{Player: "p1"}, time.Now(), 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bad := filepath.Join(root, p.ID, "files", "opt")
+	if err := os.RemoveAll(bad); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(bad, bad); err != nil {
+		t.Skip("no symlinks here:", err)
+	}
+	if err := f.eng.ProfileFromSavePoint(root, p.ID, g, "p9"); err == nil {
+		t.Fatal("a point whose files can't be read made a run")
+	}
+	if _, err := os.Stat(f.eng.Store.ProfileDir("p9", "cs2")); !os.IsNotExist(err) {
+		t.Fatalf("the run's folder was left behind: %v", err)
+	}
+}
