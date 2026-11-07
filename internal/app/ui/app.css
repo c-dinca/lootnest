@@ -1246,3 +1246,8 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .copy-card p { margin: 0; font-size: var(--fs-13); color: var(--fg-2); line-height: var(--lh-snug); overflow-wrap: anywhere; }
 .copy-card--done { border-left-color: var(--success); }
 .upd-keep { justify-self: start; margin-top: var(--space-1); font-size: var(--fs-12); color: var(--fg-2); }
+
+/* Achievement Doctor: one card per step, coloured by how it went. */
+.doc-steps { display: grid; gap: var(--space-2); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+.doc-step .run-head b { font: 650 var(--fs-15)/var(--lh-tight) var(--font-ui); letter-spacing: normal; }
+.doc-path { font-size: var(--fs-12); color: var(--fg-3); word-break: break-all; }
