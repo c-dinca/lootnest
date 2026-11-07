@@ -34,7 +34,8 @@ jobs:
       - name: Check for known vulnerabilities
         run: |
           go version
-          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          # Built with the same Go as Lootnest: an older one can't read its stdlib.
+          GOTOOLCHAIN="$(go env GOVERSION)" go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           GOOS=windows "$(go env GOPATH)/bin/govulncheck" ./...
           "$(go env GOPATH)/bin/govulncheck" ./internal/core/...
 
