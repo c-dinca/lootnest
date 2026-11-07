@@ -57,7 +57,25 @@ var uiFonts embed.FS
 // uiFontNames are the files in ui/fonts that system.css asks for.
 var uiFontNames = []string{"bricolage-latin", "bricolage-latin-ext", "figtree-latin", "figtree-latin-ext"}
 
-// pageHTML is the UI with its stylesheet, script and fonts inlined. Its
+// Kenney's Interface Sounds (CC0), embedded and inlined like the fonts.
+//
+//go:embed ui/sounds/*.ogg
+var uiSounds embed.FS
+
+// soundsJSON is {name: base64 OGG} for every file in ui/sounds.
+func soundsJSON() string {
+	m := map[string]string{}
+	files, _ := uiSounds.ReadDir("ui/sounds")
+	for _, f := range files {
+		if b, err := uiSounds.ReadFile("ui/sounds/" + f.Name()); err == nil {
+			m[strings.TrimSuffix(f.Name(), ".ogg")] = base64.StdEncoding.EncodeToString(b)
+		}
+	}
+	j, _ := json.Marshal(m)
+	return string(j)
+}
+
+// pageHTML is the UI with its stylesheet, script, fonts and sounds inlined. Its
 // Content-Security-Policy allows only this one script (by a nonce made for
 // each start), images and fonts from data: URLs and Steam's image servers,
 // and nothing else: no other scripts, no inline handlers, no fetches.
@@ -73,7 +91,7 @@ func pageHTML() string {
 	}
 	h := strings.Replace(uiHTML, "/*@CSS*/", css, 1)
 	h = strings.ReplaceAll(h, "@NONCE@", n)
-	return strings.Replace(h, "/*@JS*/", uiJS, 1)
+	return strings.Replace(h, "/*@JS*/", strings.Replace(uiJS, "/*@SOUNDS*/{}", soundsJSON(), 1), 1)
 }
 
 type App struct {

@@ -47,6 +47,9 @@ If any step shows someone else's settings or saves, stop and send the log.
    note "Save point made" shows over the game.
 3. If the game has achievements a tool keeps (step 2), unlock one. A note
    shows over the game.
+4. While the game runs, the unlock (and a save point made with
+   Ctrl+Shift+F5) also plays a short sound. If it stays silent, note it
+   and send the log. Settings, Games and swaps turns these sounds off.
 
 ## 4. Updates (games in a folder only)
 

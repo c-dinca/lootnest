@@ -159,6 +159,9 @@ type Settings struct {
 	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
 	// runs (on unless turned off).
 	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`
+	// SoundsOff silences the window's sounds for unlocks, save points and
+	// swaps (on unless turned off).
+	SoundsOff bool `json:"soundsOff,omitempty"`
 }
 
 type Config struct {

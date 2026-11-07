@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.57.0
+
+- **Real sounds in Big Picture.** Moving, choosing, switching tabs and going back play short recorded sounds instead of the old beeps. They also play when your PC is set to reduce motion; the sound button at the bottom of Big Picture still turns them off.
+- **A sound for unlocks, save points and swaps.** Lootnest's window plays a short sound when an achievement unlocks (with an extra chime for ultra rare ones), when a save point is made and when a profile's files are loaded. Never for games with an anti-cheat. Turn it off in Settings, Games and swaps.
+- The sounds are Kenney's Interface Sounds, free to use (CC0), and come inside Lootnest: nothing is downloaded.
+
 ## 1.56.0
 
 - **Games a scan finds show up at once.** Home, the sidebar and the Library's count update as soon as a scan ends, on any page. Scan again says how many new games it found, or that there were none.
