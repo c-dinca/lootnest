@@ -21,6 +21,7 @@
     checkPath: (p) => call("ps_checkPath", p),
     browse: (id, kind, start) => call("ps_browse", id, kind, start || ""),
     trySave: (gameId, from, loc, src, name) => call("ps_trySave", gameId, from, loc, src, name),
+    saveRecap: (name, year, url) => call("ps_saveRecap", name, year, url),
     play: (r) => call("ps_play", r),
     load: (r) => call("ps_load", r),
     closeGame: (id) => call("ps_closeGame", id),
@@ -2249,6 +2250,10 @@
         <div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
         <button class="btn primary" data-action="new-run-go" ${D.busy ? "disabled" : ""}>Start the run</button></div></div></div>` : "";
       setTimeout(() => { const i = $("#newrun-name"); if (i && document.activeElement !== i) i.focus(); }, 20);
+    } else if (D.kind === "recap") {
+      o.innerHTML = viewRecap(D);
+      const cv = $("#recap-canvas"), p = player(D.player);
+      if (cv && p) drawRecap(cv, p, D.year).catch(() => {});
     } else if (D.kind === "trysave") {
       o.innerHTML = viewTrySave(D);
       setTimeout(() => { const i = $("#try-name"); if (i && !D.src && document.activeElement === document.body) i.focus(); }, 20);
@@ -2723,11 +2728,113 @@
         <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}${p.bio ? `<p class="pp-bio">${esc(p.bio).replace(/\n/g, "<br>")}</p>` : ""}</div>
         <div class="pp-actions">${last ? `<button class="ln-button ln-button--play ln-button--lg" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${GI.play}Play ${esc(last.it.name)}</button>` : ""}
           <button class="ln-button ln-button--secondary" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button>
+          <button class="ln-button ln-button--ghost" data-action="recap" data-player="${esc(p.id)}">Year in games</button>
           <button class="ln-button ln-button--ghost" data-action="export-player" data-player="${esc(p.id)}">Export profile</button></div></div>
       <div class="pp-body">${body || `<p class="hint">Nothing to show yet: <b>Edit profile</b> chooses what this page shows.</p>`}</div>
     </div>`;
   }
 
+  // ------------------------------------------------------------ recap --
+  // Your year in games: a picture of a profile's year, drawn here from the
+  // daily activity and saved in Pictures\Lootnest to share. Nothing is sent.
+  const recapYears = (p) => [...new Set(Object.keys(daysOf(p.id)).filter((k) => daySum(daysOf(p.id)[k]) > 0).map((k) => +k.slice(0, 4)))].sort((a, b) => b - a);
+  function recapData(p, year) {
+    const days = daysOf(p.id), perGame = {}, perMonth = new Array(12).fill(0);
+    let total = 0;
+    const keys = Object.keys(days).filter((k) => k.startsWith(year + "-") && daySum(days[k]) > 0).sort();
+    keys.forEach((k) => {
+      const day = days[k];
+      total += daySum(day);
+      perMonth[+k.slice(5, 7) - 1] += daySum(day);
+      Object.entries(day).forEach(([g, sec]) => { perGame[g] = (perGame[g] || 0) + sec; });
+    });
+    let best = 0, run = 0, prev = null;
+    keys.forEach((k) => { const d = new Date(k + "T12:00:00"); run = prev && (d - prev) / 864e5 < 1.5 ? run + 1 : 1; best = Math.max(best, run); prev = d; });
+    const top = Object.entries(perGame).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, sec]) => { const it = itemByKey(k); return { it, name: it ? it.name : "A game no longer here", sec }; });
+    return { total, days: keys.length, games: Object.keys(perGame).length, best, top, perMonth };
+  }
+  const loadImg = (src) => new Promise((ok) => { if (!src) { ok(null); return; } const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+  async function drawRecap(cv, p, year) {
+    const R = recapData(p, year);
+    const W = 1080, H = 1350, pad = 84;
+    cv.width = W; cv.height = H;
+    const x = cv.getContext("2d");
+    try { await document.fonts.ready; } catch (e) { /* the fallbacks will do */ }
+    const C = { bg: "#111217", fg: "#DFE5EB", fg2: "#A7B0BC", line: "rgba(223,229,235,0.14)", red: "#EF233C", me: p.color || "#6C9BD2" };
+    const font = (w, px, fam, stretch) => { x.font = `${w} ${px}px ${fam === "t" ? "Bricolage, sans-serif" : "Figtree, sans-serif"}`; try { x.fontStretch = stretch || "normal"; } catch (e) { /* older engines */ } };
+    const fit = (t, max) => { if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + "…").width > max) t = t.slice(0, -1); return t + "…"; };
+    x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
+    // The most played game's art, faded behind the year.
+    const lead = R.top[0] && R.top[0].it;
+    if (lead) { ensureCover(lead); loadArt(lead); }
+    const art = lead ? await loadImg(artOf(lead) || S.covers[coverKey(lead)]) : null;
+    if (art) {
+      const h = 640, sc = Math.max(W / art.width, h / art.height);
+      x.globalAlpha = 0.38; x.drawImage(art, (W - art.width * sc) / 2, (h - art.height * sc) / 3, art.width * sc, art.height * sc); x.globalAlpha = 1;
+      const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "rgba(17,18,23,0.35)"); g.addColorStop(1, C.bg);
+      x.fillStyle = g; x.fillRect(0, 0, W, h);
+    }
+    // The mark and the name.
+    x.strokeStyle = C.fg; x.lineWidth = 3.2; x.lineCap = "round";
+    x.beginPath(); x.arc(pad + 18, 98, 15, 0.08 * Math.PI, 0.92 * Math.PI); x.stroke();
+    x.beginPath(); x.arc(pad + 18, 98, 8.5, 0.08 * Math.PI, 0.92 * Math.PI); x.stroke();
+    x.strokeStyle = C.red; x.beginPath(); x.arc(pad + 18, 86, 5, 0, 2 * Math.PI); x.stroke();
+    font(700, 30, "u"); x.fillStyle = C.fg; x.textBaseline = "middle"; x.fillText("Lootnest", pad + 46, 92);
+    // The year, big.
+    x.textBaseline = "alphabetic";
+    font(720, 260, "t", "condensed"); x.fillStyle = C.fg; x.fillText(String(year), pad - 8, 390);
+    font(600, 40, "u"); x.fillStyle = C.fg2; x.fillText(fit(`${possessive(p.name)} year in games`, W - pad * 2), pad, 452);
+    // Four numbers.
+    const stats = [[Math.round(R.total / 3600), "hours"], [R.days, R.days === 1 ? "day played" : "days played"], [R.games, R.games === 1 ? "game" : "games"], [R.best, "days in a row"]];
+    const sw = (W - pad * 2) / 4;
+    stats.forEach(([v, l], i) => {
+      const sx = pad + i * sw;
+      x.fillStyle = C.line; x.fillRect(sx, 506, sw - 24, 2);
+      font(720, 92, "t", "condensed"); x.fillStyle = i === 0 ? C.me : C.fg; x.fillText(String(v), sx, 604);
+      font(500, 26, "u"); x.fillStyle = C.fg2; x.fillText(l, sx, 642);
+    });
+    // The most played, with its cover, then the next four as bars.
+    let y = 706;
+    if (R.top[0]) {
+      const cov = await loadImg(lead && S.covers[coverKey(lead)]);
+      if (cov) { const cw = 150, ch = 225; x.save(); x.beginPath(); x.roundRect ? x.roundRect(pad, y, cw, ch, 6) : x.rect(pad, y, cw, ch); x.clip(); x.drawImage(cov, pad, y, cw, ch); x.restore(); }
+      const tx = cov ? pad + 186 : pad;
+      font(600, 26, "u"); x.fillStyle = C.fg2; x.fillText("Most played", tx, y + 44);
+      font(720, 64, "t", "condensed"); x.fillStyle = C.fg; x.fillText(fit(R.top[0].name, W - pad - tx), tx, y + 118);
+      font(600, 30, "u"); x.fillStyle = C.me; x.fillText(hours(R.top[0].sec), tx, y + 166);
+      y += 262;
+    }
+    const max = R.top[0] ? R.top[0].sec : 1;
+    R.top.slice(1, 5).forEach((t, i) => {
+      const ry = y + i * 52;
+      font(600, 28, "u"); x.fillStyle = C.fg; x.fillText(fit(t.name, 430), pad, ry + 30);
+      const bx = pad + 460, bw = W - pad - bx - 120;
+      x.fillStyle = C.line; x.fillRect(bx, ry + 14, bw, 10);
+      x.fillStyle = C.me; x.fillRect(bx, ry + 14, Math.max(6, bw * (t.sec / max)), 10);
+      font(600, 26, "u"); x.fillStyle = C.fg2; x.textAlign = "right"; x.fillText(hours(t.sec), W - pad, ry + 30); x.textAlign = "left";
+    });
+    // The months, along the bottom.
+    const my = H - 132, mh = 56, mw = (W - pad * 2) / 12, mmax = Math.max(...R.perMonth, 1);
+    "JFMAMJJASOND".split("").forEach((m, i) => {
+      const v = R.perMonth[i], bh = v ? Math.max(4, mh * (v / mmax)) : 2;
+      x.fillStyle = v ? C.me : C.line; x.fillRect(pad + i * mw, my + mh - bh, mw - 14, bh);
+      font(600, 22, "u"); x.fillStyle = C.fg2; x.fillText(m, pad + i * mw, my + mh + 32);
+    });
+    font(500, 22, "u"); x.fillStyle = C.fg2; x.textAlign = "right"; x.textBaseline = "middle"; x.fillText("Made on this PC", W - pad, 92); x.textAlign = "left"; x.textBaseline = "alphabetic";
+    return R;
+  }
+  function viewRecap(D) {
+    const p = player(D.player);
+    if (!p) return "";
+    const years = recapYears(p);
+    const yearSel = years.length > 1 ? `<select class="ln-input recap-year" id="recap-year" aria-label="Year">${years.map((y) => `<option${y === D.year ? " selected" : ""}>${y}</option>`).join("")}</select>` : "";
+    const body = years.length ? `<canvas class="recap-canvas" id="recap-canvas" width="1080" height="1350" role="img" aria-label="${esc(possessive(p.name))} ${D.year} in games"></canvas>`
+      : `<p class="sub">Nothing played yet. Lootnest counts the time from the first game you start through it.</p>`;
+    return `<div class="scrim" data-action="scrim"><div class="dialog recap-dialog" role="dialog" aria-modal="true" aria-label="Year in games">
+      <div class="recap-head"><h2>${esc(p.name)} in ${D.year}</h2>${yearSel}</div>${body}
+      <div class="dialog-foot"><span class="hint grow">Saved in Pictures\\Lootnest, to share as you like. Nothing is sent.</span><button class="btn quiet" data-action="dialog-cancel">Close</button>
+      ${years.length ? `<button class="btn primary" data-action="recap-save" ${D.busy ? "disabled" : ""}>Save the picture</button>` : ""}</div></div></div>`;
+  }
   function ppSection(s, p, st) {
     const sec = (title, inner, extra) => `<section class="pp-section pp-${s}"><div class="ln-section-head"><div><h2>${title}</h2></div>${extra || ""}</div>${inner}</section>`;
     if (s === "now") {
@@ -4475,6 +4582,23 @@
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },
     "save-players": () => savePlayers(false),
     "welcome-done": () => savePlayers(true),
+    recap(el) {
+      const p = player(el.dataset.player);
+      if (!p) return;
+      const ys = recapYears(p), now = new Date().getFullYear();
+      S.dialog = { kind: "recap", player: p.id, year: ys.includes(now) || !ys.length ? now : ys[0] };
+      renderOverlay();
+    },
+    async "recap-save"() {
+      const D = S.dialog, cv = $("#recap-canvas"), p = D && player(D.player);
+      if (!D || D.kind !== "recap" || D.busy || !cv || !p) return;
+      D.busy = true;
+      try {
+        const at = await api.saveRecap(p.name, D.year, cv.toDataURL("image/png"));
+        toast(`Saved: ${String(at).split(/[\\/]/).pop()}, in Pictures\\Lootnest.`);
+      } catch (e) { toast(errText(e), "error"); }
+      D.busy = false;
+    },
     "tonight-spin"() {
       const all = libraryItems(), picks = tonightPicks(all);
       if (picks.length < 2 || !S.tonight) return;
@@ -4711,6 +4835,7 @@
     if (el.id === "lib-store") { S.store = el.value; render(); return; }
     if (el.id === "lib-tag") { S.tag = el.value; render(); return; }
     if (el.id === "lib-status") { S.status = el.value; render(); return; }
+    if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 

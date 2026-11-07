@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.55.0
+
+- **Your year in games.** A profile's page has **Year in games**: a picture of that profile's year, ready to share.
+  - It shows the hours played, the days you played, how many games, and your longest run of days in a row.
+  - Then your most played game, with its cover and art, the four after it, and each month.
+  - **Save the picture** puts it in Pictures\Lootnest. It's made on your PC from what Lootnest counted, and nothing is sent anywhere.
+  - Choose another year when there's more than one.
+
 ## 1.54.0
 
 - **Tonight, on Home**: one game to play, picked for whoever's here from their Up next, what they're playing and what they never started. Finished, 100% and dropped games are left out. **Another** spins for a different one; the pick holds for the day.

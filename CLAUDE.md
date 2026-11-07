@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.54.0, beta)
+## Where things stand (1.55.0, beta)
 
 These shipped recently, newest last:
 
@@ -328,6 +328,13 @@ These shipped recently, newest last:
   the day and the seat (`S.tonight`), action `tonight-spin` with a short
   cover roulette (none with reduced motion). This is "What do we play
   tonight?" from the agreed list, without the time-you-have part.
+- **1.55** Your year in games (dialog `recap` from a profile's page):
+  `recapData` sums `activity.days` for the year, `drawRecap` paints a
+  1080x1350 canvas (art of the most played behind the year, four
+  numbers, top five, months), `ps_saveRecap` (`app/recap.go`,
+  `core.DecodePNGDataURL`, `core.RecapFileName`) writes it to
+  Pictures\Lootnest and shows it in Explorer. Per profile; a household
+  recap is still open.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
@@ -430,7 +437,7 @@ game can only be checked on the owner's PC.
 4. **What do we play tonight?** (Tonight on Home, 1.54): from who's seated (co-op games none of
    them finished when two sit), the time they have, Up next, and a
    backlog roulette.
-5. **Your year in games**: a yearly recap per profile and per household,
+5. **Your year in games** (per profile, 1.55): a yearly recap per profile and per household,
    across every store and folder game, as an image made on the PC to
    share.
 
