@@ -40,18 +40,24 @@
 
 /* ================================================================ tokens */
 :root {
-  /* Colour: graphite slate, hue 250 at low chroma so it never reads as navy. */
-  --bg-well:    oklch(0.13 0.010 250);   /* sunk: inputs, wells */
-  --bg-ground:  oklch(0.17 0.012 250);   /* the window */
-  --bg-surface: oklch(0.21 0.012 250);   /* solid panels */
-  --bg-raised:  oklch(0.25 0.012 250);   /* raised controls */
-  --bg-active:  oklch(0.29 0.012 250);   /* selected */
+  /* Colour: the brand's Obsidian Black (#111217) for the window, Ice Grey
+     (#DFE5EB) for text and the primary button, and Racing Red (#EF233C) in
+     touches: the mark, where you are, progress and what's switched on.
+     Red is never small text (4.4:1 on obsidian, under AA's 4.5). */
+  --bg-well:    oklch(0.150 0.010 276);  /* sunk: inputs, wells */
+  --bg-ground:  #111217;                 /* the window: Obsidian Black */
+  --bg-surface: oklch(0.220 0.011 276);  /* solid panels */
+  --bg-raised:  oklch(0.260 0.011 276);  /* raised controls */
+  --bg-active:  oklch(0.300 0.011 276);  /* selected */
 
-  --fg-1: oklch(0.95 0.006 250);         /* text: 16.5:1 on ground, 13.8:1 on raised */
-  --fg-2: oklch(0.80 0.012 250);         /* secondary: 10.2:1 on ground, 8.6:1 on raised */
-  --fg-3: oklch(0.70 0.012 250);         /* tertiary: 7.2:1 on ground, 6.0:1 on raised */
-  --fg-disabled: oklch(0.52 0.010 250);  /* disabled controls (exempt from AA; 3.5:1 on ground) */
-  --fg-on-light: oklch(0.20 0.012 250);  /* text on the light primary button: 15.6:1 */
+  --fg-1: #DFE5EB;                       /* text, Ice Grey: 14.7:1 on ground, 12.3:1 on raised */
+  --fg-2: oklch(0.790 0.012 248);        /* secondary: 9.7:1 on ground, 8.1:1 on raised */
+  --fg-3: oklch(0.700 0.012 248);        /* tertiary: 7.0:1 on ground, 5.8:1 on raised */
+  --fg-disabled: oklch(0.500 0.010 248); /* disabled controls (exempt from AA) */
+  --fg-on-light: #111217;                /* text on the Ice Grey primary button: 14.7:1 */
+
+  --accent:      #EF233C;                /* Racing Red: marks, bars, switches; never small text */
+  --accent-wash: oklch(0.612 0.231 22.6 / 0.16);
 
   --danger:      oklch(0.80 0.100 35);   /* destructive text and icons: 9.9:1 on ground */
   --danger-wash: oklch(0.80 0.100 35 / 0.12);
@@ -65,10 +71,10 @@
 
   /* Glass: frosted slate over the game's art. Each step falls back to its
      solid twin under prefers-reduced-transparency. */
-  --glass-chrome:  oklch(0.15 0.012 250 / 0.62);  /* sidebar, top bar */
-  --glass-bar:     oklch(0.17 0.012 250 / 0.70);  /* the play bar */
-  --glass-panel:   oklch(0.19 0.012 250 / 0.58);  /* panels on art */
-  --glass-overlay: oklch(0.21 0.012 250 / 0.86);  /* toasts, menus, dialogs */
+  --glass-chrome:  oklch(0.15 0.012 276 / 0.62);  /* sidebar, top bar */
+  --glass-bar:     oklch(0.17 0.012 276 / 0.70);  /* the play bar */
+  --glass-panel:   oklch(0.19 0.012 276 / 0.58);  /* panels on art */
+  --glass-overlay: oklch(0.21 0.012 276 / 0.86);  /* toasts, menus, dialogs */
   --glass-ctl:        oklch(1 0 0 / 0.06);
   --glass-ctl-hover:  oklch(1 0 0 / 0.10);
   --glass-ctl-active: oklch(1 0 0 / 0.04);
@@ -77,14 +83,14 @@
   --blur-backdrop: blur(100px) saturate(115%);
   --backdrop-opacity: 0.34;
   --blur-art-soft: blur(24px) saturate(110%);  /* a cover standing in for missing wide art */
-  --scrim-backdrop: linear-gradient(180deg, oklch(0.17 0.012 250 / 0.1), oklch(0.17 0.012 250 / 0.8) 60%, var(--bg-ground));
+  --scrim-backdrop: linear-gradient(180deg, oklch(0.17 0.012 276 / 0.1), oklch(0.17 0.012 276 / 0.8) 60%, var(--bg-ground));
   --scrim-art:  /* keeps the title readable over any art */
-    linear-gradient(90deg, oklch(0.12 0.010 250 / 0.8) 0%, oklch(0.12 0.010 250 / 0.45) 40%, transparent 68%),
-    linear-gradient(0deg, oklch(0.12 0.010 250 / 0.6) 0%, oklch(0.12 0.010 250 / 0.3) 40%, transparent 62%),
-    linear-gradient(180deg, oklch(0.12 0.010 250 / 0.45) 0%, transparent 18%);
+    linear-gradient(90deg, oklch(0.12 0.010 276 / 0.8) 0%, oklch(0.12 0.010 276 / 0.45) 40%, transparent 68%),
+    linear-gradient(0deg, oklch(0.12 0.010 276 / 0.6) 0%, oklch(0.12 0.010 276 / 0.3) 40%, transparent 62%),
+    linear-gradient(180deg, oklch(0.12 0.010 276 / 0.45) 0%, transparent 18%);
   --mask-fade: linear-gradient(180deg, #000 50%, transparent 100%);
-  --scrim-modal: oklch(0.08 0.010 250 / 0.62);  /* behind a dialog */
-  --shadow-overlay: 0 16px 40px -12px oklch(0.05 0.010 250 / 0.6);  /* floating layers only */
+  --scrim-modal: oklch(0.08 0.010 276 / 0.62);  /* behind a dialog */
+  --shadow-overlay: 0 16px 40px -12px oklch(0.05 0.010 276 / 0.6);  /* floating layers only */
 
   /* Players: every player's colour is brought to the same lightness, so text
      on it always passes AA (6.9:1 or better at rest, 6.0:1 pressed), whatever

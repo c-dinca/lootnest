@@ -3,7 +3,7 @@
 The direction is in [`design/DIRECTIONS.md`](design/DIRECTIONS.md), under *Chosen*. It combines:
 
 - the seat and the single Play from **Couch**;
-- the graphite slate and player labels from **Save Slot**;
+- the player labels from **Save Slot**, on the brand's Obsidian Black, Ice Grey and Racing Red (1.19.1);
 - glass over the game's own art, with small radii and hairlines.
 
 The tokens and components live in [`internal/app/ui/system.css`](internal/app/ui/system.css). Every component in every state is on the kitchen sink:
@@ -17,7 +17,7 @@ The kitchen sink is dev only. Nothing in `design/` is built into `Lootnest.exe`.
 
 ## Principles
 
-1. **Players are the colour.** The interface itself is neutral slate. The only saturated colour on screen belongs to a player: their Play, their avatar, their bar on a cover. If you hid the logo, Lootnest should still be recognisable from how players appear.
+1. **Players are the colour.** The interface itself is neutral obsidian, with Racing Red only in small marks. The colour that fills things belongs to a player: their Play, their avatar, their bar on a cover. If you hid the logo, Lootnest should still be recognisable from how players appear.
 2. **The game is the light.** On a game page, that game's art, blurred, lights the whole window from behind the glass. Each page takes on the colour of its game, and the chrome stays the same.
 3. **One decision per screen.** Each page has one primary action. When the action is for a player, it takes that player's colour.
 4. **Precise, not soft.** Radius goes by role, at 3, 4 and 6px, and only avatars are round. Edges are 1px hairlines. There are no drop shadows on things that sit on the page. These are what shipped launchers do, and it's the opposite of the soft, rounded, everything-in-a-card look of generated UI.
@@ -29,25 +29,39 @@ The names below are CSS custom properties. Components use only these. Raw colour
 
 ### Colour
 
-All colours are in OKLCH, on a graphite slate at hue 250 with low chroma, so the ground never reads as navy. Contrast is WCAG 2 against the ground and against the raised step.
+The brand colours (1.19.1):
+- **Obsidian Black** `#111217` is the window.
+- **Ice Grey** `#DFE5EB` is the text and the primary button.
+- **Racing Red** `#EF233C` is a touch, never a fill for content.
+
+The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own, and hue 248 for the greys, Ice Grey's. Contrast is WCAG 2 against the ground and against the raised step.
 
 | Token | Value | Role | On ground | On raised |
 |---|---|---|---|---|
-| `--bg-well` | `oklch(0.13 0.010 250)` | Sunk: inputs, wells | | |
-| `--bg-ground` | `oklch(0.17 0.012 250)` | The window | | |
-| `--bg-surface` | `oklch(0.21 0.012 250)` | Solid panels | | |
-| `--bg-raised` | `oklch(0.25 0.012 250)` | Raised controls | | |
-| `--bg-active` | `oklch(0.29 0.012 250)` | Selected | | |
-| `--fg-1` | `oklch(0.95 0.006 250)` | Text | 16.5:1 | 13.8:1 |
-| `--fg-2` | `oklch(0.80 0.012 250)` | Secondary text | 10.2:1 | 8.6:1 |
-| `--fg-3` | `oklch(0.70 0.012 250)` | Tertiary: dates, counts | 7.2:1 | 6.0:1 |
-| `--fg-disabled` | `oklch(0.52 0.010 250)` | Disabled controls (exempt) | 3.5:1 | 2.9:1 |
+| `--bg-well` | `oklch(0.150 0.010 276)` | Sunk: inputs, wells | | |
+| `--bg-ground` | `#111217` Obsidian Black | The window | | |
+| `--bg-surface` | `oklch(0.220 0.011 276)` | Solid panels | | |
+| `--bg-raised` | `oklch(0.260 0.011 276)` | Raised controls | | |
+| `--bg-active` | `oklch(0.300 0.011 276)` | Selected | | |
+| `--fg-1` | `#DFE5EB` Ice Grey | Text | 14.7:1 | 12.3:1 |
+| `--fg-2` | `oklch(0.790 0.012 248)` | Secondary text | 9.7:1 | 8.1:1 |
+| `--fg-3` | `oklch(0.700 0.012 248)` | Tertiary: dates, counts | 7.0:1 | 5.8:1 |
+| `--fg-disabled` | `oklch(0.500 0.010 248)` | Disabled controls (exempt) | 3.1:1 | 2.6:1 |
+| `--accent` | `#EF233C` Racing Red | Marks, bars, switches | 4.4:1 | 3.7:1 |
 | `--danger` | `oklch(0.80 0.100 35)` | Destructive | 9.9:1 | 8.3:1 |
 | `--success` | `oklch(0.82 0.110 155)` | Done | 11.4:1 | |
 | `--warning` | `oklch(0.86 0.110 85)` | Needs attention | 12.4:1 | |
 | `--edge-1/2/3` | white at 8 / 14 / 26% | Hairline, control edge, hover edge | | |
 
-There is no system accent. The primary button is light ink with dark text (15.6:1), and the focus ring is `--fg-1`, never a player colour.
+**Racing Red, in touches only.** It passes the 3:1 that non-text UI needs, but not AA's 4.5:1 for small text, so it is never text and never a button with text on it. It marks:
+- the gem in the logo and the app icon;
+- the icon of the page you're on;
+- progress (achievement bars, loading bars);
+- switches and checkboxes that are on;
+- list markers, news dots and link underlines in the reader;
+- the text selection, as a wash.
+
+The primary button stays Ice Grey with Obsidian text (14.7:1). The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
 
 ### Players
 

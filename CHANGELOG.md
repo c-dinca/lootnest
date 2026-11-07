@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.19.1
+
+- **New brand colours.** Obsidian Black (`#111217`) for the window, Ice Grey (`#DFE5EB`) for text and the main buttons, and touches of Racing Red (`#EF233C`):
+  - the gem in the logo and in the app icon;
+  - the icon of the page you're on;
+  - progress bars, and switches and checkboxes that are on;
+  - small marks in the news reader.
+- The installer has the same colours.
+- Text stays Ice Grey everywhere, so it reads as clearly as before (WCAG AA).
+
 ## 1.19.0
 
 - **Achievements on every game's page**, for games from Steam and for games in a folder:
