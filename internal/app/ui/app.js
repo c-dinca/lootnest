@@ -547,8 +547,9 @@
       <div class="gpage-body">${head.bar}${head.note}${banners ? `<div class="home-banners">${banners}</div>` : ""}
         <div class="home-cols">
           <div>${continueShelf(recent.slice(1), allBtn)}</div>
-          <aside class="gpage-aside">${playersBlock(all)}${homeNews(recent)}</aside>
+          <aside class="gpage-aside">${playersBlock(all)}</aside>
         </div>
+        ${homeNews(recent)}
       </div></div>`;
   }
   const homeIcon = '<svg class="ln-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3.25" y="5.5" width="13.5" height="9" rx="2.5"/><path d="M6.75 8.5v3M5.25 10h3M12.5 9.25v.01M14 10.75v.01"/></svg>';
@@ -613,13 +614,20 @@
       const t = new Date(r.at).getTime();
       if (!lastOf[r.player] || t > lastOf[r.player].t) lastOf[r.player] = { t, k, at: r.at };
     });
-    return `<section class="gpage-block">${gpHead("Who's playing")}<div class="ln-list home-players">${ps.map((p) => {
-      const l = lastOf[p.id], it = l && itemByKey(l.k);
+    // Games without profiles don't record who played; then the game they
+    // have the most time in stands in.
+    const most = {};
+    Object.entries(S.d.playtime || {}).forEach(([k, byP]) => Object.entries(byP || {}).forEach(([pid, sec]) => {
+      if (!most[pid] || sec > most[pid].sec) most[pid] = { k, sec };
+    }));
+    return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Who's playing</h2></div></div><div class="ln-list home-players">${ps.map((p) => {
+      const l = lastOf[p.id], m = !l && most[p.id];
+      const it = (l && itemByKey(l.k)) || (m && itemByKey(m.k));
       const busy = it && it.g && session(it.g.id);
       const go = !it || busy ? "" : it.g
         ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="play-as" data-game="${esc(it.g.id)}" data-player="${esc(p.id)}" aria-label="Play ${esc(it.name)} as ${esc(p.name)}">${GI.play}Play</button>`
         : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="play-found" data-key="${esc(it.id)}" aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
-      return `<div class="home-player">${lnAvatar(p, "32")}<div><b>${esc(p.name)}</b><span>${it ? `${esc(it.name)}, ${esc(ago(l.at))}` : "Hasn't played yet"}</span></div>${go}</div>`;
+      return `<div class="home-player">${lnAvatar(p, "32")}<div><b>${esc(p.name)}</b><span>${it ? (l ? `${esc(it.name)}, ${esc(ago(l.at))}` : `Most played: ${esc(it.name)}, ${esc(hours(m.sec))}`) : "Hasn't played yet"}</span></div>${go}</div>`;
     }).join("")}</div></section>`;
   }
 
@@ -629,7 +637,7 @@
     S.news[key] = { loading: true };
     api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
   }
-  // News is the last thing on Home: a short list, never next to Play.
+  // News comes after the games: the newest post large, the others beside it.
   function homeNews(recent) {
     if (!cfg().settings.gameNews) return "";
     const items = [];
@@ -638,10 +646,8 @@
       const N = S.news[coverKey(it)];
       ((N && N.items) || []).slice(0, 3).forEach((n, i) => items.push({ it, n, i }));
     });
-    if (!items.length) return "";
     items.sort((a, b) => new Date(b.n.date) - new Date(a.n.date));
-    return `<section class="gpage-block">${gpHead("News from your games")}<ul class="gpage-news">${items.slice(0, 5).map(({ it, n, i }) => `<li><button data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
-      <time class="ln-num">${esc(day(n.date))}</time><span><b>${n.update ? '<span class="ln-tag">Update</span>' : ""}${esc(n.title)}</b><span>${esc(it.name)}</span></span></button></li>`).join("")}</ul></section>`;
+    return newsSection("News from your games", items.slice(0, 5), true);
   }
 
   // Notices at the top of Home and the Library (system.css .ln-banner).
@@ -884,11 +890,30 @@
 
   // Updates and news from Steam's feed for the game (opt-in).
   const storeKept = (src) => src === "steam" || src === "epic" || src === "gog";
+  // Steam's summaries keep BBCode escapes ("\[ GAMEPLAY ]"); show them plain.
+  const plainSummary = (t) => String(t || "").replace(/\\([[\]])/g, "$1");
+  // The news as a section: the newest post large, with its picture, and the
+  // ones before it as a list beside it. items: [{ it, n, i }].
+  function newsSection(title, items, showGame) {
+    if (!items.length) return "";
+    const pic = (it, n) => n.image || S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || "";
+    const meta = (it, n) => `<span class="news-meta"><time class="ln-num">${esc(day(n.date))}</time>${n.update ? '<span class="ln-tag">Update</span>' : ""}${showGame ? `<span>${esc(it.name)}</span>` : ""}</span>`;
+    const [f, ...rest] = items;
+    const fp = pic(f.it, f.n);
+    const featured = `<button class="news-feature" data-action="read-news" data-key="${esc(coverKey(f.it))}" data-i="${f.i}">
+      <span class="news-pic"${fp ? ` style="background-image:url('${esc(fp)}')"` : ""}></span>
+      <span class="news-body">${meta(f.it, f.n)}<b>${esc(f.n.title)}</b>${f.n.summary ? `<span class="news-sum">${esc(plainSummary(f.n.summary))}</span>` : ""}
+        <span class="news-read">Read</span></span></button>`;
+    const list = rest.length ? `<ul class="news-list">${rest.map(({ it, n, i }) => { const p = pic(it, n); return `<li><button data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
+      <span class="news-thumb"${p ? ` style="background-image:url('${esc(p)}')"` : ""}></span>
+      <span class="news-body">${meta(it, n)}<b>${esc(n.title)}</b>${n.summary ? `<span class="news-sum">${esc(plainSummary(n.summary))}</span>` : ""}</span></button></li>`; }).join("")}</ul>` : "";
+    return `<section class="news" aria-label="${esc(title)}"><div class="ln-section-head"><div><h2>${esc(title)}</h2></div></div><div class="news-grid${rest.length ? "" : " single"}">${featured}${list}</div></section>`;
+  }
   function newsHTML(it) {
-    const head = gpHead("Updates and news");
+    const title = "Updates and news";
+    const head = `<div class="ln-section-head"><div><h2>${title}</h2></div></div>`;
     if (!cfg().settings.gameNews) {
-      return `<section class="gpage-block">${head}<p>See this game's latest updates and patch notes from Steam's news feed${storeKept(it.source) ? "" : ", and find out when a newer version than yours is out"}. Only the game's Steam id, or its name, is sent.</p>
-        <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="news-on">Show updates and news</button></div></section>`;
+      return `<section class="news">${head}${banner("See this game's updates and patch notes", `From Steam's news feed${storeKept(it.source) ? "" : ", and find out when a newer version than yours is out"}. Only the game's Steam id, or its name, is sent.`, bBtn("secondary", 'data-action="news-on"', "Show updates and news"))}</section>`;
     }
     const key = coverKey(it);
     const N = S.news[key];
@@ -896,17 +921,13 @@
       S.news[key] = { loading: true };
       api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
     }
-    if (!N || N.loading) return `<section class="gpage-block">${head}${lnInline("", `Reading Steam's news for ${esc(it.name)}`)}</section>`;
-    if (N.none) return `<section class="gpage-block">${head}<p>${esc(it.name)} isn't on the Steam store, so there's no news feed for it.</p></section>`;
-    if (N.error) return `<section class="gpage-block">${head}${lnInline("error", esc(N.error))}</section>`;
-    const items = (N.items || []).slice(0, 5);
-    const newer = N.newer ? `<div class="gpage-newer"><b>A newer version is out</b><p>${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.</p></div>` : "";
-    return `<section class="gpage-block">${head}${newer}
-      ${items.length ? `<ul class="gpage-news">${items.map((n, i) => `<li><button data-action="read-news" data-key="${esc(key)}" data-i="${i}">
-        <time class="ln-num">${esc(day(n.date))}</time>
-        <span><b>${n.update ? '<span class="ln-tag">Update</span>' : ""}${esc(n.title)}</b>${n.summary ? `<span>${esc(n.summary)}</span>` : ""}</span></button></li>`).join("")}</ul>`
-        : `<p>Steam has no news for this game yet.</p>`}
-    </section>`;
+    if (!N || N.loading) return `<section class="news">${head}${lnInline("", `Reading Steam's news for ${esc(it.name)}`)}</section>`;
+    if (N.none) return `<section class="news">${head}<p class="news-none">${esc(it.name)} isn't on the Steam store, so there's no news feed for it.</p></section>`;
+    if (N.error) return `<section class="news">${head}${lnInline("error", esc(N.error))}</section>`;
+    const items = (N.items || []).slice(0, 5).map((n, i) => ({ it, n, i }));
+    const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.`, "") : "";
+    if (!items.length) return `<section class="news">${head}${newer}<p class="news-none">Steam has no news for this game yet.</p></section>`;
+    return (newer ? `<div class="news-newer">${newer}</div>` : "") + newsSection(title, items, false);
   }
 
   // ------------------------------------------------------------ game page --
@@ -947,7 +968,7 @@
   };
   const gpHead = (t) => `<div class="ln-section-head ln-section-head--minor"><h2>${t}</h2></div>`;
   const gpRow = (attrs, ic, title, sub, opt = {}) => `<button class="ln-row${opt.danger ? " ln-row--danger" : ""}" ${attrs}${opt.disabled ? " disabled" : ""}>${ic}<span><b>${title}</b>${sub ? `<span>${sub}</span>` : ""}</span></button>`;
-  const gpGroup = (title, rows) => (rows.filter(Boolean).length ? `<section class="gpage-group">${gpHead(title)}<div class="ln-list">${rows.filter(Boolean).join("")}</div></section>` : "");
+  const gpGroup = (title, rows) => (rows.filter(Boolean).length ? `<section class="gpage-group" data-g="${title}">${gpHead(title)}<div class="ln-list">${rows.filter(Boolean).join("")}</div></section>` : "");
   const lnInline = (kind, title, text) => `<div class="ln-state ln-state--inline${kind === "error" ? " ln-state--error" : ""}">${kind === "error" ? GI.alert : '<span class="ln-spinner" aria-hidden="true"></span>'}<div><h3>${title}</h3>${text ? `<p>${text}</p>` : ""}</div></div>`;
   const gpStat = (value, label, p) => `<div class="ln-meta__item"><dd class="ln-num">${value}</dd><dt>${p ? `<span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span>` : ""}${label}</dt></div>`;
   const hoursValue = (sec) => { const t = hours(sec), m = t.match(/^([\d.]+) (h|min)$/); return m ? `${m[1]}<small>${m[2]}</small>` : esc(t); };
@@ -968,7 +989,7 @@
     const rec = (S.d.recent || {})[recentKey(it)];
     const meta = [esc(sourceLabel(it.source))];
     const st = steamTime(it);
-    let bar, note = "", colA, colB, aside;
+    let bar, note = "", colA, colB, side, news;
     const details = page ? "" : `<button class="ln-button ln-button--ghost" data-action="open-sheet" ${itemAttr(it)}>Details</button>`;
 
     if (it.kind === "found") {
@@ -990,7 +1011,8 @@
         f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged") : "",
         f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
       ]);
-      aside = page ? gameSavesBlock(it) + shelfBlock(it) + newsHTML(it) : "";
+      side = page ? playersPanel(it) + gameSavesBlock(it) : "";
+      news = page ? newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
       const ps = cfg().players;
@@ -1033,7 +1055,8 @@
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
         overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.`,
       }[P.cloud.state];
-      aside = page ? (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") + shelfBlock(it) + newsHTML(it) : "";
+      side = page ? playersPanel(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
+      news = page ? newsHTML(it) : "";
     }
     const back = page ? `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${S.from === "home" ? "Home" : "Library"}</button>` : "";
     const top = `<section class="gpage-hero">${art}${back}
@@ -1043,7 +1066,8 @@
     if (!page) return { top, bar, note, art };
     return `<div class="gpage ln-root${art ? "" : " no-art"}">${top}
       <div class="gpage-body">${bar}${note}
-        <div class="gpage-cols"><div class="gpage-col">${colA}</div><div class="gpage-col">${colB}</div><aside class="gpage-aside">${aside}</aside></div>
+        <div class="gpage-main"><div class="gpage-news">${news}</div><aside class="gpage-side">${side}</aside></div>
+        <section class="gpage-manage" aria-label="Manage this game"><div class="ln-section-head"><div><h2>Manage</h2></div></div><div class="gpage-manage-grid">${colA}${colB}</div></section>
       </div></div>`;
   }
   function hookBanner() {
@@ -1781,15 +1805,23 @@
     return `<section class="gpage-block">${head}${where}${inCloud}${list}</section>`;
   }
 
-  // The game page's Shelf: where the game stands for each player.
-  function shelfBlock(it) {
-    const k = recentKey(it);
-    return `<section class="gpage-block">${gpHead("Shelf")}<div class="gpage-shelf">${cfg().players.map((p) => {
+  // Everyone who plays this game: their time, where it stands for them
+  // (the Shelf: status, rating, a note) and whose files are loaded.
+  function playersPanel(it) {
+    const k = recentKey(it), pt = playtimeOf(it), rec = (S.d.recent || {})[k];
+    const g = it.g, owner = g && S.d.active[g.id];
+    const ps = cfg().players;
+    if (!ps.length) return "";
+    const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0);
+    const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
+    return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Players</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
       const e = shelfOf(p.id)[k] || {};
-      return `<div class="gpage-shelf-row ln-player" style="--player:${esc(p.color)}"><div class="gpage-shelf-top">${lnAvatar(p, "20")}<b>${esc(p.name)}</b>
-        <div class="gpage-rate" role="group" aria-label="${esc(p.name)}'s rating">${[1, 2, 3, 4, 5].map((n) => `<button data-action="shelf-rate" data-player="${esc(p.id)}" data-k="${esc(k)}" data-n="${n}" aria-label="${n} ${n === 1 ? "star" : "stars"}" aria-pressed="${(e.rating || 0) >= n}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.9l2.15 4.5 4.9.6-3.6 3.4.95 4.85L10 13.9l-4.4 2.35.95-4.85-3.6-3.4 4.9-.6z"/></svg></button>`).join("")}</div>
-        <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-note" data-player="${esc(p.id)}" data-k="${esc(k)}">${e.note ? "Edit note" : "Add a note"}</button></div>
-        <div class="ln-segmented" role="group" aria-label="${esc(p.name)}: where this game stands">${SHELF.map(([s, l]) => `<button data-action="shelf-set" data-player="${esc(p.id)}" data-k="${esc(k)}" data-status="${s}" aria-pressed="${e.status === s}">${l}</button>`).join("")}</div>
+      const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has a profile" : g ? "No profile yet" : "", rec && rec.player === p.id ? `last ${ago(rec.at)}` : ""].filter(Boolean).join(", ");
+      return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
+        <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span></div>
+          <div class="gpage-rate" role="group" aria-label="${esc(p.name)}'s rating">${[1, 2, 3, 4, 5].map((n) => `<button data-action="shelf-rate" data-player="${esc(p.id)}" data-k="${esc(k)}" data-n="${n}" aria-label="${n} ${n === 1 ? "star" : "stars"}" aria-pressed="${(e.rating || 0) >= n}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.9l2.15 4.5 4.9.6-3.6 3.4.95 4.85L10 13.9l-4.4 2.35.95-4.85-3.6-3.4 4.9-.6z"/></svg></button>`).join("")}</div></div>
+        <div class="gp-person-ctl"><div class="ln-segmented" role="group" aria-label="${esc(p.name)}: where this game stands">${SHELF.map(([s, l]) => `<button data-action="shelf-set" data-player="${esc(p.id)}" data-k="${esc(k)}" data-status="${s}" aria-pressed="${e.status === s}">${l}</button>`).join("")}</div>
+          <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-note" data-player="${esc(p.id)}" data-k="${esc(k)}">${e.note ? "Edit note" : "Add a note"}</button></div>
         ${e.note ? `<p class="gpage-shelf-note">${esc(e.note)}</p>` : ""}</div>`;
     }).join("")}</div></section>`;
   }

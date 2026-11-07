@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.16.3
+
+Fuller, wider pages:
+- **Full width.** Home, the Library and game pages now use the whole window. There's no empty band on the right on wide screens.
+- **Game page**
+  - **Updates and news** is a section of its own under the play bar. The newest post is large, with its picture and summary, and the others are listed with pictures underneath.
+  - **Players** sits beside the news. For each player it shows:
+    - how long they've played and when they last played;
+    - whose files are loaded;
+    - where the game stands for them, their rating and their note.
+  - **Manage** moves below, across the page: Profiles, Game files, Shortcuts, Danger.
+- **Home:** News from your games is now a full section under Continue playing, in the same style.
+- **Who's playing** shows the game a player has played most when Lootnest doesn't know which one they played last.
+- The "Update" tag lines up with the date, and Steam's summaries no longer show stray backslashes ("\[ GAMEPLAY ]").
+- On smaller windows, the columns stack instead of squeezing.
+
 ## 1.16.2
 
 The Library in the new look:
