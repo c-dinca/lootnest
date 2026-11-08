@@ -712,7 +712,14 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gp-person-name > .gp-person-saved { color: var(--fg-3); }
 .gp-person-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
 .gp-person-name b { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-14); font-weight: 650; }
-.gp-person-time { font-size: var(--fs-14); }
+.gp-person-time { height: var(--ctl-sm); margin-right: calc(-1 * var(--space-2)); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); font: inherit; font-size: var(--fs-14); cursor: pointer; }
+.gp-person-time:hover, .gp-person-time[aria-expanded="true"] { background: var(--glass-ctl-hover); }
+.gp-person-time.is-zero { color: var(--fg-3); }
+.gp-person-time:focus-visible { outline: var(--focus-width) solid var(--focus-ring); }
+.gp-hours { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding-left: calc(var(--space-8) + var(--space-3)); }
+.gp-hours label { font-size: var(--fs-13); color: var(--fg-2); }
+.gp-hours .ln-input { width: calc(var(--space-8) * 3); height: var(--ctl-sm); }
+.gp-hours .gpage-hint { flex-basis: 100%; margin: 0; }
 .gp-facts { border-top: 0; }
 .gp-person-name > span, .gp-person-name > .gp-person-saved { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
 
@@ -1160,6 +1167,18 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .gp-tag .ln-icon { width: 12px; height: 12px; }
 .gp-tag-add { display: flex; gap: var(--space-2); }
 .gp-tag-add .ln-input { flex: 1; min-width: 0; height: var(--ctl-sm); }
+/* A profile's stars and note: Ice Grey, not red. */
+.gp-rate { display: flex; gap: var(--space-1); margin-left: calc((var(--icon-md) - var(--ctl-sm)) / 2); }
+.gp-rate button { display: grid; place-items: center; width: var(--ctl-sm); height: var(--ctl-sm); padding: 0; border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-3); cursor: pointer; }
+.gp-rate button:hover { background: var(--glass-ctl-hover); }
+.gp-rate button.on { color: var(--fg-1); }
+.gp-rate button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); }
+.gp-rate .on .ln-icon, .stars .on .ln-icon { fill: currentColor; }
+.gp-note { height: var(--ctl-sm); }
+span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--space-2); vertical-align: middle; color: var(--fg-3); }
+.stars .on { color: var(--fg-1); }
+.ln-tile__meta .stars { margin-left: 0; }
+.stars .ln-icon { width: var(--fs-12); height: var(--fs-12); }
 .ach-who .ln-chip .ln-num { margin-left: 2px; color: var(--fg-2); font-size: var(--fs-12); }
 
 /* Find games: any game, its prices and requirements. */

@@ -62,7 +62,8 @@ func TestRekeyGameAndCarrySaves(t *testing.T) {
 	_ = s.AddPlaytime("old", "p1", 2*time.Hour)
 	_ = s.AddPlaytime("new", "p1", time.Hour)
 	_ = s.AddActivity("old", "p1", at, at.Add(2*time.Hour))
-	_ = s.SetShelf("p1", "old", ShelfEntry{Status: "playing"}, at)
+	_ = s.SetShelf("p1", "old", ShelfEntry{Status: "playing", Note: "Act 2", Offset: 5 * 3600}, at)
+	_ = s.SetShelf("p1", "new", ShelfEntry{Rating: 4, Offset: 3600}, at.Add(time.Hour))
 	if err := s.RekeyGame("old", "new"); err != nil {
 		t.Fatal(err)
 	}
@@ -72,8 +73,8 @@ func TestRekeyGameAndCarrySaves(t *testing.T) {
 	if r := s.LoadRecent(); r["new"].Player != "p1" || !r["new"].At.Equal(at) {
 		t.Fatalf("recent = %+v", r)
 	}
-	if sh := s.LoadShelf(); sh["p1"]["new"].Status != "playing" {
-		t.Fatalf("shelf = %+v", sh)
+	if e := s.LoadShelf()["p1"]["new"]; e.Status != "playing" || e.Note != "Act 2" || e.Rating != 4 || e.Offset != 6*3600 {
+		t.Fatalf("shelf = %+v", e)
 	}
 	if a := s.LoadActivity(); a.Longest["p1"].Key != "new" {
 		t.Fatalf("activity = %+v", a.Longest)

@@ -23,10 +23,39 @@ type ShelfEntry struct {
 	Status  string    `json:"status,omitempty"`
 	Rating  int       `json:"rating,omitempty"` // 1-5 stars, 0 for none
 	Note    string    `json:"note,omitempty"`
+	Offset  int64     `json:"offset,omitempty"` // seconds the player added to (or took from) their time played
 	Updated time.Time `json:"updated"`
 }
 
-func (e ShelfEntry) empty() bool { return e.Status == "" && e.Rating == 0 && e.Note == "" }
+func (e ShelfEntry) empty() bool {
+	return e.Status == "" && e.Rating == 0 && e.Note == "" && e.Offset == 0
+}
+
+// ShelfPatch changes some fields of an entry; a nil field keeps its value.
+type ShelfPatch struct {
+	Status *string `json:"status"`
+	Rating *int    `json:"rating"`
+	Note   *string `json:"note"`
+	Offset *int64  `json:"offset"`
+}
+
+func (p ShelfPatch) apply(e *ShelfEntry) {
+	if p.Status != nil {
+		e.Status = *p.Status
+	}
+	if p.Rating != nil {
+		e.Rating = *p.Rating
+	}
+	if p.Note != nil {
+		e.Note = *p.Note
+	}
+	if p.Offset != nil {
+		e.Offset = *p.Offset
+	}
+}
+
+// maxOffset bounds a correction of the time played: 100,000 hours.
+const maxOffset = 100000 * 3600
 
 // Validate cleans an entry and checks its limits.
 func (e *ShelfEntry) Validate() error {
@@ -45,6 +74,9 @@ func (e *ShelfEntry) Validate() error {
 	}
 	if e.Rating < 0 || e.Rating > 5 {
 		return errors.New("A rating is 1 to 5 stars.")
+	}
+	if e.Offset < -maxOffset || e.Offset > maxOffset {
+		return errors.New("A correction is at most 100,000 hours.")
 	}
 	return nil
 }
@@ -66,19 +98,57 @@ func (s *Store) readShelf() map[string]map[string]ShelfEntry {
 	return out
 }
 
+// readShelfToChange reads shelf.json before a write. A file that doesn't
+// parse is kept as shelf.json.broken, so the write never replaces it.
+func (s *Store) readShelfToChange() (map[string]map[string]ShelfEntry, error) {
+	out := map[string]map[string]ShelfEntry{}
+	b, err := os.ReadFile(s.ShelfPath())
+	if errors.Is(err, os.ErrNotExist) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if json.Unmarshal(b, &out) != nil {
+		if err := os.Rename(s.ShelfPath(), s.ShelfPath()+".broken"); err != nil {
+			return nil, err
+		}
+		out = nil
+	}
+	if out == nil {
+		out = map[string]map[string]ShelfEntry{}
+	}
+	return out, nil
+}
+
 // SetShelf saves a player's take on a game; an empty entry removes it.
 func (s *Store) SetShelf(playerID, key string, e ShelfEntry, now time.Time) error {
+	return s.updateShelf(playerID, key, func(old *ShelfEntry) { *old = e }, now)
+}
+
+// PatchShelf changes the fields p sets in a player's take on a game and
+// keeps the others.
+func (s *Store) PatchShelf(playerID, key string, p ShelfPatch, now time.Time) error {
+	return s.updateShelf(playerID, key, p.apply, now)
+}
+
+func (s *Store) updateShelf(playerID, key string, set func(*ShelfEntry), now time.Time) error {
 	if playerID == "" || key == "" || len(key) > 400 || strings.ContainsAny(key, "\r\n\x00") {
 		return errors.New("invalid game")
 	}
-	if err := e.Validate(); err != nil {
-		return err
-	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	sh := s.readShelf()
+	sh, err := s.readShelfToChange()
+	if err != nil {
+		return err
+	}
 	if sh[playerID] == nil {
 		sh[playerID] = map[string]ShelfEntry{}
+	}
+	e := sh[playerID][key]
+	set(&e)
+	if err := e.Validate(); err != nil {
+		return err
 	}
 	if e.empty() {
 		delete(sh[playerID], key)
@@ -87,6 +157,24 @@ func (s *Store) SetShelf(playerID, key string, e ShelfEntry, now time.Time) erro
 		sh[playerID][key] = e
 	}
 	return writeJSONAtomic(s.ShelfPath(), sh)
+}
+
+// WithOffsets adds each player's own correction of their time played
+// (ShelfEntry.Offset) to pt, Library key -> player id -> seconds, never
+// going below 0. pt is changed in place and returned.
+func WithOffsets(pt map[string]map[string]int64, shelf map[string]map[string]ShelfEntry) map[string]map[string]int64 {
+	for pid, games := range shelf {
+		for key, e := range games {
+			if e.Offset == 0 {
+				continue
+			}
+			if pt[key] == nil {
+				pt[key] = map[string]int64{}
+			}
+			pt[key][pid] = max(0, pt[key][pid]+e.Offset)
+		}
+	}
+	return pt
 }
 
 // Activity is when each player played: Days is player id -> "2006-01-02"

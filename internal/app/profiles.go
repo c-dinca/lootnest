@@ -77,15 +77,16 @@ func (a *App) makePicture(playerID, src, dst string, build func(string) ([]byte,
 	return nil
 }
 
-// apiSetShelf saves a player's take on a game (status, rating, note).
-func (a *App) apiSetShelf(playerID, key string, e core.ShelfEntry) error {
+// apiSetShelf changes a player's take on a game (status, rating, note, a
+// correction of their time played); fields left out keep their value.
+func (a *App) apiSetShelf(playerID, key string, p core.ShelfPatch) error {
 	a.mu.Lock()
 	known := a.cfg.Player(playerID) != nil
 	a.mu.Unlock()
 	if !known {
 		return errors.New("That profile doesn't exist.")
 	}
-	return a.store.SetShelf(playerID, key, e, time.Now())
+	return a.store.PatchShelf(playerID, key, p, time.Now())
 }
 
 func (a *App) apiRemoveAvatar(playerID string) error {

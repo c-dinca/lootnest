@@ -106,6 +106,12 @@
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
   };
+  // As core.WithOffsets: each profile's correction on top, never below 0.
+  const withOffsets = () => {
+    const out = JSON.parse(JSON.stringify(playtime));
+    Object.entries(shelf).forEach(([pid, gs]) => Object.entries(gs).forEach(([k, e]) => { if (e.offset) { out[k] = out[k] || {}; out[k][pid] = Math.max(0, (out[k][pid] || 0) + e.offset); } }));
+    return out;
+  };
   let FIRSTP = FIRST && [{ id: "p1", name: "Cris", color: "#6C9BD2" }]; // until Continue saves it
   const state = () => ({
     version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
@@ -113,7 +119,7 @@
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
-    sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime, steamTime, avatars: {}, banners: {}, shelf,
+    sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, avatars: {}, banners: {}, shelf,
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
@@ -235,7 +241,7 @@
     },
     ps_log: () => ok("10:42 Launched Counter-Strike 2 for Mihai\n10:20 Saved Cristian's files for It Takes Two"),
     ps_setTags: (key, tags) => { if (tags.length) TAGS[key] = tags; else delete TAGS[key]; return ok(); },
-    ps_setShelf: (pid, key, e) => { shelf[pid] = shelf[pid] || {}; if (e.status) shelf[pid][key] = e; else delete shelf[pid][key]; return ok(); },
+    ps_setShelf: (pid, key, patch) => { shelf[pid] = shelf[pid] || {}; const e = { ...shelf[pid][key], ...patch, updated: new Date().toISOString() }; if (e.status || e.rating || e.note || e.offset) shelf[pid][key] = e; else delete shelf[pid][key]; return ok(); },
     // Saving profiles gives new ones an id, as Go does.
     ps_savePlayers: (list) => { FIRSTP = null; PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },
     // A first-timer is asked how to start, as in Go.
