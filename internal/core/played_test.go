@@ -1,6 +1,8 @@
 package core
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -25,6 +27,66 @@ func TestShelf(t *testing.T) {
 	}
 	if _, ok := s.LoadShelf()["p1"]["steam:620"]; ok {
 		t.Fatal("an empty entry removes the game from the shelf")
+	}
+}
+
+func TestShelfPatch(t *testing.T) {
+	s := &Store{Dir: t.TempDir()}
+	now := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	str := func(v string) *string { return &v }
+	four, off := 4, int64(6*3600)
+	_ = s.SetShelf("p2", "steam:620", ShelfEntry{Status: "next"}, now)
+	_ = s.PatchShelf("p1", "steam:620", ShelfPatch{Status: str("playing")}, now)
+	if err := s.PatchShelf("p1", "steam:620", ShelfPatch{Rating: &four, Note: str(" Boss at 3 "), Offset: &off}, now); err != nil {
+		t.Fatal(err)
+	}
+	sh := s.LoadShelf()
+	e := sh["p1"]["steam:620"]
+	if e.Status != "playing" || e.Rating != 4 || e.Note != "Boss at 3" || e.Offset != off || sh["p2"]["steam:620"].Status != "next" {
+		t.Fatalf("a patch keeps the other fields and entries: %+v", sh)
+	}
+	zero := 0
+	_ = s.PatchShelf("p1", "steam:620", ShelfPatch{Rating: &zero}, now)
+	if e := s.LoadShelf()["p1"]["steam:620"]; e.Rating != 0 || e.Note != "Boss at 3" || e.Status != "playing" || e.Offset != off {
+		t.Fatalf("clearing the rating keeps the rest: %+v", e)
+	}
+	big := int64(maxOffset + 1)
+	if s.PatchShelf("p1", "steam:620", ShelfPatch{Offset: &big}, now) == nil {
+		t.Fatal("an offset over the limit is refused")
+	}
+	if s.LoadShelf()["p1"]["steam:620"].Offset != off {
+		t.Fatal("a refused patch changes nothing")
+	}
+}
+
+func TestShelfBrokenKept(t *testing.T) {
+	s := &Store{Dir: t.TempDir()}
+	_ = os.WriteFile(s.ShelfPath(), []byte(`{"p1":{"steam:620":{"status":"pla`), 0o644)
+	four := 4
+	if err := s.PatchShelf("p1", "game:a", ShelfPatch{Rating: &four}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if b, err := os.ReadFile(s.ShelfPath() + ".broken"); err != nil || !strings.Contains(string(b), "steam:620") {
+		t.Fatalf("a shelf.json that doesn't parse is kept: %q %v", b, err)
+	}
+	if s.LoadShelf()["p1"]["game:a"].Rating != 4 {
+		t.Fatal("the change is still saved")
+	}
+}
+
+func TestWithOffsets(t *testing.T) {
+	pt := map[string]map[string]int64{"game:a": {"p1": 44 * 3600, "p2": 3600}}
+	shelf := map[string]map[string]ShelfEntry{
+		"p1": {"game:a": {Offset: 6 * 3600}, "game:b": {Offset: 1800}},
+		"p2": {"game:a": {Offset: -2 * 3600, Rating: 3}},
+		"p3": {"game:a": {Status: "playing"}},
+	}
+	got := WithOffsets(pt, shelf)
+	if got["game:a"]["p1"] != 50*3600 || got["game:a"]["p2"] != 0 || got["game:b"]["p1"] != 1800 {
+		t.Fatalf("positive, clamped at 0, and a game with no sessions: %+v", got)
+	}
+	if _, ok := got["game:a"]["p3"]; ok {
+		t.Fatal("no offset, no change")
 	}
 }
 

@@ -230,13 +230,31 @@ func (s *Store) RekeyGame(from, to string) error {
 		}
 	}
 
-	shelf := s.readShelf()
+	shelf, err := s.readShelfToChange()
+	if err != nil {
+		return err
+	}
 	changed := false
 	for p, games := range shelf {
 		if e, ok := games[from]; ok {
-			if n, has := games[to]; !has || e.Updated.After(n.Updated) {
-				games[to] = e
+			// The newer take wins, the older fills what it leaves empty, and
+			// both corrections of the time played stay, as the time does.
+			if n, has := games[to]; has {
+				if !e.Updated.After(n.Updated) {
+					e, n = n, e
+				}
+				e.Offset += n.Offset
+				if e.Status == "" {
+					e.Status = n.Status
+				}
+				if e.Rating == 0 {
+					e.Rating = n.Rating
+				}
+				if e.Note == "" {
+					e.Note = n.Note
+				}
 			}
+			games[to] = e
 			delete(games, from)
 			shelf[p] = games
 			changed = true

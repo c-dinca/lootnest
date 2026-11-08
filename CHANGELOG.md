@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.60.0
+
+- Rate your games: a game's page has five stars and a short note under Status, for the profile shown there. Each profile keeps its own rating and note. Click the current star again to clear the rating, or use the arrow keys.
+- The Library can sort by Highest rated, with unrated games last. Sorted that way, covers show their stars; in the list view, rated games always show them under the name, and so does Played lately on a profile's page.
+- Correct play time a launcher got wrong: on a game's page, click a profile's hours under Profiles and type the right number. Lootnest keeps your correction apart from the time it recorded, so Reset brings the recorded time back. The corrected hours show on the game's page, in the Library, on Home and on the profile's page. Your year in games still counts only the days Lootnest saw you play.
+
 ## 1.59.0
 
 - Lootnest opens on its own mark: the nest draws in, the red gem drops into it, and the app fades in as soon as it's ready. The window is Obsidian from the first moment, with no white flash. With reduced motion on, the mark simply shows.

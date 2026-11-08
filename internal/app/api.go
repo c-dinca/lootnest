@@ -171,7 +171,7 @@ type AppState struct {
 	Colors    []string                              `json:"colors"`
 	Sources   map[string]string                     `json:"sources"`   // game id -> where the scan found it
 	Recent    map[string]core.Played                `json:"recent"`    // Library key -> last played
-	Playtime  map[string]map[string]int64           `json:"playtime"`  // Library key -> player -> seconds
+	Playtime  map[string]map[string]int64           `json:"playtime"`  // Library key -> player -> seconds, with each player's correction
 	SteamTime map[string]int64                      `json:"steamTime"` // Library key -> seconds Steam counts for the account
 	Avatars   map[string]string                     `json:"avatars"`   // player id -> profile picture as a data: URL
 	Banners   map[string]string                     `json:"banners"`   // player id -> banner picture as a data: URL
@@ -192,7 +192,8 @@ func (a *App) apiState() AppState {
 	conflictMu.Unlock()
 	st.Sources = a.gameSources(cfg)
 	st.Recent = a.store.LoadRecent()
-	st.Playtime = a.store.LoadPlaytime()
+	st.Shelf = a.store.LoadShelf()
+	st.Playtime = core.WithOffsets(a.store.LoadPlaytime(), st.Shelf)
 	st.Avatars, st.Banners = map[string]string{}, map[string]string{}
 	for _, p := range cfg.Players {
 		if p.Avatar {
@@ -206,7 +207,6 @@ func (a *App) apiState() AppState {
 			}
 		}
 	}
-	st.Shelf = a.store.LoadShelf()
 	st.Activity = a.store.LoadActivity()
 	st.SteamTime = map[string]int64{}
 	// Steam's own record of what was played and when, so the Library's

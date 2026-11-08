@@ -142,6 +142,7 @@
     achPage: "",      // whose the Achievements page shows
     achMs: false,     // the Achievements page's milestones are open
     statusWho: {},    // Library key -> whose status the game page shows
+    hoursEdit: null,  // {key, player}: whose hours the game page is correcting
     tag: "",          // the Library's collection filter ("" for all)
     status: "",       // the Library's status filter ("" for any)
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
@@ -581,8 +582,8 @@
     renderSideGames();
     const v = $("#view");
     const keepScroll = v.scrollTop;
-    const typing = document.activeElement && document.activeElement.id === "lib-q" ? document.activeElement.selectionStart : -1;
-    const findTyping = document.activeElement && document.activeElement.id === "find-q" ? document.activeElement.selectionStart : -1;
+    // A field being typed in keeps its text, focus and caret.
+    const ae = document.activeElement, typing = ae && ["lib-q", "find-q", "gp-note", "gp-hours"].includes(ae.id) && { id: ae.id, value: ae.value, at: ae.selectionStart };
     if (S.view === "home") v.innerHTML = viewHome();
     else if (S.view === "library") v.innerHTML = viewLibrary();
     else if (S.view === "game") v.innerHTML = viewGame();
@@ -605,8 +606,7 @@
     }
     S.animateView = false;
     v.scrollTop = keepScroll;
-    if (typing >= 0) { const q = $("#lib-q"); if (q) { q.focus(); q.setSelectionRange(typing, typing); } }
-    if (findTyping >= 0) { const q = $("#find-q"); if (q) { q.focus(); q.setSelectionRange(findTyping, findTyping); } }
+    if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
     renderOverlay();
     loadCovers();
     backdropForView();
@@ -1280,6 +1280,7 @@
     });
     if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
     else if (S.sort === "played") list.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || playedAt(b) - playedAt(a));
+    else if (S.sort === "rating") list.sort((a, b) => ratingOf(b) - ratingOf(a));
     return list;
   }
   // Collections (the user's own, for everyone) and each profile's status.
@@ -1287,8 +1288,33 @@
   const statusName = (k) => (STATUSES.find((x) => x[0] === k) || [k, k])[1];
   const tagsOf = (it) => (cfg().tags || {})[recentKey(it)] || [];
   const allTags = () => [...new Set(Object.values(cfg().tags || {}).flat())].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-  const shelfOf = (it, pid) => ((S.d.shelf || {})[pid] || {})[recentKey(it)] || {};
+  const shelfAt = (pid, key) => ((S.d.shelf || {})[pid] || {})[key] || {};
+  const shelfOf = (it, pid) => shelfAt(pid, recentKey(it));
   const statusOf = (it, pid) => shelfOf(it, pid).status || "";
+  // A game's rating in the Library: from the profile it's filtered to or the
+  // seated one, else the best any profile gave, as the Status filter does.
+  const ratingOf = (it) => {
+    const pid = S.who || (seated() || {}).id;
+    return pid ? shelfOf(it, pid).rating || 0 : Math.max(0, ...cfg().players.map((p) => shelfOf(it, p.id).rating || 0));
+  };
+  const starsHTML = (n) => n ? `<span class="stars" role="img" aria-label="${n} of 5 stars">${[1, 2, 3, 4, 5].map((i) => `<span${i <= n ? ' class="on"' : ""}>${GI.star}</span>`).join("")}</span>` : "";
+  // Changes the fields in patch of a profile's take on a game; the others stay.
+  async function saveShelf(pid, key, patch) {
+    try { await api.setShelf(pid, key, patch); } catch (e) { toast(errText(e), "error"); return false; }
+    await refresh();
+    return true;
+  }
+  // The note is shown only in its field, so saving it leaves the page (and
+  // focus) as it is.
+  async function saveNote(el) {
+    const { player: pid, key } = el.dataset, v = el.value;
+    if (v === el.defaultValue) return;
+    try { await api.setShelf(pid, key, { note: v }); } catch (e) { toast(errText(e), "error"); return; }
+    el.defaultValue = v;
+    const sh = S.d.shelf = S.d.shelf || {};
+    sh[pid] = { ...sh[pid], [key]: { ...sh[pid] && sh[pid][key], note: v.trim() } };
+  }
+  const hoursBack = (pid) => { const b = $(`.gp-person-time[data-player="${pid}"]`); if (b) b.focus(); };
   // A player's games: the ones they have a profile in, or played last.
   const playedOrOwned = (it, pid) => (it.kind === "game" && hasProfile(it.id, pid)) || !!lastBy(it, pid);
   // When a player's profile for a game was last saved, and its size, read
@@ -1336,7 +1362,7 @@
           `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`,
           `<p class="ln-empty__where">Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.</p>`, true)}</div>`;
     }
-    const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
+    const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"], ["rating", "Highest rated"]];
     const sizes = [["s", "Small covers", 8], ["m", "Medium covers", 11], ["l", "Large covers", 14], ["list", "A list", 0]];
     const seg = (k, l, n) => `<button data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}<span class="ln-count ln-num">${n}</span></button>`;
     const ps = cfg().players;
@@ -1695,7 +1721,7 @@
       : `<button class="ln-button ln-button--primary ln-button--sm lib-row-play" data-action="${g ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
     return `<div class="lib-row${s ? " busy" : ""}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
         <span class="lib-row-thumb">${thumb}</span>
-        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}</small></span>
+        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}${starsHTML(ratingOf(it))}</small></span>
         <span class="lib-row-cell">${playedAt(it) ? playedBy(it) : '<span class="lib-row-dim">Never</span>'}</span>
         <span class="lib-row-cell ln-num">${t ? esc(hours(t)) : '<span class="lib-row-dim">None</span>'}</span>
         <span class="lib-row-cell lib-row-prof">${prof}</span></button>${play}</div>`;
@@ -1746,7 +1772,7 @@
     const attr = itemAttr(it);
     return `<div class="card lib-card${s ? " busy" : ""}">
       <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
-        <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span></button>
+        <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span>${S.sort === "rating" && ratingOf(it) ? `<span class="ln-tile__meta">${starsHTML(ratingOf(it))}</span>` : ""}</button>
       ${s ? "" : `<button class="ln-button ln-button--secondary ln-button--icon ln-button--sm lib-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
   }
 
@@ -1975,6 +2001,7 @@
     cloud: gsvg('<path d="M6.25 15.25h7.5a3.25 3.25 0 0 0 .5-6.46 4.75 4.75 0 0 0-9.1 1.3A2.6 2.6 0 0 0 6.25 15.25z"/>'),
     info: gsvg('<circle cx="10" cy="10" r="6.75"/><path d="M10 9v4.5M10 6.6v.01"/>'),
     alert: gsvg('<path d="M10 3.5 17 16H3z"/><path d="M10 8.25v3.5M10 13.9v.01"/>'),
+    star: gsvg('<path d="M10 3.25l2.05 4.3 4.7.65-3.42 3.27.83 4.68L10 13.9l-4.16 2.25.83-4.68L3.25 8.2l4.7-.65z"/>'),
   };
   // A player's avatar in the system's style: their picture, a game's cover,
   // or their initial on their colour.
@@ -3066,7 +3093,7 @@
     }
     if (s === "recent") {
       if (!st.recent.length) return "";
-      return sec("Played lately", `<ul class="pp-recent">${st.recent.slice(0, 8).map(({ it, r }) => `<li><button data-action="open-sheet" ${itemAttr(it)}><b>${esc(it.name)}</b><span>${esc(ago(r.at))}</span></button></li>`).join("")}</ul>`);
+      return sec("Played lately", `<ul class="pp-recent">${st.recent.slice(0, 8).map(({ it, r }) => `<li><button data-action="open-sheet" ${itemAttr(it)}><b>${esc(it.name)}${starsHTML(shelfOf(it, p.id).rating)}</b><span>${esc(ago(r.at))}</span></button></li>`).join("")}</ul>`);
     }
     return "";
   }
@@ -3111,10 +3138,12 @@
     if (!ps.length) return "";
     const seat = seated(), owner = it.g && S.d.active[it.g.id];
     const who = (ps.find((p) => p.id === S.statusWho[key]) || (seat && ps.find((p) => p.id === seat.id)) || ps.find((p) => p.id === owner) || ps[0]).id;
-    const st = statusOf(it, who), tags = tagsOf(it), others = allTags().filter((t) => !tags.includes(t));
+    const st = statusOf(it, who), mine = shelfOf(it, who), r = mine.rating || 0, tags = tagsOf(it), others = allTags().filter((t) => !tags.includes(t));
     const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose status">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="status-who" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(parentOf(p) ? runLabel(p) : p.name)}${statusOf(it, p.id) ? `<span class="ln-num">${esc(statusName(statusOf(it, p.id)))}</span>` : ""}</button>`).join("")}</div>` : "";
     return `<section class="gpage-block gp-coll"><div class="ln-section-head"><div><h2>Status</h2></div></div>${chips}
       <div class="ln-segmented gp-status" role="group" aria-label="${esc(possessive(pname(who)))} status">${STATUSES.map(([k, l]) => `<button data-action="set-status" data-key="${esc(key)}" data-player="${esc(who)}" data-status="${k}" aria-pressed="${st === k}">${l}</button>`).join("")}</div>
+      <div class="gp-rate" role="radiogroup" aria-label="${esc(possessive(pname(who)))} rating">${[1, 2, 3, 4, 5].map((i) => `<button role="radio" aria-checked="${r === i}" tabindex="${(r || 1) === i ? 0 : -1}"${i <= r ? ' class="on"' : ""} data-action="rate" data-key="${esc(key)}" data-player="${esc(who)}" data-stars="${i}" aria-label="${i} ${i === 1 ? "star" : "stars"}" title="${r === i ? "Clear the rating" : i + (i === 1 ? " star" : " stars")}">${GI.star}</button>`).join("")}</div>
+      <input id="gp-note" class="ln-input gp-note" type="text" maxlength="280" autocomplete="off" placeholder="A note, just for you" aria-label="${esc(possessive(pname(who)))} note" value="${esc(mine.note || "")}" data-key="${esc(key)}" data-player="${esc(who)}">
       <div class="ln-section-head ln-section-head--minor"><h2>Collections</h2></div>
       <div class="gp-tags">${tags.map((t) => `<span class="ln-tag gp-tag">${esc(t)}<button data-action="tag-remove" data-key="${esc(key)}" data-tag="${esc(t)}" aria-label="Take it out of ${esc(t)}">${GI.x}</button></span>`).join("") || `<span class="gpage-hint">In no collection yet.</span>`}</div>
       ${tags.length < 8 ? `<div class="gp-tag-add"><input id="tag-new" class="ln-input" type="text" maxlength="24" list="tag-list" autocomplete="off" placeholder="Add to a collection, such as Co-op" data-key="${esc(key)}">
@@ -3314,6 +3343,17 @@
     return `<section class="gpage-block">${head}${where}${inCloud}${list}${local}</section>`;
   }
 
+  // Correcting a profile's hours for a game: the difference is kept apart
+  // from the sessions Lootnest recorded (ShelfEntry.offset), so Reset brings
+  // the recorded time back.
+  function hoursEditor(key, p, t) {
+    const off = shelfAt(p.id, key).offset || 0, rec = Math.max(0, t - off);
+    return `<div class="gp-hours"><label for="gp-hours">Hours played</label>
+      <input id="gp-hours" class="ln-input ln-num" type="number" min="0" max="100000" step="0.5" value="${Math.round(t / 360) / 10}">
+      <button class="ln-button ln-button--secondary ln-button--sm" data-action="hours-save">Save</button>
+      <button class="ln-button ln-button--ghost ln-button--sm" data-action="hours-cancel">Cancel</button>
+      <p class="gpage-hint">${rec ? `Lootnest recorded ${esc(hours(rec))}.` : "Lootnest hasn't recorded any time yet."}${off ? ` <button class="gpage-link" data-action="hours-reset">Reset</button>` : ""}</p></div>`;
+  }
   // "Saved yesterday, 24 MB": when the game last wrote this player's
   // profile, and how much it holds.
   function saved(g, pid) {
@@ -3323,7 +3363,8 @@
   // Everyone who plays this game: their time, when they played, and whose
   // files are loaded.
   function playersPanel(it) {
-    const pt = playtimeOf(it);
+    const pt = playtimeOf(it), key = recentKey(it);
+    const editing = (p) => !!S.hoursEdit && S.hoursEdit.key === key && S.hoursEdit.player === p.id;
     const g = it.g, owner = g && S.d.active[g.id];
     const ps = cfg().players;
     if (!ps.length) return "";
@@ -3334,7 +3375,8 @@
       const sub = last ? `Played ${ago(last)}` : g && hasProfile(g.id, p.id) ? "Has saves here" : pt[p.id] ? "" : "Not played yet";
       return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
         <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${saved(g, p.id)}</div>
-        ${pt[p.id] ? `<span class="gp-person-time ln-num">${esc(hours(pt[p.id]))}</span>` : ""}</div></div>`;
+        <button class="gp-person-time ln-num${pt[p.id] ? "" : " is-zero"}" data-action="hours-edit" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-label="${esc(possessive(p.name))} hours played: ${pt[p.id] ? esc(hours(pt[p.id])) : "none"}. Correct them" title="Correct the hours" aria-expanded="${editing(p)}">${pt[p.id] ? esc(hours(pt[p.id])) : "0 h"}</button></div>
+        ${editing(p) ? hoursEditor(key, p, pt[p.id] || 0) : ""}</div>`;
     }).join("")}</div>${g ? `<dl class="ln-facts gp-facts">${st ? `<div><dt>Steam account</dt><dd class="ln-num">${esc(hours(st))}</dd></div>` : ""}<div><dt>Copies before swaps</dt><dd><button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See them</button></dd></div></dl>` : ""}</section>`;
   }
   function viewProfileEditor() {
@@ -4351,10 +4393,32 @@
     "ach-page"(el) { S.achPage = el.dataset.player; render(); },
     "status-who"(el) { S.statusWho[el.dataset.key] = el.dataset.player; render(); },
     async "set-status"(el) {
-      const { key, player: pid, status } = el.dataset, cur = ((S.d.shelf || {})[pid] || {})[key] || {};
-      const next = cur.status === status ? "" : status; // pressing it again clears it
-      try { await api.setShelf(pid, key, { status: next, rating: cur.rating || 0, note: cur.note || "" }); } catch (e) { toast(errText(e), "error"); return; }
-      await refresh();
+      const { key, player: pid, status } = el.dataset, cur = shelfAt(pid, key);
+      await saveShelf(pid, key, { status: cur.status === status ? "" : status }); // pressing it again clears it
+    },
+    async rate(el) {
+      const { key, player: pid } = el.dataset, n = +el.dataset.stars, cur = shelfAt(pid, key);
+      const r = cur.rating === n ? 0 : n; // the current star again clears it
+      if (await saveShelf(pid, key, { rating: r })) { const b = $(`.gp-rate [data-stars="${r || n}"]`); if (b) b.focus(); }
+    },
+    "hours-edit"(el) {
+      if (el.getAttribute("aria-expanded") === "true") { actions["hours-cancel"](); return; }
+      S.hoursEdit = { key: el.dataset.key, player: el.dataset.player }; render(); const i = $("#gp-hours"); if (i) { i.focus(); i.select(); } },
+    "hours-cancel"() { const E = S.hoursEdit; S.hoursEdit = null; render(); if (E) hoursBack(E.player); },
+    async "hours-save"() {
+      const E = S.hoursEdit, i = $("#gp-hours");
+      if (!E || !i) return;
+      if (i.value === i.defaultValue) { actions["hours-cancel"](); return; }
+      const v = parseFloat(i.value);
+      if (!isFinite(v) || v < 0 || v > 100000) { toast("Hours played is a number from 0 to 100,000.", "error"); i.focus(); return; }
+      const off = shelfAt(E.player, E.key).offset || 0, shown = ((S.d.playtime || {})[E.key] || {})[E.player] || 0;
+      S.hoursEdit = null;
+      if (await saveShelf(E.player, E.key, { offset: Math.round(v * 3600) - (shown - off) })) hoursBack(E.player); else S.hoursEdit = E;
+    },
+    async "hours-reset"() {
+      const E = S.hoursEdit; if (!E) return;
+      S.hoursEdit = null;
+      if (await saveShelf(E.player, E.key, { offset: 0 })) hoursBack(E.player); else S.hoursEdit = E;
     },
     async "tag-add"(el) {
       const key = el.dataset.key, i = $("#tag-new"), t = ((i && i.value) || "").trim();
@@ -5111,6 +5175,7 @@
   });
 
   document.addEventListener("toggle", (ev) => { if (ev.target.classList && ev.target.classList.contains("ach-ms")) S.achMs = ev.target.open; }, true);
+  document.addEventListener("focusout", (ev) => { if (ev.target.id === "gp-note") saveNote(ev.target); });
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
@@ -5173,6 +5238,16 @@
   document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".side-search")) gqClose(); });
   document.addEventListener("keydown", (ev) => {
     if (ev.target.id === "tag-new" && ev.key === "Enter") { ev.preventDefault(); actions["tag-add"]({ dataset: { key: ev.target.dataset.key } }); return; }
+    if (ev.target.id === "gp-note" && ev.key === "Enter") { ev.preventDefault(); saveNote(ev.target); return; }
+    if (ev.target.id === "gp-hours" && (ev.key === "Enter" || ev.key === "Escape")) { ev.preventDefault(); actions[ev.key === "Enter" ? "hours-save" : "hours-cancel"](); return; }
+    // The stars are one stop for Tab; the arrows move the rating.
+    const star = ev.target.closest && ev.target.closest(".gp-rate [data-stars]");
+    if (star && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(ev.key)) {
+      ev.preventDefault();
+      const n = Math.min(5, Math.max(1, +star.dataset.stars + (ev.key === "ArrowRight" || ev.key === "ArrowUp" ? 1 : -1)));
+      if (n !== +star.dataset.stars) actions.rate({ dataset: { ...star.dataset, stars: String(n) } });
+      return;
+    }
     if (!$("#ctx").hidden) {
       if (ev.key === "Escape") { ev.preventDefault(); closeContext(); return; }
       if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
