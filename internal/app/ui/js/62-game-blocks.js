@@ -1,0 +1,260 @@
+  // A game outside Steam without profiles: its saves, kept as versions in
+  // the cloud folder (Steam games have Steam Cloud; games with profiles sync
+  // each player's saves).
+  const gsAsked = new Set();
+  // Status and collections: where the game is for one profile (playing,
+  // finished, 100%), and which of the user's collections it's in.
+  function collectionsBlock(it) {
+    const key = recentKey(it), ps = grouped();
+    if (!ps.length) return "";
+    const seat = seated(), owner = it.g && S.d.active[it.g.id];
+    const who = (ps.find((p) => p.id === S.statusWho[key]) || (seat && ps.find((p) => p.id === seat.id)) || ps.find((p) => p.id === owner) || ps[0]).id;
+    const st = statusOf(it, who), mine = shelfOf(it, who), r = mine.rating || 0, tags = tagsOf(it), others = allTags().filter((t) => !tags.includes(t));
+    const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose status">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="status-who" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(parentOf(p) ? runLabel(p) : p.name)}${statusOf(it, p.id) ? `<span class="ln-num">${esc(statusName(statusOf(it, p.id)))}</span>` : ""}</button>`).join("")}</div>` : "";
+    return `<section class="gpage-block gp-coll"><div class="ln-section-head"><div><h2>Status</h2></div></div>${chips}
+      <div class="ln-segmented gp-status" role="group" aria-label="${esc(possessive(pname(who)))} status">${STATUSES.map(([k, l]) => `<button data-action="set-status" data-key="${esc(key)}" data-player="${esc(who)}" data-status="${k}" aria-pressed="${st === k}">${l}</button>`).join("")}</div>
+      <div class="gp-rate" role="radiogroup" aria-label="${esc(possessive(pname(who)))} rating">${[1, 2, 3, 4, 5].map((i) => `<button role="radio" aria-checked="${r === i}" tabindex="${(r || 1) === i ? 0 : -1}"${i <= r ? ' class="on"' : ""} data-action="rate" data-key="${esc(key)}" data-player="${esc(who)}" data-stars="${i}" aria-label="${i} ${i === 1 ? "star" : "stars"}" title="${r === i ? "Clear the rating" : i + (i === 1 ? " star" : " stars")}">${GI.star}</button>`).join("")}</div>
+      <input id="gp-note" class="ln-input gp-note" type="text" maxlength="280" autocomplete="off" placeholder="A note, just for you" aria-label="${esc(possessive(pname(who)))} note" value="${esc(mine.note || "")}" data-key="${esc(key)}" data-player="${esc(who)}">
+      <div class="ln-section-head ln-section-head--minor"><h2>Collections</h2></div>
+      <div class="gp-tags">${tags.map((t) => `<span class="ln-tag gp-tag">${esc(t)}<button data-action="tag-remove" data-key="${esc(key)}" data-tag="${esc(t)}" aria-label="Take it out of ${esc(t)}">${GI.x}</button></span>`).join("") || `<span class="gpage-hint">In no collection yet.</span>`}</div>
+      ${tags.length < 8 ? `<div class="gp-tag-add"><input id="tag-new" class="ln-input" type="text" maxlength="24" list="tag-list" autocomplete="off" placeholder="Add to a collection, such as Co-op" data-key="${esc(key)}">
+        <datalist id="tag-list">${others.map((t) => `<option value="${esc(t)}"></option>`).join("")}</datalist>
+        <button class="ln-button ln-button--secondary ln-button--sm" data-action="tag-add" data-key="${esc(key)}">Add</button></div>` : ""}</section>`;
+  }
+
+  // Achievements: read from this PC (Steam's library cache, or the file a
+  // Steam-compatible tool keeps next to the game's saves). The latest
+  // unlocked first; the whole list on request.
+  const achAsked = new Set();
+  // Whose achievements a game shows, and the pieces both the page and the
+  // panel with the whole list are made of.
+  function achFor(it) {
+    const key = recentKey(it);
+    if (!achAsked.has(key)) {
+      achAsked.add(key);
+      const dir = it.f ? it.f.dir : it.exe;
+      if (it.appId || dir) api.achievements(key, it.appId, dir, it.name).catch(() => {});
+    }
+    const top = S.ach[key];
+    if (!top || !top.total) return null;
+    // Each player's own (they go with their profile): whose to show is the
+    // one picked here, else whoever's at the PC, else whose files are in.
+    const ids = top.players ? cfg().players.map((p) => p.id).filter((id) => top.players[id]) : [];
+    const seat = seated(), owner = it.g && S.d.active[it.g.id];
+    const who = ids.includes(S.achWho[key]) ? S.achWho[key] : seat && ids.includes(seat.id) ? seat.id : ids.includes(owner) ? owner : ids[0];
+    const A = who ? top.players[who] : top;
+    const pct = A.total ? Math.round((A.unlocked / A.total) * 100) : 0;
+    const whoRow = ids.length ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ids.map((id) => { const p = player(id); return `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-who" data-key="${esc(key)}" data-player="${esc(id)}" aria-pressed="${id === who}">${lnAvatar(p, "20")}${esc(p.name)}<span class="ln-num">${top.players[id].unlocked}</span></button>`; }).join("")}</div>` : "";
+    const g = it.g;
+    const note = A.source !== "pc" ? "From Steam, for the account signed in on this PC."
+      : ids.length ? "Each profile has its own. They go with it when you swap, like its saves."
+      : g && g.sharedAchievements ? "Shared by everyone who plays on this PC." : "Saved on this PC next to the game's saves.";
+    const toggle = g && A.source === "pc" ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-shared" data-game="${esc(g.id)}" data-on="${g.sharedAchievements ? "0" : "1"}">${g.sharedAchievements ? "Give each profile its own" : "Share one set"}</button>` : "";
+    const bar = `<div class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${A.total}" aria-valuenow="${A.unlocked}" aria-label="${A.unlocked} of ${A.total} achievements"><span style="width:${pct}%"></span></div>`;
+    const row = (a) => achRow(a, key);
+    return { key, who, A, pct, whoRow, note, toggle, bar, row };
+  }
+  // Achievements by how rare they are, as gamers know them: ultra rare in
+  // gold, rare in blue, uncommon in green, common in silver.
+  const TIERS = { ultra: "Ultra rare", rare: "Rare", uncommon: "Uncommon", common: "Common" };
+  const tierOf = (p) => (!p ? "" : p < 2 ? "ultra" : p < 10 ? "rare" : p < 30 ? "uncommon" : "common");
+  const pctText = (p) => (p < 10 ? p.toFixed(1) : Math.round(p)) + "%";
+  const achIcon = (a) => `<span class="ach-ico">${a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : GI.trophy}${a.unlocked ? "" : `<span class="ach-lock">${GI.lock || ""}</span>`}</span>`;
+  function achRow(a, key, sub) {
+    const t = a.unlocked || !a.hidden ? tierOf(a.percent) : "";
+    const rk = key + "|" + a.id;
+    const hid = a.hidden && !a.unlocked && !S.revealed.has(rk);
+    const line = sub || (a.unlocked ? (a.at && new Date(a.at).getFullYear() > 2000 ? "Unlocked " + esc(ago(a.at)) : "Unlocked") : hid ? "Hidden until it's unlocked. Click to show it." : esc(a.description || "Not unlocked yet"));
+    return `<li class="ach${a.unlocked ? " is-on" : " locked"}${t ? " tier-" + t : ""}${hid ? " is-hidden" : ""}"${hid ? ` data-action="ach-reveal" data-k="${esc(rk)}" role="button" tabindex="0" aria-label="Show this hidden achievement"` : ""}>${achIcon(a)}
+      <div><b>${hid ? "Hidden achievement" : esc(a.name)}</b><span>${line}</span>${a.percent && !hid ? `<span class="ach-rar" aria-hidden="true"><i style="width:${Math.max(3, Math.min(100, a.percent))}%"></i></span>` : ""}</div>
+      ${a.percent && !hid ? `<span class="ach-tier" title="${esc(pctText(a.percent))} of players have it"><em>${TIERS[tierOf(a.percent)]}</em><b class="ln-num">${pctText(a.percent)}</b></span>` : ""}</li>`;
+  }
+  // A ring of how much of a game is done.
+  const ring = (pct, size = 44) => `<svg class="ach-ring${pct === 100 ? " is-full" : ""}" viewBox="0 0 36 36" width="${size}" height="${size}" aria-hidden="true"><circle class="bg" cx="18" cy="18" r="15.5" pathLength="100"/><circle class="fg" cx="18" cy="18" r="15.5" pathLength="100" style="--p:${pct}"/></svg><span class="ach-ring-n ln-num">${pct}<small>%</small></span>`;
+  // Numbers that count up as a page comes in.
+  function countUp(root) {
+    if (reduced()) return;
+    root.querySelectorAll("[data-countup]").forEach((el) => {
+      const to = +el.dataset.countup, suffix = el.dataset.suffix || "";
+      if (!(to > 0)) return;
+      const t0 = performance.now(), d = 900;
+      const step = (t) => {
+        const k = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - k, 4);
+        el.innerHTML = Math.round(to * e) + suffix;
+        if (k < 1 && el.isConnected) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  // An unlock, in the window: it comes in at the top right, shines once for
+  // the rare ones, and goes after a few seconds.
+  function achPop(list, game, pid) {
+    let box = $("#ach-pops");
+    if (!box) { box = document.createElement("div"); box.id = "ach-pops"; box.className = "ach-pops ln-root"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
+    const p = pid && player(pid);
+    (list || []).slice(0, 4).forEach((a, i) => {
+      const t = tierOf(a.percent);
+      const el = document.createElement("div");
+      el.className = `ach-pop${t ? " tier-" + t : ""}`;
+      if (p) { el.classList.add("ln-player"); el.style.setProperty("--player", p.color); }
+      el.style.animationDelay = i * 160 + "ms";
+      el.innerHTML = `${achIcon(Object.assign({}, a, { unlocked: true }))}<div><span class="ach-pop-k">${p ? '<span class="dot" aria-hidden="true"></span>' : ""}Achievement unlocked${p && cfg().players.length > 1 ? " for " + esc(p.name) : ""}</span><b>${esc(a.name || "Achievement")}</b>
+        <span class="ach-pop-l">${a.percent ? `<em>${TIERS[t]}</em>, ${esc(pctText(a.percent))} of players` : esc(a.description || game || "")}</span></div>`;
+      box.appendChild(el);
+      setTimeout(() => { el.classList.add("out"); el.addEventListener("animationend", () => el.remove(), { once: true }); setTimeout(() => el.remove(), 800); }, 5600 + i * 160);
+    });
+  }
+  // On the game's page: the latest unlocked, and the whole list in a panel.
+  function achievementsBlock(it) {
+    const X = achFor(it);
+    if (!X) {
+      // Read and none found: for a game from outside the stores, say why.
+      if (S.ach[recentKey(it)] !== null || !docWorth(it)) return "";
+      return `<section class="gpage-block gp-ach">${gpHead("Achievements")}<p>None found on this PC for ${esc(it.name)}.</p>
+        <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button></div></section>`;
+    }
+    const { key, who, A, pct } = X;
+    const list = A.list.filter((a) => a.unlocked).slice(0, 6);
+    return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(possessive(pname(who))) + " achievements" : "Achievements"}</h2></div>
+        <span class="ach-count"><b class="ln-num">${A.unlocked}</b> of <span class="ln-num">${A.total}</span>, ${pct}%</span></div>
+      ${X.whoRow}${X.bar}
+      ${list.length ? `<ul class="ach-list ach-grid">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
+      <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p><div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-all" ${itemAttr(it)} aria-haspopup="dialog">Show all ${A.total}</button>${docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : ""}${X.toggle}</div></div></section>`;
+  }
+  // Save points: named copies of a game's saves, on a timeline.
+  const pointsAsked = new Set();
+  function pointsFor(it) {
+    const key = recentKey(it);
+    if (!pointsAsked.has(key)) { pointsAsked.add(key); api.savePoints(key).catch(() => {}); }
+    return S.points[key];
+  }
+  function pointRow(it, p, full, P) {
+    const when = new Date(p.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    const facts = [esc(when)];
+    if (p.playtime) facts.push(`${esc(hours(p.playtime))} played`);
+    if (p.unlocked) facts.push(`${p.unlocked} achievement${p.unlocked === 1 ? "" : "s"}`);
+    const who = p.player && player(p.player) ? `<span class="ln-mark ln-player" style="--player:${esc(color(p.player))}"></span>${esc(pname(p.player))}` : "";
+    const attrs = `${itemAttr(it)} data-id="${esc(p.id)}" data-name="${esc(p.name)}"`;
+    const b = (cls, a, label) => `<button class="ln-button ${cls} ln-button--sm" ${a} ${P.busy ? "disabled" : ""}>${label}</button>`;
+    const editing = full && S.dialog && S.dialog.editing === p.id;
+    const name = editing ? `<input class="ln-input pt-name-in" id="pt-rename" maxlength="60" value="${esc(p.name)}" aria-label="Name">` : `<b>${esc(p.name)}</b>`;
+    const actions = editing ? b("ln-button--secondary", `data-action="pt-rename-save" ${attrs}`, "Save") + b("ln-button--ghost", 'data-action="pt-rename-cancel"', "Cancel")
+      : b("ln-button--secondary", `data-action="pt-restore" ${attrs}`, "Go back to it")
+        + (full && P.profiles ? b("ln-button--ghost", `data-action="pt-branch" ${attrs} data-player="${esc(p.player || "")}"`, "New run from it") : "")
+        + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
+    return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
+      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : ""}</span></div><div class="pt-actions">${actions}</div></li>`;
+  }
+  function savePointsBlock(it) {
+    const P = pointsFor(it);
+    if (!P || !P.loaded || P.error) return "";
+    const list = P.points || [];
+    const make = `<div class="pt-make"><input class="ln-input" id="pt-new" maxlength="60" placeholder="Name it, such as Before the boss" aria-label="Save point name" ${P.busy ? "disabled" : ""}>
+      <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? '<span class="ln-spinner" aria-hidden="true"></span>Copying' : "Make a save point"}</button></div>`;
+    const hint = cfg().settings.pointHotkeyOff ? "" : " Ctrl+Shift+F5 makes one while you play.";
+    return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
+      <p class="gpage-hint">A copy of the saves as they are now, to come back to.${hint}</p>${make}
+      ${list.length ? `<ol class="pt-list">${list.slice(0, 3).map((p) => pointRow(it, p, false, P)).join("")}</ol>` : ""}
+      ${list.length ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="pt-all" ${itemAttr(it)} aria-haspopup="dialog">${list.length > 3 ? `Show all ${list.length}` : "Rename, delete or start a run"}</button></div>` : ""}</section>`;
+  }
+  // The game's timeline (ps_gameTimeline): sessions, save points, unlocks
+  // and updates, by day, the latest first.
+  const tlAsked = new Set();
+  function playSpan(sec) {
+    const m = Math.max(1, Math.round(sec / 60));
+    return m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "");
+  }
+  function tlDay(at) {
+    const d = new Date(at), now = new Date();
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(now) - day(d)) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
+  }
+  function tlRow(e) {
+    const who = e.profile && player(e.profile) && cfg().players.length > 1 ? esc(pname(e.profile)) : "";
+    const [ic, text] = {
+      session: [GI.history, who ? `${who} played ${esc(playSpan(e.seconds || 0))}` : `Played ${esc(playSpan(e.seconds || 0))}`],
+      point: [GI.save, who ? `${who} made a save point: ${esc(e.name)}` : `Save point: ${esc(e.name)}`],
+      unlock: [GI.trophy, who ? `${who} unlocked ${esc(e.name)}` : `Unlocked: ${esc(e.name)}`],
+      update: [GI.refresh, e.version ? `Updated to ${esc(e.version)}` : `Updated with ${esc(e.name)}`],
+    }[e.kind] || [];
+    if (!text) return "";
+    const hm = (t) => new Date(t).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const time = e.kind === "session" && e.start ? `${hm(e.start)} to ${hm(e.at)}` : hm(e.at);
+    return `<li class="tl-row"><span class="tl-ic" aria-hidden="true">${ic}</span><span class="tl-what">${text}</span><time class="tl-time ln-num" datetime="${esc(e.at)}">${esc(time)}</time></li>`;
+  }
+  function timelineBlock(it) {
+    const key = recentKey(it);
+    if (!tlAsked.has(key)) { tlAsked.add(key); api.gameTimeline(key).catch(() => {}); }
+    const list = S.timeline[key];
+    if (!list) return "";
+    const head = `<div class="ln-section-head"><div><h2>Timeline</h2></div></div>`;
+    if (!list.length) return `<section class="gpage-block gp-timeline">${head}<p class="gpage-hint">Lootnest keeps a timeline from now on: sessions, save points, unlocks and updates.</p></section>`;
+    const n = S.tlMore[key] || 8, days = [];
+    for (const e of list.slice(0, n)) {
+      const d = tlDay(e.at);
+      if (!days.length || days[days.length - 1].d !== d) days.push({ d, rows: [] });
+      days[days.length - 1].rows.push(tlRow(e));
+    }
+    return `<section class="gpage-block gp-timeline">${head}${days.map((g) => `<div class="tl-day"><h3 class="tl-date">${esc(g.d)}</h3><ol class="tl-list">${g.rows.join("")}</ol></div>`).join("")}
+      ${list.length > n ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="tl-more" data-key="${esc(key)}">Show more</button></div>` : ""}</section>`;
+  }
+  function viewPointsDrawer() {
+    const it = dialogItem(S.dialog);
+    if (!it) return "";
+    const P = S.points[recentKey(it)] || {};
+    const list = P.points || [];
+    return drawer({ label: `${esc(it.name)} save points`, title: "Save points", sub: `${esc(it.name)}, newest first`,
+      body: list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : `<p>No save points yet.</p>`,
+      foot: `<p class="gpage-hint ln-drawer__note">Going back keeps the saves as they are now as a point first.${P.profiles ? " A new run is a profile of its own, starting from that moment." : ""}</p>` });
+  }
+  function gameSavesBlock(it) {
+    if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
+    const head = gpHead("Saves") + oneDriveNote(it, "gpage-hint");
+    const G = S.gsaves[it.id];
+    if (!G) { if (!gsAsked.has(it.id)) { gsAsked.add(it.id); api.gameSaves(it.id).catch(() => {}); } return `<section class="gpage-block">${head}${lnInline("", "Looking for its saves")}</section>`; }
+    if (G.off === "steam") return "";
+    if (G.error) return `<section class="gpage-block">${head}${lnInline("error", esc(G.error))}</section>`;
+    const btn = (cls, attrs, label) => `<button class="ln-button ${cls} ln-button--sm" ${attrs}>${label}</button>`;
+    const when = (v) => esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }));
+    // The Save Safety Net's copies of the game's saves, on this PC.
+    const lv = G.local || [];
+    const local = lv.length ? `<div class="gpage-sub">${gpHead("Copies on this PC")}<dl class="ln-facts">${lv.map((v, i) => `<div><dt><span><b>${when(v)}</b>
+        <span class="gpage-hint">${esc(fmtBytes(v.size))}${i === 0 ? ", newest" : ""}</span></span></dt>
+        <dd>${btn("ln-button--ghost", `data-action="gs-restore" data-local="1" data-key="${esc(it.id)}" data-id="${esc(v.id)}" data-when="${esc(v.created)}" ${G.busy ? "disabled" : ""}`, "Restore")}</dd></div>`).join("")}</dl>
+      <p class="gpage-hint">Lootnest copies ${esc(possessive(it.name))} saves when they change and the game is closed, and keeps the last five. Saves inside the game's own folder are in them too, so reinstalling or updating it can't take them.</p></div>` : "";
+    if (G.off === "nocloud") return `<section class="gpage-block">${head}${local}<p>${lv.length ? "To have them on every PC too, keep" : "Keep"} ${esc(possessive(it.name))} saves in your own cloud, with every version to go back to.</p>
+      <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="nav" data-view="cloud">Set up Cloud saves</button></div></section>`;
+    if (G.off === "locked") return `<section class="gpage-block">${head}<p>The cloud folder has a password. Enter it on <b>Cloud saves</b>.</p>${local}</section>`;
+    const s = cfg().settings;
+    const choose = `<div class="gpage-actions">${btn("ln-button--secondary", `data-action="gs-add" data-key="${esc(it.id)}" data-kind="folder"`, G.locations.length ? "Add a folder" : "Choose the save folder")}
+      ${btn("ln-button--ghost", `data-action="gs-add" data-key="${esc(it.id)}" data-kind="file"`, G.locations.length ? "Add a file" : "Choose a save file")}
+      ${btn("ln-button--ghost", `data-action="gs-pcgw" data-name="${esc(it.name)}"`, "Look it up on PCGamingWiki")}</div>`;
+    let where;
+    if (!G.locations.length) {
+      where = `<p>${G.source === "you" ? `Choose where ${esc(it.name)} keeps its saves.` : `Lootnest doesn't know where ${esc(it.name)} keeps its saves yet. Choose the folder, and its saves go to the cloud from then on.`}</p>
+        <p class="gpage-hint">Usually in Documents, Saved Games, or AppData (Roaming, Local or LocalLow), in a folder named after the game or its studio. PCGamingWiki's page for the game says where.</p>
+        ${choose}
+        ${s.saveDb ? "" : `<p class="gpage-hint">Or turn on <b>Find save locations online</b>: Lootnest then uses PCGamingWiki's list of where over 20,000 games keep their saves. <button class="gpage-link" data-action="savedb-on">Turn it on</button></p>`}`;
+    } else {
+      const yours = G.source === "you";
+      where = `${gpHead("On this PC")}<dl class="ln-facts gpage-paths">${G.locations.map((l) => `<div><dt class="selectable" title="${esc(l.resolved)}">${esc(l.path)}</dt><dd><span class="ln-num">${esc(fmtBytes(l.size || 0))}</span>
+          ${btn("ln-button--ghost", `data-action="open-path" data-path="${esc(l.path)}"`, "Open")}${yours ? btn("ln-button--ghost", `data-action="gs-remove" data-key="${esc(it.id)}" data-path="${esc(l.path)}"`, "Remove") : ""}</dd></div>`).join("")}</dl>
+        <p class="gpage-hint">${yours ? "Chosen by you." : G.source === "list" ? "Found with PCGamingWiki's list of save locations." : "Folders named like the game."}
+          ${yours ? "" : `<button class="gpage-link" data-action="gs-own" data-key="${esc(it.id)}">Choose them yourself</button>`}</p>
+        ${yours ? choose : ""}`;
+    }
+    const vs = G.versions || [];
+    const inCloud = G.cloudDir ? `<div class="gpage-sub">${gpHead("In " + esc(G.provider || "your cloud folder"))}
+      <dl class="ln-facts gpage-paths"><div><dt class="selectable">${esc(G.cloudDir)}</dt><dd>${btn("ln-button--ghost", `data-action="gs-open" data-key="${esc(it.id)}"`, "Open folder")}</dd></div></dl></div>` : "";
+    const list = G.locations.length || vs.length ? `<div class="gpage-sub">${gpHead("Versions")}${vs.length ? `<dl class="ln-facts">${vs.map((v, i) => `<div><dt><span><b>${esc(new Date(v.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }))}</b>
+        <span class="gpage-hint">${esc(v.computer)}, ${esc(fmtBytes(v.size))}${i === 0 ? ", newest" : ""}</span></span></dt>
+        <dd>${btn("ln-button--ghost", `data-action="gs-restore" data-key="${esc(it.id)}" data-id="${esc(v.id)}" data-when="${esc(v.created)}" data-pc="${esc(v.computer)}" ${G.busy ? "disabled" : ""}`, "Restore")}</dd></div>`).join("")}</dl>`
+        : `<p class="gpage-hint">No versions yet.${G.off === "disabled" ? "" : " One is made when the saves change and the game is closed."}</p>`}
+      ${G.off === "disabled" ? `<p class="gpage-hint">Automatic versions are off on <b>Cloud saves</b>.</p>` : ""}
+      ${G.locations.length ? `<div class="gpage-actions">${G.busy ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Saving</button>` : btn("ln-button--secondary", `data-action="gs-now" data-key="${esc(it.id)}"`, "Back up now")}</div>` : ""}</div>` : "";
+    return `<section class="gpage-block">${head}${where}${inCloud}${list}${local}</section>`;
+  }
+

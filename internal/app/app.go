@@ -46,8 +46,20 @@ var uiSystemCSS string
 //go:embed ui/app.css
 var uiCSS string
 
-//go:embed ui/app.js
-var uiJS string
+// The script is ui/js/*.js joined in name order: one closure in ordered parts.
+//
+//go:embed ui/js/*.js
+var uiJSParts embed.FS
+
+func uiJS() string {
+	var b strings.Builder
+	files, _ := uiJSParts.ReadDir("ui/js")
+	for _, f := range files {
+		s, _ := uiJSParts.ReadFile("ui/js/" + f.Name())
+		b.Write(s)
+	}
+	return b.String()
+}
 
 // Bricolage Grotesque and Figtree (both SIL Open Font License 1.1), embedded
 // so the window looks the same on every PC without going online.
@@ -101,7 +113,7 @@ func pageHTML() string {
 	n := base64.RawStdEncoding.EncodeToString(nonce)
 	h := strings.Replace(uiHTML, "/*@CSS*/", inlineFonts(uiSystemCSS+"\n"+uiCSS), 1)
 	h = strings.ReplaceAll(h, "@NONCE@", n)
-	return strings.Replace(h, "/*@JS*/", strings.Replace(uiJS, "/*@SOUNDS*/{}", soundsJSON(), 1), 1)
+	return strings.Replace(h, "/*@JS*/", strings.Replace(uiJS(), "/*@SOUNDS*/{}", soundsJSON(), 1), 1)
 }
 
 type App struct {

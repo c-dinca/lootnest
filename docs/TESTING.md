@@ -102,3 +102,11 @@ its answers:
 3. Play a game with profiles: the swap and the save back still happen.
 4. **Restart normally** on the notice. Lootnest opens again without it.
 5. Quit, then hold Shift while you open Lootnest: it starts in safe mode.
+
+## 9. Back and Forward (1.67)
+
+1. Scroll down the Library, open a game, then press the mouse's back button
+   (the side button). The Library is back at the same spot. The forward
+   button opens the game again.
+2. Alt+Left and Alt+Right do the same; so does Backspace when you aren't
+   typing in a field. The window never turns blank or reloads.
