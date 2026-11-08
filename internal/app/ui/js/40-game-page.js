@@ -505,12 +505,12 @@
     const locs = (g.paths || []).filter((p) => !String(p.id || "").startsWith("ach-"));
     const loc = locs.find((l) => l.id === D.loc) || locs[0];
     if (!per || !loc) return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
-      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Play ${esc(g.name)} once with profiles first, so there are files to start the run from.</p></div>
+      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Play it once with profiles first.</p></div>
       <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">OK</button></div></div></div>`;
     const sel = (id, list, cur, label) => list.length > 1 ? `<label class="try-field"><span>${label}</span><select class="ln-input" id="${id}">${list.map((x) => `<option value="${esc(x.id)}"${x.id === cur ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>` : "";
     const chosen = D.src ? `<p class="try-src"><span class="selectable" title="${esc(D.src)}">${esc(D.src.split(/[\\/]/).pop())}</span><span class="gpage-hint">${esc(D.src)}</span></p>` : "";
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
-      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">It goes into a new run of ${esc(possessive(per.name))}, with ${esc(possessive(from.name))} settings and the save you bring. ${esc(possessive(from.name))} own saves stay as they are: playing as ${esc(from.name)} again is one click. Keep the run, or delete it in Profiles.</p></div>
+      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Goes into a new run. ${esc(possessive(from.name))} own saves stay as they are.</p></div>
       ${sel("try-from", froms.map((p) => ({ id: p.id, label: p.name })), from.id, "Start from")}
       ${sel("try-loc", locs.map((l) => ({ id: l.id, label: l.path })), loc.id, "Where the save goes")}
       <div class="try-pick"><button class="ln-button ln-button--secondary ln-button--sm" data-action="try-browse" data-kind="trySaveDir">Choose a folder</button>
@@ -539,8 +539,8 @@
     const it = dialogItem(S.dialog);
     if (!it) return "";
     const key = recentKey(it), R = S.doctor[key];
-    const shell = (body, foot) => drawer({ label: `Check ${esc(possessive(it.name))} achievements`, title: "Achievement check", sub: `${esc(it.name)}, step by step. Lootnest only looks; nothing changes unless you press a button below.`, body, foot });
-    if (!R) return shell(lnInline("", "Checking", "Looking next to the game and where tools keep their files"));
+    const shell = (body, foot) => drawer({ label: `Check ${esc(possessive(it.name))} achievements`, title: "Achievement check", sub: esc(it.name), body, foot });
+    if (!R) return shell(lnInline("", "Checking"));
     if (R.error) return shell(lnInline("error", esc(R.error)));
     const tone = { ok: "ok", warn: "mid", fail: "low", info: "" };
     const steps = (R.steps || []).map((x) => `<li class="doc-step run-card${tone[x.state] ? " run-card--" + tone[x.state] : ""}"><div class="run-head"><span class="run-dot"></span><div><b>${esc(x.title)}</b><p>${esc(x.detail)}</p>
@@ -548,7 +548,7 @@
     const bad = (R.steps || []).find((x) => x.state === "fail") || (R.steps || []).find((x) => x.state === "warn");
     const N = R.nameInGame;
     const seat = (S.seat && player(S.seat)) || null;
-    const nameBlock = N ? `<div class="gpage-sub">${gpHead("The name in the game")}<p class="gpage-hint">The tool shows ${N.name ? `<b class="selectable">${esc(N.name)}</b>` : "its own default name"} in the game, and to friends on LAN. ${seat ? `Set it to ${esc(possessive(seat.name))} name; its settings are kept in backups first.` : "Choose who's at the PC, at the top right, to set it to your profile's name."}</p>
+    const nameBlock = N ? `<div class="gpage-sub">${gpHead("The name in the game")}<p class="gpage-hint">In the game: ${N.name ? `<b class="selectable">${esc(N.name)}</b>` : "the tool's default name"}.${seat ? " Its settings are copied before a change." : " Sit down at the top right to use yours."}</p>
         ${seat && seat.name !== N.name ? `<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="doc-name" ${itemAttr(it)} data-player="${esc(seat.id)}">Use ${esc(possessive(seat.name))} name</button></div>` : ""}</div>` : "";
     return shell(`<p class="gpage-hint">${bad ? `Most likely: ${esc(bad.title.charAt(0).toLowerCase() + bad.title.slice(1))}.` : "Everything Lootnest checks is in place."}</p><ol class="doc-steps">${steps}</ol>${nameBlock}`,
       `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)}>Check again</button>`);
@@ -559,10 +559,10 @@
     const R = S.sources;
     const read = R && R.at && !R.at.startsWith("0001") ? ` Last looked ${ago(R.at)}.` : "";
     const scanBtn = (kind) => `<button class="ln-button ln-button--${kind} ln-button--sm" data-action="sources-rescan" ${S.found.refreshing ? 'aria-busy="true"' : ""}>${S.found.refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`;
-    const shell = (body) => drawer({ label: "Sources", title: "Sources", sub: `Each place the Library reads, and what it found there.${read}`, body,
+    const shell = (body) => drawer({ label: "Sources", title: "Sources", sub: read.trim(), body,
       foot: `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span>${scanBtn("secondary")}` });
     if (!R) return shell(lnInline("", "Reading"));
-    if (!R.sources.length) return shell(`<p class="gpage-hint">${S.found.refreshing ? "Lootnest is looking for games now. This fills in when it's done." : "Nothing read since Lootnest started. Scan again to look now."}</p>`);
+    if (!R.sources.length) return shell(`<p class="gpage-hint">${S.found.refreshing ? "Looking for games now" : "Nothing read yet"}</p>`);
     const tone = { ok: "ok", warn: "mid", info: "" };
     const name = (src) => ({ folder: "Game folders", shortcut: "Shortcuts" })[src] || sourceLabel(src);
     const away = R.sources.filter((x) => !x.installed).map((x) => name(x.source));

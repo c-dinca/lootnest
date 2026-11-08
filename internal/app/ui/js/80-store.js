@@ -402,7 +402,7 @@
         <div class="dialog-foot"><span class="error-text grow" id="bk-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="backup-pw-save" ${D.busy ? "disabled" : ""}>${D.busy ? "Checking" : "Unlock"}</button></div></div></div>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Password">
-      <div><h2>Password for your saves</h2><p class="sub">Saves and backups in the cloud folder are encrypted with it. Use the same password on every PC with this folder. Lootnest remembers it for this Windows account, so syncing keeps working by itself.</p></div>
+      <div><h2>Password for your saves</h2><p class="sub">Encrypts the saves and backups in the cloud folder. Use the same one on every PC.</p></div>
       <div class="field"><label for="bk-pw">Password <span class="hint">at least 8 characters</span></label><input id="bk-pw" type="password" autocomplete="new-password" maxlength="200"></div>
       <div class="field"><label for="bk-pw2">The same password again</label><input id="bk-pw2" type="password" autocomplete="new-password" maxlength="200"></div>
       <p class="warn">If you forget it, nobody can open these files, Lootnest included. Keep it in a password manager.</p>
@@ -454,10 +454,10 @@
         <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">Done</button></div></div></div>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Export a profile">
-      <div><h2>Export ${esc(possessive(name))} profile</h2><p class="sub">One file with their saves in every game they have a profile for, their picture, banner and play time, to take to another PC.</p></div>
+      <div><h2>Export ${esc(possessive(name))} profile</h2><p class="sub">Their saves, picture and play time in one file.</p></div>
       <div class="field"><label for="ex-pw">Password <span class="hint">optional, at least 8 characters</span></label><input id="ex-pw" type="password" autocomplete="new-password" maxlength="200"></div>
       <div class="field"><label for="ex-pw2">The same password again</label><input id="ex-pw2" type="password" autocomplete="new-password" maxlength="200"></div>
-      <p class="hint">With a password, the file is encrypted (AES-256) and needs it to be imported.</p>
+      <p class="hint">With a password, the file is encrypted.</p>
       <div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button><button class="btn primary" data-action="export-save" ${D.busy ? "disabled" : ""}>${D.busy ? "Saving" : "Choose a folder and save"}</button></div></div></div>`;
   }
 

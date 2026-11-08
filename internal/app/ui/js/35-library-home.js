@@ -356,13 +356,13 @@
     if (!g) return "";
     const list = D.list;
     const when = (w) => (w ? new Date(w).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "");
-    const body = !list ? lnInline("", "Reading the copies") : !list.length ? `<p>No copies yet. One is made before every swap.</p>`
+    const body = !list ? lnInline("", "Reading the copies") : !list.length ? `<p>No copies yet</p>`
       : `<ol class="pt-list pt-list--all">${list.map((b, i) => { const p = player(b.owner);
         return `<li class="pt-row"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main"><b>${esc(when(b.when) || b.id)}${i === 0 ? " (newest)" : ""}</b>
           <span class="pt-facts">${p ? `<span><span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span>${esc(possessive(p.name))} files</span>` : "<span>Whose isn't known</span>"}<span>${esc(fmtBytes(b.size || 0))}</span></span></div>
           <div class="pt-actions">${p ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="copy-put-back" data-game="${esc(g.id)}" data-id="${esc(b.id)}" data-owner="${esc(b.owner)}" data-when="${esc(when(b.when))}" ${D.busy ? "disabled" : ""}>Put back</button>` : ""}</div></li>`; }).join("")}</ol>`;
     return drawer({ label: `${esc(g.name)} copies`, title: "Copies before swaps", sub: `${esc(g.name)}, newest first`, body,
-      foot: `<p class="gpage-hint ln-drawer__note">Put back gives a copy's files back to the profile they belong to. What's there now is copied first, so it can be undone too.</p><button class="ln-button ln-button--ghost ln-button--sm" data-action="open-backups" data-game="${esc(g.id)}">Open the folder</button>` });
+      foot: `<p class="gpage-hint ln-drawer__note">What's there now is copied first.</p><button class="ln-button ln-button--ghost ln-button--sm" data-action="open-backups" data-game="${esc(g.id)}">Open the folder</button>` });
   }
   // A page with nothing in it yet: what it's for, and the way to fill it.
   // ghosts draws dashed covers where a page's games will go.

@@ -107,19 +107,18 @@
     const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${D.busy ? "disabled" : ""}>${label}</button>`;
     const choose = `<div class="gpage-actions">${btn('data-action="mod-pick" data-kind="mod"', "Choose a .zip, .7z or .rar")}${btn('data-action="mod-pick" data-kind="modDir"', "Choose a folder", "ln-button--ghost")}</div>`;
     const shell = (body, foot) => drawer({ label: `Add a mod to ${esc(D.name)}`, title: "Add a mod", sub: `${esc(D.name)}. Nothing in the game's folder changes until you apply.`, body, foot });
-    const intro = `<p class="gpage-hint">Lootnest doesn't download mods. Choose one you have, and Lootnest shows what it would change first. It keeps its own copy, so the file you chose can go afterwards.</p>`;
-    if (D.busy) return shell(lnInline("", "Opening the mod", "A big mod takes a minute."));
+    if (D.busy) return shell(lnInline("", "Opening the mod"));
     if (D.error) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     if (D.refused) return shell(`${lnInline("error", "Lootnest won't put this mod in", esc(D.refused))}${choose}`);
     const P = D.plan, m = D.mod;
-    if (!P || !m) return shell(`${intro}${choose}`);
+    if (!P || !m) return shell(choose);
     const shown = P.replaces.slice(0, 8);
     const body = `<div class="gpage-sub">${gpHead(esc(m.name))}<dl class="ln-facts">
         <div><dt>Adds</dt><dd>${P.added} file${P.added === 1 ? "" : "s"}</dd></div>
         <div><dt>Replaces</dt><dd>${P.replaced} game file${P.replaced === 1 ? "" : "s"}</dd></div>
         <div><dt>Size</dt><dd>${esc(fmtBytes(P.bytes))}</dd></div>
         <div><dt>Where</dt><dd>${esc(modWhere(m))}</dd></div></dl>
-        ${m.atRoot ? `<p class="find-low">None of its folders match the game's, so its files go at the top of the game's folder as they are. If the mod's notes say to put them somewhere else, extract it into that layout and add the folder instead.</p>` : ""}</div>
+        ${m.atRoot ? `<p class="find-low">None of its folders match the game's, so its files go at the top of the game's folder.</p>` : ""}</div>
       ${shown.length ? `<div class="gpage-sub">${gpHead("Game files it replaces")}<ul class="mod-files">${shown.map((r) => `<li class="selectable">${esc(r)}</li>`).join("")}</ul>
         ${P.replaces.length > shown.length ? `<p class="gpage-hint">And ${P.replaces.length - shown.length} more.</p>` : ""}</div>` : ""}`;
     return shell(body, `${btn('data-action="mod-pick" data-kind="mod"', "Choose another", "ln-button--ghost")}<span class="grow"></span>
@@ -141,7 +140,7 @@
     const { over, lose } = modVs(M, D.owner, D.id);
     const group = (by, head) => Object.keys(by).map((x) => `<div class="gpage-sub">${gpHead(esc(head(modName(M, D.owner, x))))}
         <ul class="mod-files">${by[x].map((r) => `<li class="selectable">${esc(r)}</li>`).join("")}</ul></div>`).join("");
-    return drawer({ label: `${esc(me.name)} and other mods`, title: esc(me.name), sub: "When two mods that are on have the same file, the one lower in the list goes in.",
+    return drawer({ label: `${esc(me.name)} and other mods`, title: esc(me.name), sub: "Where two mods have the same file, the lower one wins.",
       body: `${group(over, (n) => `Overrides these from ${n}`)}${group(lose, (n) => `Loses these to ${n}`)}` });
   }
 

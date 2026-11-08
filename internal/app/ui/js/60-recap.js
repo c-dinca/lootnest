@@ -96,10 +96,10 @@
     const years = recapYears(p);
     const yearSel = years.length > 1 ? `<select class="ln-input recap-year" id="recap-year" aria-label="Year">${years.map((y) => `<option${y === D.year ? " selected" : ""}>${y}</option>`).join("")}</select>` : "";
     const body = years.length ? `<canvas class="recap-canvas" id="recap-canvas" width="1080" height="1350" role="img" aria-label="${esc(possessive(p.name))} ${D.year} in games"></canvas>`
-      : `<p class="sub">Nothing played yet. Lootnest counts the time from the first game you start through it.</p>`;
+      : `<p class="sub">Nothing played yet</p>`;
     return `<div class="scrim" data-action="scrim"><div class="dialog recap-dialog" role="dialog" aria-modal="true" aria-label="Year in games">
       <div class="recap-head"><h2>${esc(p.name)} in ${D.year}</h2>${yearSel}</div>${body}
-      <div class="dialog-foot"><span class="hint grow">Saved in Pictures\\Lootnest, to share as you like. Nothing is sent.</span><button class="btn quiet" data-action="dialog-cancel">Close</button>
+      <div class="dialog-foot">${years.length ? `<span class="hint grow">Saved in Pictures\\Lootnest</span>` : ""}<button class="btn quiet" data-action="dialog-cancel">Close</button>
       ${years.length ? `<button class="btn primary" data-action="recap-save" ${D.busy ? "disabled" : ""}>${D.busy ? "Saving the picture" : "Save the picture"}</button>` : ""}</div></div></div>`;
   }
   function ppSection(s, p, st) {

@@ -69,12 +69,12 @@
   // picture, a few words, the game they're into, their numbers, activity
   // and collection.
   const SECTIONS = [
-    ["now", "Currently playing", "A game you're playing, with a note"],
-    ["stats", "Numbers", "Time played, games, streak, longest session"],
-    ["favorites", "Favourite games", "Up to six games, in your order"],
-    ["activity", "Activity", "When you played, the last six months"],
-    ["collection", "Collection", "Where your games come from"],
-    ["recent", "Played lately", "The last games you played"],
+    ["now", "Currently playing"],
+    ["stats", "Numbers"],
+    ["favorites", "Favourite games"],
+    ["activity", "Activity"],
+    ["collection", "Collection"],
+    ["recent", "Played lately"],
   ];
   const sectionsOf = (p) => { const known = SECTIONS.map((s) => s[0]), on = (p.sections || []).filter((s) => known.includes(s)); return on.length ? on : known; };
   const daysOf = (pid) => ((S.d.activity || {}).days || {})[pid] || {};

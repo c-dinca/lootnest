@@ -48,8 +48,7 @@
         <tr><th scope="row"><b>${esc(it.name)}</b><span>${esc(sourceLabel(it.source, it.f))}</span></th>${cell(z, "install")}${cell(z, "saves")}${cell(z, "profiles")}${cell(z, "copies")}
         <td><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="st-more" ${itemAttr(it)} aria-haspopup="menu" aria-expanded="false" aria-label="More for ${esc(it.name)}">${icon.dots}</button></td></tr>`).join("")}</tbody></table></div>`
       : `<p class="set-note">No games in the Library yet.</p>`;
-    const note = Z.safe ? "Lootnest is in safe mode, so it doesn't count sizes. Restart it normally to see them."
-      : `Sizes are about right: Lootnest counts them in the background after it looks for games, a game at a time.${Z.counting ? " It's counting now." : ""} Saves inside a game's folder count in its install too.`;
+    const note = Z.safe ? "Safe mode: sizes aren't counted." : Z.counting ? "Counting now" : "";
     return setSub("Drives", "", drives ? `<div class="st-drives">${drives}</div>` : `<p class="set-note">Windows didn't list any drives.</p>`)
       + setSub("Games", note, table);
   }
@@ -74,12 +73,12 @@
     const wrap = (inner, sub) => moveWrap(D.name, inner, sub);
     if (M && M.key === D.key) {
       const text = M.step === "check" ? "Checking the copy, then pointing the Library at it" : M.total ? `Copying ${fmtBytes(M.done)} of ${fmtBytes(M.total)}` : "Counting its files";
-      return wrap(`${moveProgress(M.done, M.total, text, "Don't start the game until then.")}
+      return wrap(`${moveProgress(M.done, M.total, text, "Don't start the game until it's done.")}
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button>${M.step === "check" ? "" : `<button class="btn" data-action="movefolder-cancel">Stop the move</button>`}</div>`);
     }
     const only = (text) => wrap(`<p class="note" role="status">${text}</p><div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
-    if (M || S.moving) return only("Lootnest is moving another game. Wait for it to finish, then move this one.");
-    if (!dir) return only(S.sizes && S.sizes.safe ? "Lootnest is in safe mode, which leaves moving games off. Restart it normally, then move the game." : "Lootnest is still counting this game's files. This takes a moment.");
+    if (M || S.moving) return only("Another game is moving. Wait for it to finish.");
+    if (!dir) return only(S.sizes && S.sizes.safe ? "Safe mode: moving games is off." : "Still counting this game's files.");
     const here = dir.slice(0, 3).toUpperCase();
     const spots = ((S.sizes || {}).drives || []).filter((d) => d.root.toUpperCase() !== here).map((d) => ({ path: d.games, free: d.free }));
     if (D.custom) spots.push({ path: D.custom, free: -1 });
@@ -89,7 +88,7 @@
         <span class="dot"></span><span><b>${esc(s.path)}</b><span>${s.free < 0 ? "A folder you chose" : fmtBytes(s.free) + " free"}${room(s) ? "" : ", not enough room"}</span></span></button>`).join("")}</div>`
       : `<p class="note">This PC has one drive. Choose a folder to move the game into.</p>`;
     return wrap(`${list}
-      <p class="hint">Lootnest copies the game and checks the copy first. Then the Library uses the new folder, and only then does the old one go to the Recycle Bin. Shortcuts you made to the old folder stop working.</p>
+      <p class="hint">Copied and checked first, then the old folder goes to the Recycle Bin.</p>
       <div class="dialog-foot"><button class="btn quiet" data-action="movefolder-browse">Choose a folder</button><span class="grow"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
         <button class="btn primary" data-action="movefolder-go" ${D.pick ? "" : "disabled"}>Move</button></div>`,
       `${size ? esc(about(size)) + ", now in " : "Now in "}<span class="selectable">${esc(dir)}</span>`);

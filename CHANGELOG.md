@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.95.0
+
+- **Settings in Arcade.** The categories sit on a panel at the left, each with its icon, and the one you're in lights up in its section's colour. Every category is groups of rows under labels, with the setting's name on the left and its switch, box or key on the right, all lined up and the same height.
+- **Less to read in Settings.** The sentences that explained what a switch does are gone. A short line stays only where a setting changes files or sends something online, and Online says what each one sends.
+- **Controllers** shows the pads Windows lists beside what Lootnest sees, row for row. The apps that change your controllers each have a lamp: green while running, grey when only installed.
+- **Profiles** are cards: each person's face, hours, games and latest covers, with their runs in the same card.
+- **Who's playing** has a big key for each profile. It lights up in that profile's colour under the pointer, and goes down and fills with the colour when you choose it. Number keys show on each one.
+- **Edit profile** opens in a panel from the right.
+- **Dialogs and panels** end the same way: a line, then Cancel and the main key on the right. Every button in them is a key, and their explanations are cut down to one short line before anything that changes files.
+
 ## 1.94.0
 
 - **The Library in Arcade.** Its sections sit under teal labels, with a count on All games and on each collection. Games you don't have installed show their install key on every cover and row.
