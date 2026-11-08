@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.86.0, beta)
+## Where things stand (1.87.0, beta)
 
 These shipped recently, newest last:
 
@@ -632,6 +632,15 @@ These shipped recently, newest last:
   launches refused during a run or with a pending journal
   (`errModding`); moves refused with a pending journal. Saves copied
   first (`keepSavesBefore`). Harness `?mods=1`.
+- **1.87** Roadmap Mods 2: `set.json` is a map by owner ('' the game's,
+  else a profile id; the 1.86 list reads as the game's); `ModSetFor` /
+  `ModSetIn` resolve profile, then its person (runs), then the game's;
+  `ModsDeployed.Owner`. `modsForPlay` runs in `runSwap` right after
+  `eng.Activate` (saves first, then mods; journaled `ApplyMods`); a set
+  that can't go in puts the game back and starts it vanilla. Updates
+  take mods out first (`modsOffBefore`) and leave the
+  `off-after-update` marker until the next Apply. `ps_modSetOwn`; the
+  Mods for select; New run's Start with mods.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

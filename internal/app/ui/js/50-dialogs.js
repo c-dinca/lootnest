@@ -26,11 +26,13 @@
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">${esc(D.cancel || "Cancel")}</button>
         <button class="btn primary" data-action="dialog-ok">${esc(D.ok || "OK")}</button></div></div></div>`;
     } else if (D.kind === "newrun") {
-      const g = game(D.gameId), per = player(D.person);
+      const g = game(D.gameId), per = player(D.person), M = S.mods["game:" + D.gameId];
+      const mods = M && M.sets && onIds(M, per && per.id).length ? `<label class="toggle"><span><b>Start with mods</b><p>The run gets its own copy of ${esc(possessive(per.name))} mods, ${onIds(M, per.id).length} on now. Off, it starts without mods.</p></span>
+          <span class="switch"><input type="checkbox" id="newrun-mods" ${D.mods === false ? "" : "checked"} ${D.busy ? "disabled" : ""}><span></span></span></label>` : "";
       o.innerHTML = g && per ? `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="A new run">
         <div><h2>A new run of ${esc(g.name)}</h2><p class="sub">A playthrough of its own, with its own saves and settings, such as a hardcore try or new game+. Next, choose to start it from nothing or from a copy of ${esc(possessive(per.name))} saves. Those stay as they are.</p></div>
         <input type="text" class="ln-input" id="newrun-name" maxlength="24" placeholder="${esc(per.name)} hardcore" value="${esc(D.name || "")}" aria-label="The run's name">
-        <div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
+        ${mods}<div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
         <button class="btn primary" data-action="new-run-go" ${D.busy ? "disabled" : ""}>Start the run</button></div></div></div>` : "";
       setTimeout(() => { const i = $("#newrun-name"); if (i && document.activeElement !== i) i.focus(); }, 20);
     } else if (D.kind === "recap") {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.87.0
+
+- **Mods for each profile and run.** On a game with profiles, the Mods tab has **Mods for**: the game, for everyone, or one profile or run. Each has its own list of which mods are on and in what order; the mods themselves are kept once. A run without a list of its own uses its person's, and a person without one uses the game's. **Make its own** gives it one.
+- **Play puts in the mods of whoever plays.** Their saves are swapped in first, then Lootnest takes the last player's mods out and puts theirs in, with the same checks and copies as Apply. If that can't finish, the game doesn't start and the message says why; **Put the game back as it was** still works. If their mods can't go in at all (the game's folder no longer takes mods, or a mod Lootnest kept is gone), the game is put back as it was and starts without them. In safe mode the game starts as it is.
+- **Start with mods** in New run gives the run its own copy of its person's mods. Turned off, the run starts without mods.
+- **Updates take the mods out first.** Before an update, from a file, an installer, itch.io or GOG, Lootnest puts the game back as it was, then updates it, and leaves the mods off, for every profile's Play too: they may not fit the new version. Apply them again from the Mods tab.
+
 ## 1.86.0
 
 - **Mods**, a new tab on a game's page. **Add a mod** takes one you have, a .zip, .7z or .rar, or a folder, and shows what it would do first: how many files it adds, which game files it replaces, and where in the game's folder it goes. Lootnest keeps its own copy, so the file you chose can go afterwards. It never downloads a mod.

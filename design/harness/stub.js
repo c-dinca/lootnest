@@ -342,13 +342,30 @@
     }
     return ok();
   };
-  // Mods (core/mods.go): ?mods=1 gives Phantom Blade Zero two mods, applied.
-  const PBZ = "dir:d:\\games\\phantom blade zero", MODS = {}, DEPLOYED = {}, MODS_PENDING = {};
+  // Mods (core/mods.go): ?mods=1 gives Phantom Blade Zero two mods, applied,
+  // and Baldur's Gate 3 a set for each of the first two profiles (a run of
+  // the first, with ?runs=1, uses its person's), the first's in its folder.
+  // MODS: key -> id -> the mod; SETS: key -> owner ("" the game's) -> [{id, on}].
+  const PBZ = "dir:d:\\games\\phantom blade zero", BG3 = "game:bg3", MODS = {}, SETS = {}, DEPLOYED = {}, MODS_PENDING = {};
   if (q.get("mods") === "1") {
-    MODS[PBZ] = [{ id: "m1", name: "Better Lighting", files: 14, bytes: 48.2e6, into: "ProjectPBZ", on: true },
-      { id: "m2", name: "Unlocked 60 FPS", files: 1, bytes: 2100, on: true }];
+    const m1 = { id: "m1", name: "Better Lighting", files: 14, bytes: 48.2e6, into: "ProjectPBZ" }, m2 = { id: "m2", name: "Unlocked 60 FPS", files: 1, bytes: 2100 };
+    MODS[PBZ] = { m1, m2 };
+    SETS[PBZ] = { "": [{ id: "m1", on: true }, { id: "m2", on: true }] };
     DEPLOYED[PBZ] = { mods: ["m1", "m2"] };
+    MODS[BG3] = { m3: { id: "m3", name: "Party Limit Begone", files: 6, bytes: 3.4e6, into: "Data" }, m4: { id: "m4", name: "Faster Camp", files: 2, bytes: 81e3, into: "Data" },
+      m5: { id: "m5", name: "Tav Hair Pack", files: 40, bytes: 212e6, into: "Data" } };
+    SETS[BG3] = { "": [{ id: "m4", on: true }], p1: [{ id: "m3", on: true }, { id: "m5", on: true }, { id: "m4", on: false }], ...(ids[1] ? { [ids[1]]: [{ id: "m4", on: true }, { id: "m3", on: false }] } : {}) };
+    DEPLOYED[BG3] = { mods: ["m3", "m5"], owner: "p1" };
   }
+  const modOwner = (key, o) => {
+    const sets = SETS[key] || {}, p = PLAYERS.find((x) => x.id === o);
+    return o && sets[o] ? o : p && p.of && sets[p.of] ? p.of : "";
+  };
+  const modSet = (key, o) => {
+    const sets = SETS[key] || {}, owner = modOwner(key, o), out = (sets[owner] || []).map((e) => ({ ...e }));
+    Object.keys(sets).sort().forEach((k) => sets[k].forEach((e) => { if (!out.some((x) => x.id === e.id)) out.push({ id: e.id, on: false }); }));
+    return [owner, out];
+  };
   const modDir = (key) => {
     const f = found.find((x) => x.key === key), g = games.find((x) => "game:" + x.id === key);
     return f ? (f.appId ? "C:\\Program Files (x86)\\Steam\\steamapps\\common\\" + f.name : (f.exe || "").replace(/\\[^\\]+$/, "")) : g ? "D:\\SteamLibrary\\steamapps\\common\\" + g.name : "";
@@ -485,7 +502,9 @@
     ps_mods: (key) => {
       const dir = modDir(key), ac = /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "";
       if (!dir) return Promise.reject("Lootnest doesn't know where this game's folder is, so it can't put mods into it.");
-      return ok({ dir, mods: MODS[key] || [], deployed: DEPLOYED[key] || null, pending: false,
+      const sets = {}, rows = (set) => set.filter((e) => (MODS[key] || {})[e.id]).map((e) => ({ ...MODS[key][e.id], on: e.on }));
+      ["", ...Object.keys(SETS[key] || {})].forEach((o) => { sets[o] = rows(modSet(key, o)[1]); });
+      return ok({ dir, sets, uses: key.startsWith("game:") ? Object.fromEntries(PLAYERS.map((p) => [p.id, modOwner(key, p.id)])) : {}, deployed: DEPLOYED[key] || null, pending: false,
         safe: q.get("safe") === "1" ? "Lootnest is in safe mode, which leaves the game's folder as it is. Restart it normally to change its mods." : "",
         refused: ac ? `This game ships with ${ac}, which can ban an account over changed game files, so Lootnest doesn't put mods into it.`
           : /Program Files/.test(dir) ? "Windows protects the games under Program Files and WindowsApps, so Lootnest doesn't put mods there. A game in a folder outside them can have mods." : "" });
@@ -498,28 +517,32 @@
         : { type: "modPlan", key, path, mod, plan: { added: 168, replaced: 44, bytes: 1.9e9, replaces: Array.from({ length: 44 }, (_, i) => `ProjectPBZ/Content/Paks/pakchunk${i}-WindowsNoEditor.pak`) } }, 500);
       return ok();
     },
-    ps_modToggle: (key, id, on) => {
-      const list = (MODS[key] = MODS[key] || []), m = list.find((x) => x.id === id);
-      if (m) m.on = on; else if (MODS_PENDING[id]) list.push({ ...MODS_PENDING[id], on: true });
+    ps_modToggle: (key, owner, id, on) => {
+      const [o, set] = modSet(key, owner), m = set.find((x) => x.id === id);
+      if (m) m.on = on; else if (MODS_PENDING[id]) { (MODS[key] = MODS[key] || {})[id] = MODS_PENDING[id]; set.push({ id, on: true }); }
+      (SETS[key] = SETS[key] || {})[o] = set;
       return ok();
     },
-    ps_modOrder: (key, id, by) => {
-      const list = MODS[key] || [], i = list.findIndex((x) => x.id === id), j = i + by;
-      if (i >= 0 && j >= 0 && j < list.length) [list[i], list[j]] = [list[j], list[i]];
+    ps_modOrder: (key, owner, id, by) => {
+      const [o, set] = modSet(key, owner), i = set.findIndex((x) => x.id === id), j = i + by;
+      if (i >= 0 && j >= 0 && j < set.length) [set[i], set[j]] = [set[j], set[i]];
+      SETS[key][o] = set;
       return ok();
     },
+    ps_modSetOwn: (key, owner, on) => { (SETS[key] = SETS[key] || {})[owner] = modSet(key, owner)[1].map((e) => ({ id: e.id, on: e.on && on })); return ok(); },
     ps_modRemove: (key, id) => {
-      const drop = () => { MODS[key] = (MODS[key] || []).filter((x) => x.id !== id); };
-      if (!(DEPLOYED[key] || { mods: [] }).mods.includes(id)) { drop(); delete MODS_PENDING[id]; return ok(false); }
+      const drop = () => { delete (MODS[key] || {})[id]; Object.values(SETS[key] || {}).forEach((set) => { const i = set.findIndex((e) => e.id === id); if (i >= 0) set.splice(i, 1); }); };
+      const d = DEPLOYED[key];
+      if (!(d || { mods: [] }).mods.includes(id)) { drop(); delete MODS_PENDING[id]; return ok(false); }
       return modsRun(key, "remove", () => {
         drop();
-        const on = (MODS[key] || []).filter((m) => m.on);
-        if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id) }; else delete DEPLOYED[key];
+        const on = modSet(key, d.owner || "")[1].filter((m) => m.on);
+        if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id), owner: d.owner }; else delete DEPLOYED[key];
       }).then(() => true);
     },
-    ps_modsApply: (key) => modsRun(key, "apply", () => {
-      const on = (MODS[key] || []).filter((m) => m.on);
-      if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id) }; else delete DEPLOYED[key];
+    ps_modsApply: (key, owner) => modsRun(key, "apply", () => {
+      const [o, set] = modSet(key, owner), on = set.filter((m) => m.on);
+      if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id), owner: o }; else delete DEPLOYED[key];
     }),
     ps_modsRestore: (key) => modsRun(key, "restore", () => { delete DEPLOYED[key]; }),
     ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },

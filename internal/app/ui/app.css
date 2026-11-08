@@ -918,6 +918,8 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: var(--radius-round); background: var(--fg-2); transition: transform var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
 .switch input:checked + span { background: var(--accent); box-shadow: none; }  /* on: Racing Red */
 .switch input:checked + span::after { transform: translateX(16px); background: var(--fg-1); }
+.switch input:disabled { cursor: default; }
+.switch input:disabled:checked + span { background: var(--fg-disabled); }
 .switch input:focus-visible + span { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 
 .bk-card {
@@ -2048,5 +2050,8 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .gp-mods > .gpage-hint { max-width: 66ch; }
 .gp-mods .mover { margin-top: var(--space-3); }
 .gp-mods .gpage-actions { margin-top: var(--space-4); }
+.mods-for { display: grid; justify-items: start; gap: var(--space-2); margin-top: var(--space-3); }
+.mods-for .gpage-hint { margin: 0; }
+.mods-uses .ln-button { margin-left: var(--space-2); }
 .mod-files { margin: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
 .mod-files li { padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); font-size: var(--fs-13); color: var(--fg-2); overflow-wrap: anywhere; }

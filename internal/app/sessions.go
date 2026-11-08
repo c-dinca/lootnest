@@ -14,11 +14,12 @@ import (
 
 // Session tracks one game being played.
 type Session struct {
-	GameID   string    `json:"gameId"`
-	PlayerID string    `json:"playerId"`
-	Phase    string    `json:"phase"` // loading, launching, playing, saving
-	Outside  bool      `json:"outside"`
-	Since    time.Time `json:"since"`
+	GameID   string       `json:"gameId"`
+	PlayerID string       `json:"playerId"`
+	Phase    string       `json:"phase"` // loading, mods, launching, playing, saving
+	Outside  bool         `json:"outside"`
+	Since    time.Time    `json:"since"`
+	Mods     *SessionMods `json:"mods,omitempty"` // with Phase "mods": the profile's mods going in
 	deadline time.Time
 	missed   int
 	viaPlay  bool // started from Lootnest's own Play button
@@ -70,6 +71,14 @@ func procName(g *core.Game) string {
 func isRunning(g *core.Game) bool {
 	procs, err := win.ProcessNames()
 	return err == nil && procs[procName(g)]
+}
+
+// SessionMods is how far switching a game's mods is before it starts; Off
+// when the game goes back as it was.
+type SessionMods struct {
+	Done  int  `json:"done"`
+	Total int  `json:"total"`
+	Off   bool `json:"off,omitempty"`
 }
 
 // Need is returned to the UI when a choice is still required.
@@ -189,6 +198,12 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 		go a.syncUp(cfg, g, prev) // their files went back to their profile
 	}
 	if req.ReqID != "" || req.Launch {
+		// Saves first, then the mods this profile plays with.
+		if err := a.modsForPlay(g, req.PlayerID, who); err != nil {
+			a.answerRequest(req.ReqID, "cancel", "")
+			fail(fmt.Errorf("%s's files are loaded, but %s didn't start: Lootnest couldn't switch its mods. %s Put the game back as it was, on its Mods tab, still works.", who, g.Name, sentence(err)))
+			return
+		}
 		// The profile's saves are in place now: if the game updated since
 		// it last started, they're kept as a point before it opens them.
 		if a.updatedSince("game:"+g.ID, a.profileBuild(g)) {
