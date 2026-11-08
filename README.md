@@ -54,6 +54,7 @@ It's free, for everyone, and it stays free. No account, no ads, no telemetry, an
 - **Keep a game offline**: one click has Windows Firewall stop a game Lootnest starts from connecting, and one click lets it online again. Windows asks first.
 - **Achievement check**: for a game from outside the stores, **Check why** goes through why its achievements don't show (its Steam id, the tool next to it, the file it keeps, the names), and can set the name the game shows to your profile's.
 - **Achievements as they unlock**: for games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, with how rare it is and the playing profile's colour. It's Lootnest's own window, never anything in the game, and never for games with an anti-cheat.
+- **Mods**, on a game's page: add a mod you have (a .zip, .7z, .rar or a folder), see what it adds and replaces, turn mods on and off and put them in order, then **Apply**. Lootnest copies the saves and keeps every game file a mod replaces first, and **Put the game back as it was** is one click. It never downloads mods, ships no mod loaders, and leaves games with an anti-cheat alone.
 - **Updates and news**, if you turn it on: each game's page lists its latest updates and patch notes from Steam's news feed. For a game no store keeps up to date, Lootnest says when a newer version than yours is out.
 
 **Profiles and runs**, per game, when you want them

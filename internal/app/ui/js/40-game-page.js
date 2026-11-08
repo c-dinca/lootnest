@@ -336,17 +336,18 @@
   // The page in tabs, each shown only when it has something in it. The tab
   // is kept per game (S.gameTab); switching isn't a stop for Back, but the
   // page's place in the history carries the tab it was left on.
-  const TABS = [["overview", "Overview"], ["achievements", "Achievements"], ["saves", "Saves"], ["timeline", "Timeline"], ["news", "News"]];
+  const TABS = [["overview", "Overview"], ["achievements", "Achievements"], ["saves", "Saves"], ["mods", "Mods"], ["timeline", "Timeline"], ["news", "News"]];
   const pageKey = (P) => P.kind + ":" + P.id;
   const wide = (html) => `<div class="gpage-main gpage-main--wide"><div class="gpage-col">${html}</div></div>`;
   const cols = (main, side) => (side ? `<div class="gpage-main"><div class="gpage-col">${main}</div><aside class="gpage-side">${side}</aside></div>` : wide(main));
   function gameTabs(it, side, news) {
-    const ach = achievementsBlock(it), tl = timelineBlock(it), points = savePointsBlock(it), saves = gameSavesBlock(it), other = otherSavesBlock(it);
+    const ach = achievementsBlock(it), tl = timelineBlock(it), points = savePointsBlock(it), saves = gameSavesBlock(it), other = otherSavesBlock(it), mods = modsBlock(it);
     const newsOn = cfg().settings.gameNews;
     const panes = {
       overview: cols(activityLine(it, !!tl) + detailsBlock(it) + achievementsBlock(it, true) + latestPoint(it) + latestCopy(it) + (newsOn ? "" : news), side),
       achievements: ach && wide(ach),
       saves: points ? cols(points, saves + other) : (saves || other) && wide(saves + other),
+      mods: mods && wide(mods),
       timeline: tl && wide(tl),
       news: newsOn && news && wide(news),
     };

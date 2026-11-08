@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.85.0, beta)
+## Where things stand (1.86.0, beta)
 
 These shipped recently, newest last:
 
@@ -616,6 +616,22 @@ These shipped recently, newest last:
   `gameCtlLine`/`CTL_SAYS` in 77-controllers.js (Overview and Big
   Picture); the double-input note from `core.PadCopiers` (1.84's rule,
   sent as `copiers`). Harness `?hidhide=0`.
+- **1.86** Roadmap Mods 1 (`core/mods.go`, `app/mods.go`, `67-mods.js`,
+  a Mods tab): one set per game under `mods\<sha1 of key>` (each mod's
+  staged `files` and `mod.json`, `set.json`, `deployed.json`,
+  `originals\`, `changed\<time>\`, `journal.json`). `AddMod` stages
+  (StageUpdateMax) and places by `modPlace`; `PlanMods` refuses Program
+  Files/WindowsApps, anti-cheat (Vanguard, FACEIT, EA AntiCheat added
+  to `AntiCheat`), the `modBlocked` table (steam_api, EOSSDK, emulator
+  configs...), the main exe and traversal. `ApplyMods` = journaled
+  undeploy then deploy; every replaced file kept and read back first;
+  a changed file goes to `changed\` before anything replaces or removes
+  it; added files deleted only when their hash matches. Put back works
+  even when a deploy can't finish (undeploy from the journal's plan).
+  `finishMods` at start (not in safe mode, skips running games);
+  launches refused during a run or with a pending journal
+  (`errModding`); moves refused with a pending journal. Saves copied
+  first (`keepSavesBefore`). Harness `?mods=1`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

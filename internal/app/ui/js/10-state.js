@@ -11,6 +11,8 @@
     unsorted: null,   // captures matched to no game, and the folders read: {items, total, folders}
     gameTab: {},      // "<kind>:<id>" -> the game page's tab open (Overview when none)
     facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
+    mods: {},         // Library key -> its mods and what's in its folder (ps_mods), or null while asked
+    modsRun: {},      // Library key -> a change to its mods under way: {what, done, total}
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)
     sideSort: pref("sideSort", "name"), // name, recent or played

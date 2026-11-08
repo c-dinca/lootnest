@@ -166,6 +166,13 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_sizes", a.apiSizes))
 	must(a.w.Bind("ps_moveFolderGame", a.apiMoveFolderGame))
 	must(a.w.Bind("ps_moveFolderCancel", a.apiMoveFolderCancel))
+	must(a.w.Bind("ps_mods", a.apiMods))
+	must(a.w.Bind("ps_addMod", a.apiAddMod))
+	must(a.w.Bind("ps_modToggle", a.apiModToggle))
+	must(a.w.Bind("ps_modOrder", a.apiModOrder))
+	must(a.w.Bind("ps_modRemove", a.apiModRemove))
+	must(a.w.Bind("ps_modsApply", a.apiModsApply))
+	must(a.w.Bind("ps_modsRestore", a.apiModsRestore))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_gameDetails", a.apiGameDetails))
@@ -742,6 +749,12 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "updateDir":
 			opt.Title = "Choose the update's folder"
 			opt.Folder = true
+		case "mod":
+			opt.Title = "Choose the mod"
+			opt.Filters = []win.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
+		case "modDir":
+			opt.Title = "Choose the mod's folder"
+			opt.Folder = true
 		case "trySaveDir":
 			opt.Title = "Choose the folder with the save to try"
 			opt.Folder = true
@@ -905,6 +918,8 @@ func (a *App) apiOpen(kind, arg string) error {
 		return win.ShellOpen(page)
 	case "log":
 		target = a.store.LogPath()
+	case "modsChanged": // files that changed while a game was modded, by its key
+		target = filepath.Join(a.modsRoot(arg), "changed")
 	default:
 		return errors.New("unknown location")
 	}

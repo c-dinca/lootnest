@@ -342,6 +342,22 @@
     }
     return ok();
   };
+  // Mods (core/mods.go): ?mods=1 gives Phantom Blade Zero two mods, applied.
+  const PBZ = "dir:d:\\games\\phantom blade zero", MODS = {}, DEPLOYED = {}, MODS_PENDING = {};
+  if (q.get("mods") === "1") {
+    MODS[PBZ] = [{ id: "m1", name: "Better Lighting", files: 14, bytes: 48.2e6, into: "ProjectPBZ", on: true },
+      { id: "m2", name: "Unlocked 60 FPS", files: 1, bytes: 2100, on: true }];
+    DEPLOYED[PBZ] = { mods: ["m1", "m2"] };
+  }
+  const modDir = (key) => {
+    const f = found.find((x) => x.key === key), g = games.find((x) => "game:" + x.id === key);
+    return f ? (f.appId ? "C:\\Program Files (x86)\\Steam\\steamapps\\common\\" + f.name : (f.exe || "").replace(/\\[^\\]+$/, "")) : g ? "D:\\SteamLibrary\\steamapps\\common\\" + g.name : "";
+  };
+  const modsRun = (key, what, after) => {
+    [3, 9, 15].forEach((n, i) => emit({ type: "modsProgress", key, done: n, total: 15 }, 200 + i * 300));
+    setTimeout(() => { after(); emit({ type: "modsDone", key, what, result: { changed: 0 } }); }, 1200);
+    return ok();
+  };
   const emit = (ev, delay) => setTimeout(() => window.__ps && window.__ps(ev), delay || 40);
   const ok = (v) => Promise.resolve(v);
   const never = () => new Promise(() => {});
@@ -466,6 +482,46 @@
       return ok();
     },
     ps_moveFolderCancel: () => ok(),
+    ps_mods: (key) => {
+      const dir = modDir(key), ac = /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "";
+      if (!dir) return Promise.reject("Lootnest doesn't know where this game's folder is, so it can't put mods into it.");
+      return ok({ dir, mods: MODS[key] || [], deployed: DEPLOYED[key] || null, pending: false,
+        safe: q.get("safe") === "1" ? "Lootnest is in safe mode, which leaves the game's folder as it is. Restart it normally to change its mods." : "",
+        refused: ac ? `This game ships with ${ac}, which can ban an account over changed game files, so Lootnest doesn't put mods into it.`
+          : /Program Files/.test(dir) ? "Windows protects the games under Program Files and WindowsApps, so Lootnest doesn't put mods there. A game in a folder outside them can have mods." : "" });
+    },
+    ps_addMod: (key, path) => {
+      const refused = /\.zip$/i.test(path);
+      const mod = { id: "m" + Date.now(), name: path.split("\\").pop().replace(/\.(zip|7z|rar)$/i, ""), files: refused ? 3 : 212, bytes: refused ? 4.1e6 : 1.9e9, into: refused ? "" : "ProjectPBZ", on: false };
+      if (!refused) MODS_PENDING[mod.id] = mod;
+      emit(refused ? { type: "modPlan", key, path, mod, refused: "The mod brings steam_api64.dll, which a store, its copy protection or a Steam emulator reads to start the game, so Lootnest doesn't put it in." }
+        : { type: "modPlan", key, path, mod, plan: { added: 168, replaced: 44, bytes: 1.9e9, replaces: Array.from({ length: 44 }, (_, i) => `ProjectPBZ/Content/Paks/pakchunk${i}-WindowsNoEditor.pak`) } }, 500);
+      return ok();
+    },
+    ps_modToggle: (key, id, on) => {
+      const list = (MODS[key] = MODS[key] || []), m = list.find((x) => x.id === id);
+      if (m) m.on = on; else if (MODS_PENDING[id]) list.push({ ...MODS_PENDING[id], on: true });
+      return ok();
+    },
+    ps_modOrder: (key, id, by) => {
+      const list = MODS[key] || [], i = list.findIndex((x) => x.id === id), j = i + by;
+      if (i >= 0 && j >= 0 && j < list.length) [list[i], list[j]] = [list[j], list[i]];
+      return ok();
+    },
+    ps_modRemove: (key, id) => {
+      const drop = () => { MODS[key] = (MODS[key] || []).filter((x) => x.id !== id); };
+      if (!(DEPLOYED[key] || { mods: [] }).mods.includes(id)) { drop(); delete MODS_PENDING[id]; return ok(false); }
+      return modsRun(key, "remove", () => {
+        drop();
+        const on = (MODS[key] || []).filter((m) => m.on);
+        if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id) }; else delete DEPLOYED[key];
+      }).then(() => true);
+    },
+    ps_modsApply: (key) => modsRun(key, "apply", () => {
+      const on = (MODS[key] || []).filter((m) => m.on);
+      if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id) }; else delete DEPLOYED[key];
+    }),
+    ps_modsRestore: (key) => modsRun(key, "restore", () => { delete DEPLOYED[key]; }),
     ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },
     ps_separateCopies: (group, apart) => { if (apart) SEPARATE.add(group); else SEPARATE.delete(group); return ok(); },
     ps_cover: (appId, name) => (STATE === "offline" ? offline() : ok(gameArt(appId, name, "cover"))),
@@ -729,6 +785,7 @@
       else if (kind === "workDir") emit({ type: "browse", reqId: id, path: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64" });
       else if (kind === "playniteDir") emit({ type: "browse", reqId: id, path: "D:\\Apps\\Playnite" });
       else if (kind === "art") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Pictures\\My cover.png" });
+      else if (kind === "mod" || kind === "modDir") emit({ type: "browse", reqId: id, path: kind === "mod" ? "C:\\Users\\cris\\Downloads\\PBZ Reshade and Steam fix.zip" : "C:\\Users\\cris\\Downloads\\PBZ HD Textures" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
       return ok();

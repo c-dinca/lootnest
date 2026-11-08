@@ -347,7 +347,7 @@
     if (!(key in S.facts)) { S.facts[key] = null; api.gameFacts(dir).then((f) => { S.facts[key] = f || {}; if (f && f.antiCheat && S.view === "game") render(); }).catch(() => { S.facts[key] = {}; }); }
     const f = S.facts[key];
     if (!f || !f.antiCheat) return "";
-    return `<p class="gpage-note gp-ac">${GI.shield || GI.copy}Ships with ${esc(f.antiCheat)}. Lootnest never touches the game's own files: profiles swap only its settings and saves, and no notes show over it. Progress kept on the game's servers stays with the account.</p>`;
+    return `<p class="gpage-note gp-ac">${GI.shield || GI.copy}Ships with ${esc(f.antiCheat)}. Lootnest never touches the game's own files: profiles swap only its settings and saves, no notes show over it, and mods are off for it. Progress kept on the game's servers stays with the account.</p>`;
   }
   // The copies made before each swap, with Put back on each.
   function viewCopies() {

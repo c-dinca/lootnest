@@ -261,6 +261,7 @@ func Run(opt Options) error {
 		if rerr != nil {
 			a.logf("ERROR %v", rerr)
 		}
+		go a.finishMods()
 	}
 	// Games set up by older versions to swap Steam's whole folder for them
 	// (with Steam Cloud's records): swap the folders inside it instead.

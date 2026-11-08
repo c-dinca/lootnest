@@ -737,6 +737,60 @@
       if (!it) return;
       openLaunch(it); renderOverlay(); focusOverlay();
     },
+    "mod-add": openAddMod,
+    async "mod-pick"(el) {
+      const D = S.dialog;
+      if (!D || D.kind !== "modplan") return;
+      const r = await browse(el.dataset.kind, "");
+      if (r.cancelled || !r.path || S.dialog !== D) return;
+      if (r.error) { toast(r.error, "error"); return; }
+      Object.assign(D, { path: r.path, mod: null, plan: null, refused: "", error: "", busy: true });
+      renderOverlay();
+      api.addMod(D.key, r.path).catch((e) => { D.busy = false; D.refused = errText(e); renderOverlay(); });
+    },
+    async "mod-keep"() {
+      const D = S.dialog;
+      if (!D || !D.mod) return;
+      try { await api.modToggle(D.key, D.mod.id, true); } catch (e) { D.error = errText(e); renderOverlay(); return; }
+      closeDialog();
+      toast(`${D.mod.name} is on the list. Apply puts it into the game's folder.`);
+      loadMods(D.key);
+    },
+    "mod-cancel"() {
+      const D = S.dialog;
+      if (D && D.mod) api.modRemove(D.key, D.mod.id).catch(() => {}); // Lootnest's copy of a mod not added
+      closeDialog();
+    },
+    async "mod-toggle"(el) {
+      try { await api.modToggle(el.dataset.mods, el.dataset.id, el.checked); } catch (e) { toast(errText(e), "error"); }
+      loadMods(el.dataset.mods);
+    },
+    async "mod-move"(el) {
+      try { await api.modOrder(el.dataset.mods, el.dataset.id, +el.dataset.by); } catch (e) { toast(errText(e), "error"); }
+      loadMods(el.dataset.mods);
+    },
+    async "mod-remove"(el) {
+      const key = el.dataset.mods, M = S.mods[key] || {}, inGame = ((M.deployed || {}).mods || []).includes(el.dataset.id);
+      const ok = await confirmDialog({ title: `Remove ${el.dataset.name}?`, ok: "Remove",
+        body: `${inGame ? "It's in the game's folder now, so Lootnest takes it out first; the other mods that are on stay in. " : ""}Lootnest deletes its own copy of the mod. The archive or folder you added it from stays where it is.` });
+      if (!ok) return;
+      S.modsRun[key] = { what: "remove", done: 0, total: 0 }; // before the answer, which can come first
+      try { if (!(await api.modRemove(key, el.dataset.id))) { delete S.modsRun[key]; loadMods(key); } }
+      catch (e) { delete S.modsRun[key]; render(); toast(errText(e), "error"); }
+    },
+    async "mods-apply"(el) {
+      const key = el.dataset.mods;
+      S.modsRun[key] = { what: "apply", done: 0, total: 0 }; render();
+      try { await api.modsApply(key); } catch (e) { delete S.modsRun[key]; render(); toast(errText(e), "error"); }
+    },
+    async "mods-restore"(el) {
+      const key = el.dataset.mods;
+      const ok = await confirmDialog({ title: `Put ${el.dataset.name} back as it was?`, ok: "Put it back",
+        body: "Every file the mods added goes, and every game file they replaced comes back. A file that changed since the mods went in is kept in Lootnest's folder first. Your mods stay on the list." });
+      if (!ok) return;
+      S.modsRun[key] = { what: "restore", done: 0, total: 0 }; render();
+      try { await api.modsRestore(key); } catch (e) { delete S.modsRun[key]; render(); toast(errText(e), "error"); }
+    },
     "lo-remove"(el) { S.dialog.o[el.dataset.list].splice(+el.dataset.i, 1); renderOverlay(); },
     "lo-apps"() {
       const D = S.dialog;
