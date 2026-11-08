@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ import (
 // ---------------------------------------------------------------------------
 
 const (
-	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic"
+	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic,categories,controller_support"
 	reviewsURL = "https://store.steampowered.com/appreviews/%d?json=1&language=all&purchase_type=all&num_per_page=0"
 )
 
@@ -51,7 +52,13 @@ type GameDetails struct {
 	ReviewCount   int          `json:"reviewCount,omitempty"`
 	Metacritic    int          `json:"metacritic,omitempty"`
 	StoreURL      string       `json:"storeUrl,omitempty"`
-	Fetched       time.Time    `json:"fetched"`
+	// Controller is "full", "partial" or "" (Steam doesn't say); after the
+	// user's edit it can also be "none" (keyboard and mouse only).
+	Controller string `json:"controller,omitempty"`
+	// Pads are the pad families Steam's categories name beside full or
+	// partial support (which means an Xbox pad): only "playstation" so far.
+	Pads    []string  `json:"pads,omitempty"`
+	Fetched time.Time `json:"fetched"`
 	// Unknown: the Steam store doesn't have the game, kept so it isn't
 	// asked again on every visit.
 	Unknown bool `json:"unknown,omitempty"`
@@ -59,15 +66,16 @@ type GameDetails struct {
 
 // DetailsEdit holds only the fields the user changed; nil is Steam's.
 type DetailsEdit struct {
-	Summary   *string   `json:"summary,omitempty"`
-	Developer *string   `json:"developer,omitempty"`
-	Publisher *string   `json:"publisher,omitempty"`
-	Released  *string   `json:"released,omitempty"`
-	Genres    *[]string `json:"genres,omitempty"`
+	Summary    *string   `json:"summary,omitempty"`
+	Developer  *string   `json:"developer,omitempty"`
+	Publisher  *string   `json:"publisher,omitempty"`
+	Released   *string   `json:"released,omitempty"`
+	Genres     *[]string `json:"genres,omitempty"`
+	Controller *string   `json:"controller,omitempty"` // "full", "partial" or "none"; "" is Steam's
 }
 
 func (e DetailsEdit) Empty() bool {
-	return e.Summary == nil && e.Developer == nil && e.Publisher == nil && e.Released == nil && e.Genres == nil
+	return e.Summary == nil && e.Developer == nil && e.Publisher == nil && e.Released == nil && e.Genres == nil && e.Controller == nil
 }
 
 var htmlTag = regexp.MustCompile(`(?s)<[^>]*>`)
@@ -111,6 +119,10 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 			Metacritic struct {
 				Score int `json:"score"`
 			} `json:"metacritic"`
+			Controller string `json:"controller_support"`
+			Categories []struct {
+				Description string `json:"description"`
+			} `json:"categories"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(b, &res); err != nil {
@@ -128,6 +140,11 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 		g.Genres = append(g.Genres, x.Description)
 	}
 	g.Genres = cleanNames(g.Genres)
+	var cats []string
+	for _, c := range d.Categories {
+		cats = append(cats, c.Description)
+	}
+	g.Controller, g.Pads = controllerSupport(d.Controller, cats)
 	for _, s := range d.Screenshots {
 		if len(g.Screenshots) == maxItems {
 			break
@@ -151,6 +168,31 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 		}
 	}
 	return g, nil
+}
+
+// controllerSupport reads appdetails' controller_support, else Steam's
+// controller categories, by their words, and the PlayStation categories
+// (DualShock, DualSense).
+func controllerSupport(field string, categories []string) (string, []string) {
+	var full, partial bool
+	var pads []string
+	for _, c := range categories {
+		c = strings.ToLower(c)
+		full = full || strings.Contains(c, "full controller support")
+		partial = partial || strings.Contains(c, "partial controller support")
+		if pads == nil && (strings.Contains(c, "playstation") || strings.Contains(c, "dualshock") || strings.Contains(c, "dualsense")) {
+			pads = []string{"playstation"}
+		}
+	}
+	switch support := strings.ToLower(field); {
+	case support == "full" || support == "partial":
+		return support, pads
+	case full:
+		return "full", pads
+	case partial:
+		return "partial", pads
+	}
+	return "", pads
 }
 
 // cleanNames trims names and drops empty and repeated ones, at most maxItems.
@@ -245,6 +287,9 @@ func CleanDetailsEdit(e DetailsEdit, fetched *GameDetails) DetailsEdit {
 		Publisher: text(e.Publisher, 200, strings.Join(f.Publishers, ", ")),
 		Released:  text(e.Released, 60, f.Released),
 	}
+	if c := e.Controller; c != nil && *c != f.Controller && slices.Contains([]string{"full", "partial", "none"}, *c) {
+		out.Controller = c
+	}
 	if e.Genres != nil {
 		g := cleanNames(*e.Genres)
 		if strings.Join(g, ",") != strings.Join(f.Genres, ",") {
@@ -283,6 +328,12 @@ func MergeDetails(fetched *GameDetails, e DetailsEdit) *GameDetails {
 	}
 	if e.Genres != nil {
 		d.Genres = *e.Genres
+	}
+	if e.Controller != nil {
+		d.Controller = *e.Controller
+		if d.Controller == "none" {
+			d.Pads = nil
+		}
 	}
 	return &d
 }

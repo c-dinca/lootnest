@@ -1,11 +1,11 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold&translators=1
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold&translators=1&hidhide=0
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
   const N = q.get("games") || "13", P = +(q.get("players") || 2), STATE = q.get("state") || "normal";
-  const CLOUD = q.get("cloud") !== "0", FIRST = q.get("first") === "1", TRANSLATORS = q.get("translators") === "1";
+  const CLOUD = q.get("cloud") !== "0", FIRST = q.get("first") === "1", TRANSLATORS = q.get("translators") === "1", HIDHIDE = q.get("hidhide") !== "0";
   // ?boot=<ms>: the splash shows, and the first state comes after <ms>.
   // Without it the splash is taken out, so screenshots never catch it.
   const BOOT = +(q.get("boot") || 0);
@@ -266,10 +266,10 @@
       summary: "Gather your party and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power. Mysterious abilities are awakening inside you, drawn from a mind flayer parasite planted in your brain. Resist, and turn darkness against itself. Or embrace corruption, and become ultimate evil.",
       genres: ["Adventure", "RPG", "Strategy"], developers: ["Larian Studios"], publishers: ["Larian Studios"], released: "3 Aug, 2023",
       screenshots: [1086940, 1091500, 1145350, 1426210, 1551360, 367520, 413150, 271590].map((id) => ({ thumb: art(id, "hero"), full: art(id, "hero") })),
-      reviewScore: "Overwhelmingly Positive", reviewPercent: 96, reviewCount: 612345, metacritic: 96, storeUrl: "https://store.steampowered.com/app/1086940/", fetched: iso(4 * d),
+      reviewScore: "Overwhelmingly Positive", reviewPercent: 96, reviewCount: 612345, metacritic: 96, storeUrl: "https://store.steampowered.com/app/1086940/", fetched: iso(4 * d), controller: "full", pads: ["playstation"],
     };
     else if (appId) det = { summary: "A short summary of the game from the Steam store.", genres: ["Action"], developers: ["A studio"], publishers: ["A publisher"], released: "1 Jan, 2020",
-      reviewScore: "Very Positive", reviewPercent: 92, reviewCount: 12345, storeUrl: `https://store.steampowered.com/app/${appId}/`, fetched: iso(d) };
+      reviewScore: "Very Positive", reviewPercent: 92, reviewCount: 12345, storeUrl: `https://store.steampowered.com/app/${appId}/`, fetched: iso(d), controller: "partial" };
     if (e) {
       det = Object.assign({}, det || {});
       if (e.summary !== undefined) det.summary = e.summary;
@@ -277,6 +277,8 @@
       if (e.publisher !== undefined) det.publishers = [e.publisher];
       if (e.released !== undefined) det.released = e.released;
       if (e.genres) det.genres = e.genres.map((g) => g.trim()).filter(Boolean);
+      if (e.controller) det.controller = e.controller;
+      if (e.controller === "none") delete det.pads;
     }
     return { type: "details", key, details: det, edited: !!e };
   };
@@ -795,7 +797,8 @@
     ]),
     // Settings, Controllers: Windows' view of the ?pad= controllers. With
     // ?translators=1, DS4Windows and Steam run, HidHide and ViGEmBus are
-    // installed, and DS4Windows has made a virtual Xbox 360 pad.
+    // installed, and DS4Windows has made a virtual Xbox 360 pad. With
+    // ?hidhide=0 as well, HidHide isn't there, so games see the copy too.
     ps_controllers: () => {
       const W = {
         ds5: { name: "DualSense", family: "playstation", vid: 0x054c, pid: 0x0ce6, bus: "bluetooth" },
@@ -811,9 +814,10 @@
       return ok({ pads, xinput, translators: TRANSLATORS ? [
         { name: "Steam Input", does: "Can translate your pad for the games Steam starts, shortcuts included, so they see an Xbox pad.", running: true, installed: true },
         { name: "DS4Windows", does: "Makes your PlayStation pad look like an Xbox pad to games.", running: true, installed: true },
-        { name: "HidHide", does: "Hides the pads you choose from games, so they see only the translated one.", running: false, installed: true },
+        ...(HIDHIDE ? [{ name: "HidHide", does: "Hides the pads you choose from games, so they see only the translated one.", running: false, installed: true }] : []),
         { name: "ViGEmBus", does: "The driver that apps such as DS4Windows use to add a virtual Xbox or PlayStation pad.", running: true, installed: true },
-      ] : [], notes: TRANSLATORS ? ["Steam Input and DS4Windows both translating can make games see double input. For a game Steam starts, you can turn Steam Input off in the game's Properties, under Controller."] : [] });
+      ] : [], copiers: TRANSLATORS && !HIDHIDE ? ["DS4Windows"] : [], notes: TRANSLATORS ? ["Steam Input and DS4Windows both translating can make games see double input. For a game Steam starts, you can turn Steam Input off in the game's Properties, under Controller.",
+        ...(HIDHIDE ? [] : ["Games may see two pads, your own and the copy DS4Windows makes, unless HidHide hides your own."])] : [] });
     },
     ps_steamProperties: () => ok(),
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),

@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.84.0, beta)
+## Where things stand (1.85.0, beta)
 
 These shipped recently, newest last:
 
@@ -607,6 +607,15 @@ These shipped recently, newest last:
   table and `ControllerNotes` (double input, missing HidHide).
   `ps_controllers` on page open and gamepad connect, never polled.
   Shared `setSub` in 70-settings.js. Harness `?translators=1`.
+- **1.85** Roadmap Controllers 3: `GameDetails.Controller` (full or
+  partial, from appdetails' controller_support, else category words) and
+  `Pads` (only "playstation": Steam has DualShock/DualSense categories,
+  no Xbox one, since full or partial already means an Xbox pad), in the
+  same 1.69 request (`categories,controller_support`), only with Game
+  details on. `DetailsEdit.Controller` ('none' clears Pads). UI
+  `gameCtlLine`/`CTL_SAYS` in 77-controllers.js (Overview and Big
+  Picture); the double-input note from `core.PadCopiers` (1.84's rule,
+  sent as `copiers`). Harness `?hidhide=0`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

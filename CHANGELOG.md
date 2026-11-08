@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.85.0
+
+- **What controller a game expects**, on its page under Details and in Big Picture: Full controller support, Partial controller support (some menus may need the mouse), with the buttons of the pad you're using. When Steam lists DualShock or DualSense support, the page says PlayStation controllers work too.
+- It comes from the same Steam store details Lootnest reads when **Game details** is on in Settings, Online. Nothing more is asked of Steam, and with Game details off nothing changes. Settings, Controllers says where to turn it on.
+- If Steam has it wrong, **Edit details** has a Controller choice: Steam's, Full, Partial, or Keyboard and mouse only.
+- If Settings, Controllers has found an app such as DS4Windows copying your pad with nothing hiding the real one, a game with full controller support says it may see your pad twice.
+
 ## 1.84.0
 
 - **Settings, Controllers** shows the controllers on this PC: each pad with its buttons as it labels them, its model (Xbox, DualSense, DualShock 4, Switch Pro, Joy-Con, 8BitDo, Logitech, Steam Controller and others), whether it's on USB or Bluetooth, and its Xbox-style (XInput) slot.

@@ -75,7 +75,7 @@
     } else if (D.kind === "details-edit") {
       const a = document.activeElement, at = a && a.id.startsWith("de-") ? { id: a.id, pos: a.selectionStart } : null;
       o.innerHTML = viewDetailsEdit();
-      if (at) { const q = $("#" + at.id); q.focus(); q.setSelectionRange(at.pos, at.pos); }
+      if (at) { const q = $("#" + at.id); q.focus(); if (q.setSelectionRange) q.setSelectionRange(at.pos, at.pos); }
     } else if (D.kind === "shots") {
       o.innerHTML = viewShots();
     } else if (D.kind === "manage") {

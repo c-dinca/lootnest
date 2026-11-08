@@ -80,13 +80,13 @@
       const it = bpItem(BP.detail);
       if (!it) { BP.detail = null; return bpScreen(); }
       const key = recentKey(it), t = totalPlayed(it) || steamTime(it), seat = seated();
-      const A = S.ach[key];
+      const A = S.ach[key], det = cfg().settings.gameDetails && (S.details[key] || {}).details;
       achFor(it); // reads its achievements if it hasn't yet
       const logo = artFor(it, "logo").url;
       const playLabel = it.g ? (seat ? `Play as ${esc(seat.name)}` : "Play") : "Play";
       return `<div class="bp-detail">
         <div class="bp-detail-text">${logo ? `<img class="bp-logo" src="${logo}" alt="${esc(it.name)}">` : `<h1>${esc(it.name)}</h1>`}
-          <p class="bp-meta">${[esc(storeNames(it)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : ""].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
+          <p class="bp-meta">${[esc(storeNames(it)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : "", det && CTL_SAYS[det.controller]].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
           <div class="bp-actions"><button class="bp-btn bp-btn--primary" data-bp data-bpid="play" data-go="play" data-k="${esc(bpKey(it))}">${GI.play}${playLabel}</button>
             ${it.g && cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="playas" data-go="choose" data-k="${esc(bpKey(it))}">${glyph("Y")}Play as someone else</button>` : ""}
             ${bpRunning(it) ? `<button class="bp-btn" data-bp data-bpid="close" data-go="close-game" data-k="${esc(bpKey(it))}">${glyph("X")}Close the game</button>` : ""}

@@ -55,5 +55,21 @@
     const tools = C.translators.length ? setSub("Apps that change your controllers", "Each makes games see your pad differently.", `<div class="bk-card">${C.translators.map((t) =>
       `<div class="bk-row"><div><b>${esc(t.name)}</b><p>${esc(t.does)}</p></div><span class="ln-tag">${t.running ? "Running now" : "Installed"}</span></div>`).join("")}</div>
       ${C.notes.map((n) => `<p class="ctl-note">${esc(n)}</p>`).join("")}`) : "";
-    return `<div class="ctl-page">${pads + tools}</div>`;
+    const det = cfg().settings.gameDetails ? "" : `<p class="set-note"><button class="gpage-link" data-action="details-on">Turn on Game details</button> to see which games support a controller.</p>`;
+    return `<div class="ctl-page">${pads + tools + det}</div>`;
+  }
+
+  // What a game expects, from its Steam details or the user's edit: one
+  // line on its page, with the faces of the pad in use. The note on a copy
+  // of the pad reads S.ctl only if Settings, Controllers has asked already.
+  const CTL_SAYS = { full: "Full controller support", partial: "Partial controller support", none: "Keyboard and mouse only" };
+  function gameCtlLine(d) {
+    const says = CTL_SAYS[d.controller];
+    if (!says) return "";
+    const g = padsNow(), fam = g.length && d.controller !== "none" ? padFamily((g.find(realPad) || g[0]).id) : "";
+    const twice = d.controller === "full" && S.ctl && S.ctl.copiers || [];
+    return `<div class="ctl-pad gp-ctl">${fam ? padFaces(fam) : ""}<div><b>${says}</b>
+      ${d.controller === "partial" ? "<p>Some menus may need the mouse.</p>" : ""}
+      ${d.controller !== "none" && (d.pads || []).includes("playstation") ? "<p>Steam says PlayStation controllers work too.</p>" : ""}
+      ${twice.length ? `<p>${esc(andList(twice))} ${twice.length > 1 ? "are" : "is"} running: this game may see your pad twice.</p>` : ""}</div></div>`;
   }

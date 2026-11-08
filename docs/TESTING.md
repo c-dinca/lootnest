@@ -433,3 +433,12 @@ pad: a Bluetooth DualSense must keep working in games afterwards.
 6. Press a button on a pad, then unplug it while the page is open: it
    goes from both lists. A pad you never pressed goes when you open the
    page again.
+7. With **Game details** on (1.85), open a Steam game Steam lists with
+   full controller support (details kept from before 1.85 show it once
+   they're read again, at 30 days): the Details block says **Full controller
+   support**, with the buttons of the pad you're using, and for a game with
+   DualShock or DualSense support, that PlayStation controllers work too.
+   With DS4Windows running, no HidHide, and this page opened first, a line
+   says the game may see your pad twice. **Edit details**, Controller,
+   **Keyboard and mouse only**: the page says **Keyboard and mouse only**.
+   With Game details off, this page links to it.

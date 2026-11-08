@@ -1,9 +1,12 @@
 package core
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -165,5 +168,83 @@ func TestDetailsEditsWin(t *testing.T) {
 	}
 	if err := SaveDetailsEdit(dir, "dir:d:\\games\\hades ii", DetailsEdit{}); err != nil {
 		t.Fatal("clearing twice is fine:", err)
+	}
+}
+
+func TestControllerSupport(t *testing.T) {
+	cat := func(names ...string) string {
+		var parts []string
+		for i, n := range names {
+			parts = append(parts, fmt.Sprintf(`{"id":%d,"description":%q}`, i+1, n))
+		}
+		return "[" + strings.Join(parts, ",") + "]"
+	}
+	cases := []struct {
+		name, data, want string
+		pads             []string
+	}{
+		{"the field says full", `"controller_support":"full","categories":` + cat("Single-player", "Partial Controller Support"), "full", nil},
+		{"partial from the categories", `"categories":` + cat("Single-player", "partial controller support"), "partial", nil},
+		{"full beats partial in the categories", `"categories":` + cat("Partial Controller Support", "Full controller support"), "full", nil},
+		{"pad categories", `"categories":` + cat("Full controller support", "PlayStation controllers", "DualSense controller support", "Steam Achievements"), "full", []string{"playstation"}},
+		{"DualShock alone", `"categories":` + cat("DualShock controller support"), "", []string{"playstation"}},
+		{"none", `"categories":` + cat("Single-player", "Steam Cloud", "Tracked Controller Support"), "", nil},
+		{"no categories at all", `"short_description":"x"`, "", nil},
+	}
+	for _, c := range cases {
+		var asked []string
+		body := `{"7":{"success":true,"data":{` + c.data + `}}}`
+		d, err := FetchGameDetails(steamServer(t, body, "", &asked), 7, "english")
+		if err != nil || d == nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if d.Controller != c.want || strings.Join(d.Pads, ",") != strings.Join(c.pads, ",") {
+			t.Errorf("%s: got %q %v, want %q %v", c.name, d.Controller, d.Pads, c.want, c.pads)
+		}
+		if !strings.Contains(asked[0], "categories") {
+			t.Fatalf("the categories are asked for in the same request: %v", asked)
+		}
+	}
+}
+
+func TestControllerOldCache(t *testing.T) {
+	dir := t.TempDir()
+	old := `{"summary":"Kept before 1.85","genres":["Action"],"fetched":"` + time.Now().Add(-24*time.Hour).UTC().Format(time.RFC3339) + `"}`
+	if err := os.MkdirAll(filepath.Join(dir, "details"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "details", "9.json"), []byte(old), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	d, stale := LoadDetails(dir, 9)
+	if d == nil || stale || d.Summary != "Kept before 1.85" || d.Controller != "" || d.Pads != nil {
+		t.Fatalf("an old copy stays valid, with nothing known about controllers: %+v %v", d, stale)
+	}
+}
+
+func TestControllerEdit(t *testing.T) {
+	str := func(s string) *string { return &s }
+	steam := &GameDetails{Controller: "full", Pads: []string{"playstation"}}
+	if e := CleanDetailsEdit(DetailsEdit{Controller: str("full")}, steam); !e.Empty() {
+		t.Fatalf("the same as Steam's isn't an edit: %+v", e)
+	}
+	if e := CleanDetailsEdit(DetailsEdit{Controller: str("")}, steam); !e.Empty() {
+		t.Fatalf("Steam's is no edit: %+v", e)
+	}
+	if e := CleanDetailsEdit(DetailsEdit{Controller: str("wheel")}, steam); !e.Empty() {
+		t.Fatalf("an unknown value is dropped: %+v", e)
+	}
+	e := CleanDetailsEdit(DetailsEdit{Controller: str("none")}, steam)
+	if e.Empty() || *e.Controller != "none" {
+		t.Fatalf("keyboard and mouse only is kept: %+v", e)
+	}
+	if m := MergeDetails(steam, e); m.Controller != "none" || m.Pads != nil {
+		t.Fatalf("merged %+v", m)
+	}
+	if m := MergeDetails(nil, DetailsEdit{Controller: str("partial")}); m.Controller != "partial" {
+		t.Fatalf("an edit without Steam's details: %+v", m)
+	}
+	if steam.Controller != "full" || len(steam.Pads) != 1 {
+		t.Fatal("merging changed Steam's copy")
 	}
 }
