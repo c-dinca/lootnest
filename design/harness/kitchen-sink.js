@@ -186,6 +186,15 @@
     </div>
     <p class="ks-note">Second control: hover, selected with focus, disabled.</p>`)}
 
+  ${sec("Tabs", "For the parts of one page, like a game's Overview and Achievements. The current tab is a neutral fill; arrow keys move between tabs.", `
+    <div class="ln-tabs" role="tablist" aria-label="Hollow Knight">
+      <button type="button" role="tab" aria-selected="true" tabindex="0">Overview</button>
+      <button type="button" role="tab" aria-selected="false" tabindex="-1" data-force="hover">Achievements</button>
+      <button type="button" role="tab" aria-selected="false" tabindex="-1" data-force="focus">Saves</button>
+      <button type="button" role="tab" aria-selected="false" tabindex="-1">Timeline</button>
+    </div>
+    <p class="ks-note">Selected, hover, focus, default.</p>`)}
+
   ${sec("Toasts", "Short, specific, and the same words as the action that caused them.", `
     <div class="ks-toasts">
       <div class="ln-toast ln-player" style="--player:${P.mihai.color}">${av(P.mihai)}<p>Mihai's files are loaded<span>Counter-Strike 2. A copy of Cristian's was made first.</span></p>${button("ln-button--ghost ln-button--sm", "Open backups", "", "default")}</div>

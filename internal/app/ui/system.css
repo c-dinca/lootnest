@@ -139,7 +139,11 @@
   --pic-thumb-w: 96px;    /* a save point's or screenshot's picture in a list */
   --pic-thumb-w-sm: 40px; /* a screenshot's on a Timeline row */
   --set-nav-w: 200px;     /* the list of categories in Settings */
-  --tab-h: 36px;          /* a row in that list */
+  --tab-h: 36px;          /* a row in that list, and a tab in a row of tabs */
+  --gp-head-h: 64px;      /* a game page's compact head, once its play bar has scrolled away */
+  --gp-head-art: 40px;    /* the game's cover in that head */
+  --ach-col-min: 340px;   /* a column of the Achievements tab's list */
+  --tl-col-w: 420px;      /* a column of days on the Timeline tab */
   --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */
   --prun-h: 44px;         /* a run under its person on Profiles */
   --who-face: 44px;       /* a face in Who's here on a short window */
@@ -481,6 +485,20 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-segmented .ln-count { color: var(--fg-3); font-weight: 600; }
 .ln-segmented button[aria-checked="true"] .ln-count, .ln-segmented button[aria-pressed="true"] .ln-count { color: var(--fg-2); }
 
+/* ==================================================================== tabs
+   A row of tabs over the panel they switch (role="tablist"). The current
+   one is a neutral selected fill, never red; the arrows move between them. */
+.ln-tabs { display: flex; gap: var(--space-1); min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.ln-tabs [role="tab"] {
+  flex: none; height: var(--tab-h); padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2);
+  font: 650 var(--text-body)/1 var(--font-ui); cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.ln-tabs [role="tab"]:hover, .ln-tabs [role="tab"][data-force~="hover"] { background: var(--glass-ctl); color: var(--fg-1); }
+.ln-tabs [role="tab"][aria-selected="true"] { background: var(--bg-active); color: var(--fg-1); }
+.ln-tabs [role="tab"]:focus-visible, .ln-tabs [role="tab"][data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+
 /* ================================================================== toast */
 .ln-toast {
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: var(--space-3);
@@ -573,7 +591,7 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 
 /* ============================================================ preferences */
 @media (prefers-reduced-motion: reduce) {
-  .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tile__cover::after, .ln-tile__cover img { transition-duration: 0.01ms; }
+  .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tabs [role="tab"], .ln-tile__cover::after, .ln-tile__cover img { transition-duration: 0.01ms; }
   .ln-button:active, .ln-button[data-force~="active"] { transform: none; }
   .ln-tile:hover .ln-tile__cover img, .ln-tile[data-force~="hover"] .ln-tile__cover img { transform: none; }
   .ln-toast, .ln-drawer { animation-name: ln-fade-in; }

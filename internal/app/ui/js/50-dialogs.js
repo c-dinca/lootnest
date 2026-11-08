@@ -4,7 +4,6 @@
     return new Promise((resolve) => { confirmResolve = resolve; S.dialog = Object.assign({ kind: "confirm" }, o); renderOverlay(); setTimeout(() => { const b = $(o.safe ? '.dialog [data-action="dialog-cancel"]' : ".dialog .btn.primary, .dialog .btn.danger-primary"); if (b) b.focus(); }, 20); });
   }
   function closeDialog(v) {
-    if (S.dialog && S.dialog.back) { S.dialog = S.dialog.back; renderOverlay(); focusOverlay(); return; }
     const wasSteam = S.dialog && S.dialog.kind === "steam"; S.dialog = null; renderOverlay(); if (wasSteam) render();
     if (drawerFrom) { focusBack(drawerFrom); drawerFrom = null; } if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); } }
 
@@ -77,15 +76,10 @@
       o.innerHTML = viewShots();
     } else if (D.kind === "manage") {
       o.innerHTML = viewManage();
-    } else if (D.kind === "achievements") {
-      o.innerHTML = viewAchDrawer();
     } else if (D.kind === "copies") {
       o.innerHTML = viewCopies();
     } else if (D.kind === "updhist") {
       o.innerHTML = viewUpdHistory();
-    } else if (D.kind === "points") {
-      o.innerHTML = viewPointsDrawer();
-      const r = $("#pt-rename"); if (r && document.activeElement !== r) { r.focus(); r.select(); }
     } else if (D.kind === "achdoc") {
       o.innerHTML = viewAchDoctor();
     } else if (D.kind === "sources") {

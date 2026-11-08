@@ -7,6 +7,7 @@
     points: {},       // Library key -> its save points (savePoints event)
     timeline: {},     // Library key -> its timeline, newest first (timeline event)
     tlMore: {},       // Library key -> how many timeline entries show
+    gameTab: {},      // "<kind>:<id>" -> the game page's tab open (Overview when none)
     facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)

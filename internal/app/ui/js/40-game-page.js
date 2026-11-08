@@ -130,8 +130,8 @@
       S.news[key] = { loading: true };
       api.gameNews(key, it.appId, it.name, storeKept(it.source) ? "" : it.exe).catch(() => {});
     }
-    if (!N || N.loading) return `<section class="news">${head}${lnInline("", `Reading Steam's news for ${esc(it.name)}`)}</section>`;
-    if (N.none) return `<section class="news">${head}<p class="news-none">${esc(it.name)} isn't on the Steam store, so there's no news feed for it.</p></section>`;
+    // Nothing yet, or nothing to show: no News tab.
+    if (!N || N.loading || N.none) return "";
     if (N.error) return `<section class="news">${head}${lnInline("error", esc(N.error))}</section>`;
     const items = (N.items || []).slice(0, 6).map((n, i) => ({ it, n, i }));
     const uk = updKey(it);
@@ -139,6 +139,7 @@
     const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.`,
       uk ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-start" data-key="${esc(uk)}" data-name="${esc(it.name)}">Apply an update</button>` : "") : "";
     const copyBanner = offer ? `<div class="news-newer">${copyCard(offer, true)}</div>` : "";
+    if (!items.length && !newer && !offer) return "";
     if (!items.length) return `${copyBanner}<section class="news">${head}${newer}<p class="news-none">Steam has no news for this game yet.</p></section>`;
     return copyBanner + (newer ? `<div class="news-newer">${newer}</div>` : "") + newsSection(title, items, false);
   }
@@ -224,7 +225,7 @@
     const meta = [esc(sourceLabel(it.source))];
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
     const st = steamTime(it);
-    let bar, note = "", side, news;
+    let bar, note = "", side, news, head;
     const details = page ? "" : `<button class="ln-button ln-button--ghost" data-action="open-sheet" ${itemAttr(it)}>Details</button>`;
     // Everything else you can do with the game opens in a panel at the side.
     const manage = page ? `<button class="ln-button ln-button--secondary ln-button--sm gpage-manage-btn" data-action="manage" ${itemAttr(it)} aria-haspopup="dialog">${GI.sliders}Manage</button>` : "";
@@ -232,7 +233,6 @@
     if (it.kind === "found") {
       const f = it.f;
       meta.push("Profiles off");
-      if (rec && page) meta.push(esc(lastPlayed(it)));
       const stats = [st ? gpStat(hoursValue(st), "Steam account") : ""].join("");
       const turnOn = (kind) => `<button class="ln-button ln-button--${kind}" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}${solo() ? "Keep runs" : "Turn on profiles"}</button>`;
       const t = totalPlayed(it) || st;
@@ -250,25 +250,27 @@
         <div class="gpage-state">${solo() ? `<b>One set of saves</b><span>Keep runs for more than one playthrough</span>` : `<b>Profiles off</b><span>Everyone shares the same settings and saves</span>`}</div>
         <div class="gpage-others">${startWith}${turnOn("secondary")}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
+      head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
       note = page ? also + dlNote(it) + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + antiCheatNote(it) : "";
-      side = page ? playersPanel(it) + collectionsBlock(it) + gameSavesBlock(it) : "";
+      side = page ? playersPanel(it) + collectionsBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
       const ps = cfg().players;
       const withProfile = ps.filter((p) => hasProfile(g.id, p.id));
       meta.push(!withProfile.length ? "Profiles on" : withProfile.length === 1 ? "1 profile" : withProfile.length + " profiles");
-      if (rec) meta.push(esc(lastPlayed(it)));
+      if (rec && !page) meta.push(esc(lastPlayed(it)));
       // The one Play: whoever's files are loaded, else whoever played last.
       const lead = seated() || player(owner) || (rec && player(rec.player)) || withProfile[0] || ps[0];
       const pt = playtimeOf(it);
       let play, state;
+      const playAs = (size) => `<button class="ln-button ln-button--play${size} ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>`;
       if (s) {
         play = `<span class="gpage-session ln-player" style="--player:${esc(color(s.playerId))}" role="status">${s.phase === "playing" ? '<span class="ln-mark ln-player" style="--player:' + esc(color(s.playerId)) + '"></span>' : '<span class="ln-spinner" aria-hidden="true"></span>'}${esc(sessionText(s))}</span>`;
         state = `<div class="gpage-state"><b>${esc(possessive(pname(s.playerId)))} files are loaded</b><span>Their progress goes back to their profile when the game closes</span></div>`
           + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
-        play = lead ? `<button class="ln-button ln-button--play ln-button--lg ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>` : "";
+        play = lead ? playAs(" ln-button--lg") : "";
         const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the profile's files first";
         state = `<div class="gpage-state"><b>${owner && player(owner) ? `${esc(possessive(pname(owner)))} files are loaded` : "Nobody's files yet"}</b><span>${sub}</span></div>`;
       }
@@ -276,6 +278,8 @@
       // A run of whoever's playing: its own saves, from the start or a copy.
       const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--ghost" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}" title="A new playthrough with its own saves, such as a hardcore try">${GI.plus}New run</button>` : "";
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun ? `<div class="gpage-others">${other}${newRun}</div>` : ""}${details}</section>`;
+      const loaded = s ? s.playerId : player(owner) && owner;
+      head = { play: other + (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${possessive(pname(loaded))} files are loaded` : "Nobody's files yet" };
       note = page ? conflictBanner(g) + dlNote(it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
@@ -291,10 +295,78 @@
           <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p></div>
       </section>`;
     if (!page) return { top, bar, note, real };
-    return `<div class="gpage ln-root${real ? "" : " no-art"}">${top}
-      <div class="gpage-body">${bar}${note}
-        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${detailsBlock(it)}${savePointsBlock(it)}${timelineBlock(it)}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
+    const T = gameTabs(it, side, news), tabs = T.list.length > 1;
+    const small = artFor(it, "cover").url || icon;
+    return `<div class="gpage ln-root${real ? "" : " no-art"}${docked.bar ? " no-bar" : ""}${docked.tabs ? " no-tabs" : ""}">
+      <div class="gp-dock"><div class="gp-head">${small ? `<img class="gp-head-art" src="${small}" alt="">` : `<span class="gp-head-art" aria-hidden="true">${esc(initial(it.name))}</span>`}
+        <div class="gp-head-id"><b>${esc(it.name)}</b><span>${esc(head.state)}</span></div>${tabs ? tabRow(it, T, true) : ""}<div class="gp-head-play">${head.play}</div></div></div>
+      ${top}
+      <div class="gpage-body">${bar}${note}${tabs ? tabRow(it, T, false) : ""}
+        <div class="gp-panel" id="gp-panel"${tabs ? ` role="tabpanel" aria-labelledby="gp-tab-${T.cur}"` : ""}>${T.html}</div>
       </div></div>`;
+  }
+
+  // The page in tabs, each shown only when it has something in it. The tab
+  // is kept per game (S.gameTab); switching isn't a stop for Back, but the
+  // page's place in the history carries the tab it was left on.
+  const TABS = [["overview", "Overview"], ["achievements", "Achievements"], ["saves", "Saves"], ["timeline", "Timeline"], ["news", "News"]];
+  const pageKey = (P) => P.kind + ":" + P.id;
+  const wide = (html) => `<div class="gpage-main gpage-main--wide"><div class="gpage-col">${html}</div></div>`;
+  const cols = (main, side) => (side ? `<div class="gpage-main"><div class="gpage-col">${main}</div><aside class="gpage-side">${side}</aside></div>` : wide(main));
+  function gameTabs(it, side, news) {
+    const ach = achievementsBlock(it), tl = timelineBlock(it), points = savePointsBlock(it), saves = gameSavesBlock(it), other = otherSavesBlock(it);
+    const newsOn = cfg().settings.gameNews;
+    const panes = {
+      overview: cols(activityLine(it, !!tl) + detailsBlock(it) + achievementsBlock(it, true) + latestPoint(it) + latestCopy(it) + (newsOn ? "" : news), side),
+      achievements: ach && wide(ach),
+      saves: points ? cols(points, saves + other) : (saves || other) && wide(saves + other),
+      timeline: tl && wide(tl),
+      news: newsOn && news && wide(news),
+    };
+    const want = S.gameTab[pageKey(S.page)];
+    const cur = panes[want] ? want : "overview";
+    return { list: TABS.filter(([k]) => panes[k]), cur, html: panes[cur] };
+  }
+  const tabRow = (it, T, inHead) => `<div class="ln-tabs ${inHead ? "gp-head-tabs" : "gp-tabs"}" role="tablist" aria-label="${esc(it.name)}">${T.list.map(([k, l]) => `<button role="tab"${inHead ? "" : ` id="gp-tab-${k}"`} aria-selected="${k === T.cur}" aria-controls="gp-panel" tabindex="${k === T.cur ? 0 : -1}" data-action="game-tab" data-tab="${k}">${l}</button>`).join("")}</div>`;
+  // Changing tabs keeps the scroll, unless the new tab would start above
+  // the view: then it starts just under the compact head.
+  function setGameTab(tab) {
+    if (!S.page) return;
+    S.gameTab[pageKey(S.page)] = tab;
+    render();
+    const v = $("#view"), panel = $("#gp-panel"), head = $(".gp-head"), row = $(".gp-tabs");
+    if (!panel || !head || !row) return;
+    const top = v.getBoundingClientRect().top + head.offsetHeight, over = panel.getBoundingClientRect().top - top;
+    if (over < 0) v.scrollTop += over;
+    dock("bar", $(".gpage-bar").getBoundingClientRect().bottom < top);
+    dock("tabs", row.getBoundingClientRect().top < top);
+    const t = $(`${docked.tabs ? ".gp-head-tabs" : ".gp-tabs"} [aria-selected="true"]`);
+    if (t) t.focus({ preventScroll: true });
+  }
+  // The arrows, Home and End in a tab row, and Ctrl+Tab, move between tabs.
+  function stepTab(key) {
+    const tabs = [...document.querySelectorAll(".gp-tabs [role=tab]")], n = tabs.length;
+    const i = tabs.findIndex((b) => b.getAttribute("aria-selected") === "true");
+    const j = { ArrowRight: i + 1, ArrowLeft: i - 1 + n, Home: 0, End: n - 1 }[key] % n;
+    if (n > 1 && j !== i) setGameTab(tabs[j].dataset.tab);
+  }
+  // The compact head: shown once the play bar has scrolled up under it,
+  // and its tabs once the page's own have.
+  const docked = { bar: false, tabs: false };
+  let headIO = null;
+  function dock(k, on) { docked[k] = on; const g = $("#view > .gpage:not(.home)"); if (g) g.classList.toggle("no-" + k, on); }
+  function stickHead() {
+    const v = $("#view");
+    if (!headIO) {
+      const h = getComputedStyle(document.documentElement).getPropertyValue("--gp-head-h").trim();
+      // The bar docks once it's all under the head, the tabs once any of them is.
+      headIO = new IntersectionObserver((es) => es.forEach((e) => {
+        const tabs = e.target.classList.contains("gp-tabs");
+        dock(tabs ? "tabs" : "bar", (tabs ? e.intersectionRatio < 1 : !e.isIntersecting) && e.boundingClientRect.top < e.rootBounds.top);
+      }), { root: v, rootMargin: `-${h} 0px 0px 0px`, threshold: [0, 1] });
+    }
+    headIO.disconnect();
+    if (S.view === "game") v.querySelectorAll(".gpage-bar, .gp-tabs").forEach((el) => headIO.observe(el));
   }
   // The Manage panel: what you can do with a game besides playing it,
   // grouped by intent. Each row closes the panel and does its one thing.
@@ -434,14 +506,6 @@
   async function loadSources() {
     try { S.sources = await api.sources(); } catch (e) { S.sources = { sources: [] }; }
     if (S.dialog && S.dialog.kind === "sources") renderOverlay();
-  }
-  function viewAchDrawer() {
-    const it = dialogItem(S.dialog);
-    if (!it) return "";
-    const A = achFor(it);
-    if (!A) return "";
-    return drawer({ label: `${esc(it.name)} achievements`, title: A.who ? esc(possessive(pname(A.who))) + " achievements" : "Achievements",
-      sub: `${esc(it.name)}, ${A.A.unlocked} of ${A.A.total}`, body: `<div class="gp-ach gp-ach--all">${A.whoRow}${A.bar}<ul class="ach-list">${A.A.list.map(A.row).join("")}</ul></div>`, foot: `<p class="gpage-hint ln-drawer__note">${A.note}</p>${A.toggle}` });
   }
   function hookBanner() {
     if (!S.hooks || S.hideHookBanner) return "";

@@ -12,6 +12,7 @@
     [["Arrow keys"], "Move between covers in the Library"],
     [["Home", "End"], "First or last cover"],
     [["Esc"], "Close a dialog, or go back from a game's page"],
+    [["Ctrl+Tab", "Ctrl+Shift+Tab"], "Next or previous tab on a game's page"],
     [["Alt+Left", "Backspace", "Mouse back button"], "Go back to the page you were on"],
     [["Alt+Right", "Mouse forward button"], "Go forward again"],
     [["Ctrl+B"], "Fold the sidebar, or open it again"],

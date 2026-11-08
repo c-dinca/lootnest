@@ -1,12 +1,13 @@
   // ---------------------------------------------------------------- render --
   // Back and Forward: the pages visited, kept in memory (a page, its game or
-  // profile, and how far down it was scrolled). A render that lands on
+  // profile, a game page's tab, and how far down it was scrolled). A render that lands on
   // another page records the one it left; a re-render records nothing.
   const hist = { back: [], fwd: [], at: null, moving: false };
   function here() {
     const page = S.view === "game" && S.page ? { kind: S.page.kind, id: S.page.id } : null;
     const player = S.view === "player" ? S.playerPage : "";
-    return { view: S.view, page, player, from: S.from, key: [S.view, page ? page.kind + ":" + page.id : "", player].join("|") };
+    const tab = page ? S.gameTab[pageKey(page)] || "" : "";
+    return { view: S.view, page, player, tab, from: S.from, key: [S.view, page ? page.kind + ":" + page.id : "", player].join("|") };
   }
   function noteVisit(scroll) {
     const at = hist.at;
@@ -27,6 +28,7 @@
     const P = loc.page && { ...loc.page, cloud: null };
     transition(() => {
       enterView(loc.view, P); S.from = loc.from;
+      if (P) S.gameTab[pageKey(P)] = loc.tab;
       if (loc.player) S.playerPage = loc.player;
       hist.moving = true; render(); hist.moving = false;
       $("#view").scrollTop = loc.scroll || 0;
@@ -38,7 +40,7 @@
   function enterView(view, P) {
     S.view = view; S.menuFor = null; S.edit = null;
     if (P) {
-      S.page = P; S.selected = { kind: P.kind, id: P.id }; tlAsked.clear();
+      S.page = P; S.selected = { kind: P.kind, id: P.id }; tlAsked.clear(); docked.bar = docked.tabs = false;
       for (const k in S.details) if (S.details[k].error) delete S.details[k]; // asked again on this visit
     }
     if (view === "cloud") { loadBackupInfo(); loadSaves(); }
@@ -60,7 +62,7 @@
     noteVisit(v.scrollTop);
     const keepScroll = v.scrollTop;
     // A field being typed in keeps its text, focus and caret.
-    const ae = document.activeElement, typing = ae && ["lib-q", "find-q", "gp-note", "gp-hours"].includes(ae.id) && { id: ae.id, value: ae.value, at: ae.selectionStart };
+    const ae = document.activeElement, typing = ae && ["lib-q", "find-q", "gp-note", "gp-hours", "pt-rename"].includes(ae.id) && { id: ae.id, value: ae.value, at: ae.selectionStart };
     if (S.view === "home") v.innerHTML = viewHome();
     else if (S.view === "library") v.innerHTML = viewLibrary();
     else if (S.view === "game") v.innerHTML = viewGame();
@@ -85,6 +87,7 @@
     hist.at = here();
     v.scrollTop = keepScroll;
     if (S.view === "game") fitDetails();
+    stickHead();
     if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
     renderOverlay();
     loadCovers();

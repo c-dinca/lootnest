@@ -32,7 +32,7 @@
         <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${saved(g, p.id)}</div>
         <button class="gp-person-time ln-num${pt[p.id] ? "" : " is-zero"}" data-action="hours-edit" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-label="${esc(possessive(p.name))} hours played: ${pt[p.id] ? esc(hours(pt[p.id])) : "none"}. Correct them" title="Correct the hours" aria-expanded="${editing(p)}">${pt[p.id] ? esc(hours(pt[p.id])) : "0 h"}</button></div>
         ${editing(p) ? hoursEditor(key, p, pt[p.id] || 0) : ""}</div>`;
-    }).join("")}</div>${g ? `<dl class="ln-facts gp-facts">${st ? `<div><dt>Steam account</dt><dd class="ln-num">${esc(hours(st))}</dd></div>` : ""}<div><dt>Copies before swaps</dt><dd><button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See them</button></dd></div></dl>` : ""}</section>`;
+    }).join("")}</div>${st ? `<dl class="ln-facts gp-facts"><div><dt>Steam account</dt><dd class="ln-num">${esc(hours(st))}</dd></div></dl>` : ""}</section>`;
   }
   function viewProfileEditor() {
     const D = S.dialog, p = D.p, tab = D.tab || "look";
