@@ -902,7 +902,7 @@
       S.pluginError = "";
       const r = await browse("plugin", "");
       if (!r.path) { if (r.error) toast(r.error, "error"); return; }
-      try { const m = await api.installPlugin(r.path); await pluginsDone(`Installed ${m.name} ${m.version}.`); }
+      try { await pluginInstalled(r.path, await api.installPlugin(r.path)); }
       catch (e) { S.pluginError = errText(e); render(); }
     },
     async "plugin-rollback"(el) {
@@ -912,7 +912,7 @@
       const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.id);
       if (!p) return;
       const games = (p.provides || []).includes("sources") ? " The games it added leave the Library; games with profiles stay as they are." : "";
-      if (!await confirmDialog({ title: `Remove ${p.name}?`, body: `Its files go from Lootnest's plugins folder.${games} Your saves aren't touched.`, ok: "Remove" })) return;
+      if (!await confirmDialog({ title: `Remove ${p.name}?`, body: `Its files go from Lootnest's plugins folder.${games}${p.key ? " Lootnest forgets its key, so the next copy you install is trusted as a new one." : ""} Your saves aren't touched.`, ok: "Remove" })) return;
       try { await api.removePlugin(p.id); await pluginsDone(`Removed ${p.name}.`); } catch (e) { toast(errText(e), "error"); }
     },
     "movefolder-open"(el) { const it = itemFor(el); closeContext(); if (it) openMoveFolder(it); },

@@ -94,8 +94,32 @@ func (a *App) pluginsChanged(sources, on bool) {
 	a.emit("found", map[string]any{"scanning": false})
 }
 
-// pluginGames are the games of the on source plugins, read on this PC.
+// recheckPlugins forgets the plugins read before when one of them no
+// longer checks out in list (its files changed since), so it's off from
+// then on, and says whether that one had sources.
+func (a *App) recheckPlugins(list []core.Plugin) (dropped, sources bool) {
+	plugMu.Lock()
+	defer plugMu.Unlock()
+	if plugRead == nil {
+		return false, false
+	}
+	for _, c := range plugRead.on {
+		for _, p := range list {
+			if p.ID == c.ID && p.Problem != "" {
+				dropped, sources = true, sources || c.Has("sources")
+			}
+		}
+	}
+	if dropped {
+		plugRead = nil
+	}
+	return dropped, sources
+}
+
+// pluginGames are the games of the on source plugins, read on this PC,
+// checked again first since they're read from the plugin's files.
 func (a *App) pluginGames() []core.FoundGame {
+	a.recheckPlugins(core.ListPlugins(DataDir()))
 	var out []core.FoundGame
 	for _, p := range a.plugins().on {
 		if p.Has("sources") {
@@ -140,6 +164,9 @@ var errPluginsSafe = errors.New("Lootnest is in safe mode, so plugins stay off. 
 
 func (a *App) apiPlugins() map[string]any {
 	list := core.ListPlugins(DataDir())
+	if dropped, sources := a.recheckPlugins(list); dropped {
+		a.pluginsChanged(sources, false)
+	}
 	if list == nil {
 		list = []core.Plugin{}
 	}
@@ -155,19 +182,39 @@ func (a *App) pluginByID(id string) (core.Plugin, bool) {
 	return core.Plugin{}, false
 }
 
-func (a *App) apiInstallPlugin(path string) (*core.PluginManifest, error) {
+// apiInstallPlugin answers {plugin} once installed, or {keyChange} when
+// the version is signed with another key than the pinned one, for the page
+// to ask; only that dialog calls apiInstallPluginNewKey.
+func (a *App) apiInstallPlugin(path string) (map[string]any, error) {
+	return a.installPlugin(path, core.InstallPlugin)
+}
+
+// apiInstallPluginNewKey installs path only when it's signed with the key
+// the user accepted (its fingerprint); any other key is asked about again.
+func (a *App) apiInstallPluginNewKey(path, key string) (map[string]any, error) {
+	return a.installPlugin(path, func(dataDir, src string) (*core.PluginInstalled, error) {
+		return core.InstallPluginNewKey(dataDir, src, key)
+	})
+}
+
+func (a *App) installPlugin(path string, install func(string, string) (*core.PluginInstalled, error)) (map[string]any, error) {
 	if a.safe {
 		return nil, errPluginsSafe
 	}
-	m, err := core.InstallPlugin(DataDir(), path)
+	m, err := install(DataDir(), path)
+	var kc *core.PluginKeyChange
+	if errors.As(err, &kc) {
+		a.logf("Plugin %s from %s not installed: signed with key %s, not %s", kc.Name, path, kc.Key, kc.Pinned)
+		return map[string]any{"keyChange": kc}, nil
+	}
 	if err != nil {
 		a.logf("Plugin from %s not installed: %v", path, err)
 		return nil, errors.New("Lootnest didn't install it: " + err.Error() + ".")
 	}
-	a.logf("Plugin %s %s installed from %s", m.Name, m.Version, path)
+	a.logf("Plugin %s %s installed from %s, key %q", m.Name, m.Version, path, m.Key)
 	p, _ := a.pluginByID(m.ID)
 	a.pluginsChanged(p.Has("sources"), p.On)
-	return m, nil
+	return map[string]any{"plugin": m}, nil
 }
 
 func (a *App) apiSetPluginOn(id string, on bool) error {

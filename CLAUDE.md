@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.89.0, beta)
+## Where things stand (1.90.0, beta)
 
 These shipped recently, newest last:
 
@@ -664,6 +664,16 @@ These shipped recently, newest last:
   tokens, contrast pairs checked in Go incl. glass over ground and the
   status colours; `Player.Theme`, `applyTheme` on the seat). UI
   `79-plugins.js`, Settings, Plugins. Harness `?plugins=1&theme=1`.
+- **1.90** Roadmap Plugins 3 (`core/pluginsign.go`, `cmd/plugsign`):
+  signature.json {key, sig} over `PluginDigest` (sorted
+  'relpath\tsha256' lines); `VerifyPlugin`, `KeyFingerprint`. Trust on
+  first use: the key is pinned per id in plugins.json; a different key
+  is refused with both fingerprints unless the user accepts that exact
+  fingerprint (`InstallPluginNewKey(..., accepted)`); unsigned can't
+  replace signed; `olderPlugin` only offers rollbacks matching the pin;
+  a plugin whose files changed on disk is turned off with a reason.
+  Remove forgets the pin. `plugsign keygen|sign` for authors
+  (plugsign.key 0600, gitignored).
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.90.0
+
+- **Signed plugins.** A plugin's author can sign it, and Settings, Plugins says on each row whether it's signed and with which key (Signed, key 1A2B 3C4D 5E6F 7A8B), or Not signed. Unsigned plugins still install as before.
+- Lootnest checks a signed plugin's files against its signature, and refuses one whose files changed after the author signed it. If an installed plugin's files change later, it's turned off at the next scan or when you open Settings, Plugins, and says why.
+- Lootnest remembers the key a plugin was first installed with. A new version signed with a different key asks first, with both keys shown: that can mean a new author or someone else's copy. **Cancel** keeps the version you have; **Install with the new key** installs it and remembers the new key.
+- A signed version of a plugin you installed unsigned remembers its key from then on, and says so. An unsigned version can't replace a signed one, and Roll back is offered only for a version with the key you have.
+- For plugin authors: `go run ./cmd/plugsign keygen` makes a key, and `go run ./cmd/plugsign sign <folder>` signs a plugin. Nothing goes online and there's no account: docs/PLUGINS.md, Signing.
+
 ## 1.89.0
 
 - **Plugins**, a new category in Settings. **Install from file** takes a plugin's .zip. Plugins are data only: they can add games to the Library, suggest save locations, fill in game details and change colours. They can't run anything, go online, or touch your saves.

@@ -1033,6 +1033,7 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .settings-page .log { margin: 0; }
 .bk-row p.pl-kinds { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
 .pl-row .error-text { margin-top: var(--space-2); color: var(--bad); }
+.bk-row p.pl-key { margin-top: var(--space-1); font-size: var(--text-meta); color: var(--fg-3); }
 .pl-acts { display: flex; align-items: center; gap: var(--space-2); }
 .settings-page .bk-card > * { padding: var(--space-5) var(--space-6); }
 /* As wide as 60ch of text and its switch, so the switch sits right after

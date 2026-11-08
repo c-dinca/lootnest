@@ -66,11 +66,12 @@
   // ?runs=1: two runs of the first profile ("Cristian hardcore", "Cristian 100%").
   if (q.get("runs") === "1") PLAYERS.push({ id: "r1", name: PLAYERS[0].name + " hardcore", color: "#6C9BD2", of: "p1" }, { id: "r2", name: PLAYERS[0].name + " 100%", color: "#6C9BD2", of: "p1" });
   // ?plugins=1: one plugin of each kind (core/plugins.go), with an older
-  // version of the theme kept for Roll back. &theme=1: the first profile
-  // chose the theme, so it shows.
+  // version of the theme kept for Roll back; RetroArch playlists is signed.
+  // Install from file then offers its 1.3.0 signed with another key.
+  // &theme=1: the first profile chose the theme, so it shows.
   const PLUGINS = q.get("plugins") === "1";
   const PLUGIN_LIST = PLUGINS ? [
-    { id: "retroarch", name: "RetroArch playlists", version: "1.2.0", author: "Lena M.", description: "Every game in your RetroArch playlists, in the Library.", provides: ["sources"], on: true },
+    { id: "retroarch", name: "RetroArch playlists", version: "1.2.0", author: "Lena M.", description: "Every game in your RetroArch playlists, in the Library.", provides: ["sources"], on: true, key: "1A2B 3C4D 5E6F 7A8B" },
     { id: "emu-saves", name: "Emulator save locations", version: "0.4.1", author: "Saves club", description: "Where common emulators keep saves and memory cards.", provides: ["saves"], on: true },
     { id: "retro-info", name: "Retro game details", version: "2.0.0", author: "Lena M.", description: "Summaries, developers and release years for older games.", provides: ["metadata"], on: false },
     { id: "deep-sea", name: "Deep sea", version: "1.1.0", author: "Ana P.", description: "Dark blue grounds with a cyan accent.", provides: ["theme"], on: true, older: "1.0.0" },
@@ -425,8 +426,11 @@
     ps_restart: () => ok(null),
     ps_closeGame: () => ok(),
     ps_plugins: () => ok({ plugins: PLUGIN_LIST }),
-    // Every install from the harness is refused, as core.InstallPlugin refuses a plugin with a program in it.
-    ps_installPlugin: () => Promise.reject("Lootnest didn't install it: it has a file that isn't data (bin/helper.exe); plugins can only hold .json, .ini, .vdf, .yaml, .txt and pictures."),
+    // Without ?plugins=1 every install is refused, as core.InstallPlugin refuses a plugin with a program in it.
+    ps_installPlugin: () => PLUGINS ? ok({ keyChange: { id: "retroarch", name: "RetroArch playlists", pinned: "1A2B 3C4D 5E6F 7A8B", key: "9C0D E1F2 3A4B 5C6D" } })
+      : Promise.reject("Lootnest didn't install it: it has a file that isn't data (bin/helper.exe); plugins can only hold .json, .ini, .vdf, .yaml, .txt and pictures."),
+    // 1.2.0 is kept but has the old key, so Roll back doesn't offer it (core.olderPlugin).
+    ps_installPluginNewKey: (path, key) => { const x = PLUGIN_LIST.find((p) => p.id === "retroarch"); Object.assign(x, { version: "1.3.0", key }); delete x.older; return ok({ plugin: { ...x } }); },
     ps_setPluginOn: (id, on) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) x.on = on; return ok(); },
     ps_removePlugin: (id) => { const i = PLUGIN_LIST.findIndex((p) => p.id === id); if (i >= 0) PLUGIN_LIST.splice(i, 1); return ok(); },
     ps_rollbackPlugin: (id) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (!x || !x.older) return Promise.reject("Lootnest couldn't roll it back: no older version of it is kept."); x.version = x.older; delete x.older; return ok({ ...x }); },

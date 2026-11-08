@@ -129,6 +129,7 @@
     gameDetails: (key) => call("ps_gameDetails", key),
     plugins: () => call("ps_plugins"),
     installPlugin: (path) => call("ps_installPlugin", path),
+    installPluginNewKey: (path, key) => call("ps_installPluginNewKey", path, key),
     setPluginOn: (id, on) => call("ps_setPluginOn", id, on),
     removePlugin: (id) => call("ps_removePlugin", id),
     rollbackPlugin: (id) => call("ps_rollbackPlugin", id),

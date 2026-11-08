@@ -81,6 +81,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_sources", a.apiSources))
 	must(a.w.Bind("ps_plugins", a.apiPlugins))
 	must(a.w.Bind("ps_installPlugin", a.apiInstallPlugin))
+	must(a.w.Bind("ps_installPluginNewKey", a.apiInstallPluginNewKey))
 	must(a.w.Bind("ps_setPluginOn", a.apiSetPluginOn))
 	must(a.w.Bind("ps_removePlugin", a.apiRemovePlugin))
 	must(a.w.Bind("ps_rollbackPlugin", a.apiRollbackPlugin))

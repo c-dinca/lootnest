@@ -2,7 +2,7 @@
 
 A Lootnest plugin is data, never code. It can add games to the Library, suggest save locations, fill in game details and change colours. Nothing in a plugin is run or loaded as code, and a plugin can't write saves or game folders, start programs or go online.
 
-Install one in Settings, Plugins, **Install from file**. Lootnest keeps it in `plugins\<id>` in its data folder, and the version it replaced in `plugins\.old\<id>\<version>` for **Roll back**. In safe mode every plugin is off.
+Install one in Settings, Plugins, **Install from file**. A plugin can be signed by its author (see Signing). Lootnest keeps it in `plugins\<id>` in its data folder, and the version it replaced in `plugins\.old\<id>\<version>` for **Roll back**. In safe mode every plugin is off.
 
 ## The package
 
@@ -108,6 +108,36 @@ A theme is refused, with the pair that fails, unless every pair passes WCAG 2 co
 
 Each profile chooses its theme (Edit profile, Look, Theme); it shows while that profile is at the PC. A run without one wears its person's.
 
+## Signing
+
+A plugin may be signed, so a later version can only come from whoever made the first one. Unsigned plugins install as before; Settings, Plugins shows each as **Signed, key 1A2B 3C4D 5E6F 7A8B** or **Not signed**.
+
+A signed plugin has `signature.json` at its top:
+
+```json
+{ "key": "<Ed25519 public key, base64, 32 bytes>", "sig": "<signature, base64, 64 bytes>" }
+```
+
+The signature is over a list with one line per file, every file but `signature.json`: its path inside the plugin with forward slashes, a tab, its SHA-256 in lowercase hex, and a newline (`theme.json\t9f86...\n`), sorted, as UTF-8. The key's fingerprint, shown in Lootnest, is the first 16 hex digits of the key's SHA-256, in groups of four.
+
+There's no central authority and nothing goes online: Lootnest trusts a key the first time it sees it, as SSH does with a server's key, and keeps it for that plugin's id in `plugins.json`.
+
+- A signature that doesn't match the files is refused: something changed them after the author signed it. A plugin whose files change once installed is turned off, with the reason, the next time Lootnest reads it (a scan, Settings, Plugins, or a start).
+- A new version signed with another key is refused, with both fingerprints, unless you choose **Install with the new key**. That can mean a new author, or someone else's copy.
+- A signed version replacing an unsigned one pins its key from then on, and says so.
+- An unsigned version can't replace a signed one, so a signature can't be dropped without you noticing.
+- **Roll back** is offered only for a kept version signed with the pinned key, so not for one with an old key or none.
+- **Remove** forgets the key, so the next install of that id is a first one again.
+
+To sign, from a copy of this repository (needs Go):
+
+```
+go run ./cmd/plugsign keygen
+go run ./cmd/plugsign sign path\to\my-plugin
+```
+
+`keygen` writes `plugsign.key`, the private key (keep it safe, and never commit or share it), in the folder you run it from, and prints its fingerprint. It never replaces a key that's there: with a lost key, your next version needs your users to accept a new one. `sign` checks the folder the way Lootnest does, then writes its `signature.json`; give it another key file as a third argument. Sign last, after every other change, then zip the folder's contents.
+
 ## What plugins can't do
 
-No code of any kind: no scripts, DLLs, .NET, PowerShell or Python. A plugin can't write saves or game folders, start programs, download or go online, or depend on another plugin. Online metadata, signatures and script plugins are later phases in [ROADMAP.md](ROADMAP.md), section 1.
+No code of any kind: no scripts, DLLs, .NET, PowerShell or Python. A plugin can't write saves or game folders, start programs, download or go online, or depend on another plugin. Online metadata and script plugins are later phases in [ROADMAP.md](ROADMAP.md), section 1.

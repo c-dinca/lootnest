@@ -2,6 +2,7 @@ package core
 
 import (
 	"archive/zip"
+	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"os"
@@ -376,5 +377,189 @@ func TestThemeTokensMatchSystemCSS(t *testing.T) {
 				t.Errorf("%s is %q in system.css, %q here", k, m, v)
 			}
 		}
+	}
+}
+
+// signedZip is a plugin's files as a .zip, signed with priv.
+func signedZip(t *testing.T, files map[string]string, priv ed25519.PrivateKey) string {
+	t.Helper()
+	dir := pluginDir(t, files).Dir
+	if err := SignPlugin(dir, priv); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "signature.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	all := map[string]string{"signature.json": string(b)}
+	for k, v := range files {
+		all[k] = v
+	}
+	return pluginZip(t, all)
+}
+
+func newKey(t *testing.T) ed25519.PrivateKey {
+	t.Helper()
+	_, priv, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return priv
+}
+
+func TestPluginSignature(t *testing.T) {
+	priv := newKey(t)
+	files := map[string]string{"plugin.json": manifest("deep-sea", "1.0.0", "theme"), "theme.json": goodTheme, "art/readme.txt": "hi"}
+	dir := pluginDir(t, files).Dir
+	if fp, signed, err := VerifyPlugin(dir); err != nil || signed || fp != "" {
+		t.Fatalf("unsigned: %q %v %v", fp, signed, err)
+	}
+	if err := SignPlugin(dir, priv); err != nil {
+		t.Fatal(err)
+	}
+	fp, signed, err := VerifyPlugin(dir)
+	want := KeyFingerprint(priv.Public().(ed25519.PublicKey))
+	if err != nil || !signed || fp != want || !regexp.MustCompile(`^[0-9A-F]{4}( [0-9A-F]{4}){3}$`).MatchString(fp) {
+		t.Fatalf("signed: %q %v %v", fp, signed, err)
+	}
+	d, _ := PluginDigest(dir)
+	if !strings.HasPrefix(string(d), "art/readme.txt\t") || strings.Contains(string(d), "signature.json") || strings.Count(string(d), "\n") != 3 {
+		t.Fatalf("digest %q", d)
+	}
+
+	data := t.TempDir()
+	m, err := InstallPlugin(data, dir)
+	if err != nil || m.Key != want || m.PinnedNow {
+		t.Fatalf("install %+v %v", m, err)
+	}
+	if l := ListPlugins(data); l[0].Key != want || l[0].Problem != "" {
+		t.Fatalf("listed %+v", l)
+	}
+
+	// A file changed after signing: refused, and nothing is left.
+	write(t, filepath.Join(dir, "art", "readme.txt"), "changed")
+	if _, _, err := VerifyPlugin(dir); !errors.Is(err, ErrPluginSignature) {
+		t.Fatalf("tampered: %v", err)
+	}
+	other := t.TempDir()
+	if _, err := InstallPlugin(other, dir); !errors.Is(err, ErrPluginSignature) {
+		t.Fatalf("tampered install: %v", err)
+	}
+	if ents, _ := os.ReadDir(PluginsDir(other)); len(ents) != 0 {
+		t.Fatalf("left %v", ents)
+	}
+	// Changed on disk once installed: it's off, with the reason.
+	write(t, filepath.Join(data, "plugins", "deep-sea", "theme.json"), strings.Replace(goodTheme, "Deep sea", "Deeper", 1))
+	if l := ListPlugins(data); l[0].Problem == "" || len(ActivePlugins(data)) != 0 {
+		t.Fatalf("tampered on disk %+v", l)
+	}
+	// Its signature deleted: off, and the reason says so.
+	if err := os.Remove(filepath.Join(data, "plugins", "deep-sea", "signature.json")); err != nil {
+		t.Fatal(err)
+	}
+	if l := ListPlugins(data); !strings.Contains(l[0].Problem, "its signature is gone") || !strings.Contains(l[0].Problem, want) {
+		t.Fatalf("signature gone %+v", l)
+	}
+}
+
+func TestPluginKeyPinning(t *testing.T) {
+	a, b := newKey(t), newKey(t)
+	ver := func(v string) map[string]string {
+		return map[string]string{"plugin.json": manifest("deep-sea", v, "theme"), "theme.json": goodTheme}
+	}
+	data := t.TempDir()
+	if _, err := InstallPlugin(data, signedZip(t, ver("1.0.0"), a)); err != nil {
+		t.Fatal(err)
+	}
+	// Another key: refused, naming both, and the installed one stays.
+	_, err := InstallPlugin(data, signedZip(t, ver("1.1.0"), b))
+	var kc *PluginKeyChange
+	if !errors.As(err, &kc) || kc.Pinned != KeyFingerprint(a.Public().(ed25519.PublicKey)) || kc.Key != KeyFingerprint(b.Public().(ed25519.PublicKey)) || kc.Name != "Night deep-sea" {
+		t.Fatalf("key change: %v", err)
+	}
+	if !strings.Contains(err.Error(), kc.Pinned) || !strings.Contains(err.Error(), kc.Key) {
+		t.Fatalf("reason %q", err)
+	}
+	if l := ListPlugins(data); l[0].Version != "1.0.0" {
+		t.Fatalf("replaced by a refused key: %+v", l)
+	}
+	// Unsigned can't replace signed, even when the user accepts a new key.
+	if _, err := InstallPlugin(data, pluginZip(t, ver("1.2.0"))); err == nil || !strings.Contains(err.Error(), "this version is not signed") {
+		t.Fatalf("unsigned over signed: %v", err)
+	}
+	if _, err := InstallPluginNewKey(data, pluginZip(t, ver("1.2.0")), kc.Key); err == nil || !strings.Contains(err.Error(), "this version is not signed") {
+		t.Fatalf("unsigned over signed, new key accepted: %v", err)
+	}
+	// Only the key the user accepted installs: another one is asked again.
+	c := newKey(t)
+	var again *PluginKeyChange
+	if _, err := InstallPluginNewKey(data, signedZip(t, ver("1.1.0"), c), kc.Key); !errors.As(err, &again) || again.Key != KeyFingerprint(c.Public().(ed25519.PublicKey)) {
+		t.Fatalf("a key nobody accepted: %v", err)
+	}
+	// Accepted: installed, and the new key is pinned.
+	m, err := InstallPluginNewKey(data, signedZip(t, ver("1.1.0"), b), kc.Key)
+	if err != nil || m.Key != kc.Key {
+		t.Fatalf("new key %+v %v", m, err)
+	}
+	// 1.0.0 has the old key, so Roll back doesn't offer it.
+	if l := ListPlugins(data); l[0].Version != "1.1.0" || l[0].Key != kc.Key || l[0].Problem != "" || l[0].Older != "" {
+		t.Fatalf("after new key %+v", l)
+	}
+	if _, err := InstallPlugin(data, signedZip(t, ver("1.3.0"), a)); !errors.As(err, &kc) {
+		t.Fatalf("old key after accepting the new one: %v", err)
+	}
+	if _, err := RollbackPlugin(data, "deep-sea"); err == nil {
+		t.Fatal("rolled back to another key")
+	}
+	if l := ListPlugins(data); l[0].Version != "1.1.0" {
+		t.Fatalf("after a refused rollback %+v", l)
+	}
+	// Removed: the pin goes, so another key installs as a first one.
+	if err := RemovePlugin(data, "deep-sea"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := InstallPlugin(data, signedZip(t, ver("2.0.0"), a)); err != nil {
+		t.Fatalf("after remove: %v", err)
+	}
+}
+
+func TestSignedReplacesUnsigned(t *testing.T) {
+	priv := newKey(t)
+	ver := func(v string) map[string]string {
+		return map[string]string{"plugin.json": manifest("deep-sea", v, "theme"), "theme.json": goodTheme}
+	}
+	data := t.TempDir()
+	if m, err := InstallPlugin(data, pluginZip(t, ver("1.0.0"))); err != nil || m.Key != "" {
+		t.Fatalf("unsigned %+v %v", m, err)
+	}
+	if l := ListPlugins(data); l[0].Key != "" || l[0].Problem != "" {
+		t.Fatalf("unsigned listed %+v", l)
+	}
+	m, err := InstallPlugin(data, signedZip(t, ver("1.1.0"), priv))
+	if err != nil || !m.PinnedNow || m.Key == "" {
+		t.Fatalf("signed over unsigned %+v %v", m, err)
+	}
+	if _, err := InstallPlugin(data, signedZip(t, ver("1.2.0"), newKey(t))); err == nil {
+		t.Fatal("the key wasn't pinned")
+	}
+	// Rolling back to the unsigned version would drop the signature.
+	if l := ListPlugins(data); l[0].Older != "" {
+		t.Fatalf("offers the unsigned version %+v", l)
+	}
+	if _, err := RollbackPlugin(data, "deep-sea"); err == nil {
+		t.Fatal("rolled back to unsigned")
+	}
+	if l := ListPlugins(data); l[0].Version != "1.1.0" || l[0].Problem != "" {
+		t.Fatalf("after a refused rollback %+v", l)
+	}
+	// A kept version with the pinned key rolls back.
+	if _, err := InstallPlugin(data, signedZip(t, ver("1.2.0"), priv)); err != nil {
+		t.Fatal(err)
+	}
+	if l := ListPlugins(data); l[0].Older != "1.1.0" {
+		t.Fatalf("older %+v", l)
+	}
+	if m, err := RollbackPlugin(data, "deep-sea"); err != nil || m.Version != "1.1.0" {
+		t.Fatalf("rollback %+v %v", m, err)
 	}
 }
