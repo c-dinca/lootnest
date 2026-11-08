@@ -34,6 +34,7 @@ type OwnedGame struct {
 	StoreID string `json:"storeId,omitempty"` // Epic's, for StoreAction; itch.io's game id
 	KeyID   int64  `json:"keyId,omitempty"`   // itch.io's download key
 	Cover   string `json:"cover,omitempty"`   // itch.io's cover picture
+	Hero    string `json:"hero,omitempty"`    // GOG's library picture, a wide one
 }
 
 // SteamOwned lists the games of the Steam account in userDir (Steam\

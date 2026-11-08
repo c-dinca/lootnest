@@ -368,8 +368,8 @@ func TestItchNames(t *testing.T) {
 		t.Errorf("path = %s", p)
 	}
 	for in, want := range map[string]string{"": "Game", "  ": "Game", "CON": "CON game", "A. B. ": "A. B", "Doom: Eternal": "Doom- Eternal"} {
-		if got := ItchFolderName(in); got != want {
-			t.Errorf("ItchFolderName(%q) = %q", in, got)
+		if got := GameFolderName(in); got != want {
+			t.Errorf("GameFolderName(%q) = %q", in, got)
 		}
 	}
 }

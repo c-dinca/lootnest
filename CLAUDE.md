@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.81.0, beta)
+## Where things stand (1.82.0, beta)
 
 These shipped recently, newest last:
 
@@ -574,6 +574,19 @@ These shipped recently, newest last:
   the existing update drawer (`itchApplied`, `itchUndone`). UI in
   `73-itch.js`; harness `?itch=1&itchrun=hold`. Checked only with
   httptest: docs/TESTING.md section 17 on a real PC.
+- **1.82** GOG, roadmap 7 phase 2 (`core/gog.go`, `app/gog.go`,
+  `74-gog.js`): sign-in with the public client id Galaxy, Heroic and
+  minigalaxy use, by pasting the on_login_success address (`GogCode`;
+  no embedded browser yet); refresh token in DPAPI, access token only in
+  memory and sent only to GOG's hosts. `GogOwned` (Windows games, wide
+  art as `OwnedGame.Hero`), `GogInstallers` (patches not used),
+  `GogFileLink` (downlink, checksum XML md5), the shared
+  `core/download.go` (.part, https only, md5, Range resume), Inno
+  `/DIR /SILENT` via `win.RunAndWait(path, args)`, then a scan by GOG id;
+  `gog.json` via the shared `core/records.go`. Updates through the 1.40
+  installer flow (`gogArgs`, `gogApplied`, `gogUndone`); a failed
+  installer keeps the old record. UI notes shared in 73-itch.js
+  (`storeNote`, `storeRunEvent`). Harness `?gog=1&gogrun=hold`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

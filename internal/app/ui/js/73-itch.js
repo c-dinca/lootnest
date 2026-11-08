@@ -17,10 +17,11 @@
   // Only a download has an amount to fill; the other stages show a moving
   // bar. The status line is announced when the stage changes; the bytes and
   // the bar are patched in place (itchPatch), so focus stays where it is.
-  const itchMeter = (R, act = "") => {
+  // text: the status line for a stage (GOG's, 74-gog.js, has its own).
+  const itchMeter = (R, act = "", text = itchStageText) => {
     const busy = R.stage !== "download";
-    return `<div class="itch-run mover" data-key="${esc(R.key)}"><div class="meter${busy ? " busy" : ""}" role="progressbar" aria-label="${esc(itchStageText(R))}" aria-valuemin="0" aria-valuemax="100"${busy ? "><i></i>" : ` aria-valuenow="${itchPct(R)}"><i style="width:${itchPct(R)}%"></i>`}</div>
-      <p class="hint"><span role="status">${esc(itchStageText(R))}</span> <span class="ln-num itch-bytes">${esc(itchBytes(R))}</span>${act}</p></div>`;
+    return `<div class="itch-run mover" data-key="${esc(R.key)}"><div class="meter${busy ? " busy" : ""}" role="progressbar" aria-label="${esc(text(R))}" aria-valuemin="0" aria-valuemax="100"${busy ? "><i></i>" : ` aria-valuenow="${itchPct(R)}"><i style="width:${itchPct(R)}%"></i>`}</div>
+      <p class="hint"><span role="status">${esc(text(R))}</span> <span class="ln-num itch-bytes">${esc(itchBytes(R))}</span>${act}</p></div>`;
   };
   const itchPatch = (n, R) => {
     const m = n.querySelector(".meter"), b = n.querySelector(".itch-bytes");
@@ -82,37 +83,83 @@
       <button class="ln-button ln-button--primary ln-button--sm" data-action="itch-install" data-upload="${up.id}" ${low || D.busy ? "disabled" : ""}>Install</button>`);
   }
 
-  // The itch.io record of a Library game: its own, or the one of the game
-  // it was before profiles were turned on.
-  function itchRecKey(it) {
-    const R = S.itch.recs;
+  // What itch.io and GOG (74-gog.js) share: the record of a Library game
+  // Lootnest installed from the store (its own, or the one of the game it
+  // was before profiles were turned on), the note on its page, and the
+  // events of a download. st.s names the store's part of S, its actions and
+  // its calls (S.itch, "itch-check", api.itchCheck).
+  const ITCH = {
+    s: "itch", label: "itch.io", on: itchOn, text: itchStageText,
+    cancelled: (name) => `The download of ${name} stopped. What it had downloaded is deleted.`,
+    installed: (key) => api.itchCheck(key, false).catch(() => {}),
+  };
+  function storeRecKey(st, it) {
+    const R = S[st.s].recs;
     return it.kind === "found" ? (R[it.id] ? it.id : "") : Object.keys(R).find((k) => R[k].game === it.id) || "";
   }
-  // A game Lootnest installed from itch.io: its version, the last check,
+  // A game Lootnest installed from the store: its version, the last check,
   // and an update when there's one.
-  function itchNote(it) {
-    const I = S.itch, k = itchRecKey(it), rec = k && I.recs[k];
+  function storeNote(st, it) {
+    const I = S[st.s], k = storeRecKey(st, it), rec = k && I.recs[k];
     if (!rec) return "";
-    if (!I.seen.has(k)) { I.seen.add(k); api.itchCheck(k, false).catch(() => {}); }
+    if (!I.seen.has(k)) { I.seen.add(k); api[st.s + "Check"](k, false).catch(() => {}); }
     const R = I.run && I.run.key === k ? I.run : null, newer = I.updates.find((u) => u.key === k);
-    if (R) return `<div class="gpage-note itch-note">${GI.load}${itchMeter(R, R.stage === "download" ? ` <button class="gpage-link" data-action="itch-cancel">Cancel</button>` : "")}</div>`;
+    if (R) return `<div class="gpage-note itch-note">${GI.load}${itchMeter(R, R.stage === "download" ? ` <button class="gpage-link" data-action="${st.s}-cancel">Cancel</button>` : "", st.text)}</div>`;
     const checked = rec.checkedAt && new Date(rec.checkedAt).getFullYear() > 1 ? ` Checked ${esc(ago(rec.checkedAt))}.` : "";
-    const said = (rec.version ? `Version ${esc(rec.version)}, installed from itch.io.` : "Installed from itch.io.") + checked;
+    const said = (rec.version ? `Version ${esc(rec.version)}, installed from ${st.label}.` : `Installed from ${st.label}.`) + checked;
     const out = newer ? ` ${newer.version ? `Version ${esc(newer.version)} is out` : "A newer download is out"}, ${esc(fmtBytes(newer.size || 0))}.` : "";
-    const act = !itchOn() ? "" : newer
-      ? `<button class="gpage-link" data-action="itch-update" data-key="${esc(k)}">Update</button>`
-      : `<button class="gpage-link" data-action="itch-check" data-key="${esc(k)}" ${I.checking ? "disabled" : ""}>${I.checking ? "Checking" : "Check for an update"}</button>`;
+    const act = !st.on() ? "" : newer
+      ? `<button class="gpage-link" data-action="${st.s}-update" data-key="${esc(k)}">Update</button>`
+      : `<button class="gpage-link" data-action="${st.s}-check" data-key="${esc(k)}" ${I.checking ? "disabled" : ""}>${I.checking ? "Checking" : "Check for an update"}</button>`;
     return `<p class="gpage-note">${GI.load}<span>${said}${out}</span>${act}</p>`;
   }
   // The record the game page shows, and all it shows of it, to redraw the
   // page only when that changes.
-  function itchPageKey() {
+  function storePageKey(st) {
     const P = S.view === "game" && S.page, it = P && everyItem().find((x) => x.kind === P.kind && x.id === P.id);
-    return it ? itchRecKey(it) : "";
+    return it ? storeRecKey(st, it) : "";
   }
-  function itchPageState() {
-    const k = itchPageKey();
-    return k ? JSON.stringify([k, S.itch.recs[k], S.itch.updates.find((u) => u.key === k), S.itch.checking]) : "";
+  function storePageState(st) {
+    const k = storePageKey(st), I = S[st.s];
+    return k ? JSON.stringify([k, I.recs[k], I.updates.find((u) => u.key === k), I.checking]) : "";
+  }
+  // A store's Progress, Updates and Done events; false for any other.
+  function storeRunEvent(st, ev) {
+    const I = S[st.s], D = S.dialog && S.dialog.kind === st.s ? S.dialog : null, kind = ev.type.slice(st.s.length);
+    if (kind === "Progress") {
+      const prev = I.run, runs = [...document.querySelectorAll(".itch-run")].filter((n) => n.dataset.key === ev.key);
+      I.run = ev;
+      if (prev && prev.key === ev.key && prev.stage === ev.stage && prev.file === ev.file && runs.length) { runs.forEach((n) => itchPatch(n, ev)); return true; }
+      if (D && D.key === ev.key) renderOverlay();
+      if (storePageKey(st) === ev.key) render();
+      return true;
+    }
+    if (kind === "Updates") {
+      const was = storePageState(st);
+      I.recs = ev.records || {}; I.updates = ev.list || []; I.checking = false;
+      if (ev.error && I.asked) toast(ev.error, "error");
+      I.asked = false;
+      if (storePageState(st) !== was) render();
+      return true;
+    }
+    if (kind !== "Done") return false;
+    I.run = null;
+    if (D && D.key === ev.key) { D.busy = false; if (ev.error) { D.error = ev.error; renderOverlay(); } else closeDialog(); }
+    if (ev.cancelled) toast(st.cancelled(ev.name));
+    else if (ev.error) toast(ev.error, "error");
+    else if (ev.updKey) {
+      // The update is downloaded: the update panel shows what it changes, and nothing changes until it's applied.
+      const U = S.dialog = { kind: "update", key: ev.updKey, name: ev.name, path: ev.path, busy: true, [st.s]: true };
+      renderOverlay(); focusOverlay();
+      api.updatePlan(U.key, U.path).catch((e) => { U.busy = false; U.error = errText(e); renderOverlay(); });
+    } else if (ev.libKey) {
+      const key = ev.libKey;
+      toast(`${ev.name} is installed.`, "", { label: "Open game", run: () => openSheet("found", key) });
+      loadFound().then(refresh);
+      st.installed(key);
+    }
+    if (S.view === "game" || S.view === "library") render();
+    return true;
   }
 
   function itchEvent(ev) {
@@ -133,37 +180,5 @@
       renderOverlay();
       return;
     }
-    if (ev.type === "itchProgress") {
-      const prev = I.run, runs = [...document.querySelectorAll(".itch-run")].filter((n) => n.dataset.key === ev.key);
-      I.run = ev;
-      if (prev && prev.key === ev.key && prev.stage === ev.stage && runs.length) { runs.forEach((n) => itchPatch(n, ev)); return; }
-      if (D && D.key === ev.key) renderOverlay();
-      if (itchPageKey() === ev.key) render();
-      return;
-    }
-    if (ev.type === "itchUpdates") {
-      const was = itchPageState();
-      I.recs = ev.records || {}; I.updates = ev.list || []; I.checking = false;
-      if (ev.error && I.asked) toast(ev.error, "error");
-      I.asked = false;
-      if (itchPageState() !== was) render();
-      return;
-    }
-    if (ev.type !== "itchDone") return;
-    I.run = null;
-    if (D && D.key === ev.key) { D.busy = false; if (ev.error) { D.error = ev.error; renderOverlay(); } else closeDialog(); }
-    if (ev.cancelled) toast(`The download of ${ev.name} stopped. What it had downloaded is deleted.`);
-    else if (ev.error) toast(ev.error, "error");
-    else if (ev.updKey) {
-      // The update is downloaded: the update panel shows what it changes, and nothing changes until it's applied.
-      const U = S.dialog = { kind: "update", key: ev.updKey, name: ev.name, path: ev.path, busy: true, itch: true };
-      renderOverlay(); focusOverlay();
-      api.updatePlan(U.key, U.path).catch((e) => { U.busy = false; U.error = errText(e); renderOverlay(); });
-    } else if (ev.libKey) {
-      const key = ev.libKey;
-      toast(`${ev.name} is installed.`, "", { label: "Open game", run: () => openSheet("found", key) });
-      loadFound().then(refresh);
-      api.itchCheck(key, false).catch(() => {});
-    }
-    if (S.view === "game" || S.view === "library") render();
+    storeRunEvent(ITCH, ev);
   }

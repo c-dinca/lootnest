@@ -347,3 +347,53 @@ names each request's host and path, never the key).
    saves are in `backups\saves-...-before-update`.
 8. **Disconnect**: the itch.io games leave Not installed, the installed
    ones stay and start, and `itchKey` is gone from `config.json`.
+
+## 18. Your GOG games (1.82)
+
+Nothing here could be tried against GOG's servers before release: the
+parsers follow minigalaxy, which uses the same sign-in and API as GOG
+Galaxy, and were tested against local servers. Check each step, and send
+the log if one goes wrong (it names each request's host and path, only
+the host of a download, and never a token).
+
+1. Settings, Online, GOG: **Sign in to GOG** opens GOG's sign-in page in
+   your browser. Sign in; GOG ends on a nearly empty page whose address
+   starts with `https://embed.gog.com/on_login_success`. Copy the whole
+   address, paste it and choose **Finish signing in**: it says Signed in
+   as your user name. Pasting only the code after `code=` works too;
+   pasting anything else says it isn't the address GOG showed. A code
+   used twice, or after a few minutes, is refused with a plain message.
+   `config.json` has `gogToken` starting with `dpapi:`.
+2. Library, **Not installed**: your GOG games that run on Windows show,
+   with their pictures. A game GOG Galaxy already installed isn't listed.
+   **Refresh library** reads it again.
+3. Install a game that comes as one file: the panel lists its languages
+   (yours first if GOG has it, else English) with the version, the size,
+   the folder and the free space. Install: the bar fills, then GOG's own
+   installer window shows its progress (Windows may ask first), then a
+   toast with **Open game**. The game is in the folder you chose, starts
+   with Play, shows as a GOG game, and `downloads\gog` in Lootnest's data
+   folder is empty again.
+4. Install a big game that comes in several files (an .exe and .bin
+   parts): the bar says which file it's on and fills once across all of
+   them.
+5. Start a big download and **Cancel the download**, then Install again:
+   the panel says how much is already downloaded, its button says
+   **Continue installing**, and the bar starts from there rather than from
+   the start. If GOG's servers don't take a Range request, it starts over,
+   which is fine.
+6. Make a folder named like another GOG game in the games folder, with a
+   file in it, then install that game: it refuses, and nothing changes.
+   Close the installer's window part way, or say no at Windows' prompt:
+   it says so, and Install again doesn't download the files again.
+7. On a game installed from GOG, its page says `Version <version>,
+   installed from GOG. Checked ...`. When GOG has a newer installer,
+   **Update** downloads it and opens the update panel: **Run the
+   installer** (with the copy of the game on) copies the saves, runs it
+   into the game's folder without questions, and lists what it changed.
+   **Undo** puts the old files back and the page shows the old version
+   again, with the update on offer. A game GOG Galaxy installed shows no
+   such line: Galaxy updates it.
+8. **Sign out**: the GOG games leave Not installed, the installed ones
+   stay and start, and `gogToken` is gone from `config.json`. Lootnest
+   also signs out with a plain message if GOG stops taking the sign-in.

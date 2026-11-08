@@ -44,7 +44,7 @@ type itchUpdate struct {
 	rec    core.ItchRecord
 }
 
-const itchCheckEvery = 6 * time.Hour
+const storeCheckEvery = 6 * time.Hour
 
 var errItchOff = errors.New("Connect itch.io first, in Settings, Online.")
 
@@ -246,7 +246,7 @@ func (a *App) apiItchUploads(gameID int64, parent string) {
 			itchMu.Unlock()
 		}
 		dir := a.itchParent(parent)
-		out["uploads"], out["dir"], out["target"], out["free"] = ups, dir, filepath.Join(dir, core.ItchFolderName(g.Title)), driveFree(dir)
+		out["uploads"], out["dir"], out["target"], out["free"] = ups, dir, filepath.Join(dir, core.GameFolderName(g.Title)), driveFree(dir)
 		out["dataDrive"], out["dataFree"] = strings.ToUpper(filepath.VolumeName(DataDir())), driveFree(DataDir())
 	}()
 }
@@ -347,7 +347,7 @@ func (a *App) apiItchInstall(r ItchInstallReq) error {
 		return errors.New("Choose a folder on this PC for the game.")
 	}
 	kind := core.ItchKind(up)
-	dir := filepath.Join(parent, core.ItchFolderName(g.Title))
+	dir := filepath.Join(parent, core.GameFolderName(g.Title))
 	if kind != "installer" {
 		if es, err := os.ReadDir(dir); err == nil && len(es) > 0 {
 			return fmt.Errorf("%s already has files in it. Choose another folder for the game.", dir)
@@ -434,7 +434,7 @@ func (a *App) itchRunInstaller(evKey string, g core.ItchGame, path string) (stri
 	}
 	a.itchProgress(evKey, "install", 0, 0)
 	a.logf("Running %s, the installer of %s from itch.io", filepath.Base(path), g.Title)
-	if _, err := win.RunAndWait(a.hwnd, path, filepath.Dir(path)); err != nil {
+	if _, err := win.RunAndWait(a.hwnd, path, "", filepath.Dir(path)); err != nil {
 		return "", err
 	}
 	a.itchProgress(evKey, "check", 0, 0)
@@ -479,7 +479,7 @@ func (a *App) apiItchCheck(only string, now bool) {
 		}
 		errText, asked := "", 0
 		for k, r := range a.store.ItchRecords() {
-			if key == "" || !lib[k] || (only != "" && k != only) || (!now && time.Since(r.CheckedAt) < itchCheckEvery) {
+			if key == "" || !lib[k] || (only != "" && k != only) || (!now && time.Since(r.CheckedAt) < storeCheckEvery) {
 				continue
 			}
 			if asked++; asked > 1 {
@@ -518,9 +518,9 @@ func (a *App) apiItchCheck(only string, now bool) {
 // apiItchRecords sends the records as an "itchUpdates" event, asking itch.io nothing.
 func (a *App) apiItchRecords() { go a.emitItchUpdates("") }
 
-// itchProfilesGame is the id of the game with profiles a Library game
+// profilesGameOf is the id of the game with profiles a Library game
 // became, or "".
-func (a *App) itchProfilesGame(libKey string) string {
+func (a *App) profilesGameOf(libKey string) string {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
@@ -537,9 +537,9 @@ func (a *App) itchProfilesGame(libKey string) string {
 	return ""
 }
 
-// itchTarget is the update panel's key for a Library game, with profiles or not.
-func (a *App) itchTarget(libKey string) string {
-	if id := a.itchProfilesGame(libKey); id != "" {
+// libUpdKey is the update panel's key for a Library game, with profiles or not.
+func (a *App) libUpdKey(libKey string) string {
+	if id := a.profilesGameOf(libKey); id != "" {
 		return "game:" + id
 	}
 	return "found:" + libKey
@@ -554,7 +554,7 @@ func (a *App) emitItchUpdates(errText string) {
 	all := a.store.ItchRecords()
 	games := map[string]string{}
 	for k := range all {
-		games[k] = a.itchProfilesGame(k)
+		games[k] = a.profilesGameOf(k)
 	}
 	itchMu.Lock()
 	for k, r := range all {
@@ -586,7 +586,7 @@ func (a *App) apiItchUpdate(libKey string) error {
 	if !ok || !newer {
 		return errors.New("Check for an update first.")
 	}
-	t, err := a.updTarget(a.itchTarget(libKey))
+	t, err := a.updTarget(a.libUpdKey(libKey))
 	if err != nil {
 		return err
 	}
@@ -655,7 +655,7 @@ func (a *App) itchUndone(updKey, id string) {
 	itchMu.Lock()
 	defer itchMu.Unlock()
 	for k, r := range a.store.ItchRecords() {
-		if r.UpdateID == id && r.Prev != nil && a.itchTarget(k) == updKey {
+		if r.UpdateID == id && r.Prev != nil && a.libUpdKey(k) == updKey {
 			delete(itchNewer, k)
 			if err := a.store.SetItchRecord(k, *r.Prev); err != nil {
 				a.logf("ERROR saving itch.json: %v", err)

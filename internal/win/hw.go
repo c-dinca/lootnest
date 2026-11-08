@@ -138,6 +138,15 @@ func UserCountry() string {
 	return ""
 }
 
+// UILanguage is the language Windows shows itself in, such as "ro-RO", or
+// "" when Windows doesn't say.
+func UILanguage() string {
+	if l, err := windows.GetUserPreferredUILanguages(windows.MUI_LANGUAGE_NAME); err == nil && len(l) > 0 {
+		return l[0]
+	}
+	return ""
+}
+
 // MostFree is the fixed drive with the most free space, and that space.
 func MostFree() (string, int64) {
 	best, most := "", int64(-1)

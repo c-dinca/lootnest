@@ -153,6 +153,15 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_itchCheck", a.apiItchCheck))
 	must(a.w.Bind("ps_itchRecords", a.apiItchRecords))
 	must(a.w.Bind("ps_itchUpdate", a.apiItchUpdate))
+	must(a.w.Bind("ps_gogSignIn", a.apiGogSignIn))
+	must(a.w.Bind("ps_gogSignOut", a.apiGogSignOut))
+	must(a.w.Bind("ps_gogRefresh", a.apiGogRefresh))
+	must(a.w.Bind("ps_gogInstallers", a.apiGogInstallers))
+	must(a.w.Bind("ps_gogInstall", a.apiGogInstall))
+	must(a.w.Bind("ps_gogCancel", a.apiGogCancel))
+	must(a.w.Bind("ps_gogCheck", a.apiGogCheck))
+	must(a.w.Bind("ps_gogRecords", a.apiGogRecords))
+	must(a.w.Bind("ps_gogUpdate", a.apiGogUpdate))
 	must(a.w.Bind("ps_removeGame", a.apiRemoveGame))
 	must(a.w.Bind("ps_sizes", a.apiSizes))
 	must(a.w.Bind("ps_moveFolderGame", a.apiMoveFolderGame))
@@ -225,7 +234,7 @@ type AppState struct {
 func (a *App) apiState() AppState {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
-	cfg.Settings.ItchKey = "" // the page needs only ItchUser, and never the key
+	cfg.Settings.ItchKey, cfg.Settings.GogToken = "", "" // the page needs only the user names, never a key or token
 	st := AppState{Version: Version, Stage: Stage, Safe: a.safe, Config: cfg, FirstRun: a.firstRun, LoadError: a.loadErr, DataDir: DataDir(), Colors: core.PlayerColors}
 	a.mu.Unlock()
 	st.Active = a.store.LoadState()
@@ -532,6 +541,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	s.BackupDir, s.BackupAuto, s.BackupKeep, s.BackupSalt, s.BackupKey = old.BackupDir, old.BackupAuto, old.BackupKeep, old.BackupSalt, old.BackupKey
 	s.CloudSync = old.CloudSync
 	s.ItchKey, s.ItchUser, s.ItchDir = old.ItchKey, old.ItchUser, old.ItchDir // itchio.go keeps these
+	s.GogToken, s.GogUser, s.GogDir = old.GogToken, old.GogUser, old.GogDir   // and gog.go these
 	saveDBOn := s.SaveDB && !old.SaveDB
 	capturesOn := !s.CapturesOff && old.CapturesOff
 	cfg.Settings = s
@@ -713,6 +723,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "itchDir":
 			opt.Title = "Choose where games from itch.io go"
 			opt.Folder = true
+		case "gogDir":
+			opt.Title = "Choose where games from GOG go"
+			opt.Folder = true
 		case "exportDir":
 			opt.Title = "Choose where to save the profile"
 			opt.Folder = true
@@ -874,6 +887,8 @@ func (a *App) apiOpen(kind, arg string) error {
 		return win.ShellOpen(u)
 	case "store": // a game's page in a store, from Find games
 		return openStore(arg)
+	case "gogLogin": // GOG's sign-in page, in the browser
+		return openStore(core.GogLoginURL())
 	case "news": // a game's patch notes or announcement, on Steam's own site only
 		if !core.SafeNewsURL(arg) {
 			return errors.New("That isn't a Steam news page.")

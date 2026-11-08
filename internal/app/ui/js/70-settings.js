@@ -84,6 +84,7 @@
           ${sw("achRarity", "How rare achievements are", "Each achievement shows the share of Steam's players who have it, from Steam's public numbers, on the game's page and as it unlocks. Only the game's Steam id is sent; no key is needed.", s.achRarity)}
           ${sw("downloadCovers", "Download covers and artwork", "Covers, wide artwork and logos for games Steam hasn't saved on this PC, looked up on the Steam store by name (and on SteamGridDB with a key below), saved on this PC. Only the game's name or Steam id is sent. Off: those games show their own icon.", s.downloadCovers)}`)
         + sub("itch.io", "Install and update the games in your itch.io library. Lootnest uses your own API key and only reads your library.", itchRows())
+        + sub("GOG", "Install and update the games in your GOG library. You sign in the same way GOG Galaxy does, and Lootnest only reads your library and downloads your games' installers.", gogRows())
         + sub("Your own keys", "Optional. Each is encrypted on this PC and sent only to the site it's for.", `
           <div class="bk-row set-wide"><div><label for="s-grid"><b>SteamGridDB API key</b></label>
             <p>Covers and artwork for games the Steam store doesn't know. Get a free key on steamgriddb.com, under Preferences, API.</p></div>

@@ -2,10 +2,8 @@ package core
 
 import (
 	"context"
-	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -98,17 +96,7 @@ func itchTrace(u *url.URL) {
 	}
 }
 
-// itchNetErr drops the address from a request's error: it can hold the key.
-func itchNetErr(err error) error {
-	var ue *url.Error
-	if errors.As(err, &ue) {
-		err = ue.Err
-	}
-	if errors.Is(err, context.Canceled) {
-		return err
-	}
-	return fmt.Errorf("couldn't reach itch.io (%w)", err)
-}
+func itchNetErr(err error) error { return netErr("itch.io", err) }
 
 func itchStatus(code int, status string) error {
 	switch {
@@ -122,7 +110,7 @@ func itchStatus(code int, status string) error {
 	return nil
 }
 
-func itchGet(ctx context.Context, key, path string) (itchObj, error) {
+func itchGet(ctx context.Context, key, path string) (jsonObj, error) {
 	itchMu.Lock()
 	defer itchMu.Unlock()
 	req, err := http.NewRequestWithContext(ctx, "GET", ItchAPI+path, nil)
@@ -144,9 +132,9 @@ func itchGet(ctx context.Context, key, path string) (itchObj, error) {
 	if err != nil {
 		return nil, itchNetErr(err)
 	}
-	o, err := itchDecode(b)
+	o, err := decodeObj(b)
 	if err != nil {
-		return nil, err
+		return nil, errItchReply
 	}
 	if errs := o.strs("errors"); len(errs) > 0 {
 		e := strings.ToLower(errs[0])
@@ -253,7 +241,7 @@ func ItchUploads(ctx context.Context, key string, gameID, keyID int64) ([]ItchUp
 			up.Type = "default"
 		}
 		for _, t := range u.strs("traits") {
-			switch itchNorm(t) {
+			switch normKey(t) {
 			case "pwindows":
 				up.Windows = true
 			case "demo":
@@ -350,97 +338,20 @@ func ItchNewer(rec ItchRecord, up ItchUpload) bool {
 	return up.UpdatedAt.After(rec.UpdatedAt) && (up.Size != rec.Size || up.Filename != rec.Filename || !strings.EqualFold(up.MD5, rec.MD5))
 }
 
-// ItchDownload saves the file at u to dst, through dst+".part": only over
-// https, checked against size and md5 when they're known. A download that
-// fails or is cancelled leaves nothing behind.
-func ItchDownload(ctx context.Context, u, dst string, size int64, sum string, progress func(done, total int64)) (err error) {
-	pu, err := url.Parse(u)
-	if err != nil || pu.Scheme != "https" {
-		return errors.New("Lootnest only downloads over https")
-	}
-	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
-		return err
-	}
-	part := dst + ".part"
-	defer func() {
-		if err != nil {
-			_ = os.Remove(part)
-		}
-	}()
-	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
-	if err != nil {
-		return errItchReply
-	}
-	itchTrace(pu)
-	resp, err := itchClient(0).Do(req)
-	if err != nil {
-		return itchNetErr(err)
-	}
-	defer resp.Body.Close()
-	if err := itchStatus(resp.StatusCode, resp.Status); err != nil {
-		return err
-	}
-	total := resp.ContentLength
-	var body io.Reader = resp.Body
-	if size > 0 {
-		total = size
-		body = io.LimitReader(body, size+1)
-	}
-	f, err := os.Create(part)
-	if err != nil {
-		return err
-	}
-	h := md5.New()
-	w := io.MultiWriter(f, h)
-	var done int64
-	buf := make([]byte, 1<<20)
-	for {
-		n, rerr := body.Read(buf)
-		if n > 0 {
-			if _, werr := w.Write(buf[:n]); werr != nil {
-				rerr = werr
-			}
-			done += int64(n)
-			if progress != nil {
-				progress(done, total)
-			}
-		}
-		if rerr == io.EOF {
-			break
-		}
-		if rerr != nil {
-			f.Close()
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			return itchNetErr(rerr)
-		}
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-	if size > 0 && done != size {
-		return errors.New("the download from itch.io isn't the size itch.io lists. Try again")
-	}
-	if sum != "" && !strings.EqualFold(hex.EncodeToString(h.Sum(nil)), sum) {
-		return errors.New("the download from itch.io doesn't match its checksum. Try again")
-	}
-	return os.Rename(part, dst)
+// ItchDownload saves the file at u to dst (see downloader). A download
+// that fails or is cancelled leaves nothing behind.
+func ItchDownload(ctx context.Context, u, dst string, size int64, sum string, progress func(done, total int64)) error {
+	return downloader{client: itchClient(0), store: "itch.io", status: itchStatus, trace: itchTrace}.get(ctx, u, dst, size, sum, progress)
 }
 
 // ItchDownloadPath is where an upload is downloaded to: Lootnest's own
-// downloads\itch\<game id> folder, under a name safe on Windows.
+// downloads\itch\<game id> folder.
 func ItchDownloadPath(dataDir string, gameID int64, filename string) string {
-	name := filepath.Base(strings.ReplaceAll(filename, `\`, "/"))
-	name = strings.TrimLeft(safeFileName(name), ". ")
-	if name == "" || windowsDevice(name) {
-		name = "download" + filepath.Ext(name)
-	}
-	return filepath.Join(dataDir, "downloads", "itch", strconv.FormatInt(gameID, 10), name)
+	return downloadPath(dataDir, "itch", gameID, filename)
 }
 
-// ItchFolderName is a game's title as a folder name Windows takes.
-func ItchFolderName(title string) string {
+// GameFolderName is a game's title as a folder name Windows takes.
+func GameFolderName(title string) string {
 	r := []rune(safeFileName(title))
 	if len(r) > 80 {
 		r = r[:80]
@@ -461,7 +372,7 @@ func ItchFolderName(title string) string {
 // the files go to a folder of Lootnest's own beside it first, then move
 // in at the end.
 func ItchInstallArchive(archive, parent, name string) (string, error) {
-	dir := filepath.Join(parent, ItchFolderName(name))
+	dir := filepath.Join(parent, GameFolderName(name))
 	if st, err := os.Lstat(dir); err == nil {
 		if es, _ := os.ReadDir(dir); !st.IsDir() || len(es) > 0 {
 			return "", fmt.Errorf("%s already has files in it. Choose another folder for the game, or move them first", dir)
@@ -527,155 +438,16 @@ func (s *Store) ItchPath() string { return filepath.Join(s.Dir, "itch.json") }
 func (s *Store) ItchRecords() map[string]ItchRecord {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	out := map[string]ItchRecord{}
-	if b, err := os.ReadFile(s.ItchPath()); err == nil {
-		_ = json.Unmarshal(b, &out)
-	}
-	if out == nil {
-		out = map[string]ItchRecord{}
-	}
-	return out
-}
-
-// readItchToChange reads itch.json before a write. A file that doesn't
-// parse is kept as itch.json.broken, so the write never replaces it.
-func (s *Store) readItchToChange() (map[string]ItchRecord, error) {
-	out := map[string]ItchRecord{}
-	b, err := os.ReadFile(s.ItchPath())
-	if errors.Is(err, os.ErrNotExist) {
-		return out, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	if json.Unmarshal(b, &out) != nil {
-		if err := os.Rename(s.ItchPath(), s.ItchPath()+".broken"); err != nil {
-			return nil, err
-		}
-		out = nil
-	}
-	if out == nil {
-		out = map[string]ItchRecord{}
-	}
-	return out, nil
-}
-
-func (s *Store) changeItch(change func(map[string]ItchRecord)) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	recs, err := s.readItchToChange()
-	if err != nil {
-		return err
-	}
-	change(recs)
-	return writeJSONAtomic(s.ItchPath(), recs)
+	return readRecords[ItchRecord](s.ItchPath())
 }
 
 func (s *Store) SetItchRecord(key string, r ItchRecord) error {
 	if key == "" {
 		return errors.New("invalid game")
 	}
-	return s.changeItch(func(m map[string]ItchRecord) { m[key] = r })
+	return changeRecords(s, s.ItchPath(), func(m map[string]ItchRecord) { m[key] = r })
 }
 
 func (s *Store) DeleteItchRecord(key string) error {
-	return s.changeItch(func(m map[string]ItchRecord) { delete(m, key) })
-}
-
-// ------------------------------------------------------------- parsing ---
-
-// itchObj is a JSON object with its keys lowercased and without
-// underscores, so snake_case and camelCase read the same.
-type itchObj map[string]json.RawMessage
-
-func itchNorm(k string) string { return strings.ToLower(strings.ReplaceAll(k, "_", "")) }
-
-func itchDecode(b []byte) (itchObj, error) {
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return nil, errItchReply
-	}
-	o := itchObj{}
-	for k, v := range raw {
-		o[itchNorm(k)] = v
-	}
-	return o, nil
-}
-
-func (o itchObj) obj(k string) itchObj {
-	x, err := itchDecode(o[k])
-	if err != nil {
-		return itchObj{}
-	}
-	return x
-}
-
-func (o itchObj) list(k string) []itchObj {
-	var raw []json.RawMessage
-	_ = json.Unmarshal(o[k], &raw)
-	var out []itchObj
-	for _, r := range raw {
-		if x, err := itchDecode(r); err == nil {
-			out = append(out, x)
-		}
-	}
-	return out
-}
-
-func (o itchObj) strs(k string) []string {
-	var out []string
-	if json.Unmarshal(o[k], &out) != nil {
-		return nil
-	}
-	return out
-}
-
-func (o itchObj) str(k string) string {
-	var s string
-	if json.Unmarshal(o[k], &s) == nil {
-		return s
-	}
-	var n json.Number
-	if json.Unmarshal(o[k], &n) == nil {
-		return n.String()
-	}
-	return ""
-}
-
-func (o itchObj) num(k string) int64 {
-	var n json.Number
-	if json.Unmarshal(o[k], &n) != nil {
-		var s string
-		if json.Unmarshal(o[k], &s) != nil {
-			return 0
-		}
-		n = json.Number(strings.TrimSpace(s))
-	}
-	if i, err := n.Int64(); err == nil {
-		return i
-	}
-	f, _ := n.Float64()
-	return int64(f)
-}
-
-func (o itchObj) flag(k string) bool {
-	var b bool
-	if json.Unmarshal(o[k], &b) == nil {
-		return b
-	}
-	switch strings.ToLower(o.str(k)) {
-	case "true", "1", "yes":
-		return true
-	}
-	return false
-}
-
-func (o itchObj) when(k string) time.Time {
-	s := o.str(k)
-	for _, f := range []string{time.RFC3339Nano, "2006-01-02 15:04:05", "2006-01-02T15:04:05", "2006-01-02 15:04:05.999999"} {
-		if t, err := time.Parse(f, s); err == nil {
-			return t.UTC()
-		}
-	}
-	return time.Time{}
+	return changeRecords(s, s.ItchPath(), func(m map[string]ItchRecord) { delete(m, key) })
 }

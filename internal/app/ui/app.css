@@ -1019,6 +1019,7 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .set-wide .ln-input { width: 100%; }
 .set-itch-acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .set-wide .set-itch-acts .ln-input { flex: 1; width: auto; min-width: 0; }
+.set-itch-acts .error-text { flex-basis: 100%; margin: 0; color: var(--bad); }
 .gpage-note.itch-note { align-items: flex-end; }
 .itch-note .itch-run { flex: 1; min-width: 0; max-width: var(--note-w); }
 .itch-run .gpage-link { margin-left: var(--space-2); }

@@ -33,11 +33,11 @@ type shellExecuteInfo struct {
 // changes" prompt.
 var ErrCancelledByUser = errors.New("it was cancelled at Windows' prompt")
 
-// RunAndWait starts a program the way Explorer would (so an installer that
-// needs administrator rights gets Windows' prompt), waits for it to close,
-// and returns its exit code.
-func RunAndWait(owner uintptr, exe, dir string) (uint32, error) {
-	return shellRun(owner, "open", exe, "", dir, windows.SW_SHOWNORMAL, true)
+// RunAndWait starts a program with args the way Explorer would (so an
+// installer that needs administrator rights gets Windows' prompt), waits
+// for it to close, and returns its exit code.
+func RunAndWait(owner uintptr, exe, args, dir string) (uint32, error) {
+	return shellRun(owner, "open", exe, args, dir, windows.SW_SHOWNORMAL, true)
 }
 
 // RunElevatedAndWait runs a program as administrator (Windows asks the user

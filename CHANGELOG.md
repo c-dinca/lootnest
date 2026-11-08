@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.82.0
+
+- **Your GOG games, installed and updated in Lootnest.** In Settings, Online, choose **Sign in to GOG**: GOG's own sign-in page opens in your browser, the same one GOG Galaxy uses. Once you've signed in, copy the address GOG ends on and paste it into Lootnest. Lootnest keeps the sign-in encrypted on this PC, and only reads your library and downloads your games' installers.
+- The games in your GOG library that run on Windows show in the Library under Not installed. **Install with GOG** shows the installer in your Windows language (or English, or another you choose) with its version, its size, the folder it goes in and the room on that drive. Lootnest downloads the installer from GOG, every part of it, checks each file, then runs it into a new folder without questions. It never installs into a folder that already has files in it.
+- One progress bar covers every file of a download. Cancel stops it and keeps what it has, so installing again goes on from where it stopped. If the installer doesn't finish, the download is kept for the next try; once the game is in, Lootnest deletes it.
+- A game you installed from GOG says which version you have and when Lootnest last checked. When GOG has another version, **Update** downloads its installer and opens the update panel: the saves are copied first, the installer runs into the game's folder, and Undo puts the game back, and its version with it. Games GOG Galaxy installed are left to Galaxy.
+- Sign out any time: the games you installed stay. Nothing is sent to GOG until you sign in, and safe mode installs nothing.
+
 ## 1.81.0
 
 - **Your itch.io games, installed and updated in Lootnest.** In Settings, Online, connect itch.io with an API key you make in itch.io's settings, under API keys. Lootnest uses your own key, keeps it encrypted on this PC, and only reads your library.
