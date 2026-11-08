@@ -606,11 +606,14 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
    width), with the last one running off the window's edge. */
 .lib-shelf-row {
   --n: max(1, round(down, (100cqi + var(--space-5)) / (var(--lib-cover) + var(--space-5))));
-  display: grid; grid-auto-flow: column; grid-auto-columns: var(--lib-cover); gap: var(--space-5);
+  grid-auto-columns: var(--lib-cover); gap: var(--space-5);
+}
+.lib-shelf-row, .find-grid.find-grid--wide {
+  display: grid; grid-auto-flow: column;
   margin-right: calc(-1 * var(--page-gutter)); padding-right: var(--page-gutter); scroll-padding-inline: 0 var(--page-gutter);
   overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-bottom: var(--space-3);
 }
-.lib-shelf-row > * { scroll-snap-align: start; }
+.lib-shelf-row > *, .find-grid--wide > * { scroll-snap-align: start; }
 @supports (width: calc(1px * (1px / 1px))) { .lib-shelf-row { grid-auto-columns: calc((100cqi - (var(--n) - 1) * var(--space-5)) / var(--n)); } }
 .lib-cap { position: relative; min-width: 0; }
 .lib-cap-open { display: flex; flex-direction: column; justify-content: flex-start; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; }
@@ -1126,13 +1129,13 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .find-off p { margin: 0; color: var(--fg-2); font-size: var(--fs-14); line-height: var(--lh-body); }
 .find-hint { margin: 0; color: var(--fg-2); font-size: var(--fs-14); }
 .find-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
-.find-card { display: grid; width: 100%; padding: 0; overflow: hidden; border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-1); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out); }
-.find-card:hover { border-color: var(--accent); background: var(--bg-raised); }
-.find-card:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.find-card img, .find-noimg { display: block; width: 100%; aspect-ratio: 231 / 87; object-fit: cover; background: var(--bg-well); }
+.find-card { display: grid; align-content: start; gap: var(--space-2); width: 100%; padding: 0; border: 0; background: none; color: var(--fg-1); text-align: left; cursor: pointer; }
+.find-card:focus-visible { outline: none; }
+.find-card img, .find-noimg { display: block; width: 100%; aspect-ratio: 231 / 87; object-fit: cover; border-radius: var(--radius-ctl); background: var(--bg-well); transition: box-shadow var(--dur-1) var(--ease-out); }
+.find-card:hover img, .find-card:hover .find-noimg { box-shadow: 0 0 0 2px var(--edge-3); }
+.find-card:focus-visible img, .find-card:focus-visible .find-noimg { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .find-noimg { position: relative; display: flex; background: var(--bg-raised); }
-.find-daily .find-noimg { aspect-ratio: 460 / 215; border-radius: var(--radius-ctl); }
-.find-card-body { display: grid; gap: var(--space-2); padding: var(--space-3); }
+.find-card-body { display: grid; gap: var(--space-1); }
 .find-card-body b { font-size: var(--fs-14); font-weight: 600; line-height: var(--lh-snug); }
 .find-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-height: 20px; font-size: var(--fs-13); color: var(--fg-2); }
 .find-hero { display: block; width: 100%; max-width: 460px; border-radius: var(--radius-panel); } /* Steam's header art, at its own size */
@@ -1155,20 +1158,39 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 }
 
 /* The Store's rows, before a search. */
-.find-row { display: grid; gap: var(--space-3); }
+.find-row { display: grid; gap: var(--space-3); min-width: 0; }
 .find-row .ln-section-head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
-.find-grid--wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-.find-card--wide img, .find-card--wide .find-noimg { aspect-ratio: 616 / 353; }
+/* One shelf per row, the last capsule running off the window's edge, with
+   room at the top and left for the focus and hover rings. */
+.find-grid.find-grid--wide {
+  grid-template-columns: none; grid-auto-columns: clamp(220px, 17vw, 320px);
+  margin-top: calc(-1 * var(--space-1)); margin-left: calc(-1 * var(--space-1)); padding-top: var(--space-1); padding-left: var(--space-1); scroll-padding-inline: var(--space-1) var(--page-gutter);
+}
+.find-grid--wide .find-card img, .find-grid--wide .find-noimg { aspect-ratio: 460 / 215; }
 .find-store-name { color: var(--fg-3); }
 .find-score { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 20px; padding: 0 var(--space-1); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); color: var(--fg-1); font-size: var(--fs-12); font-weight: 650; font-variant-numeric: tabular-nums; }
-.find-daily { position: relative; display: grid; grid-template-columns: minmax(0, 460px) 1fr; align-items: center; gap: var(--space-6); width: 100%; padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-1); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out); }
-.find-daily:hover { border-color: var(--accent); }
+/* The daily deal on its art beside the top sellers, stacking on a narrow page. */
+.find-top { display: grid; grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr); gap: var(--space-10); align-items: start; }
+@media (max-width: 1100px) { .find-top { grid-template-columns: minmax(0, 1fr); } }
+.find-daily { position: relative; display: flex; align-items: flex-end; align-self: stretch; width: 100%; aspect-ratio: 16 / 7; padding: var(--space-6); overflow: hidden; border: 0; border-radius: var(--radius-ctl); background: var(--bg-raised); color: var(--fg-1); text-align: left; cursor: pointer; }
+.find-daily::before { content: ""; position: absolute; inset: 0; z-index: 1; background: var(--scrim-art); }
 .find-daily:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.find-daily img { display: block; width: 100%; border-radius: var(--radius-ctl); }
-.find-daily-body { display: grid; gap: var(--space-2); }
-.find-daily-label { font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); }
-.find-daily-body b { font: 750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
-@media (max-width: 760px) { .find-daily { grid-template-columns: 1fr; } }
+.find-daily img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-2) var(--ease-out); }
+.find-daily:hover img { transform: scale(1.02); }
+.find-daily-body { position: relative; z-index: 2; display: grid; gap: var(--space-2); }
+.find-daily-label { font-size: var(--fs-13); font-weight: 650; color: var(--fg-2); }
+.find-daily-body b { font: 750 var(--fs-32)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+.find-daily .find-card-meta { color: var(--fg-1); }
+.find-tops { display: grid; gap: var(--space-3); min-width: 0; }
+.find-top-list { display: grid; margin: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
+.find-top-list button { display: grid; grid-template-columns: var(--space-6) 64px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); width: 100%; min-height: 44px; padding: var(--space-1) var(--space-2); border: 0; border-bottom: var(--hairline) solid var(--edge-1); background: none; color: var(--fg-1); text-align: left; cursor: pointer; }
+.find-top-list button:hover { background: var(--bg-raised); }
+.find-top-list button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.find-rank { color: var(--fg-3); font-size: var(--fs-13); text-align: right; }
+.find-cap { display: block; width: 64px; height: 30px; overflow: hidden; border-radius: var(--radius-tag); background: var(--bg-raised); }
+.find-cap img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.find-top-list b { overflow: hidden; font-size: var(--fs-14); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.find-top-list .find-card-meta { flex-direction: row-reverse; flex-wrap: nowrap; } /* the tag before the price, so prices share a right edge */
 
 /* The search in the sidebar, on every page. */
 .side-search { position: relative; margin: 0 0 var(--space-3); }
@@ -1191,7 +1213,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .gq-pop[hidden] { display: none; }
 /* The sidebar paints above the page, so the search's list can reach over it. */
 .side { position: relative; z-index: 3; }
-#find-results { display: grid; gap: var(--space-10); }
+#find-results { display: grid; gap: var(--space-10); min-width: 0; }
 
 /* Will it run here? The verdict, with a bar per part: the fill is this PC,
    the two lines are the minimum and recommended requirements. */

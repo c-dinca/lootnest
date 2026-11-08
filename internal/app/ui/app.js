@@ -3817,16 +3817,17 @@
   const noImg = (name) => plate("", "find-noimg", `<b>${esc(name)}</b>`);
   document.addEventListener("error", (ev) => {
     const img = ev.target;
-    if (img.tagName !== "IMG" || !img.closest(".find-card, .find-daily")) return;
-    img.outerHTML = noImg(img.alt);
+    if (img.tagName !== "IMG" || !img.closest(".find-card, .find-daily, .find-tops")) return;
+    if (img.closest(".find-card")) img.outerHTML = noImg(img.alt);
+    else img.remove();
   }, true);
+  const storePrice = (it) => (it.store ? `<span class="ln-num">${esc(money(it.usd, "USD"))}</span>${offTag(it.price && it.price.discount)}<span class="find-store-name">${esc(it.store)}</span>`
+    : it.price ? `<span class="ln-num">${esc(cents(it.price))}</span>${offTag(it.price.discount)}` : `<span>Free</span>`);
   // A game in a Store row, on its wide art.
   function storeCard(it) {
-    const price = it.store ? `<span class="ln-num">${esc(money(it.usd, "USD"))}</span>${offTag(it.price && it.price.discount)}<span class="find-store-name">${esc(it.store)}</span>`
-      : it.price ? `<span class="ln-num">${esc(cents(it.price))}</span>${offTag(it.price.discount)}` : `<span>Free</span>`;
-    return `<li><button class="find-card find-card--wide" data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
+    return `<li><button class="find-card" data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
       ${it.image ? `<img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy">` : noImg(it.name)}
-      <span class="find-card-body"><b>${esc(it.name)}</b><span class="find-card-meta">${price}${it.score ? `<span class="find-score" title="Metacritic">${it.score}</span>` : ""}${it.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`;
+      <span class="find-card-body"><b>${esc(it.name)}</b><span class="find-card-meta">${storePrice(it)}${it.score ? `<span class="find-score" title="Metacritic">${it.score}</span>` : ""}${it.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`;
   }
   function storeFront() {
     const F = S.front;
@@ -3835,9 +3836,13 @@
     if (F.error) return `${lnInline("error", esc(F.error))}<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="store-retry">Try again</button></div>`;
     const row = (title, sub, list) => (list && list.length ? `<section class="find-row"><div class="ln-section-head"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div></div><ul class="find-grid find-grid--wide">${list.map(storeCard).join("")}</ul></section>` : "");
     const d = F.daily;
-    const daily = d ? `<button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="${esc(d.name)}">` : ""}
-      <span class="find-daily-body"><span class="find-daily-label">Today's deal on Steam</span><b>${esc(d.name)}</b><span class="find-card-meta">${d.price ? `<span class="ln-num">${esc(cents(d.price))}</span>${offTag(d.price.discount)}` : ""}${d.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button>` : "";
-    return `${daily}${row("Deals on Steam", "", F.specials)}${row("Best deals in other stores", "Well-reviewed games on sale in official stores, from CheapShark, in US dollars.", F.deals)}${row("Top sellers on Steam", "", F.top)}`;
+    const daily = d ? `<button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="">` : ""}
+      <span class="find-daily-body"><span class="find-daily-label">Today's deal on Steam</span><b>${esc(d.name)}</b><span class="find-card-meta">${d.price ? storePrice(d) : ""}${d.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button>` : "";
+    const top = (F.top || []).slice(0, 10);
+    const tops = top.length ? `<section class="find-tops"><div class="ln-section-head"><h2>Top sellers on Steam</h2></div><ol class="find-top-list">${top.map((it, i) => `<li><button data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
+      <span class="ln-num find-rank">${i + 1}</span><span class="find-cap">${it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : ""}</span><b>${esc(it.name)}</b><span class="find-card-meta">${storePrice(it)}</span></button></li>`).join("")}</ol></section>` : "";
+    const head = daily && tops ? `<div class="find-top">${daily}${tops}</div>` : daily + tops;
+    return `${head}${row("Deals on Steam", "", F.specials)}${row("Best deals in other stores", "Well-reviewed games on sale in official stores, from CheapShark, in US dollars.", F.deals)}`;
   }
   function findResults() {
     const F = S.find;

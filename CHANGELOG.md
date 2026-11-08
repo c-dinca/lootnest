@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.58.14
+
+- The Store opens on today's deal across its full picture, with the name and price over it, and Top sellers on Steam beside it as a numbered list of ten.
+- Deals on Steam and Best deals in other stores are each one row of pictures that scrolls sideways, without boxes around them.
+- Search results in the Store use the same plain pictures, without boxes.
+
 ## 1.58.13
 
 - The Achievements page opens on one line: whose achievements they are, how many are unlocked out of how many, and one bar. The ring and the four numbers beside it are gone.
