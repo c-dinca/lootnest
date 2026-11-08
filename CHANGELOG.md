@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.58.8
+
+- A game's achievements sit on the page like the rest, without a box around them. The profiles beside them stay in view as you scroll, when they fit.
+- A game's picture stays at the top of its page, and the rest of the page is the same dark colour whatever the art, also as you scroll. On Home, the blurred art behind the page fades to dark sooner.
+- A game's updates and news are a short list of up to six posts, two to a row, as on Home. Each one still opens in full with a click.
+
 ## 1.58.7
 
 - A game opened from the sidebar, search or Achievements marks Library in the sidebar, and its Back button says Library.

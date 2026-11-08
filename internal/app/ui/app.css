@@ -66,6 +66,7 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 #backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 #backdrop .bd { position: absolute; inset: -12%; background: center / cover no-repeat; filter: var(--blur-backdrop); opacity: 0; transition: opacity var(--dur-backdrop) var(--ease-out); }
 #backdrop .bd.on { opacity: var(--backdrop-opacity); }
+body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
 #backdrop::after { content: ""; position: absolute; inset: 0; background: var(--scrim-backdrop); }
 .sep { display: inline-block; width: 1px; height: .9em; background: currentColor; opacity: .35; margin: 0 10px; vertical-align: -1px; }
 
@@ -622,11 +623,12 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-cap-badge { position: absolute; top: var(--space-2); left: var(--space-2); z-index: 2; }
 @media (prefers-reduced-motion: reduce) { .lib-cap-open:hover .lib-cap-art img { transform: none; } }
 
-/* Game page below the play bar: the news large with the players beside
-   it, then everything to manage, all across the window. */
+/* Game page below the play bar: achievements, save points and news, with
+   the profiles beside them in a 380 to 460 px column that stays in view. */
 .gpage-col, .gpage-aside, .gpage-side { display: grid; gap: var(--space-8); align-content: start; min-width: 0; }
-.gpage-main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 440px); gap: var(--space-10); margin-top: var(--space-8); align-items: start; }
-.gpage-col { gap: var(--space-10); }
+.gpage-main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(380px, 30%, 460px); gap: var(--space-12); margin-top: var(--space-8); align-items: start; }
+.gpage-side { position: sticky; top: var(--space-6); align-self: start; }
+.gpage-col { gap: var(--space-10); container-type: inline-size; }
 /* The Manage panel: the groups one under another. */
 .gpage-manage-list { display: grid; gap: var(--space-6); }
 .gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"] { order: 1; }
@@ -639,9 +641,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gp-ach .ln-section-head { align-items: baseline; }
 .ach-count { font-size: var(--fs-13); color: var(--fg-2); white-space: nowrap; }
 .ach-count b { font: 700 var(--fs-18)/1 var(--font-ui); color: var(--fg-1); }
-/* On the game's page, the latest unlocked sit in columns in a panel. */
-.gpage-col > .gp-ach { padding: var(--space-5) var(--space-6) var(--space-4); background: var(--bg-surface); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
-.ach-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); column-gap: var(--space-6); }
+.ach-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-6); }
 .gp-ach-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
 .gp-ach-foot .gpage-hint { margin: 0; }
 .gp-ach--all > * + * { margin-top: var(--space-4); }
@@ -671,57 +671,29 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gp-facts { border-top: 0; }
 .gp-person-name > span, .gp-person-name > .gp-person-saved { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
 
-/* News, on the game page and Home: the newest post large, the rest listed. */
-.news-grid { display: grid; gap: var(--space-5); }
-.news-feature {
-  display: grid; grid-template-columns: clamp(320px, 46%, 600px) minmax(0, 1fr); padding: 0; overflow: hidden; text-align: left; cursor: pointer; font: inherit; color: var(--fg-1);
-  background: var(--bg-surface);
-  border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel);
-  transition: border-color var(--dur-1) var(--ease-out);
-}
-.news-feature:hover { border-color: var(--edge-3); }
-.news-feature:focus-visible, .news-list button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.news-pic { display: block; min-height: 100%; aspect-ratio: 16 / 9; background: var(--bg-raised) center / cover no-repeat; }
-.news-feature .news-body { display: grid; gap: var(--space-2); align-content: center; max-width: 72ch; padding: var(--space-6) var(--space-8); }
-.news-feature b { font: 700 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); text-wrap: balance; }
-.news-sum { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--fs-13); line-height: var(--lh-body); color: var(--fg-2); }
-.news-feature .news-sum { -webkit-line-clamp: 3; font-size: var(--fs-14); }
-.news-read { justify-self: start; margin-top: var(--space-1); font-size: var(--fs-13); font-weight: 650; text-decoration: underline; text-decoration-color: var(--edge-3); text-underline-offset: 3px; }
-.news-feature:hover .news-read { text-decoration-color: currentColor; }
-.news-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--fs-12); color: var(--fg-3); }
+/* News, on the game page and Home: short posts, two to a row. */
+.news-list button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.news-meta { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-2); min-width: 0; overflow: hidden; white-space: nowrap; font-size: var(--fs-12); color: var(--fg-3); }
 .news-meta .ln-tag { height: 18px; }
-.news-meta > span:not(.ln-tag) { color: var(--fg-2); }
-.news-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 0 var(--space-6); margin: 0; padding: 0; list-style: none; }
+.news-meta > span:not(.ln-tag) { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--fg-2); }
+.news-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-6); margin: 0; padding: 0; list-style: none; }
 .news-list button {
-  display: grid; grid-template-columns: clamp(112px, 9vw, 160px) minmax(0, 1fr); gap: var(--space-4); align-items: center;
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-4); align-items: center;
   width: 100%; padding: var(--space-3) 0; border: 0; border-top: var(--hairline) solid var(--edge-1); background: none;
   color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out);
 }
 .news-list button:hover { background: var(--glass-ctl); }
 .news-thumb { aspect-ratio: 16 / 9; border-radius: var(--radius-ctl); background: var(--bg-raised) center / cover no-repeat; }
 .news-list .news-body { display: grid; gap: var(--space-1); min-width: 0; }
-.news-list b { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--fs-15); font-weight: 650; line-height: var(--lh-snug); }
-.news-list.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.news-list.compact button { grid-template-columns: 96px minmax(0, 1fr); }
-.news-list.compact .news-sum { display: none; }
-.news-list.compact b { font-size: var(--fs-14); }
-.news-list.compact .news-meta { flex-wrap: nowrap; min-width: 0; overflow: hidden; white-space: nowrap; }
-.news-list.compact .news-meta > span:not(.ln-tag) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 1180px) { .news-list.compact { grid-template-columns: minmax(0, 1fr); } }
+.news-list b { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--fs-14); font-weight: 650; line-height: var(--lh-snug); }
+@container (max-width: 640px) { .ach-grid, .news-list { grid-template-columns: minmax(0, 1fr); } }
 .news-none { margin: 0; font-size: var(--fs-13); color: var(--fg-2); }
 .news-newer { margin-bottom: var(--space-4); }
 .home .news { margin-top: var(--space-12); }
 .gp-players .ln-section-head { margin-bottom: var(--space-4); }
-@media (max-width: 1500px) {
-  .news-feature { grid-template-columns: minmax(0, 1fr); }
-}
-
-@media (max-width: 1360px) {
-  .gpage-main { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
-}
 @media (max-width: 1180px) {
   .gpage-main { grid-template-columns: minmax(0, 1fr); }
-  .gpage-side { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-10); }
+  .gpage-side { position: static; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-10); }
 }
 
 /* --------------------------------------------------------------- players */
