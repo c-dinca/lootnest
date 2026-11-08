@@ -513,7 +513,15 @@ func (a *App) apiAddLibraryGame(kind string, appID int, path string) (AddedGame,
 		return AddedGame{}, errors.New("unknown kind of game")
 	}
 
-	// Show it again if it was hidden, and remember it so scans keep it.
+	return a.addToLibrary(f)
+}
+
+// addToLibrary shows a game in the Library, again if it was hidden, and
+// remembers it so scans keep it.
+func (a *App) addToLibrary(f core.FoundGame) (AddedGame, error) {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
 	cfg.IgnoredFound = withoutKey(cfg.IgnoredFound, f.Key)
 	known := false
 	for _, g := range a.libraryGames() {

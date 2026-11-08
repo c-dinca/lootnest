@@ -95,6 +95,13 @@
         if (S.view === "game") render();
         if (S.unsorted || unsortedAsked) api.unsortedCaptures().catch(() => {});
         break;
+      case "itch":
+      case "itchUploads":
+      case "itchProgress":
+      case "itchUpdates":
+      case "itchDone":
+        itchEvent(ev);
+        break;
       case "playnitePlan":
       case "playniteDone":
         playniteEvent(ev);
@@ -246,6 +253,8 @@
       }
       case "owned": {
         S.owned = ev.games || [];
+        S.owned.forEach((o) => { if (o.cover && !S.covers["n:" + o.name.toLowerCase()]) S.covers["n:" + o.name.toLowerCase()] = o.cover; });
+        if (S.itch.refreshing && !ev.itchReading) { S.itch.refreshing = false; S.itch.error = ev.itchError || ""; if (S.view === "settings") render(); if (!ev.itchError) toast("Lootnest read your itch.io library again."); }
         renderSideGames();
         if (S.view === "library" || S.view === "game" && S.page && S.page.kind === "owned") render();
         break;
@@ -302,6 +311,7 @@
         else if (ev.error) toast(ev.error, "error");
         else toast(ev.undone ? "The update was undone" : "Updated");
         api.downloads().catch(() => {});
+        if (!ev.error) api.itchRecords().catch(() => {}); // a record from itch.io may have changed
         S.updates = null; S.news = {}; api.updates().catch(() => {});
         break;
       }

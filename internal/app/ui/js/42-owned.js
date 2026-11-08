@@ -19,6 +19,7 @@
       "ubisoft install": ["Install with Ubisoft Connect", "Ubisoft Connect downloads and installs it", `Ubisoft Connect is opening the install for ${name}.`],
       "ubisoft uninstall": ["Uninstall with Ubisoft Connect", "Ubisoft Connect asks first, then removes it", `Ubisoft Connect is asking whether to uninstall ${name}.`],
       "battlenet open": ["Open in Battle.net", "Install, uninstall and repair it there", `Battle.net is opening on ${name}.`],
+      "itch install": ["Install with itch.io", "Lootnest downloads it from itch.io and installs it", ""],
     }[src + " " + act];
     return t || (act === "uninstall" ? ["Uninstall in Windows Settings", "Opens Installed apps, where you find the game", `Installed apps is opening in Windows Settings. Find ${name} there.`] : null);
   }
@@ -44,7 +45,7 @@
         <div class="gpage-title"><h1 class="${it.name.length > 22 && !logo ? "long" : ""}">${logo ? `<img class="gpage-logo" src="${logo}" alt="${esc(it.name)}">` : esc(it.name)}</h1>
           <p class="gpage-meta"><span>${esc(store)}</span></p></div></section>
       <div class="gpage-body"><section class="gpage-bar" aria-label="Install">${installButton(it, "ln-button--primary ln-button--lg", t ? t[0] : "")}
-        <div class="gpage-state"><b>Not installed</b><span>Found in the files ${esc(store)} keeps on this PC.${t ? ` ${esc(t[1])}.` : ""}</span></div></section></div></div>`;
+        <div class="gpage-state"><b>Not installed</b><span>${it.source === "itch" ? "In your itch.io library." : `Found in the files ${esc(store)} keeps on this PC.`}${t ? ` ${esc(t[1])}.` : ""}</span></div></section></div></div>`;
   }
 
   // Remove from this PC: what's copied first, then the folder to the Recycle Bin.

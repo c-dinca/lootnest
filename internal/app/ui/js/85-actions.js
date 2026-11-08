@@ -349,7 +349,7 @@
       const demo = [{ name: "This is how an unlock looks", percent: 4.2 }];
       achPop(demo, "", (seated() || {}).id); unlockSound(demo);
       api.testToast().then(() => toast("A note shows at the bottom right of the screen for five seconds. If none does, Show recent activity says why.")).catch((e) => toast(errText(e), "error")); },
-    "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined }); renderOverlay(); } },
+    "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined, itch: false }); renderOverlay(); } },
     "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },
     async "upd-run"() {
       const D = S.dialog;
@@ -558,6 +558,31 @@
     "shot-open"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i: +el.dataset.i }; renderOverlay(); focusOverlay(); } },
     "capture-open"(el) { api.openCapture(el.dataset.path).catch((e) => toast(errText(e), "error")); },
     "playnite-open": () => openPlaynite(),
+    "itch-keys": () => api.open("store", ITCH_KEYS).catch((e) => toast(errText(e), "error")),
+    async "itch-connect"() {
+      const I = S.itch, k = ($("#s-itchkey") || {}).value || "";
+      Object.assign(I, { busy: true, error: "" }); render();
+      try { await api.itchConnect(k); } catch (e) { Object.assign(I, { busy: false, error: errText(e) }); render(); }
+    },
+    async "itch-disconnect"() {
+      const ok = await confirmDialog({ title: "Disconnect itch.io?", body: "Lootnest forgets your API key and stops listing your itch.io games. The games you installed from itch.io stay, with their saves.", ok: "Disconnect" });
+      if (!ok) return;
+      try { await api.itchDisconnect(); Object.assign(S.itch, { updates: [], error: "" }); await refresh(); toast("itch.io is disconnected."); } catch (e) { toast(errText(e), "error"); }
+    },
+    "itch-refresh"() { S.itch.refreshing = true; render(); api.itchRefresh().catch((e) => { S.itch.refreshing = false; toast(errText(e), "error"); render(); }); },
+    async "itch-dir"() {
+      const D = S.dialog, r = await browse("itchDir", D.dir);
+      if (r.path && S.dialog === D) { D.dir = r.path; D.free = -1; renderOverlay(); api.itchUploads(D.gameId, r.path).catch(() => {}); }
+    },
+    async "itch-install"(el) {
+      const D = S.dialog;
+      if (!D || D.kind !== "itch") return;
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.itchInstall({ gameId: D.gameId, uploadId: +el.dataset.upload, parent: D.dir }); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
+    "itch-cancel": () => api.itchCancel().catch(() => {}),
+    "itch-check"(el) { Object.assign(S.itch, { checking: true, asked: true }); render(); api.itchCheck(el.dataset.key, true).catch((e) => { S.itch.checking = false; toast(errText(e), "error"); render(); }); },
+    async "itch-update"(el) { try { await api.itchUpdate(el.dataset.key); } catch (e) { toast(errText(e), "error"); } },
     async "pn-dir"() {
       const D = S.dialog, r = await browse("playniteDir", D.dir);
       if (r.path && S.dialog === D) { D.dir = r.path; playnitePreview(D); }
@@ -751,6 +776,7 @@
     },
     async "store-act"(el) {
       const it = itemFor(el), t = it && storeActText(it.source, el.dataset.act, it.name);
+      if (it && it.source === "itch" && it.kind === "owned") { openItch(it); return; }
       try { await api.storeAction(el.dataset.key, el.dataset.act); toast(t ? t[2] : "The launcher is opening."); } catch (e) { toast(errText(e), "error"); }
     },
     "remove-pc"(el) {
@@ -1175,6 +1201,7 @@
       if (n) n.focus();
       return;
     }
+    if (el.id === "itch-up" && S.dialog && S.dialog.kind === "itch") { S.dialog.pick = +el.value; renderOverlay(); const n = $("#itch-up"); if (n) n.focus(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }

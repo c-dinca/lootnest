@@ -98,6 +98,8 @@
       o.innerHTML = viewOffer();
     } else if (D.kind === "update") {
       o.innerHTML = viewUpdateDrawer();
+    } else if (D.kind === "itch") {
+      o.innerHTML = viewItchInstall();
     } else if (D.kind === "profiles") {
       o.innerHTML = viewProfilesDrawer();
     }

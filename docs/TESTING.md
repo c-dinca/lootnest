@@ -303,3 +303,47 @@ its answers:
    Playnite: **Choose another**, pick its folder, and its games show.
 8. First start with Playnite installed: the welcome screen has a quiet line
    about it.
+
+## 17. Your itch.io games (1.81)
+
+Nothing here could be tried against the real API before release: the
+parsers were written from itch.io's own Go client and tested against
+local servers. Check each step, and send the log if one goes wrong (it
+names each request's host and path, never the key).
+
+1. Make a key at https://itch.io/user/settings/api-keys (Settings, Online,
+   **Make a key on itch.io** opens that page). Paste it and **Connect**: it
+   says Connected as your user name. A wrong key says itch.io didn't
+   accept it. `config.json` has `itchKey` starting with `dpapi:`, never
+   the key itself.
+2. Library, **Not installed**: the games in your itch.io library show with
+   their covers, and not the tools, asset packs or books. A game you
+   already have installed isn't listed. **Refresh library** in Settings
+   reads it again.
+3. Install a game that comes as a .zip: the panel shows its download (a
+   list when it has more than one, 64-bit first, demos last), its size,
+   the folder (Games in your user folder, or the one you chose) and the
+   free space there. Install: the bar fills, then Unpacking, then a toast
+   with **Open game**. The game has a folder of its own, without the
+   archive's wrapping folder, starts with Play, and
+   `downloads\itch` in Lootnest's data folder is empty again.
+4. Make a folder named like another of your itch.io games in that folder,
+   with a file in it, then install that game: it refuses, and nothing in
+   the folder changes.
+5. Install a game that comes as an installer (an .msi, or an .exe named
+   setup or install): the installer runs; finish it. Lootnest scans and adds the game. If the
+   installer names the game differently, it says it didn't find it, and
+   nothing is recorded. A game that comes as one .exe, with no setup in
+   its name, isn't run: it gets a folder of its own and joins the Library.
+6. Start a big download and **Cancel the download**: it stops, and nothing
+   is left in `downloads\itch`.
+7. On a game installed from itch.io, its page says `Version <version>,
+   installed from itch.io. Checked ...` (or only Installed from itch.io
+   when the developer gave no version), with profiles on or off.
+   **Check for an update**. When the developer has uploaded a newer
+   build, **Update** downloads it and opens the update panel, which lists
+   what it replaces; apply it, then **Undo** puts the old files back and
+   the page shows the old version again, with the update on offer. Its
+   saves are in `backups\saves-...-before-update`.
+8. **Disconnect**: the itch.io games leave Not installed, the installed
+   ones stay and start, and `itchKey` is gone from `config.json`.

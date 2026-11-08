@@ -195,7 +195,7 @@ func (a *App) apiUpdatePlan(key, path string) {
 			out["error"] = err.Error()
 			return
 		}
-		if strings.EqualFold(filepath.Ext(path), ".exe") {
+		if isInstaller(path) {
 			info := a.installerInfo(t, path)
 			out["plan"], out["dir"], out["free"] = info, t.Dir, info["free"]
 			return
@@ -250,6 +250,7 @@ func (a *App) apiUpdateApply(key, path string) error {
 		}
 		a.logf("Updated %s from %s: %d files added, %d replaced (the old ones are in %s)", t.Name, path, len(u.Added), len(u.Replaced), keep)
 		out["update"] = u
+		a.itchApplied(key, path, u.ID)
 	}()
 	return nil
 }
@@ -366,6 +367,7 @@ func (a *App) apiUpdateUndo(key, id string) error {
 		}
 		a.logf("Undid the update of %s from %s", t.Name, u.Source)
 		out["update"] = u
+		a.itchUndone(key, id)
 	}()
 	return nil
 }
@@ -395,7 +397,7 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 	if err != nil {
 		return err
 	}
-	if !strings.EqualFold(filepath.Ext(path), ".exe") || !fileExists(path) {
+	if !isInstaller(path) || !fileExists(path) {
 		return errors.New("Choose the update's installer, an .exe.")
 	}
 	if isInside(path, t.Dir) {
@@ -467,8 +469,15 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		}
 		a.logf("%s's installer changed %d files, added %d and removed %d", t.Name, len(changed), len(added), len(removed))
 		out["update"] = u
+		a.itchApplied(key, path, u.ID)
 	}()
 	return nil
+}
+
+// isInstaller: an update's installer, an .exe (or the .msi a store sends).
+func isInstaller(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".exe" || ext == ".msi"
 }
 
 func sameSnapshot(a, b map[string]core.FileStamp) bool {

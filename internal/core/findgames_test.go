@@ -102,6 +102,9 @@ func TestSafeStoreLink(t *testing.T) {
 		"http://store.steampowered.com/app/570/":             false,
 		"https://store.steampowered.com.evil.example/app/1/": false,
 		"https://example.com/":                               false,
+		"https://itch.io/user/settings/api-keys":             true,
+		"https://itch.io/user/settings/api-keys?x=1":         false,
+		"https://itch.io/games":                              false,
 	} {
 		if SafeStoreLink(u) != want {
 			t.Errorf("SafeStoreLink(%q) = %v", u, !want)
