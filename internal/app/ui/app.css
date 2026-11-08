@@ -545,7 +545,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib > .ln-empty { margin-top: var(--space-8); }
 .ach-page > .ln-empty { margin-top: var(--space-2); }
 .home-banners { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
-.home-cols { display: grid; grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr); gap: var(--space-12) var(--space-10); margin-top: var(--space-12); align-items: start; }
+.home-cols { display: grid; grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr); gap: var(--gap-section) var(--space-10); margin-top: var(--gap-section); align-items: start; }
 .home-main { container-type: inline-size; min-width: 0; }
 .home-hint { margin: 0; font-size: var(--fs-13); color: var(--fg-2); }
 .home-player {
@@ -601,18 +601,16 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 /* Recent games: wide art, the latest first and twice as wide. */
 .lib { container-type: inline-size; --lib-cover: clamp(136px, 8vw, 220px); }
 .lib-recent { margin-top: var(--space-8); }
-.lib-recent .ln-section-head { margin-bottom: var(--space-4); }
 .lib-recent-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-5); }
 @container (max-width: 1400px) { .lib-recent-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } .lib-cap:nth-child(n+5) { display: none; } }
 @container (max-width: 1000px) { .lib-recent-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lib-cap:nth-child(n+4) { display: none; } }
 @container (max-width: 640px) { .lib-recent-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lib-cap:nth-child(n+3) { display: none; } }
-.lib-all-head { margin-top: var(--space-12); }
+.lib-all-head { margin-top: var(--gap-section); }
 .lib-all-head[hidden], .lib-shelves[hidden] { display: none; }
 .lib-all-head + .lib-tools { margin-top: var(--space-4); }
 /* Collection shelves: one row of covers each, scrolling sideways. */
-.lib-shelves { display: grid; gap: var(--space-8); margin-top: var(--space-10); }
+.lib-shelves { display: grid; gap: var(--gap-group); margin-top: var(--gap-group); }
 .lib-shelf { min-width: 0; }
-.lib-shelf .ln-section-head { margin-bottom: var(--space-4); }
 .lib-shelf .ln-section-head .ln-button--ghost { margin-right: calc(-1 * var(--space-3)); }
 .lib-shelf-n { margin-left: var(--space-3); font: 600 var(--text-body)/1 var(--font-ui); color: var(--fg-3); vertical-align: 2px; }
 /* Covers as wide as the grid's medium ones (its column count, then the
@@ -654,17 +652,17 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 
 /* Game page below the play bar: achievements, save points and news, with
    the profiles beside them in a 380 to 460 px column that stays in view. */
-.gpage-col, .gpage-aside, .gpage-side { display: grid; gap: var(--space-8); align-content: start; min-width: 0; }
+.gpage-col, .gpage-aside, .gpage-side { display: grid; gap: var(--gap-group); align-content: start; min-width: 0; }
 .gpage-main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(380px, 30%, 460px); gap: var(--space-12); margin-top: var(--space-8); align-items: start; }
 .gpage-side { position: sticky; top: var(--space-6); align-self: start; }
-.gpage-col { gap: var(--space-10); container-type: inline-size; }
+.gpage-col { gap: var(--gap-section); container-type: inline-size; }
 /* The Manage panel: the groups one under another. */
 .gpage-manage-list { display: grid; gap: var(--space-6); }
 .gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"] { order: 1; }
 .gpage-group[data-g="Game files"] { order: 2; }
 .gpage-group[data-g="Online"] { order: 3; }
 .gpage-group[data-g="Shortcuts"] { order: 3; }
-.gpage-group[data-g="Danger"] { order: 4; }
+.gpage-group[data-g="Danger"] { order: 4; padding-top: var(--space-4); }
 
 /* Achievements beside the game: a count, a bar, the latest unlocked. */
 .gp-ach .ln-section-head { align-items: baseline; }
@@ -718,8 +716,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 @container (max-width: 640px) { .ach-grid, .news-list { grid-template-columns: minmax(0, 1fr); } }
 .news-none { margin: 0; font-size: var(--fs-13); color: var(--fg-2); }
 .news-newer { margin-bottom: var(--space-4); }
-.home .news { margin-top: var(--space-12); }
-.gp-players .ln-section-head { margin-bottom: var(--space-4); }
+.home .news { margin-top: var(--gap-section); }
 @media (max-width: 1180px) {
   .gpage-main { grid-template-columns: minmax(0, 1fr); }
   .gpage-side { position: static; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-10); }
@@ -880,7 +877,6 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .cloud-cols { display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 30vw, 520px); gap: var(--space-10); margin-top: var(--space-8); align-items: start; }
 .cloud-side, .cloud-main { display: grid; gap: var(--space-8); align-content: start; min-width: 0; }
 .cloud-main { gap: var(--space-12); }
-.cloud-side .ln-section-head { margin-bottom: var(--space-3); }
 .cs-options { border-top: var(--hairline) solid var(--edge-1); max-width: 880px; }
 .cs-option { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-4); padding: var(--space-4) 0; border-bottom: var(--hairline) solid var(--edge-1); }
 .cs-option b { display: block; font-size: var(--text-body); font-weight: 650; }

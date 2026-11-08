@@ -1966,6 +1966,7 @@
     search: gsvg('<circle cx="8.75" cy="8.75" r="4.75"/><path d="M12.25 12.25 16 16"/>'),
     x: gsvg('<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>'),
     plus: gsvg('<path d="M10 4.5v11M4.5 10h11"/>'),
+    flask: gsvg('<path d="M8 3.75h4M8.75 3.75v4.1L4.6 14.6c-.5.8.08 1.65 1 1.65h8.8c.92 0 1.5-.85 1-1.65l-4.15-6.75v-4.1M6.2 12h7.6"/>'),
     globe: gsvg('<circle cx="10" cy="10" r="6.75"/><path d="M3.25 10h13.5M10 3.25c1.9 1.85 2.85 4.1 2.85 6.75S11.9 14.9 10 16.75C8.1 14.9 7.15 12.65 7.15 10S8.1 5.1 10 3.25z"/>'),
     cloud: gsvg('<path d="M6.25 15.25h7.5a3.25 3.25 0 0 0 .5-6.46 4.75 4.75 0 0 0-9.1 1.3A2.6 2.6 0 0 0 6.25 15.25z"/>'),
     info: gsvg('<circle cx="10" cy="10" r="6.75"/><path d="M10 9v4.5M10 6.6v.01"/>'),
@@ -2085,8 +2086,8 @@
   function offlineRow(it) {
     if (!offlineWorth(it)) return "";
     const n = ((cfg().offline || {})[recentKey(it)] || []).length;
-    return isOffline(it) ? gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="0"`, GI.globe, "Let it go online again", `Windows Firewall blocks ${n === 1 ? "its program" : n + " of its programs"} now`)
-      : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall stops it connecting to the internet");
+    return isOffline(it) ? gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="0"`, GI.globe, "Let it go online again", `Windows Firewall blocks ${n === 1 ? "its program" : n + " of its programs"}`)
+      : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall blocks its connections");
   }
   function manageGroups(it) {
     if (it.kind === "found") {
@@ -2094,7 +2095,7 @@
       return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", f.args ? `Name and launch options: <code>${esc(f.args)}</code>` : "Name and launch options")])
         + gpGroup("Game files", [
           gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
-          f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged") : "",
+          f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam replaces missing or damaged files") : "",
           f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
         ])
         + gpGroup("Online", [offlineRow(it)])
@@ -2104,14 +2105,14 @@
     const g = it.g, s = session(g.id);
     return gpGroup("Profiles", [
       gpRow(`data-action="load-only" data-game="${esc(g.id)}"`, GI.load, "Load someone's files", "Without starting the game", { disabled: s }),
-      g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "When the game starts from Steam's Play button") : "",
-      gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "How it starts and what profiles swap", { disabled: s }),
-      gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.load, "Try a save", "From a friend or a mod site, in a run of its own", { disabled: s || cfg().players.length >= MAX_PROFILES }),
+      g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "When Steam's Play button starts it") : "",
+      gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "How it starts, what profiles swap", { disabled: s }),
+      gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "A friend's save, in a new run", { disabled: s || cfg().players.length >= MAX_PROFILES }),
     ]) + gpGroup("Game files", [
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
-      gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Put back the files from before any swap"),
-      g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Check the game's files", "Steam downloads any that are missing or damaged", { disabled: s }) : "",
+      gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Files from before each swap"),
+      g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Check the game's files", "Steam replaces missing or damaged files", { disabled: s }) : "",
       g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries", { disabled: s }) : "",
     ]) + gpGroup("Online", [offlineRow(it)])
       + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "Asks who's playing every time")])

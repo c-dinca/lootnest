@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.58.18
+
+- Home, a game's page and the Library leave more room between sections than inside them, so each section reads as its own block.
+- A game's Manage panel fits a 900 px tall window without scrolling. Its groups stand apart, and Danger sits a little further down.
+- The page behind side panels, such as Manage, stays readable.
+- Try a save has its own icon, and the lines under each action in Manage are shorter.
+
 ## 1.58.17
 
 - Text comes in fewer sizes with clearer steps between them: page titles, section titles, then body text and secondary lines.

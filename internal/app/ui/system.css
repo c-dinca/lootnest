@@ -95,6 +95,7 @@
     linear-gradient(180deg, oklch(0.12 0.010 276 / 0.45) 0%, transparent 18%);
   --mask-fade: linear-gradient(180deg, #000 50%, transparent 100%);
   --scrim-modal: oklch(0.08 0.010 276 / 0.62);  /* behind a dialog */
+  --scrim-drawer: oklch(0.08 0.010 276 / 0.40);  /* behind a drawer: the page it belongs to stays readable */
   --shadow-overlay: 0 16px 40px -12px oklch(0.05 0.010 276 / 0.6);  /* floating layers only */
 
   /* Players: every player's colour is brought to the same lightness, so text
@@ -121,6 +122,8 @@
   /* Space: 4px steps. */
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
   --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px;
+  /* Roles (principle 6): inside a section, groups, page sections. */
+  --gap-in: var(--space-3); --gap-group: var(--space-8); --gap-section: var(--space-12);
 
   /* Page layout */
   --side-w: 256px;        /* the sidebar */
@@ -413,7 +416,7 @@
 .ln-facts dd { margin: 0; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 
 /* ========================================================= section header */
-.ln-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin: 0 0 var(--space-4); }
+.ln-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin: 0 0 var(--gap-in); }
 .ln-section-head h2 { margin: 0; font: 700 var(--text-section)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-section); }
 .ln-section-head .ln-count { margin-left: var(--space-2); font: 600 var(--text-body)/1 var(--font-ui); color: var(--fg-3); letter-spacing: 0; }
 .ln-section-head p { margin: var(--space-1) 0 0; color: var(--fg-2); font-size: var(--fs-13); }
@@ -424,7 +427,7 @@
 .ln-list { border-top: var(--hairline) solid var(--edge-1); }
 .ln-row {
   display: grid; grid-template-columns: var(--icon-md) 1fr; column-gap: var(--space-3); align-items: start;
-  width: 100%; padding: 11px var(--space-2); margin: 0;
+  width: 100%; padding: var(--space-2); margin: 0;
   border: 0; border-bottom: var(--hairline) solid var(--edge-1); background: none; color: var(--fg-1);
   font: inherit; text-align: left; cursor: pointer;
   transition: background-color var(--dur-1) var(--ease-out);
@@ -434,7 +437,7 @@
 .ln-row:hover .ln-icon, .ln-row[data-force~="hover"] .ln-icon { color: var(--fg-1); }
 .ln-row:focus-visible, .ln-row[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-ctl); }
 .ln-row b { display: block; font-weight: 650; line-height: var(--lh-snug); }
-.ln-row span span { display: block; color: var(--fg-2); font-size: var(--fs-13); }
+.ln-row span span { display: block; color: var(--fg-2); font-size: var(--fs-13); line-height: var(--lh-snug); }
 .ln-row--danger, .ln-row--danger .ln-icon { color: var(--danger); }
 .ln-row:disabled { color: var(--fg-disabled); cursor: default; background: none; }
 .ln-row:disabled .ln-icon, .ln-row:disabled span span { color: var(--fg-disabled); }
@@ -529,7 +532,7 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 /* A panel that slides in from the right, over the page: a game's Manage
    actions, its whole list of achievements, the profile editor. The page
    stays in view behind it, so you don't lose your place. */
-.scrim.ln-drawer-scrim { place-items: stretch end; grid-template-rows: minmax(0, 100%); padding: 0; }
+.scrim.ln-drawer-scrim { place-items: stretch end; grid-template-rows: minmax(0, 100%); padding: 0; background: var(--scrim-drawer); }
 .ln-drawer {
   display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
   width: min(var(--drawer-w), 100vw); height: 100%; min-height: 0;
