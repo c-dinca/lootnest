@@ -320,7 +320,7 @@
       return ok();
     },
     ps_updates: () => {
-      setTimeout(() => emit({ type: "updates", newsOn: true, games: [
+      setTimeout(() => emit({ type: "updates", newsOn: true, games: N === "0" ? [] : [
         { key: "found:dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", source: "hydra", dir: "D:\\Games\\Phantom.Blade.Zero-InsaneRamZes", changed: iso(9 * d),
           newer: { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true }, applied: [] },
         { key: "found:dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", dir: "D:\\Games\\Hydra\\Hollow Tale", changed: iso(2 * d),
