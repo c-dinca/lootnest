@@ -71,7 +71,7 @@
       return `<li class="mod-row${m.on ? "" : " is-off"}" data-id="${esc(m.id)}">${drag ? `<span class="mod-grip" title="Drag to change the order">${MI.grip}</span>` : ""}<div class="pt-main"><b>${esc(m.name)}</b>
         <span class="pt-facts"><span>${nFiles(m.files)}</span><span>${esc(fmtBytes(m.bytes))}</span><span>${esc(modWhere(m))}</span></span>
         ${vs ? `<p class="mod-vs"><span>${esc(vs)}</span><button class="ln-button ln-button--ghost ln-button--sm" data-action="mod-conflicts" ${attrs(m)}>See the files</button></p>` : ""}
-        ${m.changed ? `<p class="mod-vs">${GI.alert}<span>The game changed Lootnest's copy of this mod. Until you turn it off, or remove it and add it again, Play starts the game without mods.</span></p>` : ""}</div>
+        ${m.changed ? `<p class="mod-vs">${GI.alert}<span>The game changed this mod's files. Play starts without mods until you turn it off or add it again.</span></p>` : ""}</div>
       <div class="mod-actions">${icon(`data-action="mod-move" data-by="-1" ${attrs(m)}`, MI.up, `Move ${m.name} up`, ro || i === 0)}${icon(`data-action="mod-move" data-by="1" ${attrs(m)}`, MI.down, `Move ${m.name} down`, ro || i === list.length - 1)}
         ${icon(`data-action="mod-remove" ${attrs(m)}`, GI.trash, `Remove ${m.name}`)}
         <span class="switch"><input type="checkbox" data-action="mod-toggle" ${attrs(m)} ${m.on ? "checked" : ""} ${busy || ro ? "disabled" : ""} aria-label="Use ${esc(m.name)}"><span></span></span></div></li>`;
@@ -80,8 +80,8 @@
     const D = M.deployed, pick = sets ? `<div class="mods-for"><label class="try-field"><span>Mods for</span>
         <select id="mods-for" class="ln-input" data-mods="${esc(key)}" ${busy ? "disabled" : ""}><option value="">The game, for everyone</option>
           ${grouped().map((p) => `<option value="${esc(p.id)}" ${p.id === o ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
-        <p class="gpage-hint">${D ? `In the game's folder now: ${esc(setName(D.owner))}.` : "The game's folder has no mods in it now."} Play switches to the mods of whoever plays, after their saves.</p></div>` : "";
-    const inherit = ro ? `<p class="gpage-note mods-uses">${GI.copy}<span>Uses ${esc(setName(uses))}. Changes to those show here too.</span>${btn('data-action="mods-own"', "Make its own")}</p>` : "";
+        ${D ? `<p class="gpage-hint">In the game's folder: ${esc(setName(D.owner))}</p>` : ""}</div>` : "";
+    const inherit = ro ? `<p class="gpage-note mods-uses">${GI.copy}<span>Uses ${esc(setName(uses))}</span>${btn('data-action="mods-own"', "Make its own")}</p>` : "";
     const run = R ? `<div class="mover"><div class="meter"><i style="width:${R.total ? Math.round((R.done / R.total) * 100) : 0}%"></i></div>
         <p class="gpage-hint" role="status">${esc(modsRunText(R))}</p></div>` : "";
     const why = M.refused || M.safe || "", back = M.deployed || M.pending;
@@ -90,10 +90,10 @@
         ${back ? btn('data-action="mods-restore"', "Put the game back as it was", "ln-button--ghost", M.safe) : ""}
         ${list.length || M.deployed ? btn('data-action="mods-apply"', "Apply", "ln-button--secondary", M.safe || !modsDirty(M, o) && !M.pending) : ""}</div>`;
     return `<section class="gpage-block gp-mods" data-key="${esc(key)}"><div class="ln-section-head"><div><h2>Mods</h2></div><span class="ln-tag${M.deployed && !modsDirty(M, o) ? " ln-tag--strong" : ""}">${esc(modsState(M, o, sets))}</span></div>
-      <p class="gpage-hint">Lootnest keeps every game file the mods replace and copies the saves first. A later mod wins where two have the same file; drag a mod, or use its arrows, to change the order.</p>
+      <p class="gpage-hint">Replaced game files are kept and saves copied first. A later mod wins over an earlier one.</p>
       ${pick}${why ? `<p class="gpage-note">${GI.alert}<span>${esc(why)}</span></p>` : ""}
-      ${M.pending ? `<p class="gpage-note">${GI.history}<span>The last change to the mods didn't finish. Lootnest finishes it when it starts, or when you apply.</span></p>` : ""}
-      ${inherit}${rows ? `<ol class="mod-list${drag ? " can-drag" : ""}" data-mods="${esc(key)}" data-owner="${esc(o)}">${rows}</ol>` : M.refused ? "" : `<p class="gpage-hint">No mods yet. Add one you have, as a .zip, .7z or .rar, or a folder.</p>`}
+      ${M.pending ? `<p class="gpage-note">${GI.history}<span>The last change didn't finish. It finishes at the next start or Apply.</span></p>` : ""}
+      ${inherit}${rows ? `<ol class="mod-list${drag ? " can-drag" : ""}" data-mods="${esc(key)}" data-owner="${esc(o)}">${rows}</ol>` : M.refused ? "" : `<p class="gpage-hint">No mods yet</p>`}
       ${run}${actions}</section>`;
   }
 

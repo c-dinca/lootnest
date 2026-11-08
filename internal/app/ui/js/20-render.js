@@ -124,6 +124,11 @@
     const el = !cur ? null : cur.offsetParent ? cur : more;
     more.classList.toggle("is-current", el === more);
     if (!el) { ind.style.opacity = "0"; return; }
+    slideInd(ind, el, still);
+  }
+  // A cartridge under the current tab: it slides to the next one, and
+  // jumps when it first shows or the bar is resized.
+  function slideInd(ind, el, still) {
     const jump = still || ind.style.opacity !== "1";
     if (jump) ind.style.transition = "none";
     ind.style.transform = `translateX(${el.offsetLeft}px) scaleX(${el.offsetWidth})`;

@@ -175,7 +175,7 @@
     const title = "Updates and news";
     const head = `<div class="ln-section-head"><div><h2>${title}</h2></div></div>`;
     if (!cfg().settings.gameNews) {
-      return `<section class="news">${head}${banner("See this game's updates and patch notes", `From Steam's news feed${storeKept(it.source) ? "" : ", and find out when a newer version than yours is out"}. Only the game's Steam id, or its name, is sent.`, bBtn("secondary", 'data-action="news-on"', "Show updates and news"))}</section>`;
+      return `<section class="news">${head}${banner("Updates and patch notes", "From Steam's news feed. Only the game's Steam id or name is sent.", bBtn("secondary", 'data-action="news-on"', "Show updates and news"))}</section>`;
     }
     const key = coverKey(it);
     const N = S.news[key];
@@ -189,11 +189,11 @@
     const items = (N.items || []).slice(0, 6).map((n, i) => ({ it, n, i }));
     const uk = updKey(it);
     const offer = it.kind === "found" && (S.copies || []).find((o) => o.new.key === it.id);
-    const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.`,
+    const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, ${esc(day(N.newer.date))}`,
       uk ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-start" data-key="${esc(uk)}" data-name="${esc(it.name)}">Apply an update</button>` : "") : "";
     const copyBanner = offer ? `<div class="news-newer">${copyCard(offer, true)}</div>` : "";
     if (!items.length && !newer && !offer) return "";
-    if (!items.length) return `${copyBanner}<section class="news">${head}${newer}<p class="news-none">Steam has no news for this game yet.</p></section>`;
+    if (!items.length) return `${copyBanner}<section class="news">${head}${newer}<p class="news-none">No news yet.</p></section>`;
     return copyBanner + (newer ? `<div class="news-newer">${newer}</div>` : "") + newsSection(title, items, false);
   }
 
@@ -299,8 +299,8 @@
       const t = totalPlayed(it) || st;
       // A game from more than one store: which copy starts, and the others.
       const grp = page && groupOf(it);
-      const startWith = grp ? `<button class="ln-button ln-button--ghost" data-action="start-with" data-key="${esc(f.key)}" aria-haspopup="menu">${GI.swap}Start with</button>` : "";
-      const also = grp ? `<p class="gpage-note">${GI.copy}<span>Also in ${andList(grp.copies.filter((c) => c.id !== it.id).map((c) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(c.id)}" title="${esc(c.f.dir || "")}">${esc(sourceLabel(c.source, c.f))}</button>`))}. Each copy keeps its own saves and play time.</span></p>` : "";
+      const startWith = grp ? `<button class="ln-button ln-button--secondary" data-action="start-with" data-key="${esc(f.key)}" aria-haspopup="menu">${GI.swap}Start with</button>` : "";
+      const also = grp ? `<p class="gpage-note">${GI.copy}<span>Also in ${andList(grp.copies.filter((c) => c.id !== it.id).map((c) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(c.id)}" title="${esc(c.f.dir || "")}">${esc(sourceLabel(c.source, c.f))}</button>`))}.</span></p>` : "";
       // Home: Play, when it was played, and the way to turn profiles on.
       if (!page) bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
@@ -308,11 +308,11 @@
         <div class="gpage-others">${turnOn("ghost")}</div></section>`;
       else bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
-        <div class="gpage-state">${solo() ? `<b>One set of saves</b><span>Keep runs for more than one playthrough</span>` : `<b>Profiles off</b><span>Everyone shares the same settings and saves</span>`}</div>
+        <div class="gpage-state"><b>${solo() ? "One set of saves" : "Profiles off"}</b>${rec ? `<span>${esc(lastPlayed(it))}</span>` : t ? `<span>${esc(hours(t))} played</span>` : ""}</div>
         <div class="gpage-others">${startWith}${turnOn("secondary")}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
-      note = page ? also + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + antiCheatNote(it) : "";
+      note = page ? also + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) : "";
       side = page ? playersPanel(it) + collectionsBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
@@ -328,16 +328,16 @@
       const playAs = (size) => `<button class="ln-button ln-button--play${size} ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>`;
       if (s) {
         play = `<span class="gpage-session ln-player" style="--player:${esc(color(s.playerId))}" role="status">${s.phase === "playing" ? '<span class="ln-mark ln-player" style="--player:' + esc(color(s.playerId)) + '"></span>' : '<span class="ln-spinner" aria-hidden="true"></span>'}${esc(sessionText(s))}</span>`;
-        state = `<div class="gpage-state"><b>${esc(possessive(pname(s.playerId)))} files are loaded</b><span>Their progress goes back to their profile when the game closes</span></div>`
+        state = `<div class="gpage-state"><b>${esc(possessive(pname(s.playerId)))} files are loaded</b></div>`
           + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
         play = lead ? playAs(" ln-button--lg") : "";
-        const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the profile's files first";
+        const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Not played yet";
         state = `<div class="gpage-state"><b>${owner && player(owner) ? `${esc(possessive(pname(owner)))} files are loaded` : "Nobody's files yet"}</b><span>${sub}</span></div>`;
       }
-      const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--ghost" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog">${solo() ? "Choose a run" : "Someone else"}</button>` : "";
+      const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--secondary" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog">${solo() ? "Choose a run" : "Someone else"}</button>` : "";
       // A run of whoever's playing: its own saves, from the start or a copy.
-      const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--ghost" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}" title="A new playthrough with its own saves, such as a hardcore try">${GI.plus}New run</button>` : "";
+      const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun ? `<div class="gpage-others">${other}${newRun}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
       head = { play: other + (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${possessive(pname(loaded))} files are loaded` : "Nobody's files yet" };
@@ -345,7 +345,7 @@
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
-        overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Lootnest checks them each time the game starts, so a cloud copy never ends up in someone's profile.`,
+        overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Checked at every start.`,
       }[P.cloud.state];
       side = page ? playersPanel(it) + collectionsBlock(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
       news = page ? newsHTML(it) : "";
@@ -440,54 +440,54 @@
     if (!offlineWorth(it)) return "";
     const n = ((cfg().offline || {})[recentKey(it)] || []).length;
     return isOffline(it) ? gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="0"`, GI.globe, "Let it go online again", `Windows Firewall blocks ${n === 1 ? "its program" : n + " of its programs"}`)
-      : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall blocks its connections");
+      : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "");
   }
-  const detailsRow = (it) => (cfg().settings.gameDetails ? gpRow(`data-action="details-edit" ${itemAttr(it)}`, GI.edit, "Edit details", "Summary, developer, release date, genres and controller", { disabled: !!(S.details[recentKey(it)] || {}).loading }) : "");
+  const detailsRow = (it) => (cfg().settings.gameDetails ? gpRow(`data-action="details-edit" ${itemAttr(it)}`, GI.edit, "Edit details", "", { disabled: !!(S.details[recentKey(it)] || {}).loading }) : "");
   // Cover and art: a picture of the user's own for each kind, copied into
   // Lootnest; their file stays where it is.
-  const ART_KINDS = [["cover", "Change cover", "A tall picture, about 2 by 3", "cover"], ["hero", "Change wide art", "The wide picture on its page and on shelves", "wide art"],
-    ["logo", "Change logo", "A PNG or WebP with a see-through background", "logo"]];
+  const ART_KINDS = [["cover", "Change cover", "About 2 by 3", "cover"], ["hero", "Change wide art", "", "wide art"],
+    ["logo", "Change logo", "PNG or WebP, see-through", "logo"]];
   const artWhat = (kind) => ART_KINDS.find((k) => k[0] === kind)[3];
   function artRows(it) {
     const mine = (S.d.customArt || {})[recentKey(it)] || {};
     return ART_KINDS.flatMap(([k, title, sub, what]) => [gpRow(`data-action="art-set" ${itemAttr(it)} data-kind="${k}"`, GI.image, title, sub),
-      mine[k] ? gpRow(`data-action="art-clear" ${itemAttr(it)} data-kind="${k}"`, GI.history, `Remove your ${what}`, "The game's own shows again, if it has one") : ""]);
+      mine[k] ? gpRow(`data-action="art-clear" ${itemAttr(it)} data-kind="${k}"`, GI.history, `Remove your ${what}`, "") : ""]);
   }
   function manageGroups(it) {
     if (it.kind === "found") {
       const f = it.f, grp = groupOf(it);
-      return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", "Name in the Library"),
+      return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Name in the Library", ""),
         launchRow(it),
         detailsRow(it),
-        grp ? gpRow(`data-action="copies-apart" data-group="${esc(grp.key)}"`, GI.copy, "Show copies separately", `One entry in the Library for ${esc(storeNames({ copies: grp.copies }))}`) : ""])
+        grp ? gpRow(`data-action="copies-apart" data-group="${esc(grp.key)}"`, GI.copy, "Show copies separately", "") : ""])
         + gpGroup("Cover and art", artRows(it))
         + gpGroup("Game files", [
-          gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
+          gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", ""),
           ...storeActs(it).filter((a) => a === "verify" || a === "open").map((a) => storeRow(it, a)),
-          f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
-          movable(it) ? gpRow(`data-action="movefolder-open" data-key="${esc(f.key)}"`, GI.drive, "Move to another drive", "Copied and checked before the old folder goes") : "",
+          f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "") : "",
+          movable(it) ? gpRow(`data-action="movefolder-open" data-key="${esc(f.key)}"`, GI.drive, "Move to another drive", "") : "",
         ])
         + gpGroup("Online", [offlineRow(it)])
-        + gpGroup("Shortcuts", [gpRow(`data-action="found-shortcut" data-key="${esc(f.key)}"`, GI.desktop, "Create desktop shortcut", "Starts the game directly")])
+        + gpGroup("Shortcuts", [gpRow(`data-action="found-shortcut" data-key="${esc(f.key)}"`, GI.desktop, "Create desktop shortcut", "")])
         + gpGroup("Danger", [storeActs(it).includes("uninstall") ? storeRow(it, "uninstall", { danger: true }) : "",
-          removable(it) ? gpRow(`data-action="remove-pc" data-key="${esc(f.key)}"`, GI.trash, "Remove from this PC", "Its saves are copied first, then the folder goes to the Recycle Bin", { danger: true }) : "",
+          removable(it) ? gpRow(`data-action="remove-pc" data-key="${esc(f.key)}"`, GI.trash, "Remove from this PC", "Saves are copied first", { danger: true }) : "",
           gpRow(`data-action="found-hide" data-key="${esc(f.key)}"`, GI.hide, f.added ? "Remove from the Library" : "Hide from the Library", removable(it) ? "The game's folder stays where it is" : "", { danger: true })]);
     }
     const g = it.g, s = session(g.id);
     return gpGroup("Profiles", [
-      gpRow(`data-action="load-only" data-game="${esc(g.id)}"`, GI.load, "Load someone's files", "Without starting the game", { disabled: s }),
-      g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "When Steam's Play button starts it") : "",
-      gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "How it starts, what profiles swap", { disabled: s }),
-      gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "A friend's save, in a new run", { disabled: s || cfg().players.length >= MAX_PROFILES }),
+      gpRow(`data-action="load-only" data-game="${esc(g.id)}"`, GI.load, "Load someone's files", "", { disabled: s }),
+      g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "") : "",
+      gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "", { disabled: s }),
+      gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "", { disabled: s || cfg().players.length >= MAX_PROFILES }),
     ]) + gpGroup("Game", [launchRow(it), detailsRow(it)]) + gpGroup("Cover and art", artRows(it)) + gpGroup("Game files", [
-      gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
-      gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
-      gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Files from before each swap"),
-      g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Verify files with Steam", "Steam replaces missing or damaged files", { disabled: s }) : "",
-      g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries", { disabled: s }) : "",
-      movable(it) ? gpRow(`data-action="movefolder-open" data-game="${esc(g.id)}"`, GI.drive, "Move to another drive", "Copied and checked before the old folder goes", { disabled: s }) : "",
+      gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", ""),
+      gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", ""),
+      gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", ""),
+      g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Verify files with Steam", "", { disabled: s }) : "",
+      g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "", { disabled: s }) : "",
+      movable(it) ? gpRow(`data-action="movefolder-open" data-game="${esc(g.id)}"`, GI.drive, "Move to another drive", "", { disabled: s }) : "",
     ]) + gpGroup("Online", [offlineRow(it)])
-      + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "Asks who's playing every time")])
+      + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "")])
       + gpGroup("Danger", [gpRow(`data-action="remove-game" data-game="${esc(g.id)}"`, GI.power, "Turn off profiles", "", { danger: true })]);
   }
   // A panel from the right. menu: each action in it closes it first.
@@ -530,7 +530,7 @@
   function viewManage() {
     const it = dialogItem(S.dialog);
     if (!it) return "";
-    return drawer({ label: `Manage ${esc(it.name)}`, title: esc(it.name), sub: it.kind === "found" ? "Profiles are off for this game" : "Its files, shortcuts and how it starts", body: `<div class="gpage-manage-list">${manageGroups(it)}</div>`, menu: true });
+    return drawer({ label: `Manage ${esc(it.name)}`, title: esc(it.name), sub: "", body: `<div class="gpage-manage-list">${manageGroups(it)}</div>`, menu: true });
   }
   // Achievement Doctor: games whose achievements a tool keeps on this PC.
   const docWorth = (it) => !(it.kind === "found" && (storeKept(it.source) || it.appId > 0));

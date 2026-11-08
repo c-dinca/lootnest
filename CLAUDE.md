@@ -142,7 +142,7 @@ The look is **Arcade** (1.93, the owner's choice; DESIGN.md): game hardware.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.93.0, beta)
+## Where things stand (1.94.0, beta)
 
 These shipped recently, newest last:
 
@@ -714,6 +714,13 @@ These shipped recently, newest last:
   The window backdrop is gone. Next: 1.94 Library/game page/Big
   Picture, 1.95 Settings/Profiles/dialogs, 1.96 the other pages, 1.97 a
   copy sweep.
+- **1.94** Arcade, part 2: the Library (teal labels, the selection bar
+  as a front panel, install keys on Not installed), the game page (keys
+  beside Play, tabs as cartridges in a well, the compact head in the
+  shell colour), Big Picture (shell, `data-sec` per tab, a sliding
+  cartridge via the shared `slideInd` in 20-render.js, keys, Play red or
+  the profile's colour, `bp-screen-in`), and the explanatory text cut
+  from those pages (one short line kept only before file changes).
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

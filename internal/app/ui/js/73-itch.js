@@ -107,9 +107,9 @@
     if (!I.seen.has(k)) { I.seen.add(k); api[st.s + "Check"](k, false).catch(() => {}); }
     const R = I.run && I.run.key === k ? I.run : null, newer = I.updates.find((u) => u.key === k);
     if (R) return `<div class="gpage-note itch-note">${GI.load}${itchMeter(R, R.stage === "download" ? ` <button class="gpage-link" data-action="${st.s}-cancel">Cancel</button>` : "", st.text)}</div>`;
-    const checked = storeChecked(rec) ? ` Checked ${esc(ago(rec.checkedAt))}.` : "";
-    const said = (rec.version ? `Version ${esc(rec.version)}, installed from ${st.label}.` : `Installed from ${st.label}.`) + checked;
-    const out = newer ? ` ${storeOut(newer)}.` : "";
+    const checked = storeChecked(rec) ? `, checked ${esc(ago(rec.checkedAt))}` : "";
+    const said = (rec.version ? `Version ${esc(rec.version)} from ${st.label}` : `From ${st.label}`) + checked;
+    const out = newer ? `. ${storeOut(newer)}` : "";
     const act = !st.on() ? "" : newer
       ? `<button class="gpage-link" data-action="${st.s}-update" data-key="${esc(k)}">Update</button>`
       : `<button class="gpage-link" data-action="${st.s}-check" data-key="${esc(k)}" ${I.checking ? "disabled" : ""}>${I.checking ? "Checking" : "Check for an update"}</button>`;

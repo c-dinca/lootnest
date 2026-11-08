@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.94.0
+
+- **The Library in Arcade.** Its sections sit under teal labels, with a count on All games and on each collection. Games you don't have installed show their install key on every cover and row.
+- **Picking games** brings up a panel at the bottom with keys for Add to collection, Set status, Favourite and Hide, and the number picked in large type.
+- **A game's page in Arcade.** Someone else and New run are keys beside Play, the tabs sit in a well with the current one raised, and the bar that stays at the top while you scroll is the dark frame's colour. The Saves tab's copies and Try a save have their own label.
+- **Big Picture in Arcade.** The dark frame's colour behind it, each tab in its section's colour, with the current tab a block that slides to the next one. Rows start with a label in that colour. Buttons are keys that go down when pressed; Play is red, or the colour of the profile it plays as, and the game's name is in Tilt Warp. Screens come up into place, and the focus ring is larger and clear on any art. With Windows' animation effects off, nothing moves.
+- **Less to read.** The Library, a game's page, its Manage panel and Big Picture lose the sentences that explained what things do. What's left is names, numbers, states and buttons, plus one short line before anything that changes files or sends something online.
+
 ## 1.93.0
 
 - **A new look, Arcade.** Lootnest now looks like a piece of game hardware: a dark indigo frame (the top bar and the sidebar) around a lighter screen where the page is. Home is the first page made for it; the other pages take the new colours, buttons and section titles now, and get their own layouts in the next versions.
