@@ -33,7 +33,8 @@ type SavePoint struct {
 	Player   string    `json:"player,omitempty"`   // whose saves (the profile loaded then)
 	Playtime int64     `json:"playtime,omitempty"` // seconds played by then
 	Unlocked int       `json:"unlocked,omitempty"` // achievements unlocked by then
-	Auto     bool      `json:"auto,omitempty"`     // made before going back to another point
+	Auto     bool      `json:"auto,omitempty"`     // made by Lootnest: before going back to another point, or before an update
+	Update   bool      `json:"update,omitempty"`   // made before the first start after the game updated
 	Size     int64     `json:"size"`
 	Locs     []string  `json:"locs"` // location ids with files in the point
 	// Paths are the locations' paths as Lootnest writes them (with

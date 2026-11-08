@@ -167,6 +167,9 @@ type Settings struct {
 	// updates to games no launcher updates (on unless turned off; it reads
 	// only names, on this PC).
 	DownloadsOff bool `json:"downloadsOff,omitempty"`
+	// UpdatePointOff stops the save point made before the first start of a
+	// game that updated since it last started (on unless turned off).
+	UpdatePointOff bool `json:"updatePointOff,omitempty"`
 }
 
 type Config struct {

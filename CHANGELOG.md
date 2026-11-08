@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.61.0
+
+- When a game has updated since you last played it, Lootnest makes a save point before it starts, named Before the update, so you can go back if the new version breaks your saves. It notices an update by Steam's build number, or by the game's .exe changing. If the point can't be made, the game starts anyway. Turn it off in Settings, Games and swaps.
+- If Windows keeps your Documents folder in OneDrive, Your saves on Home says how many games keep their saves there, with Which games to see them, and those games' pages say so too. Nothing is moved or changed.
+
 ## 1.60.0
 
 - Rate your games: a game's page has five stars and a short note under Status, for the profile shown there. Each profile keeps its own rating and note. Click the current star again to clear the rating, or use the arrow keys.

@@ -130,8 +130,32 @@ func (a *App) apiLaunchFound(key string) error {
 	if !found {
 		return errFoundGone
 	}
-	name, exe, appID, args := f.Name, f.Exe, f.AppID, f.Args
+	if _, busy := startingFound.LoadOrStore(key, true); busy {
+		return nil // already starting, once its saves are kept
+	}
 	_ = a.store.RecordPlay(key, "", time.Now())
+	if a.updatedSince(key, a.gameBuild(f.AppID, f.Exe)) {
+		// Updated since it last started: its saves are kept as a point
+		// first, away from the window's thread, then it starts.
+		go func() {
+			defer startingFound.Delete(key)
+			a.pointBeforeUpdate(key)
+			if err := a.launchFound(key, f); err != nil {
+				a.emit("toast", map[string]any{"kind": "error", "text": sentence(err)})
+			}
+		}()
+		return nil
+	}
+	startingFound.Delete(key)
+	return a.launchFound(key, f)
+}
+
+// startingFound holds the Library games waiting for a save point before
+// they start, so a second Play doesn't start one twice.
+var startingFound sync.Map
+
+func (a *App) launchFound(key string, f core.FoundGame) error {
+	name, exe, appID, args := f.Name, f.Exe, f.AppID, f.Args
 	if appID > 0 {
 		if a.env.SteamPath == "" {
 			return errors.New("Steam wasn't found on this PC")

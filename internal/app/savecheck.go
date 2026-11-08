@@ -26,14 +26,18 @@ type checkGame struct {
 }
 
 type saveCheck struct {
-	Profiles  int         `json:"profiles"`  // games with profiles: a copy before every swap
-	Net       int         `json:"net"`       // games whose saves the safety net keeps copies of
-	Points    int         `json:"points"`    // games with save points
-	Cloud     bool        `json:"cloud"`     // cloud saves are set up
-	Gone      []checkGame `json:"gone"`      // saves gone from their folder; copies kept
-	Unknown   []checkGame `json:"unknown"`   // where they keep their saves isn't known
-	UnknownN  int         `json:"unknownN"`  // how many in all
-	CheckedAt time.Time   `json:"checkedAt"` // when this was worked out
+	Profiles int         `json:"profiles"` // games with profiles: a copy before every swap
+	Net      int         `json:"net"`      // games whose saves the safety net keeps copies of
+	Points   int         `json:"points"`   // games with save points
+	Cloud    bool        `json:"cloud"`    // cloud saves are set up
+	Gone     []checkGame `json:"gone"`     // saves gone from their folder; copies kept
+	Unknown  []checkGame `json:"unknown"`  // where they keep their saves isn't known
+	UnknownN int         `json:"unknownN"` // how many in all
+	// OneDrive are the games that keep saves in Documents or Saved Games
+	// when OneDrive syncs that folder; OneDriveIn names the folders.
+	OneDrive   []checkGame `json:"oneDrive"`
+	OneDriveIn string      `json:"oneDriveIn,omitempty"`
+	CheckedAt  time.Time   `json:"checkedAt"` // when this was worked out
 }
 
 var (
@@ -54,10 +58,32 @@ func (a *App) apiSaveCheck(fresh bool) {
 }
 
 func (a *App) saveCheck() saveCheck {
-	c := saveCheck{Gone: []checkGame{}, Unknown: []checkGame{}, CheckedAt: time.Now()}
+	c := saveCheck{Gone: []checkGame{}, Unknown: []checkGame{}, OneDrive: []checkGame{}, CheckedAt: time.Now()}
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
+	synced := core.OneDriveFolders([]string{a.env.Documents, a.env.SavedGames}, []string{os.Getenv("OneDrive"), os.Getenv("OneDriveConsumer"), os.Getenv("OneDriveCommercial")})
+	var in []string
+	for _, f := range synced {
+		if f == a.env.Documents {
+			in = append(in, "Documents")
+		} else {
+			in = append(in, "Saved Games")
+		}
+	}
+	c.OneDriveIn = strings.Join(in, " and ")
+	if len(synced) > 0 {
+		for i := range cfg.Games {
+			g := &cfg.Games[i]
+			locs, _ := a.eng.SaveLocs(g)
+			for _, l := range locs {
+				if core.WithinAny(l.Live, synced) {
+					c.OneDrive = append(c.OneDrive, checkGame{"game:" + g.ID, g.Name})
+					break
+				}
+			}
+		}
+	}
 	c.Profiles = len(cfg.Games)
 	c.Cloud = cfg.Settings.BackupDir != "" && (cfg.Settings.CloudSync || cfg.Settings.GameSaves)
 	net := loadNet()
@@ -71,6 +97,14 @@ func (a *App) saveCheck() saveCheck {
 	for _, f := range a.visibleFound(a.libraryGames()) {
 		if !gameSavesOn(f) {
 			continue
+		}
+		if len(synced) > 0 {
+			for _, l := range a.savesOf(f).Locs {
+				if core.WithinAny(l.Resolved, synced) {
+					c.OneDrive = append(c.OneDrive, checkGame{f.Key, f.Name})
+					break
+				}
+			}
 		}
 		e := net[gameSavesKey(f)]
 		if e.Gone {
@@ -88,7 +122,9 @@ func (a *App) saveCheck() saveCheck {
 			c.Unknown = append(c.Unknown, checkGame{f.Key, f.Name})
 		}
 	}
-	sort.Slice(c.Unknown, func(i, j int) bool { return strings.ToLower(c.Unknown[i].Name) < strings.ToLower(c.Unknown[j].Name) })
+	for _, l := range [][]checkGame{c.Unknown, c.OneDrive} {
+		sort.Slice(l, func(i, j int) bool { return strings.ToLower(l[i].Name) < strings.ToLower(l[j].Name) })
+	}
 	return c
 }
 

@@ -183,6 +183,11 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 		go a.syncUp(cfg, g, prev) // their files went back to their profile
 	}
 	if req.ReqID != "" || req.Launch {
+		// The profile's saves are in place now: if the game updated since
+		// it last started, they're kept as a point before it opens them.
+		if a.updatedSince("game:"+g.ID, a.profileBuild(g)) {
+			a.pointBeforeUpdate("game:" + g.ID)
+		}
 		a.armCloudWatch(g)
 	}
 	if req.ReqID != "" {
@@ -372,6 +377,9 @@ func (a *App) tick() {
 
 func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
 	time.Sleep(3 * time.Second) // let the game and Steam finish writing
+	// The build that ran, if it updated as it started, so the next start
+	// doesn't take it for a new update.
+	_, _ = a.store.NoteBuild("game:"+g.ID, a.profileBuild(g))
 	who := cfg.PlayerName(playerID)
 	if takeCloudReplaced(g.ID) {
 		// Steam Cloud's copy, not this player's files: keep it as a backup and

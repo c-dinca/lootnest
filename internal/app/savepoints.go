@@ -113,10 +113,10 @@ func (a *App) apiSavePoints(key string) {
 }
 
 // makePoint makes a point now, with the playtime and achievements by then.
-func (a *App) makePoint(t pointTarget, name string, auto bool) (core.SavePoint, error) {
+func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error) {
 	pointMu.Lock()
 	defer pointMu.Unlock()
-	p := core.SavePoint{Name: name, Player: t.player, Auto: auto}
+	p.Player = t.player
 	if pt := a.store.LoadPlaytime()[t.key]; pt != nil {
 		p.Playtime = pt[t.player]
 		if t.player == "" {
@@ -144,7 +144,7 @@ func (a *App) apiMakeSavePoint(key, name string) error {
 	}
 	go func() {
 		out := map[string]any{"key": key}
-		p, err := a.makePoint(t, name, false)
+		p, err := a.makePoint(t, core.SavePoint{Name: name})
 		if err != nil {
 			out["error"] = sentence(err)
 		} else {
@@ -193,7 +193,7 @@ func (a *App) apiRestoreSavePoint(key, id string) error {
 		defer func() { a.emit("savePointMade", out); a.apiSavePoints(key) }()
 		// The saves as they are now become a point first, so going back
 		// is never a loss.
-		if _, err := a.makePoint(t, "Before going back to "+p.Name, true); err != nil && !strings.Contains(err.Error(), "no saves") {
+		if _, err := a.makePoint(t, core.SavePoint{Name: "Before going back to " + p.Name, Auto: true}); err != nil && !strings.Contains(err.Error(), "no saves") {
 			out["error"] = "Nothing changed: Lootnest couldn't keep the saves as they are now (" + err.Error() + ")."
 			return
 		}
@@ -275,6 +275,55 @@ func (a *App) apiBranchSavePoint(key, id, name string) (string, error) {
 	return run.ID, nil
 }
 
+// gameBuild is a game's build (core/gamebuild.go): Steam's with an app id,
+// else its exe's.
+func (a *App) gameBuild(appID int, exe string) string {
+	if appID == 0 {
+		exe, _ = a.env.ResolveExe(exe)
+	}
+	return core.GameBuild(a.env.SteamPath, appID, exe)
+}
+
+func (a *App) profileBuild(g *core.Game) string {
+	if g.Launch.Type == "steam" {
+		return a.gameBuild(g.Launch.AppID, "")
+	}
+	return a.gameBuild(0, g.Launch.Exe)
+}
+
+// updatedSince notes the build of a game about to start and says whether
+// it updated since it last started from Lootnest, with a save point before
+// updates on.
+func (a *App) updatedSince(key, build string) bool {
+	changed, err := a.store.NoteBuild(key, build)
+	if err != nil {
+		a.logf("Couldn't note which version of %s is installed: %v", key, err)
+	}
+	a.mu.Lock()
+	off := a.cfg.Settings.UpdatePointOff
+	a.mu.Unlock()
+	return changed && !off
+}
+
+// pointBeforeUpdate keeps the saves as they are before an updated game
+// first starts, as an Auto point. It's never in the game's way: a game with
+// no saves to keep is skipped, and a failure is only logged.
+func (a *App) pointBeforeUpdate(key string) {
+	t, err := a.pointTarget(key)
+	if err != nil {
+		return
+	}
+	p, err := a.makePoint(t, core.SavePoint{Name: "Before the update", Auto: true, Update: true})
+	if err != nil {
+		if !strings.Contains(err.Error(), "no saves") {
+			a.logf("Couldn't make a save point before %s's update, so it starts without one: %v", t.name, err)
+		}
+		return
+	}
+	a.logf("%s updated since it last started: save point %q (%d KB)", t.name, p.Name, (p.Size+1023)/1024)
+	a.apiSavePoints(key)
+}
+
 // --------------------------------------------------------------- hotkey --
 
 const hotkeyPoint = 0x4C4E // "LN"
@@ -324,7 +373,7 @@ func (a *App) quickPoint() {
 		t, err := a.pointTarget(r.key)
 		if err == nil {
 			var p core.SavePoint
-			if p, err = a.makePoint(t, "Quick save point, "+time.Now().Format("15:04"), false); err == nil {
+			if p, err = a.makePoint(t, core.SavePoint{Name: "Quick save point, " + time.Now().Format("15:04")}); err == nil {
 				win.ShowToast(win.Toast{Kicker: "Save point made", Title: p.Name, Line: r.name + ". Go back to it from the game's page.", Accent: color})
 				a.logf("Save point %q for %s (hotkey)", p.Name, r.name)
 				a.emit("savePointMade", map[string]any{"key": r.key, "point": p, "hotkey": true})
