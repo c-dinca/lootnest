@@ -67,6 +67,12 @@
       if (!$("#overlay").classList.contains("still")) { const b = $(".reader-body"); if (b) b.scrollTop = 0; }
     } else if (D.kind === "game-settings") {
       o.innerHTML = viewGameSettings();
+    } else if (D.kind === "details-edit") {
+      const a = document.activeElement, at = a && a.id.startsWith("de-") ? { id: a.id, pos: a.selectionStart } : null;
+      o.innerHTML = viewDetailsEdit();
+      if (at) { const q = $("#" + at.id); q.focus(); q.setSelectionRange(at.pos, at.pos); }
+    } else if (D.kind === "shots") {
+      o.innerHTML = viewShots();
     } else if (D.kind === "manage") {
       o.innerHTML = viewManage();
     } else if (D.kind === "achievements") {

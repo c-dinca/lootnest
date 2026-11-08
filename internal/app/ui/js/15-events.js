@@ -145,6 +145,10 @@
         refresh();
         break;
       }
+      case "details":
+        S.details[ev.key] = ev;
+        if (S.view === "game") render();
+        break;
       case "news":
         S.news[ev.key] = ev;
         if (S.view === "game" || S.view === "library" || S.view === "home") render();

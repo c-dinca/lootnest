@@ -115,3 +115,17 @@ its answers:
    button opens the game again.
 2. Alt+Left and Alt+Right do the same; so does Backspace when you aren't
    typing in a field. The window never turns blank or reloads.
+
+## 10. Game details (1.69)
+
+1. Open a Steam game's page: with **Game details** off there's only a
+   **Show details from Steam** link, and it opens Settings, Online.
+2. Turn **Game details** on and go back to the page. The Details block
+   fills in: a summary, Developer, Publisher, Released, Genres, Steam
+   reviews, and screenshots. Their pictures show (none blocked).
+3. Click a screenshot: it opens large. The arrow keys move between them,
+   Tab stays inside, Esc closes it.
+4. **Manage**, **Edit details**: change the developer, Save. The page shows
+   yours. **Use Steam's again** puts Steam's back.
+5. Open the page again later: the details show at once, without
+   **Checking for newer details**.

@@ -482,6 +482,35 @@
       s.gameNews = true;
       try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
+    // Game details: the quiet link opens Settings, Online, where the switch is.
+    "details-on"() { S.setTab = "online"; setPref("setTab", S.setTab); actions.nav({ dataset: { view: "settings" } }); },
+    "details-more"(el) {
+      const k = el.dataset.k, open = !S.detOpen.has(k), p = $("#det-sum");
+      if (open) S.detOpen.add(k); else S.detOpen.delete(k);
+      if (p) p.classList.toggle("open", open);
+      el.textContent = open ? "Show less" : "Show more"; el.setAttribute("aria-expanded", open);
+    },
+    "details-edit"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "details-edit", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
+    async "details-save"(el) {
+      const it = itemFor(el), D = S.dialog;
+      if (!it || !D) return;
+      const v = (id) => $("#" + id).value;
+      const edits = { summary: v("de-summary"), developer: v("de-developer"), publisher: v("de-publisher"), released: v("de-released"), genres: v("de-genres").split(",") };
+      D.busy = true; renderOverlay();
+      try { await api.saveDetailsEdit(recentKey(it), edits); closeDialog(false); toast("Details saved"); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
+    },
+    async "details-reset"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      try { await api.saveDetailsEdit(recentKey(it), {}); closeDialog(false); toast("Back to Steam's details"); } catch (e) { toast(errText(e), "error"); }
+    },
+    "shot-open"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i: +el.dataset.i }; renderOverlay(); focusOverlay(); } },
+    "shot-step"(el) {
+      if (!S.dialog || S.dialog.kind !== "shots") return;
+      const a = document.activeElement, label = a && $("#overlay").contains(a) && a.getAttribute("aria-label");
+      S.dialog.i += +el.dataset.d; renderOverlay();
+      ((label && $(`#overlay [aria-label="${label}"]`)) || $('#overlay [data-action="dialog-cancel"]')).focus();
+    },
     "play-as"(el) { openPicker(el.dataset.game, "play"); S.picker.playerId = el.dataset.player; S.picker.from = S.d.active[el.dataset.game] || ""; runPick(); },
     async "play-found"(el) {
       const f = (S.found.games || []).find((x) => x.key === el.dataset.key);
@@ -861,6 +890,7 @@
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (el.id === "side-q") { S.sideQ = el.value; renderSideGames(); return; }
+    if (S.dialog && S.dialog.kind === "details-edit" && el.id.startsWith("de-")) { (S.dialog.vals ||= {})[el.id] = el.value; return; }
     if (S.dialog && S.dialog.kind === "profile") {
       const f = el.dataset.pe, D = S.dialog;
       if (f) D.p[f] = f === "bannerY" ? +el.value : el.value;
@@ -1040,6 +1070,7 @@
       }
       return;
     }
+    if (S.dialog && S.dialog.kind === "shots" && !ev.altKey && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) { ev.preventDefault(); actions["shot-step"]({ dataset: { d: ev.key === "ArrowRight" ? 1 : -1 } }); return; }
     if (ev.key === "Escape") {
       if (S.dialog && S.dialog.kind !== "welcome") { closeDialog(false); return; }
       if (S.menuFor) { S.menuFor = null; render(); return; }

@@ -43,6 +43,8 @@
     icons: {},         // cover key -> the game exe's icon as a data: URL, or "" (shown when there's no cover)
     art: {},           // "hero:<appid>" / "logo:<appid>" -> Steam's wide art and logo, or ""
     news: {},          // cover key -> {items, newer, none, error} from Steam's news feed, or {loading: true}
+    details: {},       // Library key -> {details, edited, fetching, error} from ps_gameDetails, or {loading: true}
+    detOpen: new Set(), // Library keys whose summary is shown in full
     page: null,        // the game page: {kind: "game"|"found", id, cloud}
     sort: pref("sort", "name"),       // Library order: name | recent | played
     density: pref("density", "m"),    // cover size: s | m | l

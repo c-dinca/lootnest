@@ -258,3 +258,69 @@
     return `<section class="gpage-block">${head}${where}${inCloud}${list}${local}</section>`;
   }
 
+
+  // Game details from the Steam store (ps_gameDetails, opt-in): the copy
+  // kept on this PC, with the user's own edits over it.
+  const SHOTS_SHOWN = 4;
+  function detailsBlock(it) {
+    const key = recentKey(it);
+    if (!cfg().settings.gameDetails) return it.appId ? `<p class="gp-det-off"><button class="gpage-link" data-action="details-on">Show details from Steam</button></p>` : "";
+    if (!S.details[key]) { S.details[key] = { loading: true }; api.gameDetails(key).catch(() => {}); }
+    const R = S.details[key], head = `<div class="ln-section-head"><div><h2>Details</h2></div></div>`;
+    if (R.loading) return it.appId ? `<section class="gpage-block gp-det">${head}${lnInline("", "Reading the details from Steam")}</section>` : "";
+    if (R.error && !R.details) return `<section class="gpage-block gp-det">${head}${lnInline("error", esc(R.error))}</section>`;
+    const d = R.details;
+    if (!d) return "";
+    const open = S.detOpen.has(key), sum = d.summary || "";
+    const facts = [
+      ["Developer", esc((d.developers || []).join(", "))],
+      ["Publisher", esc((d.publishers || []).join(", "))],
+      ["Released", esc(d.released || "")],
+      ["Genres", esc((d.genres || []).join(", "))],
+      ["Steam reviews", d.reviewScore ? `${esc(d.reviewScore)}<span class="gp-det-n">${d.reviewPercent}% of ${d.reviewCount.toLocaleString("en-US")} reviews</span>` : ""],
+      ["Metacritic", d.metacritic ? String(d.metacritic) : ""],
+    ].filter((f) => f[1]);
+    const shots = d.screenshots || [], more = shots.length - SHOTS_SHOWN;
+    const thumbs = shots.length ? `<div class="gp-shots">${shots.slice(0, SHOTS_SHOWN).map((s, i) => `<button class="gp-shot" data-action="shot-open" ${itemAttr(it)} data-i="${i}" aria-label="Screenshot ${i + 1} of ${shots.length}" aria-haspopup="dialog">
+        <img src="${esc(s.thumb)}" alt="" loading="lazy">${i === SHOTS_SHOWN - 1 && more > 0 ? `<span class="gp-shot-more ln-num" aria-hidden="true">+${more}</span>` : ""}</button>`).join("")}</div>` : "";
+    const from = d.storeUrl ? `From the Steam store${R.edited ? ", with your edits" : ""}. <button class="gpage-link" data-action="open-link" data-url="${esc(d.storeUrl)}">Open on Steam</button>` : "Your own details.";
+    return `<section class="gpage-block gp-det">${head}<div class="gp-det-cols"><div class="gp-det-main">
+        ${sum ? `<p class="gp-det-sum${open ? " open" : ""}" id="det-sum">${esc(sum)}</p><button class="gpage-link" data-action="details-more" data-k="${esc(key)}" aria-expanded="${open}" aria-controls="det-sum"${open ? "" : " hidden"}>${open ? "Show less" : "Show more"}</button>` : ""}
+        ${thumbs}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>
+        ${facts.length ? `<dl class="ln-facts gp-det-facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>` : ""}</div></section>`;
+  }
+  // Show more only when the three lines don't hold the whole summary.
+  function fitDetails() {
+    const p = $("#det-sum"), b = $('[data-action="details-more"]');
+    if (p && b) b.hidden = !p.classList.contains("open") && p.scrollHeight <= p.clientHeight;
+  }
+  // Edit details: the fields the user changes win over Steam's.
+  function viewDetailsEdit() {
+    const D = S.dialog, it = dialogItem(D);
+    const R = it && S.details[recentKey(it)];
+    if (!it) return "";
+    const d = (R && R.details) || {}, typed = D.vals || {};
+    const field = (id, label, value, hint) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="text" value="${esc(typed[id] ?? value ?? "")}" maxlength="200" spellcheck="false">${hint ? `<p class="hint">${hint}</p>` : ""}</div>`;
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Edit details of ${esc(it.name)}">
+      <div><h2>Edit details</h2><p class="sub">Your changes stay on this PC and win over Steam's. Only what you change is kept.</p></div>
+      <div class="field"><label for="de-summary">Summary</label><textarea id="de-summary" rows="4" maxlength="2000">${esc(typed["de-summary"] ?? d.summary ?? "")}</textarea></div>
+      ${field("de-developer", "Developer", (d.developers || []).join(", "))}
+      ${field("de-publisher", "Publisher", (d.publishers || []).join(", "))}
+      ${field("de-released", "Released", d.released)}
+      ${field("de-genres", "Genres", (d.genres || []).join(", "), "Separated by commas.")}
+      <div class="dialog-foot">${R && R.edited ? `<button class="btn quiet" data-action="details-reset" ${itemAttr(it)} ${D.busy ? "disabled" : ""}>Use Steam's again</button><span class="grow"></span>` : ""}
+        <button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
+        <button class="btn primary" data-action="details-save" ${itemAttr(it)} ${D.busy ? "disabled" : ""}>Save</button></div></div></div>`;
+  }
+  // The screenshots, one at a time: the full picture loads only here.
+  function viewShots() {
+    const D = S.dialog, it = dialogItem(D);
+    const R = it && S.details[recentKey(it)], shots = (R && R.details && R.details.screenshots) || [];
+    if (!shots.length) return "";
+    const i = ((D.i % shots.length) + shots.length) % shots.length, n = shots.length;
+    const nav = (dir, label, ic) => `<button class="ln-button ln-button--secondary ln-button--icon shots-nav" data-action="shot-step" data-d="${dir}" aria-label="${label}"${n < 2 ? " disabled" : ""}>${ic}</button>`;
+    return `<div class="scrim" data-action="scrim"><div class="dialog shots" role="dialog" aria-modal="true" aria-label="Screenshots of ${esc(it.name)}">
+      <header class="shots-head"><h2>${esc(it.name)}</h2><span class="ln-num" aria-live="polite">${i + 1} of ${n}</span><span class="grow"></span>
+        <button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="dialog-cancel" aria-label="Close">${GI.x}</button></header>
+      <div class="shots-stage">${nav(-1, "Previous screenshot", GI.back)}<img src="${esc(shots[i].full)}" alt="Screenshot ${i + 1} of ${n}">${nav(1, "Next screenshot", GI.next)}</div></div></div>`;
+  }

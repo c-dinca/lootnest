@@ -133,6 +133,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_keepSavesNow", a.apiKeepSavesNow))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
+	must(a.w.Bind("ps_gameDetails", a.apiGameDetails))
+	must(a.w.Bind("ps_saveDetailsEdit", a.apiSaveDetailsEdit))
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))
