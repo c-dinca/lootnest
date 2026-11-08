@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.58.15
+
+- Settings has one title, the name of the category you're in. The version is under About.
+- The categories in Settings are a plain list, and each switch sits right after what it says, not at the far edge of the window.
+- Profiles is a list of people, a row each: their picture and name, their hours and games, then as many of their recent games as the window fits.
+- A profile's banner shows faintly behind its row, only when it has one.
+- Runs sit under their person as short rows.
+- How many profiles you have, out of 16, sits beside the Profiles title.
+
 ## 1.58.14
 
 - The Store opens on today's deal across its full picture, with the name and price over it, and Top sellers on Steam beside it as a numbered list of ten.
