@@ -40,6 +40,29 @@
     "tag-pick"() { const m = $("#ctx"); ctxAt(parseFloat(m.style.left) || 0, parseFloat(m.style.top) || 0, tagPickHTML()); },
     "tag-toggle"(el) { if (el.dataset.on) removeFromTag(S.tagPick, el.dataset.tag); else addToTag(S.tagPick, el.dataset.tag); },
     "tag-out"(el) { removeFromTag(S.tagPick, el.dataset.tag); },
+    "lib-views"(el) { toggleMenu(el, viewsMenuHTML()); },
+    "view-apply"(el) { applyView(el.dataset.name); },
+    "view-new"() { viewNaming(""); },
+    "view-rename"(el) { viewNaming(el.dataset.name); },
+    "view-save"(el) { saveViewName(el.parentNode.querySelector("#view-name")); },
+    async "view-delete"(el) {
+      const v = viewsSaved().find((x) => x.name === el.dataset.name);
+      if (!v) return;
+      try { await api.deleteView(v.name); } catch (e) { toast(errText(e), "error"); return; }
+      await refresh();
+      toast(`Deleted the view ${v.name}. Your games stay as they are.`, "", { label: "Undo", run: () => api.saveView(v, "").then(refresh, (e) => toast(errText(e), "error")) });
+    },
+    "sel-tags"(el) { S.tagPick = [...S.libSel]; toggleMenu(el, tagPickHTML(), true); },
+    "sel-untag"() { removeFromTag([...S.libSel], S.tag); },
+    "sel-status"(el) { toggleMenu(el, selStatusHTML(), true); },
+    "sel-status-set"(el) { libSetStatus(el.dataset.status); },
+    "sel-seat"() { meMenu($("#bar-me")); },
+    "sel-fav"() {
+      const keys = [...S.libSel];
+      if (keyedItems(keys).every((it) => tagsOf(it).includes(FAV))) removeFromTag(keys, FAV); else addToTag(keys, FAV);
+    },
+    "sel-hide"() { libHide(); },
+    "sel-clear"() { libSelClear(); const t = $(`#grid [data-k="${CSS.escape(S.libAnchor)}"] .ln-tile, #grid [data-k="${CSS.escape(S.libAnchor)}"] .lib-row-open`); if (t) t.focus(); },
     "tag-rename"(el) {
       if (S.folded) setFold(false);
       S.sideNew = null; S.sideRename = el.dataset.tag; renderSideGames();
@@ -940,12 +963,8 @@
       const key = el.dataset.key, f = (S.found.games || []).find((x) => x.key === key);
       // A game from more than one store is hidden with every copy.
       const grp = f && groupOf({ kind: "found", id: key }), keys = grp ? grp.copies.map((c) => c.id) : [key];
-      try { for (const k of keys) await api.ignoreFound(k); } catch (e) { toast(errText(e), "error"); return; }
-      S.found.games = S.found.games.filter((x) => !keys.includes(x.key));
-      await loadFound();
-      await refresh();
       // A game added by hand leaves the Library for good; a scanned one can come back.
-      if (f && !f.added) toast(`${f.name} is hidden from the Library.`, "success", { label: "Undo", run: async () => { for (const k of keys) await actions["found-unhide"]({ dataset: { key: k } }); } });
+      await hideFound(keys, f && !f.added ? `${f.name} is hidden from the Library.` : "");
     },
     "start-with"(el) {
       const it = everyItem().find((x) => x.kind === "found" && x.id === el.dataset.key), grp = it && groupOf(it);
@@ -1024,6 +1043,19 @@
     else if ((had && !has) || (menu && !inMenu && $("#ctx").hidden)) uiSound("close");
   });
   const PLAYS = new Set(["play", "play-as", "play-found"]);
+  // In the Library, Ctrl+click and Shift+click pick games instead of opening them.
+  const libTile = (ev) => !BP.on && ev.target.closest && ev.target.closest("#grid .ln-tile, #grid .lib-row-open");
+  document.addEventListener("mousedown", (ev) => { if (ev.shiftKey && libTile(ev)) ev.preventDefault(); }, true); // no text selected
+  document.addEventListener("click", (ev) => {
+    const t = libTile(ev);
+    if (!t) return;
+    const k = t.closest("[data-k]").dataset.k;
+    if (!ev.ctrlKey && !ev.metaKey && !ev.shiftKey) { S.libAnchor = k; return; }
+    ev.preventDefault(); ev.stopPropagation();
+    if (ev.shiftKey && S.libSel.size && S.libAnchor) libPickRange(S.libAnchor, k);
+    else { libPick([k], !S.libSel.has(k)); S.libAnchor = k; }
+    t.focus({ preventScroll: true });
+  }, true);
 
   let findTimer = 0;
   document.addEventListener("input", (ev) => {
@@ -1069,7 +1101,7 @@
     if (el.id === "lib-q") {
       S.q = el.value;
       const grid = $("#grid");
-      if (grid) { grid.innerHTML = gridHTML(); loadCovers(); }
+      if (grid) { grid.innerHTML = gridHTML(); loadCovers(); paintLibSel(); }
       document.querySelectorAll(".lib-recent, .lib-shelves, .lib-all-head").forEach((x) => { x.hidden = !!S.q; }); // a search shows only what it finds
       return;
     }
@@ -1173,6 +1205,7 @@
   document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".bar-search")) gqClose(); });
   document.addEventListener("keydown", (ev) => {
     if (ev.target.id === "lo-app" && ev.key === "Enter") { ev.preventDefault(); actions["lo-app-add"](); return; }
+    if (ev.target.id === "view-name" && ev.key === "Enter") { ev.preventDefault(); saveViewName(ev.target); return; }
     if (ev.target.id === "tag-new" && ev.key === "Enter") { ev.preventDefault(); actions["tag-add"]({ dataset: { key: ev.target.dataset.key } }); return; }
     if (ev.target.id === "gp-note" && ev.key === "Enter") { ev.preventDefault(); saveNote(ev.target); return; }
     if (ev.target.id === "gp-hours" && (ev.key === "Enter" || ev.key === "Escape")) { ev.preventDefault(); actions[ev.key === "Enter" ? "hours-save" : "hours-cancel"](); return; }
@@ -1197,14 +1230,30 @@
       const seat = inMenu && /^[1-9]$/.test(ev.key) && $('#ctx [data-action="seat-set"]') && grouped()[+ev.key - 1];
       if (seat) { ev.preventDefault(); closeContext(true); setSeat(seat.id); return; }
     }
-    // In the Library's grid, the arrows move from cover to cover.
-    const tile = !ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.target.closest && ev.target.closest("#grid .ln-tile, #grid .lib-row-open");
+    // Picking games in the Library: Space picks the focused one, Ctrl+A
+    // every game shown, Esc none.
+    const inText = ev.target.closest && ev.target.closest("input, textarea, select");
+    const tile = !ev.ctrlKey && !ev.altKey && ev.target.closest && ev.target.closest("#grid .ln-tile, #grid .lib-row-open");
+    if (S.view === "library" && !S.dialog && !S.picker && !BP.on && !inText) {
+      const k = tile && tile.closest("[data-k]").dataset.k;
+      if (ev.key === " " && tile) { ev.preventDefault(); libPick([k], !S.libSel.has(k)); S.libAnchor = k; return; }
+      if (ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "a" && $("#grid")) { ev.preventDefault(); libPick(gridKeys(), true); return; }
+      if (ev.key === "Escape" && S.libSel.size) { ev.preventDefault(); libSelClear(); return; }
+    }
+    // In the Library's grid, the arrows move from cover to cover; with
+    // Shift they pick the games on the way.
     if (tile && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(ev.key)) {
       ev.preventDefault();
       const grid = $("#grid"), tiles = [...grid.querySelectorAll(".ln-tile, .lib-row-open")], i = tiles.indexOf(tile);
       const cols = S.density === "list" ? 1 : getComputedStyle(grid).gridTemplateColumns.split(" ").length;
       const n = tiles[{ ArrowLeft: i - 1, ArrowRight: i + 1, ArrowUp: i - cols, ArrowDown: i + cols, Home: 0, End: tiles.length - 1 }[ev.key]];
-      if (n && n !== tile) { n.focus(); n.scrollIntoView({ block: "nearest" }); uiSound("move"); }
+      if (n && n !== tile) {
+        n.focus(); n.scrollIntoView({ block: "nearest" }); uiSound("move");
+        if (ev.shiftKey) {
+          if (!S.libSel.size) S.libAnchor = tile.closest("[data-k]").dataset.k;
+          libPickRange(S.libAnchor, n.closest("[data-k]").dataset.k);
+        }
+      }
       return;
     }
     // Ctrl+F or / finds a game.

@@ -173,6 +173,7 @@ func (c *Config) RenameTag(from, to string) error {
 			}
 		}
 	}
+	c.retagViews(old, name)
 	return nil
 }
 
@@ -191,6 +192,7 @@ func (c *Config) DeleteTag(tag string) error {
 		c.dropTag(k, name)
 	}
 	c.TagOrder = slices.DeleteFunc(c.TagOrder, func(t string) bool { return t == name })
+	c.retagViews(name, "")
 	return nil
 }
 

@@ -47,6 +47,7 @@
     }
     if (view === "cloud") { loadBackupInfo(); loadSaves(); }
     if (view !== "players") S.players = null;
+    if (view !== "library") S.libSel.clear();
   }
 
   function render() {
@@ -249,9 +250,14 @@
     if (el.hasAttribute("aria-haspopup")) el.setAttribute("aria-expanded", "true");
     return m;
   }
-  function toggleMenu(el, html) {
+  // above: over the button instead, for a bar at the bottom.
+  function toggleMenu(el, html, above) {
     if (!$("#ctx").hidden && ctxFrom === el) { closeContext(); return; }
     const m = menuUnder(el, html);
+    if (above) {
+      m.style.top = Math.max(8, el.getBoundingClientRect().top - m.offsetHeight - 4) + "px";
+      m.style.transformOrigin = m.style.transformOrigin.replace(/ 0$/, " 100%");
+    }
     const first = m.querySelector('[aria-checked="true"], [aria-current="page"]') || m.querySelector("button:not(:disabled)");
     if (first) first.focus({ preventScroll: true });
   }

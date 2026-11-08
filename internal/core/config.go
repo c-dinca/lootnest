@@ -219,6 +219,21 @@ type Config struct {
 	// LaunchOpts: how each game starts and what runs before and after play,
 	// by Library key (core/launchopts.go).
 	LaunchOpts map[string]LaunchOptions `json:"launchOpts,omitempty"`
+	// Views: the Library's filters saved by name (core/views.go).
+	Views []LibraryView `json:"views,omitempty"`
+}
+
+// LibraryView is the Library's filter state saved under a name. It never
+// changes games; applying it only sets the filters.
+type LibraryView struct {
+	Name       string `json:"name"`
+	Show       string `json:"show,omitempty"`       // all, profiles or owned (not installed)
+	Store      string `json:"store,omitempty"`      // a store or launcher, other, or all
+	Collection string `json:"collection,omitempty"` // a collection's name
+	Status     string `json:"status,omitempty"`
+	Profile    string `json:"profile,omitempty"` // only this profile's games
+	Sort       string `json:"sort,omitempty"`
+	Density    string `json:"density,omitempty"` // cover size, or list
 }
 
 // LibraryPref is what the user changed about a Library game that has no

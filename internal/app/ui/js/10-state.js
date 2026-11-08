@@ -20,6 +20,8 @@
     sideNew: null,    // the inline New collection field: {keys} of the games it gets
     sideRename: "",   // the collection being renamed in place
     tagPick: [],      // Library keys the Add to collection menu is for
+    libSel: new Set(), // Library keys of the games picked in the Library's grid or list
+    libAnchor: "",    // the game a Shift+click or Shift+arrow picks from
     sideClosed: (() => { try { return new Set(JSON.parse(pref("sideClosed", "[]"))); } catch (e) { return new Set(); } })(),
     folded: pref("folded", "") === "1", // the sidebar folded to a rail
     achWho: {},       // Library key -> whose achievements are shown
