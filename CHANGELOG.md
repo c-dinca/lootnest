@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.63.0
+
+- A game you have from more than one store, such as Steam and Epic Games, or GOG and a copy in a folder, shows once in the Library, the sidebar, search and Big Picture. Its cover has a small mark for each store, and its time played adds up every copy.
+- The game's page has Start with, to choose the copy the Library opens and starts. Lootnest remembers your choice; until you choose, it uses the copy you played last, else the Steam one.
+- The page says where else you have the game, with a link to that copy's page. Each copy keeps its own saves, play time, status and profiles, exactly as before. In the Library the game shows every copy's collections and status.
+- Hide from the Library on such a game hides every copy, with Undo.
+- Show copies separately, in Manage, gives each copy its own entry again, with Undo. Nothing on your PC moves or changes either way.
+
 ## 1.62.0
 
 - Big Picture keeps you on the couch: when a game you started from Big Picture closes, Lootnest comes back on the whole screen, on the game you played. If you switched to another app or opened Lootnest yourself while playing, it stays out of the way.

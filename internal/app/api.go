@@ -74,6 +74,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_sources", a.apiSources))
 	must(a.w.Bind("ps_ignoreFound", a.apiIgnoreFound))
 	must(a.w.Bind("ps_unhideFound", a.apiUnhideFound))
+	must(a.w.Bind("ps_setPrimaryCopy", a.apiSetPrimaryCopy))
+	must(a.w.Bind("ps_separateCopies", a.apiSeparateCopies))
 	must(a.w.Bind("ps_addFound", a.apiAddFound))
 	must(a.w.Bind("ps_foundGame", a.apiFoundGame))
 	must(a.w.Bind("ps_applyHooks", a.apiApplyHooks))

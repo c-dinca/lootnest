@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.59.0, beta)
+## Where things stand (1.63.0, beta)
 
 These shipped recently, newest last:
 
@@ -383,6 +383,23 @@ These shipped recently, newest last:
   signing and a winget job in build.yml, off until the owner sets
   `SIGNPATH_ENABLED` / `WINGET_ENABLED` (docs/RELEASING.md,
   packaging/winget/). The README has the code signing policy.
+
+- **1.60** Ratings, notes and corrected hours per profile
+  (`core.PatchShelf`, `ShelfPatch`, `ShelfEntry.Offset`, `WithOffsets`;
+  an unreadable `shelf.json` is kept as `shelf.json.broken`).
+- **1.61** A save point "Before the update" when a game changed since its
+  last play (`core.GameBuild`: Steam build id or the exe's size and time,
+  `Store.NoteBuild` in `builds.json`; `Settings.UpdatePointOff`), and the
+  OneDrive note for saves under a synced folder (`core.OneDriveFolders`).
+- **1.62** Big Picture comes back after a game it hid for (`a.hidFor`,
+  cleared in `a.show()`; `win.ForegroundIs`), Close the game on X, and
+  `Settings.OpenBigPicture`; the Library's Sources drawer
+  (`core.SourceChecks`, `ps_sources`).
+- **1.63** One Library entry for a game found in several stores
+  (`core.GroupCopies`, `CopyName`; `Config.Primary`, `Config.Separate`;
+  `copyGroups`, `libraryItems` against `everyItem` in app.js): Start with,
+  Also in, Show copies separately. Display only; games with profiles are
+  never grouped, and tags, status and rating read across copies.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

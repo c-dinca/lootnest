@@ -1523,6 +1523,8 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .lib-row-name { min-width: 0; display: grid; }
 .lib-row-name b { font-weight: 650; font-size: var(--fs-14); color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-row-name small { font-size: var(--fs-12); color: var(--fg-3); }
+/* A game from more than one store: a neutral mark per store. */
+.lib-stores { display: inline-flex; flex-wrap: wrap; gap: var(--space-1); }
 .lib-row-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-row-dim { color: var(--fg-3); }
 .lib-row-prof { display: flex; align-items: center; gap: var(--space-1); }

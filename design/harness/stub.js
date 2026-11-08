@@ -65,8 +65,19 @@
     { key: "dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", source: "folder", exe: "D:\\Games\\Phantom Blade Zero\\PBZ.exe" }, // no art
     { key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", steamId: 777, exe: "D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe" }, // no art
     { key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", source: "added", added: true, exe: "D:\\Games\\Onimusha\\Onimusha.exe" }, // no art
+    // The same game from two stores (core.GroupCopies): two Steam and Epic pairs, and GOG with a folder copy.
+    { key: "steam:1145350", name: "Hades II", source: "steam", appId: 1145350, ready: true },
+    { key: "dir:c:\\epic games\\cyberpunk 2077", name: "Cyberpunk 2077", source: "epic", exe: "C:\\Epic Games\\Cyberpunk 2077\\bin\\x64\\Cyberpunk2077.exe", _art: 1091500 },
+    { key: "dir:d:\\games\\hollow knight", name: "Hollow Knight", source: "folder", exe: "D:\\Games\\Hollow Knight\\hollow_knight.exe", _art: 367520 },
   ];
-  if (N === "0") { games = []; found = []; }
+  // As core.GroupCopies would group them; ps_separateCopies takes one out.
+  let GROUPS = [
+    { key: "steam:1145350", keys: ["steam:1145350", "dir:c:\\games\\hades ii"], primary: "dir:c:\\games\\hades ii" },
+    { key: "steam:1091500", keys: ["steam:1091500", "dir:c:\\epic games\\cyberpunk 2077"], primary: "steam:1091500" },
+    { key: "name:hollowknight", keys: ["dir:c:\\gog games\\hollow knight", "dir:d:\\games\\hollow knight"], primary: "dir:c:\\gog games\\hollow knight" },
+  ];
+  const SEPARATE = new Set();
+  if (N === "0") { games = []; found = []; GROUPS = []; }
   if (N === "400") {
     const pool = [730, 1091500, 1426210, 413150, 367520, 1086940, 1145350, 1551360, 271590, 250900, 0, 0];
     const words = ["Iron", "Hollow", "Neon", "Last", "Crimson", "Quiet", "Broken", "Wild", "Northern", "Paper", "Deep", "Silver"];
@@ -90,6 +101,9 @@
     delete g._players;
   });
   recent["steam:1091500"] = { at: iso(2 * d), player: "p1" };
+  recent["dir:c:\\games\\hades ii"] = { at: iso(3 * d), player: "p1" };
+  playtime["steam:1145350"] = { p1: 12 * 3600 }; playtime["dir:c:\\games\\hades ii"] = { p1: 7.5 * 3600 };
+  playtime["dir:c:\\epic games\\cyberpunk 2077"] = { p1: 16 * 3600 };
   recent["dir:d:\\games\\onimusha"] = { at: iso(43 * 60e3) };
   recent["steam:413150"] = { at: iso(9 * d) };
   steamTime["steam:1091500"] = 84 * 3600; steamTime["game:cs2"] = 412 * 3600; steamTime["steam:250900"] = 133 * 3600;
@@ -161,7 +175,9 @@
       ["folder", 3, "ok", ""], ["shortcut", 1, "ok", ""],
     ].map(([source, found, state, reason, path]) => ({ source, found, installed: reason !== "Not installed", state, reason, path: path || "" })) }),
     ps_state: () => (STATE === "loading" || BOOT ? new Promise((r) => setTimeout(() => r(state()), BOOT || 60)) : ok(state())),
-    ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN }),
+    ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [], groups: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN, groups: GROUPS.filter((g) => !SEPARATE.has(g.key)) }),
+    ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },
+    ps_separateCopies: (group, apart) => { if (apart) SEPARATE.add(group); else SEPARATE.delete(group); return ok(); },
     ps_cover: (appId, name, key) => (STATE === "offline" ? offline() : ok(art(appOf(appId, name), "cover"))),
     ps_art: (appId, name, key, kind) => (STATE === "offline" ? ok("") : ok(art(appOf(appId, name), kind))),
     // Onimusha has an icon in its exe; the other games have none.
