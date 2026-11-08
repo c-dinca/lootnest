@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.78.0, beta)
+## Where things stand (1.79.0, beta)
 
 These shipped recently, newest last:
 
@@ -537,6 +537,14 @@ These shipped recently, newest last:
   `MoveGame` copy with read-back and compare, `retargetMoved` in one
   config write, ledger `NoteMoved`, then the Recycle Bin; launches into
   the moving folder are refused). Store games move with their launcher.
+
+- **1.79** Library power: pick games with Ctrl/Shift click, Ctrl+A,
+  Space and Shift+arrows (`S.libSel`, `libPick`, `paintLibSel`), a
+  selection bar (`libSelHTML`: Add to collection, Remove from a
+  collection, Set status for the seated profile, Favourite, Hide with
+  Undo for scanned games only). Saved views (`Config.Views`,
+  `core/views.go` `SaveView`/`DeleteView`, max 20; `ps_saveView`), a
+  Views menu in the Library head and in the sidebar's menu.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

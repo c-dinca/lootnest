@@ -109,7 +109,12 @@
   }
   // A game shown once is in a collection with every copy of it.
   const sideItem = (k) => libraryItems().find((it) => recentKey(it) === k) || ownedItem(k);
-  const tagKeys = (keys) => keys.map(sideItem).filter(Boolean).flatMap((it) => copiesOf(it).map(recentKey));
+  // Many keys at once, looked up in one pass.
+  function keyedItems(keys) {
+    const by = new Map(libraryItems().concat(ownedItems()).map((it) => [recentKey(it), it]));
+    return keys.map((k) => by.get(k)).filter(Boolean);
+  }
+  const tagKeys = (keys) => keyedItems(keys).flatMap((it) => copiesOf(it).map(recentKey));
   const gamesText = (keys) => (keys.length === 1 ? (sideItem(keys[0]) || {}).name || "1 game" : `${keys.length} games`);
   async function addToTag(keys, tag, from) {
     if (!(await tagOp({ op: "add", tag, keys: tagKeys(keys), from: from || "" }))) return;
@@ -119,6 +124,7 @@
   async function removeFromTag(keys, tag) {
     const all = tagKeys(keys), back = all.filter((k) => ((cfg().tags || {})[k] || []).includes(tag));
     if (!(await tagOp({ op: "remove", tag, keys: all }))) return;
+    uiSound("move");
     S.sideSel.clear();
     renderSideGames();
     toast(`Took ${gamesText(keys)} out of ${tag}. ${keys.length === 1 ? "It stays" : "They stay"} in your Library.`, "", { label: "Undo", run: () => tagOp({ op: "add", tag, keys: back }) });
@@ -161,7 +167,7 @@
   // Add to collection, from a game's right-click: every collection, ticked
   // when the games are in it, and a new one.
   function tagPickHTML() {
-    const items = S.tagPick.map(sideItem).filter(Boolean);
+    const items = keyedItems(S.tagPick);
     const rows = allTags().map((t) => {
       const on = items.length > 0 && items.every((it) => tagsOf(it).includes(t));
       return `<button role="menuitemcheckbox" aria-checked="${on}" data-action="tag-toggle" data-tag="${esc(t)}" data-on="${on ? "1" : ""}"><span class="grow">${esc(t)}</span>${on ? GI.tick : ""}</button>`;
@@ -170,8 +176,8 @@
   }
   // Right-click on a game: for the selection when the game is in it.
   function collectionItems(it, host) {
-    const k = recentKey(it), row = host && host.closest("#side-games .sg-row");
-    S.tagPick = row && S.sideSel.has(k) ? [...S.sideSel] : [k];
+    const k = recentKey(it), row = host && host.closest("#side-games .sg-row"), inGrid = host && host.closest("#grid");
+    S.tagPick = row && S.sideSel.has(k) ? [...S.sideSel] : inGrid && S.libSel.has(k) ? [...S.libSel] : [k];
     const f = row && row.closest(".sg-folder");
     return [`<button data-action="tag-pick" aria-haspopup="menu"><span class="grow">Add to collection</span>${GI.next}</button>`,
       f ? `<button data-action="tag-out" data-tag="${esc(f.dataset.tag)}">Remove from ${esc(f.dataset.tag)}</button>` : ""];

@@ -157,3 +157,24 @@ func (a *App) apiTagOp(o tagOp) error {
 	}
 	return a.saveConfig(cfg)
 }
+
+// apiSaveView keeps the Library's filters under a name; old renames that view.
+func (a *App) apiSaveView(v core.LibraryView, old string) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	if err := cfg.SaveView(v, old); err != nil {
+		return err
+	}
+	return a.saveConfig(cfg)
+}
+
+func (a *App) apiDeleteView(name string) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	if err := cfg.DeleteView(name); err != nil {
+		return err
+	}
+	return a.saveConfig(cfg)
+}

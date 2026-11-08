@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.79.0
+
+- **Select several games in the Library** and act on them at once. Ctrl+click a cover or a row to select it, Shift+click to select a run of them, Ctrl+A for every game shown, and Esc to clear the selection. With the keyboard, Space selects the game you're on and Shift with the arrows selects the games on the way. A plain click still opens the game.
+- While games are selected, a bar at the bottom of the Library says how many and offers Add to collection, Remove from the collection you're looking at, Set status for whoever is at the PC, Favourite, and Hide from the Library, with Undo. A game from more than one store changes in every store's copy. Games with profiles and games you added aren't hidden from here; take them out from their own page.
+- Right-click a selected game to add all of them to a collection.
+- **Saved views**: set the Library's filters, sort and cover size the way you like, then choose Views, next to the search, and Save this view, and give it a name. Choosing it again later sets them all at once. Rename or delete a view from the same menu; deleting one can be undone. A view only remembers filters, not what you searched for, and never changes your games. If you rename or delete a collection, the views that show it follow.
+
 ## 1.78.0
 
 - **Storage**, a new category in Settings: each drive with how much is free, and a list of your games with about how much each takes: the game itself, its saves, its profiles, and Lootnest's own copies of it (copies before swaps, the safety net and save points). Click a column to sort. Lootnest counts sizes in the background after it looks for games, one game at a time, and remembers them for a week, so they're about right rather than exact. Never in safe mode.

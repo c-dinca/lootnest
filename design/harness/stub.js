@@ -167,7 +167,7 @@
   let FIRSTP = FIRST && [{ id: "p1", name: "Cris", color: "#6C9BD2" }]; // until Continue saves it
   const state = () => ({
     version: "1.45.0", stage: "beta", safe: q.get("safe") === "1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, tagOrder: TAGORDER, offline: OFFLINE, launchOpts: LAUNCH },
+    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, tagOrder: TAGORDER, offline: OFFLINE, launchOpts: LAUNCH, views: VIEWS },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
@@ -177,6 +177,22 @@
   });
 
   const OFFLINE = {};
+  // Saved Library views (core.LibraryView), as core/views.go keeps them.
+  const VIEWS = [{ name: "Co-op on the couch", collection: "Co-op", sort: "recent" }];
+  const retagViews = (from, to) => VIEWS.forEach((v) => { if ((v.collection || "").toLowerCase() === from.toLowerCase()) v.collection = to; });
+  const viewAt = (n) => VIEWS.findIndex((v) => v.name.toLowerCase() === String(n).trim().toLowerCase());
+  const saveView = (v, old) => {
+    v = { ...v, name: String(v.name || "").trim().replace(/\s+/g, " ") };
+    if (!v.name) return Promise.reject("Give the view a name.");
+    const at = viewAt(v.name), i = old ? viewAt(old) : -1;
+    if (old && i < 0) return Promise.reject("That view doesn't exist.");
+    if (at >= 0 && at !== i) return Promise.reject(`A view called ${VIEWS[at].name} already exists.`);
+    if (i >= 0) VIEWS[i] = v;
+    else if (VIEWS.length >= 20) return Promise.reject("Lootnest keeps up to 20 views.");
+    else VIEWS.push(v);
+    return ok();
+  };
+  const GONE = {}; // hidden from the Library: back on Undo
   // Launch options (core.LaunchOptions), by Library key: Phantom Blade Zero closes Discord and starts OBS first.
   const LAUNCH = { "dir:d:\\games\\phantom blade zero": { workDir: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64", closeApps: [{ name: "Discord.exe", force: true }, { name: "chrome.exe" }],
     startBefore: [{ path: "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe", args: "--startreplaybuffer --minimize-to-tray" }], reopenClosed: true } };
@@ -253,12 +269,13 @@
     if (!have) return Promise.reject("That collection doesn't exist.");
     if (have === FAVT && o.op !== "remove") return Promise.reject("Favourites stays as it is.");
     if (o.op === "remove") keys.forEach((k) => dropTag(k, have));
-    else if (o.op === "delete") { Object.keys(TAGS).forEach((k) => dropTag(k, have)); TAGORDER = TAGORDER.filter((t) => t !== have); }
+    else if (o.op === "delete") { Object.keys(TAGS).forEach((k) => dropTag(k, have)); TAGORDER = TAGORDER.filter((t) => t !== have); retagViews(have, ""); }
     else if (o.op === "move") { const rest = TAGORDER.filter((t) => t !== have); rest.splice(Math.max(0, Math.min(o.index, rest.length)), 0, have); TAGORDER = rest; }
     else if (o.op === "rename") {
       const to = String(o.to || "").trim(), onto = tagNamed(to), n = onto && onto !== have ? onto : to;
       TAGORDER = n === onto && onto !== have ? TAGORDER.filter((t) => t !== have) : TAGORDER.map((t) => (t === have ? n : t));
       Object.keys(TAGS).forEach((k) => { if (TAGS[k].includes(have)) { if (n !== have && TAGS[k].includes(n)) dropTag(k, have); else TAGS[k] = TAGS[k].map((t) => (t === have ? n : t)); } });
+      retagViews(have, n);
     }
     return ok();
   };
@@ -434,6 +451,10 @@
     ps_log: () => ok("10:42 Launched Counter-Strike 2 for Mihai\n10:20 Saved Cristian's files for It Takes Two"),
     ps_setTags: (key, tags) => { if (tags.length) TAGS[key] = tags; else delete TAGS[key]; return ok(); },
     ps_tagOp: tagOp,
+    ps_saveView: saveView,
+    ps_deleteView: (n) => { const i = viewAt(n); if (i < 0) return Promise.reject("That view doesn't exist."); VIEWS.splice(i, 1); return ok(); },
+    ps_ignoreFound: (k) => { const i = found.findIndex((f) => f.key === k); if (i >= 0) { HIDDEN[k] = found[i].name; GONE[k] = found.splice(i, 1)[0]; } return ok(); },
+    ps_unhideFound: (k) => { if (GONE[k]) { found.push(GONE[k]); delete GONE[k]; } delete HIDDEN[k]; return ok(); },
     ps_setShelf: (pid, key, patch) => { shelf[pid] = shelf[pid] || {}; const e = { ...shelf[pid][key], ...patch, updated: new Date().toISOString() }; if (e.status || e.rating || e.note || e.offset) shelf[pid][key] = e; else delete shelf[pid][key]; return ok(); },
     // Saving profiles gives new ones an id, as Go does.
     ps_savePlayers: (list) => { FIRSTP = null; PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },
@@ -665,5 +686,5 @@
     navigator.getGamepads = () => pads;
     setTimeout(() => pads.forEach((gamepad) => window.dispatchEvent(Object.assign(new Event("gamepadconnected"), { gamepad }))));
   }
-  window.__harness = { players: PLAYERS, found, games, pads };
+  window.__harness = { players: PLAYERS, found, games, pads, tags: TAGS, shelf, views: VIEWS };
 })();

@@ -171,6 +171,7 @@
     const head = `<header class="lib-head"><div class="lib-title"><h1>Library</h1>
         <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</span></div>
         <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
+        <button class="ln-button ln-button--ghost lib-views" id="lib-views" data-action="lib-views" aria-haspopup="menu" aria-expanded="false"><span>${esc((viewsSaved().find(viewIs) || {}).name || "Views")}</span>${gsvg('<path d="M6.5 8.25 10 11.75l3.5-3.5"/>')}</button>
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
         <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>
         <button class="ln-button ln-button--ghost" data-action="sources">Sources</button></div></header>`;
@@ -198,7 +199,136 @@
           <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}">${h ? `<span style="--h:${h}px"></span>` : '<i class="lib-size-list" aria-hidden="true"></i>'}</button>`).join("")}</div>
         </div></div>
       ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
-      <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div></div>`;
+      <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div>
+      <div class="lib-sel" id="lib-sel" role="region" aria-label="Selected games"${S.libSel.size ? "" : " hidden"}>${libSelHTML()}</div></div>`;
+  }
+
+  // Saved views: the Library's filters under a name (core.LibraryView).
+  // Applying one sets them all; it never changes a game.
+  const viewsSaved = () => cfg().views || [];
+  const VIEW_DEF = { show: "all", store: "all", sort: "name", density: "m" };
+  const viewNow = () => ({ show: S.filter, store: S.store, collection: S.tag, status: S.status, profile: S.who, sort: S.sort, density: S.density });
+  const viewIs = (v) => Object.entries(viewNow()).every(([k, x]) => (v[k] || VIEW_DEF[k] || "") === x);
+  function applyView(name) {
+    const v = viewsSaved().find((x) => x.name === name);
+    if (!v) return;
+    S.filter = v.show || "all"; S.store = v.store || "all"; S.tag = v.collection || ""; S.status = v.status || "";
+    S.who = v.profile && player(v.profile) ? v.profile : "";
+    S.sort = v.sort || "name"; setPref("sort", S.sort);
+    S.density = v.density || "m"; setPref("density", S.density);
+    uiSound("tab");
+    render();
+  }
+  // naming: the view being renamed, or "" for a new one; left out, the list.
+  function viewsMenuHTML(naming, value) {
+    if (naming !== undefined) {
+      return `<div class="ctx-title">${naming ? `Rename ${esc(naming)}` : "Save this view"}</div>
+        <div class="ctx-name"><input id="view-name" class="ln-input" type="text" maxlength="40" autocomplete="off" spellcheck="false" value="${esc(value === undefined ? naming : value)}" data-old="${esc(naming)}" placeholder="Name this view" aria-label="${naming ? `A new name for ${esc(naming)}` : "The view's name"}">
+        <button data-action="view-save">Save</button></div>`;
+    }
+    const vs = viewsSaved();
+    const rows = vs.map((v) => {
+      const on = viewIs(v), a = `data-name="${esc(v.name)}"`;
+      return `<div class="ctx-view"><button role="menuitemradio" aria-checked="${on}" data-action="view-apply" ${a}><span class="grow">${esc(v.name)}</span>${on ? GI.tick : ""}</button>
+        <button class="ctx-icon" data-action="view-rename" ${a} aria-label="Rename ${esc(v.name)}" title="Rename">${GI.edit}</button>
+        <button class="ctx-icon" data-action="view-delete" ${a} aria-label="Delete ${esc(v.name)}" title="Delete">${GI.trash}</button></div>`;
+    }).join("");
+    return `<div class="ctx-title">Saved views</div>${rows || '<p class="ctx-note">Save the filters, sort and cover size you use often, and get them back in one click.</p>'}<hr>
+      <button data-action="view-new"${vs.length >= 20 ? ' disabled title="Lootnest keeps up to 20 views."' : ""}>${GI.plus}Save this view</button>`;
+  }
+  function viewNaming(old, value) {
+    const b = $("#lib-views");
+    if (!b) return;
+    const i = menuUnder(b, viewsMenuHTML(old, value)).querySelector("#view-name");
+    i.focus(); i.select();
+  }
+  async function saveViewName(i) {
+    const name = i.value.trim(), old = i.dataset.old;
+    if (!name) { if (i.isConnected) i.focus(); else viewNaming(old, ""); return; }
+    const v = old ? { ...viewsSaved().find((x) => x.name === old), name } : { name, ...viewNow() };
+    try { await api.saveView(v, old); } catch (e) { toast(errText(e), "error"); viewNaming(old, name); return; }
+    closeContext(true);
+    await refresh();
+    toast(old ? `Renamed ${old} to ${name}.` : `Saved ${name}. Find it under Views.`);
+  }
+
+  // Picking games in the Library: Ctrl+click one, Shift+click a run of
+  // them, Ctrl+A all shown, Esc none. The bar at the bottom acts on them all,
+  // and on every store's copy of each.
+  const libSelItems = () => keyedItems([...S.libSel]);
+  const libSelKeys = () => libSelItems().flatMap((it) => copiesOf(it).map(recentKey));
+  const canHide = (it) => it.kind === "found" && !it.f.added;
+  const gridKeys = () => [...document.querySelectorAll("#grid [data-k]")].map((c) => c.dataset.k);
+  function libPick(keys, on) {
+    const was = S.libSel.size;
+    keys.forEach((k) => (on ? S.libSel.add(k) : S.libSel.delete(k)));
+    if (!was && S.libSel.size) uiSound("tab");
+    paintLibSel();
+  }
+  function libPickRange(a, b) {
+    const ks = gridKeys(), i = ks.indexOf(a), j = ks.indexOf(b);
+    if (i < 0 || j < 0) { libPick([b], true); S.libAnchor = b; return; }
+    libPick(ks.slice(Math.min(i, j), Math.max(i, j) + 1), true);
+  }
+  function libSelClear() {
+    if (!S.libSel.size) return;
+    S.libSel.clear();
+    paintLibSel();
+  }
+  function paintLibSel() {
+    document.querySelectorAll("#grid [data-k]").forEach((c) => c.classList.toggle("is-sel", S.libSel.has(c.dataset.k)));
+    const box = $("#lib-sel");
+    if (!box) return;
+    const was = !box.hidden;
+    box.innerHTML = libSelHTML();
+    box.hidden = !S.libSel.size;
+    if (!was && !box.hidden) { box.classList.remove("in"); void box.offsetWidth; box.classList.add("in"); }
+  }
+  function libSelHTML() {
+    const n = S.libSel.size;
+    if (!n) return "";
+    const items = libSelItems(), owned = S.filter === "owned", fav = items.length && items.every((it) => tagsOf(it).includes(FAV));
+    const b = (act, label, extra = "") => `<button class="ln-button ln-button--ghost ln-button--sm" data-action="${act}"${extra}>${label}</button>`;
+    const menu = ' aria-haspopup="menu" aria-expanded="false"';
+    return `<span class="lib-sel-n" role="status"><b class="ln-num">${n}</b> selected</span>
+      <div class="lib-sel-acts">${b("sel-tags", "Add to collection", menu)}
+        ${S.tag && !owned ? b("sel-untag", `Remove from ${esc(S.tag)}`) : ""}
+        ${owned ? "" : b("sel-status", "Set status", menu)}
+        ${b("sel-fav", fav ? "Remove from Favourites" : "Favourite")}
+        ${owned ? "" : b("sel-hide", "Hide from the Library", items.some(canHide) ? "" : ' disabled title="Only games Lootnest found can be hidden. Games with profiles and games you added are taken out from their own page."')}</div>
+      ${b("sel-clear", `${GI.x}Clear selection`)}`;
+  }
+  function selStatusHTML() {
+    const me = seated();
+    if (!me) return `<div class="ctx-title">Nobody's at the PC</div><button data-action="sel-seat">Choose who's here</button>`;
+    return `<div class="ctx-title">Status for ${esc(me.name)}</div>${STATUSES.map(([k, l]) => `<button data-action="sel-status-set" data-status="${k}">${l}</button>`).join("")}
+      <hr><button data-action="sel-status-set" data-status="">Clear the status</button>`;
+  }
+  async function libSetStatus(status) {
+    const me = seated(), n = S.libSel.size, text = gamesText([...S.libSel]);
+    if (!me || !n) return;
+    try { for (const k of libSelKeys()) await api.setShelf(me.id, k, { status }); } catch (e) { toast(errText(e), "error"); await refresh(); return; }
+    await refresh();
+    uiSound("move");
+    toast(status ? `Set ${text} to ${statusName(status)} for ${me.name}.` : `Cleared the status of ${text} for ${me.name}.`);
+  }
+  async function libHide() {
+    const items = libSelItems(), hide = items.filter(canHide);
+    // A copy added by hand would leave the Library for good, so it stays.
+    const keys = hide.flatMap((it) => copiesOf(it).filter((c) => !c.f.added).map((c) => c.id));
+    if (!keys.length) return;
+    const text = hide.length === 1 ? hide[0].name : hide.length + " games";
+    const kept = keys.length < items.flatMap(copiesOf).length;
+    if (await hideFound(keys, `Hid ${text} from the Library.${kept ? " Games with profiles and games you added stay." : ""}`)) uiSound("move");
+  }
+  // Takes found games out of the Library; with text, a toast offers Undo.
+  async function hideFound(keys, text) {
+    try { for (const k of keys) await api.ignoreFound(k); } catch (e) { toast(errText(e), "error"); await loadFound(); await refresh(); return false; }
+    S.found.games = S.found.games.filter((x) => !keys.includes(x.key));
+    await loadFound();
+    await refresh();
+    if (text) toast(text, "success", { label: "Undo", run: async () => { for (const k of keys) await actions["found-unhide"]({ dataset: { key: k } }); } });
+    return true;
   }
   // What Steam Cloud replaced in a session, on the game's page until read.
   function conflictBanner(g) {
@@ -529,7 +659,8 @@
   }
 
   function gridHTML() {
-    const items = shownItems();
+    const items = shownItems(), shown = new Set(items.map(recentKey));
+    S.libSel.forEach((k) => { if (!shown.has(k)) S.libSel.delete(k); }); // only games still shown stay picked
     if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.filter === "owned" ? "Every game Steam and Epic know you have is installed." : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
     if (S.density === "list") {
       return `<div class="lib-list-head" aria-hidden="true"><span></span><span>Name</span><span>Last played</span><span>Time played</span><span>Profiles</span><span></span></div>${items.map(listRowHTML).join("")}`;
@@ -546,7 +677,7 @@
     const t = timeOf(it);
     const thumb = c ? `<img src="${c}" alt="">` : ic ? `<img class="icon" src="${ic}" alt="">` : `<b>${esc(initial(it.name))}</b>`;
     if (it.kind === "owned") {
-      return `<div class="lib-row is-owned"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
+      return `<div class="lib-row is-owned${S.libSel.has(recentKey(it)) ? " is-sel" : ""}" data-k="${esc(recentKey(it))}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
         <span class="lib-row-thumb">${thumb}</span>
         <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}, not installed</small></span>
         <span class="lib-row-cell"></span><span class="lib-row-cell"></span><span class="lib-row-cell"></span></button>${installButton(it, "ln-button--secondary ln-button--sm lib-row-play", "Install")}</div>`;
@@ -554,7 +685,7 @@
     const prof = owners.length ? owners.map((p) => `<span class="ln-mark ln-player${p.id === owner ? " is-loaded" : ""}" style="--player:${esc(p.color)}" title="${esc(p.name)}${p.id === owner ? ", files loaded" : ""}"></span>`).join("") : `<span class="lib-row-dim">Off</span>`;
     const play = s ? `<span class="ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
       : `<button class="ln-button ln-button--primary ln-button--sm lib-row-play" data-action="${g ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
-    return `<div class="lib-row${s ? " busy" : ""}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
+    return `<div class="lib-row${s ? " busy" : ""}${S.libSel.has(recentKey(it)) ? " is-sel" : ""}" data-k="${esc(recentKey(it))}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
         <span class="lib-row-thumb">${thumb}</span>
         <span class="lib-row-name"><b>${esc(it.name)}</b><small>${storeMarks(it)}${starsHTML(ratingOf(it))}</small></span>
         <span class="lib-row-cell">${playedAt(it) ? playedBy(it) : '<span class="lib-row-dim">Never</span>'}</span>
@@ -657,9 +788,9 @@
     const meta = sortCap ? `<span class="ln-num">${esc(sortCap)}</span>`
       : owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
       : g ? "Profiles on" : it.kind === "owned" ? `${esc(sourceLabel(it.source))}, not installed` : storeMarks(it);
-    const attr = itemAttr(it);
-    return `<div class="card lib-card${s ? " busy" : ""}${it.kind === "owned" ? " is-owned" : ""}">
-      <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${sortCap ? `, ${esc(sortCap)}` : owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
+    const attr = itemAttr(it), k = recentKey(it);
+    return `<div class="card lib-card${s ? " busy" : ""}${it.kind === "owned" ? " is-owned" : ""}${bySort && S.libSel.has(k) ? " is-sel" : ""}"${bySort ? ` data-k="${esc(k)}"` : ""}>
+      <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${sortCap ? `, ${esc(sortCap)}` : owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}${bySort ? `<span class="lib-check" aria-hidden="true">${GI.tick}</span>` : ""}</div>
         <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span>${S.sort === "rating" && ratingOf(it) ? `<span class="ln-tile__meta">${starsHTML(ratingOf(it))}</span>` : ""}</button>
       ${it.kind === "owned" ? installButton(it, "ln-button--secondary ln-button--icon ln-button--sm lib-play", "") : s ? "" : `<button class="ln-button ln-button--secondary ln-button--icon ln-button--sm lib-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
   }

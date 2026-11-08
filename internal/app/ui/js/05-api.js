@@ -28,6 +28,8 @@
     allAchievements: () => call("ps_allAchievements"),
     setTags: (key, tags) => call("ps_setTags", key, tags),
     tagOp: (o) => call("ps_tagOp", o),
+    saveView: (v, old) => call("ps_saveView", v, old || ""),
+    deleteView: (name) => call("ps_deleteView", name),
     setShelf: (pid, key, e) => call("ps_setShelf", pid, key, e),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),

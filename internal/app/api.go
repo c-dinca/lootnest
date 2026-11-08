@@ -108,6 +108,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_setShelf", a.apiSetShelf))
 	must(a.w.Bind("ps_setTags", a.apiSetTags))
 	must(a.w.Bind("ps_tagOp", a.apiTagOp))
+	must(a.w.Bind("ps_saveView", a.apiSaveView))
+	must(a.w.Bind("ps_deleteView", a.apiDeleteView))
 	must(a.w.Bind("ps_backupInfo", a.apiBackupInfo))
 	must(a.w.Bind("ps_setBackup", a.apiSetBackup))
 	must(a.w.Bind("ps_setBackupPassword", a.apiSetBackupPassword))
