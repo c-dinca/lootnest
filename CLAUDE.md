@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.63.0, beta)
+## Where things stand (1.64.0, beta)
 
 These shipped recently, newest last:
 
@@ -400,6 +400,14 @@ These shipped recently, newest last:
   `copyGroups`, `libraryItems` against `everyItem` in app.js): Start with,
   Also in, Show copies separately. Display only; games with profiles are
   never grouped, and tags, status and rating read across copies.
+- **1.64** Name search that forgives (`norm`, `nameMatcher(q)` returns a
+  test per name; words in any order, no spaces, initials such as "bg3"):
+  the Library, the sidebar, Ctrl+K, Add a game and favourites. Library
+  covers in `#grid` sorted by Recently or Most played show that under the
+  name (`cardHTML(it, true)`; `timeOf` is the one time figure for sorts,
+  cards and rows); arrows and Home/End move between covers; F5 scans
+  again; Settings, General lists `SHORTCUTS` (`.set-keys`); the first run
+  shows the scan (`#wl-scan`, `welcomeScan`).
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

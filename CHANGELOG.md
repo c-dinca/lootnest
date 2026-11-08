@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.64.0
+
+- Searching for a game forgives more: accents, apostrophes and punctuation don't matter, words can come in any order, and initials work, so "baldurs" and "bg3" both find Baldur's Gate 3. This holds in the Library, the sidebar's filter, Ctrl+K and wherever else you look a game up by name.
+- Sorted by Recently played or Most played, the Library's covers say when each game was last played or how long, in place of the line under the name.
+- In the Library, the arrow keys move from cover to cover, and Home and End go to the first and the last.
+- F5 looks for games again, as Scan again does.
+- Settings, General lists the keyboard shortcuts.
+- The first screen says while Lootnest looks for games on this PC, then how many it found.
+
 ## 1.63.0
 
 - A game you have from more than one store, such as Steam and Epic Games, or GOG and a copy in a folder, shows once in the Library, the sidebar, search and Big Picture. Its cover has a small mark for each store, and its time played adds up every copy.
