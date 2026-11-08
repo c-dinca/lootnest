@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.58.13
+
+- The Achievements page opens on one line: whose achievements they are, how many are unlocked out of how many, and one bar. The ring and the four numbers beside it are gone.
+- With up to four profiles, you pick whose achievements to see from a row of names. With more, it's a menu.
+- Games with achievements are a list, a row each: the cover, the name, a bar and the count.
+- Rarest unlocked and Latest unlocked sit in a column beside the games, as rows. Long achievement names show in full.
+- Lootnest milestones are folded away under the games, with how many are done. Open them to see each one as a plain row.
+
 ## 1.58.12
 
 - The Updates page is one list of your games, a row each: the game's icon, its name, where it is, your version against the latest and one button. Long folder paths keep their start and their end.
