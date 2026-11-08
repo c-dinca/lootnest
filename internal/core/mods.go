@@ -21,10 +21,11 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Mods, phases 1 and 2 (docs/ROADMAP.md, section 2): sets of mods per game
-// and per profile, put into its folder by copy. The user brings each mod, an archive or a folder;
-// Lootnest never downloads one, never ships a loader, and never uses links
-// or a virtual file system.
+// Mods, phases 1 to 3 (docs/ROADMAP.md, section 2): sets of mods per game
+// and per profile, put into its folder as hard links to Lootnest's copy
+// where the drive allows, else by copy. The user brings each mod, an archive
+// or a folder; Lootnest never downloads one, never ships a loader, and never
+// uses symlinks or a virtual file system.
 //
 // A game's mods live in Lootnest's data folder, under mods\<key hash>:
 //
@@ -58,7 +59,22 @@ type Mod struct {
 	Into   string    `json:"into,omitempty"`   // the game's folder it goes into, "" for its root
 	AtRoot bool      `json:"atRoot,omitempty"` // nothing in the game matched it, so it goes at the root
 	Files  []ModFile `json:"files"`
+	// Changed are the files the game changed through a link, so Lootnest's
+	// copy of them isn't the mod's any more.
+	Changed []string `json:"changed,omitempty"`
 }
+
+// CheckIntact says why a mod can't go in because the game changed
+// Lootnest's copy of it, or nil.
+func (m *Mod) CheckIntact() error {
+	if len(m.Changed) == 0 {
+		return nil
+	}
+	return fmt.Errorf("the game changed %s in Lootnest's copy of %s, so it isn't the mod any more. %w", path.Base(m.Changed[0]), m.Name, ErrModChanged)
+}
+
+// ErrModChanged is in CheckIntact's errors.
+var ErrModChanged = errors.New("Remove the mod and add it again")
 
 // ModEntry is a mod's place in a set. The mods are kept once for the game
 // and shared; each set only says which are on and in what order.
@@ -74,6 +90,7 @@ type DeployedFile struct {
 	SHA256   string `json:"sha256"`
 	Replaces bool   `json:"replaces,omitempty"`
 	Orig     string `json:"orig,omitempty"` // the kept original's sha256
+	How      string `json:"how,omitempty"`  // "link" or "copy"
 }
 
 // ModsDeployed is what's in a game's folder from its mods.
@@ -108,6 +125,7 @@ type modJournal struct {
 	Game  string        `json:"game"`
 	Owner string        `json:"owner,omitempty"`
 	Exe   string        `json:"exe,omitempty"`
+	Link  bool          `json:"link,omitempty"` // mod files may go in as hard links
 	At    time.Time     `json:"at"`
 	Then  []string      `json:"then,omitempty"`
 	Plan  *ModsDeployed `json:"plan,omitempty"`
@@ -400,6 +418,9 @@ func PlanMods(gameDir, mainExe string, mods []*Mod, deployed *ModsDeployed) (*Mo
 	var sizes []int64
 	var blocked []string
 	for _, m := range mods {
+		if err := m.CheckIntact(); err != nil {
+			return nil, err
+		}
 		for _, f := range m.Files {
 			rel, err := updateRel(f.Rel)
 			if err != nil || rel != f.Rel {
@@ -468,10 +489,11 @@ func PlanMods(gameDir, mainExe string, mods []*Mod, deployed *ModsDeployed) (*Mo
 
 // ApplyMods makes the game's folder hold exactly mods, in order, as owner's
 // set: what's in from mods now comes out first, then mods go in. With no mods, it only puts
-// the game back as it was. Every step is in the journal first, so a run
+// the game back as it was. With link, mod files go in as hard links where
+// they can (see placeMod). Every step is in the journal first, so a run
 // cut short is finished by FinishModJournal. step, if not nil, hears how
 // far it is.
-func ApplyMods(root, gameDir, mainExe, owner string, mods []*Mod, now time.Time, step func(done, total int)) (ModsResult, error) {
+func ApplyMods(root, gameDir, mainExe, owner string, mods []*Mod, link bool, now time.Time, step func(done, total int)) (ModsResult, error) {
 	last, err := readModJournal(root)
 	if err != nil {
 		return ModsResult{}, err
@@ -495,7 +517,7 @@ func ApplyMods(root, gameDir, mainExe, owner string, mods []*Mod, now time.Time,
 			return ModsResult{}, err // refused before anything changes
 		}
 	}
-	j := &modJournal{Op: "undeploy", Game: gameDir, Exe: mainExe, Owner: owner, At: now.UTC()}
+	j := &modJournal{Op: "undeploy", Game: gameDir, Exe: mainExe, Owner: owner, Link: link, At: now.UTC()}
 	for _, m := range mods {
 		j.Then = append(j.Then, m.ID)
 	}
@@ -572,7 +594,7 @@ func runModJournal(root string, j *modJournal, step func(done, total int)) (Mods
 			_ = os.Remove(modJournalPath(root)) // the game is as it was, so there's nothing to finish
 			return res, err
 		}
-		j = &modJournal{Op: "deploy", Game: j.Game, Exe: j.Exe, Owner: j.Owner, At: j.At, Plan: &ModsDeployed{At: j.At, Owner: j.Owner, Mods: j.Then, Files: p.files, Dirs: p.dirs}}
+		j = &modJournal{Op: "deploy", Game: j.Game, Exe: j.Exe, Owner: j.Owner, Link: j.Link, At: j.At, Plan: &ModsDeployed{At: j.At, Owner: j.Owner, Mods: j.Then, Files: p.files, Dirs: p.dirs}}
 		if err := writeJSONSynced(modJournalPath(root), j); err != nil {
 			return res, err
 		}
@@ -589,10 +611,10 @@ var modStep func(i int) error
 // deployMods puts a plan's files in. Each game file a mod replaces is kept
 // in originals first and read back (a copy already there is the true
 // original and is never overwritten); each mod file goes in through a
-// temporary name beside it and is read back before it's moved in. Files
-// already in as planned are left, so a run cut short goes on from there; a
-// file the game changed after its original was kept is kept in changed
-// first.
+// temporary name beside it and is read back before it's moved in, and how
+// it went in is recorded. Files already in as planned are left, so a run
+// cut short goes on from there; a file the game changed after its original
+// was kept is kept in changed first.
 func deployMods(root string, j *modJournal, res *ModsResult, step func(done, total int)) error {
 	d := j.Plan
 	for i := range d.Files {
@@ -638,10 +660,15 @@ func deployMods(root string, j *modJournal, res *ModsResult, step func(done, tot
 				return err
 			}
 		}
+		staged := filepath.Join(root, f.Mod, "files", filepath.FromSlash(f.Rel))
 		if cur != f.SHA256 {
-			if err := placeChecked(filepath.Join(root, f.Mod, "files", filepath.FromSlash(f.Rel)), target, f.SHA256); err != nil {
+			if err := placeMod(staged, target, f.Rel, f.SHA256, j.Link); err != nil {
 				return modErr(f.Rel, err)
 			}
+		}
+		f.How = "copy"
+		if sameFile(staged, target) {
+			f.How = "link"
 		}
 		if step != nil {
 			step(i+1, len(d.Files))
@@ -655,6 +682,9 @@ func deployMods(root string, j *modJournal, res *ModsResult, step func(done, tot
 // went in (by the game or the user) is kept in changed\<time> first; an
 // added one is moved there rather than deleted. With nothing recorded as
 // deployed, the journal's plan says what a deploy cut short may have put in.
+// A file in as a link is Lootnest's own copy of the mod, so it's unlinked
+// rather than replaced; when the game changed it through the link, the
+// change is kept first and the mod is marked as changed.
 func undeployMods(root string, j *modJournal, step func(done, total int)) (ModsResult, error) {
 	var res ModsResult
 	d := LoadDeployed(root)
@@ -676,6 +706,30 @@ func undeployMods(root string, j *modJournal, step func(done, total int)) (ModsR
 		cur, err := fileSHA256(p)
 		if err != nil {
 			return res, modErr(f.Rel, err)
+		}
+		staged := filepath.Join(root, f.Mod, "files", filepath.FromSlash(f.Rel))
+		linked := cur != "" && sameFile(p, staged)
+		if linked {
+			if cur != f.SHA256 {
+				if err := res.keep(changed, p, f.Rel, false); err != nil {
+					return res, err
+				}
+			}
+			if err := removeFile(p); err != nil {
+				return res, modErr(f.Rel, err)
+			}
+			cur = ""
+		}
+		if linked || f.How == "link" {
+			// written through the link, even if the game's file has been
+			// replaced since
+			if s, err := fileSHA256(staged); err != nil {
+				return res, modErr(f.Rel, err)
+			} else if s != "" && s != f.SHA256 {
+				if err := markModChanged(root, f.Mod, f.Rel); err != nil {
+					return res, modErr(f.Rel, err)
+				}
+			}
 		}
 		orig := filepath.Join(root, "originals", filepath.FromSlash(f.Rel))
 		kept, err := fileSHA256(orig)
@@ -753,6 +807,104 @@ func modErr(rel string, err error) error {
 		return fmt.Errorf("%s is in use, so Lootnest stopped part way. Close the game and try again; Lootnest also finishes it the next time it starts", rel)
 	}
 	return fmt.Errorf("%s: %w", rel, err)
+}
+
+// markModChanged records in mod.json that the game changed rel in
+// Lootnest's copy of the mod.
+func markModChanged(root, id, rel string) error {
+	m, err := LoadMod(root, id)
+	if err != nil || slices.Contains(m.Changed, rel) {
+		return err
+	}
+	m.Changed = append(m.Changed, rel)
+	return writeJSONSynced(filepath.Join(root, id, "mod.json"), m)
+}
+
+// modConfigExts and modConfigDirs are files games rewrite, which always go
+// in by copy so a game never writes into Lootnest's copy of a mod.
+var (
+	modConfigExts = []string{".ini", ".cfg", ".json", ".xml", ".yaml", ".yml", ".toml", ".txt", ".lua", ".conf", ".properties", ".sav"}
+	modConfigDirs = []string{"save", "saves", "saved", "config", "configs"}
+)
+
+func modConfigFile(rel string) bool {
+	parts := strings.Split(strings.ToLower(rel), "/")
+	for _, p := range parts[:len(parts)-1] {
+		if slices.Contains(modConfigDirs, p) {
+			return true
+		}
+	}
+	return slices.Contains(modConfigExts, path.Ext(parts[len(parts)-1]))
+}
+
+// modLink lets tests make links fail.
+var modLink = os.Link
+
+// placeMod puts Lootnest's copy of a mod file, staged, in at dst. With
+// link, a file games don't rewrite goes in as a hard link to it, once the
+// copy is read-only, so a game that opens it to write fails instead of
+// changing it. Anything else, or a link that fails (another drive, a
+// drive without links), goes in as a checked copy.
+func placeMod(staged, dst, rel, want string, link bool) error {
+	if link && !modConfigFile(rel) && readOnly(staged) {
+		tmp := dst + tmpSuffix
+		_ = os.Remove(tmp)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err == nil && modLink(staged, tmp) == nil {
+			if got, err := fileSHA256(tmp); err == nil && got == want {
+				return moveInto(tmp, dst)
+			}
+			_ = os.Remove(tmp)
+		}
+	}
+	return placeChecked(staged, dst, want)
+}
+
+// readOnly makes p read-only and says whether it is.
+func readOnly(p string) bool {
+	if os.Chmod(p, 0o444) != nil {
+		return false
+	}
+	st, err := os.Stat(p)
+	return err == nil && st.Mode().Perm()&0o222 == 0
+}
+
+func sameFile(a, b string) bool {
+	x, err := os.Stat(a)
+	if err != nil {
+		return false
+	}
+	y, err := os.Stat(b)
+	return err == nil && os.SameFile(x, y)
+}
+
+// ModConflict is a file more than one mod brings, with the mods in order:
+// the last one's goes in.
+type ModConflict struct {
+	Rel  string   `json:"rel"`
+	Mods []string `json:"mods"`
+}
+
+// ModConflicts lists the files two or more of mods (the ones on in a set,
+// in order) bring.
+func ModConflicts(mods []*Mod) []ModConflict {
+	at := map[string]int{}
+	var all []ModConflict
+	for _, m := range mods {
+		for _, f := range m.Files {
+			k := strings.ToLower(f.Rel)
+			i, ok := at[k]
+			if !ok {
+				i, at[k] = len(all), len(all)
+				all = append(all, ModConflict{Rel: f.Rel})
+			}
+			if !slices.Contains(all[i].Mods, m.ID) {
+				all[i].Mods = append(all[i].Mods, m.ID)
+			}
+		}
+	}
+	out := slices.DeleteFunc(all, func(c ModConflict) bool { return len(c.Mods) < 2 })
+	sort.Slice(out, func(i, j int) bool { return out[i].Rel < out[j].Rel })
+	return out
 }
 
 // placeChecked copies src over dst through a temporary name beside it, and

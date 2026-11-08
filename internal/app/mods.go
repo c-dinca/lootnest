@@ -18,10 +18,10 @@ import (
 
 // ---------------------------------------------------------------------------
 // Mods (core/mods.go): a set of mods per game, and per profile and run for
-// games with profiles, put into its folder by copy, with every game file
-// they replace kept and the way back one click. Play puts in the set of
-// whoever plays, after their saves. The user brings each mod; Lootnest
-// never downloads one. Changing the game's folder is refused while the game
+// games with profiles, put into its folder as hard links or by copy, with
+// every game file they replace kept and the way back one click. Play puts
+// in the set of whoever plays, after their saves. The user brings each mod;
+// Lootnest never downloads one. Changing the game's folder is refused while the game
 // runs and in safe mode, and the saves are copied before mods go in.
 // ---------------------------------------------------------------------------
 
@@ -33,6 +33,13 @@ var (
 )
 
 func (a *App) modsRoot(key string) string { return core.ModsDir(DataDir(), key) }
+
+// modsLink says whether mods may go in as hard links (Settings, on by default).
+func (a *App) modsLink() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return !a.cfg.Settings.ModsLinkOff
+}
 
 // modSet is the set owner (a profile id, "" for the game) plays with, and
 // whose set it is.
@@ -98,10 +105,13 @@ type ModRow struct {
 	Into   string `json:"into,omitempty"`
 	AtRoot bool   `json:"atRoot,omitempty"`
 	On     bool   `json:"on"`
+	// Changed says the game changed Lootnest's copy of it, so it must be
+	// added again.
+	Changed bool `json:"changed,omitempty"`
 }
 
 func modRow(m *core.Mod, on bool) ModRow {
-	r := ModRow{ID: m.ID, Name: m.Name, Files: len(m.Files), Into: m.Into, AtRoot: m.AtRoot, On: on}
+	r := ModRow{ID: m.ID, Name: m.Name, Files: len(m.Files), Into: m.Into, AtRoot: m.AtRoot, On: on, Changed: len(m.Changed) > 0}
 	for _, f := range m.Files {
 		r.Bytes += f.Size
 	}
@@ -109,8 +119,9 @@ func modRow(m *core.Mod, on bool) ModRow {
 }
 
 // apiMods is a game's Mods tab: each set's mods in order ("" the game's,
-// else a profile's own), whose set each profile plays with, what's in its
-// folder now, and why it can't have mods, if it can't.
+// else a profile's own) with the files more than one of its mods that are
+// on bring, whose set each profile plays with, what's in its folder now,
+// and why it can't have mods, if it can't.
 func (a *App) apiMods(key string) (map[string]any, error) {
 	t, err := a.modTarget(key)
 	if err != nil {
@@ -123,18 +134,24 @@ func (a *App) apiMods(key string) (map[string]any, error) {
 	for o := range all {
 		sets[o] = nil
 	}
+	conflicts := map[string][]core.ModConflict{}
 	for o := range sets {
 		_, set := core.ModSetIn(all, o, "")
 		rows := []ModRow{}
+		var on []*core.Mod
 		for _, e := range set {
 			if kept[e.ID] == nil {
 				kept[e.ID], _ = core.LoadMod(root, e.ID)
 			}
 			if m := kept[e.ID]; m != nil {
 				rows = append(rows, modRow(m, e.On))
+				if e.On {
+					on = append(on, m)
+				}
 			}
 		}
 		sets[o] = rows
+		conflicts[o] = core.ModConflicts(on)
 	}
 	uses := map[string]string{}
 	if t.game != nil {
@@ -145,7 +162,7 @@ func (a *App) apiMods(key string) (map[string]any, error) {
 			uses[p.ID], _ = core.ModSetIn(all, p.ID, p.Of)
 		}
 	}
-	out := map[string]any{"dir": t.Dir, "sets": sets, "uses": uses, "pending": core.ModJournalPending(root)}
+	out := map[string]any{"dir": t.Dir, "sets": sets, "conflicts": conflicts, "uses": uses, "pending": core.ModJournalPending(root)}
 	if a.safe {
 		out["safe"] = modsSafeNote
 	}
@@ -231,18 +248,24 @@ func (a *App) apiModSetOwn(key, owner string, on bool) error {
 	return core.SaveModSet(root, owner, set)
 }
 
-// apiModOrder moves a mod one place up (by -1) or down (by 1). A later mod
-// wins where two have the same file.
-func (a *App) apiModOrder(key, owner, id string, by int) error {
+// apiModOrder puts the set owner plays with in the order ids gives, every
+// mod in it once. A later mod wins where two have the same file.
+func (a *App) apiModOrder(key, owner string, ids []string) error {
 	root := a.modsRoot(key)
 	o, set := a.modSet(root, owner)
-	i := slices.IndexFunc(set, func(e core.ModEntry) bool { return e.ID == id })
-	j := i + by
-	if i < 0 || (by != -1 && by != 1) || j < 0 || j >= len(set) {
-		return nil
+	bad := errors.New("The list of mods changed. Try again.")
+	if len(ids) != len(set) {
+		return bad
 	}
-	set[i], set[j] = set[j], set[i]
-	return core.SaveModSet(root, o, set)
+	next := make([]core.ModEntry, 0, len(set))
+	for _, id := range ids {
+		i := slices.IndexFunc(set, func(e core.ModEntry) bool { return e.ID == id })
+		if i < 0 || slices.ContainsFunc(next, func(e core.ModEntry) bool { return e.ID == id }) {
+			return bad
+		}
+		next = append(next, set[i])
+	}
+	return core.SaveModSet(root, o, next)
 }
 
 // apiModRemove deletes Lootnest's copy of a mod. A mod with files in the
@@ -304,14 +327,14 @@ func (a *App) applyModSet(t updTarget, owner, skip string, step func(int, int)) 
 			return core.ModsResult{}, fmt.Errorf("nothing was changed: Lootnest couldn't copy the saves first (%v)", err)
 		}
 	}
-	return core.ApplyMods(root, t.Dir, t.Exe, o, mods, time.Now(), step)
+	return core.ApplyMods(root, t.Dir, t.Exe, o, mods, a.modsLink(), time.Now(), step)
 }
 
 // apiModsRestore puts the game back as it was: every mod file out, every
 // replaced game file back.
 func (a *App) apiModsRestore(key string) error {
 	return a.modsRun(key, "restore", func(t updTarget, step func(int, int)) (core.ModsResult, error) {
-		return core.ApplyMods(a.modsRoot(key), t.Dir, t.Exe, "", nil, time.Now(), step)
+		return core.ApplyMods(a.modsRoot(key), t.Dir, t.Exe, "", nil, false, time.Now(), step)
 	})
 }
 
@@ -389,6 +412,11 @@ func (a *App) modsForPlay(g *core.Game, playerID, who string) error {
 	if err == nil {
 		err = core.ModsRefused(t.Dir)
 	}
+	for _, m := range mods {
+		if err == nil {
+			err = m.CheckIntact()
+		}
+	}
 	if err != nil {
 		a.logf("%s's mods for %s can't go in, so it starts without them: %v", who, g.Name, err)
 		if len(in) == 0 {
@@ -416,7 +444,12 @@ func (a *App) modsForPlay(g *core.Game, playerID, who string) error {
 		a.emitSessions()
 	}
 	progress(0, 0)
-	res, err := core.ApplyMods(root, t.Dir, t.Exe, o, mods, time.Now(), progress)
+	res, err := core.ApplyMods(root, t.Dir, t.Exe, o, mods, a.modsLink(), time.Now(), progress)
+	if errors.Is(err, core.ErrModChanged) && core.LoadDeployed(root) == nil && !core.ModJournalPending(root) {
+		// the mods came out, and taking them out found one the game changed
+		a.logf("%s's mods for %s can't go in, so it starts without them: %v", who, g.Name, err)
+		on, err = nil, nil
+	}
 	if err != nil {
 		a.logf("ERROR mods for %s before it started for %s: %v", g.Name, who, err)
 		return err
@@ -443,7 +476,7 @@ func (a *App) modsOffFor(t updTarget) (bool, error) {
 		return false, errors.New("Mods are in this game's folder, and safe mode leaves them as they are. Restart Lootnest normally to update it.")
 	}
 	defer modding(t.Dir)()
-	if _, err := core.ApplyMods(root, t.Dir, t.Exe, "", nil, time.Now(), nil); err != nil {
+	if _, err := core.ApplyMods(root, t.Dir, t.Exe, "", nil, false, time.Now(), nil); err != nil {
 		return false, fmt.Errorf("Nothing was updated: Lootnest couldn't take the mods out first. %s", sentence(err))
 	}
 	if err := os.WriteFile(modsOffMark(root), nil, 0o644); err != nil {

@@ -765,10 +765,18 @@
       try { await api.modToggle(el.dataset.mods, el.dataset.owner, el.dataset.id, el.checked); } catch (e) { toast(errText(e), "error"); }
       loadMods(el.dataset.mods);
     },
-    async "mod-move"(el) {
-      try { await api.modOrder(el.dataset.mods, el.dataset.owner, el.dataset.id, +el.dataset.by); } catch (e) { toast(errText(e), "error"); }
-      loadMods(el.dataset.mods);
+    "mod-move"(el) {
+      const key = el.dataset.mods, ids = setRows(S.mods[key] || {}, el.dataset.owner).map((m) => m.id), i = ids.indexOf(el.dataset.id), j = i + +el.dataset.by;
+      if (i < 0 || j < 0 || j >= ids.length) return;
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+      saveModOrder(key, el.dataset.owner, ids);
     },
+    "mod-conflicts"(el) {
+      S.dialog = { kind: "modconf", key: el.dataset.mods, owner: el.dataset.owner || "", id: el.dataset.id };
+      renderOverlay(); focusOverlay();
+    },
+    "mods-more"(el) { toggleMenu(el, modsMoreHTML()); },
+    "mods-link"() { saveSetting({ dataset: { setting: "modsLinkOff" }, type: "checkbox", checked: !cfg().settings.modsLinkOff }); },
     async "mod-remove"(el) {
       const key = el.dataset.mods, M = S.mods[key] || {}, inGame = ((M.deployed || {}).mods || []).includes(el.dataset.id);
       const ok = await confirmDialog({ title: `Remove ${el.dataset.name}?`, ok: "Remove",

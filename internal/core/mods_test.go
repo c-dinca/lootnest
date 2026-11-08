@@ -205,7 +205,7 @@ func TestDeployAndPutBack(t *testing.T) {
 	vanilla := folderHashes(t, game)
 	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A", "Data/new/a.esp": "a", "settings.ini": "settings A"}, "a.zip")
 	b := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock B"}, "b.zip")
-	res, err := ApplyMods(root, game, "", "", []*Mod{a, b}, time.Now(), nil)
+	res, err := ApplyMods(root, game, "", "", []*Mod{a, b}, false, time.Now(), nil)
 	if err != nil || res.Changed != 0 {
 		t.Fatal(res, err)
 	}
@@ -220,7 +220,7 @@ func TestDeployAndPutBack(t *testing.T) {
 		t.Fatalf("deployed: %+v", d)
 	}
 	// Apply again with one mod: the first set comes out, the new one goes in.
-	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, false, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" {
@@ -229,7 +229,7 @@ func TestDeployAndPutBack(t *testing.T) {
 	if err := RemoveMod(root, a.ID); err == nil {
 		t.Fatal("a mod in the game's folder was removed")
 	}
-	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := folderHashes(t, game); !reflect.DeepEqual(got, vanilla) {
@@ -255,7 +255,7 @@ func TestModRunCutShortIsFinished(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); !errors.Is(err, stop) {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, false, time.Now(), nil); !errors.Is(err, stop) {
 		t.Fatal(err)
 	}
 	if !ModJournalPending(root) || LoadDeployed(root) != nil {
@@ -275,7 +275,7 @@ func TestModRunCutShortIsFinished(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); !errors.Is(err, stop) {
+	if _, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil); !errors.Is(err, stop) {
 		t.Fatal(err)
 	}
 	modStep = nil
@@ -293,13 +293,13 @@ func TestModRunCutShortIsFinished(t *testing.T) {
 func TestPutBackKeepsChangedFiles(t *testing.T) {
 	game, root := modGame(t)
 	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A", "Data/new/a.ini": "a", "Data/new/b.esp": "b"}, "a.zip")
-	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, false, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	// A game update rewrote a replaced file, and the user edited an added one.
 	write(t, filepath.Join(game, "Data", "textures", "rock.dds"), "updated rock")
 	write(t, filepath.Join(game, "Data", "new", "a.ini"), "edited")
-	res, err := ApplyMods(root, game, "", "", nil, time.Now(), nil)
+	res, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil)
 	if err != nil || res.Changed != 2 {
 		t.Fatal(res, err)
 	}
@@ -327,7 +327,7 @@ func TestDeployKeepsAFileThatAppeared(t *testing.T) {
 	if _, _, err := FinishModJournal(root); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if read(t, filepath.Join(game, "Data", "new.esp")) != "the user's" {
@@ -345,7 +345,7 @@ func stuckApply(t *testing.T) (game, root string, a *Mod, hidden func()) {
 	if err := os.Rename(staged, staged+".away"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); err == nil || !ModJournalPending(root) {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, false, time.Now(), nil); err == nil || !ModJournalPending(root) {
 		t.Fatal("the run should stop part way", err)
 	}
 	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" || !exists(filepath.Join(root, "originals", "settings.ini")) {
@@ -372,7 +372,7 @@ func TestPutBackWhenADeployCantFinish(t *testing.T) {
 	if _, _, err := FinishModJournal(root); err == nil {
 		t.Fatal("the deploy can't finish without its file")
 	}
-	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "vanilla rock" || read(t, filepath.Join(game, "settings.ini")) != "vanilla settings" {
@@ -460,7 +460,7 @@ func TestModSetsTwoProfiles(t *testing.T) {
 		}
 		mods, err := LoadMods(root, on)
 		if err == nil {
-			_, err = ApplyMods(root, game, "", owner, mods, time.Now(), nil)
+			_, err = ApplyMods(root, game, "", owner, mods, false, time.Now(), nil)
 		}
 		if err != nil {
 			t.Fatal(err)
@@ -496,5 +496,188 @@ func TestModSetsTwoProfiles(t *testing.T) {
 	}
 	if got := modIDs(LoadModSet(root, "p1")); !reflect.DeepEqual(got, []string{a.ID + "+"}) || len(LoadModSet(root, "p2")) != 0 {
 		t.Fatalf("a removed mod stayed in a set: %v", got)
+	}
+}
+
+// canLink skips a test where the drive under the test's folders has no
+// hard links.
+func canLink(t *testing.T, dir string) {
+	t.Helper()
+	a := filepath.Join(dir, "link-probe")
+	write(t, a, "x")
+	if err := os.Link(a, a+"2"); err != nil {
+		t.Skip("no hard links here:", err)
+	}
+	_ = os.Remove(a)
+	_ = os.Remove(a + "2")
+}
+
+func deployedHow(d *ModsDeployed) map[string]string {
+	out := map[string]string{}
+	for _, f := range d.Files {
+		out[f.Rel] = f.How
+	}
+	return out
+}
+
+// stagedIntact fails when Lootnest's copy of a mod no longer hashes as it
+// was added.
+func stagedIntact(t *testing.T, root string, m *Mod) {
+	t.Helper()
+	for _, f := range m.Files {
+		if sum, _ := fileSHA256(filepath.Join(root, m.ID, "files", filepath.FromSlash(f.Rel))); sum != f.SHA256 {
+			t.Errorf("Lootnest's copy of %s changed", f.Rel)
+		}
+	}
+}
+
+func TestModsLinkedOnTheSameDrive(t *testing.T) {
+	game, root := modGame(t)
+	canLink(t, filepath.Dir(game))
+	vanilla := folderHashes(t, game)
+	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A", "Data/new/a.esp": "a", "settings.ini": "settings A", "Data/Config/keys.dat": "keys"}, "a.zip")
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, true, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"Data/textures/rock.dds": "link", "Data/new/a.esp": "link", "settings.ini": "copy", "Data/Config/keys.dat": "copy"}
+	if got := deployedHow(LoadDeployed(root)); !reflect.DeepEqual(got, want) {
+		t.Fatalf("how the files went in: %v", got)
+	}
+	staged := filepath.Join(root, a.ID, "files", "Data", "textures", "rock.dds")
+	if !sameFile(staged, filepath.Join(game, "Data", "textures", "rock.dds")) || sameFile(filepath.Join(root, a.ID, "files", "settings.ini"), filepath.Join(game, "settings.ini")) {
+		t.Fatal("linked or copied the wrong files")
+	}
+	if st, _ := os.Stat(staged); st.Mode().Perm()&0o222 != 0 {
+		t.Fatal("a linked file's copy isn't read-only")
+	}
+	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" || read(t, filepath.Join(root, "originals", "Data", "textures", "rock.dds")) != "vanilla rock" {
+		t.Fatal("the mod isn't in, or the original wasn't kept")
+	}
+	res, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil)
+	if err != nil || res.Changed != 0 {
+		t.Fatal(res, err)
+	}
+	if got := folderHashes(t, game); !reflect.DeepEqual(got, vanilla) {
+		t.Fatalf("not back to vanilla:\n%v\n%v", got, vanilla)
+	}
+	stagedIntact(t, root, a)
+	if m, _ := LoadMod(root, a.ID); m.CheckIntact() != nil {
+		t.Fatal("an untouched mod was marked as changed")
+	}
+	if err := RemoveMod(root, a.ID); err != nil || exists(filepath.Join(root, a.ID)) {
+		t.Fatal("a read-only copy couldn't be removed", err)
+	}
+}
+
+func TestModsLinkFallsBackToCopy(t *testing.T) {
+	game, root := modGame(t)
+	defer func() { modLink = os.Link }()
+	modLink = func(string, string) error { return errors.New("another drive") }
+	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A"}, "a.zip")
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, true, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(game, "Data", "textures", "rock.dds")
+	if got := deployedHow(LoadDeployed(root)); got["Data/textures/rock.dds"] != "copy" || sameFile(target, filepath.Join(root, a.ID, "files", "Data", "textures", "rock.dds")) || read(t, target) != "rock A" {
+		t.Fatalf("no copy after a link failed: %v", got)
+	}
+	if exists(target + tmpSuffix) {
+		t.Fatal("the link's temporary name was left")
+	}
+}
+
+// A game that clears read-only and writes into a linked file changes
+// Lootnest's copy too: the change is kept, the game put back, and the mod
+// marked so it isn't put in again as if it were the mod. A game that
+// replaces a linked file leaves Lootnest's copy as it was.
+func TestModsLinkedFileTheGameRewrote(t *testing.T) {
+	game, root := modGame(t)
+	canLink(t, filepath.Dir(game))
+	vanilla := folderHashes(t, game)
+	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A"}, "a.zip")
+	b := addMod(t, root, game, map[string]string{"Data/meshes/tree.nif": "tree B"}, "b.zip")
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a, b}, true, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	rock, tree := filepath.Join(game, "Data", "textures", "rock.dds"), filepath.Join(game, "Data", "meshes", "tree.nif")
+	if err := os.Chmod(rock, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	write(t, rock, "the game wrote here")
+	if err := removeFile(tree); err != nil {
+		t.Fatal(err)
+	}
+	write(t, tree, "the game's new tree")
+	res, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil)
+	if err != nil || res.Changed != 2 {
+		t.Fatal(res, err)
+	}
+	if read(t, filepath.Join(res.ChangedDir, "Data", "textures", "rock.dds")) != "the game wrote here" || read(t, filepath.Join(res.ChangedDir, "Data", "meshes", "tree.nif")) != "the game's new tree" {
+		t.Fatal("the game's changes weren't kept")
+	}
+	if got := folderHashes(t, game); !reflect.DeepEqual(got, vanilla) {
+		t.Fatalf("not back to vanilla:\n%v\n%v", got, vanilla)
+	}
+	stagedIntact(t, root, b)
+	a, _ = LoadMod(root, a.ID)
+	if !reflect.DeepEqual(a.Changed, []string{"Data/textures/rock.dds"}) {
+		t.Fatalf("the mod the game changed isn't marked: %+v", a)
+	}
+	if _, err := PlanMods(game, "", []*Mod{a}, nil); err == nil || !strings.Contains(err.Error(), "add it again") {
+		t.Fatalf("a changed mod would go in again: %v", err)
+	}
+}
+
+// A game that writes through a link and then replaces the file (an updater,
+// a settings writer) still leaves the mod marked.
+func TestModsLinkWrittenThenReplaced(t *testing.T) {
+	game, root := modGame(t)
+	canLink(t, filepath.Dir(game))
+	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A"}, "a.zip")
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, true, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	rock := filepath.Join(game, "Data", "textures", "rock.dds")
+	if err := os.Chmod(rock, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	write(t, rock, "the game wrote here")
+	write(t, rock+".new", "the game's new rock")
+	if err := os.Rename(rock+".new", rock); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyMods(root, game, "", "", nil, false, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if a, _ = LoadMod(root, a.ID); a.CheckIntact() == nil {
+		t.Fatal("the mod the game changed isn't marked")
+	}
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, true, time.Now(), nil); !errors.Is(err, ErrModChanged) || ModJournalPending(root) {
+		t.Fatalf("a changed mod wasn't refused before anything changed: %v", err)
+	}
+}
+
+func TestModConfigFile(t *testing.T) {
+	for rel, want := range map[string]bool{
+		"settings.INI": true, "Data/a.json": true, "Saved/Config/x.bin": true, "Saves/slot1.dat": true, "mods/init.lua": true,
+		"Data/textures/rock.dds": false, "plugin.dll": false, "Content/Paks/a.pak": false, "Configurator.exe": false,
+	} {
+		if got := modConfigFile(rel); got != want {
+			t.Errorf("%s: %v", rel, got)
+		}
+	}
+}
+
+func TestModConflicts(t *testing.T) {
+	a := &Mod{ID: "ma", Files: []ModFile{{Rel: "Data/rock.dds"}, {Rel: "Data/tree.nif"}, {Rel: "a.esp"}}}
+	b := &Mod{ID: "mb", Files: []ModFile{{Rel: "data/ROCK.dds"}, {Rel: "b.esp"}}}
+	c := &Mod{ID: "mc", Files: []ModFile{{Rel: "Data/rock.dds"}, {Rel: "Data/tree.nif"}}}
+	got := ModConflicts([]*Mod{a, b, c})
+	want := []ModConflict{{Rel: "Data/rock.dds", Mods: []string{"ma", "mb", "mc"}}, {Rel: "Data/tree.nif", Mods: []string{"ma", "mc"}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("%+v", got)
+	}
+	if got := ModConflicts([]*Mod{a}); len(got) != 0 {
+		t.Fatalf("one mod has no conflicts: %+v", got)
 	}
 }

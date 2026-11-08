@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.87.0, beta)
+## Where things stand (1.88.0, beta)
 
 These shipped recently, newest last:
 
@@ -641,6 +641,16 @@ These shipped recently, newest last:
   take mods out first (`modsOffBefore`) and leave the
   `off-after-update` marker until the next Apply. `ps_modSetOwn`; the
   Mods for select; New run's Start with mods.
+- **1.88** Roadmap Mods 3: `placeMod` hardlinks (`modLink` = os.Link to a
+  temp name, hash-checked, renamed in) when linking is on
+  (`Settings.ModsLinkOff`, More menu), the file isn't a config
+  (`modConfigFile`) and the staged copy can be made read-only; else the
+  1.86 copy. `deployed.json` records How (from `os.SameFile`). Undeploy
+  unlinks unchanged links; a staged copy the game changed marks the mod
+  (`Mod.Changed`, `ErrModChanged`; Play then starts vanilla), the
+  changed content kept in `changed\`. `ModConflicts`, conflict lines
+  and the `modconf` drawer; drag to reorder (`ps_modOrder` takes the
+  full order).
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

@@ -2042,7 +2042,19 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 
 /* Mods (67-mods.js): the set as rows on hairlines, in the order they go in. */
 .mod-list { margin: var(--space-3) 0 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
-.mod-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.mod-row { position: relative; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.mod-list.can-drag > .mod-row { user-select: none; cursor: grab; }
+.mod-row.is-dragging { background: var(--bg-active); cursor: grabbing; }
+.mod-row.ins-before::before, .mod-row.ins-after::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; border-radius: var(--radius-tag); background: var(--fg-1); pointer-events: none; }
+.mod-row.ins-before::before { top: -1px; }
+.mod-row.ins-after::after { bottom: -1px; }
+.mod-grip { display: flex; color: var(--fg-3); }
+.mod-grip .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.mod-vs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
+.mod-vs > .ln-icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); }
+.mod-vs > .ln-icon + span { flex: 1 1 0; }
+.mod-vs .ln-button { padding-inline: 0; }
+.mod-vs .ln-button:hover { background: none; }
 .mod-row .pt-main { flex: 1; }
 .mod-row.is-off .pt-main b { color: var(--fg-2); }
 .mod-actions { display: flex; align-items: center; gap: var(--space-1); }
