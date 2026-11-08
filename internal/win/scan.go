@@ -5,6 +5,7 @@ package win
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -190,4 +191,40 @@ func XboxGameFolders() []string {
 		add(filepath.Join(d, "XboxGames"))
 	}
 	return out
+}
+
+// ReadRegKey reads one key under HKCU or HKLM, read-only (KEY_READ): its
+// subkeys' names and its text and number values as text (core.RegRead).
+func ReadRegKey(key string) ([]string, map[string]string, error) {
+	root, path, _ := strings.Cut(key, `\`)
+	var r registry.Key
+	switch strings.ToUpper(root) {
+	case "HKCU":
+		r = registry.CURRENT_USER
+	case "HKLM":
+		r = registry.LOCAL_MACHINE
+	default:
+		return nil, nil, registry.ErrNotExist
+	}
+	k, err := registry.OpenKey(r, path, registry.READ)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer k.Close()
+	subs, _ := k.ReadSubKeyNames(2000)
+	names, _ := k.ReadValueNames(200)
+	vals := map[string]string{}
+	for _, n := range names {
+		if s, typ, err := k.GetStringValue(n); err == nil {
+			if typ == registry.EXPAND_SZ {
+				if x, err := registry.ExpandString(s); err == nil {
+					s = x
+				}
+			}
+			vals[n] = s
+		} else if v, _, err := k.GetIntegerValue(n); err == nil {
+			vals[n] = strconv.FormatUint(v, 10)
+		}
+	}
+	return subs, vals, nil
 }

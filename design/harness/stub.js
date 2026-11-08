@@ -65,6 +65,19 @@
   if (ANON) PLAYERS.forEach((p, i) => { p.name = "Player " + (i + 1); });
   // ?runs=1: two runs of the first profile ("Cristian hardcore", "Cristian 100%").
   if (q.get("runs") === "1") PLAYERS.push({ id: "r1", name: PLAYERS[0].name + " hardcore", color: "#6C9BD2", of: "p1" }, { id: "r2", name: PLAYERS[0].name + " 100%", color: "#6C9BD2", of: "p1" });
+  // ?plugins=1: one plugin of each kind (core/plugins.go), with an older
+  // version of the theme kept for Roll back. &theme=1: the first profile
+  // chose the theme, so it shows.
+  const PLUGINS = q.get("plugins") === "1";
+  const PLUGIN_LIST = PLUGINS ? [
+    { id: "retroarch", name: "RetroArch playlists", version: "1.2.0", author: "Lena M.", description: "Every game in your RetroArch playlists, in the Library.", provides: ["sources"], on: true },
+    { id: "emu-saves", name: "Emulator save locations", version: "0.4.1", author: "Saves club", description: "Where common emulators keep saves and memory cards.", provides: ["saves"], on: true },
+    { id: "retro-info", name: "Retro game details", version: "2.0.0", author: "Lena M.", description: "Summaries, developers and release years for older games.", provides: ["metadata"], on: false },
+    { id: "deep-sea", name: "Deep sea", version: "1.1.0", author: "Ana P.", description: "Dark blue grounds with a cyan accent.", provides: ["theme"], on: true, older: "1.0.0" },
+  ] : [];
+  const THEMES = PLUGINS ? { "deep-sea": { name: "Deep sea", tokens: { "--bg-well": "#0a1019", "--bg-ground": "#0d1520", "--bg-surface": "#152131", "--bg-raised": "#1b2a3d", "--bg-active": "#22344a",
+    "--accent": "oklch(0.70 0.15 220)", "--accent-hover": "oklch(0.76 0.14 220)", "--fg-on-accent": "#0d1520" } } } : {};
+  if (PLUGINS && q.get("theme") === "1") PLAYERS[0].theme = "deep-sea";
   const ids = PLAYERS.map((p) => p.id);
   const some = (n) => ids.slice(0, Math.min(n, ids.length));
 
@@ -171,6 +184,7 @@
   const gogRecs = () => ({ [GOG_KEY]: { version: "1.5.68", checkedAt: iso(2 * h), game: "" }, "dir:c:\\gog games\\cinder vale": { version: "2.0.3", checkedAt: "0001-01-01T00:00:00Z", game: "" } });
   const itchRecs = () => ({ [ITCH_KEY]: { version: "1.2.0", checkedAt: iso(3 * h), game: "" }, "dir:d:\\games\\itch\\moss lane": { version: "0.8.1", checkedAt: iso(h), game: "" } });
   if (ITCH) found.push({ key: "dir:d:\\games\\itch\\moss lane", name: "Moss Lane", source: "folder", exe: "D:\\Games\\itch\\Moss Lane\\MossLane.exe" });
+  if (PLUGINS) found.push({ key: "dir:d:\\emulators\\retroarch", name: "Super Metroid", source: "plugin:retroarch", sourceName: "RetroArch", exe: "D:\\Emulators\\RetroArch\\retroarch.exe" });
   if (GOG) found.push({ key: "dir:c:\\gog games\\cinder vale", name: "Cinder Vale", source: "gog", exe: "C:\\GOG Games\\Cinder Vale\\CinderVale.exe" });
   if (N === "0") { games = []; found = []; GROUPS = []; }
   if (N === "400") {
@@ -233,7 +247,7 @@
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, avatars: {}, banners: {}, shelf,
-    customArt: customIndex(),
+    customArt: customIndex(), themes: THEMES, pluginMeta: PLUGIN_LIST.some((x) => x.on && x.provides.includes("metadata")),
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
@@ -410,6 +424,12 @@
     ps_ready: () => ok(q.get("bp") === "1" ? { bigPicture: true } : {}),
     ps_restart: () => ok(null),
     ps_closeGame: () => ok(),
+    ps_plugins: () => ok({ plugins: PLUGIN_LIST }),
+    // Every install from the harness is refused, as core.InstallPlugin refuses a plugin with a program in it.
+    ps_installPlugin: () => Promise.reject("Lootnest didn't install it: it has a file that isn't data (bin/helper.exe); plugins can only hold .json, .ini, .vdf, .yaml, .txt and pictures."),
+    ps_setPluginOn: (id, on) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) x.on = on; return ok(); },
+    ps_removePlugin: (id) => { const i = PLUGIN_LIST.findIndex((p) => p.id === id); if (i >= 0) PLUGIN_LIST.splice(i, 1); return ok(); },
+    ps_rollbackPlugin: (id) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (!x || !x.older) return Promise.reject("Lootnest couldn't roll it back: no older version of it is kept."); x.version = x.older; delete x.older; return ok({ ...x }); },
     // The last scan, per source: a mix of found, not installed, no games and an error.
     ps_sources: () => ok({ at: iso(2 * 60e3 + 5e3), sources: [
       ["steam", 7, "ok", "", "C:\\Program Files (x86)\\Steam"], ["epic", 0, "info", "Not installed"],
@@ -820,6 +840,7 @@
       else if (kind === "workDir") emit({ type: "browse", reqId: id, path: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64" });
       else if (kind === "playniteDir") emit({ type: "browse", reqId: id, path: "D:\\Apps\\Playnite" });
       else if (kind === "art") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Pictures\\My cover.png" });
+      else if (kind === "plugin") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\handy-tools.zip" });
       else if (kind === "mod" || kind === "modDir") emit({ type: "browse", reqId: id, path: kind === "mod" ? "C:\\Users\\cris\\Downloads\\PBZ Reshade and Steam fix.zip" : "C:\\Users\\cris\\Downloads\\PBZ HD Textures" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });

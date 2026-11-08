@@ -79,6 +79,11 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_found", a.apiFound))
 	must(a.w.Bind("ps_scan", a.apiScan))
 	must(a.w.Bind("ps_sources", a.apiSources))
+	must(a.w.Bind("ps_plugins", a.apiPlugins))
+	must(a.w.Bind("ps_installPlugin", a.apiInstallPlugin))
+	must(a.w.Bind("ps_setPluginOn", a.apiSetPluginOn))
+	must(a.w.Bind("ps_removePlugin", a.apiRemovePlugin))
+	must(a.w.Bind("ps_rollbackPlugin", a.apiRollbackPlugin))
 	must(a.w.Bind("ps_ignoreFound", a.apiIgnoreFound))
 	must(a.w.Bind("ps_unhideFound", a.apiUnhideFound))
 	must(a.w.Bind("ps_setPrimaryCopy", a.apiSetPrimaryCopy))
@@ -238,6 +243,9 @@ type AppState struct {
 	Activity  core.Activity                         `json:"activity"`  // time played per day
 	Conflicts map[string]SteamCloudNote             `json:"conflicts"` // game id -> what Steam Cloud replaced, until dismissed
 	CustomArt map[string]map[string]string          `json:"customArt"` // Library key -> kind -> file name of the art the user chose
+	Themes    map[string]PluginTheme                `json:"themes"`    // plugin id -> the colours of an on theme plugin
+	// PluginMeta: a plugin that's on fills in game details.
+	PluginMeta bool `json:"pluginMeta,omitempty"`
 }
 
 func (a *App) apiState() AppState {
@@ -255,6 +263,8 @@ func (a *App) apiState() AppState {
 	st.Recent = a.store.LoadRecent()
 	st.Shelf = a.store.LoadShelf()
 	st.CustomArt = a.store.CustomArt()
+	pd := a.plugins()
+	st.Themes, st.PluginMeta = pd.themes, len(pd.meta) > 0
 	st.Playtime = core.WithOffsets(a.store.LoadPlaytime(), st.Shelf)
 	st.Avatars, st.Banners = map[string]string{}, map[string]string{}
 	for _, p := range cfg.Players {
@@ -750,6 +760,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "updateDir":
 			opt.Title = "Choose the update's folder"
 			opt.Folder = true
+		case "plugin":
+			opt.Title = "Choose the plugin"
+			opt.Filters = []win.FileFilter{{Name: "Lootnest plugins (*.zip)", Spec: "*.zip"}}
 		case "mod":
 			opt.Title = "Choose the mod"
 			opt.Filters = []win.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}

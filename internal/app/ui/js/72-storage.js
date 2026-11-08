@@ -26,7 +26,7 @@
   const movable = (it) => !["shortcut", "hydra"].includes(it.source) && (it.kind === "found" ? removable(it) : it.g.launch.type === "exe" && UPDATABLE.includes(it.source));
   const moveItem = (it) => movable(it) ? `<button data-action="movefolder-open" ${itemAttr(it)}>Move to another drive</button>`
     : it.appId ? `<button data-action="move-open" data-app="${it.appId}" data-name="${esc(it.name)}">Move with Game Mover</button>`
-    : LAUNCHERS.includes(it.source) ? `<button disabled>Installed by ${esc(sourceLabel(it.source))}, so move it there</button>` : "";
+    : LAUNCHERS.includes(it.source) ? `<button disabled>Installed by ${esc(sourceLabel(it.source, it.f))}, so move it there</button>` : "";
 
   const ST_COLS = [["name", "Game"], ["install", "Installed"], ["saves", "Saves"], ["profiles", "Profiles"], ["copies", "Lootnest's copies"]];
   function viewStorage() {
@@ -45,7 +45,7 @@
     const cell = (z, f) => `<td class="ln-num">${z ? (z[f] ? fmtBytes(z[f]) : "None") : "Not counted yet"}</td>`;
     const head = ST_COLS.map(([f, l]) => `<th scope="col"${f === k ? ` aria-sort="${f === "name" ? "ascending" : "descending"}"` : ""}><button class="st-sort" data-action="st-sort" data-col="${f}">${l}</button></th>`).join("");
     const table = rows.length ? `<div class="st-wrap"><table class="st-table"><thead><tr>${head}<th scope="col" aria-label="Actions"></th></tr></thead><tbody>${rows.map(({ it, z }) => `
-        <tr><th scope="row"><b>${esc(it.name)}</b><span>${esc(sourceLabel(it.source))}</span></th>${cell(z, "install")}${cell(z, "saves")}${cell(z, "profiles")}${cell(z, "copies")}
+        <tr><th scope="row"><b>${esc(it.name)}</b><span>${esc(sourceLabel(it.source, it.f))}</span></th>${cell(z, "install")}${cell(z, "saves")}${cell(z, "profiles")}${cell(z, "copies")}
         <td><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="st-more" ${itemAttr(it)} aria-haspopup="menu" aria-expanded="false" aria-label="More for ${esc(it.name)}">${icon.dots}</button></td></tr>`).join("")}</tbody></table></div>`
       : `<p class="set-note">No games in the Library yet.</p>`;
     const note = Z.safe ? "Lootnest is in safe mode, so it doesn't count sizes. Restart it normally to see them."

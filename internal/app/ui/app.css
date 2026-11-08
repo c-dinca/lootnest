@@ -1031,6 +1031,9 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .itch-dl .ln-facts > div:last-child { border-bottom: 0; }
 .set-opt { margin-left: var(--space-1); font-size: var(--fs-12); font-weight: 500; color: var(--fg-3); }
 .settings-page .log { margin: 0; }
+.bk-row p.pl-kinds { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
+.pl-row .error-text { margin-top: var(--space-2); color: var(--bad); }
+.pl-acts { display: flex; align-items: center; gap: var(--space-2); }
 .settings-page .bk-card > * { padding: var(--space-5) var(--space-6); }
 /* As wide as 60ch of text and its switch, so the switch sits right after
    the text and lines up with the card's inputs and buttons. */

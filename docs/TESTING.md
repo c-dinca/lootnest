@@ -546,3 +546,38 @@ file, and a copy of the same game on another drive (D:).
    above A (and once with the arrows): the lines swap, the state says
    Changes not applied yet, and after **Apply** the shared file is A's.
    Press Esc during a drag: nothing moves.
+
+## 23. Plugins (1.89)
+
+Make four small .zip files from the examples in docs/PLUGINS.md: a
+sources plugin (a JSON list in %APPDATA% naming a game folder on the
+PC), a saves plugin (a game whose save folder exists), a metadata plugin
+(a game in the Library) and a theme plugin.
+
+1. Settings, Plugins, **Install from file**, each in turn: each shows in
+   the list, on, with what it provides. The sources plugin's game shows
+   in the Library after the scan, its store named as the source's
+   `name`.
+2. The saves plugin's game: Turn on profiles for it. The setup lists its
+   location among the suggestions, marked From and the plugin's name, and
+   it isn't one of the locations picked for you until you add it.
+3. The metadata plugin's game page, with Game details off: Details shows
+   the plugin's summary and says From and the plugin's name. With Game
+   details on, Steam's win where it has them. Edit details: your edit wins.
+4. Edit profile, Look, Theme: choose the theme and Save. Its colours show
+   while that profile is at the PC; seat another profile (or Nobody) and
+   Lootnest's own come back. Check text on the sidebar, menus and the red
+   (now the theme's) button by eye.
+5. Refusals, each with its reason and nothing left in
+   %LOCALAPPDATA%\Lootnest\plugins: a .zip with an .exe or a .js in it, a
+   file named ..\x.json (made with a zip tool that allows it), a .txt over
+   8 MB, an id with capitals, a theme setting --fs-14, a theme with dark
+   text (#333333 for --fg-1).
+6. Install the theme again with version 1.1.0: **Roll back to 1.0.0**
+   shows and works; plugins\.old\<id>\1.0.0 held the old one.
+7. Turn the sources plugin off: its game leaves the Library at once (a
+   game with profiles from it stays). On again: the scan brings it back.
+   **Remove**: plugins\<id> goes, nothing else in the data folder changes.
+8. Safe mode (Shift on open): Plugins says every plugin is off, the
+   switches and Install from file are disabled, the theme isn't shown and
+   the sources plugin's game isn't in the Library.

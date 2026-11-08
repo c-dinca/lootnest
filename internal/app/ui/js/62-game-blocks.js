@@ -347,13 +347,15 @@
   const SHOTS_SHOWN = 4;
   function detailsBlock(it) {
     const key = recentKey(it);
-    if (!cfg().settings.gameDetails) return it.appId ? `<p class="gp-det-off"><button class="gpage-link" data-action="details-on">Show details from Steam</button></p>` : "";
+    const steam = cfg().settings.gameDetails;
+    const offer = !steam && it.appId ? `<p class="gp-det-off"><button class="gpage-link" data-action="details-on">Show details from Steam</button></p>` : "";
+    if (!steam && !S.d.pluginMeta) return offer;
     if (!S.details[key]) { S.details[key] = { loading: true }; api.gameDetails(key).catch(() => {}); }
     const R = S.details[key], head = `<div class="ln-section-head"><div><h2>Details</h2></div></div>`;
-    if (R.loading) return it.appId ? `<section class="gpage-block gp-det">${head}${lnInline("", "Reading the details from Steam")}</section>` : "";
+    if (R.loading) return it.appId && steam ? `<section class="gpage-block gp-det">${head}${lnInline("", "Reading the details from Steam")}</section>` : "";
     if (R.error && !R.details) return `<section class="gpage-block gp-det">${head}${lnInline("error", esc(R.error))}</section>`;
     const d = R.details;
-    if (!d) return "";
+    if (!d) return offer;
     const open = S.detOpen.has(key), sum = d.summary || "";
     const facts = [
       ["Developer", esc((d.developers || []).join(", "))],
@@ -366,7 +368,8 @@
     const shots = d.screenshots || [], more = shots.length - SHOTS_SHOWN;
     const thumbs = shots.length ? `<div class="gp-shots">${shots.slice(0, SHOTS_SHOWN).map((s, i) => `<button class="gp-shot" data-action="shot-open" ${itemAttr(it)} data-i="${i}" aria-label="Screenshot ${i + 1} of ${shots.length}" aria-haspopup="dialog">
         <img src="${esc(s.thumb)}" alt="" loading="lazy">${i === SHOTS_SHOWN - 1 && more > 0 ? `<span class="gp-shot-more ln-num" aria-hidden="true">+${more}</span>` : ""}</button>`).join("")}</div>` : "";
-    const from = d.storeUrl ? `From the Steam store${R.edited ? ", with your edits" : ""}. <button class="gpage-link" data-action="open-link" data-url="${esc(d.storeUrl)}">Open on Steam</button>` : "Your own details.";
+    const also = d.from ? `, and ${esc(d.from)}` : "", edits = R.edited ? ", with your edits" : "";
+    const from = d.storeUrl ? `From the Steam store${also}${edits}. <button class="gpage-link" data-action="open-link" data-url="${esc(d.storeUrl)}">Open on Steam</button>` : d.from ? `From ${esc(d.from)}${edits}.` : "Your own details.";
     return `<section class="gpage-block gp-det">${head}<div class="gp-det-cols"><div class="gp-det-main">
         ${sum ? `<p class="gp-det-sum${open ? " open" : ""}" id="det-sum">${esc(sum)}</p><button class="gpage-link" data-action="details-more" data-k="${esc(key)}" aria-expanded="${open}" aria-controls="det-sum"${open ? "" : " hidden"}>${open ? "Show less" : "Show more"}</button>` : ""}
         ${gameCtlLine(d)}${thumbs}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>

@@ -40,7 +40,7 @@
     const gameOptions = (sel, none) => `<option value="">${none}</option>${libraryItems().map((it) => `<option value="${esc(recentKey(it))}" ${sel === recentKey(it) ? "selected" : ""}>${esc(it.name)}</option>`).join("")}`;
     let body = "";
     if (tab === "look") {
-      const hasPic = !!(S.d.avatars || {})[p.id], hasBanner = !!(S.d.banners || {})[p.id];
+      const hasPic = !!(S.d.avatars || {})[p.id], hasBanner = !!(S.d.banners || {})[p.id], themes = Object.entries(S.d.themes || {});
       const kind = !p.banner ? "auto" : p.banner === "image" ? "image" : p.banner.startsWith("style:") ? "plain" : "game";
       body = `
       <div class="field"><span class="label">Picture</span><div class="pe-row">
@@ -48,6 +48,8 @@
         ${hasPic ? `<button class="btn quiet" data-action="avatar-remove">Remove picture</button>` : `<select data-pe="avatarGame" aria-label="Or a game's cover">${gameOptions(p.avatarGame || "", "Or use a game's cover")}</select>`}</div></div>
       <div class="field"><span class="label">Colour</span><div class="pe-row"><div class="swatches">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="pe-color" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>
         <label class="custom-color"><input type="color" value="${esc((p.color || "#6c9bd2").toLowerCase())}" data-pe="color" aria-label="Any colour"><span>Any colour</span></label></div></div>
+      ${themes.length ? `<div class="field"><label for="pe-theme">Theme</label><select id="pe-theme" data-pe="theme"><option value="">${p.of && parentOf(p) ? `Same as ${esc(parentOf(p).name)}` : "Lootnest"}</option>${themes.map(([id, t]) => `<option value="${esc(id)}" ${p.theme === id ? "selected" : ""}>${esc(t.name)}</option>`).join("")}</select>
+        <span class="hint">The colours Lootnest shows while this profile is at the PC. Themes come from plugins, in Settings, Plugins.</span></div>` : ""}
       <div class="field"><span class="label">Banner</span>
         <div class="segt">${[["auto", "Most played"], ["plain", "Colour"], ["image", "Your picture"], ["game", "Game art"]].map(([v, l]) => `<button data-action="pe-banner" data-v="${v}" aria-pressed="${kind === v}">${l}</button>`).join("")}</div>
         ${kind === "game" ? `<select data-pe="banner" aria-label="Game">${gameOptions(p.banner, "Choose a game")}</select>` : ""}

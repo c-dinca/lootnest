@@ -206,6 +206,12 @@ func newEnv(a *App) *core.Env {
 			}
 			return loadSaveDB()
 		},
+		PluginSaves: func() []core.PluginSaveDB {
+			if a == nil {
+				return nil
+			}
+			return a.plugins().saves
+		},
 		DataDir:        DataDir(),
 		ExtraProtected: extra,
 	}
