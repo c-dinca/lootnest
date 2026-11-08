@@ -176,6 +176,12 @@ func TestControllerTools(t *testing.T) {
 			t.Errorf("case 3: Steam advice without Steam: %q", notes)
 		}
 	}
+	if c := PadCopiers(FindControllerTools(map[string]bool{"ds4windows": true}, nil, map[string]bool{"ViGEmBus": true})); !reflect.DeepEqual(c, []string{"DS4Windows"}) {
+		t.Fatalf("copiers = %v", c)
+	}
+	if c := PadCopiers(FindControllerTools(map[string]bool{"ds4windows": true}, nil, map[string]bool{"HidHide": true})); len(c) != 0 {
+		t.Fatalf("HidHide hides the real pad, copiers = %v", c)
+	}
 	if padMaker("vigem", nil) != "an app that uses ViGEmBus" || padMaker("steam", nil) != "Steam Input" || padMaker("root", nil) != "" {
 		t.Fatal("padMaker")
 	}

@@ -369,7 +369,7 @@
     const from = d.storeUrl ? `From the Steam store${R.edited ? ", with your edits" : ""}. <button class="gpage-link" data-action="open-link" data-url="${esc(d.storeUrl)}">Open on Steam</button>` : "Your own details.";
     return `<section class="gpage-block gp-det">${head}<div class="gp-det-cols"><div class="gp-det-main">
         ${sum ? `<p class="gp-det-sum${open ? " open" : ""}" id="det-sum">${esc(sum)}</p><button class="gpage-link" data-action="details-more" data-k="${esc(key)}" aria-expanded="${open}" aria-controls="det-sum"${open ? "" : " hidden"}>${open ? "Show less" : "Show more"}</button>` : ""}
-        ${thumbs}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>
+        ${gameCtlLine(d)}${thumbs}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>
         ${facts.length ? `<dl class="ln-facts gp-det-facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>` : ""}</div></section>`;
   }
   // Show more only when the three lines don't hold the whole summary.
@@ -391,6 +391,7 @@
       ${field("de-publisher", "Publisher", (d.publishers || []).join(", "))}
       ${field("de-released", "Released", d.released)}
       ${field("de-genres", "Genres", (d.genres || []).join(", "), "Separated by commas.")}
+      <div class="field"><label for="de-controller">Controller</label><select id="de-controller" class="ln-input">${[["", "Steam's"], ["full", "Full"], ["partial", "Partial"], ["none", "Keyboard and mouse only"]].map(([v, l]) => `<option value="${v}"${(typed["de-controller"] ?? d.controller ?? "") === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="dialog-foot">${R && R.edited ? `<button class="btn quiet" data-action="details-reset" ${itemAttr(it)} ${D.busy ? "disabled" : ""}>Use Steam's again</button><span class="grow"></span>` : ""}
         <button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
         <button class="btn primary" data-action="details-save" ${itemAttr(it)} ${D.busy ? "disabled" : ""}>Save</button></div></div></div>`;

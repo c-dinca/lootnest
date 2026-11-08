@@ -554,7 +554,7 @@
       const it = itemFor(el), D = S.dialog;
       if (!it || !D) return;
       const v = (id) => $("#" + id).value;
-      const edits = { summary: v("de-summary"), developer: v("de-developer"), publisher: v("de-publisher"), released: v("de-released"), genres: v("de-genres").split(",") };
+      const edits = { summary: v("de-summary"), developer: v("de-developer"), publisher: v("de-publisher"), released: v("de-released"), genres: v("de-genres").split(","), controller: v("de-controller") };
       D.busy = true; renderOverlay();
       try { await api.saveDetailsEdit(recentKey(it), edits); closeDialog(false); toast("Details saved"); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
     },

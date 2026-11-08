@@ -384,13 +384,7 @@ func ControllerNotes(tools []ControllerTool) []string {
 		}
 		notes = append(notes, n)
 	}
-	var copies []string
-	for _, t := range tools {
-		if t.Running && t.vigem && !toolOn(tools, "HidHide") {
-			copies = append(copies, t.Name)
-		}
-	}
-	switch {
+	switch copies := PadCopiers(tools); {
 	case len(copies) == 1:
 		notes = append(notes, "Games may see two pads, your own and the copy "+copies[0]+" makes, unless HidHide hides your own.")
 	case len(copies) > 1:
@@ -402,6 +396,18 @@ func ControllerNotes(tools []ControllerTool) []string {
 		}
 	}
 	return notes
+}
+
+// PadCopiers are the running tools whose virtual pad games see beside the
+// real one, as HidHide isn't there to hide it.
+func PadCopiers(tools []ControllerTool) []string {
+	copies := []string{}
+	for _, t := range tools {
+		if t.Running && t.vigem && !toolOn(tools, "HidHide") {
+			copies = append(copies, t.Name)
+		}
+	}
+	return copies
 }
 
 func joinAnd(s []string) string {

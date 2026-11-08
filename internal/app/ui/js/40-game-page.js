@@ -407,7 +407,7 @@
     return isOffline(it) ? gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="0"`, GI.globe, "Let it go online again", `Windows Firewall blocks ${n === 1 ? "its program" : n + " of its programs"}`)
       : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall blocks its connections");
   }
-  const detailsRow = (it) => (cfg().settings.gameDetails ? gpRow(`data-action="details-edit" ${itemAttr(it)}`, GI.edit, "Edit details", "Summary, developer, release date and genres", { disabled: !!(S.details[recentKey(it)] || {}).loading }) : "");
+  const detailsRow = (it) => (cfg().settings.gameDetails ? gpRow(`data-action="details-edit" ${itemAttr(it)}`, GI.edit, "Edit details", "Summary, developer, release date, genres and controller", { disabled: !!(S.details[recentKey(it)] || {}).loading }) : "");
   // Cover and art: a picture of the user's own for each kind, copied into
   // Lootnest; their file stays where it is.
   const ART_KINDS = [["cover", "Change cover", "A tall picture, about 2 by 3", "cover"], ["hero", "Change wide art", "The wide picture on its page and on shelves", "wide art"],

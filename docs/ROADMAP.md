@@ -44,7 +44,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 **Phases.**
 - 1, S: read every pad and ignore a translator's virtual twin; glyph families from the pad's id ([Chromium's mappings](https://chromium.googlesource.com/chromium/src/+/main/device/gamepad/gamepad_standard_mappings_win.cc)); PS and touchpad buttons; rumble only where offered.
 - 2, M: controllers and translators on this PC, with no HID report reads or writes, which can switch a Bluetooth DualSense's mode. Shipped in 1.84: Settings, Controllers, from SetupAPI's device list, the device tree and XInput's state; no device is opened.
-- 3, M: what each game needs, from Steam's controller categories, opt-in under Settings, Online.
+- 3, M: what each game needs, from Steam's controller categories, opt-in under Settings, Online. Shipped in 1.85: from the same appdetails request Game details makes (`controller_support` and the categories), on the game's page and in Big Picture, editable.
 - 4, L: Play with Steam Input: append-only `shortcuts.vdf`, Steam closed with consent, a copy first, name clashes refused. Exe-launched games only; launcher hand-offs lose Steam Input.
 - 5, M, optional: the seated profile's colour on the lightbar, USB only.
 
