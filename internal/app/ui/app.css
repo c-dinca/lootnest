@@ -1936,3 +1936,18 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .rm-saves { margin: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
 .rm-saves li { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); font-size: var(--fs-13); color: var(--fg-2); }
 .rm-saves .selectable { min-width: 0; overflow-wrap: anywhere; }
+
+/* Launch options (66-launch.js): rows on hairlines, as the drawer's lists. */
+.lo-sec > * + * { margin-top: var(--space-3); }
+.lo-sec + .lo-sec { margin-top: var(--gap-group); padding-top: var(--space-5); border-top: var(--hairline) solid var(--edge-1); }
+.lo-list { margin-bottom: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
+.lo-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.lo-main { display: grid; flex: 1; min-width: 0; gap: var(--space-1); }
+.lo-main b { font-weight: 600; overflow-wrap: anywhere; }
+.lo-main .gpage-hint { overflow-wrap: anywhere; }
+.lo-main .ln-input, .lo-add .ln-input { height: var(--ctl-sm); font-size: var(--fs-13); }
+.lo-force { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-13); color: var(--fg-2); cursor: pointer; }
+.lo-add, .lo-pick { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.lo-add .ln-input { flex: 1; min-width: calc(var(--space-8) * 5); }
+.lo-pick > span { flex: 1; min-width: 0; font-size: var(--fs-13); overflow-wrap: anywhere; }
+.lo-apps { max-height: calc(var(--space-8) * 8); overflow: auto; }

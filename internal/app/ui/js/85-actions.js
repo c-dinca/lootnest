@@ -639,14 +639,57 @@
       try { await api.fixBlocked(D.gameId, D.playerId); } catch (e) { D.busy = false; renderOverlay(); toast(errText(e), "error"); }
     },
     "dialog-cancel": () => closeDialog(false),
+    "launch-options"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      openLaunch(it); renderOverlay(); focusOverlay();
+    },
+    "lo-remove"(el) { S.dialog.o[el.dataset.list].splice(+el.dataset.i, 1); renderOverlay(); },
+    "lo-apps"() {
+      const D = S.dialog;
+      D.picking = !D.picking; D.apps = null; renderOverlay();
+      if (D.picking) api.runningApps().then((l) => { D.apps = l || []; if (S.dialog === D) { renderOverlay(); $(".lo-apps")?.scrollIntoView({ block: "nearest" }); } }, (e) => { D.picking = false; D.error = errText(e); if (S.dialog === D) renderOverlay(); });
+    },
+    "lo-app-pick"(el) { const D = S.dialog; D.o.closeApps.push({ name: el.dataset.name, force: false }); renderOverlay(); },
+    "lo-app-add"() {
+      const D = S.dialog, i = $("#lo-app"), name = i.value.trim();
+      if (!name) { i.focus(); return; }
+      const full = /\.exe$/i.test(name) ? name : name + ".exe";
+      if (!D.o.closeApps.some((c) => c.name.toLowerCase() === full.toLowerCase())) D.o.closeApps.push({ name: full, force: false });
+      renderOverlay(); const n = $("#lo-app"); if (n) n.focus();
+    },
+    async "lo-prog"(el) {
+      const D = S.dialog, list = el.dataset.list, r = await browse("program");
+      if (r.path && S.dialog === D) { D.o[list].push({ path: r.path, args: "" }); renderOverlay(); }
+      else if (r.error) toast(r.error, "error");
+    },
+    async "lo-dir"() {
+      const D = S.dialog, it = dialogItem(D), r = await browse("workDir", D.o.workDir || (it ? (it.f ? it.f.dir : it.g.launch.exe) : ""));
+      if (r.path && S.dialog === D) { D.o.workDir = r.path; renderOverlay(); }
+      else if (r.error) toast(r.error, "error");
+    },
+    "lo-dir-clear"() { S.dialog.o.workDir = ""; renderOverlay(); },
+    async "lo-steam"(el) { try { await api.steamProperties(+el.dataset.app); } catch (e) { toast(errText(e), "error"); } },
+    async "lo-save"() {
+      const D = S.dialog, it = dialogItem(D);
+      if (!it) return;
+      D.busy = true; D.error = ""; renderOverlay();
+      try {
+        await api.saveLaunchOptions(recentKey(it), D.args, D.o);
+        await refresh();
+        if (it.kind === "found") await loadFound();
+        if (S.dialog === D) closeDialog(true);
+        toast("Saved");
+      } catch (e) { D.busy = false; D.error = errText(e); if (S.dialog === D) renderOverlay(); }
+    },
     "game-settings"(el) { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; openGameSettings(el.dataset.key); },
     async "game-settings-save"() {
       const D = S.dialog;
       if (!D || D.kind !== "game-settings") return;
-      const name = $("#gs-name").value, args = $("#gs-args").value;
+      const name = $("#gs-name").value, f = (S.found.games || []).find((x) => x.key === D.key);
       D.busy = true; renderOverlay();
       try {
-        await api.saveLibraryPref(D.key, name, args);
+        await api.saveLibraryPref(D.key, name, (f && f.args) || "");
         await loadFound();
         if (S.dialog === D) { S.dialog = null; renderOverlay(); }
         toast("Saved");
@@ -964,6 +1007,15 @@
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (el.id === "side-q") { S.sideQ = el.value; renderSideGames(); return; }
+    if (el.dataset.lo && S.dialog && S.dialog.kind === "launch") {
+      const D = S.dialog, O = D.o, l = el.dataset.lo;
+      if (l === "gameArgs") D.args = el.value;
+      else if (l === "args") O[el.dataset.list][+el.dataset.i].args = el.value;
+      else if (l === "force") O.closeApps[+el.dataset.i].force = el.checked;
+      else if (l === "admin") O.runAsAdmin = el.checked;
+      else if (l === "reopen") O.reopenClosed = el.checked;
+      return;
+    }
     if (S.dialog && S.dialog.kind === "details-edit" && el.id.startsWith("de-")) { (S.dialog.vals ||= {})[el.id] = el.value; return; }
     if (S.dialog && S.dialog.kind === "profile") {
       const f = el.dataset.pe, D = S.dialog;
@@ -1098,6 +1150,7 @@
   document.addEventListener("focusin", (ev) => { if (ev.target.id === "gq") renderGq(); });
   document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".bar-search")) gqClose(); });
   document.addEventListener("keydown", (ev) => {
+    if (ev.target.id === "lo-app" && ev.key === "Enter") { ev.preventDefault(); actions["lo-app-add"](); return; }
     if (ev.target.id === "tag-new" && ev.key === "Enter") { ev.preventDefault(); actions["tag-add"]({ dataset: { key: ev.target.dataset.key } }); return; }
     if (ev.target.id === "gp-note" && ev.key === "Enter") { ev.preventDefault(); saveNote(ev.target); return; }
     if (ev.target.id === "gp-hours" && (ev.key === "Enter" || ev.key === "Escape")) { ev.preventDefault(); actions[ev.key === "Enter" ? "hours-save" : "hours-cancel"](); return; }

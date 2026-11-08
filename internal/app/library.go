@@ -142,12 +142,15 @@ func (a *App) apiLaunchFound(key string) error {
 		return nil // already starting, once its saves are kept
 	}
 	_ = a.store.RecordPlay(key, "", time.Now())
-	if a.updatedSince(key, a.gameBuild(f.AppID, f.Exe)) {
+	if updated := a.updatedSince(key, a.gameBuild(f.AppID, f.Exe)); updated || !a.launchOpts(key).Empty() {
 		// Updated since it last started: its saves are kept as a point
-		// first, away from the window's thread, then it starts.
+		// first, away from the window's thread, then it starts. Apps to
+		// close before it, and Windows' administrator prompt, wait there too.
 		go func() {
 			defer startingFound.Delete(key)
-			a.pointBeforeUpdate(key)
+			if updated {
+				a.pointBeforeUpdate(key)
+			}
 			if err := a.launchFound(key, f); err != nil {
 				a.emit("toast", map[string]any{"kind": "error", "text": sentence(err)})
 			}
@@ -163,6 +166,19 @@ func (a *App) apiLaunchFound(key string) error {
 var startingFound sync.Map
 
 func (a *App) launchFound(key string, f core.FoundGame) error {
+	if f.ProcessName != "" { // followed until it closes, for the steps after
+		a.stepsBefore(key, f.Name)
+	} else if a.launchOpts(key).HasSteps() {
+		a.logf("Lootnest can't tell when %s closes, so nothing runs before or after it", f.Name)
+	}
+	err := a.startFound(key, f)
+	if err != nil {
+		a.stepsAfter(key, false)
+	}
+	return err
+}
+
+func (a *App) startFound(key string, f core.FoundGame) error {
 	name, exe, appID, args := f.Name, f.Exe, f.AppID, f.Args
 	if appID > 0 {
 		if a.env.SteamPath == "" {
@@ -188,7 +204,7 @@ func (a *App) launchFound(key string, f core.FoundGame) error {
 		return err
 	}
 	a.logf("Starting %s", name)
-	if err := win.StartDetached(path, args, dirOf(path)); err != nil {
+	if err := a.startExe(key, path, args); err != nil {
 		return err
 	}
 	a.watchFirstStart("found:" + key)

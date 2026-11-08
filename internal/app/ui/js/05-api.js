@@ -132,6 +132,9 @@
     storeAction: (key, act) => call("ps_storeAction", key, act),
     ownedGames: () => call("ps_ownedGames"),
     removeGame: (key, go) => call("ps_removeGame", key, !!go),
+    saveLaunchOptions: (key, args, o) => call("ps_saveLaunchOptions", key, args, o),
+    runningApps: () => call("ps_runningApps"),
+    steamProperties: (appId) => call("ps_steamProperties", appId),
   };
 
   // Small per-PC preferences (sort, cover size), kept in the WebView's own

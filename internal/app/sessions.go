@@ -190,6 +190,7 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 			a.pointBeforeUpdate("game:" + g.ID)
 		}
 		a.armCloudWatch(g)
+		a.stepsBefore("game:"+g.ID, g.Name)
 	}
 	if req.ReqID != "" {
 		// Steam's wrapper starts the game; the watcher follows it from here.
@@ -214,6 +215,7 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 	}
 	if err := a.launchGame(cfg, g, req.PlayerID); err != nil {
 		// The swap succeeded; files stay loaded for this player.
+		a.stepsAfter("game:"+g.ID, false)
 		fail(fmt.Errorf("%s's files are loaded, but %s didn't launch: %v", who, g.Name, err))
 		return
 	}
@@ -244,7 +246,7 @@ func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error 
 		if err != nil {
 			return err
 		}
-		return win.StartDetached(exe, args, dirOf(exe))
+		return a.startExe("game:"+g.ID, exe, args)
 	case "uri":
 		if !core.SafeLaunchURI(g.Launch.URI) {
 			return errors.New("Lootnest can't start this game through its launcher; choose its .exe in Edit game")
@@ -342,6 +344,7 @@ func (a *App) tick() {
 			} else if time.Now().After(s.deadline) {
 				delete(a.sessions, g.ID)
 				changed = true
+				go a.stepsAfter("game:"+g.ID, false)
 				notes = append(notes, [2]string{g.Name + " didn't start",
 					fmt.Sprintf("%s's files stay loaded. If it starts later, Lootnest will still save it.", cfg.PlayerName(s.PlayerID))})
 			}
@@ -408,6 +411,7 @@ func (a *App) tick() {
 }
 
 func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
+	defer a.stepsAfter("game:"+g.ID, true)
 	time.Sleep(3 * time.Second) // let the game and Steam finish writing
 	// The build that ran, if it updated as it started, so the next start
 	// doesn't take it for a new update.

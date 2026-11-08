@@ -78,6 +78,8 @@
       o.innerHTML = viewShots();
     } else if (D.kind === "manage") {
       o.innerHTML = viewManage();
+    } else if (D.kind === "launch") {
+      o.innerHTML = viewLaunch();
     } else if (D.kind === "copies") {
       o.innerHTML = viewCopies();
     } else if (D.kind === "unsorted") {
@@ -166,17 +168,11 @@
     const D = S.dialog;
     const f = (S.found.games || []).find((x) => x.key === D.key);
     if (!f) return "";
-    const steam = f.source === "steam";
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="${esc(f.name)} settings">
       <div><h2>${esc(f.name)} settings</h2><p class="sub">These settings don't depend on profiles and stay if you turn them on.</p></div>
       <div class="field"><label for="gs-name">Name in the Library</label>
         <input id="gs-name" type="text" value="${esc(f.name)}" maxlength="60" placeholder="${esc(f.scanName || f.name)}" spellcheck="false">
         ${f.scanName ? `<p class="hint">Found as ${esc(f.scanName)}. Leave it empty to use that name again.</p>` : ""}</div>
-      <div class="field"><label for="gs-args">Launch options</label>
-        <input id="gs-args" type="text" value="${esc(f.args || "")}" placeholder="${steam ? "-novid -high" : "-windowed"}" spellcheck="false">
-        <p class="hint">${steam
-          ? "Added when Lootnest or its desktop shortcut starts the game. Launch options set in Steam still apply too."
-          : "Added when Lootnest or its desktop shortcut starts the game."}</p></div>
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
         <button class="btn primary" data-action="game-settings-save" ${D.busy ? "disabled" : ""}>Save</button></div>
     </div></div>`;

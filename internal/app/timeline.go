@@ -60,6 +60,7 @@ func (a *App) foundTick(procs map[string]bool) {
 		case r.since.IsZero():
 			if now.After(r.until) {
 				delete(foundRuns, key)
+				go a.stepsAfter(key, false)
 			}
 		default:
 			if r.missed++; r.missed < 2 { // ignore quick restarts (launcher -> game)
@@ -67,6 +68,7 @@ func (a *App) foundTick(procs map[string]bool) {
 			}
 			delete(foundRuns, key)
 			go func(key string, rec core.SessionRecord) {
+				a.stepsAfter(key, true)
 				a.logSession(rec)
 				a.apiGameTimeline(key)
 			}(key, core.SessionRecord{Game: key, Start: r.since, End: now, Source: "library", Build: r.build})

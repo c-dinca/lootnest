@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.76.0, beta)
+## Where things stand (1.77.0, beta)
 
 These shipped recently, newest last:
 
@@ -520,6 +520,14 @@ These shipped recently, newest last:
   inline, pointer drag and drop (`sideDrag`; Shift moves; folder
   reorder), Ctrl/Shift selection, Delete takes out of a folder with Undo,
   and Add to collection in every game's right-click menu.
+
+- **1.77** Launch options per game (`core.LaunchOptions` in
+  `Config.LaunchOpts`: WorkDir, RunAsAdmin, CloseApps with Force,
+  StartBefore, StartAfter, ReopenClosed; `CleanLaunchOptions`, `Moved`
+  for new copies); arguments stay in `Game.Launch.Args`/`LibraryPref.Args`.
+  `stepsBefore`/`stepsAfter(played)` around every start (WM_CLOSE, 10 s,
+  Force only if ticked; never in safe mode), `startExe` (start folder,
+  runas), `ps_runningApps`, Steam properties link. Drawer in `66-launch.js`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.
