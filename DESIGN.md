@@ -147,7 +147,7 @@ Long prose (notes, bios, banners) is set to at most 65ch with `text-wrap: pretty
 
 ### Space, size, radius, motion
 
-- **Space:** 4px steps, from `--space-1` (4) up to `--space-16` (64).
+- **Space:** 4px steps, from `--space-1` (4) up to `--space-16` (64). Gaps between blocks use the roles from principle 6: `--gap-in` (12) inside a section, under its heading; `--gap-group` (32) between groups, such as a side column's blocks or the Library's shelves; `--gap-section` (48) between page sections. The space above a heading is at least twice the space below it.
 - **Controls:**
   - `--ctl-sm` (32) for small buttons, `--ctl-md` (40) as the default, `--ctl-lg` (48) for Play.
   - Icons are 16 or 18px, drawn with 1.5px strokes.
