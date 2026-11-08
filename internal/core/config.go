@@ -32,9 +32,10 @@ type Player struct {
 	// - Avatar: a picture is saved as avatars/<id>.png; without one,
 	//   AvatarGame (a Library key) shows that game's cover, else the
 	//   initial.
-	// - Banner: "" (their colour), "image" (banners/<id>.jpg) or a Library
-	//   key (that game's art). BannerY: which part of the picture shows,
-	//   0-100 from the top.
+	// - Banner: "" (their most played game's art, else none), "style:..."
+	//   (their colour), "image" (banners/<id>.jpg) or a Library key (that
+	//   game's art). BannerY: which part of the picture shows, 0-100 from
+	//   the top.
 	// - Now / NowNote: the game they're into right now, and a word on it.
 	// - Favorites: up to six Library keys, in order.
 	// - Sections: which parts of the page show, in order (ProfileSections).

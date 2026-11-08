@@ -308,6 +308,7 @@
 .ln-avatar--48 { --size: 48px; }
 .ln-avatar--72 { --size: 72px; }
 .ln-avatar--120 { --size: clamp(96px, 7vw, 128px); }
+.ln-avatar--160 { --size: 160px; }
 
 /* A player you can pick: "or play as… Cristian". */
 .ln-chip {

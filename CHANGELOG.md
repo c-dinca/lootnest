@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.58.16
+
+- Cloud saves opens on any save that changed on two PCs, with when it changed on each and the two choices, Keep this PC's or Use the other PC's. The buttons wrap instead of being cut off.
+- Sync now sits beside a one-line summary of where your saves stand.
+- The cloud folder's path keeps its start and its end when it's long, and a button copies the whole path.
+- Each switch on Cloud saves has a one-line explanation. More shows the rest.
+- A profile's page shows the art of its most played game, unless you chose another banner (Edit profile, Banner, where Colour still gives your colour). With no art, the page starts with the name.
+- A profile's numbers are a list beside Activity and Played lately, so nothing is cut short. Favourite games shows only once some are picked, from Pick favourites.
+- The first start is a full window: your profile's picture, name and colour on the left, with a preview of your Play button and your place in the sidebar, and what Lootnest does on the right. More profiles and runs are added later in Profiles.
+
 ## 1.58.15
 
 - Settings has one title, the name of the category you're in. The version is under About.
