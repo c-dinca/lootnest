@@ -549,23 +549,28 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 }
 
 /* --------------------------------------------------------------- library */
-.lib-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4) var(--space-6); }
+.lib-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-6); }
 .lib-head h1 { margin: 0; font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); }
-.lib-head p { margin: var(--space-2) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
-.lib-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.lib-actions .ln-search { width: clamp(200px, 22vw, 320px); }
+.lib-head > p { flex-basis: 100%; margin: 0; font-size: var(--fs-13); color: var(--fg-2); }
+.lib-title { display: flex; align-items: baseline; }
+.lib-meta { font-size: var(--fs-13); color: var(--fg-2); margin-left: var(--space-4); }
+.lib-actions { display: flex; flex: 1; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.lib .lib-actions { flex-wrap: nowrap; }
+.lib-actions .ln-search { flex: 0 1 clamp(240px, 28vw, 420px); min-width: 160px; }
 .lib-banners { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
-.lib-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-6); margin: var(--space-6) 0; padding-bottom: var(--space-4); border-bottom: var(--hairline) solid var(--edge-1); }
+.lib-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-4); margin: var(--space-6) 0; padding-bottom: var(--space-4); border-bottom: var(--hairline) solid var(--edge-1); }
 .lib-tools-main, .lib-tools-side, .lib-who { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.lib-tools-main { gap: var(--space-4); }
+.lib-tools-main { gap: var(--space-3); }
 .lib-who .ln-chip { height: var(--ctl-sm); padding: 0 var(--space-3) 0 6px; font-size: var(--fs-13); }
-.lib-tools-side select.ln-input { height: var(--ctl-sm); font-size: var(--fs-13); }
+.lib-tools select.ln-input { min-width: 0; max-width: 12em; height: var(--ctl-sm); padding-right: var(--space-6); background-position: right var(--space-2) center; font-size: var(--fs-13); }
+/* One row once the Library is wide enough for it; long collection names shorten the menus. */
+@container (min-width: 1080px) { .lib-tools, .lib-tools-main, .lib-tools-side, .lib-who { flex-wrap: nowrap; } .lib-tools-main { flex-shrink: 0; } .lib-tools-side { min-width: 0; } }
 .lib-size button { width: var(--ctl-sm); padding: 0; justify-content: center; }
-.lib-size button span { display: block; width: calc(var(--h) * 0.7); height: var(--h); border: 1.5px solid currentColor; border-radius: 2px; }
+.lib-size button span { display: block; width: calc(var(--h) * 0.7); height: var(--h); border: 0; background: currentColor; opacity: .75; border-radius: 1px; }
 .lib .ln-state--inline { margin-bottom: var(--space-4); }
-.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 9vw, 220px), 1fr)); gap: var(--space-8) var(--space-5); }
-.lib-grid.size-s { grid-template-columns: repeat(auto-fill, minmax(clamp(112px, 6.5vw, 160px), 1fr)); gap: var(--space-6) var(--space-4); }
-.lib-grid.size-l { grid-template-columns: repeat(auto-fill, minmax(clamp(200px, 12vw, 300px), 1fr)); gap: var(--space-10) var(--space-6); }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--lib-cover), 1fr)); gap: var(--space-8) var(--space-5); }
+.lib-grid.size-s { grid-template-columns: repeat(auto-fill, minmax(clamp(104px, 6vw, 160px), 1fr)); gap: var(--space-6) var(--space-4); }
+.lib-grid.size-l { grid-template-columns: repeat(auto-fill, minmax(clamp(184px, 11vw, 300px), 1fr)); gap: var(--space-10) var(--space-6); }
 .lib-none { margin: 0; font-size: var(--fs-14); color: var(--fg-2); }
 .lib-card { position: relative; min-width: 0; }
 .lib-card .cover img { opacity: 0; transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
@@ -580,7 +585,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-play:hover { background: var(--accent); border-color: transparent; color: var(--fg-on-accent); }
 
 /* Recent games: wide art, the latest first and twice as wide. */
-.lib { container-type: inline-size; }
+.lib { container-type: inline-size; --lib-cover: clamp(136px, 8vw, 220px); }
 .lib-recent { margin-top: var(--space-8); }
 .lib-recent .ln-section-head { margin-bottom: var(--space-4); }
 .lib-recent-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-5); }
@@ -592,13 +597,20 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-all-head + .lib-tools { margin-top: var(--space-4); }
 /* Collection shelves: one row of covers each, scrolling sideways. */
 .lib-shelves { display: grid; gap: var(--space-8); margin-top: var(--space-10); }
+.lib-shelf { min-width: 0; }
 .lib-shelf .ln-section-head { margin-bottom: var(--space-4); }
+.lib-shelf .ln-section-head .ln-button--ghost { margin-right: calc(-1 * var(--space-3)); }
 .lib-shelf-n { margin-left: var(--space-3); font: 600 var(--fs-15)/1 var(--font-ui); color: var(--fg-3); vertical-align: 2px; }
+/* Covers as wide as the grid's medium ones (its column count, then the
+   width), with the last one running off the window's edge. */
 .lib-shelf-row {
-  display: grid; grid-auto-flow: column; grid-auto-columns: clamp(120px, 7vw, 168px); gap: var(--space-5);
+  --n: max(1, round(down, (100cqi + var(--space-5)) / (var(--lib-cover) + var(--space-5))));
+  display: grid; grid-auto-flow: column; grid-auto-columns: var(--lib-cover); gap: var(--space-5);
+  margin-right: calc(-1 * var(--page-gutter)); padding-right: var(--page-gutter); scroll-padding-inline: 0 var(--page-gutter);
   overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-bottom: var(--space-3);
 }
 .lib-shelf-row > * { scroll-snap-align: start; }
+@supports (width: calc(1px * (1px / 1px))) { .lib-shelf-row { grid-auto-columns: calc((100cqi - (var(--n) - 1) * var(--space-5)) / var(--n)); } }
 .lib-cap { position: relative; min-width: 0; }
 .lib-cap-open { display: flex; flex-direction: column; justify-content: flex-start; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; }
 .lib-cap-art { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--radius-ctl); background: var(--bg-surface); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }

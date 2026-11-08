@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.58.9
+
+- The Library's title, its game count and the search sit on one line.
+- A collection gets its own shelf in the Library only when it has four games or more, up to three shelves. Their covers are the same size as the rest of the Library, and the last one runs off the edge when there are more to scroll to. Smaller collections are still in the collections menu.
+- The Library's filters fit on one row on a wide window. With more than three profiles, whose games you see is a menu instead of a row of names.
+- The cover size buttons show three filled covers, small to large, and a list.
+- The Library fits one more column of covers on a 1440 pixel wide window.
+
 ## 1.58.8
 
 - A game's achievements sit on the page like the rest, without a box around them. The profiles beside them stay in view as you scroll, when they fit.
