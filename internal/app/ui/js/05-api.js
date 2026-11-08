@@ -158,7 +158,7 @@
     mods: (key) => call("ps_mods", key),
     addMod: (key, path) => call("ps_addMod", key, path),
     modToggle: (key, owner, id, on) => call("ps_modToggle", key, owner, id, !!on),
-    modOrder: (key, owner, id, by) => call("ps_modOrder", key, owner, id, by),
+    modOrder: (key, owner, ids) => call("ps_modOrder", key, owner, ids),
     modSetOwn: (key, owner, on) => call("ps_modSetOwn", key, owner, !!on),
     modRemove: (key, id) => call("ps_modRemove", key, id),
     modsApply: (key, owner) => call("ps_modsApply", key, owner),

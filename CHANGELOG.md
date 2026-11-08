@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.88.0
+
+- **Mods go in as links when they can.** When the game is on the same drive as Lootnest's copy of a mod, each file goes into the game's folder as a link to that copy, so it takes no extra space and Apply is quicker. On another drive, or if a link can't be made, the file is copied as before. Settings and save files (.ini, .cfg, .json, .txt and the like, and anything in a Config or Saves folder) are always copied, because games rewrite them.
+- Lootnest's copy of a linked mod is read-only, so a game can't change it by accident. If a game changes it anyway, putting the game back keeps the changed file in Lootnest's folder, and the mod's row says so: until you turn it off, or remove it and add it again, Play starts the game without mods. Every check uses the files' contents, never their dates.
+- **Install mods by linking when possible** is on by default, in the Mods tab's More menu (the dots), and applies to every game. Turn it off to copy every file.
+- **Conflicts.** Each mod's row says where it and another mod that's on have the same file: Overrides 3 files from Better Lighting, or Loses 2 files to HD Textures. **See the files** lists them.
+- **Drag mods to change their order**, or use the arrows as before. A later mod still wins. The new order goes into the game's folder when you **Apply**.
+
 ## 1.87.0
 
 - **Mods for each profile and run.** On a game with profiles, the Mods tab has **Mods for**: the game, for everyone, or one profile or run. Each has its own list of which mods are on and in what order; the mods themselves are kept once. A run without a list of its own uses its person's, and a person without one uses the game's. **Make its own** gives it one.

@@ -86,6 +86,8 @@
       o.innerHTML = viewLaunch();
     } else if (D.kind === "modplan") {
       o.innerHTML = viewModPlan();
+    } else if (D.kind === "modconf") {
+      o.innerHTML = viewModConflicts();
     } else if (D.kind === "copies") {
       o.innerHTML = viewCopies();
     } else if (D.kind === "unsorted") {

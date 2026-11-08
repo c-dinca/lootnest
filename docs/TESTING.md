@@ -448,7 +448,7 @@ pad: a Bluetooth DualSense must keep working in games afterwards.
 Use a folder game you can reinstall, outside Program Files (D:\Games\Test),
 and make a copy of its folder before you start (D:\Games\Test-copy).
 
-1. Its page, **Mods**: Vanilla, and a line that mods go in by copy.
+1. Its page, **Mods**: Vanilla, and a line that every replaced file is kept.
    **Add a mod**, **Choose a .zip, .7z or .rar**: a mod archive whose
    files sit in a folder of its own (a texture pack wrapped in
    "ModName\Data\..."). The panel shows how many files it adds and
@@ -513,3 +513,36 @@ Player 2), and two mods kept for it, A and B, that replace the same file.
    %LOCALAPPDATA%\Lootnest\mods\<hash> and Play as the other person: the
    game is put back as it was and starts without mods, and the log says
    why.
+
+## 22. Mods by link, conflicts and order (1.88)
+
+Use the folder game from section 20 on the same drive as
+%LOCALAPPDATA%\Lootnest (C:), with mods A and B that replace the same
+file, and a copy of the same game on another drive (D:).
+
+1. **Mods**, More (the dots): **Install mods by linking when possible** is
+   ticked. Apply A. In a command prompt, `fsutil hardlink list` on one of
+   A's files in the game's folder: two names, the game's and the one under
+   %LOCALAPPDATA%\Lootnest\mods\<hash>\<mod id>\files. Its .ini, .cfg,
+   .json or .txt files, and anything under a Config or Saves folder, list
+   one name only: they were copied. The file is read-only (Properties).
+   deployed.json says "how": "link" or "copy" for each file.
+2. On the copy on D:, Add a mod (the same archive as A) and Apply. Every
+   file lists one name: they were copied, and the game runs the same.
+3. Untick linking and Apply again on C:: every file lists one name.
+   Tick it again.
+4. A game that rewrites a config file: with a mod that brings one (an
+   .ini), play, change a setting in the game, close it. Put the game back:
+   the toast says a file changed, it's kept under changed\<time>, and the
+   mod's own copy of the .ini is as it was added.
+5. Clear the read-only box on a linked file in the game's folder and edit
+   it. Put the game back: the change is kept under changed\<time>, the
+   game's own file is back, and the mod's row says the game changed
+   Lootnest's copy and Play starts the game without mods until it's off
+   or added again. Apply with it on: it refuses, and nothing in the
+   game's folder changes. Play: the game starts without mods.
+6. Conflicts: with A then B on, A's row says it loses files to B and B's
+   that it overrides files from A. **See the files** lists them. Drag B
+   above A (and once with the arrows): the lines swap, the state says
+   Changes not applied yet, and after **Apply** the shared file is A's.
+   Press Esc during a drag: nothing moves.

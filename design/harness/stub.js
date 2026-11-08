@@ -345,15 +345,22 @@
   // Mods (core/mods.go): ?mods=1 gives Phantom Blade Zero two mods, applied,
   // and Baldur's Gate 3 a set for each of the first two profiles (a run of
   // the first, with ?runs=1, uses its person's), the first's in its folder.
-  // MODS: key -> id -> the mod; SETS: key -> owner ("" the game's) -> [{id, on}].
+  // HD Textures, added after they were applied, overrides three of Better
+  // Lighting's files and Unlocked 60 FPS its Engine.ini; Tav Hair Pack was
+  // changed by the game through a link.
+  // MODS: key -> id -> the mod; SETS: key -> owner ("" the game's) -> [{id, on}];
+  // MODFILES: id -> its files, for the conflicts.
   const PBZ = "dir:d:\\games\\phantom blade zero", BG3 = "game:bg3", MODS = {}, SETS = {}, DEPLOYED = {}, MODS_PENDING = {};
+  const pak = (n) => `ProjectPBZ/Content/Paks/~mods/${n}.pak`, MODFILES = {
+    m1: [...["Lighting_P", "Sky_P", "Fog_P", "Interiors_P"].map(pak), "ProjectPBZ/Saved/Config/Windows/Engine.ini"],
+    m6: ["Lighting_P", "Sky_P", "Fog_P", "Textures_P"].map(pak), m2: ["ProjectPBZ/Saved/Config/Windows/Engine.ini"] };
   if (q.get("mods") === "1") {
     const m1 = { id: "m1", name: "Better Lighting", files: 14, bytes: 48.2e6, into: "ProjectPBZ" }, m2 = { id: "m2", name: "Unlocked 60 FPS", files: 1, bytes: 2100 };
-    MODS[PBZ] = { m1, m2 };
-    SETS[PBZ] = { "": [{ id: "m1", on: true }, { id: "m2", on: true }] };
+    MODS[PBZ] = { m1, m6: { id: "m6", name: "HD Textures", files: 4, bytes: 1.2e9, into: "ProjectPBZ" }, m2 };
+    SETS[PBZ] = { "": [{ id: "m1", on: true }, { id: "m6", on: true }, { id: "m2", on: true }] };
     DEPLOYED[PBZ] = { mods: ["m1", "m2"] };
     MODS[BG3] = { m3: { id: "m3", name: "Party Limit Begone", files: 6, bytes: 3.4e6, into: "Data" }, m4: { id: "m4", name: "Faster Camp", files: 2, bytes: 81e3, into: "Data" },
-      m5: { id: "m5", name: "Tav Hair Pack", files: 40, bytes: 212e6, into: "Data" } };
+      m5: { id: "m5", name: "Tav Hair Pack", files: 40, bytes: 212e6, into: "Data", changed: true } };
     SETS[BG3] = { "": [{ id: "m4", on: true }], p1: [{ id: "m3", on: true }, { id: "m5", on: true }, { id: "m4", on: false }], ...(ids[1] ? { [ids[1]]: [{ id: "m4", on: true }, { id: "m3", on: false }] } : {}) };
     DEPLOYED[BG3] = { mods: ["m3", "m5"], owner: "p1" };
   }
@@ -503,8 +510,13 @@
       const dir = modDir(key), ac = /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "";
       if (!dir) return Promise.reject("Lootnest doesn't know where this game's folder is, so it can't put mods into it.");
       const sets = {}, rows = (set) => set.filter((e) => (MODS[key] || {})[e.id]).map((e) => ({ ...MODS[key][e.id], on: e.on }));
-      ["", ...Object.keys(SETS[key] || {})].forEach((o) => { sets[o] = rows(modSet(key, o)[1]); });
-      return ok({ dir, sets, uses: key.startsWith("game:") ? Object.fromEntries(PLAYERS.map((p) => [p.id, modOwner(key, p.id)])) : {}, deployed: DEPLOYED[key] || null, pending: false,
+      const conflicts = {}, clash = (set) => {
+        const by = {};
+        set.filter((e) => e.on).forEach((e) => (MODFILES[e.id] || []).forEach((r) => (by[r] = by[r] || []).push(e.id)));
+        return Object.keys(by).sort().filter((r) => by[r].length > 1).map((rel) => ({ rel, mods: by[rel] }));
+      };
+      ["", ...Object.keys(SETS[key] || {})].forEach((o) => { const set = modSet(key, o)[1]; sets[o] = rows(set); conflicts[o] = clash(set); });
+      return ok({ dir, sets, conflicts, uses: key.startsWith("game:") ? Object.fromEntries(PLAYERS.map((p) => [p.id, modOwner(key, p.id)])) : {}, deployed: DEPLOYED[key] || null, pending: false,
         safe: q.get("safe") === "1" ? "Lootnest is in safe mode, which leaves the game's folder as it is. Restart it normally to change its mods." : "",
         refused: ac ? `This game ships with ${ac}, which can ban an account over changed game files, so Lootnest doesn't put mods into it.`
           : /Program Files/.test(dir) ? "Windows protects the games under Program Files and WindowsApps, so Lootnest doesn't put mods there. A game in a folder outside them can have mods." : "" });
@@ -523,10 +535,10 @@
       (SETS[key] = SETS[key] || {})[o] = set;
       return ok();
     },
-    ps_modOrder: (key, owner, id, by) => {
-      const [o, set] = modSet(key, owner), i = set.findIndex((x) => x.id === id), j = i + by;
-      if (i >= 0 && j >= 0 && j < set.length) [set[i], set[j]] = [set[j], set[i]];
-      SETS[key][o] = set;
+    ps_modOrder: (key, owner, ids) => {
+      const [o, set] = modSet(key, owner), next = ids.map((id) => set.find((x) => x.id === id)).filter(Boolean);
+      if (next.length !== set.length || new Set(ids).size !== ids.length) return Promise.reject("The list of mods changed. Try again.");
+      (SETS[key] = SETS[key] || {})[o] = next;
       return ok();
     },
     ps_modSetOwn: (key, owner, on) => { (SETS[key] = SETS[key] || {})[owner] = modSet(key, owner)[1].map((e) => ({ id: e.id, on: e.on && on })); return ok(); },

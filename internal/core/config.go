@@ -192,6 +192,9 @@ type Settings struct {
 	// updates to games no launcher updates (on unless turned off; it reads
 	// only names, on this PC).
 	DownloadsOff bool `json:"downloadsOff,omitempty"`
+	// ModsLinkOff puts mods in by copy only, never as hard links to
+	// Lootnest's copy of them.
+	ModsLinkOff bool `json:"modsLinkOff,omitempty"`
 	// UpdatePointOff stops the save point made before the first start of a
 	// game that updated since it last started (on unless turned off).
 	UpdatePointOff bool `json:"updatePointOff,omitempty"`
