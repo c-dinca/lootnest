@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.9.0.schema.json
+# The first version for microsoft/winget-pkgs, under manifests/c/CDinca/Lootnest/<version>/.
+# Later versions are sent by the winget job in .github/workflows/build.yml.
+
+PackageIdentifier: CDinca.Lootnest
+PackageVersion: 1.59.0
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.9.0

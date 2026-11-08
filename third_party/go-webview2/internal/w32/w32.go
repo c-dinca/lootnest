@@ -15,6 +15,9 @@ var (
 	kernel32                   = windows.NewLazySystemDLL("kernel32")
 	Kernel32GetCurrentThreadID = kernel32.NewProc("GetCurrentThreadId")
 
+	gdi32                 = windows.NewLazySystemDLL("gdi32")
+	Gdi32CreateSolidBrush = gdi32.NewProc("CreateSolidBrush")
+
 	shlwapi                  = windows.NewLazySystemDLL("shlwapi")
 	shlwapiSHCreateMemStream = shlwapi.NewProc("SHCreateMemStream")
 

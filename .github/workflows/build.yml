@@ -43,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read # SignPath fetches the uploaded .exe through the Actions API
+    outputs:
+      # The tag of the release this run published, if any (for winget below).
+      release: ${{ steps.newver.outputs.tag || (startsWith(github.ref, 'refs/tags/v') && github.ref_name) || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,20 +65,6 @@ jobs:
           GOOS=windows "$(go env GOPATH)/bin/govulncheck" ./...
           "$(go env GOPATH)/bin/govulncheck" ./internal/core/...
 
-      - name: Build
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            export VERSION="${GITHUB_REF_NAME#v}"
-          fi
-          ./build.sh
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Lootnest
-          path: |
-            dist/Lootnest-Setup.exe
-            dist/Lootnest.exe
-
       - name: Is VERSION a new release?
         id: newver
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -90,6 +80,77 @@ jobs:
             exit 1
           fi
           echo "tag=v$v" >> "$GITHUB_OUTPUT"
+
+      - name: Version from the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Build Lootnest.exe
+        run: ./build.sh app
+
+      # Code signing by SignPath Foundation, off until the repository
+      # variable SIGNPATH_ENABLED is 'true' (docs/RELEASING.md). Only builds
+      # that become a release are signed, never pull requests. The app is
+      # signed before it goes into the setup, then the setup itself.
+      - name: Upload Lootnest.exe for signing
+        id: unsigned-app
+        if: vars.SIGNPATH_ENABLED == 'true' && (steps.newver.outputs.tag != '' || startsWith(github.ref, 'refs/tags/v'))
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app
+          path: dist/Lootnest.exe
+
+      - name: Sign Lootnest.exe
+        if: steps.unsigned-app.outcome == 'success'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.unsigned-app.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600 # time to approve the request
+          output-artifact-directory: signed/app
+
+      - name: Use the signed Lootnest.exe
+        if: steps.unsigned-app.outcome == 'success'
+        run: cp signed/app/Lootnest.exe dist/Lootnest.exe
+
+      - name: Build Lootnest-Setup.exe
+        run: ./build.sh setup
+
+      - name: Upload Lootnest-Setup.exe for signing
+        id: unsigned-setup
+        if: steps.unsigned-app.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-setup
+          path: dist/Lootnest-Setup.exe
+
+      - name: Sign Lootnest-Setup.exe
+        if: steps.unsigned-setup.outcome == 'success'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.unsigned-setup.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600 # time to approve the request
+          output-artifact-directory: signed/setup
+
+      - name: Use the signed Lootnest-Setup.exe
+        if: steps.unsigned-setup.outcome == 'success'
+        run: cp signed/setup/Lootnest-Setup.exe dist/Lootnest-Setup.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lootnest
+          path: |
+            dist/Lootnest-Setup.exe
+            dist/Lootnest.exe
 
       - name: Publish the new version
         if: steps.newver.outputs.tag != ''
@@ -111,3 +172,20 @@ jobs:
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
           generate_release_notes: true
+
+  # Sends the new release to winget (a pull request to microsoft/winget-pkgs),
+  # off until the repository variable WINGET_ENABLED is 'true'; the first
+  # version goes in by hand from packaging/winget (docs/RELEASING.md). A job
+  # here, not "on: release": a release made with GITHUB_TOKEN starts no
+  # other workflow.
+  winget:
+    needs: build
+    if: vars.WINGET_ENABLED == 'true' && needs.build.outputs.release != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: CDinca.Lootnest
+          installers-regex: 'Lootnest-Setup\.exe$'
+          release-tag: ${{ needs.build.outputs.release }}
+          token: ${{ secrets.WINGET_TOKEN }}

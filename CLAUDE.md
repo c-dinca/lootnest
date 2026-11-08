@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.58.0, beta)
+## Where things stand (1.59.0, beta)
 
 These shipped recently, newest last:
 
@@ -358,9 +358,34 @@ These shipped recently, newest last:
   (`win.Recycle`). `Settings.DownloadsOff` turns it off. Lootnest still
   never finds or fetches anything.
 
+- **1.58.1 to 1.58.19** The design pass from research (19 batches;
+  DESIGN.md's twelve principles): one page grid (`.view` owns
+  `--page-gutter`), opaque surfaces (glass only over art or scrolling
+  content), at most three Racing Red marks per screen, one entrance per
+  page (`arriveOnce`, no loops), missing art as real content (`plate()`,
+  icon washes, letter plates), Home 8+4 (`capHTML`, seat rows, save
+  counts), game page with a one-row play bar (`play-pick`) and an
+  unboxed 8+4 body, Library head and shelves (`--lib-cover`), Big Picture
+  at 10-foot scale (`--bp-safe-*`, `--focus-ring-bp`, Collections row),
+  empty pages (`emptyState`, `.ln-ghosts`, `.ln-steps`), Updates as rows
+  beside a side column (`midTrunc`), Achievements headline and side
+  column, Store feature plus Top sellers list, Settings and Profiles
+  boards, Cloud conflicts first (`core.SavesChanged`), the profile page
+  on most-played art, a full-window first run (`viewWelcome`), role type
+  tokens (`--text-*`, Bricolage only at 24px and up), spacing roles
+  (`--gap-in/group/section`), and short windows (Who's here as one row
+  of faces under 820px tall).
+- **1.59** Launch splash (`#boot`, `bootDone`, the window class brush is
+  Obsidian so there's no white flash); the installer page uses the app's
+  system (`app.SystemCSS()`), with steps that tick off; `--silent`
+  (`/S`) for package managers, logging failures to
+  `%TEMP%\Lootnest-Setup.log`; `build.sh app|setup` stages; SignPath
+  signing and a winget job in build.yml, off until the owner sets
+  `SIGNPATH_ENABLED` / `WINGET_ENABLED` (docs/RELEASING.md,
+  packaging/winget/). The README has the code signing policy.
+
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
-features. A design plan from research (19 batches) is being applied;
-its principles go into DESIGN.md.
+features; docs/RELEASING.md the owner's signing and winget steps.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:

@@ -354,6 +354,10 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 		HIconSm:       windows.Handle(icon),
 		LpfnWndProc:   windows.NewCallback(wndproc),
 	}
+	if bg := opts.Background; bg != 0 { // the window's own colour too, before WebView2 paints
+		brush, _, _ := w32.Gdi32CreateSolidBrush.Call(uintptr(bg>>16&0xFF | bg&0xFF00 | (bg&0xFF)<<16))
+		wc.HbrBackground = windows.Handle(brush)
+	}
 	_, _, _ = w32.User32RegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
 
 	windowName, _ := windows.UTF16PtrFromString(opts.Title)

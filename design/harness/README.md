@@ -17,7 +17,7 @@ in every state (see DESIGN.md). It is built from `kitchen-sink.js`,
 `kitchen-sink.css` and `icons.svg`.
 
 Open `dist/page.html` in a browser to click around. The scenario comes from
-the URL: `?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1`.
+the URL: `?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1`. The launch splash is taken out unless `?boot=<ms>` asks for it, with the first state after that many milliseconds.
 
 - `stub.js` defines every `window.ps_*` call and emits the `__ps` events the
   Go side would, from fixture data (13 games: 3 with profiles, the others

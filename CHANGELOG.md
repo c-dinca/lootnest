@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.59.0
+
+- Lootnest opens on its own mark: the nest draws in, the red gem drops into it, and the app fades in as soon as it's ready. The window is Obsidian from the first moment, with no white flash. With reduced motion on, the mark simply shows.
+- The installer has the same look as the app: the Lootnest mark, switches for the desktop shortcut and Start with Windows, and a red Install button. While it works, it ticks off each step (Copy Lootnest, Start menu and shortcuts, Add to Installed apps), and it ends with Open Lootnest.
+- If installing fails, the installer shows which step stopped and why, with Try again.
+- `Lootnest-Setup.exe --silent` (or `/S`) installs without a window, for scripts and package managers. It keeps your current choices on an upgrade and doesn't open Lootnest afterwards.
+- Releases are ready to be code signed through SignPath Foundation and published to winget, which over time will stop Windows SmartScreen from asking about Lootnest. Both stay off until they're set up.
+
 ## 1.58.19
 
 - On a short window, Who's here in the sidebar is one row of pictures, with the seated profile's name, so the games list keeps its room. Click a picture to sit that profile down, as before.

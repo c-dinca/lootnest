@@ -1,11 +1,15 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright&boot=<ms>
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
   const N = q.get("games") || "13", P = +(q.get("players") || 2), STATE = q.get("state") || "normal";
   const CLOUD = q.get("cloud") !== "0", FIRST = q.get("first") === "1";
+  // ?boot=<ms>: the splash shows, and the first state comes after <ms>.
+  // Without it the splash is taken out, so screenshots never catch it.
+  const BOOT = +(q.get("boot") || 0);
+  if (!BOOT) document.getElementById("boot")?.remove();
   // ?hidden=1: two games hidden from the Library.
   const HIDDEN = q.get("hidden") === "1" ? { "steam:1245620": "Elden Ring", "dir:d:\\games\\old racer": "Old Racer" } : {};
   const now = Date.now(), h = 3600e3, d = 24 * h;
@@ -139,7 +143,7 @@
 
   const api = {
     ps_ready: () => ok({}),
-    ps_state: () => (STATE === "loading" ? new Promise((r) => setTimeout(() => r(state()), 60)) : ok(state())),
+    ps_state: () => (STATE === "loading" || BOOT ? new Promise((r) => setTimeout(() => r(state()), BOOT || 60)) : ok(state())),
     ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN }),
     ps_cover: (appId, name, key) => (STATE === "offline" ? offline() : ok(art(appOf(appId, name), "cover"))),
     ps_art: (appId, name, key, kind) => (STATE === "offline" ? ok("") : ok(art(appOf(appId, name), kind))),

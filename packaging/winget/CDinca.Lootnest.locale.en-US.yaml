@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+
+PackageIdentifier: CDinca.Lootnest
+PackageVersion: 1.59.0
+PackageLocale: en-US
+Publisher: Cristian Dinca
+PublisherUrl: https://github.com/c-dinca
+PublisherSupportUrl: https://github.com/c-dinca/lootnest/issues
+PrivacyUrl: https://github.com/c-dinca/lootnest#privacy
+PackageName: Lootnest
+PackageUrl: https://c-dinca.github.io/lootnest/
+License: MIT
+LicenseUrl: https://github.com/c-dinca/lootnest/blob/main/LICENSE
+ShortDescription: Every game on your PC in one library, with saves, settings and achievements kept per profile.
+Description: |-
+  Lootnest puts the games from every store and folder on your PC in one library.
+  Each profile, a person or a run of a game, has its own saves, settings and achievements,
+  and Lootnest swaps the right files into place before a game starts, with a copy made first.
+  It works offline, needs no account, and sends nothing unless you turn a feature on.
+Moniker: lootnest
+Tags:
+  - games
+  - saves
+  - profiles
+  - backup
+  - achievements
+ReleaseNotesUrl: https://github.com/c-dinca/lootnest/releases/tag/v1.59.0
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

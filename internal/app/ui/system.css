@@ -142,6 +142,7 @@
   --welcome-w: 1040px;    /* the first start's two columns, together */
   --prun-indent: calc(72px + var(--space-4) - var(--space-3));  /* a run's picture under its person's name */
   --switch-w: 36px;
+  --boot-mark: 72px;      /* the mark on the splash while Lootnest opens */
 
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;

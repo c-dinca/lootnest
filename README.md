@@ -81,12 +81,23 @@ It's free, for everyone, and it stays free. No account, no ads, no telemetry, an
 ## Install
 
 1. Download `Lootnest-Setup.exe` from the [latest release](../../releases/latest) and run it.
-2. If SmartScreen says it protected your PC, choose **More info**, then **Run anyway**. Lootnest isn't code-signed yet.
+2. If SmartScreen says it protected your PC, choose **More info**, then **Run anyway**. You may see this until releases are signed (see [Code signing policy](#code-signing-policy)).
 3. Name the players. The Library fills itself; turn on profiles for the games you share.
 
 You need Windows 10 or 11 (64-bit) with the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and current Windows 10. No administrator rights are needed.
 
 To update, use **Settings > Check for updates**. Your players, games and profiles are kept. To uninstall, use Windows **Settings > Apps > Installed apps**.
+
+To install without a window, for scripts and package managers, run `start /wait Lootnest-Setup.exe --silent` in Command Prompt, or `Start-Process Lootnest-Setup.exe --silent -Wait` in PowerShell (`/S` and `/silent` work too). It installs for your Windows account with a Start menu shortcut; on an upgrade the desktop shortcut and Start with Windows stay as they are, and a first install adds neither. It doesn't open Lootnest afterwards. It exits with 0 when Lootnest is installed and 1 when it couldn't be, and then writes the reason to `Lootnest-Setup.log` in your `%TEMP%` folder.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- Committers and reviewers: [Cristian Dinca](https://github.com/c-dinca), the repository's owner
+- Approvers: [Cristian Dinca](https://github.com/c-dinca)
+
+Every signed release is built by GitHub Actions from this repository's source ([build.yml](.github/workflows/build.yml)); nothing built anywhere else is signed. Privacy: Lootnest sends nothing unless you turn a feature on that needs to go online; see [Privacy](#privacy).
 
 ## Security
 
@@ -155,11 +166,13 @@ You need Go (go.mod's `toolchain` line names the release; recent Go downloads it
 
 ```bash
 ./build.sh                 # dist/Lootnest-Setup.exe and dist/Lootnest.exe
+./build.sh app             # only dist/Lootnest.exe
+./build.sh setup           # only dist/Lootnest-Setup.exe, from the dist/Lootnest.exe already there
 VERSION=1.4.0 ./build.sh   # stamps a version (default: the VERSION file)
 go test ./internal/core/   # tests
 ```
 
-It cross-compiles from Windows, macOS or Linux with no C compiler. To release, bump `VERSION`, rename `## Unreleased` in CHANGELOG.md to the new version, and merge to `main`: GitHub Actions builds both .exe files and publishes the release with that section as its notes. Pushing a `v*` tag publishes one too.
+It cross-compiles from Windows, macOS or Linux with no C compiler. To release, bump `VERSION`, rename `## Unreleased` in CHANGELOG.md to the new version, and merge to `main`: GitHub Actions builds both .exe files and publishes the release with that section as its notes. Pushing a `v*` tag publishes one too. Signing and winget are switched off until they're set up; [docs/RELEASING.md](docs/RELEASING.md) has the steps.
 
 | Folder | Contents |
 | --- | --- |

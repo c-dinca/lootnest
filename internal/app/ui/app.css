@@ -60,6 +60,20 @@ h2 { font: 700 var(--text-lead)/var(--lh-snug) var(--font-ui); margin: 0 0 4px; 
 
 .app { position: relative; z-index: 1; height: 100%; display: grid; grid-template-columns: var(--side-w) 1fr; }
 
+/* The splash while Lootnest opens: the nest draws in, the gem drops into
+   it, the name follows; it fades out once the first page is ready. */
+.boot { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: var(--space-4); background: var(--bg-ground); color: var(--fg-1); transition: opacity var(--dur-3) var(--ease-out); }
+.boot.gone { opacity: 0; pointer-events: none; }
+.boot-mark { width: var(--boot-mark); height: var(--boot-mark); overflow: visible; }
+.boot-mark path { stroke-dasharray: 1; animation: boot-draw var(--dur-4) var(--ease-out) both; }
+.boot-mark path + path { animation-delay: calc(var(--dur-1) / 2); }
+.boot-mark circle { stroke: var(--accent); animation: boot-drop var(--dur-3) var(--ease-emph) calc(var(--dur-2) + var(--dur-1) / 6) both; }
+.boot-name { font: 750 var(--text-section)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-section); animation: boot-name var(--dur-2) var(--ease-out) calc(var(--dur-3) + var(--dur-1) * 2 / 3) both; }
+@keyframes boot-draw { from { stroke-dashoffset: 1; opacity: 0; } 15% { opacity: 1; } to { stroke-dashoffset: 0; } }
+@keyframes boot-drop { from { opacity: 0; transform: translateY(calc(var(--rise) * -1)); } 70% { opacity: 1; transform: translateY(calc(var(--hairline) / 2)); } to { transform: none; } }
+@keyframes boot-name { from { opacity: 0; transform: translateY(var(--space-1)); } }
+@media (prefers-reduced-motion: reduce) { .boot-mark path, .boot-mark circle, .boot-name { animation: none; } }
+
 /* The window takes on the colours of the game in focus: its art, blurred,
    behind the glass sidebar and pages. Tokens from system.css. */
 #backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
