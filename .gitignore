@@ -5,3 +5,6 @@ cmd/setup/payload/
 design/harness/.cache/
 design/harness/dist/
 plugsign.key
+
+# Design directions being tried in the harness (large, dev only)
+design/directions/

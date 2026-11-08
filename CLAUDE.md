@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.91.0, beta)
+## Where things stand (1.92.0, beta)
 
 These shipped recently, newest last:
 
@@ -682,6 +682,14 @@ These shipped recently, newest last:
   commands (`gqCommands` in 80-store.js; existing actions only; Enter
   runs a command only when one is picked). `SET_CATS` is the one list of
   Settings categories; `open-sheet` takes `data-tab`.
+- **1.92** Smooth page changes (the owner: "not smooth"): `swapPage`
+  draws the new page at once while a still, inert copy of the old one
+  (`.page-ghost`) fades out over it; on-screen images decode first (at
+  most 120 ms); `enter()` animates the page as one piece; the backdrop
+  changes with the page (`#backdrop.with-page`, 280 ms). Still open:
+  the game page is redrawn several times by events in its first 600 ms.
+  Design directions being tried live in `design/directions/*.css`
+  (harness only, `dist/page-<name>.html`).
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

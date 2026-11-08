@@ -1,33 +1,58 @@
   // ------------------------------------------------------------ game page --
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ms = (token) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(token)) || 0;
-  // A page change: the page you leave fades out quickly (--dur-1), then the
-  // new one arrives (enter). A second change while the first page is still
-  // fading finishes the first at once.
+  // A page change: the new page is drawn at once, under a still copy of
+  // the one you leave (the same nodes, where they were scrolled), and comes
+  // in as that copy fades out, so no frame is empty. Art already on this
+  // PC is decoded first, for at most --dur-1, so the page arrives whole.
+  // A second change while one is under way finishes the first at once.
   let swapping = null;
-  function flushSwap() {
-    if (swapping) { clearTimeout(swapping.t); const u = swapping.u; swapping = null; u(); }
-  }
+  function flushSwap() { if (swapping) swapping.done(); }
   function swapPage(update) {
     flushSwap();
-    const old = $("#view").firstElementChild;
+    const v = $("#view"), old = v.firstElementChild, top = v.scrollTop;
     if (reduced() || !old) { update(); return; }
-    old.classList.add("leaving");
-    swapping = { u: update, t: setTimeout(() => { swapping = null; update(); }, ms("--dur-1")) };
+    const ghost = document.createElement("div"), r = v.getBoundingClientRect(), bd = $("#backdrop");
+    ghost.className = "view page-ghost";
+    ghost.inert = true;
+    Object.assign(ghost.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+    let shown = false;
+    const show = () => {
+      if (shown || swapping !== sw) return;
+      shown = true;
+      v.classList.remove("is-arriving");
+      if (v.firstElementChild) enter(v.firstElementChild);
+      ghost.classList.add("out"); // starts in the same frame as the entrance: a slow first frame delays both
+      Promise.all(ghost.getAnimations().map((a) => a.finished)).then(sw.done, sw.done);
+    };
+    const sw = swapping = {
+      // The page drawn again before its entrance started: the copy starts with it.
+      sync(at) { ghost.getAnimations().forEach((a) => { if (a.startTime == null) a.startTime = at; }); },
+      done() { if (!shown) { shown = true; v.classList.remove("is-arriving"); } ghost.remove(); if (swapping === sw) swapping = null; },
+    };
+    bd.classList.add("with-page"); // the window's colours change with the page (setBackdrop)
+    v.classList.add("is-arriving");
+    try { update(); } catch (e) { sw.done(); throw e; }
+    old.classList.remove("enter");
+    old.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id"));
+    ghost.append(old);
+    v.parentElement.append(ghost);
+    ghost.scrollTop = top;
+    const vr = v.getBoundingClientRect();
+    const art = [...v.querySelectorAll("img[src]")].filter((i) => { const b = i.getBoundingClientRect(); return b.bottom > vr.top && b.top < vr.bottom; }).slice(0, 24);
+    Promise.race([Promise.all(art.map((i) => i.decode().catch(() => {}))), new Promise((ok) => setTimeout(ok, ms("--dur-1")))]).then(show);
   }
-  // A page arriving: its main parts rise in --stagger apart, the first five
-  // one by one and the rest together. Once per arrival: a redraw while it
-  // arrives (a cover coming in) carries on from where it was.
-  let arrival = 0, enteredAt = -1e9;
-  function enter(page, since) {
-    if (reduced()) return;
-    if (!since) enteredAt = performance.now();
-    let parts = [...page.children];
-    if (parts.length === 1) parts = [...parts[0].children]; // a page in one wrapper
-    page.style.setProperty("--entered", Math.round(since) + "ms");
-    parts.forEach((c, i) => { c.style.setProperty("--i", Math.min(i, 5)); c.classList.add("enter"); });
-    Promise.all(parts.flatMap((c) => c.getAnimations()).filter((a) => a.animationName === "page-in").map((a) => a.finished))
-      .then(() => parts.forEach((c) => c.classList.remove("enter")), () => {});
+  // A page arriving: one entrance for the page as a whole. A redraw while
+  // it arrives (a cover coming in) carries on from where it was (at, when
+  // the entrance of the page it replaces started); while a change waits
+  // for its art, the page waits too.
+  let arrival = 0;
+  function enter(page, at) {
+    if (reduced() || swapping && $("#view").classList.contains("is-arriving")) return;
+    page.classList.add("enter");
+    const runs = page.getAnimations().filter((a) => a.animationName === "page-in");
+    if (at != null) { runs.forEach((a) => (a.startTime = at)); if (swapping) swapping.sync(at); }
+    Promise.all(runs.map((a) => a.finished)).then(() => page.classList.remove("enter"), () => {});
   }
 
   function openSheet(kind, id, fromEl) {

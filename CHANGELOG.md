@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.92.0
+
+- **Smoother page changes.** The page you go to appears at once and fades in while the one you left fades out over it, so the window is never empty between pages. A page arrives as one piece instead of section by section, and the whole change takes about a third of a second.
+- Art already on this PC is ready before the page shows, so covers and the game's picture don't pop in after it.
+- The window's colour follows the page you go to straight away instead of lagging behind it.
+- A new page opens at the top; Back and Forward return to where you were.
+
 ## 1.91.0
 
 - **Saves**, in the top bar where Cloud saves was: everything Lootnest keeps of your saves in one place. At the top, how many games have profiles, how many have copies, your save points and when the newest copy was made.
