@@ -405,7 +405,7 @@
   };
   let actx = null, master = null;
   const sfxBufs = {}, sfxAt = {};
-  function playSound(kind) {
+  function playSound(kind, scale = 1) {
     const [name, gain, rate] = SFX[kind] || [], b64 = name && SOUNDS[name];
     const now = performance.now();
     if (!b64 || now - (sfxAt[kind] || -1e9) < 45) return;
@@ -416,12 +416,23 @@
       sfxBufs[name] = sfxBufs[name] || actx.decodeAudioData(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer);
       sfxBufs[name].then((buf) => {
         const src = actx.createBufferSource(), g = actx.createGain();
-        src.buffer = buf; src.playbackRate.value = rate || 1; g.gain.value = gain;
+        src.buffer = buf; src.playbackRate.value = rate || 1; g.gain.value = gain * scale;
         src.connect(g).connect(master); src.start();
       }).catch(() => {});
     } catch (e) { /* no sound */ }
   }
-  function sfx(kind) { if (BP.sounds && !document.hidden) playSound(kind); }
+  function sfx(kind) { if (BP.sounds && !document.hidden && !cfg().settings.soundsOff) playSound(kind); }
+  // The window's own sounds, at half Big Picture's volume: one for each
+  // thing you do (a page, a tab, a menu, Play), never while a game runs.
+  // Moving between covers with the keys sounds at most every 120 ms.
+  let uiAt = -1e9;
+  function uiSound(kind) {
+    const now = performance.now();
+    if (BP.on || document.hidden || cfg().settings.soundsOff || now - uiAt < 80 || (kind === "move" && now - (sfxAt.move || -1e9) < 120)) return;
+    if ((S.d.sessions || []).some((s) => s.phase === "playing")) return;
+    uiAt = now;
+    playSound(kind, 0.5);
+  }
   // Go sends no unlocks for a game with an anti-cheat.
   function unlockSound(list) {
     if (cfg().settings.soundsOff) return;

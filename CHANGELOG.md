@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.75.0
+
+- A bar across the top of the window, as in Steam: Home, Library, Store, Updates, Achievements and Cloud saves as tabs, with a line under the one you're on that moves when you change. Back and Forward sit beside them, and the search (Ctrl+K) is in the bar on every page.
+- Who's at the PC is now your picture at the top right. Click it to choose who's here (or press 1 to 9 while it's open), add a run, or go to Profiles. With one profile, it shows you, your runs and Add a run. Settings is the gear beside it.
+- The sidebar is for your games only, from the top of the window to the bottom. Ctrl+B still folds it to a row of covers, and you can still drag its edge.
+- In a narrower window, Profiles and your name show as icons, and below 1000 pixels wide the last three tabs go under More.
+- Changing pages no longer stretches the page. The page you leave fades out quickly and the new one comes up into place, a part at a time. The bar and the sidebar stay still.
+- Menus open from the button you clicked, covers lift a little under the pointer, and buttons press in.
+- Lootnest makes a quiet click when you change pages or a game page's tab, open or close a menu, dialog or panel, go Back, press Play, and move between covers with the arrow keys. Never while a game runs. To turn them off, switch off Sounds in Settings, under Games and swaps. That turns off every sound, Big Picture's included.
+- With "Animation effects" off in Windows, pages change at once and nothing moves.
+
 ## 1.74.0
 
 - Install, uninstall and repair games from Lootnest, through each game's own store. A Steam game's Manage panel and right-click menu have **Verify files with Steam**, and **Uninstall with Steam** while its profiles are off; a GOG game has **Open in GOG Galaxy**, where you install, uninstall and repair it; Epic, Ubisoft Connect and Battle.net games have what their launchers offer; Xbox, EA, Riot, Rockstar and Amazon games open Installed apps in Windows Settings. Each says which happens. Lootnest downloads nothing itself.

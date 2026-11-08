@@ -127,7 +127,10 @@
 
   /* Page layout */
   --side-w: 256px;        /* the sidebar */
-  --bar-h: 56px;          /* the top bar, and the brand row in the sidebar */
+  --bar-h: 52px;          /* the top bar: the sections, the search, who's here */
+  --bar-search-w: 240px;  /* its search at rest, */
+  --bar-search-open: 360px;  /* while it's in use, */
+  --bar-search-min: 140px;   /* and the least it takes on a narrow window */
   --page-gutter: clamp(32px, 3vw, 64px);  /* pages use the whole window, with room at the edges */
   --overlap-bar: 64px;    /* how far the play bar sits up into the game's art */
   --bar-state-min: 192px; /* the play bar's state line before the bar wraps */
@@ -146,8 +149,6 @@
   --tl-col-w: 420px;      /* a column of days on the Timeline tab */
   --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */
   --prun-h: 44px;         /* a run under its person on Profiles */
-  --who-face: 44px;       /* a face in Who's here on a short window */
-  --nav-h-short: 30px;    /* a sidebar nav row on a short window */
   --welcome-w: 1040px;    /* the first start's two columns, together */
   --prun-indent: calc(72px + var(--space-4) - var(--space-3));  /* a run's picture under its person's name */
   --switch-w: 36px;
@@ -176,6 +177,7 @@
   --dur-4: 420ms;   /* the sidebar folding, Big Picture and empty states arriving */
   --ease-emph: cubic-bezier(.16, 1, .3, 1);  /* fast out, long settle: things arriving */
   --rise: 6px;      /* how far a page comes up as it arrives */
+  --stagger: 40ms;  /* between the parts of a page as they arrive */
   --shadow-lift: 0 18px 32px -18px oklch(0.02 0.010 276 / 0.9);  /* a cover lifted under the pointer */
 
   /* Achievement tiers, by the share of players who have one (Steam's

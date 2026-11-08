@@ -21,6 +21,19 @@
     { key: "found:dir:d:\\games\\phantom blade zero", game: "Phantom Blade Zero", path: "C:\\Users\\you\\Downloads\\Phantom.Blade.Zero.Update.v1.0.3.part1.rar", name: "Phantom.Blade.Zero.Update.v1.0.3.part1.rar", kind: "rar",
       size: 2.1e9, modTime: iso(26 * h), check: { to: "1.0.3", state: "unknown" }, newer: false },
   ];
+  // Sounds: a stand-in for WebAudio that counts what plays, as
+  // window.__sfx = [{ at, gain }], so a check can see one sound per action.
+  window.__sfx = [];
+  window.AudioContext = class {
+    constructor() { this.state = "running"; this.destination = {}; }
+    resume() { return Promise.resolve(); }
+    createGain() { return { gain: { value: 1 }, connect(n) { return n; } }; }
+    decodeAudioData() { return Promise.resolve({}); }
+    createBufferSource() {
+      const src = { playbackRate: { value: 1 }, g: null, connect(n) { src.g = n; return n; }, start() { window.__sfx.push({ at: Math.round(performance.now()), gain: src.g && src.g.gain.value }); } };
+      return src;
+    }
+  };
   const ART = window.__ART || {};
   // ?art=bright: a near-white hero for Baldur's Gate 3, our own gradient, to check text over light art.
   if (q.get("art") === "bright") ART["1086940-hero"] = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="620"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="oklch(0.97 0 0)"/><stop offset="1" stop-color="oklch(0.9 0.02 240)"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>');

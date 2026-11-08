@@ -1,25 +1,46 @@
   // ------------------------------------------------------------ game page --
-  // A game opens as its own page, with a short cross-fade (--dur-2).
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function transition(update, before, after) {
-    if (!document.startViewTransition || reduced()) { update(); if (after) after(); return; }
-    if (before) before();
-    const t = document.startViewTransition(update);
-    t.ready.catch(() => {}); // skipped when another starts: nothing to do
-    t.finished.finally(() => { if (after) after(); });
+  const ms = (token) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(token)) || 0;
+  // A page change: the page you leave fades out quickly (--dur-1), then the
+  // new one arrives (enter). A second change while the first page is still
+  // fading finishes the first at once.
+  let swapping = null;
+  function flushSwap() {
+    if (swapping) { clearTimeout(swapping.t); const u = swapping.u; swapping = null; u(); }
+  }
+  function swapPage(update) {
+    flushSwap();
+    const old = $("#view").firstElementChild;
+    if (reduced() || !old) { update(); return; }
+    old.classList.add("leaving");
+    swapping = { u: update, t: setTimeout(() => { swapping = null; update(); }, ms("--dur-1")) };
+  }
+  // A page arriving: its main parts rise in --stagger apart, the first five
+  // one by one and the rest together. Once per arrival: a redraw while it
+  // arrives (a cover coming in) carries on from where it was.
+  let arrival = 0, enteredAt = -1e9;
+  function enter(page, since) {
+    if (reduced()) return;
+    if (!since) enteredAt = performance.now();
+    let parts = [...page.children];
+    if (parts.length === 1) parts = [...parts[0].children]; // a page in one wrapper
+    page.style.setProperty("--entered", Math.round(since) + "ms");
+    parts.forEach((c, i) => { c.style.setProperty("--i", Math.min(i, 5)); c.classList.add("enter"); });
+    Promise.all(parts.flatMap((c) => c.getAnimations()).filter((a) => a.animationName === "page-in").map((a) => a.finished))
+      .then(() => parts.forEach((c) => c.classList.remove("enter")), () => {});
   }
 
   function openSheet(kind, id, fromEl) {
     if (S.view === "edit" && !confirmLeaveEdit()) return;
     if (S.dialog && S.dialog.kind !== "welcome") S.dialog = null;
     const P = { kind, id, cloud: null };
-    const go = () => {
+    swapPage(() => {
       if (S.view !== "game") S.from = S.view === "home" ? "home" : "library";
       enterView("game", P); // the timeline is read again: a session may have ended since
+      S.animateView = true;
       render(); $("#view").scrollTop = 0;
       $("#view").focus({ preventScroll: true });
-    };
-    transition(go);
+    });
     askCloud(P);
   }
 
@@ -31,14 +52,13 @@
   }
 
   // The game page's back: to the page before it, named, or to the Library.
-  function pageBack() { if (hist.back.length) goHist(true); else actions.nav({ dataset: { view: "library" } }); }
+  function pageBack() { if (hist.back.length) goHist(true); else { uiSound("back"); actions.nav({ dataset: { view: "library" } }); } }
   function backLabel() {
     const to = hist.back[hist.back.length - 1] || { view: "library" };
     const it = to.page && everyItem().find((x) => x.kind === to.page.kind && x.id === to.page.id);
     const name = it ? it.name : to.player && (player(to.player) || {}).name;
     if (name) return name.length > 24 ? name.slice(0, 23) + "…" : name;
-    const nav = $(`.nav[data-view="${to.view}"]`);
-    return nav ? nav.title : "Back";
+    return PAGE_NAMES[to.view] || "Back";
   }
 
   // When something was last played, in words.
@@ -176,6 +196,7 @@
     hide: gsvg('<path d="M3.5 10s2.4-4.75 6.5-4.75S16.5 10 16.5 10s-2.4 4.75-6.5 4.75S3.5 10 3.5 10z"/><path d="M4 4l12 12"/>'),
     copy: gsvg('<rect x="7.25" y="7.25" width="9" height="9" rx="1.75"/><path d="M12.75 7.25V5.5c0-.97-.78-1.75-1.75-1.75H5.5c-.97 0-1.75.78-1.75 1.75V11c0 .97.78 1.75 1.75 1.75h1.75"/>'),
     sliders: gsvg('<path d="M3.5 6.25h7.25M15.25 6.25h1.25M3.5 13.75h1.25M9.25 13.75h7.25"/><circle cx="13" cy="6.25" r="2.25"/><circle cx="7" cy="13.75" r="2.25"/>'),
+    person: gsvg('<circle cx="10" cy="7" r="2.75"/><path d="M5 16.25c.45-2.65 2.45-4.25 5-4.25s4.55 1.6 5 4.25"/>'),
     profiles: gsvg('<circle cx="7.75" cy="7" r="2.75"/><path d="M2.75 16.25c.45-2.65 2.45-4.25 5-4.25s4.55 1.6 5 4.25M13 4.6a2.5 2.5 0 0 1 0 4.8M14.5 12.25c1.5.4 2.5 1.65 2.75 3.5"/>'),
     search: gsvg('<circle cx="8.75" cy="8.75" r="4.75"/><path d="M12.25 12.25 16 16"/>'),
     x: gsvg('<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>'),
@@ -334,6 +355,7 @@
   // the view: then it starts just under the compact head.
   function setGameTab(tab) {
     if (!S.page) return;
+    if ((S.gameTab[pageKey(S.page)] || "overview") !== tab) uiSound("tab");
     S.gameTab[pageKey(S.page)] = tab;
     render();
     const v = $("#view"), panel = $("#gp-panel"), head = $(".gp-head"), row = $(".gp-tabs");
@@ -484,7 +506,7 @@
     const bad = (R.steps || []).find((x) => x.state === "fail") || (R.steps || []).find((x) => x.state === "warn");
     const N = R.nameInGame;
     const seat = (S.seat && player(S.seat)) || null;
-    const nameBlock = N ? `<div class="gpage-sub">${gpHead("The name in the game")}<p class="gpage-hint">The tool shows ${N.name ? `<b class="selectable">${esc(N.name)}</b>` : "its own default name"} in the game, and to friends on LAN. ${seat ? `Set it to ${esc(possessive(seat.name))} name; its settings are kept in backups first.` : "Sit down in Who's here to set it to your profile's name."}</p>
+    const nameBlock = N ? `<div class="gpage-sub">${gpHead("The name in the game")}<p class="gpage-hint">The tool shows ${N.name ? `<b class="selectable">${esc(N.name)}</b>` : "its own default name"} in the game, and to friends on LAN. ${seat ? `Set it to ${esc(possessive(seat.name))} name; its settings are kept in backups first.` : "Choose who's at the PC, at the top right, to set it to your profile's name."}</p>
         ${seat && seat.name !== N.name ? `<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="doc-name" ${itemAttr(it)} data-player="${esc(seat.id)}">Use ${esc(possessive(seat.name))} name</button></div>` : ""}</div>` : "";
     return shell(`<p class="gpage-hint">${bad ? `Most likely: ${esc(bad.title.charAt(0).toLowerCase() + bad.title.slice(1))}.` : "Everything Lootnest checks is in place."}</p><ol class="doc-steps">${steps}</ol>${nameBlock}`,
       `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)}>Check again</button>`);

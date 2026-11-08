@@ -58,9 +58,13 @@ const shots = [
   ["settings-online", "", [nav("settings"), click('[data-action="set-tab"][data-tab="online"]')]],
   ["settings-games", "", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]')]],
   ["add-game", "", [nav("library"), click('[data-action="add-game"]')]],
+  ["me-menu", "", [click("#bar-me")]],
+  ["me-menu-runs", "runs=1&players=6", [click("#bar-me")]],
+  ["me-menu-solo", "players=1", [click("#bar-me")]],
+  ["side-folded", "", ['document.dispatchEvent(new KeyboardEvent("keydown", { key: "b", ctrlKey: true }))']],
 ];
 const sizes = [[1024, 700, 1], [1280, 800, 1], [1440, 900, 1], [1920, 1080, 1]];
-const extra = [["game-on", 1280, 720, 1], ["game-on", 2560, 1440, 1], ["game-on", 1280, 720, 1.5], ["library", 2560, 1440, 1], ["home", 1280, 720, 1.5]];
+const extra = [["library", 900, 700, 1], ["game-on", 1280, 720, 1], ["game-on", 2560, 1440, 1], ["game-on", 1280, 720, 1.5], ["library", 2560, 1440, 1], ["home", 1280, 720, 1.5]];
 
 const b = await chromium.launch();
 const errors = [];

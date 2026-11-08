@@ -19,15 +19,17 @@
   // Goes back (or forward) a page, to where it was scrolled. The editor
   // isn't a stop: its unsaved state is gone once it's left.
   function goHist(back) {
+    flushSwap(); // a page still on its way is visited first
     const from = back ? hist.back : hist.fwd, to = back ? hist.fwd : hist.back;
     if (!from.length || BP.on || S.picker || S.dialog || (S.view === "edit" && !confirmLeaveEdit())) return;
+    uiSound(back ? "back" : "tab");
     const loc = from.pop();
     // A page not drawn yet (a quick second Back) keeps the scroll it had.
     if (hist.at.view !== "edit") to.push({ ...hist.at, scroll: hist.at.scroll ?? $("#view").scrollTop });
     hist.at = loc;
     const P = loc.page && { ...loc.page, cloud: null };
-    transition(() => {
-      enterView(loc.view, P); S.from = loc.from;
+    swapPage(() => {
+      enterView(loc.view, P); S.from = loc.from; S.animateView = true;
       if (P) S.gameTab[pageKey(P)] = loc.tab;
       if (loc.player) S.playerPage = loc.player;
       hist.moving = true; render(); hist.moving = false;
@@ -51,15 +53,14 @@
     if (!S.d) return;
     document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#6C9BD2");
     document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#D9738E");
-    const top = S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view;
-    document.querySelectorAll(".nav[data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
     const n = libraryItems().length;
     $("#lib-count").textContent = n ? n : "";
-    renderWho();
+    renderSeat();
     renderSideUpdate();
     renderSideGames();
     const v = $("#view");
     noteVisit(v.scrollTop);
+    if (!swapping) renderBar(); // nav has marked the tab it goes to
     const keepScroll = v.scrollTop;
     // A field being typed in keeps its text, focus and caret.
     const ae = document.activeElement, typing = ae && ["lib-q", "find-q", "gp-note", "gp-hours", "pt-rename"].includes(ae.id) && { id: ae.id, value: ae.value, at: ae.selectionStart };
@@ -74,15 +75,13 @@
     else if (S.view === "achievements") v.innerHTML = viewAchievements();
     else if (S.view === "find") v.innerHTML = viewFind();
     else if (S.view === "updates") v.innerHTML = viewUpdates();
-    if (S.animateView && v.firstElementChild) {
-      // From a transition the page itself already moves.
-      const first = v.firstElementChild;
-      if (S.animateView !== "kids") {
-        first.classList.add("enter");
-        first.addEventListener("animationend", (e) => { if (e.target === first) first.classList.remove("enter"); });
-      }
+    const first = v.firstElementChild, since = performance.now() - enteredAt;
+    if (S.animateView && first) {
+      // "kids": the page is already here, its numbers have just arrived.
+      if (S.animateView !== "kids") { arrival++; enter(first, 0); }
       arriveOnce(v);
-    }
+    } else if (first && swapping) first.classList.add("leaving");
+    else if (first && since < ms("--dur-3") + 5 * ms("--stagger")) enter(first, since);
     S.animateView = false;
     hist.at = here();
     v.scrollTop = keepScroll;
@@ -93,6 +92,36 @@
     loadCovers();
     backdropForView();
     if (BP.on) bpSoon();
+  }
+
+  // ------------------------------------------------------------- top bar --
+  // The sections as tabs, with one line under the current section that
+  // slides from tab to tab. Profiles and Settings mark theirs with a fill.
+  // Narrow windows keep the first three tabs and put the rest under More.
+  const PAGE_NAMES = { home: "Home", library: "Library", find: "Store", updates: "Updates", achievements: "Achievements", cloud: "Cloud saves", players: "Profiles", settings: "Settings" };
+  function renderBar(to) {
+    const top = to || (S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view);
+    document.querySelectorAll(".topbar [data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
+    $("#hist-back").disabled = !hist.back.length;
+    $("#hist-fwd").disabled = !hist.fwd.length;
+    placeInd(false);
+  }
+  function placeInd(still) {
+    const ind = $("#bar-ind"), more = $("#bar-more"), cur = $('.bar-tab[aria-current="page"]');
+    const el = !cur ? null : cur.offsetParent ? cur : more;
+    more.classList.toggle("is-current", el === more);
+    if (!el) { ind.style.opacity = "0"; return; }
+    const cs = getComputedStyle(el), l = parseFloat(cs.paddingLeft), w = el.offsetWidth - l - parseFloat(cs.paddingRight);
+    const jump = still || ind.style.opacity !== "1";
+    if (jump) ind.style.transition = "none";
+    ind.style.transform = `translateX(${el.offsetLeft + l}px) scaleX(${w})`;
+    ind.style.opacity = "1";
+    if (jump) { void ind.offsetWidth; ind.style.transition = ""; }
+  }
+  new ResizeObserver(() => placeInd(true)).observe($("#bar-tabs"));
+  function moreMenu(el) {
+    const hid = [...document.querySelectorAll(".bar-tab[data-view]")].filter((t) => !t.offsetParent);
+    toggleMenu(el, hid.map((t) => `<button data-action="nav" data-view="${t.dataset.view}" role="menuitem"${t.hasAttribute("aria-current") ? ' aria-current="page"' : ""}><span class="grow">${PAGE_NAMES[t.dataset.view]}</span>${(t.querySelector(".count") || {}).textContent || ""}</button>`).join(""));
   }
 
   // ------------------------------------------------------------ backdrop --
@@ -156,15 +185,23 @@
   }
   function openContext(ev, it) {
     const m = $("#ctx");
+    if (ctxFrom) closeContext();
     m.innerHTML = `<div class="ctx-title">${esc(it.name)}</div>${contextItems(it).join("")}`;
     m.hidden = false;
-    const r = m.getBoundingClientRect();
-    m.style.left = Math.min(ev.clientX, innerWidth - r.width - 8) + "px";
-    m.style.top = Math.min(ev.clientY, innerHeight - r.height - 8) + "px";
+    m.style.left = Math.min(ev.clientX, innerWidth - m.offsetWidth - 8) + "px";
+    m.style.top = Math.min(ev.clientY, innerHeight - m.offsetHeight - 8) + "px";
+    m.style.transformOrigin = "0 0";
     const first = m.querySelector("button:not(:disabled)");
     if (first) first.focus({ preventScroll: true });
   }
-  function closeContext() { const m = $("#ctx"); if (m && !m.hidden) { m.hidden = true; m.innerHTML = ""; } }
+  function closeContext(refocus) {
+    const m = $("#ctx");
+    if (!m || m.hidden) return;
+    m.hidden = true; m.innerHTML = "";
+    if (ctxFrom && ctxFrom.hasAttribute("aria-haspopup")) ctxFrom.setAttribute("aria-expanded", "false");
+    if (refocus && ctxFrom) ctxFrom.focus({ preventScroll: true });
+    ctxFrom = null;
+  }
   document.addEventListener("contextmenu", (ev) => {
     const host = ev.target.closest(".card, .lib-cap, .lib-row, .sg-row, .ln-tile, .tn-card, .now-card");
     if (!host || S.picker || BP.on) return;
@@ -172,50 +209,63 @@
     if (!it) return;
     ev.preventDefault();
     openContext(ev, it);
+    uiSound("open");
   });
-  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest("#ctx")) closeContext(); }, true);
-  window.addEventListener("blur", closeContext);
-  document.addEventListener("scroll", closeContext, true);
+  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest("#ctx") && !(ctxFrom && ctxFrom.contains(ev.target))) closeContext(); }, true);
+  document.addEventListener("focusin", (ev) => { if (!ev.target.closest("#ctx") && !(ctxFrom && ctxFrom.contains(ev.target))) closeContext(); });
+  window.addEventListener("blur", () => closeContext());
+  document.addEventListener("scroll", (ev) => { if (!(ev.target.closest && ev.target.closest("#ctx"))) closeContext(); }, true);
 
   // The seat: who's at the PC, until someone switches or Lootnest quits.
   // Every Play is theirs; "or play as…" and the picker are for anyone else.
   const seated = () => (S.seat && player(S.seat)) || null;
-  function renderWho() {
-    const playing = {}, ps = cfg().players;
-    (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = s; });
+  function renderSeat() {
     // Just you: someone is always seated, so Play is yours.
-    const alone = solo(), single = ps.length <= 1;
-    $("#app").classList.toggle("is-solo", alone);
-    $("#app").classList.toggle("is-single", single);
-    if (alone && !seated() && people()[0]) { S.seat = people()[0].id; api.setSeat(S.seat).catch(() => {}); }
-    const seat = seated();
-    $("#who-head").innerHTML = alone ? `<span>Playing as</span>` : `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu" aria-label="${seat ? "Switch" : "Sit down"}" title="Who's at the PC?">${GI.swap}<span>${seat ? "Switch" : "Sit down"}</span></button>` : ""}`;
-    $("#who").innerHTML = grouped(ps).map((p) => {
-      const s = playing[p.id];
-      const g = s && game(s.gameId);
-      const on = seat && seat.id === p.id;
-      return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}${parentOf(p) ? " who-run" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}" aria-label="${esc(p.name)}${g ? `, playing ${esc(g.name)}` : ""}"
-        title="${alone ? (on ? `Play starts as ${esc(p.name)}.` : `Play as ${esc(p.name)} from now on.`) : on ? `${esc(p.name)} is at the PC. Click to leave the seat empty.` : `Sit ${esc(p.name)} at the PC: Play starts as ${esc(p.name)}.`}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}${on && !single ? ` <span class="ln-tag ln-tag--player">${alone ? "Playing" : "Seated"}</span>` : ""}</span>
-        <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></button>`;
-    }).join("");
-    $("#who").scrollLeft = 0;
+    if (solo() && !seated() && people()[0]) { S.seat = people()[0].id; api.setSeat(S.seat).catch(() => {}); }
+    const seat = seated(), b = $("#bar-me");
+    const s = seat && (S.d.sessions || []).find((x) => x.phase === "playing" && x.playerId === seat.id), g = s && game(s.gameId);
+    const label = seat ? `${solo() ? "Playing as" : "At the PC:"} ${seat.name}${g ? `, playing ${g.name}` : ""}` : "Nobody's at the PC";
+    b.classList.toggle("playing", !!g);
+    b.innerHTML = seat ? `${lnAvatar(seat)}<span class="bar-label">${esc(seat.name)}</span>` : `<span class="bar-nobody">${GI.person}</span><span class="bar-label">Sit down</span>`;
+    b.setAttribute("aria-label", label + ". Who's here");
+    b.title = label;
   }
-  // A menu in #ctx under the button that opened it.
+  // A menu in #ctx under the button that opened it, growing from it. The
+  // same button closes it again.
+  let ctxFrom = null;
   function menuUnder(el, html) {
     const m = $("#ctx");
     m.innerHTML = html;
     m.hidden = false;
-    const b = el.getBoundingClientRect(), r = m.getBoundingClientRect();
-    m.style.left = Math.min(b.left, innerWidth - r.width - 8) + "px";
-    m.style.top = Math.min(b.bottom + 4, innerHeight - r.height - 8) + "px";
+    const b = el.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight; // the size before it grows in
+    const left = Math.max(8, Math.min(b.left, innerWidth - w - 8));
+    m.style.left = left + "px";
+    m.style.top = Math.min(b.bottom + 4, innerHeight - h - 8) + "px";
+    m.style.transformOrigin = `${Math.round(b.left + b.width / 2 - left)}px 0`;
+    ctxFrom = el;
+    if (el.hasAttribute("aria-haspopup")) el.setAttribute("aria-expanded", "true");
     return m;
   }
-  function seatMenu(el) {
-    const seat = seated();
-    const m = menuUnder(el, `<div class="ctx-title">Who's at the PC?</div>${cfg().players.map((p) => `<button data-action="seat-set" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${!!(seat && seat.id === p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span class="grow">${esc(p.name)}</span>${seat && seat.id === p.id ? GI.tick : ""}</button>`).join("")}
-      <hr><button data-action="seat-set" data-player="" role="menuitemradio" aria-checked="${!seat}">Nobody: ask who's playing each time</button>`);
-    const first = m.querySelector('[aria-checked="true"]') || m.querySelector("button");
+  function toggleMenu(el, html) {
+    if (!$("#ctx").hidden && ctxFrom === el) { closeContext(); return; }
+    const m = menuUnder(el, html);
+    const first = m.querySelector('[aria-checked="true"], [aria-current="page"]') || m.querySelector("button:not(:disabled)");
     if (first) first.focus({ preventScroll: true });
+  }
+  // The seat's menu: who's here (1 to 9 seat someone), a run and Profiles.
+  // Just you: your profile and its runs, and a run.
+  function meMenu(el) {
+    const seat = seated(), alone = solo();
+    const playing = {};
+    (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = game(s.gameId); });
+    const rows = grouped().map((p, i) => {
+      const on = !!(seat && seat.id === p.id), g = playing[p.id];
+      return `<button class="me-who${parentOf(p) ? " me-run" : ""}${g ? " playing" : ""}" data-action="seat-set" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${on}">${lnAvatar(p)}<span class="grow">${esc(p.name)}${g ? `<small>Playing ${esc(g.name)}</small>` : ""}</span>${on ? GI.tick : i < 9 ? `<kbd>${i + 1}</kbd>` : ""}</button>`;
+    }).join("");
+    const run = seat && cfg().players.length < MAX_PROFILES ? `<button data-action="add-run" data-player="${esc(personOf(seat).id)}" role="menuitem">${GI.plus}Add a run</button>` : "";
+    const more = run + (alone ? "" : `<button data-action="nav" data-view="players" role="menuitem">${GI.profiles}Profiles</button>`);
+    toggleMenu(el, `<div class="ctx-title">${alone ? "Playing as" : "Who's at the PC?"}</div><div role="group">${rows}
+      ${alone ? "" : `<button data-action="seat-set" data-player="" role="menuitemradio" aria-checked="${!seat}"><span class="grow">Nobody: ask who's playing</span>${!seat ? GI.tick : ""}</button>`}</div>${more ? "<hr>" + more : ""}`);
   }
   function setSeat(pid) {
     S.seat = pid && player(pid) ? pid : "";
@@ -224,7 +274,7 @@
     toast(S.seat ? `${solo() ? "" : `${pname(S.seat)} is at the PC. `}Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
 
-  // The Lootnest mark, as in the sidebar.
+  // The Lootnest mark, as in the top bar.
   const BRAND_MARK = '<svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>';
 
 
