@@ -89,7 +89,17 @@
   // A game from more than one store: in every copy's collections, with the
   // primary copy's status first, then the others', and the best rating.
   const tagsOf = (it) => [...new Set(copiesOf(it).flatMap((c) => (cfg().tags || {})[recentKey(c)] || []))];
-  const allTags = () => [...new Set(Object.values(cfg().tags || {}).flat())].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  // Every collection in the user's order, as core's Collections: Favourites,
+  // the order kept, then any only on games, by name.
+  const FAV = "Favourites";
+  function allTags() {
+    const C = cfg(), seen = new Set(), out = [];
+    const add = (t) => { if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); out.push(t); } };
+    [FAV, ...(C.tagOrder || [])].forEach(add);
+    Object.values(C.tags || {}).flat().map((t) => [t.toLowerCase(), t]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).forEach((x) => add(x[1]));
+    return out;
+  }
+  const usedTags = () => { const u = new Set(Object.values(cfg().tags || {}).flat()); return allTags().filter((t) => u.has(t)); };
   const shelfAt = (pid, key) => ((S.d.shelf || {})[pid] || {})[key] || {};
   const shelfOf = (it, pid) => shelfAt(pid, recentKey(it));
   const statusOf = (it, pid) => shelfOf(it, pid).status || copiesOf(it).map((c) => shelfOf(c, pid).status).find(Boolean) || "";
@@ -181,7 +191,7 @@
         <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}${S.owned.length || S.filter === "owned" ? seg("owned", "Not installed", S.owned.length) : ""}</div>${who}</div>
         <div class="lib-tools-side">
           <select id="lib-store" class="ln-input" aria-label="Store">${stores.map(([k, l]) => `<option value="${k}" ${S.store === k ? "selected" : ""}>${l}</option>`).join("")}</select>
-          ${S.filter !== "owned" && (allTags().length || S.tag) ? `<select id="lib-tag" class="ln-input" aria-label="Collection"><option value="">All collections</option>${allTags().map((t) => `<option value="${esc(t)}" ${S.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>` : ""}
+          ${S.filter !== "owned" && (usedTags().length || S.tag) ? `<select id="lib-tag" class="ln-input" aria-label="Collection"><option value="">All collections</option>${usedTags().map((t) => `<option value="${esc(t)}" ${S.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>` : ""}
           ${S.filter === "owned" ? "" : `<select id="lib-status" class="ln-input" aria-label="Status"><option value="">Any status</option>${STATUSES.map(([k, l]) => `<option value="${k}" ${S.status === k ? "selected" : ""}>${l}</option>`).join("")}</select>
           <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>`}
           <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}">${h ? `<span style="--h:${h}px"></span>` : '<i class="lib-size-list" aria-hidden="true"></i>'}</button>`).join("")}</div>
@@ -261,9 +271,9 @@
     if (S.filter !== "all" || S.who || S.store !== "all" || S.tag || S.status) return "";
     const by = {};
     all.forEach((it) => tagsOf(it).forEach((t) => (by[t] = by[t] || []).push(it)));
-    const names = Object.keys(by).filter((t) => by[t].length >= 4).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b, undefined, { sensitivity: "base" }));
+    const names = allTags().filter((t) => (by[t] || []).length >= 4);
     if (!names.length) return "";
-    // The three largest of four games or more; the rest are in the Library's collections menu.
+    // The first three of four games or more, in the sidebar's order; the rest are in the Library's collections menu.
     return `<div class="lib-shelves"${S.q ? " hidden" : ""}>${names.slice(0, 3).map((t) => {
       const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
       return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="lib-shelf-n ln-num">${list.length}</span></h2></div>

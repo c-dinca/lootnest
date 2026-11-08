@@ -27,6 +27,7 @@
     setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
     allAchievements: () => call("ps_allAchievements"),
     setTags: (key, tags) => call("ps_setTags", key, tags),
+    tagOp: (o) => call("ps_tagOp", o),
     setShelf: (pid, key, e) => call("ps_setShelf", pid, key, e),
     shortcut: (id) => call("ps_shortcut", id),
     open: (kind, arg) => call("ps_open", kind, arg || ""),

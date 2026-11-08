@@ -116,8 +116,8 @@
     const recent = recentItems(all, false).slice(0, 12);
     const tags = {};
     all.forEach((it) => tagsOf(it).forEach((t) => (tags[t] = tags[t] || []).push(it)));
-    const names = Object.keys(tags).sort();
-    const big = names.filter((t) => tags[t].length >= 5).sort((a, b) => tags[b].length - tags[a].length).slice(0, 3);
+    const names = allTags().filter((t) => tags[t]); // the sidebar's order
+    const big = names.filter((t) => tags[t].length >= 5).slice(0, 3);
     const small = names.filter((t) => !big.includes(t));
     return `<div class="bp-home">${bpRow("recent", "Continue playing", recent.length ? recent : all.slice(0, 12), true)}
       ${big.map((t) => bpRow("tag:" + t, t, tags[t], false)).join("")}

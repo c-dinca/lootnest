@@ -202,6 +202,9 @@ type Config struct {
 	// Tags are the user's collections: Library key -> the collections a
 	// game is in ("Co-op", "For the kids"), in the order they were added.
 	Tags map[string][]string `json:"tags,omitempty"`
+	// TagOrder: the collections in the user's order, those with no games
+	// yet included. Favourites is always first and isn't listed (tags.go).
+	TagOrder []string `json:"tagOrder,omitempty"`
 	// AddedGames: games the user added to the Library by hand ("Add game"),
 	// kept even when a scan doesn't find them.
 	AddedGames []FoundGame `json:"addedGames,omitempty"`
@@ -306,6 +309,13 @@ func (c *Config) normalize() {
 	for i := range c.Games {
 		if c.Games[i].Paths == nil {
 			c.Games[i].Paths = []PathEntry{}
+		}
+	}
+	for _, ts := range c.Tags {
+		for i, t := range ts {
+			if strings.EqualFold(t, FavouritesTag) {
+				ts[i] = FavouritesTag
+			}
 		}
 	}
 }
@@ -715,18 +725,19 @@ const (
 	MaxTags        = 64
 )
 
-// CleanTags checks a game's collections: names trimmed, at most 24
-// characters, no duplicates (whatever their case), at most MaxTagsPerGame.
+// CleanTags checks a game's collections: names trimmed, at most
+// MaxTagName characters, no duplicates (whatever their case), at most
+// MaxTagsPerGame.
 func CleanTags(tags []string) ([]string, error) {
 	out := []string{}
 	seen := map[string]bool{}
 	for _, t := range tags {
-		t = strings.Join(strings.Fields(t), " ")
+		t, err := cleanTagName(t)
+		if err != nil {
+			return nil, err
+		}
 		if t == "" {
 			continue
-		}
-		if len([]rune(t)) > 24 {
-			return nil, fmt.Errorf("Keep collection names under 24 characters (%q is longer).", t)
 		}
 		if seen[strings.ToLower(t)] {
 			continue
@@ -750,7 +761,10 @@ func (c *Config) SetTags(key string, tags []string) error {
 	if err != nil {
 		return err
 	}
-	known := map[string]string{}
+	known := map[string]string{strings.ToLower(FavouritesTag): FavouritesTag}
+	for _, t := range c.TagOrder {
+		known[strings.ToLower(t)] = t
+	}
 	for k, ts := range c.Tags {
 		if k == key {
 			continue
@@ -759,14 +773,16 @@ func (c *Config) SetTags(key string, tags []string) error {
 			known[strings.ToLower(t)] = t
 		}
 	}
+	added := false
 	for i, t := range tags {
 		if have, ok := known[strings.ToLower(t)]; ok {
 			tags[i] = have
 		} else {
 			known[strings.ToLower(t)] = t
+			added = true
 		}
 	}
-	if len(known) > MaxTags {
+	if added && len(known) > MaxTags {
 		return fmt.Errorf("Lootnest keeps up to %d collections.", MaxTags)
 	}
 	if c.Tags == nil {
