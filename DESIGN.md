@@ -17,11 +17,22 @@ The kitchen sink is dev only. Nothing in `design/` is built into `Lootnest.exe`.
 
 ## Principles
 
-1. **Players are the colour.** The interface itself is neutral obsidian, with Racing Red only in small marks. The colour that fills things belongs to a player: their Play, their avatar, their bar on a cover. If you hid the logo, Lootnest should still be recognisable from how players appear.
-2. **The game is the light.** On a game page, that game's art, blurred, lights the whole window from behind the glass. Each page takes on the colour of its game, and the chrome stays the same.
-3. **One decision per screen.** Each page has one primary action. When the action is for a player, it takes that player's colour.
-4. **Precise, not soft.** Radius goes by role, at 3, 4 and 6px, and only avatars are round. Edges are 1px hairlines. There are no drop shadows on things that sit on the page. These are what shipped launchers do, and it's the opposite of the soft, rounded, everything-in-a-card look of generated UI.
-5. **Plain words.** The copy voice stays: "Load someone's files", "A copy is made before every swap". A toast uses the same words as the action that caused it.
+New and reworked pages follow these; older pages move to them as they are reworked.
+
+1. **The art is the colour, and the chrome stays neutral.** Game art tints only the hero and the Big Picture backdrop. Everything below the hero sits on Obsidian with Ice Grey text: no radial halos, 160deg washes or art-tinted panels.
+2. **Racing Red has three jobs per screen at most:** the one primary button, one progress or selection mark, and the current nav item. It never fills a tag with text in it (Update, -50%), never marks a hover, and never decorates a title. Tier and player colours appear only where they mean that tier or that person: Play as someone, their avatar, their bar on a cover, always with their name beside it.
+3. **Depth comes from the oklch ramp, one step per layer** (well, ground, surface, raised, active). Glass (backdrop-filter) is only for surfaces with art or scrolling content under them: the sidebar, the play bar over the hero, drawers, menus, toasts, the unlock pop and Big Picture. Each edge is drawn once: a hairline for a panel on the ground, a tonal step for a panel inside a panel, and `--shadow-overlay` only for floating layers. Never a border, a glow and a wash on the same box. Radius goes by role, at 3, 4 and 6px, and only avatars are round.
+4. **Panels are for objects:** a save point, a copy, an update, a conflict, a drawer. Facts, lists, stats and sections sit on the ground as type, rows and hairlines. No card inside a card, no strip of equal stat cards, and no coloured side stripe unless it is the only carrier of a warning.
+5. **One page grid.** Every page starts at `--page-gutter` and grows with the window. Content splits on 12 columns with unequal spans (8+4, 9+3, 7+5), never a centred fixed column and never three equal cards. A wider window gets more content (more covers per row, a side column, a detail pane), not bigger boxes or more padding.
+6. **Space shows grouping.** Use 4 to 12px inside a component, 12 to 16 between related items, 24 to 32 between groups and 48 to 64 between page sections. The space above a heading is at least twice the space below it. Empty containers are hidden, not drawn: a shelf with too few games, an empty Favourites, a section with nothing to say.
+7. **Few type sizes with clear jumps, and one display face used large.** Bricolage is for 24px and up (and the brand row); Figtree does everything under that. The roles are meta 13, body 14, lead 18, section 24, page 32 and hero 40 to 72. Hierarchy comes from weight and `--fg-1`, `--fg-2`, `--fg-3` before size. Sentence case, with no small label that repeats the heading under it.
+8. **Missing art is always real content:** the game's own icon, a blurred crop of its other art, or its name set in type on `--bg-raised`. Never a blank dark band, repeating stripes, a grey box or a broken-image icon.
+9. **Motion is only for a change of state or place.** Under 280ms for routine changes, one entrance per page for its main object, and nothing on keyboard-driven re-renders (Ctrl+K, Ctrl+B, typing in a filter). No infinite loops except a game that is really running. Content is visible without the animation and under `prefers-reduced-motion`.
+10. **One dominant action per view.** Play as the seated profile leads Home and the game page. Everything else is ghost or secondary, or lives in Manage. Per-row actions show on hover or focus, never as a column of identical outlined buttons.
+11. **The swap is the signature moment and gets the craft:** the profile's colour, the avatar, and an exact copy line ("A copy of Player 1's saves is in Backups, 21:04"). Routine screens stay quiet so this moment stands out. Copy is plain and says things only Lootnest could say, and a toast uses the same words as the action that caused it.
+12. **Big Picture is the same system at 10-foot scale:** type about 1.5x, a 5% safe area, a double focus ring (Ice Grey inside, Obsidian outside) with a 1.05 scale and no glow, a fixed prompt bar that never covers content, and every screen reachable with the D-pad alone.
+
+Every UI change is checked in the harness at 1280x720, 1440x900, 1920x1080 and 2560x1440, with `players=6`, `games=400`, `games=0` and a no-art game, against the tells: glass on flat ground, washes, stripes, equal cards, orphan tiles, more than 3 red marks, and motion you notice on the third use.
 
 ## Tokens
 
@@ -64,13 +75,11 @@ The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own,
 - the text selection, as a wash;
 - the selected choice in a segmented control, as a 2px line under it;
 - where you are, in the sidebar and in Settings' categories: a 3px bar at the left edge, the icon, and `--accent-wash` behind the label (1.30);
-- a 40 by 3px stripe under every page title (`.lib-head h1`), like a livery;
-- the edge of a cover you point at, 2px;
-- what's new: `.ln-tag--accent`, filled red with bold `--fg-on-accent` text (4.7:1), as on a news item's **Update**;
-- a game at 100% on the Achievements page, as its card's edge;
-- the scrollbar you hold or point at.
+- a game at 100% on the Achievements page, as its card's edge.
 
-Play as someone stays in that profile's colour: players are the colour. The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
+It is not a title stripe, a hover edge (a cover or a scrollbar you point at) or a filled tag with text in it, such as **Update** or a discount (principle 2). Pages that still use red that way move off it as they are reworked.
+
+Play as someone stays in that profile's colour. The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
 
 ### Players
 
@@ -97,7 +106,7 @@ A player's colour is never the only cue. Their name is always printed beside it.
 | `--glass-overlay` | slate 0.21 at 86% | Toasts, menus, dialogs |
 | `--glass-ctl` / `-hover` / `-active` / `-on` | white at 6 / 10 / 4 / 13% | Controls on glass |
 | `--blur-glass` | `blur(32px) saturate(150%)` | Every glass surface |
-| `--blur-backdrop`, `--backdrop-opacity` | `blur(100px) saturate(115%)`, 0.34 | The game's art behind the window |
+| `--blur-backdrop`, `--backdrop-opacity` | `blur(100px) saturate(115%)`, 0.34 | The game's art behind the hero and Big Picture |
 | `--shadow-overlay` | one soft shadow | Floating layers only |
 
 Measured over the brightest part of Counter-Strike 2's art, the glass fills keep secondary text at 8.6:1 or better and ink at 12:1 or better.
@@ -108,7 +117,7 @@ With `prefers-reduced-transparency: reduce`, every glass step becomes its solid 
 
 There are two families, both under the **SIL Open Font License 1.1**, which allows embedding them in the exe. They are bundled as woff2 in `internal/app/ui/fonts`.
 
-- **Bricolage Grotesque** is used for titles, through `--font-title`. Its axes are optical size 12–96, weight 200–800 and width 75–100. Large titles use `opsz 96` and −0.02em tracking.
+- **Bricolage Grotesque** is used for titles of 24px and up and the brand row, through `--font-title`. Its axes are optical size 12–96, weight 200–800 and width 75–100. Large titles use `opsz 96` and −0.02em tracking.
 - **Figtree** is used for everything else, through `--font-ui`. Its weight axis runs 300–900.
 
 | Token | Size | Use |
@@ -117,10 +126,10 @@ There are two families, both under the **SIL Open Font License 1.1**, which allo
 | `--fs-40` / `--fs-32` | 40 / 32 | Page titles |
 | `--fs-24` | 24 | Section titles |
 | `--fs-18` | 18 | Values: hours, counts |
-| `--fs-15` | 15 | Strong lines: "Your save is in", large buttons |
+| `--fs-15` | 15 | Strong lines, large buttons. Not a role (principle 7): new work uses 14 or 18 |
 | `--fs-14` | 14 | Body, buttons |
 | `--fs-13` | 13 | Secondary lines |
-| `--fs-12` | 12 | Labels under values, tags |
+| `--fs-12` | 12 | Tags and keys. Not a role (principle 7): new text uses 13 |
 
 Numbers that sit in columns use tabular figures (`.ln-num`). Labels are sentence case: no all-caps and no tracked-out eyebrows.
 
@@ -173,7 +182,7 @@ The kitchen sink forces states with `data-force="hover|active|focus"`. Nothing i
 | Toast | `.ln-toast`, `--success`, `--error` | Player toast with an avatar; one optional ghost action | Says what happened, with the same words as the action. An error says why, and what to do. |
 | Empty / loading / error | `.ln-state`, `--error`, `--inline` | Block or inline. A spinner, an icon, a title, one line and actions | Each says what is going on and what to do next. It is never bare text. |
 | Banner | `.ln-banner` | Title, one line and actions; a spinner while something runs | A notice that needs a decision. There's no coloured side edge. |
-| Backdrop | `.ln-backdrop` | The game's art, blurred | Game pages, and Home behind the last-played game. |
+| Backdrop | `.ln-backdrop` | The game's art, blurred | Only behind the hero (a game page, Home's last-played game) and Big Picture. Below the hero the page is on Obsidian. |
 
 ## Accessibility
 
@@ -182,11 +191,11 @@ The kitchen sink forces states with `data-force="hover|active|focus"`. Nothing i
 - **Keyboard:** everything is a real `<button>` or `<a>`. Segmented controls are radio groups that move with the arrow keys.
 - **Reduced motion:** transitions become instant, Play and tiles stop moving on press and hover, toasts fade in, skeletons stop pulsing and spinners slow down.
 - **Reduced transparency:** glass becomes solid, and the backdrop is removed.
-- **Scaling:** the design is checked at 1280×720 at 150%, through to 2560×1440. Sizes are in CSS px, so Windows scaling multiplies them.
+- **Scaling:** the design is checked at the sizes under Principles, and at 1280×720 at 150%. Sizes are in CSS px, so Windows scaling multiplies them.
 
 ## Banned defaults used on purpose
 
-- **Glass (backdrop blur).** The owner asked for it, and it does a job: each game page takes its game's light. It is used only for the chrome, the play bar, panels on art and overlays. It falls back to solid under reduced transparency.
+- **Glass (backdrop blur).** The owner asked for it, and it does a job where art or scrolling content sits under it: the sidebar, the play bar over the hero, drawers, menus, toasts, the unlock pop and Big Picture (principle 3). Never on flat ground. It falls back to solid under reduced transparency.
 - **An icon next to every action row.** The action lists are scanned more than they are read, and the icon is how you find "Open backups" among the folder actions. Navigation keeps its icons for the same reason, and labels elsewhere have none.
 - **"or play as…" with an ellipsis.** It is the direction's own copy: the sentence the faces complete.
 

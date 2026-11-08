@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -18,6 +18,8 @@
       size: 2.1e9, modTime: iso(26 * h), check: { to: "1.0.3", state: "unknown" }, newer: false },
   ];
   const ART = window.__ART || {};
+  // ?art=bright: a near-white hero for Baldur's Gate 3, our own gradient, to check text over light art.
+  if (q.get("art") === "bright") ART["1086940-hero"] = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="620"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="oklch(0.97 0 0)"/><stop offset="1" stop-color="oklch(0.9 0.02 240)"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>');
   const art = (id, k) => ART[id + "-" + k] || "";
 
   const PLAYERS = [

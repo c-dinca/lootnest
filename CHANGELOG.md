@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.58.1
+
+- Every page now starts at the same distance from the sidebar. The Store, Updates and Achievements pages, and Home before you've played anything, sat a little further to the right than the Library, Home and Cloud saves.
+
 ## 1.58.0
 
 - **Updates you already downloaded, found for you.** For games no launcher keeps up to date, Lootnest looks at the names in your Downloads folder (and the folders directly in it) and spots an update for one of your games: a folder, a .zip, .7z or .rar (the first part of a set), or an installer. It tells you once with a notification, after that game closes if it's running.

@@ -121,7 +121,9 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 @keyframes breathe { 50% { opacity: .35; } }
 
 /* ----------------------------------------------------------------- views */
-.view { overflow: auto; padding: 28px 36px 64px; min-width: 0; background: transparent; }
+.view { overflow: auto; padding: var(--space-8) var(--page-gutter) var(--space-16); min-width: 0; background: transparent; }
+/* The view holds the page gutter; pages with a full-bleed hero set their own. */
+.view:has(> .gpage, > .profile-page) { padding: 0; }
 /* Pages grow with the window: forms and settings stay a readable column in
    the middle, the Library and game pages use the whole width. */
 .page { max-width: 1040px; margin-inline: auto; }
@@ -268,7 +270,7 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .suggest-item .grow { display: grid; }
 .suggest-item code { font: 13px var(--font); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .form-foot {
-  position: sticky; bottom: -64px; margin: 0 -36px -64px; padding: 16px 36px 20px;
+  position: sticky; bottom: calc(-1 * var(--space-16)); margin: 0 calc(-1 * var(--page-gutter)) calc(-1 * var(--space-16)); padding: var(--space-4) var(--page-gutter) var(--space-5);
   background: var(--ink); border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center;
 }
 .args { display: grid; grid-template-columns: 160px 1fr; gap: 10px 14px; align-items: center; }
@@ -480,7 +482,6 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 
 /* ------------------------------------------------------------ game page */
 /* Built from system.css components (DESIGN.md); layout only here. */
-.view:has(> .gpage) { padding: 0; }
 .gpage-hero { position: relative; display: flex; align-items: flex-end; height: clamp(300px, 46vh, 560px); }
 .gpage.no-art .gpage-hero { height: auto; min-height: calc(var(--bar-h) * 4); padding-top: calc(var(--bar-h) + var(--space-4)); }
 .gpage-art {
@@ -542,7 +543,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 }
 
 /* ------------------------------------------------------------------ home */
-.home-empty { display: grid; gap: var(--space-6); max-width: 960px; padding: var(--space-10) var(--page-gutter); }
+.home-empty { display: grid; gap: var(--space-6); }
+.home-empty > .ln-state { padding-inline: 0; }
 .home-banners { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
 .home-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: var(--space-10); margin-top: var(--space-10); align-items: start; }
 .home-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); gap: var(--space-6) var(--space-5); }
@@ -556,8 +558,6 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 }
 
 /* --------------------------------------------------------------- library */
-.lib { padding: var(--space-8) var(--page-gutter) var(--space-16); }
-.view:has(> .lib) { padding: 0; }
 .lib-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4) var(--space-6); }
 .lib-head h1 { margin: 0; font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); }
 /* Every page's title carries a short Racing Red stripe, like a livery. */
@@ -728,8 +728,6 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 /* --------------------------------------------------------------- players */
 /* The household: a card per person, then their names and colours. A
    player's own colour (.ln-player) stands in for --c on their pages. */
-.players-page { padding: var(--space-8) var(--page-gutter) var(--space-16); }
-.view:has(> .players-page), .view:has(> .profile-page) { padding: 0; }
 .pcard, .profile-page { --c: var(--player-fill); }
 .players-count { margin: var(--space-6) 0 0; font-size: var(--fs-13); color: var(--fg-3); }
 .pcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--space-5); margin-top: var(--space-4); }
@@ -880,8 +878,6 @@ ul.pp-recent { display: grid; max-width: 720px; margin: 0; padding: 0; list-styl
 .bk-choice b { font-weight: 600; }
 .bk-choice span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-12); color: var(--fg-2); }
 
-.cloud-page { padding: var(--space-8) var(--page-gutter) var(--space-16); }
-.view:has(> .cloud-page) { padding: 0; }
 .cloud-cols { display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 30vw, 520px); gap: var(--space-10); margin-top: var(--space-8); align-items: start; }
 .cloud-side, .cloud-main { display: grid; gap: var(--space-8); align-content: start; min-width: 0; }
 .cloud-main { gap: var(--space-12); }
@@ -914,8 +910,6 @@ ul.pp-recent { display: grid; max-width: 720px; margin: 0; padding: 0; list-styl
 .cloud-setup { margin-top: var(--space-10); }
 
 /* -------------------------------------------------------------- settings */
-.settings-page { padding: var(--space-8) var(--page-gutter) var(--space-16); }
-.view:has(> .settings-page) { padding: 0; }
 /* A list of categories on the left and one category at a time on the
    right, as in Steam's settings. */
 .set-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-10); margin-top: var(--space-8); align-items: start; }
@@ -1054,7 +1048,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 ::selection { background: var(--accent-wash); }
 
 /* Achievements page: one profile's, across every game. */
-.ach-page { display: grid; gap: var(--space-6); padding: var(--space-8) var(--page-gutter) var(--space-12); }
+.ach-page { display: grid; gap: var(--space-6); }
 .ach-summary { display: grid; gap: var(--space-5); padding: var(--space-5) var(--space-6) var(--space-6); }
 .ach-summary-who { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .ach-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); row-gap: var(--space-4); padding: 0; }
@@ -1124,7 +1118,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-who .ln-chip .ln-num { margin-left: 2px; color: var(--fg-2); font-size: var(--fs-12); }
 
 /* Find games: any game, its prices and requirements. */
-.find-page { display: grid; gap: var(--space-6); align-content: start; padding: var(--space-8) var(--page-gutter) var(--space-12); }
+.find-page { display: grid; gap: var(--space-6); align-content: start; }
 .find-page .lib-actions { flex: 1 1 320px; max-width: 480px; }
 .find-page .ln-search { width: 100%; }
 .find-off { display: grid; gap: var(--space-3); justify-items: start; max-width: 640px; padding: var(--space-6); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); }
@@ -1227,7 +1221,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .run-card--unknown .run-head p { color: var(--fg-2); }
 
 /* Updates: games no store keeps up to date. */
-.upd-page { display: grid; gap: var(--space-8); align-content: start; padding: var(--space-8) var(--page-gutter) var(--space-12); }
+.upd-page { display: grid; gap: var(--space-8); align-content: start; }
 
 /* New copies: a game reinstalled as a whole new version. */
 .copy-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-6); padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-left: 3px solid var(--accent); border-radius: var(--radius-panel); background: var(--bg-raised); }
