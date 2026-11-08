@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // ---------------------------------------------------------------------------
@@ -279,4 +280,25 @@ func AllowedPageRequest(uri string) bool {
 		return true
 	}
 	return SafeNewsImage(uri)
+}
+
+// PageSource is the one document allowed to call Lootnest from its window.
+// The page is loaded from a string, so it has no address of its own (it's
+// about:blank or a data: URL, depending on the WebView2 runtime): the
+// page's first call fixes it, and from then on only that exact document can
+// call. Its own reloads keep the same address; anything it navigated to
+// would have another.
+type PageSource struct {
+	mu   sync.Mutex
+	want string
+}
+
+// Trusted says whether a call from the document at src may go through.
+func (p *PageSource) Trusted(src string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.want == "" {
+		p.want = src
+	}
+	return src != "" && src == p.want
 }

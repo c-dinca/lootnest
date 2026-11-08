@@ -86,3 +86,19 @@ If any step shows someone else's settings or saves, stop and send the log.
 - Cloud saves, if you use them: **Back up now** finishes.
 - Quit from the tray icon, open Lootnest again: everything is as you left
   it.
+
+## 8. Safe mode, and the page's calls (1.65)
+
+Lootnest now only answers calls from its own page, so check nothing lost
+its answers:
+
+1. Open Lootnest and visit every page in the sidebar, a game's page and
+   Settings. Each one fills in as before. If one stays empty, the log says
+   "ignored ... call(s) to Lootnest from a document that isn't its own
+   page": copy it.
+2. Right-click the tray icon, **Restart in safe mode**. Lootnest closes and
+   opens again with a Safe mode notice at the top of Home, and the log says
+   what's off. No unlock notes, no Ctrl+Shift+F5 while a game runs.
+3. Play a game with profiles: the swap and the save back still happen.
+4. **Restart normally** on the notice. Lootnest opens again without it.
+5. Quit, then hold Shift while you open Lootnest: it starts in safe mode.

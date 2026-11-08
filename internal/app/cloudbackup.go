@@ -308,7 +308,7 @@ func (a *App) apiBackupNow() error {
 // queueBackup makes a backup after a session, when they're turned on.
 func (a *App) queueBackup() {
 	a.mu.Lock()
-	on := a.cfg.Settings.BackupAuto && a.cfg.Settings.BackupDir != ""
+	on := a.cfg.Settings.BackupAuto && a.cfg.Settings.BackupDir != "" && !a.safe
 	a.mu.Unlock()
 	if on {
 		go a.runBackup()

@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.64.0, beta)
+## Where things stand (1.65.0, beta)
 
 These shipped recently, newest last:
 
@@ -408,6 +408,16 @@ These shipped recently, newest last:
   cards and rows); arrows and Home/End move between covers; F5 scans
   again; Settings, General lists `SHORTCUTS` (`.set-keys`); the first run
   shows the scan (`#wl-scan`, `welcomeScan`).
+
+- **1.64.1** Unlock and save point sounds over a running game
+  (`win.PlaySound`, embedded WAVs in `app/sounds`, `App.nativeSound`;
+  events carry `native` so the window doesn't play them twice).
+- **1.65** Roadmap Plugins 0: the bridge only answers the app's own top
+  document (`MessageReceived` passes the source, `WebViewOptions.AllowMessage`,
+  `core.PageSource.Trusted` pins the first caller's address; the upstream
+  echo is gone). Safe mode (`--safe-mode`, Shift on a plain open, tray
+  item, `a.safe`, `ps_restart`, `safeBanner()`). If a real PC ever shows
+  an empty window from 1.65 on, check the log for "ignored N call(s)".
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

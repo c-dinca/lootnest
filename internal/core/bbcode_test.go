@@ -77,3 +77,26 @@ func TestAllowedPageRequest(t *testing.T) {
 		}
 	}
 }
+
+func TestPageSource(t *testing.T) {
+	var p PageSource
+	if p.Trusted("") {
+		t.Error("an empty source was trusted")
+	}
+	page := "data:text/html;charset=utf-8;base64,PGh0bWw+"
+	if !p.Trusted(page) {
+		t.Fatal("the page's own first call wasn't trusted")
+	}
+	for src, want := range map[string]bool{
+		page:                                   true,
+		page + "PHNjcmlwdD4=":                  false,
+		"data:text/html;charset=utf-8;base64,": false,
+		"about:blank":                          false,
+		"https://evil.example/":                false,
+		"":                                     false,
+	} {
+		if got := p.Trusted(src); got != want {
+			t.Errorf("Trusted(%q) = %v", src, got)
+		}
+	}
+}

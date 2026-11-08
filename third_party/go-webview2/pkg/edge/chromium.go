@@ -38,7 +38,7 @@ type Chromium struct {
 	globalPermission *CoreWebView2PermissionState
 
 	// Callbacks
-	MessageCallback              func(string)
+	MessageCallback              func(message, source string)
 	WebResourceRequestedCallback func(request *ICoreWebView2WebResourceRequest, args *ICoreWebView2WebResourceRequestedEventArgs)
 	NavigationCompletedCallback  func(sender *ICoreWebView2, args *ICoreWebView2NavigationCompletedEventArgs)
 	AcceleratorKeyCallback       func(uint) bool
@@ -237,19 +237,23 @@ func (e *Chromium) CreateCoreWebView2ControllerCompleted(res uintptr, controller
 }
 
 func (e *Chromium) MessageReceived(sender *ICoreWebView2, args *iCoreWebView2WebMessageReceivedEventArgs) uintptr {
-	var message *uint16
+	// Only the top-level document's messages arrive here (frames have their
+	// own event, which isn't listened to), with the address of the document
+	// that sent each. Nothing is posted back to the page.
+	var message, source *uint16
+	_, _, _ = args.vtbl.GetSource.Call(
+		uintptr(unsafe.Pointer(args)),
+		uintptr(unsafe.Pointer(&source)),
+	)
 	_, _, _ = args.vtbl.TryGetWebMessageAsString.Call(
 		uintptr(unsafe.Pointer(args)),
 		uintptr(unsafe.Pointer(&message)),
 	)
-	if e.MessageCallback != nil {
-		e.MessageCallback(w32.Utf16PtrToString(message))
+	if e.MessageCallback != nil && message != nil {
+		e.MessageCallback(w32.Utf16PtrToString(message), w32.Utf16PtrToString(source))
 	}
-	_, _, _ = sender.vtbl.PostWebMessageAsString.Call(
-		uintptr(unsafe.Pointer(sender)),
-		uintptr(unsafe.Pointer(message)),
-	)
 	windows.CoTaskMemFree(unsafe.Pointer(message))
+	windows.CoTaskMemFree(unsafe.Pointer(source))
 	return 0
 }
 

@@ -132,6 +132,12 @@ type App struct {
 	bigPicture   bool   // the window is in Big Picture
 	hidFor       string // the game Big Picture's window hid itself for
 	openBP       bool   // open in Big Picture once the page is ready
+	safe         bool   // safe mode: started with every optional background piece off
+	restartArgs  string // start Lootnest again with these once this one quits
+
+	page      core.PageSource // the one document that may call ps_*
+	dropped   int             // calls from any other since the last log line
+	droppedAt time.Time
 
 	tray           *win.Tray
 	quitting       bool
@@ -146,6 +152,7 @@ type Options struct {
 	StartHidden bool
 	LaunchGame  string
 	MigrateErr  error // moving PlaySwap's data folder failed; it's used where it is
+	Safe        bool  // --safe-mode, or Shift held at start
 }
 
 func newEnv(a *App) *core.Env {
@@ -221,8 +228,12 @@ func Run(opt Options) error {
 	}
 	a.cfg, a.firstRun = cfg, first
 	a.pending = opt.LaunchGame
-	a.openBP = cfg.Settings.OpenBigPicture && !first && !opt.StartHidden && opt.LaunchGame == ""
+	a.safe = opt.Safe
+	a.openBP = cfg.Settings.OpenBigPicture && !first && !opt.StartHidden && opt.LaunchGame == "" && !a.safe
 	a.logf("Lootnest %s started (steam: %q)", Version, a.env.SteamPath)
+	if a.safe {
+		a.logf("Safe mode: the safety net, Downloads, achievement and update checks, Steam set-up, hotkeys, cloud uploads and backups are off")
+	}
 	if opt.MigrateErr != nil {
 		a.logf("Couldn't move PlaySwap's data to the Lootnest folder yet (%v); using %s for now", opt.MigrateErr, DataDir())
 	}
@@ -276,6 +287,7 @@ func Run(opt Options) error {
 		// The window only ever shows Lootnest's own page: nothing else can be
 		// loaded or navigated to, so the page's access to Lootnest can't leak.
 		AllowRequest: core.AllowedPageRequest,
+		AllowMessage: a.fromPage,
 		WindowOptions: webview2.WindowOptions{
 			Title:       Name,
 			Width:       uint(scale(1100)),
@@ -332,6 +344,9 @@ func Run(opt Options) error {
 	go func() {
 		time.Sleep(2 * time.Second)
 		a.startScan()
+		if a.safe {
+			return
+		}
 		a.autoHooks()
 		go a.watchUpdates()
 		go a.cleanupLegacy()
@@ -351,8 +366,40 @@ func Run(opt Options) error {
 	a.w.Run()
 	a.tray.Remove()
 	a.logf("Lootnest quit")
+	if a.restartArgs != "" {
+		if err := win.StartDetached(a.exePath, a.restartArgs, dirOf(a.exePath)); err != nil {
+			a.logf("ERROR couldn't start Lootnest again: %v", err)
+		}
+	}
 	return nil
 }
+
+// fromPage lets only the window's own page call ps_* (core.PageSource).
+// Other calls are dropped, with a log line at most once a minute.
+func (a *App) fromPage(src string) bool {
+	if a.page.Trusted(src) {
+		return true
+	}
+	a.dropped++
+	if time.Since(a.droppedAt) > time.Minute {
+		a.logf("WARNING ignored %d call(s) to Lootnest from a document that isn't its own page", a.dropped)
+		a.dropped, a.droppedAt = 0, time.Now()
+	}
+	return false
+}
+
+// restart quits and starts Lootnest again, in safe mode or normally.
+func (a *App) restart(safe bool) {
+	a.quit(false)
+	if a.quitting {
+		a.restartArgs = "--restarted"
+		if safe {
+			a.restartArgs += " --safe-mode"
+		}
+	}
+}
+
+func (a *App) apiRestart(safe bool) { a.ui(func() { a.restart(safe) }) }
 
 // ----------------------------------------------------------- window glue --
 
@@ -424,7 +471,11 @@ func (a *App) trayMenu() {
 	if len(games) > 0 {
 		items = append(items, win.MenuItem{Sep: true})
 	}
-	items = append(items, win.MenuItem{ID: 2, Text: "Quit Lootnest"})
+	restart := "Restart in safe mode"
+	if a.safe {
+		restart = "Restart normally"
+	}
+	items = append(items, win.MenuItem{ID: 4, Text: restart}, win.MenuItem{ID: 2, Text: "Quit Lootnest"})
 	ids := make([]string, len(games))
 	for i, g := range games {
 		ids[i] = g.ID
@@ -439,6 +490,8 @@ func (a *App) trayMenu() {
 	case id == 3:
 		a.show()
 		a.emit("bigPicture", map[string]any{"on": true})
+	case id == 4:
+		a.restart(!a.safe)
 	case id >= 100 && id-100 < len(ids):
 		a.requestLaunch(ids[id-100], "")
 	}
@@ -460,6 +513,12 @@ func (a *App) handleCommand(cmd string) {
 	case strings.HasPrefix(cmd, "blocked:"):
 		if id, err := strconv.Atoi(strings.TrimPrefix(cmd, "blocked:")); err == nil {
 			a.handleSteamBlocked(id)
+		}
+	case cmd == "safe":
+		if a.safe {
+			a.show()
+		} else {
+			a.restart(true)
 		}
 	case cmd == "quit-now":
 		a.quit(true)

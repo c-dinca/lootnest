@@ -59,6 +59,7 @@ type webview struct {
 	bindings   map[string]interface{}
 	dispatchq  []func()
 	hook       func(hwnd, msg, wp, lp uintptr) (uintptr, bool)
+	allowMsg   func(source string) bool
 }
 
 type WindowOptions struct {
@@ -103,6 +104,11 @@ type WebViewOptions struct {
 	// refuses get an empty 403 response, so the page can't load or send
 	// anything elsewhere and can't navigate away from the app.
 	AllowRequest func(uri string) bool
+
+	// PlaySwap patch: AllowMessage, when set, is asked about every call the
+	// page makes to a bound function, with the address of the document that
+	// made it. Calls it refuses are dropped without an answer.
+	AllowMessage func(source string) bool
 }
 
 // New creates a new webview in a new window.
@@ -120,6 +126,7 @@ func NewWithOptions(options WebViewOptions) WebView {
 	w := &webview{}
 	w.bindings = map[string]interface{}{}
 	w.autofocus = options.AutoFocus
+	w.allowMsg = options.AllowMessage
 
 	chromium := edge.NewChromium()
 	chromium.MessageCallback = w.msgcb
@@ -168,6 +175,9 @@ func NewWithOptions(options WebViewOptions) WebView {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// No status bar for hovered links and no host objects: neither is used.
+	_ = settings.PutIsStatusBarEnabled(false)
+	_ = settings.PutAreHostObjectsAllowed(false)
 
 	return w
 }
@@ -180,7 +190,10 @@ type rpcMessage struct {
 
 func jsString(v interface{}) string { b, _ := json.Marshal(v); return string(b) }
 
-func (w *webview) msgcb(msg string) {
+func (w *webview) msgcb(msg, source string) {
+	if w.allowMsg != nil && !w.allowMsg(source) {
+		return
+	}
 	d := rpcMessage{}
 	if err := json.Unmarshal([]byte(msg), &d); err != nil {
 		log.Printf("invalid RPC message: %v", err)

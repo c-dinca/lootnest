@@ -84,7 +84,7 @@ func (a *App) checkIfStale() {
 	updateMu.Lock()
 	stale := time.Since(lastCheck) > 10*time.Minute
 	updateMu.Unlock()
-	if on && stale {
+	if on && stale && !a.safe {
 		go a.checkUpdate(false)
 	}
 }

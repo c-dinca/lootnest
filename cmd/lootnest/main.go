@@ -5,6 +5,7 @@
 //	Lootnest.exe                 open the app
 //	Lootnest.exe --tray          start in the tray (used by "Start with Windows")
 //	Lootnest.exe --launch <id>   ask who's playing, then start that game
+//	Lootnest.exe --safe-mode     start with background work off (or hold Shift while it opens)
 //	Lootnest.exe --uninstall     remove Lootnest
 package main
 
@@ -24,7 +25,7 @@ func init() {
 }
 
 func main() {
-	var tray, uninstall, quiet bool
+	var tray, uninstall, quiet, safe, restarted bool
 	var launch string
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
@@ -35,6 +36,10 @@ func main() {
 			uninstall = true
 		case "--quiet", "/quiet", "/s":
 			quiet = true
+		case "--safe-mode", "/safe-mode":
+			safe = true
+		case "--restarted": // the old Lootnest is still closing
+			restarted = true
 		case "--launch", "/launch":
 			if i+1 < len(args) {
 				launch = args[i+1]
@@ -53,12 +58,19 @@ func main() {
 		return
 	}
 
-	if !win.AcquireSingleInstance(app.MutexName) {
+	got := win.AcquireSingleInstance(app.MutexName)
+	for i := 0; !got && restarted && i < 100; i++ {
+		time.Sleep(100 * time.Millisecond)
+		got = win.AcquireSingleInstance(app.MutexName)
+	}
+	if !got {
 		// Already running: hand the request to that instance.
 		for i := 0; i < 20; i++ {
 			if h := win.FindWindow(app.WindowClass); h != 0 {
 				cmd := "show"
-				if launch != "" {
+				if safe {
+					cmd = "safe"
+				} else if launch != "" {
 					cmd = "launch:" + launch
 				} else if tray {
 					return
@@ -74,7 +86,7 @@ func main() {
 	// Lootnest used to be PlaySwap: move its data folder over (once).
 	migrateErr := app.MigrateLegacyData()
 
-	if err := app.Run(app.Options{MigrateErr: migrateErr, StartHidden: tray, LaunchGame: launch}); err != nil {
+	if err := app.Run(app.Options{MigrateErr: migrateErr, StartHidden: tray, LaunchGame: launch, Safe: safe || (!tray && launch == "" && !restarted && win.ShiftDown())}); err != nil {
 		os.Exit(1)
 	}
 }

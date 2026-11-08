@@ -263,12 +263,12 @@ func (a *App) watch() {
 	for range t.C {
 		a.tick()
 		n++
-		if n%3 == 0 { // every ~6 s: achievements unlocked in a running game
+		if n%3 == 0 && !a.safe { // every ~6 s: achievements unlocked in a running game, and the save point hotkey
 			if procs, err := win.ProcessNames(); err == nil {
 				a.achTick(procs)
 			}
 		}
-		if n%60 == 0 { // every ~2 min: updates that landed in Downloads
+		if n%60 == 0 && !a.safe { // every ~2 min: updates that landed in Downloads
 			go a.downloadsCheck()
 		}
 		if n%15 == 0 { // every ~30 s: finish Steam set-up once Steam is closed
