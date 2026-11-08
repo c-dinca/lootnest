@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.58.19
+
+- On a short window, Who's here in the sidebar is one row of pictures, with the seated profile's name, so the games list keeps its room. Click a picture to sit that profile down, as before.
+- A game's page and Big Picture fit windows of 1024 by 700: the art is shorter on short windows, the other ways to play take their own row in the play bar, and side panels use the whole width on narrow windows.
+- The first start sits in the middle of the window, with your profile and the welcome side by side and the Lootnest mark at the top. On a narrow window they stack.
+
 ## 1.58.18
 
 - Home, a game's page and the Library leave more room between sections than inside them, so each section reads as its own block.
