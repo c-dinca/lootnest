@@ -409,7 +409,7 @@
     // The first three of four games or more, in the sidebar's order; the rest are in the Library's collections menu.
     return `<div class="lib-shelves"${S.q ? " hidden" : ""}>${names.slice(0, 3).map((t) => {
       const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
-      return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="lib-shelf-n ln-num">${list.length}</span></h2></div>
+      return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="ln-count ln-num">${list.length}</span></h2></div>
           <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-all" data-tag="${esc(t)}">See all</button></div>
         <div class="lib-shelf-row">${list.slice(0, 16).map((it) => cardHTML(it)).join("")}</div></section>`;
     }).join("")}</div>`;
@@ -561,7 +561,7 @@
     const od = C.oneDrive || [];
     if (od.length) lines.push(line("", `${n(od.length, "1 game keeps", "# games keep")} saves in ${esc(C.oneDriveIn)}, which OneDrive syncs. <button class="gpage-link" data-action="sc-games" data-kind="oneDrive" aria-haspopup="menu">Which games</button>`));
     lines.push(line("", C.cloud ? "Cloud saves are on." : `Cloud saves are off. <button class="gpage-link" data-action="nav" data-view="cloud">Set them up</button>`));
-    return `<section class="home-block sc"><div class="ln-section-head"><div><h2>Your saves</h2>${stats ? "<p>Games Lootnest looks after</p>" : ""}</div><button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="saves">See all</button></div>${stats ? `<dl class="ln-meta sc-stats">${stats}</dl>` : ""}<ul class="sc-lines">${lines.join("")}</ul></section>`;
+    return `<section class="home-block sc"><div class="ln-section-head"><div><h2>Your saves</h2></div><button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="saves">See all</button></div>${stats ? `<p class="home-hint">Games Lootnest looks after</p><dl class="ln-meta sc-stats">${stats}</dl>` : ""}<ul class="sc-lines">${lines.join("")}</ul></section>`;
   }
   // A game whose saves are in a folder OneDrive syncs (Documents moved
   // into OneDrive): said once, as information.
@@ -843,6 +843,5 @@
         el.src = ic;
       } else el.remove();
     });
-    if (!bdShown) backdropForView();
   }
 

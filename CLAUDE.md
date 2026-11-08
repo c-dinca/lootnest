@@ -108,7 +108,9 @@ What makes it different, and the direction to keep pushing:
 - The design rules in DESIGN.md:
   - tokens only, with no raw colours or sizes outside the token block;
   - WCAG AA contrast;
-  - small radii and hairlines, never "rounded AI slop";
+  - radius by role (labels square-ish, keys and panels a little rounder),
+    keys on a lip, section titles as labels in the section's colour,
+    never "rounded AI slop";
   - full-width, responsive pages;
   - fonts licensed under the OFL.
 - Copy voice: plain, specific and calm. No hype, no emoji.
@@ -122,17 +124,25 @@ What makes it different, and the direction to keep pushing:
 
 ## Brand
 
-- Obsidian Black `#111217` is the ground.
+The look is **Arcade** (1.93, the owner's choice; DESIGN.md): game hardware.
+
+- A dark indigo shell (`--shell`: the top bar and the sidebar) around a
+  lighter indigo screen, the page (`--bg-ground`).
 - Ice Grey `#DFE5EB` is text.
-- Racing Red `#EF233C` fills the primary button, with bold near-black
-  text (`--fg-on-accent`, 4.7:1), and is a touch elsewhere: the logo gem,
-  the current nav icon, progress, switches that are on, checkboxes, the
-  selected segment, reader marks and the text selection. It is never small
-  text, because it is 4.4:1 on obsidian. Play as someone keeps that
+- Racing Red `#EF233C` is the logo gem and the Play key (the primary
+  button), with bold near-black text on it (`--fg-on-accent`, 4.7:1).
+  Nothing else is red, and it is never text. Play as someone keeps that
   profile's colour.
+- Every section has a cartridge colour (`--sec-*`): Home yellow, Library
+  teal (a game's page too), Store blue, Updates orange, Achievements
+  lilac, Saves green, Profiles pink. Section titles are a label in it,
+  dark ink on it, on a 3px rule of it. Switches that are on are lit green.
+- Type: Tilt Warp for page titles, a game's name, the Play key and big
+  numbers; Atkinson Hyperlegible Next for everything else, with Figtree's
+  digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.92.0, beta)
+## Where things stand (1.93.0, beta)
 
 These shipped recently, newest last:
 
@@ -690,6 +700,20 @@ These shipped recently, newest last:
   the game page is redrawn several times by events in its first 600 ms.
   Design directions being tried live in `design/directions/*.css`
   (harness only, `dist/page-<name>.html`).
+- **1.93** Arcade, part 1 (the owner chose direction 7 of seven mocked;
+  they want it premium, with real motion, and later all explanatory
+  text cut, "like other launchers"): fonts Tilt Warp (titles, the Play
+  key, scores) and Atkinson Hyperlegible Next with Figtree's digits
+  (Bricolage gone); system.css tokens for the indigo shell and screen,
+  section colours (`--sec-*`, `--sec` via `[data-sec]` set by `secOf()`
+  in render), lamp-green switches, keys on a lip that press 2px,
+  `.ln-label` section labels; motion: the 1.92 ghost crossfade plus an
+  arrival choreography in `enter()` (head settles, labels wipe, content
+  fades, under 400 ms), the top bar cartridge sliding in the section
+  colour, key press, cover lift, drawers, dialogs, toasts, the seat pop.
+  The window backdrop is gone. Next: 1.94 Library/game page/Big
+  Picture, 1.95 Settings/Profiles/dialogs, 1.96 the other pages, 1.97 a
+  copy sweep.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

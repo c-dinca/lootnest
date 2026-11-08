@@ -29,9 +29,9 @@ const (
 	WindowClass = "LootnestMainWindow"
 	MutexName   = `Local\Lootnest.SingleInstance.v1`
 	UninstallID = "Lootnest"
-	bgColor     = 0x0E1117 // --ink-2 in ui/app.css: the title bar frames the window like the sidebar
+	bgColor     = 0x0C0C1D // --shell: the title bar is the same plastic as the top bar
 	borderColor = 0x2A3142 // --line
-	groundColor = 0x111217 // --bg-ground, Obsidian: painted before the page, under the splash
+	groundColor = 0x0C0C1D // --shell: painted before the page, under the splash
 )
 
 // Version is set at build time with -ldflags "-X lootnest/internal/app.Version=..."
@@ -61,14 +61,15 @@ func uiJS() string {
 	return b.String()
 }
 
-// Bricolage Grotesque and Figtree (both SIL Open Font License 1.1), embedded
-// so the window looks the same on every PC without going online.
+// Tilt Warp, Atkinson Hyperlegible Next and Figtree's digits (all three SIL
+// Open Font License 1.1), embedded so the window looks the same on every PC
+// without going online.
 //
 //go:embed ui/fonts/*.woff2
 var uiFonts embed.FS
 
 // uiFontNames are the files in ui/fonts that system.css asks for.
-var uiFontNames = []string{"bricolage-latin", "bricolage-latin-ext", "figtree-latin", "figtree-latin-ext"}
+var uiFontNames = []string{"tilt-warp-latin", "atkinson-next-latin", "atkinson-next-latin-ext", "figtree-latin"}
 
 // Kenney's Interface Sounds (CC0), embedded and inlined like the fonts.
 //

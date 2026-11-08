@@ -66,33 +66,40 @@
     <p>Every component in every state, from <code>internal/app/ui/system.css</code>. The background is Counter-Strike 2's art, blurred, as on a game page, so the glass shows what it does.</p>
   </header>
 
-  ${sec("Colour", "Graphite slate at hue 250. Player colours are brought to the same lightness, so text on them always passes AA.", `
+  ${sec("Colour", "Indigo plastic at hue 282: a dark shell around a lighter screen. A cartridge colour for every section, dark ink on it. Player colours are brought to the same lightness, so text on them always passes AA.", `
     <div class="ks-swatches">
-      ${swatch("Well", "--bg-well")}${swatch("Ground", "--bg-ground")}${swatch("Surface", "--bg-surface")}${swatch("Raised", "--bg-raised")}${swatch("Active", "--bg-active")}
-      ${swatch("Text", "--fg-1", "16.5:1")}${swatch("Secondary", "--fg-2", "10.2:1")}${swatch("Tertiary", "--fg-3", "7.2:1")}${swatch("Disabled", "--fg-disabled", "3.5:1")}
-      ${swatch("Danger", "--danger", "9.9:1")}${swatch("Success", "--success")}${swatch("Warning", "--warning")}
+      ${swatch("Shell", "--shell")}${swatch("Well", "--bg-well")}${swatch("Ground", "--bg-ground")}${swatch("Surface", "--bg-surface")}${swatch("Raised", "--bg-raised")}${swatch("Active", "--bg-active")}
+      ${swatch("Text", "--fg-1", "14.2:1")}${swatch("Secondary", "--fg-2", "10.6:1")}${swatch("Tertiary", "--fg-3", "7.5:1")}${swatch("Disabled", "--fg-disabled")}
+      ${swatch("Racing Red", "--accent")}${swatch("Lamp", "--lamp", "10.9:1")}${swatch("Danger", "--danger", "9.3:1")}
+    </div>
+    <div class="ks-swatches" style="margin-top:var(--space-6)">
+      ${swatch("Home", "--sec-home", "ink 12.3:1")}${swatch("Library", "--sec-library", "ink 11.3:1")}${swatch("Store", "--sec-store", "ink 9.0:1")}${swatch("Updates", "--sec-updates", "ink 9.6:1")}
+      ${swatch("Achievements", "--sec-ach", "ink 8.7:1")}${swatch("Saves", "--sec-saves", "ink 11.5:1")}${swatch("Profiles", "--sec-profiles", "ink 9.5:1")}${swatch("Neutral", "--sec-neutral", "ink 11.1:1")}
     </div>
     <div class="ks-players">${Object.values(P).map((p) => `<div class="ks-pl ln-player" style="--player:${p.color}"><span class="ks-pl-fill">${p.name}</span><code>${p.color} → fill</code></div>`).join("")}
       <div class="ks-pl ln-player" style="--player:#B8E34A"><span class="ks-pl-fill">Custom</span><code>#B8E34A → fill</code></div></div>`)}
 
-  ${sec("Type", "Bricolage Grotesque for titles, Figtree for the interface. Both SIL Open Font License 1.1, embedded in the exe.", `
+  ${sec("Type", "Tilt Warp for page titles, a game's name, the Play key and big numbers; Atkinson Hyperlegible Next for everything else, with Figtree's plain zero. All SIL Open Font License 1.1, embedded in the exe.", `
     <div class="ks-type">
-      <div><span class="ks-k">72 / title</span><span style="font:750 var(--fs-72)/1 var(--font-title);letter-spacing:var(--track-title)">Counter-Strike 2</span></div>
-      <div><span class="ks-k">56 / title</span><span style="font:750 var(--fs-56)/1 var(--font-title);letter-spacing:var(--track-title)">Baldur's Gate 3</span></div>
-      <div><span class="ks-k">24 / section</span><span style="font:700 var(--text-section)/1.1 var(--font-title);letter-spacing:var(--track-section)">Continue playing</span></div>
-      <div><span class="ks-k">18 / value</span><span class="ln-num" style="font:700 var(--fs-18)/1.1 var(--font-ui)">44 h · 22 h · 412 h</span></div>
+      <div><span class="ks-k">64 / hero</span><span style="font:400 64px/1 var(--font-title)">Counter-Strike 2</span></div>
+      <div><span class="ks-k">34 / page</span><span style="font:400 var(--text-page)/1 var(--font-title)">Library</span></div>
+      <div><span class="ks-k">26 / score</span><span style="font:400 var(--text-score)/1 var(--font-title)">412 h, 10 days</span></div>
+      <div><span class="ks-k">16 / label</span><span class="ln-label" style="justify-self:start">Continue playing</span></div>
+      <div><span class="ks-k">18 / value</span><span class="ln-num" style="font:750 var(--fs-18)/1.1 var(--font-ui)">44 h, 22 h, 2026</span></div>
       <div><span class="ks-k">14 / body</span><span style="font:500 var(--fs-14)/1.5 var(--font-ui)">Before a game starts, Lootnest swaps the right person's files into place.</span></div>
       <div><span class="ks-k">13 / secondary</span><span style="font:500 var(--fs-13)/1.5 var(--font-ui);color:var(--fg-2)">A copy is made before every swap.</span></div>
       <div><span class="ks-k">12 / label</span><span style="font:600 var(--fs-12)/1.5 var(--font-ui);color:var(--fg-2)">Steam account</span></div>
     </div>`)}
 
-  ${sec("Shape and depth", "Radius by role, hairline edges, glass by level. No drop shadows except on floating layers.", `
+  ${sec("Shape and depth", "Radius by role. Keys and panels sit on a darker lip; only floating layers cast a shadow.", `
     <div class="ks-shapes">
-      <div class="ks-shape" style="border-radius:var(--radius-tag)"><b>3px</b><span>Tags, keys</span></div>
-      <div class="ks-shape" style="border-radius:var(--radius-ctl)"><b>4px</b><span>Buttons, rows, tiles</span></div>
-      <div class="ks-shape" style="border-radius:var(--radius-panel)"><b>6px</b><span>Panels, toasts</span></div>
+      <div class="ks-shape" style="border-radius:var(--radius-label)"><b>2px</b><span>Labels</span></div>
+      <div class="ks-shape" style="border-radius:var(--radius-tag)"><b>4px</b><span>Tags, keyboard keys</span></div>
+      <div class="ks-shape" style="border-radius:var(--radius-ctl);box-shadow:var(--lip-key)"><b>6px</b><span>Keys, rows, inputs</span></div>
+      <div class="ks-shape" style="border-radius:var(--radius-cover)"><b>8px</b><span>Covers</span></div>
+      <div class="ks-shape" style="border-radius:var(--radius-panel);box-shadow:var(--lip-panel)"><b>10px</b><span>Panels, toasts</span></div>
       <div class="ks-shape" style="border-radius:var(--radius-round);width:96px"><b>Round</b><span>Avatars</span></div>
-      <div class="ks-shape ks-glass" style="background:var(--glass-chrome)"><b>Chrome</b><span>Sidebar, top bar</span></div>
+      <div class="ks-shape" style="background:var(--shell)"><b>Shell</b><span>Sidebar, top bar</span></div>
       <div class="ks-shape ks-glass" style="background:var(--glass-bar)"><b>Bar</b><span>The play bar</span></div>
       <div class="ks-shape ks-glass" style="background:var(--glass-panel)"><b>Panel</b><span>On art</span></div>
       <div class="ks-shape ks-glass" style="background:var(--glass-overlay);box-shadow:var(--shadow-overlay)"><b>Overlay</b><span>Toasts, dialogs</span></div>
@@ -156,8 +163,9 @@
         <dl class="ln-meta"><div class="ln-meta__item"><dd class="ln-meta__text">Nobody yet</dd><dt>Time played</dt></div></dl></div>
     </div>`)}
 
-  ${sec("Section headers and action lists", "Page sections take a title; groups of actions take a label and hairline rows.", `
-    <div class="ln-section-head"><div><h2>Library<span class="ln-count ln-num">13</span></h2></div>${button("ln-button--secondary ln-button--sm", "Add game", "plus", "default")}</div>
+  ${sec("Section labels and action lists", "A section's title is a label in the section's colour on a rule of it; groups of actions take a small title and hairline rows.", `
+    <div class="ln-section-head" data-sec="library"><div><h2>Library<span class="ln-count ln-num">13</span></h2></div>${button("ln-button--secondary ln-button--sm", "Add game", "plus", "default")}</div>
+    <div class="ks-flow">${[["home", "Home"], ["store", "Store"], ["updates", "Updates"], ["ach", "Achievements"], ["saves", "Saves"], ["profiles", "Profiles"], ["neutral", "Settings"]].map(([k, t]) => `<span class="ln-label" data-sec="${k}">${t}</span>`).join("")}</div>
     <div class="ks-two">
       <div><div class="ln-section-head ln-section-head--minor"><h2>Profiles</h2></div>
         <div class="ln-list">
@@ -186,7 +194,16 @@
     </div>
     <p class="ks-note">Second control: hover, selected with focus, disabled.</p>`)}
 
-  ${sec("Tabs", "For the parts of one page, like a game's Overview and Achievements. The current tab is a neutral fill; arrow keys move between tabs.", `
+  ${sec("Switches", "Off is a dark slot; on is lit green, like a power LED.", `
+    <div class="ks-flow">
+      <label class="switch"><input type="checkbox" aria-label="Off"><span></span></label>
+      <label class="switch"><input type="checkbox" checked aria-label="On"><span></span></label>
+      <label class="switch"><input type="checkbox" disabled aria-label="Off, disabled"><span></span></label>
+      <label class="switch"><input type="checkbox" checked disabled aria-label="On, disabled"><span></span></label>
+    </div>
+    <p class="ks-note">Off, on, off disabled, on disabled.</p>`)}
+
+  ${sec("Tabs", "For the parts of one page, like a game's Overview and Achievements. The current tab is a cartridge: raised, with the section's colour along its top; arrow keys move between tabs.", `
     <div class="ln-tabs" role="tablist" aria-label="Hollow Knight">
       <button type="button" role="tab" aria-selected="true" tabindex="0">Overview</button>
       <button type="button" role="tab" aria-selected="false" tabindex="-1" data-force="hover">Achievements</button>

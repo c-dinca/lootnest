@@ -6,14 +6,14 @@
 <style>
 /*@SYSTEM*/
 /* The installer's own sizes; the rest are the app's tokens, from system.css above. */
-:root { --switch-h:20px; --knob:14px; --mark:32px; --step-dot:20px; --check:12px; color-scheme:dark; }
+:root { --mark:32px; --step-dot:20px; --check:12px; color-scheme:dark; }
 * { box-sizing:border-box; }
 html,body { margin:0; height:100%; }
 body { background:var(--bg-ground); color:var(--fg-1); font:var(--fs-14)/var(--lh-body) var(--font-ui); user-select:none; overflow:hidden; -webkit-font-smoothing:antialiased; }
 :focus { outline:none; }
 :focus-visible { outline:var(--focus-width) solid var(--focus-ring); outline-offset:2px; }
 .wrap { height:100%; display:grid; grid-template-rows:auto 1fr auto; }
-.top { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-5) var(--space-8) 0; font:700 var(--fs-15)/1 var(--font-title); }
+.top { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-5) var(--space-8) 0; font:400 var(--fs-18)/1 var(--font-title); }
 .top .ver { margin-left:auto; font:500 var(--fs-13)/1 var(--font-ui); color:var(--fg-3); }
 .mark { width:var(--mark); height:var(--mark); overflow:visible; }
 .mark circle { stroke:var(--accent); }
@@ -25,20 +25,13 @@ body { background:var(--bg-ground); color:var(--fg-1); font:var(--fs-14)/var(--l
 .main { padding:var(--space-8) var(--space-8) 0; display:grid; align-content:start; gap:var(--space-6); }
 .intro .main { animation:rise var(--dur-3) var(--ease-emph) var(--dur-3) both; }
 @keyframes rise { from { opacity:0; transform:translateY(var(--rise)); } }
-h1 { margin:0; font:750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing:var(--track-section); }
+h1 { margin:0; font:400 var(--fs-32)/var(--lh-tight) var(--font-title); }
 .sub { margin:var(--space-2) 0 0; color:var(--fg-2); max-width:52ch; }
 .opts { display:grid; }
 .opt { display:grid; grid-template-columns:1fr auto; align-items:center; gap:var(--space-4); padding:var(--space-3) 0; border-bottom:var(--hairline) solid var(--edge-1); cursor:pointer; }
 .opt:last-child { border-bottom:0; }
 .opt b { font-weight:600; }
 .opt p { margin:2px 0 0; font-size:var(--fs-13); color:var(--fg-2); }
-.switch { position:relative; width:var(--switch-w); height:var(--switch-h); }
-.switch input { position:absolute; inset:0; margin:0; opacity:0; cursor:pointer; }
-.switch span { position:absolute; inset:0; border-radius:var(--radius-round); background:var(--glass-ctl-hover); box-shadow:inset 0 0 0 var(--hairline) var(--edge-2); transition:background-color var(--dur-2) var(--ease-out); }
-.switch span::after { content:""; position:absolute; top:3px; left:3px; width:var(--knob); height:var(--knob); border-radius:var(--radius-round); background:var(--fg-2); transition:transform var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
-.switch input:checked + span { background:var(--accent); box-shadow:none; }
-.switch input:checked + span::after { transform:translateX(16px); background:var(--fg-1); }
-.switch input:focus-visible + span { outline:var(--focus-width) solid var(--focus-ring); outline-offset:2px; }
 .where { margin:0; color:var(--fg-3); font-size:var(--fs-13); user-select:text; overflow-wrap:anywhere; }
 .steps { list-style:none; margin:0; padding:0; display:grid; gap:var(--space-3); }
 .steps li { display:flex; align-items:center; gap:var(--space-3); color:var(--fg-3); }
@@ -48,8 +41,8 @@ h1 { margin:0; font:750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-s
 .dot { flex:none; width:var(--step-dot); height:var(--step-dot); border-radius:var(--radius-round); box-shadow:inset 0 0 0 var(--hairline) var(--edge-2); display:grid; place-items:center; }
 .now .dot { box-shadow:none; }
 .dot svg { width:var(--check); height:var(--check); fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
-.ok .dot { background:var(--accent); box-shadow:none; }
-.ok .dot svg { stroke:var(--fg-on-accent); }
+.ok .dot { background:var(--lamp); box-shadow:none; }
+.ok .dot svg { stroke:var(--fg-on-light); }
 .bad .dot { box-shadow:inset 0 0 0 var(--hairline) var(--danger); }
 .bad .dot svg { stroke:var(--danger); }
 .just .dot { animation:pop var(--dur-2) var(--ease-emph) both; }
@@ -61,7 +54,6 @@ h1 { margin:0; font:750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-s
 .foot:empty { display:none; }
 @media (prefers-reduced-motion: reduce) {
   .intro .mark path, .intro .mark circle, .intro .main, .just .dot, .just .dot path { animation:none; }
-  .switch span, .switch span::after { transition:none; }
 }
 </style>
 </head>

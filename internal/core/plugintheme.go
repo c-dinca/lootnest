@@ -23,37 +23,37 @@ import (
 // ThemeTokens are the tokens a theme may set, with Lootnest's own values
 // (system.css; a test keeps them the same).
 var ThemeTokens = map[string]string{
-	"--bg-well":      "oklch(0.150 0.010 276)",
-	"--bg-ground":    "#111217",
-	"--bg-surface":   "oklch(0.220 0.011 276)",
-	"--bg-raised":    "oklch(0.260 0.011 276)",
-	"--bg-active":    "oklch(0.300 0.011 276)",
+	"--bg-well":      "oklch(0.175 0.036 282)",
+	"--bg-ground":    "oklch(0.205 0.040 282)",
+	"--bg-surface":   "oklch(0.250 0.044 282)",
+	"--bg-raised":    "oklch(0.295 0.046 282)",
+	"--bg-active":    "oklch(0.345 0.048 282)",
 	"--fg-1":         "#DFE5EB",
-	"--fg-2":         "oklch(0.790 0.012 248)",
-	"--fg-3":         "oklch(0.700 0.012 248)",
+	"--fg-2":         "oklch(0.830 0.024 280)",
+	"--fg-3":         "oklch(0.730 0.030 280)",
 	"--accent":       "#EF233C",
 	"--accent-hover": "oklch(0.660 0.230 22.6)",
 	"--fg-on-accent": "oklch(0.140 0.020 20)",
-	"--edge-1":       "oklch(1 0 0 / 0.08)",
-	"--edge-2":       "oklch(1 0 0 / 0.14)",
-	"--edge-3":       "oklch(1 0 0 / 0.26)",
+	"--edge-1":       "oklch(0.80 0.06 282 / 0.12)",
+	"--edge-2":       "oklch(0.80 0.06 282 / 0.20)",
+	"--edge-3":       "oklch(0.85 0.06 282 / 0.38)",
 }
 
-// themeGlass are the glass layers a theme can't change, over the ground;
-// text on them is checked too, so a light theme can't put dark text on the
-// sidebar's dark glass.
+// themeGlass are the layers a theme can't change, over the ground; text on
+// them is checked too, so a light theme can't put dark text on the dark
+// shell (the top bar and the sidebar).
 var themeGlass = [][2]string{
-	{"the sidebar's glass", "oklch(0.15 0.012 276 / 0.62)"},
-	{"the play bar's glass", "oklch(0.17 0.012 276 / 0.70)"},
-	{"menus and dialogs", "oklch(0.21 0.012 276 / 0.86)"},
+	{"the shell", "oklch(0.165 0.034 282)"},
+	{"the play bar", "oklch(0.250 0.044 282 / 0.94)"},
+	{"menus and dialogs", "oklch(0.270 0.046 282 / 0.97)"},
 }
 
 // themeFixed are text colours a theme can't change (errors, warnings,
 // done), checked on the theme's backgrounds.
 var themeFixed = map[string]string{
-	"--danger":  "oklch(0.80 0.100 35)",
-	"--warning": "oklch(0.86 0.110 85)",
-	"--success": "oklch(0.82 0.110 155)",
+	"--danger":  "oklch(0.80 0.110 30)",
+	"--warning": "oklch(0.85 0.120 78)",
+	"--success": "oklch(0.82 0.170 148)",
 }
 
 var tokenWords = map[string]string{

@@ -5,7 +5,7 @@ import path from "node:path";
 const here = path.dirname(new URL(import.meta.url).pathname);
 const ui = path.join(here, "../../internal/app/ui");
 // Like app.go: system.css, then app.css, with the fonts inlined.
-const fonts = ["bricolage-latin", "bricolage-latin-ext", "figtree-latin", "figtree-latin-ext"];
+const fonts = ["tilt-warp-latin", "atkinson-next-latin", "atkinson-next-latin-ext", "figtree-latin"];
 const withFonts = (css) => fonts.reduce((c, n) => c.replace("@FONT:" + n + "@", fs.readFileSync(path.join(ui, "fonts", n + ".woff2")).toString("base64")), css);
 const system = fs.readFileSync(path.join(ui, "system.css"), "utf8");
 const css = withFonts(system + "\n" + fs.readFileSync(path.join(ui, "app.css"), "utf8"));
