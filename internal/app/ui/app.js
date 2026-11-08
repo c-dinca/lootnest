@@ -374,7 +374,7 @@
         break;
       case "allAchievements":
         S.allAch = { games: ev.games || [] };
-        if (S.view === "achievements") render();
+        if (S.view === "achievements") { S.animateView = "kids"; render(); }
         break;
       case "profileInfo":
         S.pinfo[ev.gameId] = ev.info || {};
@@ -594,10 +594,13 @@
     else if (S.view === "find") v.innerHTML = viewFind();
     else if (S.view === "updates") v.innerHTML = viewUpdates();
     if (S.animateView && v.firstElementChild) {
-      // From a transition the page itself already moves; its parts still
-      // come in one after another.
-      if (S.animateView !== "kids") v.firstElementChild.classList.add("enter");
-      staggerIn(v);
+      // From a transition the page itself already moves.
+      const first = v.firstElementChild;
+      if (S.animateView !== "kids") {
+        first.classList.add("enter");
+        first.addEventListener("animationend", (e) => { if (e.target === first) first.classList.remove("enter"); });
+      }
+      arriveOnce(v);
     }
     S.animateView = false;
     v.scrollTop = keepScroll;
@@ -1199,19 +1202,16 @@
     });
     h.addEventListener("dblclick", () => { setPref("sideW", ""); applySideWidth(); });
   })();
-  // Tiles and blocks of a page coming in, one after another.
-  function staggerIn(root) {
-    if (reduced()) return;
+  // Numbers count up and rings and bars fill the first time a page opens
+  // in a session, for each seat.
+  const arrived = new Set();
+  function arriveOnce(root) {
+    const key = `${S.view}|${S.view === "player" ? S.playerPage : ""}|${S.seat}`;
+    if (reduced() || arrived.has(key) || !root.querySelector("[data-countup], .ach-ring, .ach-bar")) return;
+    arrived.add(key);
     countUp(root);
     const page = root.firstElementChild;
     if (page) { page.classList.add("arrive"); setTimeout(() => page.classList.remove("arrive"), 1400); }
-    let i = 0;
-    root.querySelectorAll(".ln-tile, .lib-cap, .home-cols > *, .gpage-block, .ach-gcard, .ach-show-card, .ach-latest .ach, .ach-ms-grid li, .upd-stat, .upd-card, .copy-card, .find-row, .bk-card, .set-sub, .pl-card, .lib-row").forEach((el) => {
-      if (i > 24 || el.getBoundingClientRect().top > innerHeight) return;
-      el.style.setProperty("--i", i++);
-      el.classList.add("stagger");
-      el.addEventListener("animationend", () => el.classList.remove("stagger"), { once: true });
-    });
   }
 
   // --------------------------------------------------------------- library --

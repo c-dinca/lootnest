@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.58.4
+
+- Pages come in with one short movement instead of every card and row arriving one after another.
+- Achievement rings and bars fill, and numbers count up, only the first time you open a page, not on every visit.
+- The rarest achievements shine once when you unlock them, instead of shining over and over on every page.
+- Rows and cards stay still under the pointer: a game's picture in the Library list and on Updates no longer grows, a game's card on the Achievements page and an unlocked achievement's icon no longer lift, and the Updates figures no longer shrink when clicked. Covers in the Library still lift.
+
 ## 1.58.3
 
 - Racing Red is kept for a few things on each page: the main button, the game's progress and the page you're on in the sidebar. It no longer marks a cover or the scrollbar you point at, and page titles have no red line under them.
