@@ -31,18 +31,19 @@ type hydraGame struct {
 
 // HydraGames lists the games Hydra installed on this PC whose exe is still
 // there. dbDir is Hydra's hydra-db folder; tmp is a folder Lootnest may
-// use and remove.
-func HydraGames(dbDir, tmp string, containers []string) []FoundGame {
+// use and remove. The error says why a library that's there couldn't be
+// read.
+func HydraGames(dbDir, tmp string, containers []string) ([]FoundGame, error) {
 	if !isDir(dbDir) {
-		return nil
+		return nil, nil
 	}
 	defer os.RemoveAll(tmp)
 	if err := copyLevelDB(dbDir, tmp); err != nil {
-		return nil
+		return nil, err
 	}
 	db, err := leveldb.OpenFile(tmp, &opt.Options{ErrorIfMissing: true})
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer db.Close()
 	it := db.NewIterator(util.BytesPrefix([]byte("!games!")), nil)
@@ -72,7 +73,7 @@ func HydraGames(dbDir, tmp string, containers []string) []FoundGame {
 		}
 		out = append(out, f)
 	}
-	return out
+	return out, nil
 }
 
 // copyLevelDB copies a LevelDB folder's files, except its lock, so the copy

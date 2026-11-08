@@ -62,20 +62,23 @@ var launcherApps = []string{"battle.net", "blizzard battle.net", "blizzard app",
 // IsLauncherApp says whether a program's name is a launcher's, not a game's:
 // the name itself, or with "beta", "launcher", "client" or a note in
 // brackets after it.
-func IsLauncherApp(name string) bool {
+func IsLauncherApp(name string) bool { return launcherOf(name) != "" }
+
+// launcherOf is the launcher (from launcherApps) a program's name is, or "".
+func launcherOf(name string) string {
 	n := strings.Join(strings.Fields(strings.ToLower(name)), " ")
 	for _, l := range launcherApps {
 		if n == l {
-			return true
+			return l
 		}
 		if rest, ok := strings.CutPrefix(n, l+" "); ok {
 			switch {
 			case strings.HasPrefix(rest, "("), rest == "beta", rest == "launcher", rest == "app", rest == "client", rest == "desktop", rest == "helper":
-				return true
+				return l
 			}
 		}
 	}
-	return false
+	return ""
 }
 
 // tooBroadDir: an install folder that holds many programs, such as a drive

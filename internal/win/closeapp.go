@@ -75,3 +75,11 @@ func CloseProcessWindows(name string) int {
 	closePIDs = nil
 	return n
 }
+
+// ForegroundIs reports whether the window in front belongs to a process
+// named name (lower case, without .exe).
+func ForegroundIs(name string) bool {
+	var pid uint32
+	procGetWindowThreadProcessId.Call(foreground(), uintptr(unsafe.Pointer(&pid)))
+	return pid != 0 && processIDs(name)[pid]
+}

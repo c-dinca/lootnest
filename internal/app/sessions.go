@@ -22,6 +22,7 @@ type Session struct {
 	deadline time.Time
 	missed   int
 	viaPlay  bool // started from Lootnest's own Play button
+	front    bool // the game's window was in front at the last look
 }
 
 func (a *App) sessionsSnapshot() []Session {
@@ -295,7 +296,8 @@ func (a *App) tick() {
 	}
 	var finishes []finish
 	var notes [][2]string
-	hide := false // a game Lootnest started is now up: the window steps aside
+	hide := ""    // a game Lootnest started is now up: the window steps aside
+	back := false // the game Big Picture hid for closed while in front
 
 	a.mu.Lock()
 	cfg := a.cfg
@@ -331,7 +333,9 @@ func (a *App) tick() {
 				changed = true
 				// Hidden only now, once the game is running, so the window
 				// doesn't vanish to the desktop while the game is loading.
-				hide = hide || cfg.Settings.HideWhilePlaying
+				if cfg.Settings.HideWhilePlaying {
+					hide = g.ID
+				}
 				c := cfg.Clone()
 				go a.checkCloudWatch(c, c.Game(g.ID), s.PlayerID)
 			} else if time.Now().After(s.deadline) {
@@ -343,11 +347,17 @@ func (a *App) tick() {
 		case s != nil && s.Phase == "playing":
 			if running {
 				s.missed = 0
+				if g.ID == a.hidFor {
+					s.front = win.ForegroundIs(procName(g))
+				}
 				continue
 			}
 			s.missed++
 			if s.missed < 2 { // ignore quick restarts (launcher -> game)
 				continue
+			}
+			if g.ID == a.hidFor {
+				a.hidFor, back = "", s.front
 			}
 			go func(key, player string, since time.Time) {
 				now := time.Now()
@@ -364,8 +374,28 @@ func (a *App) tick() {
 	if changed {
 		a.emitSessions()
 	}
-	if hide {
-		a.ui(func() { win.ShowWindow(a.hwnd, win.SW_HIDE) })
+	if hide != "" {
+		a.ui(func() {
+			a.mu.Lock()
+			if a.bigPicture && win.IsVisible(a.hwnd) {
+				a.hidFor = hide
+			}
+			a.mu.Unlock()
+			win.ShowWindow(a.hwnd, win.SW_HIDE)
+		})
+	}
+	if back {
+		// Back to Big Picture, where the game was started, unless the window
+		// was opened or Big Picture left while it ran.
+		a.ui(func() {
+			a.mu.Lock()
+			bp := a.bigPicture
+			a.mu.Unlock()
+			if bp && !win.IsVisible(a.hwnd) {
+				a.show()
+				a.emit("bpReturn", nil)
+			}
+		})
 	}
 	for _, n := range notes {
 		a.notify(n[0], n[1])
