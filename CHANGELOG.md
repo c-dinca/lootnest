@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.84.0
+
+- **Settings, Controllers** shows the controllers on this PC: each pad with its buttons as it labels them, its model (Xbox, DualSense, DualShock 4, Switch Pro, Joy-Con, 8BitDo, Logitech, Steam Controller and others), whether it's on USB or Bluetooth, and its Xbox-style (XInput) slot.
+- Virtual pads say what made them, such as DS4Windows or Steam Input. Beside Windows' list is what Lootnest and Big Picture see right now, and which pad Lootnest ignores because it's a copy another app made.
+- The apps that change how games see your pad, when they're installed or running: Steam Input, DS4Windows, DSX, reWASD, x360ce, BetterJoy, InputMapper, JoyToKey, AntiMicroX, Xpadder, HidHide and ViGEmBus, each with what it does. A plain line says when two of them translating at once can make games see double input, or when games may see your pad twice.
+- Lootnest only reads what Windows says about a controller. It never opens one or sends it anything, so a Bluetooth DualSense stays in the mode your games expect. Nothing goes online.
+
 ## 1.83.0
 
 - **Games you installed from itch.io or GOG are on the Updates page**, with your other games no launcher keeps up to date. Each row says where its updates come from and which version you have.

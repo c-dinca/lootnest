@@ -927,8 +927,8 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .bk-card .toggle { padding: var(--space-4) var(--space-5); border-bottom: 0; }
 .bk-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); }
 .bk-row > div:first-child { flex: 1; min-width: 0; }
-.bk-row b { font-weight: 600; }
-.bk-row p { margin: 2px 0 0; font-size: var(--fs-13); color: var(--fg-2); }
+.bk-row b, .ctl-pad b { font-weight: 600; }
+.bk-row p, .ctl-pad p { margin: 2px 0 0; font-size: var(--fs-13); color: var(--fg-2); }
 .bk-where { display: grid; gap: 2px; }
 .bk-path { display: flex; align-items: center; gap: var(--space-1); min-width: 0; }
 .bk-row > div.bk-where { flex-basis: max-content; }
@@ -1032,6 +1032,17 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
    the text and lines up with the card's inputs and buttons. */
 .settings-page .bk-card { max-width: calc(60ch + var(--space-8) + var(--switch-w) + 2 * var(--space-6)); }
 .settings-page .bk-card .toggle { column-gap: var(--space-8); padding: var(--space-5) var(--space-6); }
+
+/* Controllers: Windows' list beside the Gamepad API's, each pad with its
+   face buttons as its family labels them. */
+.ctl-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ctl-col-w)), 1fr)); gap: var(--gap-group); align-items: start; }
+.ctl-page .bk-card { max-width: none; }
+.ctl-pad { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-4); }
+.ctl-faces { display: grid; grid-template: repeat(3, var(--icon-md)) / repeat(3, var(--icon-md)); color: var(--fg-2); }
+.ctl-g { display: grid; place-items: center; font: 700 var(--fs-12)/1 var(--font-ui); }
+.ctl-g .ln-icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: 2; }
+.ctl-g--y { grid-area: 1 / 2; } .ctl-g--x { grid-area: 2 / 1; } .ctl-g--b { grid-area: 2 / 3; } .ctl-g--a { grid-area: 3 / 2; }
+.ctl-note { margin: var(--space-3) 0 0; max-width: 65ch; font-size: var(--text-body); color: var(--fg-1); text-wrap: pretty; }
 
 /* Storage: the drives, each with a bar of what's used, then every game's
    sizes. Red only for a drive that's almost full. */

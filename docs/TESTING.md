@@ -406,3 +406,30 @@ the host of a download, and never a token).
 8. **Sign out**: the GOG games leave Not installed, the installed ones
    stay and start, and `gogToken` is gone from `config.json`. Lootnest
    also signs out with a plain message if GOG stops taking the sign-in.
+
+## 19. Controllers on this PC (1.84)
+
+Lootnest only reads here. The thing to watch is that nothing changes a
+pad: a Bluetooth DualSense must keep working in games afterwards.
+
+1. With no pad connected, Settings, Controllers says **No controller
+   connected**.
+2. Plug in a pad by USB (an Xbox pad and a DualSense if you have them):
+   each shows under **On this PC** with its name, USB, and for the Xbox
+   pad Xbox-style (XInput) with its slot. Press a button: it shows under
+   **What Lootnest sees** too, with its buttons' family.
+3. Pair a DualSense by Bluetooth: it shows as DualSense, Bluetooth. Open
+   the page a few times, then play a game that uses the DualSense over
+   Bluetooth (one with its own DualSense support, and one through Steam
+   Input): the pad, its lightbar, rumble and triggers work as before.
+   Nothing Lootnest did should have switched its mode.
+4. Start DS4Windows with the DualSense connected: the page now also lists
+   DS4Windows (Running now), ViGEmBus, HidHide if installed, and a
+   virtual Xbox 360 pad made by DS4Windows. Without HidHide, a line says
+   games may see two pads. Under What Lootnest sees, the Xbox twin says
+   Lootnest ignores it while the other pad is in use.
+5. With Steam running as well, a line says Steam Input and DS4Windows
+   both translating can make games see double input.
+6. Press a button on a pad, then unplug it while the page is open: it
+   goes from both lists. A pad you never pressed goes when you open the
+   page again.

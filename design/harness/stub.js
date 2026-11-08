@@ -1,11 +1,11 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold&translators=1
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
   const N = q.get("games") || "13", P = +(q.get("players") || 2), STATE = q.get("state") || "normal";
-  const CLOUD = q.get("cloud") !== "0", FIRST = q.get("first") === "1";
+  const CLOUD = q.get("cloud") !== "0", FIRST = q.get("first") === "1", TRANSLATORS = q.get("translators") === "1";
   // ?boot=<ms>: the splash shows, and the first state comes after <ms>.
   // Without it the splash is taken out, so screenshots never catch it.
   const BOOT = +(q.get("boot") || 0);
@@ -793,6 +793,28 @@
       { name: "steamwebhelper.exe", path: "C:\\Program Files (x86)\\Steam\\bin\\cef\\cef.win7x64\\steamwebhelper.exe" },
       { name: "WhatsApp.exe", path: "C:\\Program Files\\WindowsApps\\WhatsApp\\WhatsApp.exe" },
     ]),
+    // Settings, Controllers: Windows' view of the ?pad= controllers. With
+    // ?translators=1, DS4Windows and Steam run, HidHide and ViGEmBus are
+    // installed, and DS4Windows has made a virtual Xbox 360 pad.
+    ps_controllers: () => {
+      const W = {
+        ds5: { name: "DualSense", family: "playstation", vid: 0x054c, pid: 0x0ce6, bus: "bluetooth" },
+        ds4: { name: "DualShock 4 (second model)", family: "playstation", vid: 0x054c, pid: 0x09cc, bus: "usb" },
+        xbox: { name: "Xbox Series controller", family: "xbox", vid: 0x045e, pid: 0x0b12, bus: "usb", xinput: true },
+        switch: { name: "Switch Pro Controller", family: "nintendo", vid: 0x057e, pid: 0x2009, bus: "bluetooth" },
+        generic: { name: "USB Gamepad", family: "generic", vid: 0x0079, pid: 0x0006, bus: "usb" },
+      };
+      const pads = (q.get("pad") || "").split(",").filter((k) => W[k]).map((k) => ({ xinput: false, slot: 0, virtual: "", madeBy: "", ...W[k] }));
+      if (TRANSLATORS) pads.push({ name: "Xbox 360 controller", family: "xbox", vid: 0x045e, pid: 0x028e, bus: "", xinput: true, slot: 0, virtual: "vigem", madeBy: "DS4Windows" });
+      const xinput = pads.filter((p) => p.xinput).map((p, i) => ({ slot: i + 1, kind: "gamepad", wireless: false }));
+      if (xinput.length === 1) pads.find((p) => p.xinput).slot = 1;
+      return ok({ pads, xinput, translators: TRANSLATORS ? [
+        { name: "Steam Input", does: "Can translate your pad for the games Steam starts, shortcuts included, so they see an Xbox pad.", running: true, installed: true },
+        { name: "DS4Windows", does: "Makes your PlayStation pad look like an Xbox pad to games.", running: true, installed: true },
+        { name: "HidHide", does: "Hides the pads you choose from games, so they see only the translated one.", running: false, installed: true },
+        { name: "ViGEmBus", does: "The driver that apps such as DS4Windows use to add a virtual Xbox or PlayStation pad.", running: true, installed: true },
+      ] : [], notes: TRANSLATORS ? ["Steam Input and DS4Windows both translating can make games see double input. For a game Steam starts, you can turn Steam Input off in the game's Properties, under Controller."] : [] });
+    },
     ps_steamProperties: () => ok(),
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };
@@ -816,7 +838,10 @@
     switch: "Pro Controller (STANDARD GAMEPAD Vendor: 057e Product: 2009)",
     generic: "USB Gamepad (STANDARD GAMEPAD Vendor: 0079 Product: 0006)",
   };
-  const pads = (q.get("pad") || "").split(",").filter((k) => PAD_IDS[k]).map((k, index) =>
+  // ?translators=1: DS4Windows's Xbox twin of the pad, as the Gamepad API shows it.
+  const padKeys = (q.get("pad") || "").split(",").filter((k) => PAD_IDS[k]);
+  if (TRANSLATORS && padKeys.length && !padKeys.includes("xbox")) padKeys.push("xbox");
+  const pads = padKeys.map((k, index) =>
     ({ id: PAD_IDS[k], index, connected: true, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 18 }, () => ({ pressed: false, value: 0 })) }));
   if (pads.length) {
     navigator.getGamepads = () => pads;

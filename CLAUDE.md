@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.83.0, beta)
+## Where things stand (1.84.0, beta)
 
 These shipped recently, newest last:
 
@@ -596,6 +596,17 @@ These shipped recently, newest last:
   record once per run, since found updates live only in memory.
   `S.updAsking` keeps the page from asking again while it loads.
   Harness `?itch=1|out&gog=1|out`.
+- **1.84** Roadmap Controllers 2: Settings, Controllers (`77-controllers.js`).
+  `win.PadDevices` lists HID and XUSB interfaces with SetupAPI and
+  CM_* properties only: no device is ever opened (no CreateFile, HidD_
+  or HidP_), so a Bluetooth DualSense's mode is never switched; usage
+  from compatible ids (`gameUsage`). `win.XInputPads`, `win.ServiceState`
+  (read-only SCM). `core/controllers.go`: `modelOf` (vid/pid to model and
+  1.68 family), `parseVIDPID` (USB, BT Classic and BLE ids), `Pads`,
+  virtual pads (vJoy, Steam, ViGEm, ROOT/SWD), the `controllerTools`
+  table and `ControllerNotes` (double input, missing HidHide).
+  `ps_controllers` on page open and gamepad connect, never polled.
+  Shared `setSub` in 70-settings.js. Harness `?translators=1`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

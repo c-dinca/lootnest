@@ -34,6 +34,7 @@
       <div class="bk-row"><div><b>Unsorted captures</b><p>${U.total ? `${U.total} ${U.total === 1 ? "capture" : "captures"} Lootnest couldn't match to a game. Choose the game of each, and it shows on that game's Timeline.` : "Every capture is matched to a game."}</p></div>${U.total ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="captures-unsorted" aria-haspopup="dialog">Choose their games</button>` : ""}</div>` : "";
     return sw("capturesOff", "Captures from other apps", "Screenshots and clips you made with Game Bar, Steam, NVIDIA, AMD or OBS show on each game's Timeline, matched by the game's Steam folder, its name, or when you played it. Lootnest only reads these folders on this PC: it never moves, renames or deletes a capture, and nothing goes online.", !s.capturesOff, true) + rows;
   }
+  const setSub = (title, note, body) => `<section class="set-sub"><div class="ln-section-head ln-section-head--minor"><h2>${title}</h2></div>${note ? `<p class="set-note">${note}</p>` : ""}${body}</section>`;
   // Settings: plain on purpose. Groups of rows, each saying what it does,
   // with its control on the right. Everything online is off until turned on.
   function viewSettings() {
@@ -44,7 +45,7 @@
       ? (S.update.step ? `<button class="ln-button ln-button--primary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Updating</button>` : b("primary", 'data-action="update-now"', `Update to ${esc(S.update.version)}`))
       : (S.update.checking ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Checking</button>` : b("secondary", 'data-action="update-check"', "Check for updates"));
     const card = (rows) => `<div class="bk-card">${rows}</div>`;
-    const sub = (title, note, rows) => `<section class="set-sub"><div class="ln-section-head ln-section-head--minor"><h2>${title}</h2></div>${note ? `<p class="set-note">${note}</p>` : ""}${card(rows)}</section>`;
+    const sub = (title, note, rows) => setSub(title, note, card(rows));
     const versionRow = `<div class="bk-row set-version"><div><b>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}</b><p>${S.update.available ? `Version ${esc(S.update.version)} is ready to install.` : "Updates come from Lootnest's releases on GitHub."}</p></div>${update}</div>`;
     // One category at a time, picked on the left, as in Steam's settings.
     const tabs = [
@@ -75,6 +76,7 @@
             ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : `<div class="bk-row"><div><b>Steam isn't on this PC</b><p>Steam games show up here once it's installed.</p></div></div>`}`)
         + (hidden.length ? sub("Hidden games", "Games you hid from the Library. Scans leave them out until you show them again.", hidden.map(([k, name]) =>
           `<div class="bk-row"><div><b>${esc(name)}</b></div>${b("secondary", `data-action="found-unhide" data-key="${esc(k)}"`, "Show again")}</div>`).join("")) : "")],
+      ["controllers", "Controllers", GI.pad, "The controllers on this PC, and the apps that change how games see them.", viewControllers],
       ["storage", "Storage", GI.drive, "What your games take on each drive, and moving a game to another one.", viewStorage],
       ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
           ${sw("findGames", "Store", "The Store page, and the search in the top bar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
