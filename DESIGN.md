@@ -171,7 +171,7 @@ Long prose (notes, bios, banners) is set to at most 65ch with `text-wrap: pretty
     - covers lift 2px with `--shadow-lift` on hover;
     - buttons and tabs press to 98%;
     - toasts rise 8px;
-    - a page change moves only the page: the one you leave fades out in `--dur-1`, then the new one's main parts rise `--rise` and fade in over `--dur-3`, `--stagger` (40ms) apart, the first five one by one and the rest together. Once per arrival, so a redraw (a cover coming in) carries on and doesn't start again. The top bar and the sidebar never move, and nothing scales;
+    - a page change moves only the page: the new page is drawn at once and rises `--rise` and fades in as one piece over `--dur-2`, while a still copy of the one you leave (`.page-ghost`) fades out over it in `--dur-1`, so no frame is empty. Art already on the PC is decoded first, for at most `--dur-1`, and the window's backdrop changes with the page (`--dur-3`). Once per arrival, so a redraw (a cover coming in) carries on and doesn't start again. A new page opens at the top; Back and Forward return to where it was scrolled. The top bar and the sidebar never move, and nothing scales;
     - menus and the search's list grow from what opened them (scale 0.96 to 1, `--dur-2`);
     - the sounds (Kenney's Interface Sounds, CC0) follow the same rule: one for each thing you do, at half Big Picture's volume. A tab for a section or a game page's tab, open and close for menus, dialogs and drawers, back for Back, go for Play, and a soft move for the arrow keys in the Library's grid, at most every 120ms. Never on hover, a redraw or a change Lootnest makes itself, never while a game runs, and none with Sounds off in Settings.
 

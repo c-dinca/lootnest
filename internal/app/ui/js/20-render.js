@@ -62,8 +62,12 @@
     renderSideGames();
     const v = $("#view");
     noteVisit(v.scrollTop);
-    if (!swapping) renderBar(); // nav has marked the tab it goes to
+    renderBar();
     const keepScroll = v.scrollTop;
+    // A page still arriving carries on from where its entrance was.
+    const was = v.firstElementChild, run = was && was.classList.contains("enter") && was.getAnimations().find((a) => a.animationName === "page-in");
+    // Read before the page goes (it stops then); one not started yet starts now.
+    const runAt = run ? run.startTime ?? document.timeline.currentTime : undefined;
     // A field being typed in keeps its text, focus and caret.
     const ae = document.activeElement, typing = ae && ["lib-q", "find-q", "gp-note", "gp-hours", "pt-rename"].includes(ae.id) && { id: ae.id, value: ae.value, at: ae.selectionStart };
     if (S.view === "home") v.innerHTML = viewHome();
@@ -77,13 +81,12 @@
     else if (S.view === "achievements") v.innerHTML = viewAchievements();
     else if (S.view === "find") v.innerHTML = viewFind();
     else if (S.view === "updates") v.innerHTML = viewUpdates();
-    const first = v.firstElementChild, since = performance.now() - enteredAt;
+    const first = v.firstElementChild;
     if (S.animateView && first) {
       // "kids": the page is already here, its numbers have just arrived.
-      if (S.animateView !== "kids") { arrival++; enter(first, 0); }
+      if (S.animateView !== "kids") { arrival++; enter(first); }
       arriveOnce(v);
-    } else if (first && swapping) first.classList.add("leaving");
-    else if (first && since < ms("--dur-3") + 5 * ms("--stagger")) enter(first, since);
+    } else if (first && run) enter(first, runAt);
     S.animateView = false;
     hist.at = here();
     v.scrollTop = keepScroll;
@@ -131,12 +134,20 @@
   // The window takes on the colours of the game in focus: its art, blurred
   // far out of shape, behind everything. It follows the game the pointer
   // rests on in the Library, and the game whose page is open.
-  let bdShown = "", bdFront = 0, bdTimer = 0;
+  // New art is decoded first (for at most --dur-1), so it fades in whole;
+  // in a page change it fades as quickly as the page (#backdrop.with-page).
+  let bdShown = "", bdFront = 0, bdTimer = 0, bdSeq = 0;
   function setBackdrop(url) {
     if (url === bdShown) return;
     bdShown = url;
+    const seq = ++bdSeq, im = url && new Image(), quick = !!swapping;
+    if (im) im.src = url;
+    Promise.race([im && im.decode(), new Promise((ok) => setTimeout(ok, ms("--dur-1")))]).catch(() => {}).then(() => seq === bdSeq && showBackdrop(url, quick));
+  }
+  function showBackdrop(url, quick) {
     const layers = document.querySelectorAll("#backdrop .bd");
     if (layers.length < 2) return;
+    $("#backdrop").classList.toggle("with-page", quick);
     const next = layers[bdFront ^ 1], cur = layers[bdFront];
     if (url) next.style.backgroundImage = `url("${url}")`;
     next.classList.toggle("on", !!url);

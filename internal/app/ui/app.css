@@ -79,7 +79,8 @@ h2 { font: 700 var(--text-lead)/var(--lh-snug) var(--font-ui); margin: 0 0 4px; 
 #backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 #backdrop .bd { position: absolute; inset: -12%; background: center / cover no-repeat; filter: var(--blur-backdrop); opacity: 0; transition: opacity var(--dur-backdrop) var(--ease-out); }
 #backdrop .bd.on { opacity: var(--backdrop-opacity); }
-body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
+body:has(#view > .gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
+#backdrop.with-page .bd { transition-duration: var(--dur-3); }  /* a page change: the colours change with the page */
 #backdrop::after { content: ""; position: absolute; inset: 0; background: var(--scrim-backdrop); }
 .sep { display: inline-block; width: 1px; height: .9em; background: currentColor; opacity: .35; margin: 0 10px; vertical-align: -1px; }
 
@@ -1651,14 +1652,17 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 }
 
 /* ================================================================= motion
-   Only the page moves when the section changes: the one you leave fades
-   out quickly, then the new one's parts rise in, a few at a time. The bar
-   and the sidebar stay where they are. Covers lift under the pointer,
-   buttons press, menus grow from what opened them. Quick and mechanical,
-   never bouncy. */
+   Only the page moves when the section changes: the new one rises in as
+   one piece while a still copy of the one you leave fades out over it
+   (.page-ghost, over the view; no frame is empty). The bar and the sidebar
+   stay where they are. Covers lift under the pointer, buttons press, menus
+   grow from what opened them. Quick and mechanical, never bouncy. */
 @keyframes page-in { from { opacity: 0; transform: translateY(var(--rise)); } }
-.leaving { opacity: 0; transition: opacity var(--dur-1) var(--ease-out); }
-.enter { animation: page-in var(--dur-3) var(--ease-emph) both; animation-delay: calc(var(--i, 0) * var(--stagger) - var(--entered, 0ms)); }
+.view.is-arriving { opacity: 0; }  /* the new page, for the moment its art decodes */
+.page-ghost { position: fixed; z-index: 2; pointer-events: none; transition: opacity var(--dur-1) var(--ease-out); }
+.page-ghost.out { opacity: 0; }
+.page-ghost * { animation: none !important; transition: none !important; }  /* moved nodes would play theirs again */
+.enter { animation: page-in var(--dur-2) var(--ease-emph) both; }
 .ctx:not([hidden]) { animation: menu-in var(--dur-2) var(--ease-out); }
 @keyframes menu-in { from { opacity: 0; transform: scale(.96); } }
 .ln-tile__cover { transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
@@ -1672,7 +1676,7 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(.98); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .app, .sg-thumb img, .ln-tile__cover, .bar-ind, .bar-search, .leaving, .sg-folder, .sg-newrow, .sg-more { transition: none; }
+  .app, .sg-thumb img, .ln-tile__cover, .bar-ind, .bar-search, .page-ghost, .sg-folder, .sg-newrow, .sg-more { transition: none; }
   .enter, .ctx:not([hidden]), .gq-pop, .ln-toast, .sg-rows.opening, .sg-live { animation: none; }
   .ln-tile:hover .ln-tile__cover, .ln-button:active:not(:disabled), .bar-tab:active { transform: none; }
 }
