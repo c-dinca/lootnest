@@ -740,13 +740,13 @@
   // to move through with the stick or the D-pad, A to choose, B to go back,
   // Y to play as someone else, Start to leave. The keyboard works the same:
   // arrows, Enter, Escape, Q and E.
-  const BP = { on: false, tab: "home", detail: null, choose: null, focus: "", from: "", keep: false, timer: 0, sounds: pref("bpSounds", "1") === "1" };
+  const BP = { on: false, tab: "home", tag: "", detail: null, choose: null, focus: "", from: "", keep: false, timer: 0, sounds: pref("bpSounds", "1") === "1" };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
   const bpKey = (it) => it.kind + ":" + it.id;
   function bpOpen() {
     if (BP.on) return;
-    BP.on = true; BP.tab = "home"; BP.detail = null; BP.choose = null; BP.focus = ""; BP.from = "";
+    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.detail = null; BP.choose = null; BP.focus = ""; BP.from = "";
     closeContext(); gqClose();
     if (!S.allAch) api.allAchievements().catch(() => {});
     api.bigPicture(true).catch(() => {});
@@ -774,6 +774,15 @@
     return `<button class="bp-tile${wide ? " bp-tile--wide" : ""}" data-bp data-bpid="t:${esc(bpKey(it))}:${wide ? "w" : "c"}" data-k="${esc(bpKey(it))}" data-go="open">
       <span class="bp-tile-art">${art ? `<img src="${art}" alt="">` : plate(ic, "", `${ic ? `<img src="${ic}" alt="">` : ""}<b>${esc(it.name)}</b>`)}</span>
       ${s ? `<span class="bp-live">${esc(sessionText(s))}</span>` : ""}<span class="bp-tile-name">${esc(it.name)}</span></button>`;
+  }
+  // A collection too small for a row of its own: one wide tile with its first three covers and its name.
+  function bpTagTile(t, list) {
+    const covers = list.slice(0, 3).map((it) => {
+      const art = bpArt(it, false);
+      return `<span class="bp-tag-cover">${art ? `<img src="${art}" alt="">` : plate(S.icons[coverKey(it)], "", "")}</span>`;
+    }).join("");
+    return `<button class="bp-tile bp-tile--wide bp-tile--tag" data-bp data-bpid="c:${esc(t)}" data-go="tag" data-tag="${esc(t)}">
+      <span class="bp-tile-art">${covers}<span class="bp-tag-name"><b>${esc(t)}</b>${list.length} ${list.length === 1 ? "game" : "games"}</span></span></button>`;
   }
   const bpRow = (id, title, list, wide) => (list.length ? `<section class="bp-row"><h2>${esc(title)}</h2><div class="bp-row-track" data-row="${esc(id)}">${list.map((it) => bpTile(it, wide)).join("")}</div></section>` : "");
   function bpScreen() {
@@ -804,7 +813,8 @@
         <button class="bp-btn bp-btn--primary" data-bp data-bpid="exit" data-go="exit">${glyph("Start")}Leave Big Picture</button></div>`;
     }
     if (BP.tab === "library") {
-      return `<div class="bp-grid-wrap"><h2 class="bp-h">All games <span>${all.length}</span></h2><div class="bp-grid">${all.map((it) => bpTile(it, false)).join("")}</div></div>`;
+      const list = BP.tag ? all.filter((it) => tagsOf(it).includes(BP.tag)) : all;
+      return `<div class="bp-grid-wrap"><h2 class="bp-h">${BP.tag ? esc(BP.tag) : "All games"} <span>${list.length}</span></h2><div class="bp-grid">${list.map((it) => bpTile(it, false)).join("")}</div></div>`;
     }
     if (BP.tab === "profiles") {
       const ps = cfg().players, seat = seated(), alone = solo();
@@ -822,8 +832,12 @@
     const recent = recentItems(all, false).slice(0, 12);
     const tags = {};
     all.forEach((it) => tagsOf(it).forEach((t) => (tags[t] = tags[t] || []).push(it)));
+    const names = Object.keys(tags).sort();
+    const big = names.filter((t) => tags[t].length >= 5).sort((a, b) => tags[b].length - tags[a].length).slice(0, 3);
+    const small = names.filter((t) => !big.includes(t));
     return `<div class="bp-home">${bpRow("recent", "Continue playing", recent.length ? recent : all.slice(0, 12), true)}
-      ${Object.keys(tags).sort().slice(0, 4).map((t) => bpRow("tag:" + t, t, tags[t], false)).join("")}
+      ${big.map((t) => bpRow("tag:" + t, t, tags[t], false)).join("")}
+      ${small.length ? `<section class="bp-row"><h2>Collections</h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
       ${bpRow("all", "Your games", all.slice(0, 40), false)}</div>`;
   }
   let bpSeat = "";
@@ -851,7 +865,7 @@
         <div class="bp-right">${seatHTML}<time class="bp-clock ln-num"></time>
           <button class="bp-exit" data-go="exit" tabindex="-1" title="Leave Big Picture">${glyph("Start")}Leave</button></div></header>
       <main class="bp-main"></main>
-      <footer class="bp-foot">${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${glyph("Y")}Play as…<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button></footer>`;
+      <footer class="bp-foot">${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button></footer>`;
       main = el.querySelector(".bp-main");
     } else if (seatHTML !== bpSeat) {
       el.querySelectorAll(".bp-right .bp-seat").forEach((x) => x.remove());
@@ -919,7 +933,7 @@
     if (BP.detail || BP.choose) return;
     const i = BP_TABS.findIndex((t) => t[0] === BP.tab);
     BP.tab = BP_TABS[(i + step + BP_TABS.length) % BP_TABS.length][0];
-    BP.focus = ""; BP.keep = true;
+    BP.tag = ""; BP.focus = ""; BP.keep = true;
     sfx("tab");
     renderBP(true);
   }
@@ -938,17 +952,19 @@
     const go = el.dataset.go;
     if (go === "open") { BP.detail = el.dataset.k; BP.from = el.dataset.bpid; BP.focus = "play"; BP.keep = true; sfx("go"); renderBP(true); }
     else if (go === "play") bpPlay(bpItem(el.dataset.k));
+    else if (go === "tag") { BP.tab = "library"; BP.tag = el.dataset.tag; BP.focus = ""; BP.keep = true; sfx("go"); renderBP(true); }
     else if (go === "choose") { BP.choose = el.dataset.k; BP.focus = ""; sfx("go"); renderBP(true); }
     else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
     else if (go === "back") bpBack();
     else if (go === "seat") { actions.seat({ dataset: { player: el.dataset.p } }); sfx("go"); renderBP(false); }
-    else if (go === "tab") { BP.tab = el.dataset.t; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("tab"); renderBP(true); }
+    else if (go === "tab") { BP.tab = el.dataset.t; BP.tag = ""; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("tab"); renderBP(true); }
     else if (go === "exit") bpClose();
     else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); sfx("toggle"); renderBP(false); }
   }
   function bpBack() {
     if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
+    else if (BP.tag) { BP.focus = "c:" + BP.tag; BP.tab = "home"; BP.tag = ""; }
     else { sfx("edge"); return; }
     BP.keep = true;
     sfx("back");
@@ -986,7 +1002,7 @@
     const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
     if (dirs[k]) { ev.preventDefault(); bpMove(dirs[k]); }
     else if (k === "Enter" || k === " ") { ev.preventDefault(); bpSelect(document.activeElement.closest && document.activeElement.closest("#bp [data-go]")); }
-    else if (k === "Escape" || k === "Backspace") { ev.preventDefault(); if (BP.detail || BP.choose) bpBack(); else bpClose(); }
+    else if (k === "Escape" || k === "Backspace") { ev.preventDefault(); if (BP.detail || BP.choose || BP.tag) bpBack(); else bpClose(); }
     else if (k === "q" || k === "PageUp") { ev.preventDefault(); bpTab(-1); }
     else if (k === "e" || k === "PageDown") { ev.preventDefault(); bpTab(1); }
     else if (k === "y") { ev.preventDefault(); bpY(); }
