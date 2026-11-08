@@ -1304,23 +1304,24 @@
     const have = new Set(all.map((it) => filterOf(it.source)));
     const stores = [["all", "All stores"], ...LAUNCHERS.filter((k) => have.has(k) || S.store === k).map((k) => [k, sourceLabel(k)]),
       ...(have.has("other") || S.store === "other" ? [["other", "Other"]] : [])];
-    const head = `<header class="lib-head"><div><h1>Library</h1>
-        <p>${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"} on this PC, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</p></div>
+    const head = `<header class="lib-head"><div class="lib-title"><h1>Library</h1>
+        <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</span></div>
         <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
         <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button></div></header>`;
     if (!all.length && !scanning) {
       const where = ["Steam", "Epic", "GOG", "Xbox", "EA", "Ubisoft", "Battle.net", "Riot", "Amazon", "Rockstar", "itch.io", "Hydra", "Game folders", "Shortcuts"];
-      return `<div class="lib ln-root"><header class="lib-head"><div><h1>Library</h1><p>Every game on this PC, in one place.</p></div></header>
+      return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1><p>Every game on this PC, in one place.</p></header>
         ${emptyState(homeIcon, "No games found yet", "Lootnest looks everywhere games are installed on this PC. If yours isn't found, add it by hand: point Lootnest at its folder or its .exe.",
           `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`,
           `<ul class="ln-empty__where" aria-label="Where Lootnest looks">${where.map((w) => `<li>${w}</li>`).join("")}</ul>`)}</div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
-    const sizes = [["s", "Small covers", 10], ["m", "Medium covers", 13], ["l", "Large covers", 16], ["list", "A list", 0]];
+    const sizes = [["s", "Small covers", 8], ["m", "Medium covers", 11], ["l", "Large covers", 14], ["list", "A list", 0]];
     const seg = (k, l, n) => `<button data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}<span class="ln-count ln-num">${n}</span></button>`;
     const ps = cfg().players;
-    const who = ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
+    const who = ps.length > 3 ? `<select id="lib-who" class="ln-input" aria-label="Whose games"><option value="">Anyone's games</option>${ps.map((p) => `<option value="${esc(p.id)}" ${S.who === p.id ? "selected" : ""}>${esc(possessive(p.name))} games</option>`).join("")}</select>`
+      : ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     return `<div class="lib ln-root">${head}${hookBanner() || coverHint(all) ? `<div class="lib-banners">${hookBanner()}${coverHint(all)}</div>` : ""}
       ${(() => { const top = recentShelf(all) + collectionShelves(all); return top ? top + `<div class="ln-section-head lib-all-head"${S.q ? " hidden" : ""}><div><h2>All games</h2></div></div>` : ""; })()}
       <div class="lib-tools">
@@ -1407,10 +1408,10 @@
     if (S.filter !== "all" || S.who || S.store !== "all" || S.tag || S.status) return "";
     const tags = cfg().tags || {}, by = {};
     all.forEach((it) => (tags[recentKey(it)] || []).forEach((t) => (by[t] = by[t] || []).push(it)));
-    const names = Object.keys(by).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b, undefined, { sensitivity: "base" }));
+    const names = Object.keys(by).filter((t) => by[t].length >= 4).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b, undefined, { sensitivity: "base" }));
     if (!names.length) return "";
-    // The six largest; the rest are in the Library's collections menu.
-    return `<div class="lib-shelves"${S.q ? " hidden" : ""}>${names.slice(0, 6).map((t) => {
+    // The three largest of four games or more; the rest are in the Library's collections menu.
+    return `<div class="lib-shelves"${S.q ? " hidden" : ""}>${names.slice(0, 3).map((t) => {
       const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
       return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="lib-shelf-n ln-num">${list.length}</span></h2></div>
           <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-all" data-tag="${esc(t)}">See all</button></div>
@@ -3358,10 +3359,11 @@
     }).join("");
     const n = cfg().players.length;
     return `<div class="players-page ln-root">
-      <header class="lib-head"><div><h1>Profiles</h1><p>Each profile has its own settings, saves and achievements in every game. Make one for everyone who plays, or a few for yourself, one per run.</p></div>
+      <header class="lib-head"><h1>Profiles</h1>
         <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile someone exported from Lootnest on another PC: their saves, picture and play time">Import a profile</button>
           <button class="ln-button ln-button--secondary" data-action="edit-profiles" aria-haspopup="dialog">${GI.edit}Names and colours${dirty ? '<span class="ln-tag">Not saved</span>' : ""}</button>
-          ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--primary" data-action="new-profile" aria-haspopup="dialog">${GI.plus}New profile</button>` : ""}</div></header>
+          ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--primary" data-action="new-profile" aria-haspopup="dialog">${GI.plus}New profile</button>` : ""}</div>
+        <p>Each profile has its own settings, saves and achievements in every game. Make one for everyone who plays, or a few for yourself, one per run.</p></header>
       <p class="players-count">${n} of ${MAX_PROFILES} profiles. Open one to change its picture, banner and page.</p>
       <div class="pcards${people.length === 1 ? " one" : ""}">${cards}</div></div>`;
   }
@@ -3472,7 +3474,7 @@
     ];
     const cur = tabs.find((t) => t[0] === S.setTab) || tabs[0];
     return `<div class="settings-page ln-root">
-      <header class="lib-head"><div><h1>Settings</h1><p>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}. Anything that goes online is off until you turn it on.</p></div></header>
+      <header class="lib-head"><h1>Settings</h1><p>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}. Anything that goes online is off until you turn it on.</p></header>
       <div class="set-layout">
         <nav class="set-nav" aria-label="Settings">${tabs.map(([k, label, ic]) => `<button class="set-tab" data-action="set-tab" data-tab="${k}"${k === cur[0] ? ' aria-current="true"' : ""}>${ic}<span>${label}</span>${k === "updates" && S.update.available ? '<span class="set-dot" aria-label="An update is ready"></span>' : ""}</button>`).join("")}</nav>
         <section class="set-panel" aria-labelledby="set-title"><div class="set-panel-head"><h2 id="set-title">${cur[1]}</h2><p>${cur[3]}</p></div>${cur[4]()}</section>
@@ -3774,7 +3776,7 @@
   function viewFind() {
     const on = cfg().settings.findGames;
     const search = on ? `<div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="find-q" class="ln-input" placeholder="Search the store" value="${esc(S.find.q)}" autocomplete="off" spellcheck="false" aria-label="Search the store"></label></div>` : "";
-    const head = `<header class="lib-head"><div><h1>Store</h1><p>Any game, with its price in every official store and whether it runs on this PC.</p></div>${search}</header>`;
+    const head = `<header class="lib-head"><h1>Store</h1>${search}<p>Any game, with its price in every official store and whether it runs on this PC.</p></header>`;
     if (!on) return `<div class="find-page ln-root">${head}<section class="find-off"><h2>Look up any game</h2>
       <p>The Store asks the Steam store for games, deals and requirements, and CheapShark for prices in other official stores, such as GOG, Humble and Fanatical. Only what you type, or a game's Steam id, is sent. Lootnest opens the store you choose in your browser.</p>
       <button class="ln-button ln-button--primary" data-action="find-on">Turn on the Store</button></section></div>`;
@@ -3899,7 +3901,7 @@
 
   let allAchAsked = false;
   function viewAchievements() {
-    const head = `<header class="lib-head"><div><h1>Achievements</h1><p>Every game's achievements on this PC. Each profile has its own where they go with the profile; Steam's belong to the Steam account.</p></div></header>`;
+    const head = `<header class="lib-head"><h1>Achievements</h1><p>Every game's achievements on this PC. Each profile has its own where they go with the profile; Steam's belong to the Steam account.</p></header>`;
     if (!S.allAch) {
       if (!allAchAsked) { allAchAsked = true; api.allAchievements().catch(() => {}).finally(() => { allAchAsked = false; }); }
       return `<div class="ach-page ln-root">${head}${lnInline("", "Reading achievements on this PC")}</div>`;
@@ -3969,8 +3971,8 @@
   // and the backups of everything.
   function viewCloud() {
     const B = S.backup;
-    const head = (actions) => `<header class="lib-head"><div><h1>Cloud saves</h1>
-      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p></div>${actions ? `<div class="lib-actions">${actions}</div>` : ""}</header>`;
+    const head = (actions) => `<header class="lib-head"><h1>Cloud saves</h1>${actions ? `<div class="lib-actions">${actions}</div>` : ""}
+      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p></header>`;
     if (!B) { loadBackupInfo(); return `<div class="cloud-page ln-root">${head("")}${lnInline("", "Reading your cloud folder")}</div>`; }
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
     if (!B.dir) {
@@ -5032,6 +5034,7 @@
     if (el.id === "lib-store") { S.store = el.value; render(); return; }
     if (el.id === "lib-tag") { S.tag = el.value; render(); return; }
     if (el.id === "lib-status") { S.status = el.value; render(); return; }
+    if (el.id === "lib-who") { S.who = el.value; render(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
