@@ -108,7 +108,8 @@ func LauncherGames(entries []UninstallEntry) []FoundGame {
 		f := FoundGame{Key: "dir:" + strings.ToLower(dir), Name: name, Dir: dir}
 		switch {
 		case uplayKey.MatchString(e.Key):
-			f.Source, f.URI = "ubisoft", "uplay://launch/"+uplayKey.FindStringSubmatch(e.Key)[1]+"/0"
+			f.Source, f.StoreID = "ubisoft", uplayKey.FindStringSubmatch(e.Key)[1]
+			f.URI = "uplay://launch/" + f.StoreID + "/0"
 		case strings.Contains(strings.ToLower(un), "riotclientservices.exe") && riotProduct.MatchString(un):
 			product := riotProduct.FindStringSubmatch(un)[1]
 			if strings.Contains(strings.ToLower(product), "riot_client") {
@@ -130,7 +131,7 @@ func LauncherGames(entries []UninstallEntry) []FoundGame {
 			}
 			f.Source = "battlenet"
 			if code := battleNetCodes[uid]; code != "" {
-				f.URI = "battlenet://" + code
+				f.URI, f.StoreID = "battlenet://"+code, code
 			}
 		case amazonID.MatchString(un):
 			f.Source, f.URI = "amazon", "amazon-games://play/"+amazonID.FindStringSubmatch(un)[1]

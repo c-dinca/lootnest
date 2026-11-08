@@ -116,6 +116,7 @@
     const host = el && el.closest("[data-game], [data-key]");
     if (!host) return null;
     const id = host.dataset.game || host.dataset.key, kind = host.dataset.game ? "game" : "found";
+    if (isOwnedKey(id)) return ownedItem(id);
     return everyItem().find((x) => x.kind === kind && x.id === id) || null;
   }
   // The colours change when a game is chosen, not as the pointer passes:
@@ -131,9 +132,10 @@
   function backdropForView() { clearTimeout(bdTimer); setBackdrop(defaultBackdrop()); }
 
   // ---------------------------------------------------------- right-click --
-  function openContext(ev, it) {
+  function contextItems(it) {
     const g = it.g, f = it.f;
-    const attr = g ? `data-game="${esc(g.id)}"` : `data-key="${esc(f.key)}"`;
+    const attr = itemAttr(it);
+    if (it.kind === "owned") return [storeItem(it, "install"), `<button data-action="open-sheet" ${attr}>Open the game's page</button>`];
     const s = g && session(g.id);
     const items = [];
     if (!s) {
@@ -145,11 +147,16 @@
     else items.push(`<button data-action="game-settings" ${attr}>Game settings</button>`);
     items.push(`<button data-action="open-game-folder" ${attr}>Open the game's folder</button>`,
       `<button data-action="${g ? "shortcut" : "found-shortcut"}" ${attr}>Create desktop shortcut</button>`);
-    if (it.appId) items.push(`<button data-action="steam-verify" data-app="${it.appId}" ${s ? "disabled" : ""}>Check the game's files</button>`);
-    items.push("<hr>", g ? `<button class="danger" data-action="remove-game" ${attr}>Turn off profiles</button>`
-      : `<button class="danger" data-action="found-hide" ${attr}>${f.added ? "Remove from the Library" : "Hide from the Library"}</button>`);
+    if (g && it.appId) items.push(`<button data-action="steam-verify" data-app="${it.appId}" ${s ? "disabled" : ""}>Verify files with Steam</button>`);
+    if (f) items.push(...storeActs(it).filter((a) => a === "verify" || a === "open").map((a) => storeItem(it, a)));
+    items.push("<hr>");
+    if (g) return [...items, `<button class="danger" data-action="remove-game" ${attr}>Turn off profiles</button>`];
+    return [...items, `<button class="danger" data-action="found-hide" ${attr}>${f.added ? "Remove from the Library" : "Hide from the Library"}</button>`,
+      storeActs(it).includes("uninstall") ? storeItem(it, "uninstall") : "", removable(it) ? `<button class="danger" data-action="remove-pc" ${attr}>Remove from this PC</button>` : ""];
+  }
+  function openContext(ev, it) {
     const m = $("#ctx");
-    m.innerHTML = `<div class="ctx-title">${esc(it.name)}</div>${items.join("")}`;
+    m.innerHTML = `<div class="ctx-title">${esc(it.name)}</div>${contextItems(it).join("")}`;
     m.hidden = false;
     const r = m.getBoundingClientRect();
     m.style.left = Math.min(ev.clientX, innerWidth - r.width - 8) + "px";

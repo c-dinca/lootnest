@@ -16,7 +16,10 @@
         openPicker(ev.gameId, ev.reqId ? "steam" : "play", ev.reqId);
         break;
       case "found":
-        loadFound().then(() => { if (S.dialog && S.dialog.kind === "sources") loadSources(); });
+        loadFound().then(() => {
+          if (S.owned && !S.found.refreshing) api.ownedGames().catch(() => {}); // an install or uninstall may be done
+          if (S.dialog && S.dialog.kind === "sources") loadSources();
+        });
         break;
       case "hooks":
         loadHooks().then(() => { render(); if (S.dialog && S.dialog.kind === "steam") renderOverlay(); });
@@ -214,6 +217,27 @@
         const same = JSON.stringify(S.dl) === JSON.stringify(ev.matches || []);
         S.dl = ev.matches || []; updateNavCount();
         if (!same && (S.view === "updates" || S.view === "game")) render();
+        break;
+      }
+      case "owned": {
+        S.owned = ev.games || [];
+        if (S.view === "library" || S.view === "game" && S.page && S.page.kind === "owned") render();
+        break;
+      }
+      case "removePlan": {
+        const D = S.dialog;
+        if (D && D.kind === "removepc" && D.key === ev.key) { D.plan = ev.plan || null; D.error = ev.error || ""; renderOverlay(); }
+        break;
+      }
+      case "gameRemoved": {
+        const D = S.dialog && S.dialog.kind === "removepc" && S.dialog.key === ev.key ? S.dialog : null;
+        if (ev.error) {
+          if (D) { D.busy = false; D.error = ev.error; renderOverlay(); } else toast(ev.error, "error");
+          break;
+        }
+        if (D) { S.dialog = null; renderOverlay(); }
+        if (S.view === "game" && S.page && S.page.id === ev.key) pageBack();
+        toast(`${ev.name} is in the Recycle Bin. Its saves are copied in Lootnest's backups.`);
         break;
       }
       case "carried": {

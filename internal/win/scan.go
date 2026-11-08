@@ -31,7 +31,7 @@ func FixedDrives() []string {
 	return out
 }
 
-type GOGGame struct{ Name, Path, Exe string }
+type GOGGame struct{ ID, Name, Path, Exe string }
 
 // GOGGames lists games installed through GOG (from the registry).
 func GOGGames() []GOGGame {
@@ -53,7 +53,7 @@ func GOGGames() []GOGGame {
 			exe, _, _ := g.GetStringValue("exe")
 			g.Close()
 			if name != "" && path != "" && exe != "" {
-				out = append(out, GOGGame{name, path, exe})
+				out = append(out, GOGGame{n, name, path, exe})
 			}
 		}
 		if len(out) > 0 {

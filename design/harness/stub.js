@@ -89,6 +89,17 @@
     { key: "name:hollowknight", keys: ["dir:c:\\gog games\\hollow knight", "dir:d:\\games\\hollow knight"], primary: "dir:c:\\gog games\\hollow knight" },
   ];
   const SEPARATE = new Set();
+  // As core.StoreActions, without install (they're installed).
+  const ACTS = () => Object.fromEntries(found.map((f) => [f.key, f.source === "steam" ? ["uninstall", "verify"] : f.source === "gog" ? ["open"] : f.source === "epic" ? ["uninstall"]
+    : ["xbox", "ea", "riot", "rockstar", "amazon"].includes(f.source) ? ["uninstall"] : []]).filter((e) => e[1].length));
+  // Owned in a store (core.SteamOwned, core.EpicOwned); the installed ones are left out, as in apiOwnedGames.
+  const OWNED = [
+    { key: "owned:steam:1245620", name: "Elden Ring", source: "steam", appId: 1245620 },
+    { key: "owned:steam:620", name: "Portal 2", source: "steam", appId: 620 },
+    { key: "owned:steam:367520", name: "Hollow Knight", source: "steam", appId: 367520 },
+    { key: "owned:steam:1551360", name: "Forza Horizon 5", source: "steam", appId: 1551360 },
+    { key: "owned:epic:Calluna", name: "Control", source: "epic", storeId: "calluna%3Aitem%3ACalluna" },
+  ];
   if (N === "0") { games = []; found = []; GROUPS = []; }
   if (N === "400") {
     const pool = [730, 1091500, 1426210, 413150, 367520, 1086940, 1145350, 1551360, 271590, 250900, 0, 0];
@@ -238,7 +249,17 @@
       ["folder", 3, "ok", ""], ["shortcut", 1, "ok", ""],
     ].map(([source, found, state, reason, path]) => ({ source, found, installed: reason !== "Not installed", state, reason, path: path || "" })) }),
     ps_state: () => (STATE === "loading" || BOOT ? new Promise((r) => setTimeout(() => r(state()), BOOT || 60)) : ok(state())),
-    ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [], groups: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN, groups: GROUPS.filter((g) => !SEPARATE.has(g.key)) }),
+    ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [], groups: [], acts: {} } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN, groups: GROUPS.filter((g) => !SEPARATE.has(g.key)), acts: ACTS() }),
+    ps_ownedGames: () => { emit({ type: "owned", games: N === "0" ? [] : OWNED.filter((o) => !found.some((f) => f.name === o.name)) }); return ok(); },
+    ps_storeAction: () => ok(),
+    ps_removeGame: (key, go) => {
+      const f = found.find((x) => x.key === key);
+      if (!f) return Promise.reject("That game isn't on the list anymore. Scan again from the Library.");
+      if (go) setTimeout(() => emit({ type: "gameRemoved", key, name: f.name, keep: "C:\\Users\\Ana\\AppData\\Roaming\\Lootnest\\backups\\removed" }), 900);
+      else setTimeout(() => emit({ type: "removePlan", key, plan: { name: f.name, dir: f.dir, keep: "", size: 38.2 * 2 ** 30, saves: /phantom/i.test(f.name)
+        ? [{ from: f.dir + "\\ProjectPBZ\\Saved\\SaveGames", rel: "ProjectPBZ/Saved/SaveGames", size: 14.6 * 2 ** 20 }, { from: "C:\\Users\\Ana\\AppData\\Local\\PBZ\\Config", size: 48 * 2 ** 10 }] : [] } }), 300);
+      return ok();
+    },
     ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },
     ps_separateCopies: (group, apart) => { if (apart) SEPARATE.add(group); else SEPARATE.delete(group); return ok(); },
     ps_cover: (appId, name) => (STATE === "offline" ? offline() : ok(gameArt(appId, name, "cover"))),

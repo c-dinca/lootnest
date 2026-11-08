@@ -65,6 +65,7 @@
   }
   function shownItems() {
     const m = nameMatcher(S.q);
+    if (S.filter === "owned") return ownedItems().filter((it) => m(it.name) && (S.store === "all" || filterOf(it.source) === S.store));
     const list = libraryItems().filter((it) => {
       if (!m(it.name)) return false;
       if (S.filter === "profiles" && it.kind !== "game") return false;
@@ -148,6 +149,7 @@
   }
 
   function viewLibrary() {
+    if (S.owned === null) { S.owned = []; api.ownedGames().catch(() => {}); }
     const all = libraryItems();
     const withProfiles = cfg().games.length;
     const scanning = S.found.scanning;
@@ -170,18 +172,18 @@
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"], ["rating", "Highest rated"]];
     const sizes = [["s", "Small covers", 8], ["m", "Medium covers", 11], ["l", "Large covers", 14], ["list", "A list", 0]];
     const seg = (k, l, n) => `<button data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}<span class="ln-count ln-num">${n}</span></button>`;
-    const ps = cfg().players;
+    const ps = S.filter === "owned" ? [] : cfg().players; // profiles, collections, status and sort don't apply to games not installed
     const who = ps.length > 3 ? `<select id="lib-who" class="ln-input" aria-label="Whose games"><option value="">Anyone's games</option>${ps.map((p) => `<option value="${esc(p.id)}" ${S.who === p.id ? "selected" : ""}>${esc(possessive(p.name))} games</option>`).join("")}</select>`
       : ps.length > 1 ? `<div class="lib-who" role="group" aria-label="Whose games">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="who" data-player="${esc(p.id)}" aria-pressed="${S.who === p.id}" title="${esc(possessive(p.name))} games">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     return `<div class="lib ln-root">${head}${hookBanner() || coverHint(all) ? `<div class="lib-banners">${hookBanner()}${coverHint(all)}</div>` : ""}
       ${(() => { const top = recentShelf(all) + collectionShelves(all); return top ? top + `<div class="ln-section-head lib-all-head"${S.q ? " hidden" : ""}><div><h2>All games</h2></div></div>` : ""; })()}
       <div class="lib-tools">
-        <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}</div>${who}</div>
+        <div class="lib-tools-main"><div class="ln-segmented" role="group" aria-label="Show">${seg("all", "All", all.length)}${seg("profiles", "With profiles", withProfiles)}${S.owned.length || S.filter === "owned" ? seg("owned", "Not installed", S.owned.length) : ""}</div>${who}</div>
         <div class="lib-tools-side">
           <select id="lib-store" class="ln-input" aria-label="Store">${stores.map(([k, l]) => `<option value="${k}" ${S.store === k ? "selected" : ""}>${l}</option>`).join("")}</select>
-          ${allTags().length || S.tag ? `<select id="lib-tag" class="ln-input" aria-label="Collection"><option value="">All collections</option>${allTags().map((t) => `<option value="${esc(t)}" ${S.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>` : ""}
-          <select id="lib-status" class="ln-input" aria-label="Status"><option value="">Any status</option>${STATUSES.map(([k, l]) => `<option value="${k}" ${S.status === k ? "selected" : ""}>${l}</option>`).join("")}</select>
-          <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>
+          ${S.filter !== "owned" && (allTags().length || S.tag) ? `<select id="lib-tag" class="ln-input" aria-label="Collection"><option value="">All collections</option>${allTags().map((t) => `<option value="${esc(t)}" ${S.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>` : ""}
+          ${S.filter === "owned" ? "" : `<select id="lib-status" class="ln-input" aria-label="Status"><option value="">Any status</option>${STATUSES.map(([k, l]) => `<option value="${k}" ${S.status === k ? "selected" : ""}>${l}</option>`).join("")}</select>
+          <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>`}
           <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}">${h ? `<span style="--h:${h}px"></span>` : '<i class="lib-size-list" aria-hidden="true"></i>'}</button>`).join("")}</div>
         </div></div>
       ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
@@ -517,7 +519,7 @@
 
   function gridHTML() {
     const items = shownItems();
-    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
+    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.filter === "owned" ? "Every game Steam and Epic know you have is installed." : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
     if (S.density === "list") {
       return `<div class="lib-list-head" aria-hidden="true"><span></span><span>Name</span><span>Last played</span><span>Time played</span><span>Profiles</span><span></span></div>${items.map(listRowHTML).join("")}`;
     }
@@ -532,6 +534,12 @@
     const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
     const t = timeOf(it);
     const thumb = c ? `<img src="${c}" alt="">` : ic ? `<img class="icon" src="${ic}" alt="">` : `<b>${esc(initial(it.name))}</b>`;
+    if (it.kind === "owned") {
+      return `<div class="lib-row is-owned"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
+        <span class="lib-row-thumb">${thumb}</span>
+        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}, not installed</small></span>
+        <span class="lib-row-cell"></span><span class="lib-row-cell"></span><span class="lib-row-cell"></span></button>${installButton(it, "ln-button--secondary ln-button--sm lib-row-play", "Install")}</div>`;
+    }
     const prof = owners.length ? owners.map((p) => `<span class="ln-mark ln-player${p.id === owner ? " is-loaded" : ""}" style="--player:${esc(p.color)}" title="${esc(p.name)}${p.id === owner ? ", files loaded" : ""}"></span>`).join("") : `<span class="lib-row-dim">Off</span>`;
     const play = s ? `<span class="ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
       : `<button class="ln-button ln-button--primary ln-button--sm lib-row-play" data-action="${g ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
@@ -636,12 +644,12 @@
       : S.sort === "played" ? (timeOf(it) ? hours(timeOf(it)) : "No time yet") : "";
     const meta = sortCap ? `<span class="ln-num">${esc(sortCap)}</span>`
       : owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
-      : g ? "Profiles on" : storeMarks(it);
+      : g ? "Profiles on" : it.kind === "owned" ? `${esc(sourceLabel(it.source))}, not installed` : storeMarks(it);
     const attr = itemAttr(it);
-    return `<div class="card lib-card${s ? " busy" : ""}">
+    return `<div class="card lib-card${s ? " busy" : ""}${it.kind === "owned" ? " is-owned" : ""}">
       <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${sortCap ? `, ${esc(sortCap)}` : owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
         <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span>${S.sort === "rating" && ratingOf(it) ? `<span class="ln-tile__meta">${starsHTML(ratingOf(it))}</span>` : ""}</button>
-      ${s ? "" : `<button class="ln-button ln-button--secondary ln-button--icon ln-button--sm lib-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
+      ${it.kind === "owned" ? installButton(it, "ln-button--secondary ln-button--icon ln-button--sm lib-play", "") : s ? "" : `<button class="ln-button ln-button--secondary ln-button--icon ln-button--sm lib-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
   }
 
   // Covers load lazily as cards scroll into view; Steam keeps them on this PC.

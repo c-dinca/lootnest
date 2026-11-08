@@ -40,6 +40,8 @@
       const cv = $("#recap-canvas"), p = player(D.player);
       if (cv && old && D.drawnFor === key) cv.replaceWith(old);
       else if (cv && p) { D.drawnFor = key; D.drawn = drawRecap(cv, p, D.year).catch(() => {}); }
+    } else if (D.kind === "removepc") {
+      o.innerHTML = viewRemovePC(D);
     } else if (D.kind === "trysave") {
       o.innerHTML = viewTrySave(D);
       setTimeout(() => { const i = $("#try-name"); if (i && !D.src && document.activeElement === document.body) i.focus(); }, 20);

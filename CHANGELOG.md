@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.74.0
+
+- Install, uninstall and repair games from Lootnest, through each game's own store. A Steam game's Manage panel and right-click menu have **Verify files with Steam**, and **Uninstall with Steam** while its profiles are off; a GOG game has **Open in GOG Galaxy**, where you install, uninstall and repair it; Epic, Ubisoft Connect and Battle.net games have what their launchers offer; Xbox, EA, Riot, Rockstar and Amazon games open Installed apps in Windows Settings. Each says which happens. Lootnest downloads nothing itself.
+- The Library has **Not installed**: the Steam and Epic games you have that aren't on this PC from any store, greyed, each with **Install with Steam** or **Install with Epic**. They come only from the files Steam and Epic keep on this PC: no sign-in, nothing online. A game you install shows in the Library once the scan finds it.
+- **Remove from this PC** for a game in a folder of its own, outside any store, in Manage and the right-click menu. Lootnest copies its saves to its backups first, checks each copy, then moves the folder to the Recycle Bin. It won't while the game runs, or for a folder that holds more than the game, such as a drive, Program Files, your user folder or the Desktop.
+- Add a removed game again later, in the same folder or another, and Updates offers its saves back.
 ## 1.73.1
 
 - Updating Lootnest from inside the app works again when GitHub's download link for a release fails, as it did on 8 November with "504 Gateway Timeout". Lootnest now tries the link twice, then gets the same file through GitHub's API, and still checks it against the release's SHA-256 before it runs.

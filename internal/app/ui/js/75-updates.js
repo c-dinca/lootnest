@@ -15,7 +15,7 @@
     const ids = `data-old="${esc(o.old.key)}" data-new="${esc(o.new.key)}" data-name="${esc(o.old.name)}"`;
     const what = [o.profiles ? "its profiles and their saves" : o.saves.length ? `its saves (${o.saves.map(esc).join(", ")})` : "", "playtime, status, collections and settings"].filter(Boolean).join(", ");
     return `<div class="copy-card"><div><b>${esc(o.new.name)} looks like a new copy of ${esc(o.old.name)}</b>
-      <p>${o.oldGone ? `The old folder, <span class="selectable">${esc(o.old.dir)}</span>, is gone.` : `The old copy is still in <span class="selectable">${esc(o.old.dir)}</span>.`} Lootnest can carry over ${what}.</p></div>
+      <p>${o.old.kept ? "Lootnest kept its saves when you removed it from this PC." : o.oldGone ? `The old folder, <span class="selectable">${esc(o.old.dir)}</span>, is gone.` : `The old copy is still in <span class="selectable">${esc(o.old.dir)}</span>.`} Lootnest can carry over ${what}.</p></div>
       <div class="gpage-actions">${btn(`data-action="copy-carry" ${ids}`, C.busy ? "Carrying over" : "Carry everything over")}${compact ? "" : btn(`data-action="copy-dismiss" ${ids}`, "Not the same game", "ln-button--ghost")}</div></div>`;
   }
   function carriedCard(oldKey) {

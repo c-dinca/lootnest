@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.73.0, beta)
+## Where things stand (1.74.0, beta)
 
 These shipped recently, newest last:
 
@@ -480,6 +480,24 @@ These shipped recently, newest last:
   id, name, then session time; `UpdateCaptures`, `AssignCapture`,
   `CaptureNoGame`); `Settings.CapturesOff`; the Timeline tab shows them,
   an Unsorted drawer assigns them, and a Game Bar tip shows when none.
+
+- **1.73.1** Updates fall back to GitHub's API asset url
+  (`Release.AssetURL`, `downloadRelease`) when the release link answers
+  504, as it did for this repository on 8 Nov 2026.
+- **1.74** Complete game manager 1: store hand-offs (`core.StoreAction`,
+  `SafeHandoff` scheme allowlist, `FoundGame.StoreID`; Install, Uninstall,
+  Verify files with Steam, Open in GOG Galaxy...), owned but not installed
+  read from files on the PC (`SteamOwned` from localconfig and appinfo.vdf,
+  `EpicOwned` from catcache.bin; Library segment Not installed, `ownedView`),
+  and Remove from this PC for folder games (`PlanRemove`, `CopySaves` into
+  backups\removed, then the Recycle Bin; the copies ledger offers the
+  saves back on reinstall).
+- **Owner, 8 Nov 2026**: yes to GOG and itch.io downloads of owned games
+  through their official APIs after sign-in (roadmap section 7); next is
+  a Steam-like shell (a top bar with the sections, profile and Settings;
+  the sidebar only games, with collections you create and drag games
+  into), real page transitions, animations and UI sounds on navigation.
+  Plan in the session's manager-plan.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

@@ -50,7 +50,7 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 			exe = filepath.Join(g.Path, exe)
 		}
 		if _, err := os.Stat(exe); err == nil {
-			all = append(all, core.FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(g.Path)), Name: g.Name, Source: "gog", Exe: exe, Dir: filepath.Clean(g.Path)})
+			all = append(all, core.FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(g.Path)), Name: g.Name, Source: "gog", Exe: exe, Dir: filepath.Clean(g.Path), StoreID: g.ID})
 		}
 	}
 
@@ -275,11 +275,12 @@ func (a *App) startScan() {
 }
 
 type FoundState struct {
-	Scanning   bool              `json:"scanning"`   // first scan, nothing to show yet
-	Refreshing bool              `json:"refreshing"` // a scan is updating the saved library
-	Games      []core.FoundGame  `json:"games"`
-	Hidden     map[string]string `json:"hidden"` // names of hidden games the library still has, by key
-	Groups     []core.CopyGroup  `json:"groups"` // the same game from more than one store, shown once
+	Scanning   bool                `json:"scanning"`   // first scan, nothing to show yet
+	Refreshing bool                `json:"refreshing"` // a scan is updating the saved library
+	Games      []core.FoundGame    `json:"games"`
+	Hidden     map[string]string   `json:"hidden"` // names of hidden games the library still has, by key
+	Groups     []core.CopyGroup    `json:"groups"` // the same game from more than one store, shown once
+	Acts       map[string][]string `json:"acts"`   // what each game's store can do for it (core.StoreActions), by key
 }
 
 func (a *App) apiFound() FoundState {
@@ -303,7 +304,15 @@ func (a *App) apiFound() FoundState {
 	if groups == nil {
 		groups = []core.CopyGroup{}
 	}
-	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: games, Hidden: hidden, Groups: groups}
+	acts := map[string][]string{}
+	for _, f := range games {
+		for _, act := range core.StoreActions(f.Source, storeIDOf(f.Source, f.AppID, f.StoreID)) {
+			if act != "install" { // it's installed
+				acts[f.Key] = append(acts[f.Key], act)
+			}
+		}
+	}
+	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: games, Hidden: hidden, Groups: groups, Acts: acts}
 }
 
 // apiSetPrimaryCopy chooses the copy Start with uses for a game from more
@@ -352,14 +361,18 @@ func (a *App) apiIgnoreFound(key string) error {
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
 	cfg.IgnoredFound = append(cfg.IgnoredFound, key)
-	kept := cfg.AddedGames[:0]
-	for _, g := range cfg.AddedGames {
+	cfg.AddedGames = withoutAdded(cfg.AddedGames, key)
+	return a.saveConfig(cfg)
+}
+
+func withoutAdded(games []core.FoundGame, key string) []core.FoundGame {
+	out := []core.FoundGame{}
+	for _, g := range games {
 		if g.Key != key {
-			kept = append(kept, g)
+			out = append(out, g)
 		}
 	}
-	cfg.AddedGames = kept
-	return a.saveConfig(cfg)
+	return out
 }
 
 // apiUnhideFound shows a hidden game in the Library again. The library

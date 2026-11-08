@@ -38,6 +38,10 @@ type FoundGame struct {
 	// SteamID is the game's Steam app id when another launcher knows it
 	// (Hydra). AppID stays 0: the game isn't a Steam install.
 	SteamID int `json:"steamId,omitempty"`
+	// StoreID is the game's id in its store outside Steam (GOG's product
+	// id, Epic's namespace:item:app, Ubisoft's, Battle.net's code), for
+	// the store's own links (StoreAction).
+	StoreID string `json:"storeId,omitempty"`
 }
 
 // MergeAdded puts the games the user added by hand into the scan results.
@@ -361,6 +365,12 @@ type epicManifest struct {
 	AppCategories        []string `json:"AppCategories"`
 }
 
+// EpicID is how Epic's launcher links name a game: namespace, catalog
+// item and app name, each escaped, joined by an escaped colon.
+func EpicID(namespace, item, app string) string {
+	return url.PathEscape(namespace) + "%3A" + url.PathEscape(item) + "%3A" + url.PathEscape(app)
+}
+
 // EpicGames reads Epic Games Launcher manifests from
 // %ProgramData%\Epic\EpicGamesLauncher\Data\Manifests.
 func EpicGames(manifestDir string) []FoundGame {
@@ -393,9 +403,9 @@ func EpicGames(manifestDir string) []FoundGame {
 		// Through the Epic launcher, so the game is signed in like when it
 		// starts from Epic.
 		if m.CatalogNamespace != "" && m.CatalogItemID != "" && m.AppName != "" {
-			if u := "com.epicgames.launcher://apps/" + url.PathEscape(m.CatalogNamespace) + "%3A" + url.PathEscape(m.CatalogItemID) + "%3A" +
-				url.PathEscape(m.AppName) + "?action=launch&silent=true"; SafeLaunchURI(u) {
-				f.URI = u
+			id := EpicID(m.CatalogNamespace, m.CatalogItemID, m.AppName)
+			if u := "com.epicgames.launcher://apps/" + id + "?action=launch&silent=true"; SafeLaunchURI(u) {
+				f.URI, f.StoreID = u, id
 			}
 		}
 		out = append(out, f)

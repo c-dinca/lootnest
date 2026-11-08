@@ -171,6 +171,7 @@
     check: gsvg('<path d="M10 3.25 15.75 5.4v4.35c0 3.35-2.4 5.85-5.75 7-3.35-1.15-5.75-3.65-5.75-7V5.4z"/><path d="M7.4 10.1l1.85 1.85 3.4-3.6"/>'),
     drive: gsvg('<rect x="3.25" y="10.5" width="13.5" height="5.75" rx="1.5"/><path d="M4.75 10.5 6.2 5.3a1.5 1.5 0 0 1 1.45-1.05h4.7A1.5 1.5 0 0 1 13.8 5.3l1.45 5.2M13.25 13.4v.01M10.75 13.4v.01"/>'),
     desktop: gsvg('<rect x="3.25" y="3.75" width="13.5" height="9.5" rx="1.5"/><path d="M7.25 16.5h5.5M10 13.25v3.25"/>'),
+    trash: gsvg('<path d="M4 5.75h12M8 5.75V4.25h4v1.5M5.5 5.75l.75 10h7.5l.75-10M8.5 8.75v4.5M11.5 8.75v4.5"/>'),
     power: gsvg('<path d="M10 3.25v6.25"/><path d="M6.4 5.75a5.75 5.75 0 1 0 7.2 0"/>'),
     hide: gsvg('<path d="M3.5 10s2.4-4.75 6.5-4.75S16.5 10 16.5 10s-2.4 4.75-6.5 4.75S3.5 10 3.5 10z"/><path d="M4 4l12 12"/>'),
     copy: gsvg('<rect x="7.25" y="7.25" width="9" height="9" rx="1.75"/><path d="M12.75 7.25V5.5c0-.97-.78-1.75-1.75-1.75H5.5c-.97 0-1.75.78-1.75 1.75V11c0 .97.78 1.75 1.75 1.75h1.75"/>'),
@@ -208,9 +209,9 @@
 
   function viewGame() {
     const P = S.page;
-    const it = P && everyItem().find((x) => x.kind === P.kind && x.id === P.id);
+    const it = P && (P.kind === "owned" ? ownedItem(P.id) : everyItem().find((x) => x.kind === P.kind && x.id === P.id));
     if (!it) { S.view = "library"; return viewLibrary(); }
-    return gameView(it, true);
+    return it.kind === "owned" ? ownedView(it) : gameView(it, true);
   }
   // The game page (page = true), or just its art and play bar, as on Home.
   function gameView(it, page) {
@@ -400,12 +401,14 @@
         + gpGroup("Cover and art", artRows(it))
         + gpGroup("Game files", [
           gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
-          f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam replaces missing or damaged files") : "",
+          ...storeActs(it).filter((a) => a === "verify" || a === "open").map((a) => storeRow(it, a)),
           f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
         ])
         + gpGroup("Online", [offlineRow(it)])
         + gpGroup("Shortcuts", [gpRow(`data-action="found-shortcut" data-key="${esc(f.key)}"`, GI.desktop, "Create desktop shortcut", "Starts the game directly")])
-        + gpGroup("Danger", [gpRow(`data-action="found-hide" data-key="${esc(f.key)}"`, GI.hide, f.added ? "Remove from the Library" : "Hide from the Library", "", { danger: true })]);
+        + gpGroup("Danger", [storeActs(it).includes("uninstall") ? storeRow(it, "uninstall", { danger: true }) : "",
+          removable(it) ? gpRow(`data-action="remove-pc" data-key="${esc(f.key)}"`, GI.trash, "Remove from this PC", "Its saves are copied first, then the folder goes to the Recycle Bin", { danger: true }) : "",
+          gpRow(`data-action="found-hide" data-key="${esc(f.key)}"`, GI.hide, f.added ? "Remove from the Library" : "Hide from the Library", removable(it) ? "The game's folder stays where it is" : "", { danger: true })]);
     }
     const g = it.g, s = session(g.id);
     return gpGroup("Profiles", [
@@ -417,7 +420,7 @@
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
       gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Files from before each swap"),
-      g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Check the game's files", "Steam replaces missing or damaged files", { disabled: s }) : "",
+      g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Verify files with Steam", "Steam replaces missing or damaged files", { disabled: s }) : "",
       g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries", { disabled: s }) : "",
     ]) + gpGroup("Online", [offlineRow(it)])
       + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "Asks who's playing every time")])

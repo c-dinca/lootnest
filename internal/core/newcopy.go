@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,6 +33,9 @@ type SeenGame struct {
 	First   time.Time `json:"first"`          // when Lootnest first saw this copy
 	Seen    time.Time `json:"seen"`           // the last scan that found it
 	Gone    bool      `json:"gone,omitempty"` // its folder isn't there any more
+	// Kept are the in-folder saves copied when it was removed from this
+	// PC (Remove from this PC), by place inside the folder: the backup.
+	Kept map[string]string `json:"kept,omitempty"`
 }
 
 // CopyLedger is copies.json.
@@ -83,6 +87,21 @@ func (l *CopyLedger) NoteSeen(found []FoundGame, now time.Time, dirThere func(st
 		if f.Dir == "" || f.AppID > 0 {
 			continue
 		}
+		if o := l.Games[f.Key]; o.Gone && len(o.Kept) > 0 {
+			if !dirThere(f.Dir) {
+				continue // still listed, but its folder is gone
+			}
+			// Removed, then added again in the same folder: the removed copy
+			// stays as the old one, under a key of its own for each removal,
+			// so its kept saves are offered back, unless they already went
+			// to another copy.
+			delete(l.Games, f.Key)
+			if l.Carried[f.Key] == "" {
+				o.Key += removedSuffix + strconv.FormatInt(o.Seen.Unix(), 10)
+				l.rekeyDismissed(f.Key, o.Key)
+				l.Games[o.Key] = o
+			}
+		}
 		here[f.Key] = true
 		first := l.Games[f.Key].First
 		if first.IsZero() {
@@ -91,7 +110,7 @@ func (l *CopyLedger) NoteSeen(found []FoundGame, now time.Time, dirThere func(st
 		l.Games[f.Key] = SeenGame{Key: f.Key, Name: f.Name, Dir: f.Dir, SteamID: f.SteamID, First: first, Seen: now.UTC()}
 	}
 	for k, g := range l.Games {
-		if !here[k] {
+		if !here[k] && len(g.Kept) == 0 { // a removed copy stays gone, even with a new one in its folder
 			g.Gone = !dirThere(g.Dir)
 			l.Games[k] = g
 		}
@@ -100,6 +119,33 @@ func (l *CopyLedger) NoteSeen(found []FoundGame, now time.Time, dirThere func(st
 	for k, g := range l.Games {
 		if g.Gone && now.Sub(g.Seen) > 183*24*time.Hour {
 			delete(l.Games, k)
+		}
+	}
+}
+
+const removedSuffix = "#removed-"
+
+// NoteRemoved records a game removed from this PC, with its kept saves.
+func (l *CopyLedger) NoteRemoved(f FoundGame, kept map[string]string, now time.Time) {
+	g := l.Games[f.Key]
+	if g.Key == "" {
+		g = SeenGame{Key: f.Key, Name: f.Name, Dir: f.Dir, SteamID: f.SteamID, First: now.UTC()}
+	}
+	g.Seen, g.Gone, g.Kept = now.UTC(), true, kept
+	l.Games[f.Key] = g
+	delete(l.Carried, f.Key) // what an earlier copy in its place carried or dismissed is history
+	l.rekeyDismissed(f.Key, "")
+}
+
+// rekeyDismissed moves the "Not the same game" answers about old copy from
+// to to, or forgets them when to is "".
+func (l *CopyLedger) rekeyDismissed(from, to string) {
+	for k := range l.Dismissed {
+		if rest, ok := strings.CutPrefix(k, from+"|"); ok {
+			delete(l.Dismissed, k)
+			if to != "" {
+				l.Dismissed[to+"|"+rest] = true
+			}
 		}
 	}
 }
@@ -131,10 +177,10 @@ func (l CopyLedger) Matches() []CopyMatch {
 		var best *SeenGame
 		for _, o := range l.Games {
 			o := o
-			if o.Key == n.Key || l.Carried[o.Key] != "" || l.Dismissed[o.Key+"|"+n.Key] || !sameGame(o, n) || samePath(o.Dir, n.Dir) {
+			if o.Key == n.Key || l.Carried[o.Key] != "" || l.Dismissed[o.Key+"|"+n.Key] || !sameGame(o, n) {
 				continue
 			}
-			if isWithin(o.Dir, n.Dir) || isWithin(n.Dir, o.Dir) {
+			if len(o.Kept) == 0 && (isWithin(o.Dir, n.Dir) || isWithin(n.Dir, o.Dir)) {
 				continue // one inside the other: the same install found twice
 			}
 			if !o.First.Before(n.First) {
