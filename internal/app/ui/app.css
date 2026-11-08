@@ -1419,80 +1419,82 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .lib-tools { position: sticky; top: calc(var(--view-pad-top) * -1); z-index: 4; padding-block: var(--space-3); background: var(--bg-ground); border-bottom: var(--hairline) solid var(--edge-1); }
 
 /* ================================================================ updates
-   A summary you can filter by, what needs a look, then a card per game: its
-   art, where it is, its version against the latest, one clear action. */
-.upd-page { gap: var(--space-8); }
+   One dense list of games, filtered by state, each with its version against
+   the latest and one action; beside it, a narrow column of what needs a look. */
+.upd-page { gap: var(--space-8); container: upd-page / inline-size; }
 .upd-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4) var(--space-6); }
 .upd-head h1 { margin: 0; font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); }
 .upd-head p { margin: var(--space-2) 0 0; max-width: 72ch; font-size: var(--fs-13); color: var(--fg-2); }
-.upd-head .ln-button svg { width: var(--icon-sm); height: var(--icon-sm); }
+.upd-head .ln-button svg, .upd-check .ln-button svg { width: var(--icon-sm); height: var(--icon-sm); }
 .upd-skel { display: grid; gap: var(--space-2); }
-.upd-skel .ln-skeleton { height: 112px; border-radius: var(--radius-panel); }
+.upd-skel .ln-skeleton { height: calc(var(--space-12) + var(--space-6)); border-radius: var(--radius-panel); }
 
-.upd-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
-.upd-stat { display: grid; gap: var(--space-1); justify-items: start; padding: var(--space-4) var(--space-5); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
-.upd-stat b { font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); }
-.upd-stat:hover { border-color: var(--edge-2); background: var(--bg-raised); }
-.upd-stat:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.upd-stat[aria-pressed="true"] { border-color: var(--edge-3); background: var(--bg-active); }
-@media (max-width: 900px) { .upd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.upd-cols { display: grid; grid-template-columns: minmax(0, 9fr) minmax(260px, 3fr); gap: var(--space-10); align-items: start; }
+.upd-main-col { display: grid; gap: var(--space-8); min-width: 0; container: upd-list / inline-size; }
+.upd-aside { position: sticky; top: var(--space-6); display: grid; gap: var(--space-6); min-width: 0; }
+/* Stacked when the page is under 1000 px wide, where the side column left the rows no room for a path. */
+@container upd-page (max-width: 1000px) { .upd-cols { grid-template-columns: minmax(0, 1fr); } .upd-aside { position: static; order: -1; } }
+.upd-check { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); font-size: var(--fs-12); color: var(--fg-3); }
+
+.upd-filter { flex-wrap: wrap; margin-bottom: var(--space-2); }
+.upd-dot { width: var(--space-2); height: var(--space-2); border-radius: var(--radius-round); background: var(--accent); }
 
 .upd-callout { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-6); padding: var(--space-4) var(--space-5); border: var(--hairline) dashed var(--edge-2); border-radius: var(--radius-panel); }
 .upd-callout b { font-weight: 650; }
 .upd-callout p { margin: var(--space-1) 0 0; max-width: 70ch; font-size: var(--fs-13); color: var(--fg-2); }
 
-.upd-sec-head { display: flex; align-items: baseline; gap: var(--space-2); margin-bottom: var(--space-3); }
+.upd-sec-head { display: flex; align-items: baseline; gap: var(--space-2); margin-bottom: var(--space-2); }
 .upd-sec-head h2 { margin: 0; font: 700 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
 .upd-sec-n { font-size: var(--fs-13); color: var(--fg-3); }
-.upd-look { display: grid; gap: var(--space-2); }
-.upd-look .upd-sec-head { margin-bottom: var(--space-1); }
+.upd-look { display: grid; }
 .copy-card--warn > .ln-icon { color: var(--warning); }
 .copy-card--done > .ln-icon { color: var(--success); }
-.dl-card .dl-art { flex: none; cursor: default; }
-.dl-text { display: grid; gap: var(--space-1); flex: 1 1 calc(var(--space-16) * 4); min-width: 0; }
-.dl-text p.selectable { font-size: var(--fs-12); color: var(--fg-3); }
 .dl-muted { color: var(--fg-3); }
+/* In the side column, what needs a look is a row of text with its buttons under it. */
+.upd-aside .copy-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); margin: 0; padding: var(--space-3) 0; border: 0; border-top: var(--hairline) solid var(--edge-1); border-radius: 0; background: none; }
+.upd-aside .copy-card > .ln-icon { display: none; }
+.upd-aside .copy-card b { font-size: var(--fs-13); }
+.upd-aside .copy-card p { font-size: var(--fs-12); }
+.upd-aside .copy-card .gpage-actions { flex-wrap: wrap; }
 
-.upd-cards { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.upd-card { position: relative; display: grid; grid-template-columns: 184px minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
-.upd-card:hover { border-color: var(--edge-2); background: var(--bg-raised); }
-.upd-art { position: relative; display: block; width: 184px; aspect-ratio: 184 / 86; padding: 0; overflow: hidden; border: 0; border-radius: var(--radius-ctl); background: var(--bg-raised); cursor: pointer; }
-.upd-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.upd-art img.soft { filter: var(--blur-art-soft); transform: scale(1.2); }
-.upd-art span { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-2); font: 750 var(--fs-15)/var(--lh-tight) var(--font-title); color: var(--fg-2); text-align: center; }
-.upd-art:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+/* One grid for the whole list, so the versions and buttons line up row to row. */
+.upd-cards { display: grid; grid-template-columns: var(--space-12) minmax(0, 1fr) auto auto; column-gap: var(--space-4); margin: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
+.upd-card { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; gap: var(--space-1) var(--space-4); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.upd-art { display: grid; place-items: center; width: var(--space-12); aspect-ratio: 1; overflow: hidden; padding: 0; border: 0; border-radius: var(--radius-ctl); background: var(--bg-raised); color: var(--fg-2); font: 700 var(--fs-18)/1 var(--font-ui); cursor: pointer; }
+.upd-art img { width: var(--space-8); height: var(--space-8); object-fit: contain; }
+.upd-art .upd-cover { width: 100%; height: 100%; object-fit: cover; }
+.dl-card .upd-art { cursor: default; }
 .upd-main { display: grid; gap: var(--space-1); min-width: 0; }
-.upd-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
-.upd-name { padding: 0; border: 0; background: none; color: var(--fg-1); font: 700 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); text-align: left; cursor: pointer; }
-.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.upd-title-row { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.upd-name { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: var(--fg-1); font: 650 var(--fs-15)/var(--lh-snug) var(--font-ui); text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.dl-card .upd-name { cursor: auto; }
+button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; }
 .upd-name:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-tag); }
-.upd-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-tag); background: var(--glass-ctl); font: 650 var(--fs-12)/1 var(--font-ui); color: var(--fg-2); }
+.upd-pill { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-tag); background: var(--glass-ctl); font: 650 var(--fs-12)/1 var(--font-ui); color: var(--fg-2); }
 .upd-pill i { width: 7px; height: 7px; border-radius: var(--radius-round); background: var(--fg-3); }
 .upd-pill--new { color: var(--fg-1); }
 .upd-pill--new i { background: var(--accent); }
 .upd-pill--ok i { background: var(--success); }
 .upd-pill--low { background: oklch(0.86 0.110 85 / 0.12); color: var(--warning); }
 .upd-pill--low i { background: var(--warning); }
-.upd-meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; font-size: var(--fs-12); color: var(--fg-3); min-width: 0; }
-.upd-meta span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46ch; }
-.upd-note { display: grid; justify-items: start; gap: 1px; margin-top: var(--space-1); padding: 0; border: 0; background: none; color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; min-width: 0; max-width: 100%; }
-.upd-note span { font-size: var(--fs-12); color: var(--fg-3); }
-.upd-note b { font-weight: 600; color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.upd-note:hover b { text-decoration: underline; text-underline-offset: 3px; }
-.upd-note-line { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); overflow-wrap: anywhere; }
-.upd-ver { display: flex; align-items: center; gap: var(--space-3); }
-.upd-ver > div { display: grid; gap: 2px; min-width: 72px; }
+.upd-meta { display: flex; gap: var(--space-3); margin: 0; min-width: 0; font-size: var(--fs-12); line-height: var(--lh-snug); color: var(--fg-3); white-space: nowrap; }
+/* Only the path gives way; its title holds it whole. */
+.upd-meta > * { flex: none; }
+.upd-meta > .upd-path { display: flex; flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.upd-path > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.upd-note { padding: 0; border: 0; background: none; color: var(--fg-2); font: 500 var(--fs-12)/var(--lh-snug) var(--font-ui); cursor: pointer; }
+.upd-note:hover { color: var(--fg-1); text-decoration: underline; text-underline-offset: 3px; }
+.upd-note:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-tag); }
+.upd-ver { display: flex; align-items: center; gap: var(--space-2); }
+.upd-ver > div { display: grid; gap: 2px; }
 .upd-ver span { font-size: var(--fs-12); color: var(--fg-3); }
-.upd-ver b { font: 700 var(--fs-18)/1 var(--font-ui); color: var(--fg-1); font-variant-numeric: tabular-nums; }
-.upd-arrow { width: 18px; height: 18px; fill: none; stroke: var(--fg-3); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.upd-act { display: flex; align-items: center; gap: var(--space-1); }
+.upd-ver b { font: 650 var(--fs-15)/1 var(--font-ui); color: var(--fg-1); font-variant-numeric: tabular-nums; }
+.upd-arrow { width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: var(--fg-3); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.upd-act { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-1); }
 .upd-act .ln-button--icon { width: var(--ctl-sm); }
-.upd-empty { padding: var(--space-6); border: var(--hairline) dashed var(--edge-2); border-radius: var(--radius-panel); color: var(--fg-2); text-align: center; }
-@media (max-width: 1180px) { .upd-card { grid-template-columns: 140px minmax(0, 1fr) auto; } .upd-art { width: 140px; } .upd-ver { grid-column: 2; } .upd-act { grid-column: 3; grid-row: 1 / span 2; } }
-@media (max-width: 760px) { .upd-card { grid-template-columns: 1fr; } .upd-art { width: 100%; } .upd-ver, .upd-act { grid-column: auto; grid-row: auto; } }
-.upd-ver { min-width: 230px; justify-content: flex-end; }
-.upd-art span { background: var(--bg-raised); }
-@media (max-width: 1180px) { .upd-ver { min-width: 0; justify-content: flex-start; } }
+.upd-empty { margin: 0; padding: var(--space-6) 0; color: var(--fg-2); }
+/* A narrow list puts the versions under the name. */
+@container upd-list (max-width: 760px) { .upd-cards { grid-template-columns: var(--space-12) minmax(0, 1fr) auto; } .upd-ver { grid-column: 2; grid-row: 2; } .upd-act { grid-column: 3; grid-row: 1 / span 2; } }
 
 /* =========================================================== achievements
    Each one in its tier's colour: the ring round its icon, a bar of how many
