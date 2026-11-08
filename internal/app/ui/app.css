@@ -528,8 +528,9 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 }
 
 /* ------------------------------------------------------------------ home */
-.home-empty { display: grid; gap: var(--space-6); }
-.home-empty > .ln-state, .ach-page > .ln-state { padding-inline: 0; }
+.home-empty .home-cols { margin-top: var(--space-8); }
+.lib > .ln-empty { margin-top: var(--space-8); }
+.ach-page > .ln-empty { margin-top: var(--space-2); }
 .home-banners { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
 .home-cols { display: grid; grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr); gap: var(--space-12) var(--space-10); margin-top: var(--space-12); align-items: start; }
 .home-main { container-type: inline-size; min-width: 0; }

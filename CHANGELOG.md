@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.58.11
+
+- Pages with nothing in them yet start on the same left edge as every other page, without a box in the middle. The empty Library shows dashed covers where your games will go, and one line on where Lootnest looked.
+- Home before anything is played lists three first steps: the games Lootnest found (or Scan again), adding a game from a folder, and a profile for everyone who plays, or a new run when you play alone. Who's playing sits beside them.
+- The Achievements page with nothing found yet looks like the other empty pages.
+
 ## 1.58.10
 
 - Big Picture is easier to read from the sofa: larger tabs that start beside the name, and room at every edge of the screen.

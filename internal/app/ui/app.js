@@ -1326,11 +1326,10 @@
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
         <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button></div></header>`;
     if (!all.length && !scanning) {
-      const where = ["Steam", "Epic", "GOG", "Xbox", "EA", "Ubisoft", "Battle.net", "Riot", "Amazon", "Rockstar", "itch.io", "Hydra", "Game folders", "Shortcuts"];
       return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1><p>Every game on this PC, in one place.</p></header>
         ${emptyState(homeIcon, "No games found yet", "Lootnest looks everywhere games are installed on this PC. If yours isn't found, add it by hand: point Lootnest at its folder or its .exe.",
           `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`,
-          `<ul class="ln-empty__where" aria-label="Where Lootnest looks">${where.map((w) => `<li>${w}</li>`).join("")}</ul>`)}</div>`;
+          `<p class="ln-empty__where">Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.</p>`, true)}</div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"]];
     const sizes = [["s", "Small covers", 8], ["m", "Medium covers", 11], ["l", "Large covers", 14], ["list", "A list", 0]];
@@ -1386,9 +1385,10 @@
       foot: `<p class="gpage-hint ln-drawer__note">Put back gives a copy's files back to the profile they belong to. What's there now is copied first, so it can be undone too.</p><button class="ln-button ln-button--ghost ln-button--sm" data-action="open-backups" data-game="${esc(g.id)}">Open the folder</button>` });
   }
   // A page with nothing in it yet: what it's for, and the way to fill it.
-  function emptyState(ic, title, text, actions, extra) {
-    return `<section class="ln-empty"><div class="ln-empty__icon" aria-hidden="true">${ic}</div><h2>${title}</h2><p>${text}</p>
-      ${actions ? `<div class="ln-empty__act">${actions}</div>` : ""}${extra || ""}</section>`;
+  // ghosts draws dashed covers where a page's games will go.
+  function emptyState(ic, title, text, actions, extra, ghosts) {
+    return `<section class="ln-empty"><h2>${ic}${title}</h2><p>${text}</p>
+      ${actions ? `<div class="ln-empty__act">${actions}</div>` : ""}${extra || ""}${ghosts ? `<div class="ln-ghosts" aria-hidden="true">${"<span></span>".repeat(16)}</div>` : ""}</section>`;
   }
   // Recent games, as at the top of Steam's library: the last few played, on
   // their wide art, one click from Play. Only on the Library as it opens,
@@ -1443,10 +1443,23 @@
     const banners = updateBanner() + hookBanner();
     const allBtn = all.length ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button>` : "";
     if (!recent.length) {
+      const step = (mark, title, sub, act) => `<li>${mark}<div><b>${title}</b><span>${sub}</span></div>${act}</li>`;
+      const btn = (attrs, label) => `<button class="ln-button ln-button--secondary ln-button--sm" ${attrs}>${label}</button>`;
+      const n = all.length, num = (i) => `<span class="ln-num">${i}</span>`;
+      const steps = [
+        S.found.scanning ? step('<span class="ln-spinner" aria-hidden="true"></span>', "Looking for games on this PC", "Games appear in the Library as they're found.", "")
+          : n ? step(GI.tick, `Lootnest found ${n === 1 ? "1 game" : n + " games"} on this PC`, "From every launcher, game folder and shortcut it knows.", btn('data-action="nav" data-view="library"', "Open the Library"))
+          : step(num(1), "Lootnest found no games on this PC yet", "It looks in every launcher, game folder and shortcut it knows.", btn('data-action="rescan"', "Scan again")),
+        step(num(2), "Add a game from a folder", "A game that isn't found: point Lootnest at its folder or its .exe.", btn('data-action="add-game"', "Add a game")),
+        solo() ? step(num(3), "Start a run of a game", "Open a game and choose New run: a fresh start with its own saves, and yours kept.", n ? btn('data-action="nav" data-view="library"', "Choose a game") : "")
+          : step(GI.tick, "Make a profile for everyone who plays", `${people().length} people have one, each with their own saves, settings and achievements in every game.`, btn('data-action="nav" data-view="players"', "Open Profiles")),
+      ];
       return `<div class="home-empty ln-root">${banners}
         <header class="lib-head"><div><h1>Home</h1></div>${allBtn}</header>
-        <div class="ln-state">${homeIcon}<div><h3>Nothing played yet</h3><p>Start a game from your Library and it shows up here, with who played it, the others you play and their news.</p>
-          <div class="ln-actions"><button class="ln-button ln-button--primary" data-action="nav" data-view="library">Open the Library</button></div></div></div></div>`;
+        <div class="home-cols">
+          <div class="home-main">${emptyState(homeIcon, "Nothing played yet", n ? "Start a game from your Library and it shows up here, with who played it, the others you play and their news." : "Games you play show up here, with who played them and their news.", "", `<ol class="ln-steps">${steps.join("")}</ol>`)}</div>
+          <aside class="gpage-aside">${playersBlock(all)}</aside>
+        </div></div>`;
     }
     const first = recent[0];
     const head = gameView(first, false);
@@ -3932,8 +3945,7 @@
     }).filter(Boolean);
     const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-page" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     if (!rows.length) {
-      return `<div class="ach-page ln-root">${head}${chips}<div class="ln-state">${GI.trophy}<div><h3>No achievements found yet</h3>
-        <p>Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.</p></div></div></div>`;
+      return `<div class="ach-page ln-root">${head}${chips}${emptyState(GI.trophy, "No achievements found yet", "Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.")}</div>`;
     }
     const total = rows.reduce((n, r) => n + r.unlocked, 0), perfect = rows.filter((r) => r.unlocked && r.unlocked === r.g.total).length;
     const ms = who && player(who) ? milestones(player(who), rows) : [];
