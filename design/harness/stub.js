@@ -176,11 +176,17 @@
         // Phantom Blade Zero's picture 404s.
         emit({ type: "storeFront", front: {
           daily: g(1145360, "Hades", eur(2450, 612)),
-          specials: [g(1245620, "ELDEN RING", eur(5999, 2999)), g(1086940, "Baldur's Gate 3", eur(5999, 4799)), g(413150, "Stardew Valley", eur(1399, 979)), g(1091500, "Cyberpunk 2077", eur(5999, 2999), { owned: "found:steam:1091500" })],
+          specials: [g(1245620, "ELDEN RING", eur(5999, 2999)), g(1086940, "Baldur's Gate 3", eur(5999, 4799)), g(413150, "Stardew Valley", eur(1399, 979)), g(1091500, "Cyberpunk 2077", eur(5999, 2999), { owned: "found:steam:1091500" }),
+            g(367520, "Hollow Knight", eur(1499, 749)), g(1426210, "It Takes Two", eur(3999, 1599)), g(242760, "The Forest", eur(1699, 424)), g(250900, "The Binding of Isaac: Rebirth", eur(1499, 449))],
           deals: [g(632470, "Disco Elysium - The Final Cut", { currency: "USD", discount: 80 }, { store: "IndieGala", usd: 7.89, score: 97, url: "https://www.cheapshark.com/redirect?dealID=a" }),
             g(49520, "Borderlands 2", { currency: "USD", discount: 90 }, { store: "Steam", usd: 1.99, score: 89, url: "https://www.cheapshark.com/redirect?dealID=b" }),
-            g(115800, "Owlboy", { currency: "USD", discount: 90 }, { store: "GOG", usd: 1.99, score: 88, url: "https://www.cheapshark.com/redirect?dealID=c" })],
-          top: [g(4115450, "Phantom Blade Zero", eur(5999, 5999), { image: "missing-header.jpg" }), g(570, "Dota 2", null), g(730, "Counter-Strike 2", null, { owned: "game:cs2" })],
+            g(115800, "Owlboy", { currency: "USD", discount: 90 }, { store: "GOG", usd: 1.99, score: 88, url: "https://www.cheapshark.com/redirect?dealID=c" }),
+            g(1551360, "Forza Horizon 5", { currency: "USD", discount: 50 }, { store: "Steam", usd: 29.99, score: 92, url: "https://www.cheapshark.com/redirect?dealID=d" }),
+            g(271590, "Grand Theft Auto V Legacy", { currency: "USD", discount: 50 }, { store: "Fanatical", usd: 14.99, score: 96, url: "https://www.cheapshark.com/redirect?dealID=e" }),
+            g(1145350, "Hades II", { currency: "USD", discount: 20 }, { store: "GreenManGaming", usd: 23.99, score: 95, url: "https://www.cheapshark.com/redirect?dealID=f" })],
+          top: [g(4115450, "Phantom Blade Zero", eur(5999, 5999), { image: "missing-header.jpg" }), g(570, "Dota 2", null), g(730, "Counter-Strike 2", null, { owned: "game:cs2" }),
+            g(1086940, "Baldur's Gate 3", eur(5999, 5999)), g(1245620, "ELDEN RING", eur(5999, 2999)), g(2358720, "Black Myth: Wukong", eur(5999, 5999)),
+            g(1091500, "Cyberpunk 2077", eur(5999, 2999)), g(413150, "Stardew Valley", eur(1399, 1399)), g(1145360, "Hades", eur(2450, 612)), g(271590, "Grand Theft Auto V Legacy", eur(2999, 1499))],
         } });
       }, 150);
       return ok();
