@@ -1035,6 +1035,7 @@
     else if (k === "e" || k === "PageDown") { ev.preventDefault(); bpTab(1); }
     else if (k === "y") { ev.preventDefault(); bpY(); }
     else if (k === "x") { ev.preventDefault(); bpX(); }
+    else if (k === "F5") ev.preventDefault();
     ev.stopImmediatePropagation();
   }, true);
   setInterval(() => { const c = BP.on && $("#bp .bp-clock"); if (c) c.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); }, 15000);
@@ -1132,7 +1133,7 @@
   function sideSorted(list) {
     const out = list.slice();
     if (S.sideSort === "recent") out.sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
-    else if (S.sideSort === "played") out.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || a.name.localeCompare(b.name));
+    else if (S.sideSort === "played") out.sort((a, b) => timeOf(b) - timeOf(a) || a.name.localeCompare(b.name));
     return out;
   }
   function sideRow(it, cur) {
@@ -1159,9 +1160,9 @@
         <div class="sg-rows">${list.map((it) => sideRow(it, isCur(it))).join("")}</div></div>`;
     };
     let html;
-    const q = S.sideQ.trim().toLowerCase();
+    const q = S.sideQ.trim();
     if (q) {
-      const hits = sideSorted(all.filter((it) => it.name.toLowerCase().includes(q)));
+      const m = nameMatcher(q), hits = sideSorted(all.filter((it) => m(it.name)));
       html = hits.length ? group("matches", "Matches", hits, { open: true }) : `<p class="sg-empty">No game called that.</p>`;
     } else if (!all.length) {
       html = `<p class="sg-empty">${S.found.scanning ? "Looking for your games" : "No games yet."}</p>`;
@@ -1313,10 +1314,28 @@
   // A small neutral mark per store a game is in.
   const storeMarks = (it) => it.copies ? `<span class="lib-stores">${it.copies.map((c) => `<span class="ln-tag">${esc(sourceLabel(c.source))}</span>`).join("")}</span>` : esc(sourceLabel(it.source));
 
+  // Name search that forgives: accents, punctuation and spacing don't
+  // matter, words can come in any order, and initials work ("bg3").
+  const norm = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").replace(/[™®©'’‘`]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ").trim().toLowerCase();
+  const normNames = new Map();
+  function nameMatcher(q) {
+    const t = norm(q), words = t.split(" "), flat = t.replace(/ /g, "");
+    return (name) => {
+      if (!t) return true;
+      let n = normNames.get(name);
+      if (!n) {
+        const ws = norm(name).split(" ");
+        n = { text: ws.join(" "), flat: ws.join(""), initials: ws.map((w) => (/^\d+$/.test(w) ? w : w[0] || "")).join("") };
+        normNames.set(name, n);
+      }
+      return words.every((w) => n.text.includes(w)) || n.flat.includes(flat) || n.initials === flat;
+    };
+  }
   function shownItems() {
-    const q = S.q.trim().toLowerCase();
+    const m = nameMatcher(S.q);
     const list = libraryItems().filter((it) => {
-      if (q && !it.name.toLowerCase().includes(q)) return false;
+      if (!m(it.name)) return false;
       if (S.filter === "profiles" && it.kind !== "game") return false;
       if (S.store !== "all" && !copiesOf(it).some((c) => filterOf(c.source) === S.store)) return false;
       if (S.tag && !tagsOf(it).includes(S.tag)) return false;
@@ -1328,7 +1347,7 @@
       return true;
     });
     if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
-    else if (S.sort === "played") list.sort((a, b) => Math.max(totalPlayed(b), steamTime(b)) - Math.max(totalPlayed(a), steamTime(a)) || playedAt(b) - playedAt(a));
+    else if (S.sort === "played") list.sort((a, b) => timeOf(b) - timeOf(a) || playedAt(b) - playedAt(a));
     else if (S.sort === "rating") list.sort((a, b) => ratingOf(b) - ratingOf(a));
     return list;
   }
@@ -1388,6 +1407,7 @@
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
   const totalPlayed = (it) => copiesOf(it).reduce((n, c) => n + Object.values(playtimeOf(c)).reduce((a, b) => a + b, 0), 0);
   const steamTime = (it) => copiesOf(it).reduce((n, c) => n + ((S.d.steamTime || {})[recentKey(c)] || 0), 0);
+  const timeOf = (it) => Math.max(totalPlayed(it), steamTime(it));
   // How much a game has been played: Lootnest's own count, or Steam's.
   const playedText = (it) => totalPlayed(it) ? hours(totalPlayed(it)) + " played in all" : steamTime(it) ? hours(steamTime(it)) + " on Steam" : "";
   function hours(sec) {
@@ -1494,7 +1514,7 @@
     loadArt(it); ensureCover(it);
     const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key], ic = S.icons[key];
     const art = hero ? `<img src="${hero}" alt="">` : cover ? `<img class="soft" src="${cover}" alt="">` : "";
-    const t = totalPlayed(it) || steamTime(it);
+    const t = timeOf(it);
     const s = it.g && session(it.g.id);
     return `<div class="lib-cap${s ? " busy" : ""}${art ? "" : " no-art"}"><button class="lib-cap-open" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">
         <span class="lib-cap-art">${art || plate(ic, "lib-cap-none", `<b>${esc(it.name)}</b>`)}</span>
@@ -1516,7 +1536,7 @@
       const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
       return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="lib-shelf-n ln-num">${list.length}</span></h2></div>
           <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-all" data-tag="${esc(t)}">See all</button></div>
-        <div class="lib-shelf-row">${list.slice(0, 16).map(cardHTML).join("")}</div></section>`;
+        <div class="lib-shelf-row">${list.slice(0, 16).map((it) => cardHTML(it)).join("")}</div></section>`;
     }).join("")}</div>`;
   }
 
@@ -1769,7 +1789,7 @@
     if (S.density === "list") {
       return `<div class="lib-list-head" aria-hidden="true"><span></span><span>Name</span><span>Last played</span><span>Time played</span><span>Profiles</span><span></span></div>${items.map(listRowHTML).join("")}`;
     }
-    return items.map(cardHTML).join("");
+    return items.map((it) => cardHTML(it, true)).join("");
   }
   // The Library as a list, as in Steam's: a row per game with when it was
   // last played, how long, and who has a profile.
@@ -1778,7 +1798,7 @@
     ensureCoverQuiet(it);
     const g = it.g, s = g && session(g.id), owner = g && S.d.active[g.id];
     const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
-    const t = totalPlayed(it) || steamTime(it);
+    const t = timeOf(it);
     const thumb = c ? `<img src="${c}" alt="">` : ic ? `<img class="icon" src="${ic}" alt="">` : `<b>${esc(initial(it.name))}</b>`;
     const prof = owners.length ? owners.map((p) => `<span class="ln-mark ln-player${p.id === owner ? " is-loaded" : ""}" style="--player:${esc(p.color)}" title="${esc(p.name)}${p.id === owner ? ", files loaded" : ""}"></span>`).join("") : `<span class="lib-row-dim">Off</span>`;
     const play = s ? `<span class="ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
@@ -1823,19 +1843,22 @@
 
   // A Library cover (system.css .ln-tile). Who has a profile is the colour
   // code along the bottom; the tall bar, and the line under the title, say
-  // whose files are loaded.
-  function cardHTML(it) {
+  // whose files are loaded; in the grid sorted by when or how much, it says that.
+  function cardHTML(it, bySort) {
     const g = it.g;
     const owner = g && S.d.active[g.id];
     const s = g && session(g.id);
     const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
     const bars = owners.length ? `<div class="ln-tile__owners" aria-hidden="true">${owners.map((p) => `<span class="ln-player" style="--player:${esc(p.color)}"${p.id === owner ? " data-loaded" : ""}></span>`).join("")}</div>` : "";
     const badge = s ? `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>` : "";
-    const meta = owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
+    const sortCap = !bySort ? "" : S.sort === "recent" ? (playedAt(it) ? cap(ago(playedAt(it))) : "No date yet")
+      : S.sort === "played" ? (timeOf(it) ? hours(timeOf(it)) : "No time yet") : "";
+    const meta = sortCap ? `<span class="ln-num">${esc(sortCap)}</span>`
+      : owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
       : g ? "Profiles on" : storeMarks(it);
     const attr = itemAttr(it);
     return `<div class="card lib-card${s ? " busy" : ""}">
-      <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
+      <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${sortCap ? `, ${esc(sortCap)}` : owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
         <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span>${S.sort === "rating" && ratingOf(it) ? `<span class="ln-tile__meta">${starsHTML(ratingOf(it))}</span>` : ""}</button>
       ${s ? "" : `<button class="ln-button ln-button--secondary ln-button--icon ln-button--sm lib-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${attr} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
   }
@@ -2340,7 +2363,7 @@
       toast(n ? `Found ${n} new game${n === 1 ? "" : "s"}` : "No new games found");
     }
     if (!S.picker && !S.dialog && ["home", "library", "game"].includes(S.view)) render();
-    else { $("#lib-count").textContent = libraryItems().length || ""; renderSideGames(); }
+    else { $("#lib-count").textContent = libraryItems().length || ""; renderSideGames(); const w = $("#wl-scan"); if (w) w.innerHTML = welcomeScan(); }
   }
 
   // ---------------------------------------------------------------- picker --
@@ -2722,14 +2745,13 @@
   // -------------------------------------------------------------- add game --
   function viewAddDialog() {
     const D = S.dialog;
-    const q = (D.q || "").toLowerCase();
     const inLibrary = new Set((S.found.games || []).filter((f) => f.appId).map((f) => f.appId)
       .concat(cfg().games.filter((g) => g.launch.type === "steam").map((g) => g.launch.appId)));
     let list;
     if (!S.d.steam.found) list = `<div class="note">Steam wasn't found on this PC. You can still add any game by choosing its .exe.</div>`;
     else if (!D.steam) list = `<p class="hint">Looking for installed Steam games</p>`;
     else {
-      const items = D.steam.filter((g) => !q || g.name.toLowerCase().includes(q));
+      const m = nameMatcher(D.q), items = D.steam.filter((g) => m(g.name));
       list = items.length
         ? `<div class="steam-list">${items.map((g) => `<button class="steam-item${inLibrary.has(g.appId) ? " added" : ""}" data-action="add-steam" data-app="${g.appId}"><b>${esc(g.name)}</b><span>${inLibrary.has(g.appId) ? "In your Library" : "Steam"}</span></button>`).join("")}</div>`
         : `<p class="hint">No installed Steam game matches “${esc(D.q)}”.</p>`;
@@ -2913,6 +2935,12 @@
     if (small) small.innerHTML = lnAvatar(me, "32");
     document.querySelectorAll("[data-wl-name]").forEach((e) => { e.textContent = me.name; });
   }
+  // While the first scan runs, and what it found.
+  function welcomeScan() {
+    if (S.found.scanning || S.found.refreshing) return `<span class="ln-spinner" aria-hidden="true"></span>Looking for games on this PC`;
+    const n = libraryItems().length;
+    return n ? `Found ${n} game${n === 1 ? "" : "s"}` : "No games found on this PC yet";
+  }
   function viewWelcome() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const p = ps[0], me = { ...p, name: welcomeName(p) };
@@ -2931,6 +2959,7 @@
       <div class="wl-about">
         <h1 id="wl-title">Welcome to Lootnest</h1>
         <p class="wl-lead">Your games from every launcher in one place. Your profile keeps its own saves, and Lootnest swaps them in before a game starts, with a copy made first.</p>
+        <p class="wl-scan" id="wl-scan" aria-live="polite">${welcomeScan()}</p>
         <div class="wl-go"><button class="ln-button ln-button--primary ln-button--lg" data-action="welcome-done">Continue</button><span class="error-text" id="players-error"></span></div>
         <p class="wl-note">More profiles, and runs of your own, can be added later in Profiles.</p>
       </div>
@@ -3500,8 +3529,8 @@
       <div class="field"><label for="pe-now">Currently playing</label><select id="pe-now" data-pe="now">${gameOptions(p.now || "", "None")}</select>
         <input type="text" maxlength="80" value="${esc(p.nowNote || "")}" placeholder="A note (optional)" data-pe="nowNote" aria-label="A word on it" style="margin-top:8px"></div>`;
     } else if (tab === "showcase") {
-      const q = (D.q || "").toLowerCase(), fav = p.favorites || [];
-      const games = libraryItems().filter((it) => !q || it.name.toLowerCase().includes(q));
+      const fav = p.favorites || [];
+      const m = nameMatcher(D.q), games = libraryItems().filter((it) => m(it.name));
       body = `
       <div class="field"><span class="label">Favourite games <span class="hint">${fav.length} of 6, in this order</span></span>
         ${fav.length ? `<ol class="fav-order">${fav.map((k, i) => { const it = itemByKey(k); return `<li><span>${esc(it ? it.name : "A game no longer here")}</span>
@@ -3606,6 +3635,19 @@
       <span class="switch"><input type="checkbox" data-setting="${field}"${invert ? ' data-invert="1"' : ""} ${checked ? "checked" : ""}><span></span></span></label>`;
   }
 
+  const SHORTCUTS = (pointHotkeyOff) => [
+    [["Ctrl+K"], "Search your games, and the store if it's on"],
+    [["Ctrl+F", "/"], "Find a game in the Library"],
+    [["Arrow keys"], "Move between covers in the Library"],
+    [["Home", "End"], "First or last cover"],
+    [["Esc"], "Close a dialog, or go back from a game's page"],
+    [["Ctrl+B"], "Fold the sidebar, or open it again"],
+    [["F5"], "Look for games again"],
+    [["1 to 9"], "Choose a profile in Who's playing"],
+    [["F11"], "Open or leave Big Picture"],
+    [["Q", "E"], "Switch tabs in Big Picture"],
+    ...(pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
+  ];
   // Settings: plain on purpose. Groups of rows, each saying what it does,
   // with its control on the right. Everything online is off until turned on.
   function viewSettings() {
@@ -3625,7 +3667,8 @@
           ${sw("closeToTray", "Keep running when the window is closed", "Closing the window leaves Lootnest in the tray. Quit from the tray icon.", s.closeToTray)}
           ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts. In Big Picture, it comes back when the game closes.", s.hideWhilePlaying)}
           ${sw("openBigPicture", "Open in Big Picture when Lootnest starts", "For a PC by the TV: Lootnest opens on the whole screen, ready for a controller. Not when it starts in the tray with Windows.", s.openBigPicture)}
-          ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}`)],
+          ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}`)
+        + sub("Keyboard shortcuts", "", `<dl class="set-keys">${SHORTCUTS(s.pointHotkeyOff).map(([keys, what]) => `<dt>${keys.map((k) => `<kbd>${k}</kbd>`).join(", ")}</dt><dd>${what}</dd>`).join("")}</dl>`)],
       ["games", "Games and swaps", GI.play, "How profiles' files are swapped, and how Lootnest works with Steam.", () => sub("Swaps", "", `
           ${row("s-backups", "Copies kept per game before each swap", "A copy is made before every swap. The oldest go once there are more than this.", `<input id="s-backups" class="ln-input set-num" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}">`)}
           ${row("s-timeout", "Seconds to wait for a game to start", "If it hasn't started by then, the profile's files stay loaded, and Lootnest still saves them if the game starts later.", `<input id="s-timeout" class="ln-input set-num" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}">`)}
@@ -3927,9 +3970,9 @@
   // One search box on every page: your games first, then the store's.
   let gqTimer = 0;
   function gqItems() {
-    const q = S.gq.q.trim().toLowerCase();
+    const q = S.gq.q.trim();
     if (!q) return [];
-    const mine = libraryItems().filter((it) => it.name.toLowerCase().includes(q)).slice(0, 5).map((it) => ({ mine: it }));
+    const m = nameMatcher(q), mine = libraryItems().filter((it) => m(it.name)).slice(0, 5).map((it) => ({ mine: it }));
     const ownedIds = new Set(mine.map((m) => m.mine.appId).filter(Boolean));
     const store = (S.gq.hits || []).filter((h) => !ownedIds.has(h.appId) && !h.owned).slice(0, 6).map((h) => ({ hit: h }));
     return [...mine, ...store];
@@ -5378,6 +5421,16 @@
         return;
       }
     }
+    // In the Library's grid, the arrows move from cover to cover.
+    const tile = !ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.target.closest && ev.target.closest("#grid .ln-tile, #grid .lib-row-open");
+    if (tile && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(ev.key)) {
+      ev.preventDefault();
+      const grid = $("#grid"), tiles = [...grid.querySelectorAll(".ln-tile, .lib-row-open")], i = tiles.indexOf(tile);
+      const cols = S.density === "list" ? 1 : getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+      const n = tiles[{ ArrowLeft: i - 1, ArrowRight: i + 1, ArrowUp: i - cols, ArrowDown: i + cols, Home: 0, End: tiles.length - 1 }[ev.key]];
+      if (n) { n.focus(); n.scrollIntoView({ block: "nearest" }); }
+      return;
+    }
     // Ctrl+F or / finds a game.
     if (!S.picker && !S.dialog && ((ev.ctrlKey && ev.key.toLowerCase() === "f") || (ev.key === "/" && !ev.target.closest("input, textarea, select")))) {
       ev.preventDefault();
@@ -5412,6 +5465,8 @@
   // block browser shortcuts that make no sense in an app window
   document.addEventListener("keydown", (ev) => {
     if ((ev.ctrlKey && ["p", "f", "g", "r", "u", "s", "+", "-", "=", "0"].includes(ev.key.toLowerCase())) || ev.key === "F5" || ev.key === "F3") ev.preventDefault();
+    // F5 looks for games again, as Scan again does.
+    if (ev.key === "F5" && !ev.ctrlKey && !ev.altKey && !ev.shiftKey && !S.picker && !S.dialog && !S.found.refreshing) actions.rescan();
   }, true);
   // No page zoom (Ctrl+wheel, pinch) and no browser menu outside text fields.
   document.addEventListener("wheel", (ev) => { if (ev.ctrlKey) ev.preventDefault(); }, { passive: false });
