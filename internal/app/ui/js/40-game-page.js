@@ -247,6 +247,8 @@
     const title = logo ? `<img class="gpage-logo" src="${logo}" alt="${esc(it.name)}">` : esc(it.name);
     const rec = (S.d.recent || {})[recentKey(it)];
     const meta = [esc(sourceLabel(it.source))];
+    const installed = page && installOf(groupOf(it) || it); // every copy, as in the Library
+    if (installed) meta.push(`<span class="ln-num">${esc(about(installed))}</span> on this PC`);
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
     const st = steamTime(it);
     let bar, note = "", side, news, head;
@@ -427,6 +429,7 @@
           gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
           ...storeActs(it).filter((a) => a === "verify" || a === "open").map((a) => storeRow(it, a)),
           f.source === "steam" && f.appId ? gpRow(`data-action="move-open" data-app="${f.appId}" data-name="${esc(f.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries") : "",
+          movable(it) ? gpRow(`data-action="movefolder-open" data-key="${esc(f.key)}"`, GI.drive, "Move to another drive", "Copied and checked before the old folder goes") : "",
         ])
         + gpGroup("Online", [offlineRow(it)])
         + gpGroup("Shortcuts", [gpRow(`data-action="found-shortcut" data-key="${esc(f.key)}"`, GI.desktop, "Create desktop shortcut", "Starts the game directly")])
@@ -446,6 +449,7 @@
       gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Files from before each swap"),
       g.launch.type === "steam" ? gpRow(`data-action="steam-verify" data-app="${g.launch.appId}"`, GI.check, "Verify files with Steam", "Steam replaces missing or damaged files", { disabled: s }) : "",
       g.launch.type === "steam" ? gpRow(`data-action="move-open" data-app="${g.launch.appId}" data-name="${esc(g.name)}"`, GI.drive, "Move to another drive", "To another of your Steam libraries", { disabled: s }) : "",
+      movable(it) ? gpRow(`data-action="movefolder-open" data-game="${esc(g.id)}"`, GI.drive, "Move to another drive", "Copied and checked before the old folder goes", { disabled: s }) : "",
     ]) + gpGroup("Online", [offlineRow(it)])
       + gpGroup("Shortcuts", [gpRow(`data-action="shortcut" data-game="${esc(g.id)}"`, GI.desktop, "Create desktop shortcut", "Asks who's playing every time")])
       + gpGroup("Danger", [gpRow(`data-action="remove-game" data-game="${esc(g.id)}"`, GI.power, "Turn off profiles", "", { danger: true })]);

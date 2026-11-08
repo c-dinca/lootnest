@@ -271,6 +271,7 @@ func (a *App) startScan() {
 		a.emit("found", map[string]any{"scanning": false})
 		go a.noteCopies()
 		a.scanCapturesSoon()
+		a.sizesSoon()
 	}()
 }
 

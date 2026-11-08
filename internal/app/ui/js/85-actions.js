@@ -735,6 +735,28 @@
       try { await api.steamVerify(+el.dataset.app); toast("Steam is checking the game's files. It downloads any that are missing or damaged."); } catch (e) { toast(errText(e), "error"); }
     },
     "move-open"(el) { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; openMove(+el.dataset.app, el.dataset.name); },
+    "st-sort"(el) { S.stSort = el.dataset.col; setPref("stSort", S.stSort); render(); },
+    "st-more"(el) { storageMenu(el); },
+    "movefolder-open"(el) { const it = itemFor(el); closeContext(); if (it) openMoveFolder(it); },
+    "movefolder-pick"(el) { if (S.dialog && S.dialog.kind === "movefolder") { S.dialog.pick = el.dataset.path; renderOverlay(); } },
+    async "movefolder-browse"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "movefolder") return;
+      const r = await browse("moveDir", "");
+      if (r.error) toast(r.error, "error");
+      if (r.path && S.dialog === D) { D.custom = D.pick = r.path; renderOverlay(); }
+    },
+    async "movefolder-go"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "movefolder" || !D.pick) return;
+      try {
+        await api.moveFolderGame(D.key, D.pick);
+        if (S.dialog !== D) return; // the move already ended
+        if (!S.folderMove) S.folderMove = { key: D.key, done: 0, total: 0 };
+        renderOverlay();
+      } catch (e) { toast(errText(e), "error"); }
+    },
+    async "movefolder-cancel"() { try { await api.moveFolderCancel(); } catch (e) { toast(errText(e), "error"); } },
     "move-pick"(el) { if (S.dialog && S.dialog.kind === "move") { S.dialog.pick = el.dataset.lib; renderOverlay(); } },
     async "move-go"() {
       const D = S.dialog;

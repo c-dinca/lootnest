@@ -4,6 +4,7 @@ package app
 
 import (
 	"bytes"
+	"cmp"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
@@ -137,6 +138,9 @@ func (a *App) apiLaunchFound(key string) error {
 	f, found := a.foundByKey(key)
 	if !found {
 		return errFoundGone
+	}
+	if err := a.errMoving(cmp.Or(f.Dir, f.Exe)); err != nil {
+		return err
 	}
 	if _, busy := startingFound.LoadOrStore(key, true); busy {
 		return nil // already starting, once its saves are kept

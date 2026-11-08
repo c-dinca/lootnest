@@ -137,6 +137,24 @@ func (l *CopyLedger) NoteRemoved(f FoundGame, kept map[string]string, now time.T
 	l.rekeyDismissed(f.Key, "")
 }
 
+// NoteMoved records a folder game Lootnest moved to another folder: the
+// same copy under its new key, so it isn't offered as a new copy of itself.
+func (l *CopyLedger) NoteMoved(from, to, dir string) {
+	g, ok := l.Games[from]
+	if !ok {
+		return
+	}
+	delete(l.Games, from)
+	g.Key, g.Dir, g.Gone = to, dir, false
+	l.Games[to] = g
+	l.rekeyDismissed(from, to)
+	for old, nw := range l.Carried {
+		if nw == from {
+			l.Carried[old] = to
+		}
+	}
+}
+
 // rekeyDismissed moves the "Not the same game" answers about old copy from
 // to to, or forgets them when to is "".
 func (l *CopyLedger) rekeyDismissed(from, to string) {

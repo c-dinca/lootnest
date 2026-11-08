@@ -119,3 +119,22 @@ func TestReseat(t *testing.T) {
 		t.Fatalf("reseat = %q, %v, %q", who, err, read(t, f.optFile()))
 	}
 }
+
+func TestNoteMovedIsNoNewCopy(t *testing.T) {
+	l := CopyLedger{Games: map[string]SeenGame{}, Dismissed: map[string]bool{}, Carried: map[string]string{}}
+	there := map[string]bool{`D:\Games\Hollow Tale`: true}
+	dirThere := func(d string) bool { return there[d] }
+	t0 := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	l.NoteSeen([]FoundGame{{Key: `dir:d:\games\hollow tale`, Name: "Hollow Tale", Dir: `D:\Games\Hollow Tale`}}, t0, dirThere)
+
+	// Moved to E: the old folder goes, the same copy is seen in the new one.
+	l.NoteMoved(`dir:d:\games\hollow tale`, `dir:e:\games\hollow tale`, `E:\Games\Hollow Tale`)
+	there = map[string]bool{`E:\Games\Hollow Tale`: true}
+	l.NoteSeen([]FoundGame{{Key: `dir:e:\games\hollow tale`, Name: "Hollow Tale", Dir: `E:\Games\Hollow Tale`}}, t0.Add(time.Hour), dirThere)
+	if m := l.Matches(); len(m) != 0 {
+		t.Fatalf("a moved game is offered as a new copy of itself: %+v", m)
+	}
+	if g := l.Games[`dir:e:\games\hollow tale`]; !g.First.Equal(t0) || g.Dir != `E:\Games\Hollow Tale` || len(l.Games) != 1 {
+		t.Fatalf("ledger %+v", l.Games)
+	}
+}

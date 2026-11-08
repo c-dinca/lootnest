@@ -81,6 +81,7 @@
     if (S.sort === "recent") list.sort((a, b) => playedAt(b) - playedAt(a));
     else if (S.sort === "played") list.sort((a, b) => timeOf(b) - timeOf(a) || playedAt(b) - playedAt(a));
     else if (S.sort === "rating") list.sort((a, b) => ratingOf(b) - ratingOf(a));
+    else if (S.sort === "size") list.sort((a, b) => installOf(b) - installOf(a));
     return list;
   }
   // Collections (the user's own, for everyone) and each profile's status.
@@ -179,7 +180,7 @@
           `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button><button class="ln-button ln-button--ghost" data-action="sources">Sources</button>`,
           `<p class="ln-empty__where">Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.</p>`, true)}</div>`;
     }
-    const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"], ["rating", "Highest rated"]];
+    const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"], ["rating", "Highest rated"], ["size", "Largest first"]];
     const sizes = [["s", "Small covers", 8], ["m", "Medium covers", 11], ["l", "Large covers", 14], ["list", "A list", 0]];
     const seg = (k, l, n) => `<button data-action="filter" data-filter="${k}" aria-pressed="${S.filter === k}">${l}<span class="ln-count ln-num">${n}</span></button>`;
     const ps = S.filter === "owned" ? [] : cfg().players; // profiles, collections, status and sort don't apply to games not installed
@@ -651,7 +652,8 @@
     const bars = owners.length ? `<div class="ln-tile__owners" aria-hidden="true">${owners.map((p) => `<span class="ln-player" style="--player:${esc(p.color)}"${p.id === owner ? " data-loaded" : ""}></span>`).join("")}</div>` : "";
     const badge = s ? `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>` : "";
     const sortCap = !bySort ? "" : S.sort === "recent" ? (playedAt(it) ? cap(ago(playedAt(it))) : "No date yet")
-      : S.sort === "played" ? (timeOf(it) ? hours(timeOf(it)) : "No time yet") : "";
+      : S.sort === "played" ? (timeOf(it) ? hours(timeOf(it)) : "No time yet")
+      : S.sort === "size" ? (installOf(it) ? about(installOf(it)) : S.sizes ? "Size not counted yet" : "Counting") : "";
     const meta = sortCap ? `<span class="ln-num">${esc(sortCap)}</span>`
       : owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
       : g ? "Profiles on" : it.kind === "owned" ? `${esc(sourceLabel(it.source))}, not installed` : storeMarks(it);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.78.0
+
+- **Storage**, a new category in Settings: each drive with how much is free, and a list of your games with about how much each takes: the game itself, its saves, its profiles, and Lootnest's own copies of it (copies before swaps, the safety net and save points). Click a column to sort. Lootnest counts sizes in the background after it looks for games, one game at a time, and remembers them for a week, so they're about right rather than exact. Never in safe mode.
+- The Library can sort by **Largest first**, and a game's page says about how much it takes on this PC.
+- **Move to another drive** for a game in a folder of its own, from Storage or the game's Manage panel. Lootnest copies the game into the other drive's Games folder (or one you choose), reads every file back and checks the copy has every file at its size. Only then does the Library use the new folder, with its playtime, collections, settings and profiles, and only after that does the old folder go to the Recycle Bin. If anything goes wrong, or you stop it, the copy is removed and the game stays where it was.
+- It won't move a game that's running, one kept offline (let it go online first), or onto a drive without room for the game and a tenth more. Shortcuts you made to the old folder stop working; make them again.
+- Steam games move with Game Mover, as before; games from other stores say which launcher moves them. Game Mover now reads back every file it copies too.
+
 ## 1.77.0
 
 - Each game has **Launch options**, under Manage. For a game Lootnest starts by its .exe: the options it starts with, the folder it starts in, and Run as administrator. Windows asks each time a game starts as administrator, and the game then has full rights over the PC, so it's only for games that need it.

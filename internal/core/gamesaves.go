@@ -42,6 +42,9 @@ func (c *Cloud) savesDir(game string) string {
 	return filepath.Join(c.dir(), "saves", filepath.Base(game))
 }
 
+// SavesDir is where a game's saves versions are kept.
+func (c *Cloud) SavesDir(game string) string { return c.savesDir(game) }
+
 // locationsAsPaths makes PathEntries for SyncHash and the saves format.
 func locationsAsPaths(locs []SaveLocation) ([]PathEntry, func(PathEntry) string) {
 	paths := make([]PathEntry, len(locs))

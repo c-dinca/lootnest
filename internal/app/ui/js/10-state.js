@@ -56,7 +56,7 @@
     details: {},       // Library key -> {details, edited, fetching, error} from ps_gameDetails, or {loading: true}
     detOpen: new Set(), // Library keys whose summary is shown in full
     page: null,        // the game page: {kind: "game"|"found"|"owned", id, cloud}
-    sort: pref("sort", "name"),       // Library order: name | recent | played
+    sort: pref("sort", "name"),       // Library order: name | recent | played | rating | size
     density: pref("density", "m"),    // cover size: s | m | l
     ctx: null,         // the right-click menu: {x, y, kind, id}
     update: {},        // {available, version, page, upToDate, checking, error, step}
@@ -74,6 +74,9 @@
     adding: false,
     hooksBusy: false,
     moving: null,     // {appId, name, step, done, total} while Game Mover copies a game
+    folderMove: null, // {key, done, total, step} while a folder game moves to another drive
+    sizes: null,      // ps_sizes: {games: [{key, install, saves, profiles, copies}], drives, counting, safe}
+    stSort: pref("stSort", "install"), // the Storage list's order: name or a size
   };
   const browseWaiters = {};
   let seq = 0;

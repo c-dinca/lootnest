@@ -169,6 +169,27 @@
         refresh();
         break;
       }
+      case "sizes":
+        S.sizes = ev;
+        if ((S.view === "settings" && S.setTab === "storage") || (S.view === "library" && S.sort === "size") || S.view === "game") render();
+        if (S.dialog && S.dialog.kind === "movefolder") renderOverlay();
+        break;
+      case "folderMoveProgress":
+        S.folderMove = ev;
+        if (S.dialog && S.dialog.kind === "movefolder") renderOverlay();
+        break;
+      case "folderMoveDone": {
+        S.folderMove = null;
+        if (S.dialog && S.dialog.kind === "movefolder" && S.dialog.key === ev.key) { S.dialog = null; renderOverlay(); }
+        if (ev.error) toast(`Couldn't move ${ev.name}: ${ev.error}`, "error");
+        else if (ev.cancelled) toast(`${ev.name} stays where it was.`);
+        else {
+          if (S.page && S.page.kind === "found" && S.page.id === ev.key) S.page.id = ev.newKey;
+          toast(ev.leftover ? `${ev.name} is now in ${ev.to}. Its old folder couldn't go to the Recycle Bin and is still in ${ev.leftover}.` : `${ev.name} is now in ${ev.to}. Its old folder is in the Recycle Bin.`);
+        }
+        loadFound().then(refresh); // the page's new key is in the Library first
+        break;
+      }
       case "details":
         S.details[ev.key] = ev;
         if (S.view === "game") render();

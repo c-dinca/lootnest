@@ -43,6 +43,7 @@ var (
 	moveMu     sync.Mutex
 	movingApp  int // app id being moved, 0 when none
 	movingGame string
+	movingDir  string // the folder game being moved to another drive
 )
 
 // movingName is the game Game Mover is moving, or "".
@@ -116,7 +117,7 @@ func (a *App) moveBlocker(appID int) string {
 // the outcome arrive as events.
 func (a *App) apiMoveGame(appID int, lib string) error {
 	moveMu.Lock()
-	if movingApp != 0 {
+	if movingApp != 0 || movingGame != "" {
 		moveMu.Unlock()
 		return errors.New("Lootnest is already moving a game. Wait for it to finish, then move this one.")
 	}

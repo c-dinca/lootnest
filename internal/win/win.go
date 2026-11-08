@@ -539,13 +539,20 @@ func WebView2Installed() bool {
 // DiskFree is the space free for this user on the drive that holds path, or
 // -1 when Windows can't say.
 func DiskFree(path string) int64 {
+	free, _ := DiskSpace(path)
+	return free
+}
+
+// DiskSpace is the space free for this user and the size of the drive that
+// holds path, or -1 for both when Windows can't say.
+func DiskSpace(path string) (free, size int64) {
 	p, err := windows.UTF16PtrFromString(path)
 	if err != nil {
-		return -1
+		return -1, -1
 	}
-	var free, total, all uint64
-	if err := windows.GetDiskFreeSpaceEx(p, &free, &total, &all); err != nil {
-		return -1
+	var f, total, all uint64
+	if err := windows.GetDiskFreeSpaceEx(p, &f, &total, &all); err != nil {
+		return -1, -1
 	}
-	return int64(free)
+	return int64(f), int64(total)
 }
