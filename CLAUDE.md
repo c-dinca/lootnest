@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.65.0, beta)
+## Where things stand (1.66.0, beta)
 
 These shipped recently, newest last:
 
@@ -418,6 +418,13 @@ These shipped recently, newest last:
   echo is gone). Safe mode (`--safe-mode`, Shift on a plain open, tray
   item, `a.safe`, `ps_restart`, `safeBanner()`). If a real PC ever shows
   an empty window from 1.65 on, check the log for "ignored N call(s)".
+
+- **1.66** Roadmap Timeline 1: `sessions.jsonl` (`core.AppendSession`,
+  `ReadSessions`; append-only, fsynced, bad lines skipped, under 60 s or
+  over 24 h dropped), written where playtime is counted and for Library
+  games Lootnest starts (`followFound`, `foundTick`); `ps_gameTimeline`
+  merges sessions, save points, timed unlocks and applied updates;
+  `timelineBlock` on the game page.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

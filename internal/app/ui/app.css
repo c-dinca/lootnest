@@ -1344,6 +1344,15 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .pt-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-1); }
 .pt-list--all .pt-row { grid-template-columns: auto 1fr; }
 .pt-list--all .pt-actions { grid-column: 2; justify-content: flex-start; }
+.tl-day + .tl-day { margin-top: var(--space-4); }
+.tl-date { margin: 0 0 var(--space-1); font: 650 var(--text-meta)/var(--lh-tight) var(--font-ui); color: var(--fg-2); }
+.tl-list { margin: 0; padding: 0; list-style: none; }
+.tl-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); font-size: var(--text-body); }
+.tl-row:last-child { border-bottom: 0; }
+.tl-ic { display: grid; color: var(--fg-3); }
+.tl-ic svg { width: var(--icon-sm); height: var(--icon-sm); }
+.tl-what { min-width: 0; color: var(--fg-1); overflow-wrap: anywhere; }
+.tl-time { font-size: var(--text-meta); color: var(--fg-3); }
 
 /* Beta, next to the name in the sidebar. */
 .brand-stage { padding: var(--space-1) var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/1 var(--font-ui); letter-spacing: normal; color: var(--fg-2); }

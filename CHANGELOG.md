@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.66.0
+
+- A game's page has a Timeline under Save points: your sessions (when they started and ended), save points, achievement unlocks and applied updates, grouped by day. It starts with the latest few, and Show more goes further back.
+- Each entry says which profile it belongs to when the PC has more than one, for example "Player 2 unlocked Hag Hunter".
+- Lootnest now keeps a log of every play session of 60 seconds or more, for games played as a profile and for Library games it starts. The log stays on this PC and only grows; a damaged line is skipped, never deleted.
+
 ## 1.65.0
 
 - Safe mode: start Lootnest with --safe-mode, or hold Shift while it opens, or choose Restart in safe mode from the tray icon. It starts with its background work off: no safety net copies, no unlock notes over games, no checks of Downloads or for Lootnest updates, no Steam set-up, no save point hotkey, and no cloud uploads or backups after a game. Profiles still swap when you play. Home says it's in safe mode, with Restart normally to go back. Starting it with --safe-mode while Lootnest is already open restarts that one in safe mode. Use it if something stops Lootnest from starting.
