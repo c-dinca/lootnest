@@ -4,36 +4,65 @@
 <meta charset="utf-8">
 <title>Lootnest setup</title>
 <style>
-:root { --ink:#111217; --panel:#191a20; --raised:#22232a; --line:#2e3038; --text:#DFE5EB; --muted:#a9b0b8; --dim:#8a919a; --bad:#f0907f; --gold:#DFE5EB; --gold-ink:#111217; --focus:#DFE5EB; --red:#EF233C;
-  --font:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif; --display:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif; color-scheme:dark; }
+/*@SYSTEM*/
+/* The installer's own sizes; the rest are the app's tokens, from system.css above. */
+:root { --switch-h:20px; --knob:14px; --mark:32px; --step-dot:20px; --check:12px; color-scheme:dark; }
 * { box-sizing:border-box; }
 html,body { margin:0; height:100%; }
-body { background:var(--ink); color:var(--text); font:14px/1.45 var(--font); user-select:none; overflow:hidden; -webkit-font-smoothing:antialiased; }
-::-webkit-scrollbar { width:12px; height:12px; } ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background:transparent; } ::-webkit-scrollbar-button { display:none; }
-::-webkit-scrollbar-thumb { background:var(--line); border-radius:999px; border:3px solid transparent; background-clip:content-box; min-height:48px; } ::-webkit-scrollbar-thumb:hover { background-color:var(--dim); }
-:focus { outline:none; } :focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:6px; }
-.wrap { height:100%; display:grid; grid-template-rows:1fr auto; }
-.main { padding:28px 36px 0; display:grid; align-content:start; gap:18px; animation:rise .24s cubic-bezier(.2,.7,.3,1); }
-@keyframes rise { from { opacity:0; transform:translateY(6px); } }
-.mark { width:48px; height:48px; }
-h1 { font:600 26px/1.2 var(--display); margin:0; }
-.sub { color:var(--muted); margin:6px 0 0; max-width:52ch; }
-.opts { display:grid; gap:2px; }
-.opt { display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start; padding:10px 0; cursor:pointer; }
-.opt input { margin:3px 0 0; width:16px; height:16px; accent-color:var(--red); }
-.opt p { margin:2px 0 0; color:var(--muted); font-size:13px; }
-.where { color:var(--dim); font-size:12.5px; user-select:text; }
-.foot { display:flex; gap:10px; justify-content:flex-end; align-items:center; padding:16px 36px 20px; border-top:1px solid var(--line); }
-.foot .msg { margin-right:auto; color:var(--bad); font-size:13px; }
-.btn { height:36px; padding:0 18px; border-radius:6px; border:1px solid var(--line); background:var(--raised); color:var(--text); font:500 14px var(--font); cursor:pointer; }
-.btn:hover { background:#2a2824; }
-.btn.primary { background:var(--gold); color:var(--gold-ink); border-color:var(--gold); font-weight:600; }
-.btn.primary:hover { background:#ebb46c; border-color:#ebb46c; }
-.btn:disabled { opacity:.5; cursor:default; }
-.bar { width:100%; max-width:360px; height:3px; border-radius:3px; background:var(--line); overflow:hidden; }
-.bar::after { content:""; display:block; width:40%; height:100%; border-radius:3px; background:var(--red); animation:slide 1.2s cubic-bezier(.2,.7,.3,1) infinite; }
-@keyframes slide { from { transform:translateX(-100%); } to { transform:translateX(250%); } }
-@media (prefers-reduced-motion: reduce) { .bar::after { animation:none; width:100%; } .main { animation:none; } }
+body { background:var(--bg-ground); color:var(--fg-1); font:var(--fs-14)/var(--lh-body) var(--font-ui); user-select:none; overflow:hidden; -webkit-font-smoothing:antialiased; }
+:focus { outline:none; }
+:focus-visible { outline:var(--focus-width) solid var(--focus-ring); outline-offset:2px; }
+.wrap { height:100%; display:grid; grid-template-rows:auto 1fr auto; }
+.top { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-5) var(--space-8) 0; font:700 var(--fs-15)/1 var(--font-title); }
+.top .ver { margin-left:auto; font:500 var(--fs-13)/1 var(--font-ui); color:var(--fg-3); }
+.mark { width:var(--mark); height:var(--mark); overflow:visible; }
+.mark circle { stroke:var(--accent); }
+.intro .mark path { stroke-dasharray:1; animation:draw var(--dur-4) var(--ease-out) both; }
+.intro .mark path + path { animation-delay:calc(var(--dur-1) / 2); }
+.intro .mark circle { animation:drop var(--dur-3) var(--ease-emph) calc(var(--dur-2) + var(--dur-1) / 6) both; }
+@keyframes draw { from { stroke-dashoffset:1; opacity:0; } 15% { opacity:1; } to { stroke-dashoffset:0; } }
+@keyframes drop { from { opacity:0; transform:translateY(calc(var(--rise) * -1)); } 70% { opacity:1; transform:translateY(calc(var(--hairline) / 2)); } to { transform:none; } }
+.main { padding:var(--space-8) var(--space-8) 0; display:grid; align-content:start; gap:var(--space-6); }
+.intro .main { animation:rise var(--dur-3) var(--ease-emph) var(--dur-3) both; }
+@keyframes rise { from { opacity:0; transform:translateY(var(--rise)); } }
+h1 { margin:0; font:750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing:var(--track-section); }
+.sub { margin:var(--space-2) 0 0; color:var(--fg-2); max-width:52ch; }
+.opts { display:grid; }
+.opt { display:grid; grid-template-columns:1fr auto; align-items:center; gap:var(--space-4); padding:var(--space-3) 0; border-bottom:var(--hairline) solid var(--edge-1); cursor:pointer; }
+.opt:last-child { border-bottom:0; }
+.opt b { font-weight:600; }
+.opt p { margin:2px 0 0; font-size:var(--fs-13); color:var(--fg-2); }
+.switch { position:relative; width:var(--switch-w); height:var(--switch-h); }
+.switch input { position:absolute; inset:0; margin:0; opacity:0; cursor:pointer; }
+.switch span { position:absolute; inset:0; border-radius:var(--radius-round); background:var(--glass-ctl-hover); box-shadow:inset 0 0 0 var(--hairline) var(--edge-2); transition:background-color var(--dur-2) var(--ease-out); }
+.switch span::after { content:""; position:absolute; top:3px; left:3px; width:var(--knob); height:var(--knob); border-radius:var(--radius-round); background:var(--fg-2); transition:transform var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
+.switch input:checked + span { background:var(--accent); box-shadow:none; }
+.switch input:checked + span::after { transform:translateX(16px); background:var(--fg-1); }
+.switch input:focus-visible + span { outline:var(--focus-width) solid var(--focus-ring); outline-offset:2px; }
+.where { margin:0; color:var(--fg-3); font-size:var(--fs-13); user-select:text; overflow-wrap:anywhere; }
+.steps { list-style:none; margin:0; padding:0; display:grid; gap:var(--space-3); }
+.steps li { display:flex; align-items:center; gap:var(--space-3); color:var(--fg-3); }
+.steps li.now { color:var(--fg-1); }
+.steps li.ok { color:var(--fg-2); }
+.steps li.bad { color:var(--danger); }
+.dot { flex:none; width:var(--step-dot); height:var(--step-dot); border-radius:var(--radius-round); box-shadow:inset 0 0 0 var(--hairline) var(--edge-2); display:grid; place-items:center; }
+.now .dot { box-shadow:none; }
+.dot svg { width:var(--check); height:var(--check); fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.ok .dot { background:var(--accent); box-shadow:none; }
+.ok .dot svg { stroke:var(--fg-on-accent); }
+.bad .dot { box-shadow:inset 0 0 0 var(--hairline) var(--danger); }
+.bad .dot svg { stroke:var(--danger); }
+.just .dot { animation:pop var(--dur-2) var(--ease-emph) both; }
+.just .dot path { stroke-dasharray:1; animation:tick var(--dur-2) var(--ease-out) calc(var(--dur-1) / 2) both; }
+@keyframes pop { from { transform:scale(.6); } }
+@keyframes tick { from { stroke-dashoffset:1; } to { stroke-dashoffset:0; } }
+.err { margin:0; color:var(--danger); max-width:60ch; user-select:text; }
+.foot { display:flex; gap:var(--space-2); justify-content:flex-end; align-items:center; padding:var(--space-4) var(--space-8) var(--space-5); border-top:var(--hairline) solid var(--edge-1); }
+.foot:empty { display:none; }
+@media (prefers-reduced-motion: reduce) {
+  .intro .mark path, .intro .mark circle, .intro .main, .just .dot, .just .dot path { animation:none; }
+  .switch span, .switch span::after { transition:none; }
+}
 </style>
 </head>
 <body>
@@ -42,57 +71,88 @@ h1 { font:600 26px/1.2 var(--display); margin:0; }
 "use strict";
 (function () {
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const mark = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#22232a"/><path d="M7 17a9 8 0 0 0 18 0" fill="none" stroke="#DFE5EB" stroke-width="3.2" stroke-linecap="round"/><path d="M11.5 10.5 14 7h4l2.5 3.5L16 17z" fill="#EF233C"/></svg>';
-  let info = null, step = "options", error = "";
-  const opts = { desktop: true, autostart: true, launch: true };
+  // The app's mark (the sidebar's): the nest's two arcs and the gem.
+  const mark = '<svg class="mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path pathLength="1" d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path pathLength="1" d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>';
+  const check = '<svg viewBox="0 0 12 12" aria-hidden="true"><path pathLength="1" d="M2.5 6.25 5 8.5l4.5-5"/></svg>';
+  const cross = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 3.5l5 5M8.5 3.5l-5 5"/></svg>';
+  const STEPS = ["Copy Lootnest", "Start menu and shortcuts", "Add to Installed apps"];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let info = null, step = "options", error = "", ticked = 0, fresh = false, intro = true;
+  const opts = { desktop: true, autostart: true };
+
+  function steps() {
+    return `<ol class="steps">${STEPS.map((s, i) => {
+      const cls = i < ticked ? "ok" + (fresh && i === ticked - 1 ? " just" : "") : error && i === ticked ? "bad" : i === ticked && step === "working" ? "now" : "";
+      return `<li class="${cls}"><span class="dot">${i < ticked ? check : cls === "bad" ? cross : cls === "now" ? '<span class="ln-spinner"></span>' : ""}</span>${s}</li>`;
+    }).join("")}</ol>`;
+  }
 
   function render() {
     const r = document.getElementById("root");
     if (!info) { r.innerHTML = ""; return; }
+    const update = info.existing;
+    let main = "", foot = "", focus = "";
     if (step === "options") {
-      const update = info.existing;
-      r.innerHTML = `<div class="main">${mark}
-        <div><h1>${info.legacy ? "PlaySwap is now Lootnest" : update ? "Update Lootnest" : "Install Lootnest"}</h1>
-        <p class="sub">${info.legacy ? `This replaces PlaySwap with Lootnest ${esc(info.version)}. Players, games, profiles, backups and the Steam set-up carry over.` : update ? `This replaces the installed Lootnest with version ${esc(info.version)}. Players, games and profiles stay as they are.` : "Everyone who shares this PC gets their own game settings and saves. Pick who's playing, and Lootnest swaps the files."}</p></div>
+      main = `<div><h1>${info.legacy ? "PlaySwap is now Lootnest" : update ? "Update Lootnest" : "Install Lootnest"}</h1>
+        <p class="sub">${info.legacy ? `This replaces PlaySwap with Lootnest ${esc(info.version)}. Players, games, profiles, backups and the Steam set-up carry over.` : update ? `This replaces the installed Lootnest with version ${esc(info.version)}. Players, games and profiles stay as they are.` : "Every game on this PC in one library, with its saves kept safe and a profile for each person or run."}</p></div>
         <div class="opts">
-          <label class="opt"><input type="checkbox" id="o-desktop" ${opts.desktop ? "checked" : ""}><span><b style="font-weight:500">Add a desktop shortcut</b></span></label>
-          <label class="opt"><input type="checkbox" id="o-autostart" ${opts.autostart ? "checked" : ""}><span><b style="font-weight:500">Start with Windows</b><p>Lootnest waits in the tray and follows games you start from Steam.</p></span></label>
+          <label class="opt"><span><b>Add a desktop shortcut</b></span><span class="switch"><input type="checkbox" id="o-desktop" ${opts.desktop ? "checked" : ""}><span></span></span></label>
+          <label class="opt"><span><b>Start with Windows</b><p>Lootnest waits in the tray and follows games you start from Steam.</p></span><span class="switch"><input type="checkbox" id="o-autostart" ${opts.autostart ? "checked" : ""}><span></span></span></label>
         </div>
-        <p class="where">Installs for your Windows account in ${esc(info.installDir)}. No administrator rights needed.</p></div>
-        <div class="foot"><span class="msg">${esc(error)}</span><button class="btn" data-a="cancel">Cancel</button><button class="btn primary" data-a="install">${update ? "Update" : "Install"}</button></div>`;
-      setTimeout(() => { const b = document.querySelector('[data-a="install"]'); if (b) b.focus(); }, 20);
+        <p class="where">Installs for your Windows account in ${esc(info.installDir)}. No administrator rights needed.</p>`;
+      foot = `<button class="ln-button ln-button--ghost" data-a="cancel">Cancel</button><button class="ln-button ln-button--primary" data-a="install">${update ? "Update" : "Install"}</button>`;
+      focus = "install";
     } else if (step === "working") {
-      r.innerHTML = `<div class="main">${mark}<div><h1>${info.existing ? "Updating" : "Installing"} Lootnest</h1><p class="sub">This takes a few seconds.</p></div><div class="bar"></div></div><div class="foot"></div>`;
+      main = error
+        ? `<div><h1>Lootnest couldn't ${update ? "update" : "install"}</h1></div>${steps()}<p class="err" role="alert">${esc(error)}</p>`
+        : `<div><h1>${update ? "Updating" : "Installing"} Lootnest</h1><p class="sub">This takes a few seconds.</p></div>${steps()}`;
+      if (error) { foot = `<button class="ln-button ln-button--ghost" data-a="cancel">Close</button><button class="ln-button ln-button--primary" data-a="install">Try again</button>`; focus = "install"; }
     } else if (step === "done") {
-      r.innerHTML = `<div class="main">${mark}<div><h1>Lootnest is ready</h1>
-        <p class="sub">It's in your Start menu${opts.desktop ? " and on your desktop" : ""}. Add the games you share, then press Play and choose who's playing.</p></div>
-        <label class="opt"><input type="checkbox" id="o-launch" ${opts.launch ? "checked" : ""}><span><b style="font-weight:500">Open Lootnest now</b></span></label></div>
-        <div class="foot"><button class="btn primary" data-a="finish">Finish</button></div>`;
-      setTimeout(() => { const b = document.querySelector('[data-a="finish"]'); if (b) b.focus(); }, 20);
+      main = `<div><h1>Lootnest is ${update ? "updated" : "installed"}</h1>
+        <p class="sub">It's in your Start menu${opts.desktop ? " and on your desktop" : ""}.</p></div>${steps()}`;
+      foot = `<button class="ln-button ln-button--ghost" data-a="cancel">Close</button><button class="ln-button ln-button--primary" data-a="open">Open Lootnest</button>`;
+      focus = "open";
     }
+    r.className = "wrap" + (intro && !reduce ? " intro" : "");
+    r.innerHTML = `<div class="top">${mark}<span>Lootnest</span><span class="ver">Version ${esc(info.version)}</span></div>
+      <div class="main">${main}</div><div class="foot">${foot}</div>`;
+    intro = fresh = false;
+    if (focus) setTimeout(() => { const b = document.querySelector(`[data-a="${focus}"]`); if (b) b.focus(); }, 20);
   }
 
-  window.__setup = function (ev) {
-    if (ev.type === "installed") {
-      if (ev.error) { error = ev.error; step = "options"; } else { step = "done"; }
-      render();
-    }
-  };
+  // Go reports each step as it finishes, then "installed". They can come
+  // within a few milliseconds, so each tick shows for a moment before the next.
+  const queue = [];
+  let busy = false;
+  function pump() {
+    if (busy || !queue.length) return;
+    const ev = queue.shift();
+    if (ev.type === "step") { ticked = ev.step; fresh = true; }
+    if (ev.type === "installed") { if (ev.error) error = ev.error; else step = "done"; }
+    render();
+    busy = true;
+    setTimeout(() => { busy = false; pump(); }, reduce ? 0 : 240);
+  }
+  window.__setup = function (ev) { queue.push(ev); pump(); };
+
+  function start() {
+    error = ""; ticked = 0; step = "working"; render();
+    window.setup_install({ desktop: opts.desktop, autostart: opts.autostart });
+  }
 
   document.addEventListener("change", (e) => {
     if (e.target.id === "o-desktop") opts.desktop = e.target.checked;
     if (e.target.id === "o-autostart") opts.autostart = e.target.checked;
-    if (e.target.id === "o-launch") opts.launch = e.target.checked;
   });
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-a]");
     if (!b) return;
     if (b.dataset.a === "cancel") window.setup_close(false);
-    if (b.dataset.a === "install") { error = ""; step = "working"; render(); window.setup_install({ desktop: opts.desktop, autostart: opts.autostart }); }
-    if (b.dataset.a === "finish") window.setup_close(opts.launch);
+    if (b.dataset.a === "install") start();
+    if (b.dataset.a === "open") window.setup_close(true);
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && step !== "working") window.setup_close(false);
+    if (e.key === "Escape" && (step !== "working" || error)) window.setup_close(false);
     if ((e.ctrlKey && ["p", "f", "r", "+", "-", "=", "0"].includes(e.key.toLowerCase())) || e.key === "F5") e.preventDefault();
   }, true);
   document.addEventListener("wheel", (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });

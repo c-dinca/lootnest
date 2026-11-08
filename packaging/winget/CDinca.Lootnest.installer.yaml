@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+
+PackageIdentifier: CDinca.Lootnest
+PackageVersion: 1.59.0
+MinimumOSVersion: 10.0.0.0
+InstallerType: exe
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+InstallerSwitches:
+  Silent: --silent
+  SilentWithProgress: --silent
+UpgradeBehavior: install
+AppsAndFeaturesEntries:
+  - DisplayName: Lootnest
+    Publisher: Lootnest
+    ProductCode: Lootnest
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/c-dinca/lootnest/releases/download/v1.59.0/Lootnest-Setup.exe
+    # Fill in from the release: the SHA-256 GitHub shows next to Lootnest-Setup.exe,
+    # or: winget hash Lootnest-Setup.exe
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+ManifestType: installer
+ManifestVersion: 1.9.0

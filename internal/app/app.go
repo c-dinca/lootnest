@@ -31,6 +31,7 @@ const (
 	UninstallID = "Lootnest"
 	bgColor     = 0x0E1117 // --ink-2 in ui/app.css: the title bar frames the window like the sidebar
 	borderColor = 0x2A3142 // --line
+	groundColor = 0x111217 // --bg-ground, Obsidian: painted before the page, under the splash
 )
 
 // Version is set at build time with -ldflags "-X lootnest/internal/app.Version=..."
@@ -75,6 +76,21 @@ func soundsJSON() string {
 	return string(j)
 }
 
+// inlineFonts puts the fonts in ui/fonts in place of their @FONT:name@
+// marks, as base64 for data: URLs.
+func inlineFonts(css string) string {
+	for _, name := range uiFontNames {
+		if b, err := uiFonts.ReadFile("ui/fonts/" + name + ".woff2"); err == nil {
+			css = strings.Replace(css, "@FONT:"+name+"@", base64.StdEncoding.EncodeToString(b), 1)
+		}
+	}
+	return css
+}
+
+// SystemCSS is the design system (ui/system.css) with its fonts inlined,
+// for the installer's page.
+func SystemCSS() string { return inlineFonts(uiSystemCSS) }
+
 // pageHTML is the UI with its stylesheet, script, fonts and sounds inlined. Its
 // Content-Security-Policy allows only this one script (by a nonce made for
 // each start), images and fonts from data: URLs and Steam's image servers,
@@ -83,13 +99,7 @@ func pageHTML() string {
 	nonce := make([]byte, 18)
 	_, _ = rand.Read(nonce)
 	n := base64.RawStdEncoding.EncodeToString(nonce)
-	css := uiSystemCSS + "\n" + uiCSS
-	for _, name := range uiFontNames {
-		if b, err := uiFonts.ReadFile("ui/fonts/" + name + ".woff2"); err == nil {
-			css = strings.Replace(css, "@FONT:"+name+"@", base64.StdEncoding.EncodeToString(b), 1)
-		}
-	}
-	h := strings.Replace(uiHTML, "/*@CSS*/", css, 1)
+	h := strings.Replace(uiHTML, "/*@CSS*/", inlineFonts(uiSystemCSS+"\n"+uiCSS), 1)
 	h = strings.ReplaceAll(h, "@NONCE@", n)
 	return strings.Replace(h, "/*@JS*/", strings.Replace(uiJS, "/*@SOUNDS*/{}", soundsJSON(), 1), 1)
 }
@@ -268,7 +278,7 @@ func Run(opt Options) error {
 			Center:      true,
 			ClassName:   WindowClass,
 			Hidden:      opt.StartHidden && opt.LaunchGame == "",
-			Background:  bgColor,
+			Background:  groundColor,
 			OnCreate:    func(hwnd uintptr) { win.StyleTitleBar(hwnd, bgColor, borderColor); win.SetWindowIcons(hwnd, dpi) },
 			MessageHook: a.hook,
 		},
