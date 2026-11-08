@@ -296,7 +296,7 @@ func SharkStores(fetch Fetch) (map[string]string, error) {
 }
 
 // SafeStoreLink accepts the links Find games opens: the Steam store and
-// CheapShark's deal links.
+// CheapShark's deal links, and the itch.io page where API keys are made.
 func SafeStoreLink(u string) bool {
 	p, err := url.Parse(u)
 	if err != nil || p.Scheme != "https" {
@@ -307,6 +307,8 @@ func SafeStoreLink(u string) bool {
 		return strings.HasPrefix(p.Path, "/app/")
 	case "www.cheapshark.com":
 		return p.Path == "/redirect" && p.Query().Get("dealID") != ""
+	case "itch.io": // where the user makes the API key Lootnest asks for
+		return p.Path == "/user/settings/api-keys" && p.RawQuery == "" && p.Fragment == ""
 	}
 	return false
 }

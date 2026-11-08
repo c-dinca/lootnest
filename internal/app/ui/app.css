@@ -1017,6 +1017,13 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .bk-row input.set-num { width: 96px; flex: none; }
 .set-wide { flex-direction: column; align-items: stretch; }
 .set-wide .ln-input { width: 100%; }
+.set-itch-acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.set-wide .set-itch-acts .ln-input { flex: 1; width: auto; min-width: 0; }
+.gpage-note.itch-note { align-items: flex-end; }
+.itch-note .itch-run { flex: 1; min-width: 0; max-width: var(--note-w); }
+.itch-run .gpage-link { margin-left: var(--space-2); }
+.meter.busy i { width: 35%; animation: slide 1.2s var(--ease) infinite; }
+.itch-dl .ln-facts > div:last-child { border-bottom: 0; }
 .set-opt { margin-left: var(--space-1); font-size: var(--fs-12); font-weight: 500; color: var(--fg-3); }
 .settings-page .log { margin: 0; }
 .settings-page .bk-card > * { padding: var(--space-5) var(--space-6); }

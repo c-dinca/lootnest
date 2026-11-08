@@ -661,7 +661,7 @@
   function gridHTML() {
     const items = shownItems(), shown = new Set(items.map(recentKey));
     S.libSel.forEach((k) => { if (!shown.has(k)) S.libSel.delete(k); }); // only games still shown stay picked
-    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.filter === "owned" ? "Every game Steam and Epic know you have is installed." : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
+    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.filter === "owned" ? (itchOn() ? "Every game Steam, Epic and itch.io know you have is installed." : "Every game Steam and Epic know you have is installed.") : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
     if (S.density === "list") {
       return `<div class="lib-list-head" aria-hidden="true"><span></span><span>Name</span><span>Last played</span><span>Time played</span><span>Profiles</span><span></span></div>${items.map(listRowHTML).join("")}`;
     }

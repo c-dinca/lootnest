@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.81.0
+
+- **Your itch.io games, installed and updated in Lootnest.** In Settings, Online, connect itch.io with an API key you make in itch.io's settings, under API keys. Lootnest uses your own key, keeps it encrypted on this PC, and only reads your library.
+- The games in your itch.io library show in the Library under Not installed, with their covers. **Install with itch.io** shows the download (choose one when there's more than one), its size, the folder it goes in and the room on that drive. Lootnest downloads it straight from itch.io, checks the file, and unpacks it into a new folder of its own, without the extra folder archives often wrap a game in. It never unpacks into a folder that already has files in it. A game that comes as one .exe gets a folder of its own too. A game that comes as an installer runs its installer, and Lootnest finds the game afterwards.
+- A progress bar shows each step, and Cancel stops a download and deletes what it had. Once a game is in, Lootnest deletes the download, and a note offers to open the game.
+- A game you installed from itch.io says which version you have and when Lootnest last checked, with profiles on or off. **Check for an update** asks itch.io now; Lootnest also checks when you open the game's page or Updates, at most every six hours. **Update** downloads the new version and opens the update panel: the saves and every file it replaces are copied first, and Undo puts the game back, and its version with it.
+- Only games you own, and only from itch.io. Disconnect any time: the games you installed stay. Nothing is sent to itch.io until you connect it, and safe mode installs nothing.
+
 ## 1.80.0
 
 - **Import from Playnite**, in Settings, Data and activity. Lootnest reads Playnite's library on this PC and brings in, for the games that are here: time played and when they were last played, statuses (Beaten becomes Finished, Completed 100%, Abandoned Dropped, and Plan to Play and On Hold Up next), favourites, ratings (Playnite's score as 1 to 5 stars) and notes. Categories and tags can come in as collections too, if you turn them on.

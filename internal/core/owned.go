@@ -27,11 +27,13 @@ import (
 
 // OwnedGame is a game a store says you have, not installed on this PC.
 type OwnedGame struct {
-	Key     string `json:"key"` // "owned:steam:620", "owned:epic:<app name>"
+	Key     string `json:"key"` // "owned:steam:620", "owned:epic:<app name>", "owned:itch:<game id>"
 	Name    string `json:"name"`
 	Source  string `json:"source"`
 	AppID   int    `json:"appId,omitempty"`
-	StoreID string `json:"storeId,omitempty"` // Epic's, for StoreAction
+	StoreID string `json:"storeId,omitempty"` // Epic's, for StoreAction; itch.io's game id
+	KeyID   int64  `json:"keyId,omitempty"`   // itch.io's download key
+	Cover   string `json:"cover,omitempty"`   // itch.io's cover picture
 }
 
 // SteamOwned lists the games of the Steam account in userDir (Steam\

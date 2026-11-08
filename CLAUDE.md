@@ -28,7 +28,11 @@ What makes it different, and the direction to keep pushing:
   (Goldberg/GSE, CODEX, RUNE, OnlineFix, RLD, SKIDROW, CreamAPI, EMPRESS
   achievements), and swaps and syncs them per profile.
   Lootnest itself never downloads, cracks or runs anything for the user,
-  and never bypasses DRM. Reading what's already on the PC is fine;
+  and never bypasses DRM. Reading what's already on the PC is fine.
+  The owner's one exception (8 Nov 2026): games the user owns, from the
+  store they bought them from (itch.io now, GOG next), through that
+  store's official API after the user connects it; never other sources,
+  never a catalogue;
 - cloud saves through the user's own OneDrive or Google Drive folder, with
   versions, encryption and per-profile sync;
 - nothing goes online unless the user turns it on (README, Privacy table).
@@ -128,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.80.0, beta)
+## Where things stand (1.81.0, beta)
 
 These shipped recently, newest last:
 
@@ -556,6 +560,20 @@ These shipped recently, newest last:
   backups\import\<id> first; `UndoImport`. Drawer in `71-playnite.js`,
   from Settings, Data and activity and the first run. Test libraries in
   `testdata/playnite` were written by LiteDB 4.1.4 itself.
+- **1.81** itch.io, roadmap 7 phase 1 (the owner's exception: owned
+  games, official API, after the user connects): `core/itchio.go`
+  (`ItchAPI`, `ItchOwned`, `ItchUploads` reading snake or camel case and
+  all three platform shapes, `ItchPickUpload`, `ItchKind` installer,
+  exe or archive, `ItchNewer`, `ItchDownload` to .part with size and
+  md5, https only, `ItchInstallArchive` into a new folder via a temp
+  folder, never into one with files; `itch.json` records with `Prev`
+  for Undo, moved by `RekeyGame`). `Settings.ItchKey` is DPAPI and never
+  sent to the page. `app/itchio.go`: the owned list in the background
+  (`itchLibrary`), `ps_itchInstall` with progress and Cancel,
+  `ps_itchCheck` at most every 6 h, `ps_itchUpdate` downloads then opens
+  the existing update drawer (`itchApplied`, `itchUndone`). UI in
+  `73-itch.js`; harness `?itch=1&itchrun=hold`. Checked only with
+  httptest: docs/TESTING.md section 17 on a real PC.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.
@@ -692,7 +710,10 @@ already on the PC, as always:
 
 The line, which holds for all of these: Lootnest never shows where to get
 games (no sources, official-looking or hidden), never bypasses DRM, and
-never generates, ships or "repairs" anything that makes a game start.
+never generates, ships or "repairs" anything that makes a game start. It
+downloads only games the user owns, from the store they bought them from,
+through its official API once the user connects it (itch.io now, GOG
+next): never from anywhere else, and never a catalogue.
 
 ## Ideas not started
 

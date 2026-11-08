@@ -68,13 +68,14 @@ func (a *App) apiStoreAction(key, action string) error {
 }
 
 // apiOwnedGames reads the games the stores' files on this PC say you have,
-// and sends the ones not installed as an "owned" event.
+// with the itch.io library when it's connected, and sends the ones not
+// installed as an "owned" event.
 func (a *App) apiOwnedGames() {
 	go func() {
 		// A game installed from any store, or as a folder game, isn't listed.
-		steamIDs, epicIDs, names := map[int]bool{}, map[string]bool{}, map[string]bool{}
+		steamIDs, epicIDs, names, keys := map[int]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}
 		for _, f := range a.libraryGames() {
-			steamIDs[f.AppID], steamIDs[f.SteamID], names[core.CoverKey(f.Name)] = true, true, true
+			steamIDs[f.AppID], steamIDs[f.SteamID], names[core.CoverKey(f.Name)], keys[f.Key] = true, true, true, true
 			if f.Source == "epic" {
 				epicIDs[f.StoreID] = true
 			}
@@ -86,6 +87,8 @@ func (a *App) apiOwnedGames() {
 		if pd := win.ProgramData(); pd != "" {
 			all = append(all, core.EpicOwned(filepath.Join(pd, "Epic", "EpicGamesLauncher", "Data", "Catalog", "catcache.bin"), epicIDs)...)
 		}
+		itch, itchErr, itchReading := a.itchOwnedGames(keys)
+		all = append(all, itch...)
 		out := []core.OwnedGame{}
 		for _, o := range all {
 			if !names[core.CoverKey(o.Name)] {
@@ -95,7 +98,7 @@ func (a *App) apiOwnedGames() {
 		ownedMu.Lock()
 		ownedLast = out
 		ownedMu.Unlock()
-		a.emit("owned", map[string]any{"games": out})
+		a.emit("owned", map[string]any{"games": out, "itchError": itchErr, "itchReading": itchReading})
 	}()
 }
 

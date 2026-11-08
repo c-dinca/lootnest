@@ -136,6 +136,7 @@
   --bar-state-min: 192px; /* the play bar's state line before the bar wraps */
   --drawer-w: 480px;      /* a panel from the right */
   --drawer-w-wide: 720px; /* one holding a form, such as the profile editor */
+  --note-w: 560px;        /* a progress line in a note on a game's page */
   --logo-w: clamp(240px, 28vw, 520px);  /* a game's logo in place of its name on its page */
   --logo-h: clamp(88px, 15vh, 176px);
   --shots-w: 1280px;      /* the screenshot viewer */

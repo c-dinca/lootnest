@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1&itchrun=hold
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -113,6 +113,31 @@
     { key: "owned:steam:1551360", name: "Forza Horizon 5", source: "steam", appId: 1551360 },
     { key: "owned:epic:Calluna", name: "Control", source: "epic", storeId: "calluna%3Aitem%3ACalluna" },
   ];
+  // ?itch=1: an itch.io account with three games not installed (the first
+  // with two downloads), and Onimusha installed from it, with an update out.
+  // ?itch=1&itchrun=hold: an install or update stops part way through its download.
+  const ITCH = q.get("itch") === "1", ITCH_HOLD = q.get("itchrun") === "hold", ITCH_KEY = "dir:d:\\games\\onimusha";
+  const plate = (a, b) => "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="630" height="500"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`);
+  const ITCH_OWNED = [
+    { key: "owned:itch:101", name: "Lantern Keeper", source: "itch", storeId: "101", keyId: 9001, cover: plate("oklch(0.55 0.12 60)", "oklch(0.25 0.05 280)") },
+    { key: "owned:itch:102", name: "Paper Tides", source: "itch", storeId: "102", keyId: 9002, cover: plate("oklch(0.6 0.09 200)", "oklch(0.3 0.06 240)") },
+    { key: "owned:itch:103", name: "Northern Signal", source: "itch", storeId: "103", keyId: 9003 },
+  ];
+  const ITCH_UPS = {
+    101: [{ id: 501, filename: "lantern-keeper-win64.zip", displayName: "Lantern Keeper for Windows (64-bit)", size: 812e6, type: "default", windows: true, userVersion: "1.4.2", kind: "archive" },
+      { id: 502, filename: "lantern-keeper-demo.zip", displayName: "Demo", size: 240e6, type: "default", windows: true, demo: true, kind: "archive" }],
+    102: [{ id: 503, filename: "PaperTidesSetup.exe", size: 1.6e9, type: "default", windows: true, kind: "installer" }],
+    103: [{ id: 504, filename: "northern-signal.7z", size: 3.1e9, type: "default", windows: true, userVersion: "0.9", kind: "archive" }],
+  };
+  // Fake progress for an install or update: a download, then its other steps.
+  function itchRun(key, steps, done) {
+    let t = 0;
+    const total = 812e6;
+    [0.12, 0.38, 0.64, 0.9, 1].forEach((f) => { if (!ITCH_HOLD || f < 0.5) setTimeout(() => emit({ type: "itchProgress", key, stage: "download", done: f * total, total }, 0), (t += 300)); });
+    if (ITCH_HOLD) return;
+    steps.forEach((s) => setTimeout(() => emit({ type: "itchProgress", key, stage: s, done: 0, total: 0 }, 0), (t += 500)));
+    setTimeout(() => emit(done, 0), (t += 500));
+  }
   if (N === "0") { games = []; found = []; GROUPS = []; }
   if (N === "400") {
     const pool = [730, 1091500, 1426210, 413150, 367520, 1086940, 1145350, 1551360, 271590, 250900, 0, 0];
@@ -157,6 +182,7 @@
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     gameDetails: q.get("details") !== "0", // ?details=0: Game details off
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
+    itchUser: ITCH ? "player1" : "",
   };
   // As core.WithOffsets: each profile's correction on top, never below 0.
   const withOffsets = () => {
@@ -318,7 +344,35 @@
     ].map(([source, found, state, reason, path]) => ({ source, found, installed: reason !== "Not installed", state, reason, path: path || "" })) }),
     ps_state: () => (STATE === "loading" || BOOT ? new Promise((r) => setTimeout(() => r(state()), BOOT || 60)) : ok(state())),
     ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [], groups: [], acts: {} } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN, groups: GROUPS.filter((g) => !SEPARATE.has(g.key)), acts: ACTS() }),
-    ps_ownedGames: () => { emit({ type: "owned", games: N === "0" ? [] : OWNED.filter((o) => !found.some((f) => f.name === o.name)) }); return ok(); },
+    ps_ownedGames: () => { emit({ type: "owned", games: N === "0" ? [] : OWNED.filter((o) => !found.some((f) => f.name === o.name)).concat(settings.itchUser ? ITCH_OWNED : []) }); return ok(); },
+    ps_itchConnect: (key) => {
+      if (!key.trim()) return Promise.reject("Paste the API key you made on itch.io.");
+      setTimeout(() => { settings.itchUser = "player1"; emit({ type: "itch", connected: true, user: "player1" }, 0); }, 600);
+      return ok();
+    },
+    ps_itchDisconnect: () => { settings.itchUser = ""; return ok(); },
+    ps_itchRefresh: () => { emit({ type: "owned", games: OWNED, itchReading: true }, 0); setTimeout(() => all.ps_ownedGames(), 1500); return ok(); }, // the read takes a while
+    ps_itchUploads: (gameId, parent) => {
+      const dir = parent || "C:\\Users\\you\\Games", o = ITCH_OWNED.find((x) => +x.storeId === gameId);
+      emit({ type: "itchUploads", gameId, uploads: ITCH_UPS[gameId] || [], dir, target: dir + "\\" + (o ? o.name : "Game"), free: dir.startsWith("C") ? 182e9 : 1.2e12, dataDrive: "C:", dataFree: 182e9 }, 300);
+      return ok();
+    },
+    ps_itchInstall: (r) => {
+      const o = ITCH_OWNED.find((x) => +x.storeId === r.gameId), up = (ITCH_UPS[r.gameId] || []).find((u) => u.id === r.uploadId);
+      if (!o || !up) return Promise.reject("Choose one of the game's downloads.");
+      itchRun(o.key, up.kind === "installer" ? ["install", "check"] : ["extract"], { type: "itchDone", key: o.key, name: o.name, libKey: ITCH_KEY });
+      return ok();
+    },
+    ps_itchCancel: () => { emit({ type: "itchDone", key: "owned:itch:101", name: "Lantern Keeper", cancelled: true }); return ok(); },
+    ps_itchCheck: () => {
+      if (ITCH) emit({ type: "itchUpdates", records: { [ITCH_KEY]: { version: "1.2.0", checkedAt: iso(3 * h), game: "" } }, list: [{ key: ITCH_KEY, version: "1.3.0", size: 412e6, uploadId: 77 }], error: "" }, 200);
+      return ok();
+    },
+    ps_itchRecords: () => {
+      if (ITCH) emit({ type: "itchUpdates", records: { [ITCH_KEY]: { version: "1.2.0", checkedAt: iso(3 * h), game: "" } }, list: [], error: "" }, 0);
+      return ok();
+    },
+    ps_itchUpdate: (key) => { itchRun(key, [], { type: "itchDone", key, name: "Onimusha: Way of the Sword", path: "C:\\Users\\you\\AppData\\Roaming\\Lootnest\\downloads\\itch\\7\\onimusha-1.3.0.zip", updKey: "found:" + key }); return ok(); },
     ps_storeAction: () => ok(),
     ps_removeGame: (key, go) => {
       const f = found.find((x) => x.key === key);

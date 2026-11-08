@@ -103,7 +103,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 **Approach.** Only games the user owns, through each store's own API, signed in by the user: GOG's account and installer endpoints, and itch.io's API with the user's own key. Downloads go through the update center that already exists: saves copied first, the version checked, every replaced file kept, Undo. Off until the user signs in.
 
 **Phases.**
-- 1, M: itch.io: library, download and install a build, check for a newer upload.
+- 1, M: itch.io: library, download and install a build, check for a newer upload. Done in 1.81.
 - 2, L: GOG: sign in, library, offline installers and patches for owned games, updates through the installer flow (1.40).
 - 3, S: both show on the Updates page with the other folder games.
 

@@ -137,6 +137,13 @@ type Settings struct {
 	// achievements of games the PC has no names for (games in a folder)
 	// get their names, descriptions and pictures from Steam.
 	SteamAPIKey string `json:"steamApiKey,omitempty"`
+	// itch.io (app/itchio.go): ItchKey is the user's own itch.io API key,
+	// encrypted like SteamAPIKey, and ItchUser the account it's for. With
+	// it, the games they bought there install and update from itch.io.
+	// ItchDir is where those games go (empty: Games in the user's folder).
+	ItchKey  string `json:"itchKey,omitempty"`
+	ItchUser string `json:"itchUser,omitempty"`
+	ItchDir  string `json:"itchDir,omitempty"`
 	// Backups to a folder the user picks (usually one a cloud app syncs):
 	// BackupDir is that folder (backups go in <dir>\Lootnest), BackupAuto
 	// makes one after each session, BackupKeep is how many this PC keeps.

@@ -144,6 +144,15 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_keepSavesNow", a.apiKeepSavesNow))
 	must(a.w.Bind("ps_storeAction", a.apiStoreAction))
 	must(a.w.Bind("ps_ownedGames", a.apiOwnedGames))
+	must(a.w.Bind("ps_itchConnect", a.apiItchConnect))
+	must(a.w.Bind("ps_itchDisconnect", a.apiItchDisconnect))
+	must(a.w.Bind("ps_itchRefresh", a.apiItchRefresh))
+	must(a.w.Bind("ps_itchUploads", a.apiItchUploads))
+	must(a.w.Bind("ps_itchInstall", a.apiItchInstall))
+	must(a.w.Bind("ps_itchCancel", a.apiItchCancel))
+	must(a.w.Bind("ps_itchCheck", a.apiItchCheck))
+	must(a.w.Bind("ps_itchRecords", a.apiItchRecords))
+	must(a.w.Bind("ps_itchUpdate", a.apiItchUpdate))
 	must(a.w.Bind("ps_removeGame", a.apiRemoveGame))
 	must(a.w.Bind("ps_sizes", a.apiSizes))
 	must(a.w.Bind("ps_moveFolderGame", a.apiMoveFolderGame))
@@ -216,6 +225,7 @@ type AppState struct {
 func (a *App) apiState() AppState {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
+	cfg.Settings.ItchKey = "" // the page needs only ItchUser, and never the key
 	st := AppState{Version: Version, Stage: Stage, Safe: a.safe, Config: cfg, FirstRun: a.firstRun, LoadError: a.loadErr, DataDir: DataDir(), Colors: core.PlayerColors}
 	a.mu.Unlock()
 	st.Active = a.store.LoadState()
@@ -521,6 +531,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	old := cfg.Settings
 	s.BackupDir, s.BackupAuto, s.BackupKeep, s.BackupSalt, s.BackupKey = old.BackupDir, old.BackupAuto, old.BackupKeep, old.BackupSalt, old.BackupKey
 	s.CloudSync = old.CloudSync
+	s.ItchKey, s.ItchUser, s.ItchDir = old.ItchKey, old.ItchUser, old.ItchDir // itchio.go keeps these
 	saveDBOn := s.SaveDB && !old.SaveDB
 	capturesOn := !s.CapturesOff && old.CapturesOff
 	cfg.Settings = s
@@ -698,6 +709,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Folder = true
 		case "moveDir":
 			opt.Title = "Choose where the game goes"
+			opt.Folder = true
+		case "itchDir":
+			opt.Title = "Choose where games from itch.io go"
 			opt.Folder = true
 		case "exportDir":
 			opt.Title = "Choose where to save the profile"
