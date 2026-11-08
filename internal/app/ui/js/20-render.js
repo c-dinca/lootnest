@@ -37,7 +37,10 @@
   // What arriving on a page resets, and the game page's game.
   function enterView(view, P) {
     S.view = view; S.menuFor = null; S.edit = null;
-    if (P) { S.page = P; S.selected = { kind: P.kind, id: P.id }; tlAsked.clear(); }
+    if (P) {
+      S.page = P; S.selected = { kind: P.kind, id: P.id }; tlAsked.clear();
+      for (const k in S.details) if (S.details[k].error) delete S.details[k]; // asked again on this visit
+    }
     if (view === "cloud") { loadBackupInfo(); loadSaves(); }
     if (view !== "players") S.players = null;
   }
@@ -81,6 +84,7 @@
     S.animateView = false;
     hist.at = here();
     v.scrollTop = keepScroll;
+    if (S.view === "game") fitDetails();
     if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
     renderOverlay();
     loadCovers();

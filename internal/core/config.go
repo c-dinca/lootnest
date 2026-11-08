@@ -120,6 +120,10 @@ type Settings struct {
 	// the official stores (Steam, CheapShark) and its requirements. Off by
 	// default; only the search words or a game's Steam id are sent.
 	FindGames bool `json:"findGames,omitempty"`
+	// GameDetails shows a game's summary, genres, release date, screenshots
+	// and review score from the Steam store on its page (gamedetails.go).
+	// Off by default; only the game's Steam id is sent, when its page opens.
+	GameDetails bool `json:"gameDetails,omitempty"`
 	// AutoInstallUpdates installs a newer Lootnest found by the automatic
 	// check by itself, while the window is closed to the tray and no game
 	// is running. UpdatesAsked: the user answered "Keep Lootnest up to date?".

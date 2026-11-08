@@ -118,6 +118,7 @@
     startMinimized: false, closeToTray: true, hideWhilePlaying: true, watchOutsideLaunches: true, notifications: true,
     backupsToKeep: 10, startTimeoutSeconds: 180, steamAccountId: "", autoSteamHooks: true, downloadCovers: true, checkUpdates: true,
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
+    gameDetails: q.get("details") !== "0", // ?details=0: Game details off
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
   };
   // As core.WithOffsets: each profile's correction on top, never below 0.
@@ -138,6 +139,29 @@
   });
 
   const OFFLINE = {};
+  const DETEDITS = {};
+  const detailsEv = (key) => {
+    const appId = key === "game:bg3" ? 1086940 : key === "game:cs2" ? 730 : key === "game:ittakestwo" ? 1426210 : ((found.find((f) => f.key === key) || {}).appId || 0);
+    const e = DETEDITS[key];
+    let det = null;
+    if (appId === 1086940) det = {
+      summary: "Gather your party and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power. Mysterious abilities are awakening inside you, drawn from a mind flayer parasite planted in your brain. Resist, and turn darkness against itself. Or embrace corruption, and become ultimate evil.",
+      genres: ["Adventure", "RPG", "Strategy"], developers: ["Larian Studios"], publishers: ["Larian Studios"], released: "3 Aug, 2023",
+      screenshots: [1086940, 1091500, 1145350, 1426210, 1551360, 367520, 413150, 271590].map((id) => ({ thumb: art(id, "hero"), full: art(id, "hero") })),
+      reviewScore: "Overwhelmingly Positive", reviewPercent: 96, reviewCount: 612345, metacritic: 96, storeUrl: "https://store.steampowered.com/app/1086940/", fetched: iso(4 * d),
+    };
+    else if (appId) det = { summary: "A short summary of the game from the Steam store.", genres: ["Action"], developers: ["A studio"], publishers: ["A publisher"], released: "1 Jan, 2020",
+      reviewScore: "Very Positive", reviewPercent: 92, reviewCount: 12345, storeUrl: `https://store.steampowered.com/app/${appId}/`, fetched: iso(d) };
+    if (e) {
+      det = Object.assign({}, det || {});
+      if (e.summary !== undefined) det.summary = e.summary;
+      if (e.developer !== undefined) det.developers = [e.developer];
+      if (e.publisher !== undefined) det.publishers = [e.publisher];
+      if (e.released !== undefined) det.released = e.released;
+      if (e.genres) det.genres = e.genres.map((g) => g.trim()).filter(Boolean);
+    }
+    return { type: "details", key, details: det, edited: !!e };
+  };
   const POINTS = {};
 
   const TAGS = { "game:cs2": ["Co-op", "Shooters"], "game:ittakestwo": ["Co-op", "For the kids"], "steam:413150": ["Co-op", "Weekend", "For the kids"],
@@ -184,6 +208,14 @@
     // Onimusha has an icon in its exe; the other games have none.
     ps_gameIcon: (exe) => ok(/onimusha/i.test(exe) ? "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="6" fill="#7a1f2b"/><path d="M9 23 16 7l7 16-7-4z" fill="#e8c36a"/></svg>') : ""),
     ps_gameNews: (key) => { if (STATE === "offline") emit({ type: "news", key, error: "Couldn't reach Steam's news feed.", items: [] }); else if (STATE !== "loading") emit({ type: "news", key, items: NEWS, newer: /phantom/i.test(key) ? { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true } : undefined }); return ok(); },
+    // Game details: Baldur's Gate 3 has everything, other Steam games a
+    // summary and facts, games without a Steam id none (or the user's edits).
+    ps_gameDetails: (key) => {
+      if (STATE === "offline") emit({ type: "details", key, error: "Couldn't reach the Steam store. Lootnest tries again next time you open this page." });
+      else if (STATE !== "loading") emit(detailsEv(key));
+      return ok();
+    },
+    ps_saveDetailsEdit: (key, e) => { if (Object.keys(e).length) DETEDITS[key] = e; else delete DETEDITS[key]; emit(detailsEv(key)); return ok(); },
     ps_cloudStatus: () => ok({ state: "overlap", count: 1 }),
     ps_steamSetup: () => ok({ games: [], steamRunning: false }),
     ps_backupInfo: () => ok({

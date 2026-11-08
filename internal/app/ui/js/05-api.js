@@ -115,6 +115,8 @@
     keepSavesNow: (key) => call("ps_keepSavesNow", key),
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
+    gameDetails: (key) => call("ps_gameDetails", key),
+    saveDetailsEdit: (key, edits) => call("ps_saveDetailsEdit", key, edits),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
     steamVerify: (appId) => call("ps_steamVerify", appId),

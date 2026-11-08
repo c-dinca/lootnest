@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.69.0
+
+- A game's page can show its details from the Steam store: a summary, the developer and publisher, the release date, its genres, the Steam review score and Metacritic's, and screenshots. Turn on Game details in Settings, Online; it's off until you do.
+- The details are read only when you open that game's page, and kept on this PC for 30 days, so the next visit shows them at once. Only the game's Steam id is sent. Games in a folder or from Hydra get them too when Lootnest knows their Steam id.
+- Click a screenshot to see it large. The arrow keys go to the next or previous one, and Esc closes it.
+- Edit details in Manage changes the summary, developer, publisher, release date or genres. Your changes stay on this PC and always win over Steam's; Use Steam's again puts Steam's back.
+
 ## 1.68.0
 
 - Big Picture shows your controller's own buttons: cross, circle, square and triangle with L1, R1, Options and Create on a PlayStation controller; A, B, X, Y with L, R, + and minus on a Switch Pro controller or Joy-Cons, where A on the right chooses and B goes back, as on the Switch; and Menu and View on an Xbox controller. Other controllers show which side of the four buttons to press.

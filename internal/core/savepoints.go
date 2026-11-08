@@ -58,7 +58,13 @@ func LocID(path string) string {
 
 // SavePointsDir is where a game's points are kept.
 func (s *Store) SavePointsDir(gameKey string) string {
-	return filepath.Join(s.Dir, "savepoints", CoverKey(gameKey)+"-"+strings.TrimPrefix(LocID(gameKey), "loc-"))
+	return filepath.Join(s.Dir, "savepoints", gameFileKey(gameKey))
+}
+
+// gameFileKey names a Library game's own file or folder: readable, and
+// unique for each key.
+func gameFileKey(key string) string {
+	return CoverKey(key) + "-" + strings.TrimPrefix(LocID(key), "loc-")
 }
 
 // cleanPointName keeps a point's name to one line of at most 60 characters.

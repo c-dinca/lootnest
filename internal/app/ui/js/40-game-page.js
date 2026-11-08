@@ -153,6 +153,7 @@
     refresh: gsvg('<path d="M15.75 10a5.75 5.75 0 1 1-1.68-4.07"/><path d="M15.75 3.75v3h-3"/>'),
     more: gsvg('<circle cx="5" cy="10" r="1.1"/><circle cx="10" cy="10" r="1.1"/><circle cx="15" cy="10" r="1.1"/>'),
     back: gsvg('<path d="M12 4.75 6.75 10 12 15.25"/>'),
+    next: gsvg('<path d="M8 4.75 13.25 10 8 15.25"/>'),
     swap: gsvg('<path d="M4 7h11.5M12.75 4.25 15.5 7l-2.75 2.75M16 13H4.5M7.25 10.25 4.5 13l2.75 2.75"/>'),
     tick: gsvg('<path d="M5 10.5l3.25 3.25L15 7"/>'),
     shield: gsvg('<path d="M10 3.25 15.5 5.5v4.25c0 3.25-2.25 5.75-5.5 7-3.25-1.25-5.5-3.75-5.5-7V5.5z"/>'),
@@ -290,7 +291,7 @@
     if (!page) return { top, bar, note, real };
     return `<div class="gpage ln-root${real ? "" : " no-art"}">${top}
       <div class="gpage-body">${bar}${note}
-        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${savePointsBlock(it)}${timelineBlock(it)}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
+        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${detailsBlock(it)}${savePointsBlock(it)}${timelineBlock(it)}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
       </div></div>`;
   }
   // The Manage panel: what you can do with a game besides playing it,
@@ -304,10 +305,12 @@
     return isOffline(it) ? gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="0"`, GI.globe, "Let it go online again", `Windows Firewall blocks ${n === 1 ? "its program" : n + " of its programs"}`)
       : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall blocks its connections");
   }
+  const detailsRow = (it) => (cfg().settings.gameDetails ? gpRow(`data-action="details-edit" ${itemAttr(it)}`, GI.edit, "Edit details", "Summary, developer, release date and genres", { disabled: !!(S.details[recentKey(it)] || {}).loading }) : "");
   function manageGroups(it) {
     if (it.kind === "found") {
       const f = it.f, grp = groupOf(it);
       return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", f.args ? `Name and launch options: <code>${esc(f.args)}</code>` : "Name and launch options"),
+        detailsRow(it),
         grp ? gpRow(`data-action="copies-apart" data-group="${esc(grp.key)}"`, GI.copy, "Show copies separately", `One entry in the Library for ${esc(storeNames({ copies: grp.copies }))}`) : ""])
         + gpGroup("Game files", [
           gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
@@ -324,7 +327,7 @@
       g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "When Steam's Play button starts it") : "",
       gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "How it starts, what profiles swap", { disabled: s }),
       gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "A friend's save, in a new run", { disabled: s || cfg().players.length >= MAX_PROFILES }),
-    ]) + gpGroup("Game files", [
+    ]) + gpGroup("Game", [detailsRow(it)]) + gpGroup("Game files", [
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
       gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Files from before each swap"),

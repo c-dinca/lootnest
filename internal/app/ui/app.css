@@ -553,6 +553,32 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-block .ln-facts dt > span { display: grid; gap: 1px; padding: var(--space-2) 0; }
 .gpage-block .ln-facts b { font-weight: 600; }
 
+/* Game details from Steam: the summary and screenshots beside the facts. */
+.gp-det-off { margin: 0; font-size: var(--text-meta); color: var(--fg-2); }
+.gpage-col > .gp-det-off:not(:first-child) { margin-top: calc(var(--gap-group) - var(--gap-section)); }
+.gp-det-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-8); align-items: start; }
+.gp-det-main { display: grid; gap: var(--space-2); justify-items: start; }
+.gpage-block .gp-det-sum { margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-body); color: var(--fg-1); }
+.gpage-block .gp-det-sum.open { display: block; }
+.gp-shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); width: 100%; margin-top: var(--space-2); }
+.gp-shot { position: relative; padding: 0; aspect-ratio: 16 / 9; overflow: hidden; border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-ctl); background: var(--glass-ctl); cursor: zoom-in; }
+.gp-shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity var(--dur-1) var(--ease-out); }
+.gp-shot:hover img { opacity: 0.8; }
+.gp-shot:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.gp-shot-more { position: absolute; inset: 0; display: grid; place-items: center; background: var(--scrim-modal); color: var(--fg-1); font-size: var(--text-body); font-weight: 650; }
+.gp-det-facts > div { grid-template-columns: auto minmax(0, 1fr); }
+.gpage-block .gp-det-facts dt { color: var(--fg-2); }
+.gpage-block .gp-det-facts dd { display: block; padding: var(--space-2) 0; text-align: right; color: var(--fg-1); }
+.gp-det-n { display: block; font-size: var(--text-meta); color: var(--fg-2); }
+@container (max-width: 600px) { .gp-det-cols { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); } .gp-shots { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* The screenshot viewer. */
+.dialog.shots { width: min(var(--shots-w), 100%); padding: var(--space-4); gap: var(--space-3); }
+.shots-head { display: flex; align-items: center; gap: var(--space-3); }
+.dialog .shots-head h2 { font: 650 var(--text-lead)/var(--lh-tight) var(--font-ui); letter-spacing: 0; }
+.shots-head .ln-num { font-size: var(--text-meta); color: var(--fg-2); }
+.shots-stage { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
+.shots-stage img { display: block; width: 100%; max-height: calc(100vh - 2 * var(--space-6) - var(--space-16) - var(--space-8)); aspect-ratio: 16 / 9; object-fit: contain; background: var(--bg-ground); border-radius: var(--radius-ctl); }
+
 
 
 @media (max-height: 760px) {

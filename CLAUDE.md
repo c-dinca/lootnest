@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.68.0, beta)
+## Where things stand (1.69.0, beta)
 
 These shipped recently, newest last:
 
@@ -440,6 +440,13 @@ These shipped recently, newest last:
   confirm to its right-hand A, PS/Home to Start, the touchpad to View;
   an Xbox twin's presses are dropped while a real pad holds a button
   (`realPad`). Harness `?pad=ds5|ds4|xbox|switch|generic`.
+
+- **1.69** Roadmap Game details 1 (`Settings.GameDetails`, off by
+  default): `core.FetchGameDetails` (appdetails and appreviews, plain text
+  via `HTMLText`), `details/<appid>.json` kept 30 days, the user's edits
+  in `details-edits/` always win (`MergeDetails`); fetched only when a
+  game's page opens (`ps_gameDetails`), never for the whole Library.
+  `detailsBlock`, a screenshot lightbox (`viewShots`), Edit details.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.
