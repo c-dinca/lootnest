@@ -14,6 +14,12 @@
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)
     sideSort: pref("sideSort", "name"), // name, recent or played
+    sideShow: pref("sideShow", "all"), // the sidebar's games: all, installed, fav, owned or "p:<profile id>"
+    sideSel: new Set(), // Library keys of the sidebar's selected rows (Ctrl and Shift+click)
+    sideAnchor: "",   // the row a Shift+click selects from
+    sideNew: null,    // the inline New collection field: {keys} of the games it gets
+    sideRename: "",   // the collection being renamed in place
+    tagPick: [],      // Library keys the Add to collection menu is for
     sideClosed: (() => { try { return new Set(JSON.parse(pref("sideClosed", "[]"))); } catch (e) { return new Set(); } })(),
     folded: pref("folded", "") === "1", // the sidebar folded to a rail
     achWho: {},       // Library key -> whose achievements are shown

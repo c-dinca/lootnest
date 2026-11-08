@@ -34,6 +34,26 @@
       if (!grp.classList.contains("closed")) { const r = grp.querySelector(".sg-rows"); r.classList.add("opening"); r.addEventListener("animationend", () => r.classList.remove("opening"), { once: true }); watchSideThumbs(); }
       $("#side-games").dataset.html = "";
     },
+    "tag-new"() { startNewTag([]); },
+    "tag-new-for"() { startNewTag(S.tagPick); },
+    "tag-menu"(el) { toggleMenu(el, tagMenuHTML(el.dataset.tag)); },
+    "tag-pick"() { const m = $("#ctx"); ctxAt(parseFloat(m.style.left) || 0, parseFloat(m.style.top) || 0, tagPickHTML()); },
+    "tag-toggle"(el) { if (el.dataset.on) removeFromTag(S.tagPick, el.dataset.tag); else addToTag(S.tagPick, el.dataset.tag); },
+    "tag-out"(el) { removeFromTag(S.tagPick, el.dataset.tag); },
+    "tag-rename"(el) {
+      if (S.folded) setFold(false);
+      S.sideNew = null; S.sideRename = el.dataset.tag; renderSideGames();
+      const i = $("#sg-rename"); if (i) { i.focus(); i.select(); }
+    },
+    "tag-move"(el) { tagOp({ op: "move", tag: el.dataset.tag, index: +el.dataset.index }); },
+    async "tag-delete"(el) {
+      const t = el.dataset.tag;
+      if (!(await confirmDialog({ title: `Delete ${t}?`, body: "The games stay in your Library.", ok: "Delete collection" }))) return;
+      if (!(await tagOp({ op: "delete", tag: t }))) return;
+      if (S.tag === t) S.tag = "";
+      if (BP.tag === t) BP.tag = "";
+      toast(`Deleted ${t}. Its games are still in your Library.`);
+    },
     "side-sort"() {
       const order = Object.keys(SIDE_SORTS);
       S.sideSort = order[(order.indexOf(S.sideSort) + 1) % order.length];
@@ -1040,8 +1060,8 @@
     // Ctrl+B folds the sidebar to a rail of icons, and opens it again.
     if (ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "b") { ev.preventDefault(); setFold(!S.folded); return; }
     // In the sidebar's games, the arrows move from game to game.
-    if ((ev.key === "ArrowDown" || ev.key === "ArrowUp") && (ev.target.closest && (ev.target.closest("#side-games") || ev.target.id === "side-q"))) {
-      const rows = [...document.querySelectorAll("#side-games .sg-group:not(.closed) .sg-row, #side-games .sg-head")];
+    if ((ev.key === "ArrowDown" || ev.key === "ArrowUp") && (ev.target.closest && ((ev.target.closest("#side-games") && !ev.target.matches(".sg-input")) || ev.target.id === "side-q"))) {
+      const rows = [...document.querySelectorAll("#side-games .sg-group:not(.closed) .sg-row, #side-games .sg-head, #side-games .sg-new")];
       const i = rows.indexOf(ev.target);
       const n = ev.target.id === "side-q" ? (ev.key === "ArrowDown" ? rows[0] : null) : rows[i + (ev.key === "ArrowDown" ? 1 : -1)];
       if (n) { ev.preventDefault(); n.focus(); n.scrollIntoView({ block: "nearest" }); }
@@ -1146,6 +1166,7 @@
     // Back and Forward, as in a browser: Alt+Left and Alt+Right, and
     // Backspace outside a text field.
     if (ev.altKey && !ev.ctrlKey && !ev.shiftKey && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) { ev.preventDefault(); goHist(ev.key === "ArrowLeft"); return; }
+    if (ev.key === "Delete" && sideRemoveKey(ev)) return;
     if (ev.key === "Backspace" && !ev.altKey && !ev.ctrlKey && !ev.target.closest("input, textarea, select, [contenteditable]")) { ev.preventDefault(); goHist(true); return; }
     if (ev.key === "Enter" && S.dialog && S.dialog.kind === "welcome" && ev.target.dataset.field === "pname") savePlayers(true);
     if (ev.key === "Enter" && ev.target.id === "rs-pw") actions["restore-pw"]();

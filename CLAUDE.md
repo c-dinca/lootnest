@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.75.0, beta)
+## Where things stand (1.76.0, beta)
 
 These shipped recently, newest last:
 
@@ -510,6 +510,16 @@ These shipped recently, newest last:
   sounds (`uiSound`, half Big Picture's gain, one per action, never while
   playing or with Sounds off). Next: 1.76 collections in the sidebar
   with drag and drop.
+
+- **1.76** The owner's Steam-like shell, part 2: the sidebar's menu
+  (`#side-show`: All games, Installed, Favourites, Not installed, Played
+  by a profile), collections as folders in the user's order
+  (`Config.TagOrder`, built-in `FavouritesTag`; `core/tags.go`
+  `Collections`, `AddToTag`, `RemoveFromTag`, `RenameTag` merging,
+  `DeleteTag` keeping games, `MoveTag`; `ps_tagOp`), New collection
+  inline, pointer drag and drop (`sideDrag`; Shift moves; folder
+  reorder), Ctrl/Shift selection, Delete takes out of a folder with Undo,
+  and Add to collection in every game's right-click menu.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

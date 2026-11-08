@@ -712,7 +712,7 @@ func TestCollections(t *testing.T) {
 	if err := c.SetTags("steam:1", nil); err != nil || c.Tags["steam:1"] != nil {
 		t.Fatal("taken out of all")
 	}
-	if _, err := CleanTags([]string{strings.Repeat("x", 25)}); err == nil {
+	if _, err := CleanTags([]string{strings.Repeat("x", MaxTagName+1)}); err == nil {
 		t.Fatal("too long")
 	}
 	e := ShelfEntry{Status: "complete"}

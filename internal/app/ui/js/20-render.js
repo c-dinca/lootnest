@@ -161,17 +161,17 @@
   function backdropForView() { clearTimeout(bdTimer); setBackdrop(defaultBackdrop()); }
 
   // ---------------------------------------------------------- right-click --
-  function contextItems(it) {
+  function contextItems(it, host) {
     const g = it.g, f = it.f;
     const attr = itemAttr(it);
-    if (it.kind === "owned") return [storeItem(it, "install"), `<button data-action="open-sheet" ${attr}>Open the game's page</button>`];
+    if (it.kind === "owned") return [storeItem(it, "install"), `<button data-action="open-sheet" ${attr}>Open the game's page</button>`, "<hr>", ...collectionItems(it, host)];
     const s = g && session(g.id);
     const items = [];
     if (!s) {
       if (g) cfg().players.forEach((p) => items.push(`<button data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>Play as ${esc(p.name)}</button>`));
       else items.push(`<button data-action="play-found" ${attr}>${icon.play}Play</button>`);
     }
-    items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, "<hr>");
+    items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, ...collectionItems(it, host), "<hr>");
     if (g) items.push(`<button data-action="edit-game" ${attr} ${s ? "disabled" : ""}>Edit game</button>`);
     else items.push(`<button data-action="game-settings" ${attr}>Game settings</button>`);
     items.push(`<button data-action="open-game-folder" ${attr}>Open the game's folder</button>`,
@@ -183,13 +183,14 @@
     return [...items, `<button class="danger" data-action="found-hide" ${attr}>${f.added ? "Remove from the Library" : "Hide from the Library"}</button>`,
       storeActs(it).includes("uninstall") ? storeItem(it, "uninstall") : "", removable(it) ? `<button class="danger" data-action="remove-pc" ${attr}>Remove from this PC</button>` : ""];
   }
-  function openContext(ev, it) {
+  function openContext(ev, it, host) { ctxAt(ev.clientX, ev.clientY, `<div class="ctx-title">${esc(it.name)}</div>${contextItems(it, host).join("")}`); }
+  function ctxAt(x, y, html) {
     const m = $("#ctx");
     if (ctxFrom) closeContext();
-    m.innerHTML = `<div class="ctx-title">${esc(it.name)}</div>${contextItems(it).join("")}`;
+    m.innerHTML = html;
     m.hidden = false;
-    m.style.left = Math.min(ev.clientX, innerWidth - m.offsetWidth - 8) + "px";
-    m.style.top = Math.min(ev.clientY, innerHeight - m.offsetHeight - 8) + "px";
+    m.style.left = Math.max(8, Math.min(x, innerWidth - m.offsetWidth - 8)) + "px";
+    m.style.top = Math.max(8, Math.min(y, innerHeight - m.offsetHeight - 8)) + "px";
     m.style.transformOrigin = "0 0";
     const first = m.querySelector("button:not(:disabled)");
     if (first) first.focus({ preventScroll: true });
@@ -203,12 +204,14 @@
     ctxFrom = null;
   }
   document.addEventListener("contextmenu", (ev) => {
+    const folder = ev.target.closest("#side-games .sg-folder:not(.is-fav) .sg-headrow");
+    if (folder && folder.querySelector(".sg-head")) { ev.preventDefault(); ctxAt(ev.clientX, ev.clientY, tagMenuHTML(folder.parentNode.dataset.tag)); uiSound("open"); return; }
     const host = ev.target.closest(".card, .lib-cap, .lib-row, .sg-row, .ln-tile, .tn-card, .now-card");
     if (!host || S.picker || BP.on) return;
     const it = itemFor(host.matches("[data-game], [data-key]") ? host : host.querySelector("[data-game], [data-key]"));
     if (!it) return;
     ev.preventDefault();
-    openContext(ev, it);
+    openContext(ev, it, host);
     uiSound("open");
   });
   document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest("#ctx") && !(ctxFrom && ctxFrom.contains(ev.target))) closeContext(); }, true);

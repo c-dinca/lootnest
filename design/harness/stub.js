@@ -167,7 +167,7 @@
   let FIRSTP = FIRST && [{ id: "p1", name: "Cris", color: "#6C9BD2" }]; // until Continue saves it
   const state = () => ({
     version: "1.45.0", stage: "beta", safe: q.get("safe") === "1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, offline: OFFLINE },
+    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, tagOrder: TAGORDER, offline: OFFLINE },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
@@ -223,7 +223,42 @@
   ];
 
   const TAGS = { "game:cs2": ["Co-op", "Shooters"], "game:ittakestwo": ["Co-op", "For the kids"], "steam:413150": ["Co-op", "Weekend", "For the kids"],
-    "steam:1091500": ["Weekend"], "dir:c:\\games\\hades ii": ["Weekend"], "dir:c:\\gog games\\hollow knight": ["Weekend"], "game:bg3": ["Co-op", "Weekend"] };
+    "steam:1091500": ["Weekend"], "dir:c:\\games\\hades ii": ["Weekend", "Favourites"], "dir:c:\\gog games\\hollow knight": ["Weekend"], "game:bg3": ["Co-op", "Weekend", "Favourites"] };
+  // As core's tags.go: Favourites first, then the user's order, then any only on games.
+  let TAGORDER = [];
+  const FAVT = "Favourites";
+  const tagList = () => {
+    const seen = new Set(), out = [];
+    const add = (t) => { if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); out.push(t); } };
+    [FAVT, ...TAGORDER].forEach(add);
+    Object.values(TAGS).flat().sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : 1)).forEach(add);
+    return out;
+  };
+  const tagNamed = (n) => tagList().find((t) => t.toLowerCase() === String(n || "").trim().toLowerCase()) || "";
+  const dropTag = (k, n) => { const ts = (TAGS[k] || []).filter((t) => t !== n); if (ts.length) TAGS[k] = ts; else delete TAGS[k]; };
+  const tagOp = (o) => {
+    TAGORDER = tagList().slice(1);
+    const name = String(o.tag || "").trim().replace(/\s+/g, " "), have = tagNamed(name), keys = o.keys || [];
+    if (o.op === "add") {
+      if (!name) return Promise.reject("Give the collection a name.");
+      const t = have || name;
+      if (!have) TAGORDER.push(t);
+      keys.forEach((k) => { if (!(TAGS[k] || []).includes(t)) TAGS[k] = (TAGS[k] || []).concat([t]); });
+      if (o.from) keys.forEach((k) => dropTag(k, tagNamed(o.from)));
+      return ok();
+    }
+    if (!have) return Promise.reject("That collection doesn't exist.");
+    if (have === FAVT && o.op !== "remove") return Promise.reject("Favourites stays as it is.");
+    if (o.op === "remove") keys.forEach((k) => dropTag(k, have));
+    else if (o.op === "delete") { Object.keys(TAGS).forEach((k) => dropTag(k, have)); TAGORDER = TAGORDER.filter((t) => t !== have); }
+    else if (o.op === "move") { const rest = TAGORDER.filter((t) => t !== have); rest.splice(Math.max(0, Math.min(o.index, rest.length)), 0, have); TAGORDER = rest; }
+    else if (o.op === "rename") {
+      const to = String(o.to || "").trim(), onto = tagNamed(to), n = onto && onto !== have ? onto : to;
+      TAGORDER = n === onto && onto !== have ? TAGORDER.filter((t) => t !== have) : TAGORDER.map((t) => (t === have ? n : t));
+      Object.keys(TAGS).forEach((k) => { if (TAGS[k].includes(have)) { if (n !== have && TAGS[k].includes(n)) dropTag(k, have); else TAGS[k] = TAGS[k].map((t) => (t === have ? n : t)); } });
+    }
+    return ok();
+  };
   const emit = (ev, delay) => setTimeout(() => window.__ps && window.__ps(ev), delay || 40);
   const ok = (v) => Promise.resolve(v);
   const never = () => new Promise(() => {});
@@ -376,6 +411,7 @@
     },
     ps_log: () => ok("10:42 Launched Counter-Strike 2 for Mihai\n10:20 Saved Cristian's files for It Takes Two"),
     ps_setTags: (key, tags) => { if (tags.length) TAGS[key] = tags; else delete TAGS[key]; return ok(); },
+    ps_tagOp: tagOp,
     ps_setShelf: (pid, key, patch) => { shelf[pid] = shelf[pid] || {}; const e = { ...shelf[pid][key], ...patch, updated: new Date().toISOString() }; if (e.status || e.rating || e.note || e.offset) shelf[pid][key] = e; else delete shelf[pid][key]; return ok(); },
     // Saving profiles gives new ones an id, as Go does.
     ps_savePlayers: (list) => { FIRSTP = null; PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },

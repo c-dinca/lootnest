@@ -221,6 +221,7 @@
       }
       case "owned": {
         S.owned = ev.games || [];
+        renderSideGames();
         if (S.view === "library" || S.view === "game" && S.page && S.page.kind === "owned") render();
         break;
       }

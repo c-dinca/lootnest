@@ -117,3 +117,43 @@ func (a *App) apiSetTags(key string, tags []string) error {
 	}
 	return a.saveConfig(cfg)
 }
+
+// tagOp is one change to the collections, from the sidebar.
+type tagOp struct {
+	Op    string   `json:"op"` // add, remove, rename, delete, move
+	Tag   string   `json:"tag"`
+	Keys  []string `json:"keys,omitempty"`
+	From  string   `json:"from,omitempty"` // add: then take the games out of this one (a move)
+	To    string   `json:"to,omitempty"`   // rename
+	Index int      `json:"index,omitempty"`
+}
+
+// apiTagOp changes the collections and saves once. Deleting one only takes
+// its label off the games.
+func (a *App) apiTagOp(o tagOp) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	var err error
+	switch o.Op {
+	case "add":
+		err = cfg.AddToTag(o.Keys, o.Tag)
+		if err == nil && o.From != "" {
+			err = cfg.RemoveFromTag(o.Keys, o.From)
+		}
+	case "remove":
+		err = cfg.RemoveFromTag(o.Keys, o.Tag)
+	case "rename":
+		err = cfg.RenameTag(o.Tag, o.To)
+	case "delete":
+		err = cfg.DeleteTag(o.Tag)
+	case "move":
+		err = cfg.MoveTag(o.Tag, o.Index)
+	default:
+		err = errors.New("unknown collection change")
+	}
+	if err != nil {
+		return err
+	}
+	return a.saveConfig(cfg)
+}

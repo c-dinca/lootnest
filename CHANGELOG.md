@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.76.0
+
+- The sidebar works like Steam's library. The menu at its top picks which games it lists: All games, Installed, Favourites, Not installed, or the games one profile has played or has files for.
+- Your collections are folders in the sidebar, each with its count, under Recent. Click one to fold or open it; Lootnest remembers which are folded.
+- Drag a game onto a collection to add it. It stays in its other collections; hold Shift as you drop to move it out of the one you dragged it from. Drag a collection's name to change the order. Esc cancels a drag.
+- Ctrl+click picks several games and Shift+click a run of them; drag any of them to move them all. Delete takes the picked games out of the collection they're in. They stay in your Library, and Undo puts them back.
+- New collection, under your collections, asks for a name right there. Drop games on it to make a collection with them.
+- Right-click a collection, or use the More button beside its name, to rename it, move it up or down, or delete it. Deleting a collection only takes its name off the games: every game stays in your Library. Renaming one to the name of another puts the two together, after asking.
+- Every game's right-click menu has Add to collection, with a tick by the ones it's in. Favourites is always there and always first.
+- The Library's collection shelves and Big Picture's Collections follow the order you choose. Collection names can be up to 40 characters.
+
 ## 1.75.0
 
 - A bar across the top of the window, as in Steam: Home, Library, Store, Updates, Achievements and Cloud saves as tabs, with a line under the one you're on that moves when you change. Back and Forward sit beside them, and the search (Ctrl+K) is in the bar on every page.
