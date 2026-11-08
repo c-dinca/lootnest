@@ -278,6 +278,7 @@ type FoundState struct {
 	Refreshing bool              `json:"refreshing"` // a scan is updating the saved library
 	Games      []core.FoundGame  `json:"games"`
 	Hidden     map[string]string `json:"hidden"` // names of hidden games the library still has, by key
+	Groups     []core.CopyGroup  `json:"groups"` // the same game from more than one store, shown once
 }
 
 func (a *App) apiFound() FoundState {
@@ -288,6 +289,7 @@ func (a *App) apiFound() FoundState {
 	for _, k := range a.cfg.IgnoredFound {
 		ignored[k] = true
 	}
+	separate, primary := a.cfg.Separate, a.cfg.Primary
 	a.mu.Unlock()
 	hidden := map[string]string{}
 	for _, f := range list {
@@ -295,7 +297,38 @@ func (a *App) apiFound() FoundState {
 			hidden[f.Key] = f.Name
 		}
 	}
-	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: a.visibleFound(list), Hidden: hidden}
+	games := a.visibleFound(list)
+	groups := core.GroupCopies(games, separate, primary, a.store.LoadRecent())
+	if groups == nil {
+		groups = []core.CopyGroup{}
+	}
+	return FoundState{Scanning: scanning && len(list) == 0, Refreshing: scanning, Games: games, Hidden: hidden, Groups: groups}
+}
+
+// apiSetPrimaryCopy chooses the copy Start with uses for a game from more
+// than one store.
+func (a *App) apiSetPrimaryCopy(group, key string) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	if cfg.Primary == nil {
+		cfg.Primary = map[string]string{}
+	}
+	cfg.Primary[group] = key
+	return a.saveConfig(cfg)
+}
+
+// apiSeparateCopies shows a game's copies from each store on their own
+// (apart), or as one game again.
+func (a *App) apiSeparateCopies(group string, apart bool) error {
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	cfg.Separate = withoutKey(cfg.Separate, group)
+	if apart {
+		cfg.Separate = append(cfg.Separate, group)
+	}
+	return a.saveConfig(cfg)
 }
 
 func (a *App) apiScan() { a.startScan() }

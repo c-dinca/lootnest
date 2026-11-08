@@ -197,6 +197,11 @@ type Config struct {
 	// Offline: games kept from going online by Windows Firewall rules
 	// Lootnest made (Library key -> the programs blocked), core/offline.go.
 	Offline map[string][]string `json:"offline,omitempty"`
+	// Primary: for a game from more than one store (core/dupes.go), the
+	// copy Start with uses (group key -> Library key).
+	Primary map[string]string `json:"primary,omitempty"`
+	// Separate: the group keys of games the user shows as separate copies.
+	Separate []string `json:"separate,omitempty"`
 }
 
 // LibraryPref is what the user changed about a Library game that has no

@@ -44,6 +44,8 @@
     sources: () => call("ps_sources"),
     ignoreFound: (k) => call("ps_ignoreFound", k),
     unhideFound: (k) => call("ps_unhideFound", k),
+    setPrimaryCopy: (group, key) => call("ps_setPrimaryCopy", group, key),
+    separateCopies: (group, apart) => call("ps_separateCopies", group, !!apart),
     addFound: (keys) => call("ps_addFound", keys),
     foundGame: (k) => call("ps_foundGame", k),
     applyHooks: (restart) => call("ps_applyHooks", restart),
@@ -639,13 +641,13 @@
     const host = el && el.closest("[data-game], [data-key]");
     if (!host) return null;
     const id = host.dataset.game || host.dataset.key, kind = host.dataset.game ? "game" : "found";
-    return libraryItems().find((x) => x.kind === kind && x.id === id) || null;
+    return everyItem().find((x) => x.kind === kind && x.id === id) || null;
   }
   // The colours change when a game is chosen, not as the pointer passes:
   // Home takes the game played last, a game's page that game, and the
   // Library the game opened last.
   function defaultBackdrop() {
-    const find = (p) => p && libraryItems().find((x) => x.kind === p.kind && x.id === p.id);
+    const find = (p) => p && everyItem().find((x) => x.kind === p.kind && x.id === p.id);
     if (S.view === "game" && S.page) return artOf(find(S.page));
     if (S.view === "home") return artOf(recentItems(libraryItems(), false)[0]);
     if (S.view === "library") return artOf(find(S.selected));
@@ -813,7 +815,7 @@
       const playLabel = it.g ? (seat ? `Play as ${esc(seat.name)}` : "Play") : "Play";
       return `<div class="bp-detail">
         <div class="bp-detail-text">${logo ? `<img class="bp-logo" src="${logo}" alt="${esc(it.name)}">` : `<h1>${esc(it.name)}</h1>`}
-          <p class="bp-meta">${[esc(sourceLabel(it.source)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : ""].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
+          <p class="bp-meta">${[esc(storeNames(it)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : ""].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
           <div class="bp-actions"><button class="bp-btn bp-btn--primary" data-bp data-bpid="play" data-go="play" data-k="${esc(bpKey(it))}">${GI.play}${playLabel}</button>
             ${it.g && cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="playas" data-go="choose" data-k="${esc(bpKey(it))}">${glyph("Y")}Play as someone else</button>` : ""}
             ${bpRunning(it) ? `<button class="bp-btn" data-bp data-bpid="close" data-go="close-game" data-k="${esc(bpKey(it))}">${glyph("X")}Close the game</button>` : ""}
@@ -1114,7 +1116,7 @@
   // notes over games. A Steam profile game's folder is its scanned one's.
   function cue(kind, key) {
     if (cfg().settings.soundsOff) return;
-    const it = libraryItems().find((x) => recentKey(x) === key);
+    const it = everyItem().find((x) => recentKey(x) === key);
     const dir = it && (it.f ? it.f.dir : it.exe || ((S.found.games || []).find((f) => it.appId && f.appId === it.appId) || {}).dir);
     if (!dir) { playSound(kind); return; }
     const f = S.facts[key];
@@ -1148,7 +1150,7 @@
     if (!box) return;
     const all = libraryItems();
     const cur = S.view === "game" && S.page ? S.page : null;
-    const isCur = (it) => cur && cur.kind === it.kind && cur.id === it.id;
+    const isCur = (it) => cur && cur.kind === it.kind && copiesOf(it).some((c) => c.id === cur.id);
     const group = (id, title, list, opts = {}) => {
       if (!list.length) return "";
       const closed = !opts.open && S.sideClosed.has(id);
@@ -1277,8 +1279,9 @@
   const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra"];
   const filterOf = (src) => (LAUNCHERS.includes(src) ? src : "other");
 
-  // Every game on the PC: the ones with profiles, then everything the scan found.
-  function libraryItems() {
+  // Every game on the PC: the ones with profiles, then everything the scan
+  // found, each copy of a game from more than one store on its own.
+  function everyItem() {
     const items = cfg().games.map((g) => ({
       kind: "game", id: g.id, name: g.name, appId: g.launch.type === "steam" ? g.launch.appId : 0,
       source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", exe: g.launch.type !== "steam" ? g.launch.exe || "" : "", g,
@@ -1286,13 +1289,36 @@
     (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, exe: f.appId ? "" : f.exe || "", f }));
     return items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
   }
+  // The Library as shown: a game from more than one store once, as its
+  // primary copy, with every copy in copies. Each copy keeps its own key.
+  function libraryItems() {
+    const all = everyItem(), drop = new Set();
+    copyGroups(all).forEach((grp) => {
+      grp.primary.copies = grp.copies; grp.primary.group = grp.key;
+      grp.copies.forEach((c) => { if (c !== grp.primary) drop.add(c); });
+    });
+    return all.filter((it) => !drop.has(it));
+  }
+  // The scan's groups as items of all: { key, primary, copies }.
+  function copyGroups(all) {
+    const by = new Map(all.filter((it) => it.kind === "found").map((it) => [it.id, it]));
+    return (S.found.groups || []).map((grp) => ({ key: grp.key, primary: by.get(grp.primary), copies: grp.keys.map((k) => by.get(k)).filter(Boolean) }))
+      .filter((grp) => grp.primary && grp.copies.length > 1);
+  }
+  // The group a found game's copy is in, else null.
+  const groupOf = (it) => (it.kind === "found" && copyGroups(everyItem()).find((grp) => grp.copies.some((c) => c.id === it.id))) || null;
+  const copiesOf = (it) => it.copies || [it];
+  const andList = (list) => new Intl.ListFormat("en", { type: "conjunction" }).format(list);
+  const storeNames = (it) => andList(copiesOf(it).map((c) => sourceLabel(c.source)));
+  // A small neutral mark per store a game is in.
+  const storeMarks = (it) => it.copies ? `<span class="lib-stores">${it.copies.map((c) => `<span class="ln-tag">${esc(sourceLabel(c.source))}</span>`).join("")}</span>` : esc(sourceLabel(it.source));
 
   function shownItems() {
     const q = S.q.trim().toLowerCase();
     const list = libraryItems().filter((it) => {
       if (q && !it.name.toLowerCase().includes(q)) return false;
       if (S.filter === "profiles" && it.kind !== "game") return false;
-      if (S.store !== "all" && filterOf(it.source) !== S.store) return false;
+      if (S.store !== "all" && !copiesOf(it).some((c) => filterOf(c.source) === S.store)) return false;
       if (S.tag && !tagsOf(it).includes(S.tag)) return false;
       if (S.status) {
         const pid = S.who || (seated() || {}).id;
@@ -1309,16 +1335,19 @@
   // Collections (the user's own, for everyone) and each profile's status.
   const STATUSES = [["playing", "Playing"], ["next", "Up next"], ["finished", "Finished"], ["complete", "100%"], ["stopped", "Dropped"]];
   const statusName = (k) => (STATUSES.find((x) => x[0] === k) || [k, k])[1];
-  const tagsOf = (it) => (cfg().tags || {})[recentKey(it)] || [];
+  // A game from more than one store: in every copy's collections, with the
+  // primary copy's status first, then the others', and the best rating.
+  const tagsOf = (it) => [...new Set(copiesOf(it).flatMap((c) => (cfg().tags || {})[recentKey(c)] || []))];
   const allTags = () => [...new Set(Object.values(cfg().tags || {}).flat())].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   const shelfAt = (pid, key) => ((S.d.shelf || {})[pid] || {})[key] || {};
   const shelfOf = (it, pid) => shelfAt(pid, recentKey(it));
-  const statusOf = (it, pid) => shelfOf(it, pid).status || "";
+  const statusOf = (it, pid) => shelfOf(it, pid).status || copiesOf(it).map((c) => shelfOf(c, pid).status).find(Boolean) || "";
+  const rateOf = (it, pid) => Math.max(0, ...copiesOf(it).map((c) => shelfOf(c, pid).rating || 0));
   // A game's rating in the Library: from the profile it's filtered to or the
   // seated one, else the best any profile gave, as the Status filter does.
   const ratingOf = (it) => {
     const pid = S.who || (seated() || {}).id;
-    return pid ? shelfOf(it, pid).rating || 0 : Math.max(0, ...cfg().players.map((p) => shelfOf(it, p.id).rating || 0));
+    return pid ? rateOf(it, pid) : Math.max(0, ...cfg().players.map((p) => rateOf(it, p.id)));
   };
   const starsHTML = (n) => n ? `<span class="stars" role="img" aria-label="${n} of 5 stars">${[1, 2, 3, 4, 5].map((i) => `<span${i <= n ? ' class="on"' : ""}>${GI.star}</span>`).join("")}</span>` : "";
   // Changes the fields in patch of a profile's take on a game; the others stay.
@@ -1354,10 +1383,11 @@
     if (!r || !pid) return "";
     return (r.players || {})[pid] || (r.player === pid ? r.at : "");
   }
-  const playedAt = (it) => { const r = (S.d.recent || {})[recentKey(it)]; return r ? new Date(r.at).getTime() : 0; };
+  // For a game from more than one store, across its copies (display only).
+  const playedAt = (it) => Math.max(...copiesOf(it).map((c) => { const r = (S.d.recent || {})[recentKey(c)]; return r ? new Date(r.at).getTime() : 0; }));
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
-  const totalPlayed = (it) => Object.values(playtimeOf(it)).reduce((a, b) => a + b, 0);
-  const steamTime = (it) => (S.d.steamTime || {})[recentKey(it)] || 0;
+  const totalPlayed = (it) => copiesOf(it).reduce((n, c) => n + Object.values(playtimeOf(c)).reduce((a, b) => a + b, 0), 0);
+  const steamTime = (it) => copiesOf(it).reduce((n, c) => n + ((S.d.steamTime || {})[recentKey(c)] || 0), 0);
   // How much a game has been played: Lootnest's own count, or Steam's.
   const playedText = (it) => totalPlayed(it) ? hours(totalPlayed(it)) + " played in all" : steamTime(it) ? hours(steamTime(it)) + " on Steam" : "";
   function hours(sec) {
@@ -1371,7 +1401,7 @@
     const withProfiles = cfg().games.length;
     const scanning = S.found.scanning;
     const refreshing = S.found.refreshing;
-    const have = new Set(all.map((it) => filterOf(it.source)));
+    const have = new Set(all.flatMap((it) => copiesOf(it).map((c) => filterOf(c.source))));
     const stores = [["all", "All stores"], ...LAUNCHERS.filter((k) => have.has(k) || S.store === k).map((k) => [k, sourceLabel(k)]),
       ...(have.has("other") || S.store === "other" ? [["other", "Other"]] : [])];
     const head = `<header class="lib-head"><div class="lib-title"><h1>Library</h1>
@@ -1477,8 +1507,8 @@
   // Library to it. Same rules as Recent games for when they show.
   function collectionShelves(all) {
     if (S.filter !== "all" || S.who || S.store !== "all" || S.tag || S.status) return "";
-    const tags = cfg().tags || {}, by = {};
-    all.forEach((it) => (tags[recentKey(it)] || []).forEach((t) => (by[t] = by[t] || []).push(it)));
+    const by = {};
+    all.forEach((it) => tagsOf(it).forEach((t) => (by[t] = by[t] || []).push(it)));
     const names = Object.keys(by).filter((t) => by[t].length >= 4).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b, undefined, { sensitivity: "base" }));
     if (!names.length) return "";
     // The three largest of four games or more; the rest are in the Library's collections menu.
@@ -1550,7 +1580,7 @@
 
   // "Mihai, yesterday": who played it last, in their colour.
   function playedBy(it) {
-    const r = (S.d.recent || {})[recentKey(it)];
+    const r = copiesOf(it).map((c) => (S.d.recent || {})[recentKey(c)]).filter(Boolean).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
     if (!r) return `<span class="by">${esc(sourceLabel(it.source))}</span>`;
     const p = r.player && player(r.player);
     return p ? `<span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span><span class="by">${esc(p.name)}, ${esc(ago(r.at))}</span>` : `<span class="by">${esc(cap(ago(r.at)))}</span>`;
@@ -1755,7 +1785,7 @@
       : `<button class="ln-button ln-button--primary ln-button--sm lib-row-play" data-action="${g ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
     return `<div class="lib-row${s ? " busy" : ""}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
         <span class="lib-row-thumb">${thumb}</span>
-        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}${starsHTML(ratingOf(it))}</small></span>
+        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${storeMarks(it)}${starsHTML(ratingOf(it))}</small></span>
         <span class="lib-row-cell">${playedAt(it) ? playedBy(it) : '<span class="lib-row-dim">Never</span>'}</span>
         <span class="lib-row-cell ln-num">${t ? esc(hours(t)) : '<span class="lib-row-dim">None</span>'}</span>
         <span class="lib-row-cell lib-row-prof">${prof}</span></button>${play}</div>`;
@@ -1802,7 +1832,7 @@
     const bars = owners.length ? `<div class="ln-tile__owners" aria-hidden="true">${owners.map((p) => `<span class="ln-player" style="--player:${esc(p.color)}"${p.id === owner ? " data-loaded" : ""}></span>`).join("")}</div>` : "";
     const badge = s ? `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>` : "";
     const meta = owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
-      : g ? "Profiles on" : esc(sourceLabel(it.source));
+      : g ? "Profiles on" : storeMarks(it);
     const attr = itemAttr(it);
     return `<div class="card lib-card${s ? " busy" : ""}">
       <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}</div>
@@ -1950,7 +1980,7 @@
     const D = S.dialog;
     const n = ((S.news[D.key] || {}).items || [])[D.i];
     if (!n) return "";
-    const it = libraryItems().find((x) => coverKey(x) === D.key);
+    const it = everyItem().find((x) => coverKey(x) === D.key);
     return `<div class="scrim" data-action="scrim"><article class="dialog reader" role="dialog" aria-modal="true" aria-label="${esc(n.title)}">
       <header class="reader-head"><div>
         <p class="reader-meta">${n.update ? '<span class="dot"></span>Update' : "News"}<span>${esc(new Date(n.date).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }))}</span>${it ? `<span>${esc(it.name)}</span>` : ""}</p>
@@ -2058,7 +2088,7 @@
 
   function viewGame() {
     const P = S.page;
-    const it = P && libraryItems().find((x) => x.kind === P.kind && x.id === P.id);
+    const it = P && everyItem().find((x) => x.kind === P.kind && x.id === P.id);
     if (!it) { S.view = "library"; return viewLibrary(); }
     return gameView(it, true);
   }
@@ -2087,6 +2117,10 @@
       const stats = [st ? gpStat(hoursValue(st), "Steam account") : ""].join("");
       const turnOn = (kind) => `<button class="ln-button ln-button--${kind}" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}${solo() ? "Keep runs" : "Turn on profiles"}</button>`;
       const t = totalPlayed(it) || st;
+      // A game from more than one store: which copy starts, and the others.
+      const grp = page && groupOf(it);
+      const startWith = grp ? `<button class="ln-button ln-button--ghost" data-action="start-with" data-key="${esc(f.key)}" aria-haspopup="menu">${GI.swap}Start with</button>` : "";
+      const also = grp ? `<p class="gpage-note">${GI.copy}<span>Also in ${andList(grp.copies.filter((c) => c.id !== it.id).map((c) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(c.id)}" title="${esc(c.f.dir || "")}">${esc(sourceLabel(c.source))}</button>`))}. Each copy keeps its own saves and play time.</span></p>` : "";
       // Home: Play, when it was played, and the way to turn profiles on.
       if (!page) bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
@@ -2095,9 +2129,9 @@
       else bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
         <div class="gpage-state">${solo() ? `<b>One set of saves</b><span>Keep runs for more than one playthrough</span>` : `<b>Profiles off</b><span>Everyone shares the same settings and saves</span>`}</div>
-        <div class="gpage-others">${turnOn("secondary")}</div>
+        <div class="gpage-others">${startWith}${turnOn("secondary")}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = page ? dlNote(it) + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + antiCheatNote(it) : "";
+      note = page ? also + dlNote(it) + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + antiCheatNote(it) : "";
       side = page ? playersPanel(it) + collectionsBlock(it) + gameSavesBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
@@ -2156,8 +2190,9 @@
   }
   function manageGroups(it) {
     if (it.kind === "found") {
-      const f = it.f;
-      return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", f.args ? `Name and launch options: <code>${esc(f.args)}</code>` : "Name and launch options")])
+      const f = it.f, grp = groupOf(it);
+      return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", f.args ? `Name and launch options: <code>${esc(f.args)}</code>` : "Name and launch options"),
+        grp ? gpRow(`data-action="copies-apart" data-group="${esc(grp.key)}"`, GI.copy, "Show copies separately", `One entry in the Library for ${esc(storeNames({ copies: grp.copies }))}`) : ""])
         + gpGroup("Game files", [
           gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
           f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam replaces missing or damaged files") : "",
@@ -2187,7 +2222,7 @@
   const drawer = (o) => `<div class="scrim ln-drawer-scrim" data-action="scrim"><aside class="ln-drawer ln-root${o.wide ? " ln-drawer--wide" : ""}" tabindex="-1" role="dialog" aria-modal="true" aria-label="${o.label}"${o.menu ? " data-menu" : ""}>
       <header class="ln-drawer__head"><div><h2>${o.title}</h2>${o.sub ? `<p>${o.sub}</p>` : ""}</div><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="dialog-cancel" aria-label="Close">${GI.x}</button></header>
       <div class="ln-drawer__body">${o.body}</div>${o.foot ? `<footer class="ln-drawer__foot">${o.foot}</footer>` : ""}</aside></div>`;
-  const dialogItem = (D) => libraryItems().find((x) => x.kind === D.ik && x.id === D.iid) || null;
+  const dialogItem = (D) => everyItem().find((x) => x.kind === D.ik && x.id === D.iid) || null;
   // Try a save: someone else's save in a new run, never over anyone's files.
   function viewTrySave(D) {
     const g = game(D.gameId);
@@ -2945,11 +2980,11 @@
     const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc(p.name.trim().charAt(0).toUpperCase());
     return `<span class="avatar ln-player ${cls || ""}" style="--c:${esc(p.color)}" aria-hidden="true">${inner}</span>`;
   };
-  const itemByKey = (k) => libraryItems().find((it) => recentKey(it) === k || it.id === k);
+  const itemByKey = (k) => everyItem().find((it) => recentKey(it) === k || it.id === k);
   const itemAttr = (it) => (it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`);
 
   function playerStats(p) {
-    const items = libraryItems();
+    const items = everyItem();
     let total = 0, top = null, topT = 0, played = 0;
     items.forEach((it) => { const t = (playtimeOf(it) || {})[p.id] || 0; total += t; if (t) played++; if (t > topT) { top = it; topT = t; } });
     // Their own last time in each game, not whoever played it last.
@@ -3717,7 +3752,7 @@
   // version against the latest, and beside it what needs a look.
   const vtxt = (v) => (v ? (v.startsWith("build ") ? "Build " + v.slice(6) : v) : "");
   const verIn = (t) => { const m = (t || "").match(/(?:^|[^a-z0-9])v?(\d+(?:\.\d+){1,3}[a-z]?)(?![\d.])/i) || (t || "").match(/\bbuild[\s._-]*(\d{4,})/i); return m ? (/build/i.test(m[0]) ? "build " + m[1] : m[1]) : ""; };
-  const updItem = (key) => libraryItems().find((x) => updKey(x) === key) || null;
+  const updItem = (key) => everyItem().find((x) => updKey(x) === key) || null;
   function updState(r, U) {
     const last = (r.applied || []).find((u) => u.state === "applied");
     if (last && last.broke) return { k: "low", text: "Closed right after starting" };
@@ -3908,7 +3943,7 @@
     let i = -1;
     const opt = (inner, extra = "") => { i++; return `<button class="gq-item${i === S.gq.sel ? " is-sel" : ""}" role="option" aria-selected="${i === S.gq.sel}" data-action="gq-open" data-i="${i}" ${extra}>${inner}</button>`; };
     const mine = items.filter((x) => x.mine), store = items.filter((x) => x.hit);
-    const mineHTML = mine.length ? `<div class="gq-group"><span class="gq-label">Your games</span>${mine.map((m) => opt(`<span class="gq-name">${esc(m.mine.name)}</span><span class="gq-meta">${esc(m.mine.kind === "game" ? "Profiles on" : sourceLabel(m.mine.source))}</span>`)).join("")}</div>` : "";
+    const mineHTML = mine.length ? `<div class="gq-group"><span class="gq-label">Your games</span>${mine.map((m) => opt(`<span class="gq-name">${esc(m.mine.name)}</span><span class="gq-meta">${esc(m.mine.kind === "game" ? "Profiles on" : storeNames(m.mine))}</span>`)).join("")}</div>` : "";
     const storeHTML = !on ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Turn on the Store to search every game, with prices and whether it runs here.</p></div>`
       : S.gq.hits === null ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Looking it up</p></div>`
       : store.length ? `<div class="gq-group"><span class="gq-label">Store</span>${store.map((x) => opt(`${x.hit.image ? `<img src="${esc(x.hit.image)}" alt="">` : ""}<span class="gq-name">${esc(x.hit.name)}</span><span class="gq-meta">${x.hit.price ? esc(cents(x.hit.price)) : ""}</span>`)).join("")}</div>` : "";
@@ -4190,7 +4225,7 @@
       games = `<div class="cs-games">${Object.entries(byGame).map(([gid, rows]) => {
         const g = game(gid);
         if (!g) return "";
-        const it = libraryItems().find((x) => x.kind === "game" && x.id === gid);
+        const it = everyItem().find((x) => x.kind === "game" && x.id === gid);
         if (it) ensureCover(it);
         return `<div class="cs-game"><div class="cs-cover">${it ? `<div class="cover">${coverHTML(it)}</div>` : ""}</div><div class="cs-rows"><b class="cs-name">${esc(g.name)}</b>
           ${rows.map((x) => {
@@ -4741,7 +4776,7 @@
     "find-store"(el) { api.open("store", el.dataset.url).catch((e) => toast(errText(e), "error")); },
     "find-library"(el) {
       const o = el.dataset.owned || "", [kind, ...rest] = o.split(":"), id = rest.join(":");
-      const it = libraryItems().find((x) => (kind === "game" ? x.kind === "game" : x.kind === "found") && x.id === id);
+      const it = everyItem().find((x) => (kind === "game" ? x.kind === "game" : x.kind === "found") && x.id === id);
       if (!it) { toast("That game isn't in the Library any more.", "error"); return; }
       S.dialog = null; renderOverlay();
       openSheet(it.kind, it.id, null);
@@ -5090,7 +5125,7 @@
     },
     sources() { S.sources = null; S.dialog = { kind: "sources" }; renderOverlay(); focusOverlay(); loadSources(); },
     "sources-rescan"() { actions.rescan(); renderOverlay(); },
-    rescan() { S.rescanning = new Set((S.found.games || []).map((f) => f.key)); S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [] }; render(); api.scan(); },
+    rescan() { S.rescanning = new Set((S.found.games || []).map((f) => f.key)); S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [], groups: S.found.groups || [] }; render(); api.scan(); },
     async "add-all"() {
       const keys = (S.found.games || []).filter((f) => f.ready).map((f) => f.key);
       await addFound(keys);
@@ -5110,12 +5145,34 @@
     async "found-hide"(el) {
       if (S.dialog && S.dialog.kind === "sheet") closeDialog(false);
       const key = el.dataset.key, f = (S.found.games || []).find((x) => x.key === key);
-      try { await api.ignoreFound(key); } catch (e) { toast(errText(e), "error"); return; }
-      S.found.games = S.found.games.filter((x) => x.key !== key);
+      // A game from more than one store is hidden with every copy.
+      const grp = f && groupOf({ kind: "found", id: key }), keys = grp ? grp.copies.map((c) => c.id) : [key];
+      try { for (const k of keys) await api.ignoreFound(k); } catch (e) { toast(errText(e), "error"); return; }
+      S.found.games = S.found.games.filter((x) => !keys.includes(x.key));
       await loadFound();
       await refresh();
       // A game added by hand leaves the Library for good; a scanned one can come back.
-      if (f && !f.added) toast(`${f.name} is hidden from the Library.`, "success", { label: "Undo", run: () => actions["found-unhide"]({ dataset: { key } }) });
+      if (f && !f.added) toast(`${f.name} is hidden from the Library.`, "success", { label: "Undo", run: async () => { for (const k of keys) await actions["found-unhide"]({ dataset: { key: k } }); } });
+    },
+    "start-with"(el) {
+      const it = everyItem().find((x) => x.kind === "found" && x.id === el.dataset.key), grp = it && groupOf(it);
+      if (!grp) return;
+      const m = menuUnder(el, `<div class="ctx-title">Start with</div>${grp.copies.map((c) => `<button data-action="start-copy" data-group="${esc(grp.key)}" data-key="${esc(c.id)}" role="menuitemradio" aria-checked="${c.id === it.id}" title="${esc(c.f.dir || "")}"><span class="grow">${esc(sourceLabel(c.source))}</span>${c.id === it.id ? GI.tick : ""}</button>`).join("")}`);
+      const first = m.querySelector('[aria-checked="true"]') || m.querySelector("button");
+      if (first) first.focus({ preventScroll: true });
+    },
+    async "start-copy"(el) {
+      const { group, key } = el.dataset;
+      try { await api.setPrimaryCopy(group, key); } catch (e) { toast(errText(e), "error"); return; }
+      await loadFound();
+      if (S.view === "game" && S.page && S.page.id !== key) openSheet("found", key, null);
+    },
+    async "copies-apart"(el) {
+      const group = el.dataset.group, apart = el.dataset.apart !== "0";
+      try { await api.separateCopies(group, apart); } catch (e) { toast(errText(e), "error"); return; }
+      await loadFound();
+      await refresh();
+      if (apart) toast("Each copy has its own entry in the Library now.", "success", { label: "Undo", run: () => actions["copies-apart"]({ dataset: { group, apart: "0" } }) });
     },
     async "found-unhide"(el) {
       try { await api.unhideFound(el.dataset.key); await loadFound(); await refresh(); } catch (e) { toast(errText(e), "error"); }
