@@ -759,14 +759,14 @@
   const glyph = (b) => `<span class="bp-g bp-g--${b.toLowerCase()}" aria-hidden="true">${b}</span>`;
   function bpArt(it, wide) {
     loadArt(it); ensureCover(it);
-    const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key] || S.icons[key];
+    const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key];
     return wide ? hero || cover || "" : cover || hero || "";
   }
   function bpTile(it, wide) {
-    const art = bpArt(it, wide);
+    const art = bpArt(it, wide), ic = S.icons[coverKey(it)];
     const s = it.g && session(it.g.id);
     return `<button class="bp-tile${wide ? " bp-tile--wide" : ""}" data-bp data-bpid="t:${esc(bpKey(it))}:${wide ? "w" : "c"}" data-k="${esc(bpKey(it))}" data-go="open">
-      <span class="bp-tile-art">${art ? `<img src="${art}" alt=""${art === S.icons[coverKey(it)] ? ' class="icon"' : ""}>` : `<b>${esc(it.name)}</b>`}</span>
+      <span class="bp-tile-art">${art ? `<img src="${art}" alt="">` : plate(ic, "", `${ic ? `<img src="${ic}" alt="">` : ""}<b>${esc(it.name)}</b>`)}</span>
       ${s ? `<span class="bp-live">${esc(sessionText(s))}</span>` : ""}<span class="bp-tile-name">${esc(it.name)}</span></button>`;
   }
   const bpRow = (id, title, list, wide) => (list.length ? `<section class="bp-row"><h2>${esc(title)}</h2><div class="bp-row-track" data-row="${esc(id)}">${list.map((it) => bpTile(it, wide)).join("")}</div></section>` : "");
@@ -1087,7 +1087,7 @@
     const ck = coverKey(it), c = S.covers[ck], ic = !c && S.icons[ck];
     const s = it.g && session(it.g.id);
     const owner = it.g && S.d.active[it.g.id];
-    const thumb = c ? `<img class="ready" src="${c}" alt="">` : ic ? `<img class="ready icon" src="${ic}" alt="">` : `<b>${esc((it.name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase())}</b>`;
+    const thumb = c ? `<img class="ready" src="${c}" alt="">` : ic ? `<img class="ready icon" src="${ic}" alt="">` : `<b>${esc(initial(it.name))}</b>`;
     const sub = s ? `<small>${esc(sessionText(s))}</small>` : "";
     const mark = s ? '<span class="sg-live" aria-hidden="true"></span>' : owner && player(owner) ? `<span class="sg-mark ln-player" style="--player:${esc(color(owner))}" title="${esc(possessive(pname(owner)))} files are loaded"><i></i></span>` : "";
     return `<button class="sg-row${s ? " playing" : ""}" data-action="open-sheet" ${itemAttr(it)} data-ck="${esc(ck)}"${cur ? ' aria-current="true"' : ""} title="${esc(it.name)}">
@@ -1374,14 +1374,18 @@
     if (S.filter !== "all" || S.who || S.store !== "all" || S.tag || S.status) return "";
     const rec = recentItems(all, false).slice(0, 5);
     if (rec.length < 2) return "";
+    rec.forEach((it) => { loadArt(it); ensureCover(it); });
+    // The row leads with art: the second game moves up when only it has some.
+    // Only the first two slots show at every width.
+    const hasArt = (it) => S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)];
+    if (!hasArt(rec[0]) && hasArt(rec[1])) rec.unshift(rec.splice(1, 1)[0]);
     const cap = (it) => {
-      loadArt(it); ensureCover(it);
-      const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key];
+      const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key], ic = S.icons[key];
       const art = hero ? `<img src="${hero}" alt="">` : cover ? `<img class="soft" src="${cover}" alt="">` : "";
       const t = totalPlayed(it) || steamTime(it);
       const s = it.g && session(it.g.id);
       return `<div class="lib-cap${s ? " busy" : ""}${art ? "" : " no-art"}"><button class="lib-cap-open" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">
-          <span class="lib-cap-art">${art || `<span class="lib-cap-none">${esc(it.name)}</span>`}</span>
+          <span class="lib-cap-art">${art || plate(ic, "lib-cap-none", `<b>${esc(it.name)}</b>`)}</span>
           <span class="lib-cap-text"><b>${esc(it.name)}</b><span>${playedBy(it)}${t ? `<span class="lib-cap-time ln-num">${esc(hours(t))}</span>` : ""}</span></span></button>
         ${s ? `<span class="lib-cap-badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
           : `<button class="ln-button ln-button--primary ln-button--icon ln-button--sm lib-cap-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
@@ -1423,7 +1427,7 @@
     }
     const first = recent[0];
     const head = gameView(first, false);
-    return `<div class="gpage home ln-root${head.art ? "" : " no-art"}">${head.top}
+    return `<div class="gpage home ln-root${head.real ? "" : " no-art"}">${head.top}
       <div class="gpage-body">${head.bar}${head.note}${banners ? `<div class="home-banners">${banners}</div>` : ""}
         <div class="home-cols">
           <div>${continueShelf(recent.slice(1), allBtn)}${tonightBlock(all)}</div>
@@ -1458,12 +1462,12 @@
   // colour code along the bottom, whose files are loaded the tall bar.
   function tileHTML(it, meta) {
     ensureCover(it);
-    const k = coverKey(it), c = S.covers[k];
+    const k = coverKey(it), c = S.covers[k], ic = !c && S.icons[k];
     const g = it.g, owner = g && S.d.active[g.id], s = g && session(g.id);
     const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
     const bars = owners.length ? `<div class="ln-tile__owners" aria-hidden="true">${owners.map((p) => `<span class="ln-player" style="--player:${esc(p.color)}"${p.id === owner ? " data-loaded" : ""}></span>`).join("")}</div>` : "";
     const badge = s ? `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>` : "";
-    const cover = c ? `<img src="${c}" alt="">` : `<div class="ln-tile__none"><b>${esc(it.name)}</b><span>${esc(sourceLabel(it.source))}</span></div>`;
+    const cover = c ? `<img src="${c}" alt="">` : plate(ic, "", `${ic ? `<img src="${ic}" alt="">` : ""}<b>${esc(it.name)}</b><span>${esc(sourceLabel(it.source))}</span>`);
     return `<button class="ln-tile" data-action="open-sheet" ${itemAttr(it)}>
       <div class="ln-tile__cover">${cover}${bars}${badge}</div>
       <span class="ln-tile__title">${esc(it.name)}</span><span class="ln-tile__meta">${meta}</span></button>`;
@@ -1660,7 +1664,7 @@
     const g = it.g, s = g && session(g.id), owner = g && S.d.active[g.id];
     const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
     const t = totalPlayed(it) || steamTime(it);
-    const thumb = c ? `<img src="${c}" alt="">` : ic ? `<img class="icon" src="${ic}" alt="">` : `<b>${esc((it.name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase())}</b>`;
+    const thumb = c ? `<img src="${c}" alt="">` : ic ? `<img class="icon" src="${ic}" alt="">` : `<b>${esc(initial(it.name))}</b>`;
     const prof = owners.length ? owners.map((p) => `<span class="ln-mark ln-player${p.id === owner ? " is-loaded" : ""}" style="--player:${esc(p.color)}" title="${esc(p.name)}${p.id === owner ? ", files loaded" : ""}"></span>`).join("") : `<span class="lib-row-dim">Off</span>`;
     const play = s ? `<span class="ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
       : `<button class="ln-button ln-button--primary ln-button--sm lib-row-play" data-action="${g ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}">${GI.play}Play</button>`;
@@ -1687,6 +1691,9 @@
 
   // Steam games have a cover in Steam's cache; other games only when the
   // user turned on "Download covers".
+  // A cover with no art (system.css .ln-tile__none), washed in the game's icon when it has one.
+  const plate = (ic, cls, inner, attr = "") => `<span class="ln-tile__none${cls ? " " + cls : ""}${ic ? " with-icon" : ""}"${ic ? ` style="--icon:url('${ic}')"` : ""}${attr}>${inner}</span>`;
+  const initial = (name) => (name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase();
   const coverKey = (it) => (it.appId ? "a" + it.appId : "n:" + it.name.toLowerCase());
   function coverHTML(it) {
     const key = coverKey(it);
@@ -1696,7 +1703,7 @@
     const show = can && (c !== "" || ic !== "" && it.exe);
     const src = c ? ` src="${c}" class="ready"` : ic ? ` src="${ic}" class="icon ready"` : "";
     const img = show ? `<img alt="" data-cover="${esc(key)}" data-app="${it.appId || 0}" data-name="${esc(it.name)}" data-exe="${esc(it.exe || "")}"${src}>` : "";
-    return `<div class="nocover${ic ? " with-icon" : ""}"${c ? " hidden" : ""}${ic ? ` style="--icon:url('${ic}')"` : ""}><span>${esc(it.name)}</span></div>${img}`;
+    return plate(ic, "nocover", `<b>${esc(it.name)}</b>`, c ? " hidden" : "") + img;
   }
 
   // A Library cover (system.css .ln-tile). Who has a profile is the colour
@@ -1981,10 +1988,12 @@
   // The game page (page = true), or just its art and play bar, as on Home.
   function gameView(it, page) {
     const P = page ? S.page : {};
-    loadArt(it);
+    loadArt(it); ensureCover(it);
     const key = coverKey(it);
-    const hero = S.art["hero:" + key], cover = S.covers[key] || "";
-    const art = hero ? `<img class="gpage-art" src="${hero}" alt="">` : cover ? `<img class="gpage-art soft" src="${cover}" alt="">` : "";
+    const hero = S.art["hero:" + key], cover = S.covers[key] || "", icon = S.icons[key];
+    const art = hero ? `<img class="gpage-art" src="${hero}" alt="">` : cover ? `<img class="gpage-art soft" src="${cover}" alt="">`
+      : icon ? `<img class="gpage-art icon" src="${icon}" alt="">` : `<div class="gpage-plate" aria-hidden="true"><span>${esc(initial(it.name))}</span></div>`;
+    const real = hero || cover;
     const rec = (S.d.recent || {})[recentKey(it)];
     const meta = [esc(sourceLabel(it.source))];
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
@@ -2047,8 +2056,8 @@
         <div class="gpage-title"><h1 class="${it.name.length > 22 ? "long" : ""}">${esc(it.name)}</h1>
           <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p></div>
       </section>`;
-    if (!page) return { top, bar, note, art };
-    return `<div class="gpage ln-root${art ? "" : " no-art"}">${top}
+    if (!page) return { top, bar, note, real };
+    return `<div class="gpage ln-root${real ? "" : " no-art"}">${top}
       <div class="gpage-body">${bar}${note}
         <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${page ? savePointsBlock(it) : ""}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
       </div></div>`;
@@ -3786,12 +3795,19 @@
       <button class="ln-button ln-button--primary" data-action="find-on">Turn on the Store</button></section></div>`;
     return `<div class="find-page ln-root">${head}<div id="find-results">${findResults()}</div></div>`;
   }
+  // A Store picture that's missing, or didn't load: the name set in type.
+  const noImg = (name) => plate("", "find-noimg", `<b>${esc(name)}</b>`);
+  document.addEventListener("error", (ev) => {
+    const img = ev.target;
+    if (img.tagName !== "IMG" || !img.closest(".find-card, .find-daily")) return;
+    img.outerHTML = noImg(img.alt);
+  }, true);
   // A game in a Store row, on its wide art.
   function storeCard(it) {
     const price = it.store ? `<span class="ln-num">${esc(money(it.usd, "USD"))}</span>${offTag(it.price && it.price.discount)}<span class="find-store-name">${esc(it.store)}</span>`
       : it.price ? `<span class="ln-num">${esc(cents(it.price))}</span>${offTag(it.price.discount)}` : `<span>Free</span>`;
     return `<li><button class="find-card find-card--wide" data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
-      ${it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : `<span class="find-noimg"></span>`}
+      ${it.image ? `<img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy">` : noImg(it.name)}
       <span class="find-card-body"><b>${esc(it.name)}</b><span class="find-card-meta">${price}${it.score ? `<span class="find-score" title="Metacritic">${it.score}</span>` : ""}${it.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`;
   }
   function storeFront() {
@@ -3801,7 +3817,7 @@
     if (F.error) return `${lnInline("error", esc(F.error))}<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="store-retry">Try again</button></div>`;
     const row = (title, sub, list) => (list && list.length ? `<section class="find-row"><div class="ln-section-head"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div></div><ul class="find-grid find-grid--wide">${list.map(storeCard).join("")}</ul></section>` : "");
     const d = F.daily;
-    const daily = d ? `<button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="">` : ""}
+    const daily = d ? `<button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="${esc(d.name)}">` : ""}
       <span class="find-daily-body"><span class="find-daily-label">Today's deal on Steam</span><b>${esc(d.name)}</b><span class="find-card-meta">${d.price ? `<span class="ln-num">${esc(cents(d.price))}</span>${offTag(d.price.discount)}` : ""}${d.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button>` : "";
     return `${daily}${row("Deals on Steam", "", F.specials)}${row("Best deals in other stores", "Well-reviewed games on sale in official stores, from CheapShark, in US dollars.", F.deals)}${row("Top sellers on Steam", "", F.top)}`;
   }
@@ -3812,7 +3828,7 @@
     if (!F.hits) return lnInline("", "Looking it up");
     if (!F.hits.length) return `<p class="find-hint">The Steam store has nothing called "${esc(F.q)}".</p>`;
     return `<ul class="find-grid">${F.hits.map((h) => `<li><button class="find-card" data-action="find-open" data-app="${h.appId}" data-name="${esc(h.name)}">
-      ${h.image ? `<img src="${esc(h.image)}" alt="" loading="lazy">` : `<span class="find-noimg"></span>`}
+      ${h.image ? `<img src="${esc(h.image)}" alt="${esc(h.name)}" loading="lazy">` : noImg(h.name)}
       <span class="find-card-body"><b>${esc(h.name)}</b><span class="find-card-meta">${h.price ? `<span class="ln-num">${esc(cents(h.price))}</span>${offTag(h.price.discount)}` : ""}${h.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`).join("")}</ul>`;
   }
   // Sizes in requirements, as in core.ReqBytes.
