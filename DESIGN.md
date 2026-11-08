@@ -74,7 +74,7 @@ The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own,
 - list markers, news dots and link underlines in the reader;
 - the text selection, as a wash;
 - the selected choice in a segmented control, as a 2px line under it;
-- where you are, in the sidebar only: a 3px bar at the left edge and the icon, on a neutral fill. Settings' current category is a neutral selected fill (`--bg-active`).
+- where you are, in the top bar only: a 2px line under the current section's tab, which slides from tab to tab. Profiles and Settings, on the bar's right, mark theirs with a neutral fill, as does Settings' current category (`--bg-active`), and the sidebar's current game.
 
 It is not a title stripe, a hover edge (a cover or a scrollbar you point at) or a filled tag with text in it, such as **Update** or a discount (principle 2). Secondary bars and rings, such as Lootnest's milestones and the game cards on the Achievements page and in Big Picture, are neutral; a game's own progress on its page stays red.
 
@@ -99,7 +99,7 @@ A player's colour is never the only cue. Their name is always printed beside it.
 
 | Token | Value | Where |
 |---|---|---|
-| `--glass-chrome` | slate 0.15 at 62% | Sidebar, top bar |
+| `--glass-chrome` | slate 0.15 at 62% | Sidebar |
 | `--glass-bar` | slate 0.17 at 70% | The play bar on a game page |
 | `--glass-panel` | slate 0.19 at 58% | Panels that sit on art |
 | `--glass-overlay` | slate 0.21 at 86% | Toasts, menus, dialogs |
@@ -168,10 +168,12 @@ Long prose (notes, bios, banners) is set to at most 65ch with `text-wrap: pretty
     - With reduced motion, the chosen avatar fades in and nothing slides.
   - **Elsewhere:**
     - slots lift 4px on hover and come in 30ms apart;
-    - covers scale 3% on hover;
-    - buttons move down 1px when pressed;
+    - covers lift 2px with `--shadow-lift` on hover;
+    - buttons and tabs press to 98%;
     - toasts rise 8px;
-    - pages cross-fade in `--dur-2`.
+    - a page change moves only the page: the one you leave fades out in `--dur-1`, then the new one's main parts rise `--rise` and fade in over `--dur-3`, `--stagger` (40ms) apart, the first five one by one and the rest together. Once per arrival, so a redraw (a cover coming in) carries on and doesn't start again. The top bar and the sidebar never move, and nothing scales;
+    - menus and the search's list grow from what opened them (scale 0.96 to 1, `--dur-2`);
+    - the sounds (Kenney's Interface Sounds, CC0) follow the same rule: one for each thing you do, at half Big Picture's volume. A tab for a section or a game page's tab, open and close for menus, dialogs and drawers, back for Back, go for Play, and a soft move for the arrow keys in the Library's grid, at most every 120ms. Never on hover, a redraw or a change Lootnest makes itself, never while a game runs, and none with Sounds off in Settings.
 
 ## Components
 
@@ -224,13 +226,13 @@ Each page's old rules are deleted from `app.css` in the same PR, until `app.css`
 
 | Page | Status |
 |---|---|
-| Sidebar, backdrop, toasts | On the system (1.16.0) |
+| Sidebar, backdrop, toasts | On the system (1.16.0). Since 1.75, the shell is a top bar over the sidebar and the page, as in Steam: the brand, Back and Forward, the sections as text tabs (Home, Library, Store, Updates, Achievements, Cloud saves; after the third under **More** below 1000px), the search (Ctrl+K), then Big Picture, Profiles, who's here and Settings. The bar is opaque `--bg-surface` with a hairline under it, `--bar-h` tall. Profiles and the seat lose their words below 1100px. The sidebar holds only the games, the full height under the bar, and folds to a rail of covers (Ctrl+B). |
 | Game page, profiles on and off, with Cloud save, Shelf and news | On the system (1.16.0) |
 | Home, banners (`ln-banner`) | On the system (1.16.1) |
 | Library, inputs (`ln-input`, `ln-search`) | On the system (1.16.2). Since 1.31, **Recent games** (`.lib-recent`, `.lib-cap`) opens it, as in Steam's library: the last five played on their wide art (16:9), each with who played and their time, and a red Play on hover. It shows only on the Library as it opens, not filtered, and a search hides it. The filters sit under it, above the grid they filter. Since 1.32, a shelf for each collection follows (`.lib-shelf`, up to six, the largest first): one row of covers that scrolls sideways, and **See all**, which filters the grid to it. Then **All games** heads the filters and the grid. A search hides all three. |
 | Players and a player's page | On the system (1.16.5) |
 | Cloud saves, switches and setting rows | On the system (1.16.6) |
-| The seat (who's at the PC) | On the system (1.18.0). It lives in the sidebar's **Who's here** rather than the mock's top-right control, so it never covers a page's own actions or the game art. |
+| The seat (who's at the PC) | On the system (1.18.0). Since 1.75 it's the seated profile's picture and name at the top bar's right, a menu button: who's here (1 to 9 seat someone), Nobody, Add a run and Profiles. Just you: your profile, its runs and Add a run. Settings is the gear beside it. The bar is above the pages, so it never covers a page's own actions or the game art. |
 | Settings | On the system (1.16.7). Since 1.30, one category at a time: a list on the left (`.set-nav`, `.set-tab`), as in Steam's settings, and the category's title, line and cards on the right. The open category is kept (`ln.setTab`). |
 | Dialogs (Add game, first run, the profile editor, confirmations), the right-click menu, older buttons and form controls | On the system (1.16.8) |
 | The "Who's playing?" picker and the swap moment | On the system (1.17.0) |

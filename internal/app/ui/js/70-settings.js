@@ -17,7 +17,7 @@
     [["Alt+Right", "Mouse forward button"], "Go forward again"],
     [["Ctrl+B"], "Fold the sidebar, or open it again"],
     [["F5"], "Look for games again"],
-    [["1 to 9"], "Choose a profile in Who's playing"],
+    [["1 to 9"], "Choose a profile in Who's playing, or in the menu under your picture in the top bar"],
     [["F11"], "Open or leave Big Picture"],
     [["Q", "E"], "Switch tabs in Big Picture"],
     ...(s.pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
@@ -61,7 +61,7 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}`)
         + sub("While you play", "", `
           ${sw("achToastsOff", "Show achievements as they unlock", "For games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, in the colour of the profile playing. It's a window of Lootnest's own: nothing goes into the game. It shows over windowed and borderless games, and over most fullscreen ones; switch a game to borderless if it doesn't. Never for games with an anti-cheat.", !s.achToastsOff, true)}
-          ${sw("soundsOff", "Sounds for unlocks, save points and swaps", "A short sound when an achievement unlocks, a save point is made or a profile's files are loaded, also over the game while Lootnest is hidden. Never for games with an anti-cheat.", !s.soundsOff, true)}
+          ${sw("soundsOff", "Sounds", "<p>A short sound when an achievement unlocks, a save point is made or a profile's files are loaded, also over the game while Lootnest is hidden. Never for games with an anti-cheat.</p><p>Interface sounds: clicks when you change pages, open menus and press Play.</p>", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
           ${sw("screenshotsOff", "Ctrl+Shift+F12 saves a screenshot", "While a game runs, the keys save a picture of it to Pictures\\Lootnest\\Screenshots, taken from outside the game. If it comes out black, switch the game to borderless windowed. Lootnest holds the keys only while a game runs.", !s.screenshotsOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, here and over the screen at the bottom right, as it does over a game.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
@@ -76,7 +76,7 @@
         + (hidden.length ? sub("Hidden games", "Games you hid from the Library. Scans leave them out until you show them again.", hidden.map(([k, name]) =>
           `<div class="bk-row"><div><b>${esc(name)}</b></div>${b("secondary", `data-action="found-unhide" data-key="${esc(k)}"`, "Show again")}</div>`).join("")) : "")],
       ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
-          ${sw("findGames", "Store", "The Store page, and the search in the sidebar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
+          ${sw("findGames", "Store", "The Store page, and the search in the top bar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
           ${sw("gameDetails", "Game details", "Reads a game's summary, genres, release date, screenshots and review score from Steam when you open its page. Kept on this PC for 30 days.", s.gameDetails)}

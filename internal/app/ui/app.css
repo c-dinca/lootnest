@@ -83,54 +83,12 @@ body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
 #backdrop::after { content: ""; position: absolute; inset: 0; background: var(--scrim-backdrop); }
 .sep { display: inline-block; width: 1px; height: .9em; background: currentColor; opacity: .35; margin: 0 10px; vertical-align: -1px; }
 
-/* --------------------------------------------------------------- sidebar */
-.side {
-  display: flex; flex-direction: column; gap: 1px; min-height: 0;
-  padding: 0 var(--space-3) var(--space-3);
-  background: var(--glass-chrome); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
-  border-right: var(--hairline) solid var(--edge-1);
-  font-family: var(--font-ui);
-}
-.brand { display: flex; align-items: center; gap: var(--space-2); height: var(--bar-h); padding: 0 var(--space-2); margin-bottom: var(--space-2); font: 700 var(--fs-15)/1 var(--font-title); letter-spacing: -0.01em; color: var(--fg-1); }
+/* ----------------------------------------------------------- the top bar */
+.brand { display: flex; align-items: center; gap: var(--space-2); flex: none; font: 700 var(--fs-15)/1 var(--font-title); letter-spacing: -0.01em; color: var(--fg-1); }
 .brand-mark { width: 20px; height: 20px; flex: none; }
 .brand-mark circle { stroke: var(--accent); }  /* the gem: Racing Red */
-.nav-list { display: grid; gap: 1px; }
-.nav {
-  position: relative; display: flex; align-items: center; gap: var(--space-3); width: 100%; height: 36px; padding: 0 var(--space-2);
-  border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2);
-  font: 500 var(--fs-14)/1 var(--font-ui); text-align: left; cursor: pointer;
-  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
-.nav svg { width: var(--icon-md); height: var(--icon-md); stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.nav:hover { color: var(--fg-1); background: var(--glass-ctl); }
-.nav[aria-current="page"] { background: var(--glass-ctl-hover); color: var(--fg-1); font-weight: 650; }
-.nav[aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: var(--radius-tag); background: var(--accent); }
-.nav[aria-current="page"] svg { stroke: var(--accent); }  /* where you are */
-.nav:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
-.nav .count { margin-left: auto; color: var(--fg-3); font-size: var(--fs-12); font-weight: 500; font-variant-numeric: tabular-nums; }
-.nav-bottom { margin-top: auto; }
-.side-sep { height: var(--hairline); background: var(--edge-1); margin: var(--space-4) var(--space-2); }
-.side-label { font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); padding: 0 var(--space-2) var(--space-1); }
-.who-list { display: grid; gap: 1px; overflow: auto; }
-/* Who's here: each player is a button that seats them (who's at the PC);
-   the seated one wears a Seated tag. */
-.who-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.who-switch { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2); font: 600 var(--fs-12)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
-.who-switch:hover { background: var(--glass-ctl); color: var(--fg-1); }
-.who-switch:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
-.who-switch .ln-icon { width: 14px; height: 14px; }
-.who-item { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: var(--space-3); align-items: center; width: 100%; min-height: 36px; padding: var(--space-1) var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
-.who-item:hover { background: var(--glass-ctl); }
-.who-item:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
-.who-item.seated { background: var(--glass-ctl-hover); }
-.who-item .who-name .ln-tag { margin-left: var(--space-1); vertical-align: 1px; }
-.ctx button .grow { flex: 1; }
-.who-item .ln-avatar { grid-row: 1 / span 2; }
-.who-item .who-name { font-weight: 600; line-height: var(--lh-snug); }
-.who-item .what { font-size: var(--fs-12); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--lh-snug); }
-.who-item .what:empty { display: none; }
-.who-item:not(.playing) .who-name { grid-row: 1 / span 2; }
-.who-item.playing .ln-avatar { box-shadow: 0 0 0 2px var(--bg-ground), 0 0 0 4px var(--player-fill); }
+.side-label { font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); }
+.ctx button .grow { flex: 1; min-width: 0; }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--dim); }
 
 /* ----------------------------------------------------------------- views */
@@ -141,7 +99,6 @@ body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
    the middle, the Library and game pages use the whole width. */
 .page { max-width: 1040px; margin-inline: auto; }
 .page.wide { max-width: none; }
-.enter { animation: fade var(--dur-2) var(--ease-out); }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 @keyframes fade { from { opacity: 0; } }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
@@ -224,9 +181,6 @@ body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
 .reader-body .link.video { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; background: var(--raised); color: var(--text); padding: 8px 14px; border-radius: var(--radius-s); margin: 6px 0 14px; }
 .reader .dialog-foot { padding: 14px 24px; border-top: 1px solid var(--line); }
 
-/* The cover travels from the Library into the game's page and back. */
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--dur-2); animation-timing-function: var(--ease-out); }
-
 /* ---------------------------------------------------------------- forms */
 .form { display: grid; gap: 28px; padding-bottom: 48px; }
 .section { display: grid; gap: 14px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
@@ -308,7 +262,7 @@ body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
 .welcome input.wl-name:focus { outline: none; border-bottom-color: var(--fg-1); background: none; }
 .wl-cap { margin: var(--space-6) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
 .wl-preview { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-6); pointer-events: none; }
-.wl-preview .who-item { width: auto; padding-right: var(--space-4); }
+.wl-preview .bar-me { cursor: default; }
 .wl-about { display: grid; gap: var(--space-5); min-width: 0; }
 .wl-lead { margin: 0; max-width: 44ch; font-size: var(--fs-18); line-height: var(--lh-body); color: var(--fg-2); }
 .wl-scan { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--text-meta); color: var(--fg-2); }
@@ -408,16 +362,8 @@ body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
 /* Windows "Animation effects" off: no movement anywhere. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
-  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
 @media (max-width: 760px) {
-  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .side { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 12px; }
-  .brand { padding: 4px 10px; }
-  .nav-list { display: flex; }
-  .side-sep, .side-label, .who-list { display: none; }
-  #backdrop { left: 0; }
-  .nav-bottom { margin-top: 0; width: auto; }
   .view { --view-pad-top: 22px; padding: var(--view-pad-top) 16px 56px; }
   .hero-body { left: 20px; right: 20px; bottom: 20px; }
   .lib-head { flex-wrap: wrap; }
@@ -478,10 +424,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 
 /* ----------------------------------------------------------- cloud saves */
 
-/* A newer Lootnest, in the sidebar above Settings. */
-.side-update { margin-top: auto; padding: 0 0 8px; }
+/* A newer Lootnest, at the foot of the sidebar. */
 .side-update:empty { display: none; }
-.side-update:not(:empty) + .nav-bottom { margin-top: 0; }
 .side-update-btn { display: grid; gap: 2px; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--radius-m); background: var(--gold); color: var(--gold-ink); text-align: left; cursor: pointer; }
 .side-update-btn:hover { background: var(--gold-hover); }
 .side-update-btn:disabled { opacity: .8; cursor: default; }
@@ -1206,8 +1150,6 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-ms-grid li:not(.done) b { color: var(--fg-2); }
 
 /* Runs: a profile that's a run of a person shows under them. */
-.who-item.who-run { padding-left: calc(var(--space-2) + 16px); }
-.who-item.who-run .ln-avatar { --size: 20px; font-size: var(--fs-12); }
 .slot.slot-run { width: clamp(160px, 12vw, 200px); padding-top: var(--space-6); }
 .slot.slot-run .name { font-size: var(--text-section); letter-spacing: var(--track-section); }
 .slot-of { font-size: var(--fs-12); color: var(--fg-2); }
@@ -1318,11 +1260,6 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .find-top-list b { overflow: hidden; font-size: var(--fs-14); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .find-top-list .find-card-meta { flex-direction: row-reverse; flex-wrap: nowrap; } /* the tag before the price, so prices share a right edge */
 
-/* The search in the sidebar, on every page. */
-.side-search { position: relative; margin: 0 0 var(--space-3); }
-.side-search .ln-search { width: 100%; }
-.side-search .ln-input { height: var(--ctl-sm); font-size: var(--fs-13); }
-.gq-pop { position: absolute; z-index: 40; top: calc(100% + var(--space-1)); left: 0; width: min(420px, calc(100vw - var(--space-6))); max-height: min(520px, 75vh); overflow: auto; display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel); background: var(--bg-raised); box-shadow: var(--shadow-overlay); }
 .gq-group { display: grid; gap: 1px; }
 .gq-label { padding: var(--space-1) var(--space-2); font-size: var(--fs-12); font-weight: 650; color: var(--fg-3); }
 .gq-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); min-height: 40px; padding: var(--space-1) var(--space-2); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); text-align: left; font-size: var(--fs-13); cursor: pointer; }
@@ -1335,10 +1272,7 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .gq-note { margin: 0; padding: var(--space-1) var(--space-2) var(--space-2); font-size: var(--fs-13); color: var(--fg-2); }
 .gq-all { padding: var(--space-2); border: 0; border-top: var(--hairline) solid var(--edge-1); background: none; color: var(--fg-1); font-size: var(--fs-13); font-weight: 600; text-align: left; cursor: pointer; }
 .gq-all:hover { text-decoration: underline; text-underline-offset: 3px; }
-@media (max-width: 760px) { .side-search { flex: 1 1 100%; order: 3; margin: var(--space-2) 0 0; } }
 .gq-pop[hidden] { display: none; }
-/* The sidebar paints above the page, so the search's list can reach over it. */
-.side { position: relative; z-index: 3; }
 #find-results { display: grid; gap: var(--space-10); min-width: 0; }
 
 /* Will it run here? The verdict, with a bar per part: the fill is this PC,
@@ -1438,9 +1372,6 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .set-folders li { overflow-wrap: anywhere; }
 .set-folders b { color: var(--fg-1); font-weight: 600; }
 
-/* Beta, next to the name in the sidebar. */
-.brand-stage { padding: var(--space-1) var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/1 var(--font-ui); letter-spacing: normal; color: var(--fg-2); }
-
 /* Your saves, on Home: how many games Lootnest looks after, then what needs a look. */
 .sc-stats { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; }
 .sc-stats .ln-meta__item { padding: 0 var(--space-3); }
@@ -1452,36 +1383,89 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .sc-line--low { --tone: var(--danger); }
 
 /* =================================================================== shell
-   The sidebar, as in Steam's library: the sections at the top, then every
-   game in a list you can filter, sort and fold by collection; who's here and
-   Settings at the bottom. It's as wide as you drag it, or folds to a rail of
-   icons (Ctrl+B). */
-.app { grid-template-columns: var(--side-w) minmax(0, 1fr); transition: grid-template-columns var(--dur-4) var(--ease-emph); }
+   One bar across the window: the brand, Back and Forward, the sections as
+   tabs, the search, then Big Picture, Profiles, who's here and Settings.
+   Under it, the sidebar holds the games, as in Steam's library: what's
+   being played, the last few, each collection, then all of them. It's as
+   wide as you drag it, or folds to a rail of covers (Ctrl+B). */
+.app { grid-template-columns: var(--side-w) minmax(0, 1fr); grid-template-rows: var(--bar-h) minmax(0, 1fr); transition: grid-template-columns var(--dur-4) var(--ease-emph); }
 .app.no-anim { transition: none; }
-.side { gap: 0; padding: 0 var(--space-2) var(--space-2); overflow: hidden; }
-.side-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: var(--bar-h); flex: none; }
-.side-top .brand { height: auto; margin: 0; min-width: 0; }
+.topbar {
+  grid-column: 1 / -1; position: relative; z-index: 4; display: flex; align-items: center; gap: var(--space-4); min-width: 0;
+  padding: 0 var(--space-4) 0 var(--space-5); background: var(--bg-surface); border-bottom: var(--hairline) solid var(--edge-1); font-family: var(--font-ui);
+}
 .brand-name { white-space: nowrap; }
-.side-btn { display: inline-grid; place-items: center; width: 28px; height: 28px; flex: none; padding: 0; border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-3); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
-.side-btn svg { width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.side-btn:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
-.side-btn:active { transform: scale(.94); }
-.side-btn:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.brand-stage { padding: var(--space-1) var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/1 var(--font-ui); letter-spacing: normal; color: var(--fg-2); }
+.bar-hist { display: flex; flex: none; gap: var(--space-1); }
+.bar-btn, .side-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); flex: none; padding: 0; border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2); font: 600 var(--fs-13)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.bar-btn { min-width: var(--ctl-sm); height: var(--ctl-sm); }
+.side-btn { width: 28px; height: 28px; color: var(--fg-3); }
+.bar-btn svg, .side-btn svg { width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.side-btn svg { width: var(--icon-sm); height: var(--icon-sm); }
+.bar-btn:hover:not(:disabled), .side-btn:hover { background: var(--bg-raised); color: var(--fg-1); }
+.bar-btn:active:not(:disabled), .side-btn:active { transform: scale(.94); }
+.bar-btn:disabled { color: var(--fg-disabled); cursor: default; }
+.bar-btn:focus-visible, .side-btn:focus-visible, .bar-tab:focus-visible, .bar-me:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.bar-btn[aria-current="page"] { background: var(--bg-active); color: var(--fg-1); }
+.bar-labeled { padding: 0 var(--space-3) 0 var(--space-2); }
 .side-btn[aria-pressed="true"] { color: var(--fg-1); background: var(--glass-ctl-on); }
-.side-search { margin: 0 0 var(--space-2); flex: none; }
-.side-kbd { position: absolute; right: var(--space-2); padding: 1px 5px; border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/var(--lh-snug) var(--font-ui); color: var(--fg-3); pointer-events: none; transition: opacity var(--dur-1) var(--ease-out); }
-.side-search .ln-input:focus ~ .side-kbd, .side-search .ln-input:not(:placeholder-shown) ~ .side-kbd { opacity: 0; }
-.nav-list { flex: none; }
-.nav { height: 34px; }
-.nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav .count { margin-left: 0; }
 
-/* The games. */
-.side-lib { display: flex; flex-direction: column; min-height: 0; flex: 1; margin-top: var(--space-4); border-top: var(--hairline) solid var(--edge-1); padding-top: var(--space-3); }
-.side-lib-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0 var(--space-1) var(--space-2); }
-.side-lib-head .side-label { padding: 0; }
-.side-lib-tools { display: flex; gap: 2px; }
-.side-filter { position: relative; display: flex; align-items: center; margin: 0 0 var(--space-2); }
+/* The sections. The current one is set in Ice Grey, bolder, over one red
+   line that slides from tab to tab. */
+.bar-tabs { position: relative; display: flex; flex: none; align-self: stretch; }
+.bar-tab { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); flex: none; height: 100%; padding: 0 var(--space-3); border: 0; background: none; color: var(--fg-2); font: 500 var(--fs-14)/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color var(--dur-1) var(--ease-out); }
+.bar-tab:hover { color: var(--fg-1); }
+.bar-tab[aria-current="page"], .bar-more.is-current { color: var(--fg-1); font-weight: 650; }
+.bar-tab .count { color: var(--fg-3); font-size: var(--fs-12); font-weight: 500; font-variant-numeric: tabular-nums; }
+.bar-tab .count:empty { display: none; }
+.bar-more { display: none; }
+.bar-more svg { width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.bar-ind { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: 0 0; opacity: 0; pointer-events: none; transition: transform var(--dur-3) var(--ease-emph), opacity var(--dur-2) var(--ease-out); }
+
+/* The search: on every page, wider while it's in use. */
+.bar-search { position: relative; flex: 0 1 var(--bar-search-w); min-width: var(--bar-search-min); margin-left: auto; transition: flex-basis var(--dur-2) var(--ease-out); }
+.bar-search:focus-within { flex-basis: var(--bar-search-open); }
+.bar-search .ln-search { width: 100%; }
+.bar-search .ln-input { height: var(--ctl-sm); font-size: var(--fs-13); }
+.bar-kbd, .ctx kbd { padding: 1px 5px; border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/var(--lh-snug) var(--font-ui); color: var(--fg-3); }
+.bar-kbd { position: absolute; right: var(--space-2); pointer-events: none; transition: opacity var(--dur-1) var(--ease-out); }
+.bar-search .ln-input:focus ~ .bar-kbd, .bar-search .ln-input:not(:placeholder-shown) ~ .bar-kbd { opacity: 0; }
+.gq-pop { position: absolute; z-index: 40; top: calc(100% + var(--space-1)); right: 0; width: min(420px, calc(100vw - var(--space-6))); max-height: min(520px, 75vh); overflow: auto; display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel); background: var(--bg-raised); box-shadow: var(--shadow-overlay); transform-origin: 100% 0; animation: menu-in var(--dur-2) var(--ease-out); }
+.gq-pop[hidden] { display: none; }
+
+/* Who's here: the seated profile's picture and name, opening its menu. */
+.bar-end { display: flex; align-items: center; flex: none; gap: var(--space-1); }
+.bar-me { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--ctl-sm); padding: 0 var(--space-3) 0 var(--space-1); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); font: 600 var(--fs-13)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.bar-me:hover, .bar-me[aria-expanded="true"] { background: var(--bg-raised); }
+.bar-me .bar-label { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-me.playing .ln-avatar { box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--player-fill); }
+.bar-nobody { display: inline-grid; place-items: center; width: calc(var(--ctl-sm) - var(--space-2)); height: calc(var(--ctl-sm) - var(--space-2)); border: var(--hairline) dashed var(--edge-3); border-radius: var(--radius-round); color: var(--fg-2); }
+.bar-nobody .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.ctx .me-who { height: auto; min-height: var(--ctl-md); padding-block: var(--space-1); }
+.ctx .me-who small { display: block; font-size: var(--fs-12); color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx .me-run { padding-left: var(--space-8); }
+.ctx .me-who.playing .ln-avatar { box-shadow: 0 0 0 2px var(--bg-raised), 0 0 0 3px var(--player-fill); }
+.ctx [aria-current="page"] { font-weight: 650; }
+
+/* Narrower windows: Profiles and the seat lose their words, then the
+   sections after the third go under More. */
+@media (max-width: 1100px) {
+  .topbar { gap: var(--space-3); padding-inline: var(--space-3); }
+  .bar-labeled { padding: 0; }
+  .topbar .bar-label, .brand-stage, .bar-kbd { display: none; }
+  .bar-me { padding-right: var(--space-1); }
+  .bar-tab { padding-inline: var(--space-2); }
+}
+@media (max-width: 1000px) {
+  .bar-tabs .bar-tab[data-view]:nth-child(n+4) { display: none; }
+  .bar-more { display: inline-flex; }
+}
+
+/* The sidebar: the games, under the bar, the window's full height. */
+.side { position: relative; z-index: 3; display: flex; flex-direction: column; min-height: 0; padding: var(--space-3) var(--space-2) var(--space-2); overflow: hidden; background: var(--glass-chrome); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border-right: var(--hairline) solid var(--edge-1); font-family: var(--font-ui); }
+.side-head { display: flex; align-items: center; justify-content: space-between; flex: none; padding: 0 0 var(--space-1) var(--space-2); }
+.side-tools { display: flex; gap: 2px; }
+.side-filter { position: relative; display: flex; flex: none; align-items: center; margin: 0 0 var(--space-2); }
 .side-filter svg { position: absolute; left: var(--space-2); width: 14px; height: 14px; fill: none; stroke: var(--fg-3); stroke-width: 1.5; stroke-linecap: round; pointer-events: none; }
 .side-filter input { width: 100%; height: 28px; padding: 0 var(--space-2) 0 28px; border: var(--hairline) solid transparent; border-radius: var(--radius-ctl); background: var(--glass-ctl); color: var(--fg-1); font: 500 var(--fs-13)/1 var(--font-ui); transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
 .side-filter input::placeholder { color: var(--fg-3); }
@@ -1503,7 +1487,7 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .sg-row:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
 .sg-row:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
 .sg-row[aria-current="true"] { background: var(--glass-ctl-on); color: var(--fg-1); }
-.sg-row[aria-current="true"]::before { content: ""; position: absolute; left: -4px; top: 8px; bottom: 8px; width: 2px; border-radius: var(--radius-tag); background: var(--accent); }
+.sg-row[aria-current="true"]::before { content: ""; position: absolute; left: -4px; top: 8px; bottom: 8px; width: 2px; border-radius: var(--radius-tag); background: var(--fg-2); }
 .sg-thumb { position: relative; width: var(--thumb-w); height: var(--thumb-h); border-radius: 2px; overflow: hidden; background: var(--bg-raised); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }
 .sg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
 .sg-thumb img.ready { opacity: 1; }
@@ -1518,11 +1502,7 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 @keyframes live { 0% { box-shadow: 0 0 0 0 oklch(0.82 0.110 155 / 0.55); } 70%, 100% { box-shadow: 0 0 0 6px oklch(0.82 0.110 155 / 0); } }
 .sg-empty { padding: var(--space-2); font-size: var(--fs-13); color: var(--fg-3); }
 
-/* The bottom: who's here, Lootnest's own update, Settings. */
-.side-foot { flex: none; display: grid; gap: 1px; padding-top: var(--space-2); border-top: var(--hairline) solid var(--edge-1); }
-.side-foot .who-list { max-height: calc(36px * 3 + 2px); }
-.side-foot .side-update { margin: 0; padding: var(--space-1) 0; }
-.side-foot .nav-bottom { margin-top: var(--space-1); }
+.side-update { flex: none; padding-top: var(--space-2); border-top: var(--hairline) solid var(--edge-1); }
 
 /* Dragging the edge resizes the sidebar. */
 .side-resize { position: absolute; top: 0; right: -3px; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; }
@@ -1531,67 +1511,38 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .app.resizing, .app.resizing * { cursor: col-resize !important; user-select: none; }
 .app.resizing { transition: none; }
 
-/* Folded: a rail of icons. */
+/* Folded: a rail of covers, with the button that opens it again. */
 .app.side-folded { --side-w: var(--side-rail); }
-.side-folded .side { padding-inline: var(--space-2); }
-.side-folded .side-top { flex-direction: column; justify-content: center; gap: var(--space-2); height: auto; padding: var(--space-3) 0 var(--space-2); }
-.side-folded .brand-name, .side-folded .brand-stage, .side-folded .nav-label, .side-folded .nav .count, .side-folded .side-lib-head, .side-folded .side-filter, .side-folded .who-head, .side-folded .who-item .who-name, .side-folded .who-item .what, .side-folded .side-update, .side-folded .side-resize, .side-folded .sg-head, .side-folded .sg-name, .side-folded .sg-mark { display: none; }
+.side-folded .side-head { justify-content: center; padding: 0 0 var(--space-2); }
+.side-folded .side-head .side-label, .side-folded .side-tools > :not(.side-collapse), .side-folded .side-filter, .side-folded .side-update, .side-folded .side-resize, .side-folded .sg-head, .side-folded .sg-name, .side-folded .sg-mark { display: none; }
 .side-folded .side-collapse svg { transform: scaleX(-1); }
-.side-folded .side-search .ln-input { width: 40px; padding: 0; color: transparent; cursor: pointer; }
-.side-folded .side-search .ln-input::placeholder { color: transparent; }
-.side-folded .side-search .ln-icon { left: 12px; }
-.side-folded .side-kbd { display: none; }
-.side-folded .nav { justify-content: center; padding: 0; }
-.side-folded .nav[aria-current="page"]::before { left: -8px; }
-.side-folded .nav[data-view="library"] .count, .side-folded .nav[data-view="updates"] .count:not(:empty) { display: block; position: absolute; top: 3px; right: 6px; min-width: var(--space-4); height: var(--space-4); padding: 0 3px; border-radius: var(--radius-round); background: var(--accent); color: var(--fg-on-accent); font: 750 var(--fs-12)/var(--space-4) var(--font-ui); text-align: center; }
-.side-folded .nav[data-view="library"] .count { display: none; }
-.side-folded .side-lib { margin-top: var(--space-3); padding-top: var(--space-2); }
 .side-folded .side-games { margin: 0 -4px; padding: 0 4px; scrollbar-width: none; }
 .side-folded .side-games::-webkit-scrollbar { display: none; }
 .side-folded .sg-group.closed .sg-rows { display: grid; }
 .side-folded .sg-row { grid-template-columns: 1fr; justify-items: center; padding: 3px 0; }
 .side-folded .sg-thumb { --thumb-w: 30px; --thumb-h: 40px; }
 .side-folded .sg-group + .sg-group { border-top: var(--hairline) solid var(--edge-1); padding-top: var(--space-1); }
-.side-folded .who-item { grid-template-columns: 1fr; justify-items: center; padding: var(--space-1) 0; }
-.side-folded .who-item .ln-avatar { grid-row: auto; }
-.side-folded .who-list { max-height: none; }
 
-/* Short windows: Who's here is one row of faces beside Switch, and the
-   rows above it tighten, so the games keep the room. The seated profile
-   keeps its name. */
+/* Short windows: the rows tighten, so the games keep the room. */
 @media (max-height: 820px) {
-  .nav { height: var(--nav-h-short); }
-  .side-lib { margin-top: var(--space-2); padding-top: var(--space-2); }
   .sg-row { min-height: var(--ctl-sm); padding-block: 0; }
-  .app:not(.side-folded) .side-foot { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
-  .app:not(.side-folded) .side-foot > * { grid-column: 1 / -1; }
-  .app:not(.side-folded) .side-foot > .who-list { grid-column: 1; grid-row: 1; display: flex; gap: var(--space-1); max-height: none; overflow: auto hidden; scrollbar-width: thin; }
-  .app:not(.side-folded) .side-foot > .who-head { grid-column: 2; grid-row: 1; padding: 0; }
-  .app:not(.side-folded) .who-head > span, .app:not(.side-folded) .who-switch span { display: none; }
-  .app:not(.side-folded) .who-switch { height: var(--who-face); }
-  .app:not(.side-folded) .side-foot .who-item { flex: none; justify-content: center; width: auto; min-width: var(--who-face); min-height: var(--who-face); padding: var(--space-1) var(--space-2); }
-  .app:not(.side-folded) .side-foot .who-item:not(.seated) { grid-template-columns: auto; }
-  .app:not(.side-folded) .side-foot .who-item:not(.seated) .who-name, .app:not(.side-folded) .side-foot .who-item:not(.seated) .what { display: none; }
-  .app:not(.side-folded) .side-foot .who-item.seated { order: -1; max-width: 100%; }
-  .app:not(.side-folded) .side-foot .who-item.seated .who-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .app:not(.side-folded) .side-foot .who-item.seated .ln-tag { display: none; }
 }
 
-@media (max-width: 760px) { .side-resize { display: none; } }
-
 /* ================================================================= motion
-   Pages arrive with a short rise; covers lift under the pointer. Quick and mechanical, never bouncy. */
-#view { view-transition-name: page; }
-::view-transition-old(page) { animation: page-out var(--dur-1) var(--ease-out) both; }
-::view-transition-new(page) { animation: page-in var(--dur-3) var(--ease-emph) both; }
-::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-@keyframes page-out { to { opacity: 0; } }
+   Only the page moves when the section changes: the one you leave fades
+   out quickly, then the new one's parts rise in, a few at a time. The bar
+   and the sidebar stay where they are. Covers lift under the pointer,
+   buttons press, menus grow from what opened them. Quick and mechanical,
+   never bouncy. */
 @keyframes page-in { from { opacity: 0; transform: translateY(var(--rise)); } }
-.enter { animation: page-in var(--dur-3) var(--ease-emph) both; }
+.leaving { opacity: 0; transition: opacity var(--dur-1) var(--ease-out); }
+.enter { animation: page-in var(--dur-3) var(--ease-emph) both; animation-delay: calc(var(--i, 0) * var(--stagger) - var(--entered, 0ms)); }
+.ctx:not([hidden]) { animation: menu-in var(--dur-2) var(--ease-out); }
+@keyframes menu-in { from { opacity: 0; transform: scale(.96); } }
 .ln-tile__cover { transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
-.ln-tile:hover .ln-tile__cover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.ln-tile:hover .ln-tile__cover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 .ln-tile:active .ln-tile__cover { transform: translateY(-1px); }
-.ln-button:active:not(:disabled) { transform: scale(.98); }
+.ln-button:active:not(:disabled), .bar-tab:active { transform: scale(.98); }
 .ln-button { transition-property: background-color, border-color, color, transform, box-shadow; }
 .sg-rows.opening { animation: rows-in var(--dur-3) var(--ease-emph); }
 @keyframes rows-in { from { opacity: 0; transform: translateY(-4px); } }
@@ -1599,10 +1550,9 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(.98); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .app, .sg-thumb img, .ln-tile__cover { transition: none; }
-  .enter, .ln-toast, .sg-rows.opening, .sg-live { animation: none; }
-  ::view-transition-old(page), ::view-transition-new(page) { animation: none; }
-  .ln-tile:hover .ln-tile__cover { transform: none; }
+  .app, .sg-thumb img, .ln-tile__cover, .bar-ind, .bar-search, .leaving { transition: none; }
+  .enter, .ctx:not([hidden]), .gq-pop, .ln-toast, .sg-rows.opening, .sg-live { animation: none; }
+  .ln-tile:hover .ln-tile__cover, .ln-button:active:not(:disabled), .bar-tab:active { transform: none; }
 }
 
 /* =========================================================== library list
@@ -1793,8 +1743,6 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 /* ============================================================ big picture
    The whole screen, for a controller from the sofa: large type, tiles that
    grow as the focus reaches them, the art of the game in focus behind. */
-.side-top .side-bp { margin-left: auto; }
-.side-folded .side-bp { margin: 0; }
 .bp { position: fixed; inset: 0; z-index: 45; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--bg-ground); color: var(--fg-1); font-family: var(--font-ui); animation: bp-in var(--dur-4) var(--ease-emph) both; overflow: hidden; }
 .bp.out { animation: bp-out var(--dur-3) var(--ease-in-out) both; }
 body:has(> #bp) #overlay .scrim { z-index: 46; }
@@ -1908,9 +1856,6 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .gpage-note.gp-ac .ln-icon { flex: none; margin-top: 1px; }
 .gpage-note .gpage-link { font-size: inherit; }
 
-/* Just you on this PC, with no runs yet: Play is always yours, so the
-   sidebar has no one to seat. */
-.is-single #who-head, .is-single #who { display: none; }
 
 /* Try a save (dialog trysave) */
 .try-field { display: grid; gap: var(--space-1); font-size: var(--fs-13); color: var(--fg-2); }

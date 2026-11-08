@@ -25,10 +25,10 @@
         <span id="wl-av">${lnAvatar(me, "160")}</span>
         <input type="text" class="wl-name" id="wl-name" data-field="pname" data-i="0" value="${/^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="Your name" maxlength="24" aria-label="Your name">
         ${SWATCHES(p, 0)}
-        <p class="wl-cap">Play and the sidebar show you like this.</p>
+        <p class="wl-cap">Play and the top bar show you like this.</p>
         <div class="wl-preview" aria-hidden="true">
           <span class="ln-button ln-button--play ln-button--lg">${GI.play}<span>Play as <span data-wl-name>${esc(me.name)}</span></span></span>
-          <span class="who-item seated"><span id="wl-who-av">${lnAvatar(me, "32")}</span><span class="who-name" data-wl-name>${esc(me.name)}</span></span>
+          <span class="bar-me"><span id="wl-who-av">${lnAvatar(me, "32")}</span><span class="bar-label" data-wl-name>${esc(me.name)}</span></span>
         </div>
       </div>
       <div class="wl-about">

@@ -128,15 +128,13 @@
     });
     h.addEventListener("dblclick", () => { setPref("sideW", ""); applySideWidth(); });
   })();
-  // Numbers count up and rings and bars fill the first time a page opens
-  // in a session, for each seat.
-  const arrived = new Set();
+  // Numbers count up and rings and bars fill each time a page arrives,
+  // once: or as soon as they're there, when they come in after the page.
+  let arrivedAt = -1;
   function arriveOnce(root) {
-    const key = `${S.view}|${S.view === "player" ? S.playerPage : ""}|${S.seat}`;
-    if (reduced() || arrived.has(key) || !root.querySelector("[data-countup], .ach-ring, .ach-bar")) return;
-    arrived.add(key);
+    if (reduced() || arrivedAt === arrival || !root.querySelector("[data-countup], .ach-ring, .ach-bar")) return;
+    arrivedAt = arrival;
     countUp(root);
     const page = root.firstElementChild;
     if (page) { page.classList.add("arrive"); setTimeout(() => page.classList.remove("arrive"), 1400); }
   }
-

@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.74.0, beta)
+## Where things stand (1.75.0, beta)
 
 These shipped recently, newest last:
 
@@ -498,6 +498,18 @@ These shipped recently, newest last:
   the sidebar only games, with collections you create and drag games
   into), real page transitions, animations and UI sounds on navigation.
   Plan in the session's manager-plan.
+
+- **1.75** The owner's Steam-like shell, part 1: a top bar (`.topbar`,
+  `--bar-h`) with Back/Forward, the section tabs and a sliding underline
+  (`renderBar`, `#bar-ind`, a More menu under 1000px), search (`#gq`),
+  Big Picture, Profiles, the seat as an avatar menu (`renderSeat`,
+  `meMenu`: who's at the PC, Nobody, Add a run, Profiles) and Settings;
+  the sidebar holds only games. Page changes: no View Transitions; the
+  old page fades (`swapPage`, `.leaving`), the new one rises in parts
+  staggered (`enter`, `--stagger`); `arriveOnce` per arrival. Interface
+  sounds (`uiSound`, half Big Picture's gain, one per action, never while
+  playing or with Sounds off). Next: 1.76 collections in the sidebar
+  with drag and drop.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

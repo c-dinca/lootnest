@@ -97,7 +97,7 @@ If any step shows someone else's settings or saves, stop and send the log.
 Lootnest now only answers calls from its own page, so check nothing lost
 its answers:
 
-1. Open Lootnest and visit every page in the sidebar, a game's page and
+1. Open Lootnest and visit every page in the top bar, a game's page and
    Settings. Each one fills in as before. If one stays empty, the log says
    "ignored ... call(s) to Lootnest from a document that isn't its own
    page": copy it.

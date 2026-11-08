@@ -1,13 +1,26 @@
   // --------------------------------------------------------------- actions --
   const actions = {
-    nav(el) {
+    nav(el, ev) {
       if (S.view === "edit" && !confirmLeaveEdit()) return;
       const view = el.dataset.view;
-      transition(() => {
-        enterView(view); S.animateView = document.startViewTransition && !reduced() ? "kids" : true;
-        if (S.view === "library") S.animateCards = true;
-        render(); $("#view").scrollTop = 0;
-      });
+      if (view === S.view) { $("#view").scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" }); return; }
+      if (ev) uiSound("tab");
+      renderBar(view);
+      swapPage(() => { enterView(view); S.animateView = true; render(); $("#view").scrollTop = 0; });
+    },
+    "hist-back"() { goHist(true); },
+    "hist-fwd"() { goHist(false); },
+    "tabs-more"(el) { moreMenu(el); },
+    "me-menu"(el) { meMenu(el); },
+    "add-run"(el) {
+      const per = player(el.dataset.player);
+      if (!per) return;
+      if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players));
+      const i = S.players.push({ id: "", name: "", color: per.color, of: per.id }) - 1;
+      S.dialog = { kind: "profiles" };
+      render();
+      const inp = $(`[data-field="pname"][data-i="${i}"]`);
+      if (inp) inp.focus();
     },
     "side-toggle"() { setFold(!S.folded); },
     "bp-open"() { bpOpen(); },
@@ -163,7 +176,6 @@
       achAsked.delete("game:" + id);
       toast(shared ? "Achievements are shared now." : "Each profile gets its own achievements from the next swap.");
     },
-    "seat-menu"(el) { seatMenu(el); },
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : isOwnedKey(el.dataset.key) ? "owned" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => pageBack(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
@@ -914,15 +926,21 @@
       return;
     }
     if (el.dataset.action !== "menu" && S.menuFor && !el.closest(".menu")) S.menuFor = null;
-    if (el.closest("#ctx")) closeContext();
+    const had = !!(S.dialog || S.picker), menu = !$("#ctx").hidden, inMenu = !!el.closest("#ctx");
+    if (inMenu) closeContext();
     if (el.closest(".ln-drawer[data-menu]") && el.dataset.action !== "dialog-cancel" && el.dataset.action !== "scrim") { S.dialog = null; renderOverlay(); }
+    if (PLAYS.has(el.dataset.action)) uiSound("go");
     const f = actions[el.dataset.action];
     if (f) f(el, ev);
+    // One sound for what the click did: Play, a page or tab (in the action),
+    // then a dialog, drawer or menu opening or closing.
+    const has = !!(S.dialog || S.picker);
+    if ((has && !had) || (!menu && !$("#ctx").hidden)) uiSound("open");
+    else if ((had && !has) || (menu && !inMenu && $("#ctx").hidden)) uiSound("close");
   });
+  const PLAYS = new Set(["play", "play-as", "play-found"]);
 
   let findTimer = 0;
-  // The search in a folded sidebar opens it.
-  document.addEventListener("focusin", (ev) => { if (ev.target.id === "gq" && S.folded) setFold(false); });
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (el.id === "side-q") { S.sideQ = el.value; renderSideGames(); return; }
@@ -1017,7 +1035,7 @@
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
   });
 
-  // The sidebar search: Ctrl+K anywhere, arrows and Enter in its list.
+  // The search in the top bar: Ctrl+K anywhere, arrows and Enter in its list.
   document.addEventListener("keydown", (ev) => {
     // Ctrl+B folds the sidebar to a rail of icons, and opens it again.
     if (ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "b") { ev.preventDefault(); setFold(!S.folded); return; }
@@ -1041,7 +1059,6 @@
     }
     if (ev.ctrlKey && !ev.altKey && ev.key.toLowerCase() === "k") {
       ev.preventDefault();
-      if (S.folded) setFold(false);
       const q = $("#gq"); if (q) { q.focus(); q.select(); renderGq(); }
       return;
     }
@@ -1059,7 +1076,7 @@
     }
   }, true);
   document.addEventListener("focusin", (ev) => { if (ev.target.id === "gq") renderGq(); });
-  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".side-search")) gqClose(); });
+  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".bar-search")) gqClose(); });
   document.addEventListener("keydown", (ev) => {
     if (ev.target.id === "tag-new" && ev.key === "Enter") { ev.preventDefault(); actions["tag-add"]({ dataset: { key: ev.target.dataset.key } }); return; }
     if (ev.target.id === "gp-note" && ev.key === "Enter") { ev.preventDefault(); saveNote(ev.target); return; }
@@ -1073,14 +1090,17 @@
       return;
     }
     if (!$("#ctx").hidden) {
-      if (ev.key === "Escape") { ev.preventDefault(); closeContext(); return; }
-      if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+      if (ev.key === "Escape") { ev.preventDefault(); closeContext(true); uiSound("close"); return; }
+      const inMenu = !!(ev.target.closest && ev.target.closest("#ctx"));
+      if (inMenu && (ev.key === "ArrowDown" || ev.key === "ArrowUp" || ev.key === "Tab")) {
         ev.preventDefault();
         const b = [...document.querySelectorAll("#ctx button:not(:disabled)")];
-        const i = b.indexOf(document.activeElement);
-        b[(i + (ev.key === "ArrowDown" ? 1 : b.length - 1)) % b.length].focus();
+        const i = b.indexOf(document.activeElement), down = ev.key === "Tab" ? !ev.shiftKey : ev.key === "ArrowDown";
+        if (b.length) b[(i + (down ? 1 : b.length - 1)) % b.length].focus();
         return;
       }
+      const seat = inMenu && /^[1-9]$/.test(ev.key) && $('#ctx [data-action="seat-set"]') && grouped()[+ev.key - 1];
+      if (seat) { ev.preventDefault(); closeContext(true); setSeat(seat.id); return; }
     }
     // In the Library's grid, the arrows move from cover to cover.
     const tile = !ev.ctrlKey && !ev.altKey && !ev.shiftKey && ev.target.closest && ev.target.closest("#grid .ln-tile, #grid .lib-row-open");
@@ -1089,7 +1109,7 @@
       const grid = $("#grid"), tiles = [...grid.querySelectorAll(".ln-tile, .lib-row-open")], i = tiles.indexOf(tile);
       const cols = S.density === "list" ? 1 : getComputedStyle(grid).gridTemplateColumns.split(" ").length;
       const n = tiles[{ ArrowLeft: i - 1, ArrowRight: i + 1, ArrowUp: i - cols, ArrowDown: i + cols, Home: 0, End: tiles.length - 1 }[ev.key]];
-      if (n) { n.focus(); n.scrollIntoView({ block: "nearest" }); }
+      if (n && n !== tile) { n.focus(); n.scrollIntoView({ block: "nearest" }); uiSound("move"); }
       return;
     }
     // Ctrl+F or / finds a game.
@@ -1106,7 +1126,7 @@
         else if (ev.key === "Escape") { ev.preventDefault(); actions["np-cancel"](); }
         return;
       }
-      if (ev.key === "Escape") { ev.preventDefault(); if (S.picker.ask) actions["picker-back"](); else closePicker(); return; }
+      if (ev.key === "Escape") { ev.preventDefault(); if (S.picker.ask) actions["picker-back"](); else { closePicker(); uiSound("close"); } return; }
       if (!S.picker.ask && /^[1-9]$/.test(ev.key)) {
         const p = grouped()[+ev.key - 1];
         if (p) { ev.preventDefault(); S.picker.playerId = p.id; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); }
@@ -1119,7 +1139,7 @@
     if (ev.ctrlKey && !ev.altKey && ev.key === "Tab" && S.view === "game" && !S.dialog && !S.picker && !BP.on) { ev.preventDefault(); stepTab(ev.shiftKey ? "ArrowLeft" : "ArrowRight"); return; }
     if (S.dialog && S.dialog.kind === "shots" && !ev.altKey && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) { ev.preventDefault(); actions["shot-step"]({ dataset: { d: ev.key === "ArrowRight" ? 1 : -1 } }); return; }
     if (ev.key === "Escape") {
-      if (S.dialog && S.dialog.kind !== "welcome") { closeDialog(false); return; }
+      if (S.dialog && S.dialog.kind !== "welcome") { closeDialog(false); uiSound("close"); return; }
       if (S.menuFor) { S.menuFor = null; render(); return; }
       if (S.view === "game" && !ev.target.closest("input, textarea, select")) pageBack();
     }

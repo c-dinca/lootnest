@@ -28,7 +28,7 @@
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     find: { q: "", hits: null, error: "" }, // Store: the search and what came back
     front: null,      // Store rows before a search: {daily, specials, top, deals} or {error}
-    gq: { q: "", hits: null, sel: -1 }, // the search in the sidebar
+    gq: { q: "", hits: null, sel: -1 }, // the search in the top bar
     updates: null,    // the Updates page: {games, newsOn} from ps_updates
     copies: null,     // "Is this a new copy?" offers from ps_newCopies
     dl: null,         // updates found in Downloads, from ps_downloads
