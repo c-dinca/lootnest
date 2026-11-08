@@ -1594,7 +1594,7 @@
       ((N && N.items) || []).slice(0, 3).forEach((n, i) => items.push({ it, n, i }));
     });
     items.sort((a, b) => new Date(b.n.date) - new Date(a.n.date));
-    return newsSection("News from your games", items.slice(0, 4), true, true);
+    return newsSection("News from your games", items.slice(0, 4), true);
   }
 
   // Notices at the top of Home and the Library (system.css .ln-banner).
@@ -1869,25 +1869,14 @@
 
   // Updates and news from Steam's feed for the game (opt-in).
   const storeKept = (src) => src === "steam" || src === "epic" || src === "gog";
-  // Steam's summaries keep BBCode escapes ("\[ GAMEPLAY ]"); show them plain.
-  const plainSummary = (t) => String(t || "").replace(/\\([[\]])/g, "$1");
-  // The news as a section: the newest post large, with its picture, and the
-  // ones before it as a list beside it; compact lists them all, as on Home.
-  // items: [{ it, n, i }].
-  function newsSection(title, items, showGame, compact) {
+  // The news as a short list, two to a row. items: [{ it, n, i }].
+  function newsSection(title, items, showGame) {
     if (!items.length) return "";
     const pic = (it, n) => n.image || S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || "";
     const meta = (it, n) => `<span class="news-meta"><time class="ln-num">${esc(day(n.date))}</time>${n.update ? '<span class="ln-tag ln-tag--strong">Update</span>' : ""}${showGame ? `<span>${esc(it.name)}</span>` : ""}</span>`;
-    const [f, ...rest] = compact ? [null, ...items] : items;
-    const fp = f && pic(f.it, f.n);
-    const featured = !f ? "" : `<button class="news-feature" data-action="read-news" data-key="${esc(coverKey(f.it))}" data-i="${f.i}">
-      <span class="news-pic"${fp ? ` style="background-image:url('${esc(fp)}')"` : ""}></span>
-      <span class="news-body">${meta(f.it, f.n)}<b>${esc(f.n.title)}</b>${f.n.summary ? `<span class="news-sum">${esc(plainSummary(f.n.summary))}</span>` : ""}
-        <span class="news-read">Read</span></span></button>`;
-    const list = rest.length ? `<ul class="news-list${compact ? " compact" : ""}">${rest.map(({ it, n, i }) => { const p = pic(it, n); return `<li><button data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
+    return `<section class="news" aria-label="${esc(title)}"><div class="ln-section-head"><div><h2>${esc(title)}</h2></div></div><ul class="news-list">${items.map(({ it, n, i }) => { const p = pic(it, n); return `<li><button data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
       <span class="news-thumb"${p ? ` style="background-image:url('${esc(p)}')"` : ""}></span>
-      <span class="news-body">${meta(it, n)}<b>${esc(n.title)}</b>${n.summary ? `<span class="news-sum">${esc(plainSummary(n.summary))}</span>` : ""}</span></button></li>`; }).join("")}</ul>` : "";
-    return `<section class="news" aria-label="${esc(title)}"><div class="ln-section-head"><div><h2>${esc(title)}</h2></div></div><div class="news-grid${rest.length ? "" : " single"}">${featured}${list}</div></section>`;
+      <span class="news-body">${meta(it, n)}<b>${esc(n.title)}</b></span></button></li>`; }).join("")}</ul></section>`;
   }
   function newsHTML(it) {
     const title = "Updates and news";
@@ -1904,7 +1893,7 @@
     if (!N || N.loading) return `<section class="news">${head}${lnInline("", `Reading Steam's news for ${esc(it.name)}`)}</section>`;
     if (N.none) return `<section class="news">${head}<p class="news-none">${esc(it.name)} isn't on the Steam store, so there's no news feed for it.</p></section>`;
     if (N.error) return `<section class="news">${head}${lnInline("error", esc(N.error))}</section>`;
-    const items = (N.items || []).slice(0, 5).map((n, i) => ({ it, n, i }));
+    const items = (N.items || []).slice(0, 6).map((n, i) => ({ it, n, i }));
     const uk = updKey(it);
     const offer = it.kind === "found" && (S.copies || []).find((o) => o.new.key === it.id);
     const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, released ${esc(day(N.newer.date))}. The files of your copy are older than that.`,

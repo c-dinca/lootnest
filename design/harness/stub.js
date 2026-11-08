@@ -129,6 +129,11 @@
   const NEWS = [
     { title: "Patch 2.3: new co-op mode and 40 fixes", date: iso(2 * d), update: true, summary: "Play the campaign with a friend, plus balance changes across every class.", url: "https://store.steampowered.com/news/1", body: "<p>Patch notes.</p>", image: art(1091500, "hero") },
     { title: "Developer update: the road to 3.0", date: iso(12 * d), update: false, summary: "What we're working on for the next big update.", url: "https://store.steampowered.com/news/2", body: "<p>Roadmap.</p>" },
+    { title: "Hotfix 2.2.1", date: iso(20 * d), update: true, summary: "Fixes a crash when loading older saves.", url: "https://store.steampowered.com/news/3", body: "<p>Hotfix.</p>", image: art(1086940, "hero") },
+    { title: "Patch 2.2: photo mode", date: iso(34 * d), update: true, summary: "Photo mode, new difficulty settings and many fixes.", url: "https://store.steampowered.com/news/4", body: "<p>Patch notes.</p>" },
+    { title: "Community spotlight", date: iso(41 * d), update: false, summary: "Your best screenshots from the last month.", url: "https://store.steampowered.com/news/5", body: "<p>Spotlight.</p>", image: art(1245620, "hero") },
+    { title: "Patch 2.1: performance", date: iso(55 * d), update: true, summary: "Faster loading and smoother frame times.", url: "https://store.steampowered.com/news/6", body: "<p>Patch notes.</p>" },
+    { title: "Patch 2.0: the big one", date: iso(80 * d), update: true, summary: "A new act, new classes and a reworked inventory.", url: "https://store.steampowered.com/news/7", body: "<p>Patch notes.</p>" },
   ];
 
   const api = {
