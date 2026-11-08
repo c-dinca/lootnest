@@ -86,7 +86,6 @@
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
         if (S.view === "game") render();
-        if (S.dialog && S.dialog.kind === "points") renderOverlay();
         break;
       case "savePointMade": {
         const P = S.points[ev.key] || (S.points[ev.key] = {});
@@ -96,7 +95,6 @@
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
         else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
-        if (S.dialog && S.dialog.kind === "points") renderOverlay();
         break;
       }
       case "offline":

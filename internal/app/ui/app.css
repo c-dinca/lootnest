@@ -702,8 +702,40 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
    the profiles beside them in a 380 to 460 px column that stays in view. */
 .gpage-col, .gpage-aside, .gpage-side { display: grid; gap: var(--gap-group); align-content: start; min-width: 0; }
 .gpage-main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(380px, 30%, 460px); gap: var(--space-12); margin-top: var(--space-8); align-items: start; }
-.gpage-side { position: sticky; top: var(--space-6); align-self: start; }
+.gpage-side { position: sticky; top: calc(var(--gp-head-h) + var(--space-6)); align-self: start; }
 .gpage-col { gap: var(--gap-section); container-type: inline-size; }
+.gpage-main--wide { grid-template-columns: minmax(0, 1fr); }
+.gp-activity { margin: 0; }
+/* The tabs under the play bar, and what each holds at full width. */
+.gp-tabs { margin-top: var(--space-8); padding-bottom: var(--space-2); border-bottom: var(--hairline) solid var(--edge-1); }
+.gpage-main--wide .ach-grid { grid-template-columns: repeat(auto-fill, minmax(var(--ach-col-min), 1fr)); }
+.gpage-main--wide .gp-timeline { columns: var(--tl-col-w); column-gap: var(--space-12); }
+.gp-timeline > .ln-section-head, .gp-timeline > .gpage-actions { column-span: all; }
+.tl-day { break-inside: avoid; }
+/* The compact head: it stays at the top of the page once the play bar has
+   scrolled away, with the tabs and Play. Focus moving under it scrolls
+   clear of it (scroll-margin on the page, not the head). */
+.gpage-hero *, .gpage-body * { scroll-margin-top: var(--gp-head-h); }
+.gp-dock { position: sticky; top: 0; z-index: 3; height: 0; }
+.gp-head {
+  container-type: inline-size; display: flex; align-items: center; gap: var(--space-4); height: var(--gp-head-h); padding: 0 var(--page-gutter);
+  background: var(--bg-surface); border-bottom: var(--hairline) solid var(--edge-1);
+  transform: translateY(calc(-1 * var(--space-2)));
+}
+.gp-head, .gp-head-tabs { visibility: hidden; opacity: 0; transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+.no-bar > .gp-dock .gp-head, .no-bar.no-tabs > .gp-dock .gp-head-tabs { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+.gp-head-art { flex: none; display: grid; place-items: center; width: calc(var(--gp-head-art) * 2 / 3); height: var(--gp-head-art); border-radius: var(--radius-tag); object-fit: cover; background: var(--bg-raised); color: var(--fg-2); font: 750 var(--text-body)/1 var(--font-ui); }
+.gp-head-id { display: grid; gap: 2px; flex: 0 1 auto; min-width: 0; max-width: 24ch; }
+.gp-head-id b, .gp-head-id span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-head-id b { font-size: var(--text-body); font-weight: 700; }
+.gp-head-id span { font-size: var(--text-meta); color: var(--fg-2); }
+.gp-head-tabs { flex: 1 1 auto; }
+.gp-head-play { display: flex; align-items: center; gap: var(--space-2); flex: none; margin-left: auto; }
+.gp-head .gpage-session { height: var(--ctl-md); font-size: var(--text-body); }
+@container (max-width: 1040px) { .gp-head-id span, .gp-head-play > .ln-button--ghost { display: none; } }
+@container (max-width: 880px) { .gp-head-id { display: none; } }
+@container (max-width: 680px) { .gp-head-art { display: none; } }
+@media (prefers-reduced-motion: reduce) { .gp-head, .gp-head-tabs { transform: none; transition: none; } }
 /* The Manage panel: the groups one under another. */
 .gpage-manage-list { display: grid; gap: var(--space-6); }
 .gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"], .gpage-group[data-g="Cover and art"] { order: 1; }
@@ -719,7 +751,6 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .ach-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-6); }
 .gp-ach-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
 .gp-ach-foot .gpage-hint { margin: 0; }
-.gp-ach--all > * + * { margin-top: var(--space-4); }
 .ln-drawer__note { flex: 1; margin: 0; }
 .ach-who { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .ach-who .ln-num { margin-left: 2px; color: var(--fg-2); font-size: var(--fs-12); }

@@ -88,7 +88,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 **Phases.**
 - 0, M: split `app.js` into ordered files joined into one closure; role type tokens; routing with Back; an accessibility harness; the tab slot API. The split and Back shipped in 1.67.
 - 1, M: art fallback chain, type covers, logo art, palette tint, custom art copied into `covers\custom`.
-- 2, L: game page tabs, a facts column, a compact sticky head.
+- 2, L: game page tabs, a facts column, a compact sticky head. The tabs and the head shipped in 1.72; the side column stays on Overview.
 - 3, M: five nav items with a Saves hub; the command palette.
 - 4, M: density, WebView2 zoom, contrast, forced colours, motion, per profile.
 - 5, M: post-session summary, cover-to-hero transition, spotlight shelves.

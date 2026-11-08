@@ -104,25 +104,28 @@
       setTimeout(() => { el.classList.add("out"); el.addEventListener("animationend", () => el.remove(), { once: true }); setTimeout(() => el.remove(), 800); }, 5600 + i * 160);
     });
   }
-  // On the game's page: the latest unlocked, and the whole list in a panel.
-  function achievementsBlock(it) {
+  // The Achievements tab: the whole list. few: Overview's latest three.
+  function achievementsBlock(it, few) {
     const X = achFor(it);
     if (!X) {
       // Read and none found: for a game from outside the stores, say why.
-      if (S.ach[recentKey(it)] !== null || !docWorth(it)) return "";
+      if (few || S.ach[recentKey(it)] !== null || !docWorth(it)) return "";
       return `<section class="gpage-block gp-ach">${gpHead("Achievements")}<p>None found on this PC for ${esc(it.name)}.</p>
         <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button></div></section>`;
     }
     const { key, who, A, pct } = X;
-    const list = A.list.filter((a) => a.unlocked).slice(0, 6);
+    const list = few ? A.list.filter((a) => a.unlocked).slice(0, 3) : A.list;
+    const acts = few ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="game-tab" data-tab="achievements">Show all ${A.total}</button>`
+      : (docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : "") + X.toggle;
     return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(possessive(pname(who))) + " achievements" : "Achievements"}</h2></div>
         <span class="ach-count"><b class="ln-num">${A.unlocked}</b> of <span class="ln-num">${A.total}</span>, ${pct}%</span></div>
       ${X.whoRow}${X.bar}
-      ${list.length ? `<ul class="ach-list ach-grid">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
-      <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p><div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-all" ${itemAttr(it)} aria-haspopup="dialog">Show all ${A.total}</button>${docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : ""}${X.toggle}</div></div></section>`;
+      ${list.length ? `<ul class="ach-list${few ? "" : " ach-grid"}">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
+      <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p>${acts ? `<div class="gpage-actions">${acts}</div>` : ""}</div></section>`;
   }
   // Save points: named copies of a game's saves, on a timeline.
   const pointsAsked = new Set();
+  let ptEdit = null; // the save point being renamed
   function pointsFor(it) {
     const key = recentKey(it);
     if (!pointsAsked.has(key)) { pointsAsked.add(key); api.savePoints(key).catch(() => {}); }
@@ -136,7 +139,7 @@
     const who = p.player && player(p.player) ? `<span class="ln-mark ln-player" style="--player:${esc(color(p.player))}"></span>${esc(pname(p.player))}` : "";
     const attrs = `${itemAttr(it)} data-id="${esc(p.id)}" data-name="${esc(p.name)}"`;
     const b = (cls, a, label) => `<button class="ln-button ${cls} ln-button--sm" ${a} ${P.busy ? "disabled" : ""}>${label}</button>`;
-    const editing = full && S.dialog && S.dialog.editing === p.id;
+    const editing = full && ptEdit === p.id;
     const name = editing ? `<input class="ln-input pt-name-in" id="pt-rename" maxlength="60" value="${esc(p.name)}" aria-label="Name">` : `<b>${esc(p.name)}</b>`;
     const actions = editing ? b("ln-button--secondary", `data-action="pt-rename-save" ${attrs}`, "Save") + b("ln-button--ghost", 'data-action="pt-rename-cancel"', "Cancel")
       : b("ln-button--secondary", `data-action="pt-restore" ${attrs}`, "Go back to it")
@@ -163,13 +166,48 @@
       <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? '<span class="ln-spinner" aria-hidden="true"></span>Copying' : "Make a save point"}</button></div>`;
     const hint = cfg().settings.pointHotkeyOff ? "" : " Ctrl+Shift+F5 makes one while you play.";
     return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
-      <p class="gpage-hint">A copy of the saves as they are now, to come back to.${hint}</p>${make}
-      ${list.length ? `<ol class="pt-list">${list.slice(0, 3).map((p) => pointRow(it, p, false, P)).join("")}</ol>` : ""}
-      ${list.length ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="pt-all" ${itemAttr(it)} aria-haspopup="dialog">${list.length > 3 ? `Show all ${list.length}` : "Rename, delete or start a run"}</button></div>` : ""}</section>`;
+      <p class="gpage-hint">A copy of the saves as they are now, to come back to. Going back to one keeps the current saves as a point first.${hint}</p>${make}
+      ${list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : ""}</section>`;
+  }
+  // Overview: the newest save point, and the way to the rest.
+  function latestPoint(it) {
+    const P = S.points[recentKey(it)] || {}, list = P.points || [];
+    if (!list.length) return "";
+    return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Latest save point</h2></div>
+        <button class="ln-button ln-button--ghost ln-button--sm" data-action="game-tab" data-tab="saves">${list.length > 1 ? `All ${list.length} save points` : "Go to Saves"}</button></div>
+      <ol class="pt-list">${pointRow(it, list[0], false, P)}</ol></section>`;
+  }
+  // Overview: the safety net's copies, for a game outside the stores.
+  function latestCopy(it) {
+    const G = it.kind === "found" && S.gsaves[it.id];
+    if (!G || G.error || G.off === "steam") return "";
+    const lv = G.local || [];
+    const text = lv.length ? `${lv.length} ${lv.length === 1 ? "copy" : "copies"} on this PC, the newest from ${ago(lv[0].created)}.`
+      : (G.locations || []).length ? "No copies yet. Lootnest copies its saves when they change and the game is closed." : `Lootnest doesn't know where ${it.name} keeps its saves yet.`;
+    return `<section class="gpage-block"><div class="ln-section-head"><div><h2>Saves</h2></div>
+        <button class="ln-button ln-button--ghost ln-button--sm" data-action="game-tab" data-tab="saves">Go to Saves</button></div><p>${esc(text)}</p></section>`;
+  }
+  // Overview: the last session, by whom and for how long.
+  function activityLine(it, timeline) {
+    const e = (S.timeline[recentKey(it)] || []).find((x) => x.kind === "session");
+    if (!e) return "";
+    const who = e.profile && player(e.profile) && cfg().players.length > 1 ? pname(e.profile) : "";
+    const text = `${who ? who + " played" : "Played"} ${playSpan(e.seconds || 0)}, ${ago(e.at)}`;
+    return `<p class="gpage-note gp-activity">${GI.history}<span>${esc(text)}.</span>${timeline ? `<button class="gpage-link" data-action="game-tab" data-tab="timeline">See the timeline</button>` : ""}</p>`;
+  }
+  // The Saves tab, beside the save points: the copies made before swaps,
+  // and trying someone else's save in a run of its own (as in Manage).
+  function otherSavesBlock(it) {
+    const g = it.g;
+    if (!g) return "";
+    const s = session(g.id);
+    return `<section class="gpage-block"><div class="ln-list">
+      ${gpRow(`data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog"`, GI.history, "Copies before swaps", "Files from before each swap")}
+      ${gpRow(`data-action="try-save" data-game="${esc(g.id)}" aria-haspopup="dialog"`, GI.flask, "Try a save", "A friend's save, in a new run", { disabled: s || cfg().players.length >= MAX_PROFILES })}</div></section>`;
   }
   // The game's timeline (ps_gameTimeline): sessions, save points, unlocks
   // and updates, by day, the latest first.
-  const tlAsked = new Set();
+  const tlAsked = new Set(), TL_SHOWN = 40;
   function playSpan(sec) {
     const m = Math.max(1, Math.round(sec / 60));
     return m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "");
@@ -200,10 +238,9 @@
     const key = recentKey(it);
     if (!tlAsked.has(key)) { tlAsked.add(key); api.gameTimeline(key).catch(() => {}); }
     const list = S.timeline[key];
-    if (!list) return "";
+    if (!list || !list.length) return "";
     const head = `<div class="ln-section-head"><div><h2>Timeline</h2></div></div>`;
-    if (!list.length) return `<section class="gpage-block gp-timeline">${head}<p class="gpage-hint">Lootnest keeps a timeline from now on: sessions, save points, unlocks, updates and screenshots.</p></section>`;
-    const n = S.tlMore[key] || 8, days = [];
+    const n = S.tlMore[key] || TL_SHOWN, days = [];
     for (const e of list.slice(0, n)) {
       const d = tlDay(e.at);
       if (!days.length || days[days.length - 1].d !== d) days.push({ d, rows: [] });
@@ -211,15 +248,6 @@
     }
     return `<section class="gpage-block gp-timeline">${head}${days.map((g) => `<div class="tl-day"><h3 class="tl-date">${esc(g.d)}</h3><ol class="tl-list">${g.rows.join("")}</ol></div>`).join("")}
       ${list.length > n ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="tl-more" data-key="${esc(key)}">Show more</button></div>` : ""}</section>`;
-  }
-  function viewPointsDrawer() {
-    const it = dialogItem(S.dialog);
-    if (!it) return "";
-    const P = S.points[recentKey(it)] || {};
-    const list = P.points || [];
-    return drawer({ label: `${esc(it.name)} save points`, title: "Save points", sub: `${esc(it.name)}, newest first`,
-      body: list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : `<p>No save points yet.</p>`,
-      foot: `<p class="gpage-hint ln-drawer__note">Going back keeps the saves as they are now as a point first.${P.profiles ? " A new run is a profile of its own, starting from that moment." : ""}</p>` });
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";

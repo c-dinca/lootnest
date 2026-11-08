@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.72.0
+
+- A game's page is now in tabs: Overview, Achievements, Saves, Timeline and News. A tab shows only when the game has something for it, so a game with no news has no News tab.
+- Overview has the details, when it was last played and by whom, the three latest achievements, the latest save point, how the saves of a game from outside the stores are kept, and the profiles, status, rating, note and collections beside them.
+- Achievements lists them all on the page, no longer in a panel at the side. Saves has every save point, to go back to, rename, delete or start a run from, and the copies on this PC, the copies made before swaps, and Try a save. Timeline shows more of it at once.
+- Scroll down a game's page and a small bar stays at the top with the game, whose files are loaded, the tabs and Play, so Play is always one click away.
+- The arrow keys, Home and End move between the tabs, and Ctrl+Tab and Ctrl+Shift+Tab do too from anywhere on the page. Each game remembers its tab while Lootnest is open, and Back returns to a game's page on the tab you left it on.
+
 ## 1.71.0
 
 - Choose your own cover, wide art or logo for any game: open the game, then Manage, Cover and art. Pick a PNG, JPEG or WebP picture of up to 20 MB. Lootnest keeps its own copy, and your picture stays where it was, as it was.

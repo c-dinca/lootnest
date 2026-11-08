@@ -41,43 +41,39 @@
       P.busy = true; render();
       try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
-    "tl-more"(el) { const k = el.dataset.key; S.tlMore[k] = (S.tlMore[k] || 8) + 20; render(); },
-    "pt-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "points", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
+    "tl-more"(el) { const k = el.dataset.key; S.tlMore[k] = (S.tlMore[k] || TL_SHOWN) + TL_SHOWN; render(); },
     async "pt-restore"(el) {
       const it = itemFor(el);
       if (!it) return;
-      const key = recentKey(it), back = S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null;
+      const key = recentKey(it);
       const ok = await confirmDialog({ title: `Go back to ${el.dataset.name}?`, body: `The saves of ${it.name} become what they were then. The saves as they are now are kept as a save point first, so you can come back to them too.`, ok: "Go back to it" });
-      if (back) { S.dialog = back; renderOverlay(); }
       if (!ok) return;
       const P = S.points[key] || (S.points[key] = {});
-      P.busy = true; render(); if (back) renderOverlay();
-      try { await api.restoreSavePoint(key, el.dataset.id); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); if (back) renderOverlay(); }
+      P.busy = true; render();
+      try { await api.restoreSavePoint(key, el.dataset.id); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
     async "pt-branch"(el) {
       const it = itemFor(el);
       if (!it) return;
-      const key = recentKey(it), back = S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null;
+      const key = recentKey(it);
       const who = el.dataset.player && player(el.dataset.player) ? pname(el.dataset.player) : "this profile";
       const ok = await confirmDialog({ title: `Start a new run from ${el.dataset.name}?`, body: `A new run of ${who} starts with the saves of that moment: a profile of its own, with its own saves from then on. Everyone else's stay as they are.`, ok: "Start the run" });
-      if (back) { S.dialog = back; renderOverlay(); }
       if (!ok) return;
       try { const id = await api.branchSavePoint(key, el.dataset.id, ""); await refresh(); toast(`New run: ${pname(id)}. Choose it when you play.`); } catch (e) { toast(errText(e), "error"); }
     },
-    "pt-rename"(el) { if (S.dialog && S.dialog.kind === "points") { S.dialog.editing = el.dataset.id; renderOverlay(); } },
-    "pt-rename-cancel"() { if (S.dialog) { S.dialog.editing = null; renderOverlay(); } },
+    "pt-rename"(el) { ptEdit = el.dataset.id; render(); const r = $("#pt-rename"); if (r) { r.focus(); r.select(); } },
+    "pt-rename-cancel"() { ptEdit = null; render(); },
     async "pt-rename-save"(el) {
       const it = itemFor(el), inp = $("#pt-rename");
       if (!it || !inp) return;
       const key = recentKey(it);
-      try { await api.renameSavePoint(key, el.dataset.id, inp.value); S.dialog.editing = null; api.savePoints(key).catch(() => {}); } catch (e) { toast(errText(e), "error"); }
+      try { await api.renameSavePoint(key, el.dataset.id, inp.value); ptEdit = null; api.savePoints(key).catch(() => {}); } catch (e) { toast(errText(e), "error"); }
     },
     async "pt-delete"(el) {
       const it = itemFor(el);
       if (!it) return;
-      const key = recentKey(it), back = S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null;
+      const key = recentKey(it);
       const ok = await confirmDialog({ title: `Delete ${el.dataset.name}?`, body: "This save point's copy of the saves goes. The game's saves now aren't touched.", ok: "Delete it", danger: true });
-      if (back) { S.dialog = back; renderOverlay(); }
       if (!ok) return;
       try { await api.deleteSavePoint(key, el.dataset.id); } catch (e) { toast(errText(e), "error"); }
     },
@@ -112,7 +108,7 @@
       try { S.logText = (await api.log()) || "Nothing yet."; } catch (e) { S.logText = errText(e); }
       render(); $("#view").scrollTop = 0;
     },
-    "ach-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "achievements", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
+    "game-tab"(el) { setGameTab(el.dataset.tab); },
     manage(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "manage", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
     "ach-page"(el) { S.achPage = el.dataset.player; render(); },
@@ -510,7 +506,7 @@
       if (!it) return;
       const pics = pagePictures(it), i = Math.max(0, pics.findIndex((p) => p.ref === el.dataset.ref));
       if (!pics.length) return;
-      S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i, pics, full: {}, back: S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null };
+      S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i, pics, full: {} };
       renderOverlay(); focusOverlay();
     },
     "shot-step"(el) {
@@ -1091,6 +1087,10 @@
       }
       return;
     }
+    // The game page's tabs: the arrows, Home and End in their row, and
+    // Ctrl+Tab and Ctrl+Shift+Tab anywhere on the page.
+    if (ev.target.closest && ev.target.closest(".gp-tabs, .gp-head-tabs") && !ev.ctrlKey && !ev.altKey && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(ev.key)) { ev.preventDefault(); stepTab(ev.key); return; }
+    if (ev.ctrlKey && !ev.altKey && ev.key === "Tab" && S.view === "game" && !S.dialog && !S.picker && !BP.on) { ev.preventDefault(); stepTab(ev.shiftKey ? "ArrowLeft" : "ArrowRight"); return; }
     if (S.dialog && S.dialog.kind === "shots" && !ev.altKey && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) { ev.preventDefault(); actions["shot-step"]({ dataset: { d: ev.key === "ArrowRight" ? 1 : -1 } }); return; }
     if (ev.key === "Escape") {
       if (S.dialog && S.dialog.kind !== "welcome") { closeDialog(false); return; }

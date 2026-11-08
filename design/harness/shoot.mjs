@@ -44,7 +44,7 @@ const shots = [
   ["players-6", "players=6", [nav("players")]],
   ["player-profile", "", [nav("players"), click('[data-action="open-player"]')]],
   ["game-manage", "", [...game('data-game="cs2"'), click('[data-action="manage"]')]],
-  ["game-ach-all", "", [...game('data-game="bg3"'), click('[data-action="ach-all"]')]],
+  ["game-tab-ach", "", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="achievements"]')]],
   ["achievements", "", [nav("achievements")]],
   ["updates", "", [nav("updates")]],
   ["store", "", [nav("find")]],

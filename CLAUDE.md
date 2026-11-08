@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.71.0, beta)
+## Where things stand (1.72.0, beta)
 
 These shipped recently, newest last:
 
@@ -465,6 +465,13 @@ These shipped recently, newest last:
   `artFor(it, kind)` picks custom, store, the other kind (crop or a
   cover over its own blur), then `typeCover` (name or logo); a logo
   replaces the title on the game page. Harness `?art=partial|missing`.
+
+- **1.72** Roadmap UI 2: the game page in tabs (`gameTabs`, `tabRow`,
+  `.ln-tabs`, `S.gameTab` per game, kept in history entries but not in
+  their key), Overview, Achievements (inline, the drawer is gone), Saves
+  (every point inline, the points drawer is gone), Timeline, News; a
+  compact sticky head (`.gp-dock`, one IntersectionObserver in
+  `stickHead`, `--gp-head-h`, `scroll-margin-top` on the page's parts).
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.
