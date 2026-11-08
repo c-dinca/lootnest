@@ -142,6 +142,12 @@ func tree(t *testing.T, root string) map[string]string {
 		if err != nil {
 			return err
 		}
+		// A folder counts by being there: NTFS updates a folder's time and
+		// size when a file in it is rewritten, as this test does itself.
+		if d.IsDir() {
+			out[p] = "dir"
+			return nil
+		}
 		fi, _ := d.Info()
 		out[p] = fmt.Sprint(fi.Mode(), fi.ModTime(), fi.Size())
 		return nil
