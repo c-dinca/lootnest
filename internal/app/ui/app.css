@@ -177,6 +177,8 @@ body:has(.gpage:not(.home)) #backdrop .bd.on { opacity: 0; }
 /* No cover: .ln-tile__none; the game's icon, read later, sits above the name. */
 .nocover[hidden] { display: none; }
 .nocover.with-icon b { margin-top: calc(var(--space-10) + var(--space-1)); }
+.cover .ln-tile__none img.ln-tile__logo { position: relative; inset: auto; height: auto; opacity: 1; }
+.lib-card .ln-tile__type b { font-size: var(--text-lead); line-height: var(--lh-tight); -webkit-line-clamp: 4; }
 .cover img.icon { inset: auto; left: var(--space-3); top: var(--space-3); width: var(--space-10); height: var(--space-10); object-fit: contain; }
 .ln-tile__cover:has(.ln-tile__badge) img.icon { top: var(--space-10); }
 /* Play sits on the cover's bottom-right corner; a percentage margin-top is
@@ -496,7 +498,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 25%;
   -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade);
 }
-.gpage-art.soft { filter: var(--blur-art-soft); }
+.gpage-art > .ln-art-wide__img { margin-inline: auto var(--page-gutter); }  /* the cover across from the title */
 .gpage-art.icon { object-fit: cover; filter: var(--blur-art-icon); opacity: .5; transform: scale(1.4); }
 /* No art at all: the game's first letter, large and quiet, on a plain plate. */
 .gpage-plate { position: absolute; inset: 0; overflow: hidden; background: var(--bg-surface); -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade); }
@@ -508,6 +510,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-title { position: relative; z-index: 1; width: 100%; padding: 0 var(--page-gutter) calc(var(--overlap-bar) + var(--space-6)); }
 .gpage h1 { margin: 0; font: 750 var(--text-hero)/1 var(--font-title); font-variation-settings: "opsz" 96; letter-spacing: var(--track-title); text-wrap: balance; max-width: 18ch; }
 .gpage h1.long { font-size: clamp(var(--fs-32), 3vw, var(--fs-56)); max-width: 24ch; }
+.gpage-logo { display: block; max-width: min(100%, var(--logo-w)); max-height: var(--logo-h); object-fit: contain; object-position: left bottom; }
 .gpage-title-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 0.12em; }
 .gpage-title-link:hover { text-decoration-color: var(--edge-3); }
 .gpage-title-link:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--space-1); border-radius: var(--radius-tag); }
@@ -677,7 +680,6 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-cap-art { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--radius-ctl); background: var(--bg-surface); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }
 .lib-cap.no-art .lib-cap-text b { display: none; }
 .lib-cap-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-2) var(--ease-out); }
-.lib-cap-art img.soft { filter: var(--blur-art-soft); }
 .lib-cap-art::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); transition: box-shadow var(--dur-1) var(--ease-out); }
 .lib-cap-open:hover .lib-cap-art::after { box-shadow: inset 0 0 0 2px var(--edge-3); }
 .lib-cap-open:hover .lib-cap-art img { transform: scale(1.03); }
@@ -704,7 +706,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-col { gap: var(--gap-section); container-type: inline-size; }
 /* The Manage panel: the groups one under another. */
 .gpage-manage-list { display: grid; gap: var(--space-6); }
-.gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"] { order: 1; }
+.gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"], .gpage-group[data-g="Cover and art"] { order: 1; }
 .gpage-group[data-g="Game files"] { order: 2; }
 .gpage-group[data-g="Online"] { order: 3; }
 .gpage-group[data-g="Shortcuts"] { order: 3; }
@@ -1793,7 +1795,7 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-tile--wide .bp-tile-art { aspect-ratio: 16 / 7.5; }
 .bp-tile-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bp-tile-art .ln-tile__none { justify-content: flex-end; padding: var(--space-4); }
-.bp-tile-art .ln-tile__none img { width: var(--space-12); height: var(--space-12); margin-bottom: auto; }
+.bp-tile-art .ln-tile__none img:not(.ln-tile__logo) { width: var(--space-12); height: var(--space-12); margin-bottom: auto; }
 .bp-tile-art .ln-tile__none b { margin: 0; font: 750 var(--text-section)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-section); -webkit-line-clamp: 3; }
 .bp-tile-name { font: 650 var(--text-body)/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .0; transform: translateY(-4px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
 .bp-tile:focus, .bp-tile:hover { transform: scale(1.05); color: var(--fg-1); z-index: 2; }

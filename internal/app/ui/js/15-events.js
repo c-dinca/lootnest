@@ -57,7 +57,9 @@
       case "cover":
         pendingCovers.delete(ev.key);
         S.covers[ev.key] = ev.url;
-        showCover(ev.key);
+        // Its wide art stood in, so there's no image to fill: draw again.
+        if (ev.url && S.art["hero:" + ev.key] && !document.querySelector(`img[data-cover="${CSS.escape(ev.key)}"]`)) render();
+        else showCover(ev.key);
         break;
       case "art":
         S.art[ev.key] = ev.url;

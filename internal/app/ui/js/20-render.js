@@ -108,7 +108,7 @@
     cur.classList.remove("on");
     bdFront ^= 1;
   }
-  const artOf = (it) => (it && (S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || S.icons[coverKey(it)])) || "";
+  const artOf = (it) => (it && (artFor(it, "hero").url || S.icons[coverKey(it)])) || "";
   function itemFor(el) {
     const host = el && el.closest("[data-game], [data-key]");
     if (!host) return null;

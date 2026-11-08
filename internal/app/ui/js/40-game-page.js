@@ -65,9 +65,8 @@
   // Wide art and logos: from Steam's cache on this PC, or downloaded when
   // "Download covers and artwork" is on.
   function artHTML(it) {
-    const hero = S.art["hero:" + coverKey(it)];
-    const c = S.covers[coverKey(it)] || S.icons[coverKey(it)] || "";
-    if (hero) return `<div class="art" style="background-image:url('${hero}')"></div>`;
+    const h = artFor(it, "hero"), c = h.url || S.icons[coverKey(it)] || "";
+    if (h.from === "hero") return `<div class="art" style="background-image:url('${h.url}')"></div>`;
     if (c) return `<div class="art soft" style="background-image:url('${c}')"></div>`;
     return `<div class="art none"></div>`;
   }
@@ -113,7 +112,7 @@
   // The news as a short list, two to a row. items: [{ it, n, i }].
   function newsSection(title, items, showGame) {
     if (!items.length) return "";
-    const pic = (it, n) => n.image || S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || "";
+    const pic = (it, n) => n.image || artFor(it, "hero").url;
     const meta = (it, n) => `<span class="news-meta"><time class="ln-num">${esc(day(n.date))}</time>${n.update ? '<span class="ln-tag ln-tag--strong">Update</span>' : ""}${showGame ? `<span>${esc(it.name)}</span>` : ""}</span>`;
     return `<section class="news" aria-label="${esc(title)}"><div class="ln-section-head"><div><h2>${esc(title)}</h2></div></div><ul class="news-list">${items.map(({ it, n, i }) => { const p = pic(it, n); return `<li><button data-action="read-news" data-key="${esc(coverKey(it))}" data-i="${i}">
       <span class="news-thumb"${p ? ` style="background-image:url('${esc(p)}')"` : ""}></span>
@@ -183,6 +182,7 @@
     cloud: gsvg('<path d="M6.25 15.25h7.5a3.25 3.25 0 0 0 .5-6.46 4.75 4.75 0 0 0-9.1 1.3A2.6 2.6 0 0 0 6.25 15.25z"/>'),
     info: gsvg('<circle cx="10" cy="10" r="6.75"/><path d="M10 9v4.5M10 6.6v.01"/>'),
     alert: gsvg('<path d="M10 3.5 17 16H3z"/><path d="M10 8.25v3.5M10 13.9v.01"/>'),
+    image: gsvg('<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="1.5"/><circle cx="7.5" cy="8.25" r="1.25"/><path d="m3.75 14.75 4-4 3 3 2-2 3.5 3.5"/>'),
     star: gsvg('<path d="M10 3.25l2.05 4.3 4.7.65-3.42 3.27.83 4.68L10 13.9l-4.16 2.25.83-4.68L3.25 8.2l4.7-.65z"/>'),
   };
   // A player's avatar in the system's style: their picture, a game's cover,
@@ -193,7 +193,7 @@
     const u = (S.d.avatars || {})[who.id];
     const g = !u && who.avatarGame && itemByKey(who.avatarGame);
     if (g) ensureCover(g);
-    const gu = g && (S.covers[coverKey(g)] || S.icons[coverKey(g)]);
+    const gu = g && (artFor(g, "cover").url || S.icons[coverKey(g)]);
     const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc((who.name || "?").trim().charAt(0).toUpperCase());
     return `<span class="ln-avatar ln-player${size ? " ln-avatar--" + size : ""}${par ? " is-run" : ""}" style="--player:${esc(who.color || p.color)}" aria-hidden="true">${inner}</span>`;
   };
@@ -215,10 +215,11 @@
     const P = page ? S.page : {};
     loadArt(it); ensureCover(it);
     const key = coverKey(it);
-    const hero = S.art["hero:" + key], cover = S.covers[key] || "", icon = S.icons[key];
-    const art = hero ? `<img class="gpage-art" src="${hero}" alt="">` : cover ? `<img class="gpage-art soft" src="${cover}" alt="">`
+    const h = artFor(it, "hero"), icon = S.icons[key], logo = artFor(it, "logo").url;
+    const art = h.url ? artImg(h, "hero", "gpage-art")
       : icon ? `<img class="gpage-art icon" src="${icon}" alt="">` : `<div class="gpage-plate" aria-hidden="true"><span>${esc(initial(it.name))}</span></div>`;
-    const real = hero || cover;
+    const real = h.url;
+    const title = logo ? `<img class="gpage-logo" src="${logo}" alt="${esc(it.name)}">` : esc(it.name);
     const rec = (S.d.recent || {})[recentKey(it)];
     const meta = [esc(sourceLabel(it.source))];
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
@@ -286,7 +287,7 @@
     }
     const back = page ? `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${esc(backLabel())}</button>` : "";
     const top = `<section class="gpage-hero">${art}${back}${manage}
-        <div class="gpage-title"><h1 class="${it.name.length > 22 ? "long" : ""}">${page ? esc(it.name) : `<button class="gpage-title-link" data-action="open-sheet" ${itemAttr(it)}>${esc(it.name)}</button>`}</h1>
+        <div class="gpage-title"><h1 class="${it.name.length > 22 && !logo ? "long" : ""}">${page ? title : `<button class="gpage-title-link" data-action="open-sheet" ${itemAttr(it)}>${title}</button>`}</h1>
           <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p></div>
       </section>`;
     if (!page) return { top, bar, note, real };
@@ -307,12 +308,23 @@
       : gpRow(`data-action="offline-toggle" ${itemAttr(it)} data-on="1"`, GI.globe, "Keep it offline", "Windows Firewall blocks its connections");
   }
   const detailsRow = (it) => (cfg().settings.gameDetails ? gpRow(`data-action="details-edit" ${itemAttr(it)}`, GI.edit, "Edit details", "Summary, developer, release date and genres", { disabled: !!(S.details[recentKey(it)] || {}).loading }) : "");
+  // Cover and art: a picture of the user's own for each kind, copied into
+  // Lootnest; their file stays where it is.
+  const ART_KINDS = [["cover", "Change cover", "A tall picture, about 2 by 3", "cover"], ["hero", "Change wide art", "The wide picture on its page and on shelves", "wide art"],
+    ["logo", "Change logo", "A PNG or WebP with a see-through background", "logo"]];
+  const artWhat = (kind) => ART_KINDS.find((k) => k[0] === kind)[3];
+  function artRows(it) {
+    const mine = (S.d.customArt || {})[recentKey(it)] || {};
+    return ART_KINDS.flatMap(([k, title, sub, what]) => [gpRow(`data-action="art-set" ${itemAttr(it)} data-kind="${k}"`, GI.image, title, sub),
+      mine[k] ? gpRow(`data-action="art-clear" ${itemAttr(it)} data-kind="${k}"`, GI.history, `Remove your ${what}`, "The game's own shows again, if it has one") : ""]);
+  }
   function manageGroups(it) {
     if (it.kind === "found") {
       const f = it.f, grp = groupOf(it);
       return gpGroup("Game", [gpRow(`data-action="game-settings" data-key="${esc(f.key)}"`, GI.sliders, "Game settings", f.args ? `Name and launch options: <code>${esc(f.args)}</code>` : "Name and launch options"),
         detailsRow(it),
         grp ? gpRow(`data-action="copies-apart" data-group="${esc(grp.key)}"`, GI.copy, "Show copies separately", `One entry in the Library for ${esc(storeNames({ copies: grp.copies }))}`) : ""])
+        + gpGroup("Cover and art", artRows(it))
         + gpGroup("Game files", [
           gpRow(`data-action="open-game-folder" data-key="${esc(f.key)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
           f.source === "steam" && f.appId ? gpRow(`data-action="steam-verify" data-app="${f.appId}"`, GI.check, "Check the game's files", "Steam replaces missing or damaged files") : "",
@@ -328,7 +340,7 @@
       g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "When Steam's Play button starts it") : "",
       gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "How it starts, what profiles swap", { disabled: s }),
       gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "A friend's save, in a new run", { disabled: s || cfg().players.length >= MAX_PROFILES }),
-    ]) + gpGroup("Game", [detailsRow(it)]) + gpGroup("Game files", [
+    ]) + gpGroup("Game", [detailsRow(it)]) + gpGroup("Cover and art", artRows(it)) + gpGroup("Game files", [
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", "Where it's installed"),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", "The files profiles swap"),
       gpRow(`data-action="copies" data-game="${esc(g.id)}"`, GI.history, "Copies before swaps", "Files from before each swap"),

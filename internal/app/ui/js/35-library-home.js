@@ -235,7 +235,7 @@
     if (rec.length < 2) return "";
     // The row leads with art: the second game moves up when only it has some.
     // Only the first two slots show at every width.
-    const hasArt = (it) => S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)];
+    const hasArt = (it) => artFor(it, "hero").url;
     if (!hasArt(rec[0]) && hasArt(rec[1])) rec.unshift(rec.splice(1, 1)[0]);
     return `<section class="lib-recent" aria-label="Recent games"${S.q ? " hidden" : ""}><div class="ln-section-head"><div><h2>Recent games</h2></div></div>
       <div class="lib-recent-row">${rec.map(capHTML).join("")}</div></section>`;
@@ -243,12 +243,11 @@
   // A game on its wide art, with who played it last; Play on hover.
   function capHTML(it) {
     loadArt(it); ensureCover(it);
-    const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key], ic = S.icons[key];
-    const art = hero ? `<img src="${hero}" alt="">` : cover ? `<img class="soft" src="${cover}" alt="">` : "";
+    const a = artFor(it, "hero"), art = a.url ? artImg(a, "hero") : "";
     const t = timeOf(it);
     const s = it.g && session(it.g.id);
     return `<div class="lib-cap${s ? " busy" : ""}${art ? "" : " no-art"}"><button class="lib-cap-open" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">
-        <span class="lib-cap-art">${art || plate(ic, "lib-cap-none", `<b>${esc(it.name)}</b>`)}</span>
+        <span class="lib-cap-art">${art || typeCover(it, "lib-cap-none")}</span>
         <span class="lib-cap-text"><b>${esc(it.name)}</b><span>${playedBy(it)}${t ? `<span class="lib-cap-time ln-num">${esc(hours(t))}</span>` : ""}</span></span></button>
       ${s ? `<span class="lib-cap-badge ln-tag ln-tag--player ln-player" style="--player:${esc(color(s.playerId))}">${esc(sessionText(s))}</span>`
         : `<button class="ln-button ln-button--primary ln-button--icon ln-button--sm lib-cap-play" data-action="${it.kind === "game" ? "play" : "play-found"}" ${itemAttr(it)} aria-label="Play ${esc(it.name)}" title="Play">${GI.play}</button>`}</div>`;
@@ -387,13 +386,13 @@
     const pick = picks.find((p) => p.it.id === S.tonight.id) || picks[0];
     const it = pick.it;
     ensureCover(it);
-    const c = S.covers[coverKey(it)];
+    const a = artFor(it, "cover");
     const play = it.kind === "game"
       ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="play" data-game="${esc(it.id)}">${GI.play}Play</button>`
       : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="play-found" data-key="${esc(it.id)}">${GI.play}Play</button>`;
     return `<section class="tonight" aria-label="What to play tonight"><div class="ln-section-head"><div><h2>Tonight</h2></div></div>
       <div class="tn-card">
-        <button class="tn-cover" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">${c ? `<img src="${c}" alt="">` : `<span class="tn-none">${esc(it.name)}</span>`}</button>
+        <button class="tn-cover" data-action="open-sheet" ${itemAttr(it)} aria-label="${esc(it.name)}">${a.url ? artImg(a, "cover") : `<span class="tn-none">${esc(it.name)}</span>`}</button>
         <div class="tn-info"><span class="tn-why">${esc(pick.why)}</span><b class="tn-name">${esc(it.name)}</b>
           <div class="tn-actions">${play}<button class="ln-button ln-button--ghost ln-button--sm" data-action="tonight-spin">Another</button></div></div>
       </div></section>`;
@@ -527,7 +526,7 @@
   // The Library as a list, as in Steam's: a row per game with when it was
   // last played, how long, and who has a profile.
   function listRowHTML(it) {
-    const ck = coverKey(it), c = S.covers[ck], ic = !c && S.icons[ck];
+    const ck = coverKey(it), c = artFor(it, "cover").url, ic = !c && S.icons[ck];
     ensureCoverQuiet(it);
     const g = it.g, s = g && session(g.id), owner = g && S.d.active[g.id];
     const owners = g ? cfg().players.filter((p) => hasProfile(g.id, p.id)) : [];
@@ -563,15 +562,64 @@
   const plate = (ic, cls, inner, attr = "") => `<span class="ln-tile__none${cls ? " " + cls : ""}${ic ? " with-icon" : ""}"${ic ? ` style="--icon:url('${ic}')"` : ""}${attr}>${inner}</span>`;
   const initial = (name) => (name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase();
   const coverKey = (it) => (it.appId ? "a" + it.appId : "n:" + it.name.toLowerCase());
-  function coverHTML(it) {
+  // Art the user chose in Manage, read once per file and kept as a short
+  // blob: URL, so a big picture isn't pasted into every render.
+  const customAsked = new Set();
+  function blobURL(d) {
+    const i = d.indexOf(","), bin = atob(d.slice(i + 1)), b = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) b[j] = bin.charCodeAt(j);
+    return URL.createObjectURL(new Blob([b], { type: d.slice(5, d.indexOf(";")) }));
+  }
+  function customArt(it, kind) {
+    const lk = recentKey(it), file = ((S.d.customArt || {})[lk] || {})[kind];
+    if (!file) return "";
+    const k = lk + ":" + file;
+    if (!(k in S.custom) && !customAsked.has(k)) {
+      customAsked.add(k);
+      api.customArt(lk, kind).then((u) => { S.custom[k] = u ? blobURL(u) : ""; if (u) render(); }).catch(() => { S.custom[k] = ""; });
+    }
+    return S.custom[k] || "";
+  }
+  // After a change in Manage, the next read gets the new file.
+  function forgetCustom(it) {
+    const pre = recentKey(it) + ":";
+    Object.keys(S.custom).forEach((k) => { if (k.startsWith(pre)) { if (S.custom[k]) URL.revokeObjectURL(S.custom[k]); delete S.custom[k]; } });
+    customAsked.forEach((k) => { if (k.startsWith(pre)) customAsked.delete(k); });
+  }
+  // The best art of a kind (cover, hero, logo) as { url, from }: the user's,
+  // then the store's, then the other kind to crop from (none for a logo).
+  // No url: draw typeCover().
+  function artFor(it, kind) {
     const key = coverKey(it);
-    const c = S.covers[key];
-    const ic = !c && S.icons[key];
+    const own = (k) => customArt(it, k) || (k === "cover" ? S.covers[key] : S.art[k + ":" + key]) || "";
+    const url = own(kind);
+    if (url || kind === "logo") return { url, from: kind };
+    const other = kind === "cover" ? "hero" : "cover", alt = own(other);
+    return { url: alt, from: alt ? other : "" };
+  }
+  // artFor's art as an image: wide art made from a cover is the whole cover
+  // over a blur of itself; a cover cut from wide art keeps its focal point.
+  const artImg = (a, kind, cls = "") => (kind === "hero" && a.from === "cover"
+    ? `<span class="ln-art-wide${cls ? " " + cls : ""}" style="--art:url('${a.url}')"><img class="ln-art-wide__img" src="${a.url}" alt=""></span>`
+    : `<img class="${[cls, kind === "cover" && a.from === "hero" ? "ln-art-crop" : ""].filter(Boolean).join(" ")}" src="${a.url}" alt="">`);
+  // A cover set in type: the game's logo, else its name, with the store
+  // small at the bottom (o.store false leaves it to the caption below), on
+  // a quiet plate washed in its icon.
+  function typeCover(it, cls, o = {}) {
+    const logo = artFor(it, "logo").url, ic = !logo && S.icons[coverKey(it)];
+    const name = logo ? `<img class="ln-tile__logo" src="${logo}" alt="">` : `${o.icon && ic ? `<img src="${ic}" alt="">` : ""}<b>${esc(it.name)}</b>`;
+    return plate(ic, "ln-tile__type" + (cls ? " " + cls : ""), `${name}${o.store === false ? "" : `<span>${esc(sourceLabel(it.source))}</span>`}`, o.attr);
+  }
+  function coverHTML(it) {
+    const key = coverKey(it), a = artFor(it, "cover");
+    if (a.url && a.url !== S.covers[key]) return artImg(a, "cover", "ready");
+    const c = S.covers[key], logo = !c && artFor(it, "logo").url;
+    const ic = !c && !logo && S.icons[key];
     const can = it.appId || cfg().settings.downloadCovers || it.exe;
     const show = can && (c !== "" || ic !== "" && it.exe);
     const src = c ? ` src="${c}" class="ready"` : ic ? ` src="${ic}" class="icon ready"` : "";
     const img = show ? `<img alt="" data-cover="${esc(key)}" data-app="${it.appId || 0}" data-name="${esc(it.name)}" data-exe="${esc(it.exe || "")}"${src}>` : "";
-    return plate(ic, "nocover", `<b>${esc(it.name)}</b>`, c ? " hidden" : "") + img;
+    return typeCover(it, "nocover", { attr: c ? " hidden" : "", store: false }) + img;
   }
 
   // A Library cover (system.css .ln-tile). Who has a profile is the colour
@@ -618,7 +666,9 @@
       else if (can && cfg().settings.downloadCovers) pendingCovers.add(key); // may still arrive
       else S.covers[key] = "";
     }
-    // No cover (yet): the game's own icon, read from its exe on this PC.
+    // No cover (yet): its wide art or logo can stand in, and the game's own
+    // icon, read from its exe on this PC.
+    if (!S.covers[key]) loadArt({ appId: +img.dataset.app, name: img.dataset.name });
     if (!S.covers[key] && img.dataset.exe && !(key in S.icons)) {
       try { S.icons[key] = (await api.gameIcon(img.dataset.exe)) || ""; } catch (e) { S.icons[key] = ""; }
     }
@@ -633,7 +683,7 @@
       if (url) {
         el.onload = () => { el.classList.remove("icon"); el.classList.add("ready"); if (tile) { tile.hidden = true; tile.classList.remove("with-icon"); } };
         el.src = url;
-      } else if (ic) {
+      } else if (ic && !(tile && tile.querySelector(".ln-tile__logo"))) {
         el.classList.add("icon");
         if (tile) { tile.classList.add("with-icon"); tile.style.setProperty("--icon", `url("${ic}")`); }
         el.onload = () => el.classList.add("ready");

@@ -45,8 +45,11 @@ func dataURLMax(p string, limit int64) string {
 		return ""
 	}
 	mime := "image/jpeg"
-	if strings.HasSuffix(strings.ToLower(p), ".png") {
+	switch strings.ToLower(filepath.Ext(p)) {
+	case ".png":
 		mime = "image/png"
+	case ".webp":
+		mime = "image/webp"
 	}
 	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(b)
 }

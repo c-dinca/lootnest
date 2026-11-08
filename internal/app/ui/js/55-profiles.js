@@ -80,7 +80,7 @@
     const u = (S.d.avatars || {})[p.id];
     const g = !u && p.avatarGame && itemByKey(p.avatarGame);
     if (g) ensureCover(g);
-    const gu = g && (S.covers[coverKey(g)] || S.icons[coverKey(g)]);
+    const gu = g && (artFor(g, "cover").url || S.icons[coverKey(g)]);
     const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc(p.name.trim().charAt(0).toUpperCase());
     return `<span class="avatar ln-player ${cls || ""}" style="--c:${esc(p.color)}" aria-hidden="true">${inner}</span>`;
   };

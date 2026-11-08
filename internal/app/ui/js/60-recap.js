@@ -31,7 +31,7 @@
     // The most played game's art, faded behind the year.
     const lead = R.top[0] && R.top[0].it;
     if (lead) { ensureCover(lead); loadArt(lead); }
-    const art = lead ? await loadImg(artOf(lead) || S.covers[coverKey(lead)]) : null;
+    const art = lead ? await loadImg(artOf(lead)) : null;
     if (art) {
       const h = 640, sc = Math.max(W / art.width, h / art.height);
       x.globalAlpha = 0.38; x.drawImage(art, (W - art.width * sc) / 2, (h - art.height * sc) / 3, art.width * sc, art.height * sc); x.globalAlpha = 1;
@@ -60,8 +60,11 @@
     // The most played, with its cover, then the next four as bars.
     let y = 706;
     if (R.top[0]) {
-      const cov = await loadImg(lead && S.covers[coverKey(lead)]);
-      if (cov) { const cw = 150, ch = 225; x.save(); x.beginPath(); x.roundRect ? x.roundRect(pad, y, cw, ch, 6) : x.rect(pad, y, cw, ch); x.clip(); x.drawImage(cov, pad, y, cw, ch); x.restore(); }
+      const cov = await loadImg(lead && artFor(lead, "cover").url);
+      if (cov) { const cw = 150, ch = 225; x.save(); x.beginPath(); x.roundRect ? x.roundRect(pad, y, cw, ch, 6) : x.rect(pad, y, cw, ch); x.clip();
+        // Cover-fit at the --art-focal point, whatever shape the art is.
+        const iw = cov.naturalWidth || cov.width, ih = cov.naturalHeight || cov.height, f = Math.max(cw / iw, ch / ih);
+        x.drawImage(cov, (iw - cw / f) * 0.5, (ih - ch / f) * 0.3, cw / f, ch / f, pad, y, cw, ch); x.restore(); }
       const tx = cov ? pad + 186 : pad;
       font(600, 26, "u"); x.fillStyle = C.fg2; x.fillText("Most played", tx, y + 44);
       font(720, 64, "t", "condensed"); x.fillStyle = C.fg; x.fillText(fit(R.top[0].name, W - pad - tx), tx, y + 118);

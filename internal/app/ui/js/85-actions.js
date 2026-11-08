@@ -625,6 +625,19 @@
     async "open-game-folder"(el) {
       try { await (el.dataset.game ? api.openGameFolder("game", el.dataset.game) : api.openGameFolder("found", el.dataset.key)); } catch (e) { toast(errText(e), "error"); }
     },
+    async "art-set"(el) {
+      const it = itemFor(el), kind = el.dataset.kind;
+      if (!it) return;
+      const r = await browse("art");
+      if (r.error) { toast(r.error, "error"); return; }
+      if (!r.path) return;
+      try { await api.setCustomArt(recentKey(it), kind, r.path); forgetCustom(it); await refresh(); toast(`${cap(artWhat(kind))} changed. Lootnest keeps a copy; your picture stays where it was.`); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "art-clear"(el) {
+      const it = itemFor(el), kind = el.dataset.kind;
+      if (!it) return;
+      try { await api.clearCustomArt(recentKey(it), kind); forgetCustom(it); await refresh(); toast(`Your ${artWhat(kind)} is removed`); } catch (e) { toast(errText(e), "error"); }
+    },
     async "found-shortcut"(el) {
       try { await api.foundShortcut(el.dataset.key); toast("Shortcut added to your desktop"); } catch (e) { toast(errText(e), "error"); }
     },
@@ -710,13 +723,13 @@
       const cover = $(".tn-cover"), name = $(".tn-name");
       if (reduced() || !cover || !name) { done(); return; }
       // A short roulette over the games that have a cover, slowing down.
-      const withArt = picks.filter((p) => S.covers[coverKey(p.it)]);
+      const withArt = picks.filter((p) => artFor(p.it, "cover").url);
       if (withArt.length < 3) { done(); return; }
       let n = 0;
       const steps = 11, start = Math.floor(Math.random() * withArt.length);
       const tick = () => {
         const p = withArt[(start + n) % withArt.length];
-        cover.innerHTML = `<img src="${S.covers[coverKey(p.it)]}" alt="">`;
+        cover.innerHTML = artImg(artFor(p.it, "cover"), "cover");
         name.textContent = p.it.name;
         cover.classList.remove("tn-flick"); void cover.offsetWidth; cover.classList.add("tn-flick");
         if (++n < steps) setTimeout(tick, 45 + n * n * 3); else setTimeout(done, 160);

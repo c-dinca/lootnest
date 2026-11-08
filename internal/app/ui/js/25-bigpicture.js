@@ -49,21 +49,20 @@
   };
   function bpArt(it, wide) {
     loadArt(it); ensureCover(it);
-    const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key];
-    return wide ? hero || cover || "" : cover || hero || "";
+    return artFor(it, wide ? "hero" : "cover");
   }
   function bpTile(it, wide) {
-    const art = bpArt(it, wide), ic = S.icons[coverKey(it)];
+    const a = bpArt(it, wide), kind = wide ? "hero" : "cover";
     const s = it.g && session(it.g.id);
     return `<button class="bp-tile${wide ? " bp-tile--wide" : ""}" data-bp data-bpid="t:${esc(bpKey(it))}:${wide ? "w" : "c"}" data-k="${esc(bpKey(it))}" data-go="open">
-      <span class="bp-tile-art">${art ? `<img src="${art}" alt="">` : plate(ic, "", `${ic ? `<img src="${ic}" alt="">` : ""}<b>${esc(it.name)}</b>`)}</span>
+      <span class="bp-tile-art">${a.url ? artImg(a, kind) : typeCover(it, "", { icon: true })}</span>
       ${s ? `<span class="bp-live">${esc(sessionText(s))}</span>` : ""}<span class="bp-tile-name">${esc(it.name)}</span></button>`;
   }
   // A collection too small for a row of its own: one wide tile with its first three covers and its name.
   function bpTagTile(t, list) {
     const covers = list.slice(0, 3).map((it) => {
-      const art = bpArt(it, false);
-      return `<span class="bp-tag-cover">${art ? `<img src="${art}" alt="">` : plate(S.icons[coverKey(it)], "", "")}</span>`;
+      const a = bpArt(it, false);
+      return `<span class="bp-tag-cover">${a.url ? artImg(a, "cover") : plate(S.icons[coverKey(it)], "", "")}</span>`;
     }).join("");
     return `<button class="bp-tile bp-tile--wide bp-tile--tag" data-bp data-bpid="c:${esc(t)}" data-go="tag" data-tag="${esc(t)}">
       <span class="bp-tile-art">${covers}<span class="bp-tag-name"><b>${esc(t)}</b>${list.length} ${list.length === 1 ? "game" : "games"}</span></span></button>`;
@@ -83,7 +82,7 @@
       const key = recentKey(it), t = totalPlayed(it) || steamTime(it), seat = seated();
       const A = S.ach[key];
       achFor(it); // reads its achievements if it hasn't yet
-      const logo = S.art["logo:" + coverKey(it)];
+      const logo = artFor(it, "logo").url;
       const playLabel = it.g ? (seat ? `Play as ${esc(seat.name)}` : "Play") : "Play";
       return `<div class="bp-detail">
         <div class="bp-detail-text">${logo ? `<img class="bp-logo" src="${logo}" alt="${esc(it.name)}">` : `<h1>${esc(it.name)}</h1>`}
@@ -187,7 +186,7 @@
   let bpBgFront = 0, bpBgUrl = "";
   function bpArtFor(el, now) {
     const it = el && el.dataset.k && bpItem(el.dataset.k);
-    const url = it ? bpArt(it, true) : BP.detail ? bpArt(bpItem(BP.detail), true) : "";
+    const url = it ? bpArt(it, true).url : BP.detail ? bpArt(bpItem(BP.detail), true).url : "";
     if (url === bpBgUrl && !now) return;
     bpBgUrl = url;
     const ls = document.querySelectorAll("#bp .bp-bg-l");

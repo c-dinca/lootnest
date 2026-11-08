@@ -153,15 +153,14 @@ func (l CopyLedger) Matches() []CopyMatch {
 }
 
 // RekeyGame moves what Lootnest recorded for a Library game from one key to
-// another: when it was played, playtime, daily activity and statuses.
-// Anything already recorded under the new key is kept and added to.
+// another: when it was played, playtime, daily activity, statuses and
+// custom art. Anything already recorded under the new key is kept and added to.
 func (s *Store) RekeyGame(from, to string) error {
 	if from == "" || to == "" || from == to {
 		return errors.New("nothing to move")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
 	rec := map[string]Played{}
 	if b, err := os.ReadFile(s.RecentPath()); err == nil {
 		_ = json.Unmarshal(b, &rec)
@@ -261,9 +260,11 @@ func (s *Store) RekeyGame(from, to string) error {
 		}
 	}
 	if changed {
-		return writeJSONAtomic(s.ShelfPath(), shelf)
+		if err := writeJSONAtomic(s.ShelfPath(), shelf); err != nil {
+			return err
+		}
 	}
-	return nil
+	return s.rekeyCustomArt(from, to)
 }
 
 // RekeyConfig moves a Library game's settings and collections to its new key.

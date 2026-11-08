@@ -40,7 +40,7 @@
   // The game's icon, else its cover, else its initial; never its name again.
   function updArt(it, name) {
     if (it) ensureCover(it);
-    const k = it && coverKey(it), ic = it && S.icons[k], c = !ic && it && S.covers[k];
+    const k = it && coverKey(it), ic = it && S.icons[k], c = !ic && it && artFor(it, "cover").url;
     return ic ? `<img src="${ic}" alt="">` : c ? `<img class="upd-cover" src="${c}" alt="">` : `<b>${esc(initial(name))}</b>`;
   }
   const updVer = (have, to) => `<div class="upd-ver">
