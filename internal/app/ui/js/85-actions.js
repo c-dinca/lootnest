@@ -164,7 +164,7 @@
       toast(shared ? "Achievements are shared now." : "Each profile gets its own achievements from the next swap.");
     },
     "seat-menu"(el) { seatMenu(el); },
-    "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
+    "open-sheet": (el) => openSheet(el.dataset.game ? "game" : isOwnedKey(el.dataset.key) ? "owned" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => pageBack(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
     "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: el.dataset.tab || "look" }; renderOverlay(); },
@@ -638,6 +638,23 @@
     },
     async "found-shortcut"(el) {
       try { await api.foundShortcut(el.dataset.key); toast("Shortcut added to your desktop"); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "store-act"(el) {
+      const it = itemFor(el), t = it && storeActText(it.source, el.dataset.act, it.name);
+      try { await api.storeAction(el.dataset.key, el.dataset.act); toast(t ? t[2] : "The launcher is opening."); } catch (e) { toast(errText(e), "error"); }
+    },
+    "remove-pc"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const D = S.dialog = { kind: "removepc", key: it.id, name: it.name, plan: null, error: "" };
+      renderOverlay(); focusOverlay();
+      api.removeGame(it.id, false).catch((e) => { if (S.dialog === D) { D.error = errText(e); renderOverlay(); } });
+    },
+    async "remove-pc-go"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "removepc" || D.busy || !D.plan) return;
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.removeGame(D.key, true); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
     },
     async "steam-verify"(el) {
       try { await api.steamVerify(+el.dataset.app); toast("Steam is checking the game's files. It downloads any that are missing or damaged."); } catch (e) { toast(errText(e), "error"); }

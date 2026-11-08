@@ -183,3 +183,37 @@ its answers:
 8. Turn **Captures from other apps** off: the Timeline shows only
    Lootnest's own entries. Start Lootnest in safe mode: no captures are
    read (the recent activity has no "Captures from other apps" line).
+
+## 13. Install, uninstall and remove from Lootnest (1.74)
+
+1. A Steam game in the Library: Manage, **Verify files with Steam**. Steam
+   checks its files. Right-click it in the Library: the same entry is
+   there. **Uninstall with Steam** opens Steam's own uninstall question;
+   say no, and nothing changes.
+2. A GOG Galaxy game: Manage, **Open in GOG Galaxy** opens Galaxy on that
+   game. An Epic game: **Open your Epic library** opens it. An
+   Xbox, EA, Riot, Rockstar or Amazon game: **Uninstall in Windows
+   Settings** opens Installed apps.
+3. Library, **Not installed**: the Steam games your account has played or
+   viewed on this PC, and Epic games, if the Epic launcher is installed,
+   that aren't installed. A game installed from another store, or as a
+   folder game, isn't listed. Note any that are missing, or any that are
+   installed or aren't yours. Open one: **Install with Steam** (or Epic)
+   is the main button, and opens the store's install. Install a small
+   one: about 90 seconds after the click, and again once the scan runs, it
+   leaves Not installed and shows in All, ready to play.
+4. A game in a folder of its own (copy a small DRM-free game to
+   D:\Games\Test and Scan again), with a save in it. Start it and, while
+   it runs, choose Manage, **Remove from this PC**, then the button: it
+   says the game is running. Close it and try again. The dialog lists its
+   save locations; after Remove, the folder is in the Recycle Bin and its
+   saves are in Lootnest's data folder, backups\removed\<game>\<time>,
+   with removed.json saying where each came from. A game added by hand
+   leaves the Library too.
+5. Restore the folder from the Recycle Bin (or copy the game back), Scan
+   again: Updates shows it as a new copy, saying Lootnest kept its saves.
+   Carry everything over: the kept saves are back in the folder, and the
+   folder's own saves, if any, are in backups first.
+6. Remove from this PC isn't offered for store games. For a folder that
+   holds other games (add D:\Games itself as a game), the dialog says
+   Lootnest won't remove it.

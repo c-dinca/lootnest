@@ -39,7 +39,7 @@
     from: "home",      // the view a game's page goes back to
     selected: null,    // {kind, id} of the game last opened: the Library's colours follow it
     q: "",             // library search
-    filter: "all",     // library: "all" or "profiles"
+    filter: "all",     // library: "all", "profiles" or "owned" (not installed)
     store: "all",      // library: a store or launcher, or "all"
     who: "",           // library: only the games this player has a profile in or played last
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
@@ -49,7 +49,7 @@
     news: {},          // cover key -> {items, newer, none, error} from Steam's news feed, or {loading: true}
     details: {},       // Library key -> {details, edited, fetching, error} from ps_gameDetails, or {loading: true}
     detOpen: new Set(), // Library keys whose summary is shown in full
-    page: null,        // the game page: {kind: "game"|"found", id, cloud}
+    page: null,        // the game page: {kind: "game"|"found"|"owned", id, cloud}
     sort: pref("sort", "name"),       // Library order: name | recent | played
     density: pref("density", "m"),    // cover size: s | m | l
     ctx: null,         // the right-click menu: {x, y, kind, id}
@@ -64,6 +64,7 @@
     hooks: null,        // Steam launch option status per game
     hideHookBanner: false,
     found: { scanning: true, games: [] },
+    owned: null,      // games you have in a store, not installed (owned event); null until asked
     adding: false,
     hooksBusy: false,
     moving: null,     // {appId, name, step, done, total} while Game Mover copies a game

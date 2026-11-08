@@ -128,6 +128,9 @@
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),
     steamVerify: (appId) => call("ps_steamVerify", appId),
+    storeAction: (key, act) => call("ps_storeAction", key, act),
+    ownedGames: () => call("ps_ownedGames"),
+    removeGame: (key, go) => call("ps_removeGame", key, !!go),
   };
 
   // Small per-PC preferences (sort, cover size), kept in the WebView's own

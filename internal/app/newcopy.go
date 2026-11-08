@@ -94,10 +94,19 @@ func (a *App) copyGame(old core.SeenGame) (*core.FoundGame, *core.Game) {
 }
 
 // oldCopySaves are the saves the old copy keeps inside its folder, by path
-// inside it: from the folder, or from the safety net's newest copy when
-// the folder is gone (as a source to restore from, keyed "net:<id>").
+// inside it: the copies made when it was removed from this PC, from the
+// folder, or from the safety net's newest copy when the folder is gone (as
+// a source to restore from, keyed "net:<id>").
 func (a *App) oldCopySaves(old core.SeenGame) map[string]string {
 	out := map[string]string{}
+	if len(old.Kept) > 0 { // removed from this PC: the copies made then
+		for rel, p := range old.Kept {
+			if core.HasFiles(p) {
+				out[rel] = p
+			}
+		}
+		return out
+	}
 	f, _ := a.copyGame(old)
 	if dirExists(old.Dir) {
 		locs := core.InFolder(a.savesOf(*f).Locs, old.Dir)
@@ -243,7 +252,7 @@ func (a *App) apiCarryOver(oldKey, newKey string) error {
 		a.mu.Unlock()
 		_ = a.store.UpdateCopies(func(l *core.CopyLedger) { l.Carried[oldKey] = newKey })
 		a.logf("Carried %s over to its new copy in %s (%d save locations)", old.Name, nw.Dir, len(carried))
-		out["saves"], out["oldThere"] = carried, dirExists(old.Dir)
+		out["saves"], out["oldThere"] = carried, len(old.Kept) == 0 && dirExists(old.Dir) // a removed copy's folder may be the new one's
 		a.emitSessions()
 	}()
 	return nil
