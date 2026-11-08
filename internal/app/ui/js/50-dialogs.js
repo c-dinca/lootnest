@@ -3,7 +3,9 @@
   function confirmDialog(o) {
     return new Promise((resolve) => { confirmResolve = resolve; S.dialog = Object.assign({ kind: "confirm" }, o); renderOverlay(); setTimeout(() => { const b = $(o.safe ? '.dialog [data-action="dialog-cancel"]' : ".dialog .btn.primary, .dialog .btn.danger-primary"); if (b) b.focus(); }, 20); });
   }
-  function closeDialog(v) { const wasSteam = S.dialog && S.dialog.kind === "steam"; S.dialog = null; renderOverlay(); if (wasSteam) render();
+  function closeDialog(v) {
+    if (S.dialog && S.dialog.back) { S.dialog = S.dialog.back; renderOverlay(); focusOverlay(); return; }
+    const wasSteam = S.dialog && S.dialog.kind === "steam"; S.dialog = null; renderOverlay(); if (wasSteam) render();
     if (drawerFrom) { focusBack(drawerFrom); drawerFrom = null; } if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); } }
 
   // Redrawing the dialog that's already open (a choice clicked, progress, an

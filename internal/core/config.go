@@ -164,6 +164,9 @@ type Settings struct {
 	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
 	// runs (on unless turned off).
 	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`
+	// ScreenshotsOff stops Ctrl+Shift+F12 saving a picture of the game
+	// running to Pictures\Lootnest\Screenshots (on unless turned off).
+	ScreenshotsOff bool `json:"screenshotsOff,omitempty"`
 	// SoundsOff silences the sounds for unlocks, save points and swaps, in
 	// the window and over a running game (on unless turned off).
 	SoundsOff bool `json:"soundsOff,omitempty"`

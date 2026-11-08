@@ -505,6 +505,14 @@
       try { await api.saveDetailsEdit(recentKey(it), {}); closeDialog(false); toast("Back to Steam's details"); } catch (e) { toast(errText(e), "error"); }
     },
     "shot-open"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i: +el.dataset.i }; renderOverlay(); focusOverlay(); } },
+    "pic-open"(el) {
+      const it = itemFor(el);
+      if (!it) return;
+      const pics = pagePictures(it), i = Math.max(0, pics.findIndex((p) => p.ref === el.dataset.ref));
+      if (!pics.length) return;
+      S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i, pics, full: {}, back: S.dialog && S.dialog.kind === "points" ? { ...S.dialog } : null };
+      renderOverlay(); focusOverlay();
+    },
     "shot-step"(el) {
       if (!S.dialog || S.dialog.kind !== "shots") return;
       const a = document.activeElement, label = a && $("#overlay").contains(a) && a.getAttribute("aria-label");

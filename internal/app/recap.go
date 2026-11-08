@@ -21,12 +21,7 @@ func (a *App) apiSaveRecap(profile string, year int, dataURL string) (string, er
 	if year < 2000 || year > time.Now().Year()+1 {
 		year = time.Now().Year()
 	}
-	dir := win.Pictures()
-	if dir == "" {
-		home, _ := os.UserHomeDir()
-		dir = filepath.Join(home, "Pictures")
-	}
-	dir = filepath.Join(dir, "Lootnest")
+	dir := filepath.Join(picturesDir(), "Lootnest")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}

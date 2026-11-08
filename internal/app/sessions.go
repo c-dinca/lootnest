@@ -263,7 +263,7 @@ func (a *App) watch() {
 	for range t.C {
 		a.tick()
 		n++
-		if n%3 == 0 && !a.safe { // every ~6 s: achievements unlocked in a running game, and the save point hotkey
+		if n%3 == 0 && !a.safe { // every ~6 s: achievements unlocked in a running game, and the hotkeys
 			if procs, err := win.ProcessNames(); err == nil {
 				a.achTick(procs)
 			}

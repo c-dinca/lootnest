@@ -142,8 +142,18 @@
       : b("ln-button--secondary", `data-action="pt-restore" ${attrs}`, "Go back to it")
         + (full && P.profiles ? b("ln-button--ghost", `data-action="pt-branch" ${attrs} data-player="${esc(p.player || "")}"`, "New run from it") : "")
         + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
-    return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
-      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : ""}</span></div><div class="pt-actions">${actions}</div></li>`;
+    const pic = p.thumb ? picButton(it, "point:" + p.id, p.thumb, `Picture of ${p.name}`) : "";
+    return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}${pic ? " pt-row--pic" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
+      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : ""}</span></div>${pic}<div class="pt-actions">${actions}</div></li>`;
+  }
+  const shotLabel = (e) => "Screenshot, " + new Date(e.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
+  // A picture's thumbnail that opens it large (viewShots).
+  const picButton = (it, ref, thumb, label) => `<button class="gp-shot pic-thumb" data-action="pic-open" ${itemAttr(it)} data-ref="${esc(ref)}" aria-label="${esc(label)}" aria-haspopup="dialog"><img src="${esc(thumb)}" alt=""></button>`;
+  // Every picture the game page shows, in order: save points', then screenshots'.
+  function pagePictures(it) {
+    const key = recentKey(it), P = S.points[key] || {};
+    return [...(P.points || []).filter((p) => p.thumb).map((p) => ({ ref: "point:" + p.id, thumb: p.thumb, label: p.name })),
+      ...(S.timeline[key] || []).filter((e) => e.kind === "shot" && e.thumb).map((e) => ({ ref: "shot:" + e.name, thumb: e.thumb, label: shotLabel(e) }))];
   }
   function savePointsBlock(it) {
     const P = pointsFor(it);
@@ -172,18 +182,19 @@
     if (diff === 1) return "Yesterday";
     return d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
   }
-  function tlRow(e) {
+  function tlRow(it, e) {
     const who = e.profile && player(e.profile) && cfg().players.length > 1 ? esc(pname(e.profile)) : "";
     const [ic, text] = {
       session: [GI.history, who ? `${who} played ${esc(playSpan(e.seconds || 0))}` : `Played ${esc(playSpan(e.seconds || 0))}`],
       point: [GI.save, who ? `${who} made a save point: ${esc(e.name)}` : `Save point: ${esc(e.name)}`],
       unlock: [GI.trophy, who ? `${who} unlocked ${esc(e.name)}` : `Unlocked: ${esc(e.name)}`],
       update: [GI.refresh, e.version ? `Updated to ${esc(e.version)}` : `Updated with ${esc(e.name)}`],
+      shot: [GI.camera, "Screenshot"],
     }[e.kind] || [];
     if (!text) return "";
     const hm = (t) => new Date(t).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
     const time = e.kind === "session" && e.start ? `${hm(e.start)} to ${hm(e.at)}` : hm(e.at);
-    return `<li class="tl-row"><span class="tl-ic" aria-hidden="true">${ic}</span><span class="tl-what">${text}</span><time class="tl-time ln-num" datetime="${esc(e.at)}">${esc(time)}</time></li>`;
+    return `<li class="tl-row${e.kind === "shot" ? " tl-row--shot" : ""}"><span class="tl-ic" aria-hidden="true">${ic}</span><span class="tl-what">${text}</span>${e.kind === "shot" && e.thumb ? picButton(it, "shot:" + e.name, e.thumb, shotLabel(e)) : ""}<time class="tl-time ln-num" datetime="${esc(e.at)}">${esc(time)}</time></li>`;
   }
   function timelineBlock(it) {
     const key = recentKey(it);
@@ -191,12 +202,12 @@
     const list = S.timeline[key];
     if (!list) return "";
     const head = `<div class="ln-section-head"><div><h2>Timeline</h2></div></div>`;
-    if (!list.length) return `<section class="gpage-block gp-timeline">${head}<p class="gpage-hint">Lootnest keeps a timeline from now on: sessions, save points, unlocks and updates.</p></section>`;
+    if (!list.length) return `<section class="gpage-block gp-timeline">${head}<p class="gpage-hint">Lootnest keeps a timeline from now on: sessions, save points, unlocks, updates and screenshots.</p></section>`;
     const n = S.tlMore[key] || 8, days = [];
     for (const e of list.slice(0, n)) {
       const d = tlDay(e.at);
       if (!days.length || days[days.length - 1].d !== d) days.push({ d, rows: [] });
-      days[days.length - 1].rows.push(tlRow(e));
+      days[days.length - 1].rows.push(tlRow(it, e));
     }
     return `<section class="gpage-block gp-timeline">${head}${days.map((g) => `<div class="tl-day"><h3 class="tl-date">${esc(g.d)}</h3><ol class="tl-list">${g.rows.join("")}</ol></div>`).join("")}
       ${list.length > n ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="tl-more" data-key="${esc(key)}">Show more</button></div>` : ""}</section>`;
@@ -312,15 +323,25 @@
         <button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
         <button class="btn primary" data-action="details-save" ${itemAttr(it)} ${D.busy ? "disabled" : ""}>Save</button></div></div></div>`;
   }
-  // The screenshots, one at a time: the full picture loads only here.
+  // The screenshots, one at a time: the full picture loads only here. With
+  // D.pics, the game's own pictures (save points', screenshots'), read from
+  // this PC by ps_picture; the thumbnail shows until it arrives.
   function viewShots() {
     const D = S.dialog, it = dialogItem(D);
-    const R = it && S.details[recentKey(it)], shots = (R && R.details && R.details.screenshots) || [];
+    const R = it && S.details[recentKey(it)];
+    const shots = D.pics ? D.pics.map((p) => ({ full: D.full[p.ref] || p.thumb, alt: p.label })) : (R && R.details && R.details.screenshots) || [];
     if (!shots.length) return "";
     const i = ((D.i % shots.length) + shots.length) % shots.length, n = shots.length;
+    const want = D.pics && D.pics[i].ref;
+    if (want && !(want in D.full)) {
+      D.full[want] = "";
+      const done = (u) => { D.full[want] = u; if (S.dialog === D) renderOverlay(); };
+      api.picture(recentKey(it), want).then(done, () => done(null));
+    }
+    const what = D.pics ? "picture" : "screenshot", gone = want && D.full[want] === null;
     const nav = (dir, label, ic) => `<button class="ln-button ln-button--secondary ln-button--icon shots-nav" data-action="shot-step" data-d="${dir}" aria-label="${label}"${n < 2 ? " disabled" : ""}>${ic}</button>`;
-    return `<div class="scrim" data-action="scrim"><div class="dialog shots" role="dialog" aria-modal="true" aria-label="Screenshots of ${esc(it.name)}">
-      <header class="shots-head"><h2>${esc(it.name)}</h2><span class="ln-num" aria-live="polite">${i + 1} of ${n}</span><span class="grow"></span>
+    return `<div class="scrim" data-action="scrim"><div class="dialog shots" role="dialog" aria-modal="true" aria-label="${D.pics ? "Pictures" : "Screenshots"} of ${esc(it.name)}">
+      <header class="shots-head"><h2>${esc(it.name)}</h2><span class="ln-num" aria-live="polite">${D.pics ? esc(shots[i].alt) + ", " : ""}${i + 1} of ${n}</span><span class="grow"></span>
         <button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="dialog-cancel" aria-label="Close">${GI.x}</button></header>
-      <div class="shots-stage">${nav(-1, "Previous screenshot", GI.back)}<img src="${esc(shots[i].full)}" alt="Screenshot ${i + 1} of ${n}">${nav(1, "Next screenshot", GI.next)}</div></div></div>`;
+      <div class="shots-stage">${nav(-1, `Previous ${what}`, GI.back)}${gone ? `<p class="shots-gone">That picture is gone, or too big to show.</p>` : `<img src="${esc(shots[i].full)}" alt="${esc(shots[i].alt || `Screenshot ${i + 1} of ${n}`)}">`}${nav(1, `Next ${what}`, GI.next)}</div></div></div>`;
   }

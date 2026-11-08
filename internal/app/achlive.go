@@ -34,6 +34,7 @@ type achLive struct {
 // achRun is a game running now.
 type achRun struct {
 	key, name, dir, player string
+	proc                   string // its process, lower case, without .exe
 	appID                  int
 	game                   *core.Game
 }
@@ -82,7 +83,7 @@ func (a *App) achRunning(procs map[string]bool) []achRun {
 		}
 		if g := a.cfg.Game(id); g != nil {
 			c := *g
-			out = append(out, achRun{key: "game:" + id, name: g.Name, player: s.PlayerID, game: &c})
+			out = append(out, achRun{key: "game:" + id, name: g.Name, player: s.PlayerID, game: &c, proc: procName(&c)})
 		}
 	}
 	a.mu.Unlock()
@@ -103,10 +104,11 @@ func (a *App) achRunning(procs map[string]bool) []achRun {
 		}
 	}
 	for _, f := range found {
-		if f.AppID > 0 || f.ProcessName == "" || !procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
+		proc := strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))
+		if f.AppID > 0 || proc == "" || !procs[proc] {
 			continue
 		}
-		out = append(out, achRun{key: f.Key, name: f.Name, dir: f.Dir, player: seat, appID: f.SteamID})
+		out = append(out, achRun{key: f.Key, name: f.Name, dir: f.Dir, player: seat, appID: f.SteamID, proc: proc})
 	}
 	return out
 }

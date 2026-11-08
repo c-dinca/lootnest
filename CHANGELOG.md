@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.70.0
+
+- Ctrl+Shift+F12 while a game runs saves a picture of it to Pictures\Lootnest\Screenshots, in a folder named after the game. A note over the game says it's saved, with the file's name. The picture is taken from outside the game, as any screenshot tool does; nothing goes into the game.
+- If the picture comes out black, as it can with a game in exclusive fullscreen, nothing is saved and the note says to switch the game to borderless windowed.
+- A save point made while its game runs keeps a picture of the game too. Save points show it, and a click opens it large. Going back to a save point never puts the picture in the game's save folder.
+- The Timeline on a game's page lists your screenshots with a small picture of each; click one to see it large.
+- Turn the hotkey off in Settings, Games and swaps, Ctrl+Shift+F12 saves a screenshot. Like Ctrl+Shift+F5, Lootnest holds the keys only while a game runs. Pictures stay on this PC.
+
 ## 1.69.0
 
 - A game's page can show its details from the Steam store: a summary, the developer and publisher, the release date, its genres, the Steam review score and Metacritic's, and screenshots. Turn on Game details in Settings, Online; it's off until you do.

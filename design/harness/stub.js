@@ -340,9 +340,9 @@
     ps_savePoints: (key) => {
       if (!POINTS[key]) POINTS[key] = key === "game:bg3" ? [
         { id: "20261107-214500", name: "Before the update", created: iso(10 * 60e3), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"], auto: true, update: true },
-        { id: "20261107-201500", name: "Before the Netherbrain", created: iso(40 * 60e3), player: "p1", playtime: 312000, unlocked: 21, size: 9e7, locs: ["a"] },
+        { id: "20261107-201500", name: "Before the Netherbrain", created: iso(40 * 60e3), player: "p1", playtime: 312000, unlocked: 21, size: 9e7, locs: ["a"], thumb: art(1091500, "hero") },
         { id: "20261107-195000", name: "Before going back to Act 2 start", created: iso(70 * 60e3), player: "p1", playtime: 310000, unlocked: 20, size: 9e7, locs: ["a"], auto: true },
-        { id: "20261104-210000", name: "Act 2 start", created: iso(3 * d), player: "p1", playtime: 250000, unlocked: 14, size: 8e7, locs: ["a"] },
+        { id: "20261104-210000", name: "Act 2 start", created: iso(3 * d), player: "p1", playtime: 250000, unlocked: 14, size: 8e7, locs: ["a"], thumb: art(1086940, "hero") },
         { id: "20261101-180000", name: "Honour mode, gate", created: iso(6 * d), player: "p2", playtime: 90000, unlocked: 6, size: 6e7, locs: ["a"] },
       ] : [];
       setTimeout(() => emit({ type: "savePoints", key, points: POINTS[key], player: "p1", running: false, profiles: key.startsWith("game:") }), 80);
@@ -356,7 +356,9 @@
         ev("point", 10 * 60e3, { name: "Before the update", profile: "p1" }),
         ev("update", 12 * 60e3, { name: "Patch8_Hotfix2.zip", version: "4.1.1.6" }),
         ev("session", 30 * 60e3, { profile: "p1", seconds: 4800 }),
+        ev("shot", 32 * 60e3, { name: "2026-11-08 20-58-12.png", thumb: art(1145350, "hero") }),
         ev("point", 40 * 60e3, { name: "Before the Netherbrain", profile: "p1" }),
+        ev("shot", 50 * 60e3, { name: "2026-11-08 20-40-03.png", thumb: art(1426210, "hero") }),
         ev("unlock", 55 * 60e3, { name: "Descent From Avernus", profile: "p1" }),
         ev("point", 70 * 60e3, { name: "Before going back to Act 2 start", profile: "p1" }),
         ev("session", d + 2 * h, { profile: p2, seconds: 2700 }),
@@ -381,6 +383,8 @@
       setTimeout(() => emit({ type: "timeline", key, items }), 90);
       return ok();
     },
+    // Full-size pictures for the lightbox: the harness has no larger art.
+    ps_picture: (key, ref) => ok(ref.startsWith("point:") ? ((POINTS[key] || []).find((p) => "point:" + p.id === ref) || {}).thumb || "" : art(1145350, "hero")),
     ps_makeSavePoint: (key, name) => {
       const p = { id: "20261107-213000", name: name || "Save point, 7 Nov, 21:30", created: new Date().toISOString(), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"] };
       setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, 400);

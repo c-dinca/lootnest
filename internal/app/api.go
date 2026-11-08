@@ -36,6 +36,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_setOffline", a.apiSetOffline))
 	must(a.w.Bind("ps_savePoints", a.apiSavePoints))
 	must(a.w.Bind("ps_gameTimeline", a.apiGameTimeline))
+	must(a.w.Bind("ps_picture", a.apiPicture))
 	must(a.w.Bind("ps_saveCheck", a.apiSaveCheck))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
