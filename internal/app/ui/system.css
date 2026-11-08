@@ -304,8 +304,7 @@
   color: var(--fg-2); font: 600 var(--fs-12)/1 var(--font-ui); white-space: nowrap;
 }
 .ln-tag--player { border-color: transparent; background: var(--player-fill); color: var(--player-on); }
-/* Racing Red, for what's new: bold near-black text, 4.7:1. */
-.ln-tag--accent { border-color: transparent; background: var(--accent); color: var(--fg-on-accent); font-weight: 750; }
+.ln-tag--strong { border-color: transparent; background: var(--bg-active); color: var(--fg-1); font-weight: 700; }
 .ln-mark { width: 8px; height: 8px; flex: none; border-radius: 2px; background: var(--player-fill); }
 
 /* ============================================================== game tile */
@@ -325,7 +324,7 @@
   transition: box-shadow var(--dur-1) var(--ease-out);
 }
 .ln-tile__cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--dur-2) var(--ease-out); }
-.ln-tile:hover .ln-tile__cover::after, .ln-tile[data-force~="hover"] .ln-tile__cover::after { box-shadow: inset 0 0 0 2px var(--accent); }
+.ln-tile:hover .ln-tile__cover::after, .ln-tile[data-force~="hover"] .ln-tile__cover::after { box-shadow: inset 0 0 0 2px var(--edge-3); }
 .ln-tile:hover .ln-tile__cover img, .ln-tile[data-force~="hover"] .ln-tile__cover img { transform: scale(1.03); }
 .ln-tile:active .ln-tile__cover img, .ln-tile[data-force~="active"] .ln-tile__cover img { transform: scale(1.01); }
 .ln-tile:focus-visible, .ln-tile[data-force~="focus"] { outline: none; }

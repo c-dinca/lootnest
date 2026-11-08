@@ -69,15 +69,14 @@ The steps around them are in OKLCH: hue 276 for the grounds, the obsidian's own,
 **Racing Red: the primary button, and touches.** It passes the 3:1 that non-text UI needs, but not AA's 4.5:1 for small text, so it is never text. The primary button (Save, Sync now, Play when profiles are off) is filled with it, with bold near-black text, `--fg-on-accent`, at 4.7:1 (5.7:1 on hover). White on it would be 4.2:1, so never white. Elsewhere it marks:
 - the gem in the logo and the app icon;
 - the icon of the page you're on;
-- progress (achievement bars, loading bars);
+- a game's own progress (its achievement bar and ring, loading bars);
 - switches and checkboxes that are on;
 - list markers, news dots and link underlines in the reader;
 - the text selection, as a wash;
 - the selected choice in a segmented control, as a 2px line under it;
-- where you are, in the sidebar and in Settings' categories: a 3px bar at the left edge, the icon, and `--accent-wash` behind the label (1.30);
-- a game at 100% on the Achievements page, as its card's edge.
+- where you are, in the sidebar only: a 3px bar at the left edge and the icon, on a neutral fill. Settings' current category is a neutral selected fill (`--bg-active`).
 
-It is not a title stripe, a hover edge (a cover or a scrollbar you point at) or a filled tag with text in it, such as **Update** or a discount (principle 2). Pages that still use red that way move off it as they are reworked.
+It is not a title stripe, a hover edge (a cover or a scrollbar you point at) or a filled tag with text in it, such as **Update** or a discount (principle 2). Secondary bars and rings, such as Lootnest's milestones and the game cards on the Achievements page and in Big Picture, are neutral; a game's own progress on its page stays red.
 
 Play as someone stays in that profile's colour. The focus ring is `--fg-1`, never red (red reads as an error) and never a player colour. Destructive stays `--danger`, a lighter coral that reads as a warning next to Racing Red.
 
