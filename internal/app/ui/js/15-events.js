@@ -83,6 +83,27 @@
         S.timeline[ev.key] = ev.items || [];
         if (S.view === "game") render();
         break;
+      case "captures":
+        S.captures[ev.key] = { items: ev.items || [], counts: ev.counts || {}, gameBarOff: !!ev.gameBarOff };
+        if (S.view === "game") render();
+        break;
+      case "capturesIndexed": // asked again, so what's shown stays until the answer
+        capAsked.clear();
+        if (S.view === "game") render();
+        if (S.unsorted || unsortedAsked) api.unsortedCaptures().catch(() => {});
+        break;
+      case "unsortedCaptures":
+        S.unsorted = { items: ev.items || [], total: ev.total || 0, folders: ev.folders || [] };
+        {
+          // In the drawer, focus stays on the row it was on, or the one that
+          // took the place of a row just given a game.
+          const D = S.dialog && S.dialog.kind === "unsorted" ? S.dialog : null, sels = () => [...document.querySelectorAll("[data-assign]")];
+          const at = !D ? -1 : D.focusAt != null ? D.focusAt : sels().indexOf(document.activeElement);
+          if (S.view === "settings") render(); else if (D) renderOverlay();
+          if (D) D.focusAt = null;
+          if (at >= 0) (sels()[Math.min(at, sels().length - 1)] || $('.ln-drawer [data-action="dialog-cancel"]')).focus();
+        }
+        break;
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
         if (S.view === "game") render();

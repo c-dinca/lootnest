@@ -37,6 +37,10 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_savePoints", a.apiSavePoints))
 	must(a.w.Bind("ps_gameTimeline", a.apiGameTimeline))
 	must(a.w.Bind("ps_picture", a.apiPicture))
+	must(a.w.Bind("ps_gameCaptures", a.apiGameCaptures))
+	must(a.w.Bind("ps_unsortedCaptures", a.apiUnsortedCaptures))
+	must(a.w.Bind("ps_assignCapture", a.apiAssignCapture))
+	must(a.w.Bind("ps_openCapture", a.apiOpenCapture))
 	must(a.w.Bind("ps_saveCheck", a.apiSaveCheck))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
@@ -502,12 +506,16 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	s.BackupDir, s.BackupAuto, s.BackupKeep, s.BackupSalt, s.BackupKey = old.BackupDir, old.BackupAuto, old.BackupKeep, old.BackupSalt, old.BackupKey
 	s.CloudSync = old.CloudSync
 	saveDBOn := s.SaveDB && !old.SaveDB
+	capturesOn := !s.CapturesOff && old.CapturesOff
 	cfg.Settings = s
 	if err := a.saveConfig(cfg); err != nil {
 		return err
 	}
 	if checkNow {
 		go a.checkUpdate(false)
+	}
+	if capturesOn {
+		a.scanCapturesSoon()
 	}
 	if saveDBOn {
 		go func() {

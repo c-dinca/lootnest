@@ -501,6 +501,8 @@
       try { await api.saveDetailsEdit(recentKey(it), {}); closeDialog(false); toast("Back to Steam's details"); } catch (e) { toast(errText(e), "error"); }
     },
     "shot-open"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i: +el.dataset.i }; renderOverlay(); focusOverlay(); } },
+    "capture-open"(el) { api.openCapture(el.dataset.path).catch((e) => toast(errText(e), "error")); },
+    "captures-unsorted"() { S.dialog = { kind: "unsorted" }; renderOverlay(); focusOverlay(); api.unsortedCaptures().catch((e) => toast(errText(e), "error")); },
     "pic-open"(el) {
       const it = itemFor(el);
       if (!it) return;
@@ -986,6 +988,13 @@
     if (el.id === "lib-status") { S.status = el.value; render(); return; }
     if (el.id === "lib-who") { S.who = el.value; render(); return; }
     if (el.id === "ach-pick") { S.achPage = el.value; render(); return; }
+    if (el.dataset.assign) {
+      if (!el.value) return;
+      const it = everyItem().find((x) => recentKey(x) === el.value);
+      if (S.dialog && S.dialog.kind === "unsorted") S.dialog.focusAt = [...document.querySelectorAll("[data-assign]")].indexOf(el);
+      api.assignCapture(el.dataset.assign, el.value).then(() => toast(it ? `Now on ${it.name}'s Timeline` : "Marked as not a game"), (e) => toast(errText(e), "error"));
+      return;
+    }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }

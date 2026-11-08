@@ -177,6 +177,26 @@
     return { type: "details", key, details: det, edited: !!e };
   };
   const POINTS = {};
+  // Captures from other apps (ps_gameCaptures): Baldur's Gate 3 from Steam,
+  // Game Bar and NVIDIA, and two matched to no game. ?gamebar=off: Game Bar
+  // captures are off in Windows.
+  const GAMEBAR_OFF = q.get("gamebar") === "off";
+  const cap = (path, kind, source, ago, thumb, key) => ({ path, kind, source, at: iso(ago), thumb, key });
+  const CAPTURES = [
+    cap("C:\\Program Files (x86)\\Steam\\userdata\\123\\760\\remote\\1086940\\screenshots\\20261108204512_1.jpg", "picture", "Steam", 35 * 60e3, art(1091500, "hero"), "game:bg3"),
+    cap("C:\\Users\\you\\Videos\\Captures\\Baldur's Gate 3 2026-11-08 20-30-41.mp4", "clip", "Game Bar", 45 * 60e3, art(1086940, "hero"), "game:bg3"),
+    cap("C:\\Program Files (x86)\\Steam\\userdata\\123\\760\\remote\\1086940\\screenshots\\20261107211002_1.jpg", "picture", "Steam", d + 4 * h, art(1551360, "hero"), "game:bg3"),
+    cap("C:\\Users\\you\\Videos\\Baldur's Gate 3\\Baldur's Gate 3 2026.11.05 - 22.14.09.02.mp4", "clip", "NVIDIA", 3 * d + 2.5 * h, "", "game:bg3"),
+    cap("C:\\Users\\you\\Videos\\Captures\\Desktop 2026-11-06 18-02-11.png", "picture", "Game Bar", 2 * d, art(413150, "hero"), ""),
+    cap("C:\\Users\\you\\Videos\\2026-11-04 21-40-03.mkv", "clip", "OBS", 4 * d, "", ""),
+  ];
+  const CAP_FOLDERS = [
+    { source: "Game Bar", dir: "C:\\Users\\you\\Videos\\Captures" },
+    { source: "Steam", dir: "C:\\Program Files (x86)\\Steam\\userdata\\123\\760\\remote" },
+    { source: "NVIDIA", dir: "C:\\Users\\you\\Videos" },
+    { source: "OBS", dir: "C:\\Users\\you\\Videos" },
+    { source: "Lootnest", dir: "C:\\Users\\you\\Pictures\\Lootnest\\Screenshots" },
+  ];
 
   const TAGS = { "game:cs2": ["Co-op", "Shooters"], "game:ittakestwo": ["Co-op", "For the kids"], "steam:413150": ["Co-op", "Weekend", "For the kids"],
     "steam:1091500": ["Weekend"], "dir:c:\\games\\hades ii": ["Weekend"], "dir:c:\\gog games\\hollow knight": ["Weekend"], "game:bg3": ["Co-op", "Weekend"] };
@@ -401,11 +421,32 @@
         ev("session", 7 * d + 1 * h, { profile: "p1", seconds: 3000 }),
         ev("unlock", 7 * d + 2 * h, { name: "Act One", profile: "p1" }),
       ];
+      // Counter-Strike 2: a few sessions and no captures, for the Game Bar tip.
+      if (key === "game:cs2") items.push(ev("session", 3 * h, { profile: "p1", seconds: 3600 }), ev("session", 2 * d, { profile: "p1", seconds: 5400 }));
       setTimeout(() => emit({ type: "timeline", key, items }), 90);
       return ok();
     },
+    ps_gameCaptures: (key) => {
+      const items = CAPTURES.filter((c) => c.key === key), counts = {};
+      items.forEach((c) => { counts[c.source] = (counts[c.source] || 0) + 1; });
+      setTimeout(() => emit({ type: "captures", key, items, counts, gameBarOff: GAMEBAR_OFF }), 100);
+      return ok();
+    },
+    ps_unsortedCaptures: () => {
+      const items = CAPTURES.filter((c) => !c.key);
+      setTimeout(() => emit({ type: "unsortedCaptures", items, total: items.length, folders: CAP_FOLDERS }), 100);
+      return ok();
+    },
+    ps_assignCapture: (path, key) => {
+      const c = CAPTURES.find((x) => x.path === path);
+      if (!c) return Promise.reject("That capture isn't on the list anymore.");
+      c.key = key;
+      emit({ type: "capturesIndexed" });
+      return ok();
+    },
+    ps_openCapture: () => ok(),
     // Full-size pictures for the lightbox: the harness has no larger art.
-    ps_picture: (key, ref) => ok(ref.startsWith("point:") ? ((POINTS[key] || []).find((p) => "point:" + p.id === ref) || {}).thumb || "" : art(1145350, "hero")),
+    ps_picture: (key, ref) => ok(ref.startsWith("capture:") ? (CAPTURES.find((c) => "capture:" + c.path === ref) || {}).thumb || "" : ref.startsWith("point:") ? ((POINTS[key] || []).find((p) => "point:" + p.id === ref) || {}).thumb || "" : art(1145350, "hero")),
     ps_makeSavePoint: (key, name) => {
       const p = { id: "20261107-213000", name: name || "Save point, 7 Nov, 21:30", created: new Date().toISOString(), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"] };
       setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, 400);

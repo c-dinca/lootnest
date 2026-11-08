@@ -85,9 +85,13 @@ func (a *App) shotThumb(key, dir, name string) string {
 }
 
 // apiPicture is one picture at full size, for the window's lightbox: a save
-// point's ("point:<id>") or a screenshot's ("shot:<file name>").
+// point's ("point:<id>"), a screenshot's ("shot:<file name>") or a capture's
+// from another app ("capture:<path>").
 func (a *App) apiPicture(key, ref string) (string, error) {
 	var p string
+	if path, ok := strings.CutPrefix(ref, "capture:"); ok {
+		return a.capturePicture(path)
+	}
 	if id, ok := strings.CutPrefix(ref, "point:"); ok {
 		var err error
 		if p, err = core.SavePointFile(a.store.SavePointsDir(key), id, core.PointPicture); err != nil {

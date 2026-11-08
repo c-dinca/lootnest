@@ -23,6 +23,17 @@
     ...(s.pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
     ...(s.screenshotsOff ? [] : [[["Ctrl+Shift+F12"], "Save a picture of the game that's running"]]),
   ];
+  // Captures from other apps: the switch, the folders read, and the way to
+  // the ones matched to no game.
+  let unsortedAsked = false;
+  function capturesRows(s) {
+    const U = S.unsorted;
+    if (!s.capturesOff && !unsortedAsked) { unsortedAsked = true; api.unsortedCaptures().catch(() => {}); }
+    const rows = !s.capturesOff && U ? `
+      <div class="bk-row"><div><b>Folders Lootnest reads</b>${U.folders.length ? `<ul class="set-folders selectable">${U.folders.map((f) => `<li><b>${esc(f.source)}</b> ${esc(f.dir)}</li>`).join("")}</ul>` : "<p>None of these apps has a captures folder on this PC yet.</p>"}</div></div>
+      <div class="bk-row"><div><b>Unsorted captures</b><p>${U.total ? `${U.total} ${U.total === 1 ? "capture" : "captures"} Lootnest couldn't match to a game. Choose the game of each, and it shows on that game's Timeline.` : "Every capture is matched to a game."}</p></div>${U.total ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="captures-unsorted" aria-haspopup="dialog">Choose their games</button>` : ""}</div>` : "";
+    return sw("capturesOff", "Captures from other apps", "Screenshots and clips you made with Game Bar, Steam, NVIDIA, AMD or OBS show on each game's Timeline, matched by the game's Steam folder, its name, or when you played it. Lootnest only reads these folders on this PC: it never moves, renames or deletes a capture, and nothing goes online.", !s.capturesOff, true) + rows;
+  }
   // Settings: plain on purpose. Groups of rows, each saying what it does,
   // with its control on the right. Everything online is off until turned on.
   function viewSettings() {
@@ -86,7 +97,7 @@
       ["data", "Data and activity", GI.folder, "Where Lootnest keeps profiles and backups, and what it did lately.", () => card(`
           <div class="bk-row"><div><b>Data folder</b><p class="selectable">Profiles and backups are stored in ${esc(S.d.dataDir)}</p></div>${b("secondary", 'data-action="open-data"', "Open data folder")}</div>
           <div class="bk-row"><div><b>Recent activity</b><p>Every swap, save and scan, with the reason when something didn't work. Useful when you ask for help.</p></div>${b("secondary", 'data-action="show-log"', "Show recent activity")}</div>
-          ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}`)],
+          ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}`) + sub("Captures", "", capturesRows(s))],
       ["about", "About", GI.info, "The version, how to tell us about a problem, and how to leave.", () => card(`
           ${versionRow}
           <div class="bk-row"><div><b>Lootnest is in beta</b><p>Everything that moves your files makes a copy first. If something doesn't work as it should, Report a problem copies the version and the recent activity for you to paste, and opens a new issue on GitHub in your browser. Lootnest sends nothing itself. Read it before you post: it names your games and folders.</p></div>${b("secondary", 'data-action="report-problem"', "Report a problem")}</div>

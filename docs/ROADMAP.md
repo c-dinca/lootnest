@@ -72,9 +72,9 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 
 **Phases.**
 - 1, M: session log and a timeline without captures; no Windows-only code.
-- 2, L: capture import through virtual hosts, shell thumbnails, a lightbox, an Unsorted list. File names are undocumented, so time matching carries it.
+- 2, L: capture import through virtual hosts, shell thumbnails, a lightbox, an Unsorted list. File names are undocumented, so time matching carries it. Shipped in 1.73, with thumbnails as data: URLs instead of virtual hosts.
 - 3, M: Ctrl+Shift+F12 to `Pictures\Lootnest\Screenshots\<Game>`, a borderless hint on black frames, a picture on each save point. Shipped in 1.70.
-- 4, S: a tip naming Game Bar's clip keys, and a notice when capture is off.
+- 4, S: a tip naming Game Bar's clip keys, and a notice when capture is off. Shipped in 1.73.
 - 5, L, optional: [Windows.Graphics.Capture](https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/screen-capture) by hand-written WinRT, only if GDI falls short; its yellow border stays.
 
 **Will not do.** Record video or ship ffmpeg ([GPL builds](https://www.gyan.dev/ffmpeg/builds/), around 100 MB); capture exclusive fullscreen, which needs hooking; work around games that hide from capture.

@@ -270,6 +270,7 @@ func (a *App) startScan() {
 		a.logf("Scan found %d games in %s (%d in the library)", fresh, time.Since(start).Round(100*time.Millisecond), len(list))
 		a.emit("found", map[string]any{"scanning": false})
 		go a.noteCopies()
+		a.scanCapturesSoon()
 	}()
 }
 

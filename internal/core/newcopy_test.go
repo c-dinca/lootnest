@@ -64,6 +64,7 @@ func TestRekeyGameAndCarrySaves(t *testing.T) {
 	_ = s.AddActivity("old", "p1", at, at.Add(2*time.Hour))
 	_ = s.SetShelf("p1", "old", ShelfEntry{Status: "playing", Note: "Act 2", Offset: 5 * 3600}, at)
 	_ = s.SetShelf("p1", "new", ShelfEntry{Rating: 4, Offset: 3600}, at.Add(time.Hour))
+	_ = writeJSONAtomic(s.CapturesPath(), captureIndex{Captures: []Capture{{Path: "a.png", Key: "old", Manual: true}}})
 	if err := s.RekeyGame("old", "new"); err != nil {
 		t.Fatal(err)
 	}
@@ -78,6 +79,9 @@ func TestRekeyGameAndCarrySaves(t *testing.T) {
 	}
 	if a := s.LoadActivity(); a.Longest["p1"].Key != "new" {
 		t.Fatalf("activity = %+v", a.Longest)
+	}
+	if c := s.LoadCaptures(); len(c) != 1 || c[0].Key != "new" {
+		t.Fatalf("captures = %+v", c)
 	}
 	cfg := &Config{LibraryPrefs: map[string]LibraryPref{"old": {Name: "PBZ"}}, Tags: map[string][]string{"old": {"Souls"}, "new": {"New"}}}
 	if !RekeyConfig(cfg, "old", "new") || cfg.LibraryPrefs["new"].Name != "PBZ" || len(cfg.Tags["new"]) != 2 {

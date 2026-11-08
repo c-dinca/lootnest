@@ -167,6 +167,10 @@ type Settings struct {
 	// ScreenshotsOff stops Ctrl+Shift+F12 saving a picture of the game
 	// running to Pictures\Lootnest\Screenshots (on unless turned off).
 	ScreenshotsOff bool `json:"screenshotsOff,omitempty"`
+	// CapturesOff stops Lootnest reading the screenshots and clips other
+	// apps (Game Bar, Steam, NVIDIA, AMD, OBS) keep on this PC for the
+	// Timeline. On by default: it only reads folders on this PC.
+	CapturesOff bool `json:"capturesOff,omitempty"`
 	// SoundsOff silences the sounds for unlocks, save points and swaps, in
 	// the window and over a running game (on unless turned off).
 	SoundsOff bool `json:"soundsOff,omitempty"`

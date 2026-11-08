@@ -150,3 +150,36 @@ its answers:
    off. While a game runs, Ctrl+Shift+F12 does nothing in Lootnest and
    reaches the game or other programs again. Settings, General no longer
    lists it.
+
+## 12. Captures from other apps (1.73)
+
+1. In a game, press **Win+Alt+PrtScn** (Game Bar's screenshot) and
+   **Win+Alt+R** twice (a short clip). Close the game. Once it's closed
+   (or within 10 minutes of the last scan, such as Lootnest starting),
+   the Timeline tab of its page lists "Screenshot (Game Bar)" and
+   "Clip (Game Bar)" with small pictures, and the Captures line counts
+   them. If Game Bar's file names don't carry the game's name, the time of
+   the session still matches them; note which.
+2. Take a screenshot with Steam's key (F12 by default) in a Steam game: it
+   shows as "Screenshot (Steam)". With the NVIDIA app, AMD Adrenalin or
+   OBS, record a clip of a game too, if you have one of them.
+3. Click a screenshot: it opens large, and the arrows go through the
+   game's other pictures. Click a clip: it plays in the app Windows opens
+   videos with. A clip shows the picture Explorer shows for it, or a plain
+   plate if Windows has none.
+4. In Explorer, check that every capture is still where it was, with its
+   name and date. Lootnest never moves, renames or deletes one.
+5. Delete a capture in Explorer, then start and close a game (or Scan
+   again in the Library) after 10 minutes: it's gone from the Timeline.
+6. Settings, Data and activity, Captures: the folders Lootnest reads are
+   listed. **Choose their games** opens the ones matched to no game;
+   choose a game for one, and it's on that game's Timeline, still in its
+   own folder. Choose **Not a game** for a desktop capture: it leaves the
+   list. Keyboard focus stays in the drawer after each choice.
+7. A game with sessions and no captures says on its Timeline that
+   Win+Alt+PrtScn and Win+Alt+R make some. Turn Game Bar's captures off in
+   Windows (Settings, Gaming, Captures), open the page again: it says
+   they're off and where to turn them on.
+8. Turn **Captures from other apps** off: the Timeline shows only
+   Lootnest's own entries. Start Lootnest in safe mode: no captures are
+   read (the recent activity has no "Captures from other apps" line).

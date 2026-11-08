@@ -152,11 +152,32 @@
   const shotLabel = (e) => "Screenshot, " + new Date(e.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
   // A picture's thumbnail that opens it large (viewShots).
   const picButton = (it, ref, thumb, label) => `<button class="gp-shot pic-thumb" data-action="pic-open" ${itemAttr(it)} data-ref="${esc(ref)}" aria-label="${esc(label)}" aria-haspopup="dialog"><img src="${esc(thumb)}" alt=""></button>`;
-  // Every picture the game page shows, in order: save points', then screenshots'.
+  // Every picture the game page shows, in order: save points', screenshots',
+  // then other apps' captures.
   function pagePictures(it) {
-    const key = recentKey(it), P = S.points[key] || {};
+    const key = recentKey(it), P = S.points[key] || {}, C = S.captures[key];
     return [...(P.points || []).filter((p) => p.thumb).map((p) => ({ ref: "point:" + p.id, thumb: p.thumb, label: p.name })),
-      ...(S.timeline[key] || []).filter((e) => e.kind === "shot" && e.thumb).map((e) => ({ ref: "shot:" + e.name, thumb: e.thumb, label: shotLabel(e) }))];
+      ...(S.timeline[key] || []).filter((e) => e.kind === "shot" && e.thumb).map((e) => ({ ref: "shot:" + e.name, thumb: e.thumb, label: shotLabel(e) })),
+      ...((C && C.items) || []).filter(capInBox).map((c) => ({ ref: "capture:" + c.path, thumb: c.thumb || "", label: capLabel(c) }))];
+  }
+  // Captures from other apps (ps_gameCaptures): Game Bar, Steam, NVIDIA,
+  // AMD and OBS, on the game's Timeline. A picture opens in the lightbox; a
+  // clip, or a JPEG XR picture the window can't show, opens in the app
+  // Windows opens it with.
+  const capAsked = new Set();
+  const capWhat = (c) => `${(c.ckind || c.kind) === "clip" ? "Clip" : "Screenshot"} (${c.source})`;
+  const capLabel = (c) => capWhat(c) + ", " + new Date(c.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const capInBox = (c) => (c.ckind || c.kind) === "picture" && !/\.jxr$/i.test(c.path);
+  function capturesFor(key) {
+    if (cfg().settings.capturesOff) return null;
+    if (!capAsked.has(key)) { capAsked.add(key); api.gameCaptures(key).catch(() => {}); }
+    return S.captures[key] || null;
+  }
+  function capThumb(it, c) {
+    const clip = (c.ckind || c.kind) === "clip", inner = c.thumb ? `<img src="${esc(c.thumb)}" alt="">${clip ? `<span class="cap-mark" aria-hidden="true">${GI.play}</span>` : ""}`
+      : `<span class="cap-plate" aria-hidden="true">${clip ? GI.clip : GI.image}</span>`;
+    if (it && capInBox(c)) return `<button class="gp-shot pic-thumb" data-action="pic-open" ${itemAttr(it)} data-ref="${esc("capture:" + c.path)}" aria-label="${esc(capLabel(c))}" aria-haspopup="dialog">${inner}</button>`;
+    return `<button class="gp-shot pic-thumb cap-open" data-action="capture-open" data-path="${esc(c.path)}" aria-label="Open ${esc(capLabel(c))}">${inner}</button>`;
   }
   function savePointsBlock(it) {
     const P = pointsFor(it);
@@ -228,18 +249,28 @@
       unlock: [GI.trophy, who ? `${who} unlocked ${esc(e.name)}` : `Unlocked: ${esc(e.name)}`],
       update: [GI.refresh, e.version ? `Updated to ${esc(e.version)}` : `Updated with ${esc(e.name)}`],
       shot: [GI.camera, "Screenshot"],
+      capture: [e.ckind === "clip" ? GI.clip : GI.camera, esc(capWhat(e))],
     }[e.kind] || [];
     if (!text) return "";
     const hm = (t) => new Date(t).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
     const time = e.kind === "session" && e.start ? `${hm(e.start)} to ${hm(e.at)}` : hm(e.at);
-    return `<li class="tl-row${e.kind === "shot" ? " tl-row--shot" : ""}"><span class="tl-ic" aria-hidden="true">${ic}</span><span class="tl-what">${text}</span>${e.kind === "shot" && e.thumb ? picButton(it, "shot:" + e.name, e.thumb, shotLabel(e)) : ""}<time class="tl-time ln-num" datetime="${esc(e.at)}">${esc(time)}</time></li>`;
+    const pic = e.kind === "capture" ? capThumb(it, e) : e.kind === "shot" && e.thumb ? picButton(it, "shot:" + e.name, e.thumb, shotLabel(e)) : "";
+    return `<li class="tl-row${pic ? " tl-row--shot" : ""}"><span class="tl-ic" aria-hidden="true">${ic}</span><span class="tl-what">${text}</span>${pic}<time class="tl-time ln-num" datetime="${esc(e.at)}">${esc(time)}</time></li>`;
   }
   function timelineBlock(it) {
     const key = recentKey(it);
     if (!tlAsked.has(key)) { tlAsked.add(key); api.gameTimeline(key).catch(() => {}); }
-    const list = S.timeline[key];
-    if (!list || !list.length) return "";
-    const head = `<div class="ln-section-head"><div><h2>Timeline</h2></div></div>`;
+    const C = capturesFor(key), caps = ((C && C.items) || []).map((c) => ({ ...c, ckind: c.kind, kind: "capture" }));
+    const list = [...(S.timeline[key] || []), ...caps].sort((a, b) => new Date(b.at) - new Date(a.at));
+    if (!list.length) return "";
+    // How many captures each app made, Lootnest's own screenshots included;
+    // with none, how to make them.
+    const counts = Object.entries({ ...((C && C.counts) || {}), Lootnest: list.filter((e) => e.kind === "shot").length }).filter(([, n]) => n);
+    const tip = C && C.gameBarOff ? "Game Bar captures are off in Windows. Turn them on in Windows Settings, Gaming, Captures. Then Win+Alt+PrtScn takes a screenshot and Win+Alt+R records a clip, and they show here."
+      : "Win+Alt+PrtScn takes a screenshot with Game Bar, and Win+Alt+R records a clip. They show here.";
+    const capsLine = counts.length ? `<p class="tl-caps"><span>Captures</span>${counts.map(([s, n]) => `<span class="ln-tag">${esc(s)} <b class="ln-num">${n}</b></span>`).join("")}</p>`
+      : C ? `<p class="gpage-hint tl-tip">${tip}</p>` : "";
+    const head = `<div class="ln-section-head"><div><h2>Timeline</h2>${capsLine}</div></div>`;
     const n = S.tlMore[key] || TL_SHOWN, days = [];
     for (const e of list.slice(0, n)) {
       const d = tlDay(e.at);
@@ -248,6 +279,19 @@
     }
     return `<section class="gpage-block gp-timeline">${head}${days.map((g) => `<div class="tl-day"><h3 class="tl-date">${esc(g.d)}</h3><ol class="tl-list">${g.rows.join("")}</ol></div>`).join("")}
       ${list.length > n ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="tl-more" data-key="${esc(key)}">Show more</button></div>` : ""}</section>`;
+  }
+  // Unsorted captures (Settings, Data and activity): the newest 50 Lootnest
+  // couldn't match to a game, each given one here, or marked as of no game.
+  // Only the index changes.
+  const UNSORTED_SHOWN = 50;
+  function viewUnsorted() {
+    const U = S.unsorted, when = (c) => new Date(c.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    const opts = `<option value="">Choose a game</option><option value="none">Not a game</option>${everyItem().sort((a, b) => a.name.localeCompare(b.name)).map((it) => `<option value="${esc(recentKey(it))}">${esc(it.name)}</option>`).join("")}`;
+    const body = !U ? lnInline("", "Reading the captures") : !U.items.length ? "<p>Every capture is matched to a game.</p>"
+      : `<ul class="cap-list">${U.items.slice(0, UNSORTED_SHOWN).map((c) => `<li class="cap-row">${capThumb(null, c)}<div class="cap-main"><b>${esc(capWhat(c))}</b><span>${esc(when(c))}</span><span class="cap-file" title="${esc(c.path)}">${esc(c.path.split(/[\\/]/).pop())}</span></div>
+          <select class="ln-input" data-assign="${esc(c.path)}" aria-label="${esc("The game of " + capLabel(c))}">${opts}</select></li>`).join("")}</ul>`;
+    return drawer({ label: "Unsorted captures", title: "Unsorted captures", sub: U && U.total ? `${U.total} ${U.total === 1 ? "capture" : "captures"} Lootnest couldn't match to a game${U.total > UNSORTED_SHOWN ? `, the newest ${UNSORTED_SHOWN} here` : ", newest first"}` : "", body,
+      foot: `<p class="gpage-hint ln-drawer__note">Choosing a game puts the capture on its Timeline. Lootnest only notes it down: the file stays where it is, as it is.</p>` });
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
@@ -371,5 +415,5 @@
     return `<div class="scrim" data-action="scrim"><div class="dialog shots" role="dialog" aria-modal="true" aria-label="${D.pics ? "Pictures" : "Screenshots"} of ${esc(it.name)}">
       <header class="shots-head"><h2>${esc(it.name)}</h2><span class="ln-num" aria-live="polite">${D.pics ? esc(shots[i].alt) + ", " : ""}${i + 1} of ${n}</span><span class="grow"></span>
         <button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="dialog-cancel" aria-label="Close">${GI.x}</button></header>
-      <div class="shots-stage">${nav(-1, `Previous ${what}`, GI.back)}${gone ? `<p class="shots-gone">That picture is gone, or too big to show.</p>` : `<img src="${esc(shots[i].full)}" alt="${esc(shots[i].alt || `Screenshot ${i + 1} of ${n}`)}">`}${nav(1, `Next ${what}`, GI.next)}</div></div></div>`;
+      <div class="shots-stage">${nav(-1, `Previous ${what}`, GI.back)}${gone ? `<p class="shots-gone">That picture is gone, or too big to show.</p>` : !shots[i].full ? `<p class="shots-gone">Reading the picture</p>` : `<img src="${esc(shots[i].full)}" alt="${esc(shots[i].alt || `Screenshot ${i + 1} of ${n}`)}">`}${nav(1, `Next ${what}`, GI.next)}</div></div></div>`;
   }
