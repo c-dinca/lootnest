@@ -242,7 +242,7 @@
         break;
       }
       case "updates": {
-        S.updates = { games: ev.games || [], newsOn: !!ev.newsOn, at: Date.now() }; S.updChecking = false;
+        S.updates = { games: ev.games || [], newsOn: !!ev.newsOn, at: Date.now() }; S.updChecking = S.updAsking = false;
         updateNavCount();
         if (S.view === "updates") render();
         break;

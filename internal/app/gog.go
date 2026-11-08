@@ -32,6 +32,7 @@ var (
 	gogOwned   []core.GogGame                    // the library last read; nil until read
 	gogIns     = map[int64][]core.GogInstaller{} // the installers last listed, per game: the only ones Install takes
 	gogNewer   = map[string]core.GogInstaller{}  // Library key -> the installer of the update the last check found
+	gogBad     = map[string]string{}             // Library key -> why its last check failed
 	gogPending = map[string]gogUpdate{}          // a downloaded update's installer -> its record once applied
 	gogStop    context.CancelFunc                // the download running, if any
 	gogReading bool
@@ -64,7 +65,7 @@ func (a *App) gogUser() string {
 func gogForget() {
 	gogMu.Lock()
 	defer gogMu.Unlock()
-	gogOwned, gogIns, gogNewer, gogPending = nil, map[int64][]core.GogInstaller{}, map[string]core.GogInstaller{}, map[string]gogUpdate{}
+	gogOwned, gogIns, gogNewer, gogPending, gogBad = nil, map[int64][]core.GogInstaller{}, map[string]core.GogInstaller{}, map[string]gogUpdate{}, map[string]string{}
 	gogErr, gogFailed = "", time.Time{}
 }
 
@@ -585,7 +586,7 @@ func (a *App) apiGogCheck(only string, now bool) {
 		}
 		errText, asked := "", 0
 		for k, r := range a.store.GogRecords() {
-			if !on || !lib[k] || (only != "" && k != only) || (!now && time.Since(r.CheckedAt) < storeCheckEvery) {
+			if !on || !lib[k] || (only != "" && k != only) || (!now && !storeDue("gog:"+k, r.CheckedAt)) {
 				continue
 			}
 			if asked++; asked > 1 {
@@ -598,10 +599,15 @@ func (a *App) apiGogCheck(only string, now bool) {
 			if err != nil {
 				errText = sentence(err)
 				a.logf("Couldn't check GOG for an update of %s: %v", k, err)
+				gogMu.Lock()
+				gogBad[k] = errText
+				gogMu.Unlock()
 				continue
 			}
+			storeChecked("gog:" + k)
 			gogMu.Lock()
 			delete(gogNewer, k)
+			delete(gogBad, k)
 			if in, newer := core.GogUpdate(r, ins); newer {
 				gogNewer[k] = in
 			}
@@ -629,7 +635,7 @@ func (a *App) emitGogUpdates(errText string) {
 	}
 	gogMu.Lock()
 	for k, r := range all {
-		recs[k] = map[string]any{"version": r.Version, "checkedAt": r.CheckedAt, "game": games[k]}
+		recs[k] = map[string]any{"version": r.Version, "checkedAt": r.CheckedAt, "game": games[k], "failed": gogBad[k]}
 		if in, ok := gogNewer[k]; ok {
 			list = append(list, map[string]any{"key": k, "version": in.Version, "size": in.Size})
 		}
@@ -639,7 +645,8 @@ func (a *App) emitGogUpdates(errText string) {
 }
 
 // gogUpdTarget is a game Lootnest installed from GOG as the update panel
-// takes it. Its own installer updates it, so the Updates page doesn't list it.
+// takes it. Its own installer updates it, so updTargets leaves it out; the
+// Updates page lists it from its GOG record.
 func (a *App) gogUpdTarget(key string) (updTarget, bool) {
 	recs := a.store.GogRecords()
 	for _, f := range a.libraryGames() {

@@ -4,7 +4,7 @@
   const UPDATABLE = ["folder", "added", "shortcut", "hydra", "other"];
   const updKey = (it) => (it.kind === "game" ? (it.g.launch.type === "exe" && UPDATABLE.includes(it.source) ? "game:" + it.id : "") : UPDATABLE.includes(it.source) && !it.appId ? "found:" + it.id : "");
   function updateNavCount() {
-    const keys = new Set([...(S.updates ? S.updates.games : []), ...(S.dl || [])].filter((g) => g.newer).map((g) => g.key));
+    const keys = new Set([...(S.updates ? S.updates.games : []), ...(S.dl || []), ...storeUpdRows()].filter((g) => g.newer).map((g) => g.key));
     const n = keys.size + (S.copies ? S.copies.length : 0);
     const el = $("#upd-count"); if (el) el.textContent = n ? String(n) : "";
   }
@@ -60,17 +60,51 @@
       : r.noNews ? `<span>Not on the Steam store</span>`
       : U.newsOn ? `<span>Files from ${esc(day(r.changed))}</span>` : "";
     const primary = `<button class="ln-button ${lead ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="upd-start" data-key="${esc(r.key)}" data-name="${esc(r.name)}">${r.newer ? "Apply the update" : "Apply an update"}</button>`;
+    return updRow(r, st, `<p class="upd-meta"><span>${esc(sourceLabel(r.source || "folder"))}</span>${updPath(r.dir)}${note}</p>`, ver, primary + updMore(r));
+  }
+  const updMore = (r) => `<button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="upd-more" data-key="${esc(r.key)}" data-name="${esc(r.name)}" aria-label="More for ${esc(r.name)}" aria-haspopup="menu" title="More">${GI.more || "&#8943;"}</button>`;
+  // One row of the list: art, name and state, then meta, version and actions.
+  function updRow(r, st, meta, ver, act) {
     return `<li class="upd-card upd-card--${st.k}">
-      <button class="upd-art" data-action="upd-open-game" data-key="${esc(r.key)}" aria-label="Open ${esc(r.name)}'s page" tabindex="-1">${updArt(updItem(r.key), r.name)}</button>
+      <button class="upd-art" data-action="upd-open-game" data-key="${esc(r.key)}" aria-label="Open ${esc(r.name)}'s page" tabindex="-1">${updArt(r.it || updItem(r.key), r.name)}</button>
       <div class="upd-main">
         <div class="upd-title-row"><button class="upd-name" data-action="upd-open-game" data-key="${esc(r.key)}">${esc(r.name)}</button>
           <span class="upd-pill upd-pill--${st.k}"><i aria-hidden="true"></i>${esc(st.text)}</span></div>
-        <p class="upd-meta"><span>${esc(sourceLabel(r.source || "folder"))}</span>${updPath(r.dir)}${note}</p>
+        ${meta}
       </div>
       ${ver}
-      <div class="upd-act">${primary}
-        <button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="upd-more" data-key="${esc(r.key)}" data-name="${esc(r.name)}" aria-label="More for ${esc(r.name)}" aria-haspopup="menu" title="More">${GI.more || "&#8943;"}</button></div>
+      <div class="upd-act">${act}</div>
     </li>`;
+  }
+  // Games Lootnest installed from itch.io or GOG (73-itch.js): their updates
+  // come from the store, so a game that is also a folder game shows once, as this.
+  function storeUpdRows() {
+    const all = everyItem();
+    return [ITCH, GOG].flatMap((from) => Object.entries(S[from.s].recs).map(([k, rec]) => {
+      const it = rec.game ? all.find((x) => x.kind === "game" && x.id === rec.game) : all.find((x) => x.kind === "found" && x.id === k);
+      return it && { key: (rec.game ? "game:" : "found:") + it.id, k, rec, from, it, name: it.name, newer: from.on() && S[from.s].updates.find((u) => u.key === k) };
+    }).filter(Boolean));
+  }
+  function storeState(r) {
+    if (!r.from.on()) return { k: "dim", text: "Not connected" };
+    if (r.newer) return { k: "new", text: "Newer version out" };
+    if (r.rec.failed) return { k: "dim", text: "Couldn't check" };
+    if (!storeChecked(r.rec)) return { k: "dim", text: "Not checked yet" };
+    return { k: "ok", text: "Up to date" };
+  }
+  const storeUpdBtn = (r, cls) => `<button class="ln-button ${cls} ln-button--sm" data-action="${r.from.s}-update" data-key="${esc(r.k)}" aria-label="Update ${esc(r.name)}">Update</button>`;
+  function storeUpdCard(r, lead) {
+    const st = storeState(r), I = S[r.from.s], R = I.run && I.run.key === r.k ? I.run : null, n = r.newer;
+    const note = !r.from.on() ? `<button class="upd-note" data-action="details-on">${r.from.s === "itch" ? "Connect itch.io to check" : "Sign in to GOG to check"}</button>`
+      : n ? `<span>${storeOut(n)}</span>`
+      : r.rec.failed ? `<span class="upd-why" title="${esc(r.rec.failed)}">${esc(r.rec.failed)}</span>`
+      : storeChecked(r.rec) ? `<span>Checked ${esc(ago(r.rec.checkedAt))}</span>` : "";
+    const act = R ? (R.stage === "download" ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="${r.from.s}-cancel">Cancel</button>` : "")
+      : n && r.from.on() ? storeUpdBtn(r, lead ? "ln-button--primary" : "ln-button--secondary") : "";
+    // The More menu holds a folder game's update history; a game with none has no menu.
+    const more = S.updates.games.some((g) => g.key === r.key) ? updMore(r) : "";
+    return updRow(r, st, R ? itchMeter(R, "", r.from.text) : `<p class="upd-meta"><span>From ${r.from.label}</span>${note}</p>`,
+      updVer(r.rec.version || "", n && n.version && ["Latest", n.version]), act + more);
   }
   // Updates already in Downloads, matched by name: each goes through the
   // same drawer as one the user chooses.
@@ -99,34 +133,44 @@
   }
   function viewUpdates() {
     const U = S.updates;
-    const checking = S.updChecking;
+    const checking = S.updChecking || S.itch.checking || S.gog.checking;
     const refresh = `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-refresh" ${checking ? 'aria-busy="true" disabled' : ""}>${checking ? '<span class="ln-spinner" aria-hidden="true"></span>Checking' : `${GI.refresh}Check again`}</button>`;
-    const head = (act) => `<header class="upd-head"><div><h1>Updates</h1><p>Games no store keeps up to date. Lootnest compares your copy with Steam's patch notes, and applies an update you bring with a copy of everything first.</p></div>${act}</header>`;
-    if (!U) { api.updates().catch(() => {}); if (itchOn()) api.itchCheck("", false).catch(() => {}); if (gogOn()) api.gogCheck("", false).catch(() => {}); return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`; }
+    const srows = storeUpdRows(), skeys = new Set(srows.map((r) => r.key));
+    const labels = [ITCH, GOG].filter((from) => srows.some((r) => r.from === from)).map((from) => from.label);
+    const head = (act) => `<header class="upd-head"><div><h1>Updates</h1><p>Games no store keeps up to date. Lootnest compares your copy with Steam's patch notes${labels.length ? `, or asks ${labels.join(" and ")} about the games it installed from there,` : ""} and applies an update you bring with a copy of everything first.</p></div>${act}</header>`;
+    // Asked once per load: every answer redraws the page, and that mustn't ask again.
+    if (!U) {
+      if (!S.updAsking) { S.updAsking = true; api.updates().catch(() => { S.updAsking = false; }); if (itchOn()) api.itchCheck("", false).catch(() => {}); if (gogOn()) api.gogCheck("", false).catch(() => {}); }
+      return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`;
+    }
     if (!S.copies) api.newCopies().catch(() => {});
-    if (!U.games.length) {
+    const games = [...U.games.filter((g) => !skeys.has(g.key)), ...srows];
+    const stOf = (r) => (r.from ? storeState(r) : updState(r, U));
+    if (!games.length) {
       return `<div class="upd-page ln-root">${head(refresh)}${emptyState(GI.load, "Nothing to keep up to date here", "Steam, Epic, GOG and the other launchers keep their own games up to date. Games in a folder, from Hydra or added by hand show up here, with their version against the latest.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)}</div>`;
     }
     const offers = S.copies || [];
     const done = Object.keys(S.carried).filter((k) => S.carried[k].done && !S.carried[k].deleted);
     const broke = U.games.filter((g) => ((g.applied || []).find((u) => u.state === "applied") || {}).broke);
-    const nNew = U.games.filter((g) => g.newer).length;
-    const nLook = offers.length + broke.length;
+    const nNew = games.filter((g) => g.newer).length;
+    const storeNew = srows.filter((r) => r.newer && r.from.on() && !(S[r.from.s].run && S[r.from.s].run.key === r.k));
+    const nLook = offers.length + broke.length + storeNew.length;
     const F = S.updFilter || "all";
     const seg = (k, n, label) => `<button data-action="upd-filter" data-f="${k}" aria-pressed="${F === k}">${k === "new" && n ? '<i class="upd-dot" aria-hidden="true"></i>' : ""}${label}<span class="ln-count ln-num">${n}</span></button>`;
     const filter = `<div class="ln-segmented upd-filter" role="group" aria-label="Show">
-      ${seg("all", U.games.length, "All")}${seg("new", nNew, "Newer version out")}
-      ${seg("ok", U.games.filter((g) => updState(g, U).k === "ok").length, "Up to date")}${seg("dim", U.games.filter((g) => updState(g, U).k === "dim").length, "Can't tell")}</div>`;
+      ${seg("all", games.length, "All")}${seg("new", nNew, "Newer version out")}
+      ${seg("ok", games.filter((g) => stOf(g).k === "ok").length, "Up to date")}${seg("dim", games.filter((g) => stOf(g).k === "dim").length, "Can't tell")}</div>`;
     const news = U.newsOn ? "" : `<div class="upd-callout"><div><b>Find out when a newer version is out</b><p>Lootnest reads each game's patch notes from Steam's news feed and compares their date with your copy. Only the game's Steam id, or its name, is sent.</p></div><button class="ln-button ln-button--secondary ln-button--sm" data-action="news-on">Turn it on</button></div>`;
     const dl = S.dl || [];
     const found = dl.length ? `<section aria-label="Found in your Downloads"><div class="upd-sec-head"><h2>Found in your Downloads</h2><span class="upd-sec-n ln-num">${dl.length}</span></div><ul class="upd-cards">${dl.map(dlCard).join("")}</ul></section>` : "";
     const look = !(nLook || done.length) ? "" : `<section class="upd-look" aria-label="Needs a look"><div class="upd-sec-head"><h2>Needs a look</h2><span class="upd-sec-n ln-num">${nLook}</span></div>
       ${done.map(carriedCard).join("")}${offers.map((o) => copyCard(o, false)).join("")}
+      ${storeNew.map((r) => `<div class="copy-card">${GI.load}<div><b>${r.newer.version ? `${esc(r.name)} ${esc(r.newer.version)} is out` : `A newer download of ${esc(r.name)} is out`}</b><p>From ${r.from.label}, ${esc(fmtBytes(r.newer.size || 0))}. Lootnest downloads it, then shows what it changes before anything in the game's folder does.</p></div><div class="gpage-actions">${storeUpdBtn(r, "ln-button--secondary")}</div></div>`).join("")}
       ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn">${GI.alert}<div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}
       </section>`;
-    const list = U.games.filter((g) => F === "all" || updState(g, U).k === F || (F === "new" && g.newer))
+    const list = games.filter((g) => F === "all" || stOf(g).k === F || (F === "new" && g.newer))
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || a.name.localeCompare(b.name));
-    const cards = list.length ? `<ol class="upd-cards">${list.map((r, i) => updCard(r, U, i === 0 && !!r.newer)).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
+    const cards = list.length ? `<ol class="upd-cards">${list.map((r, i) => (r.from ? storeUpdCard(r, i === 0 && !!r.newer) : updCard(r, U, i === 0 && !!r.newer))).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
     return `<div class="upd-page ln-root">${head("")}<div class="upd-cols">
       <div class="upd-main-col">${found}${news}<section aria-label="Your games">${filter}${cards}</section></div>
       <aside class="upd-aside">${look}<div class="upd-check">${refresh}<span>Checked ${esc(ago(U.at))}</span></div></aside></div></div>`;

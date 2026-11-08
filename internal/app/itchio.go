@@ -31,6 +31,7 @@ var (
 	itchOwned   []core.ItchGame                 // the library last read; nil until read
 	itchUps     = map[int64][]core.ItchUpload{} // the uploads last listed, per game: the only ones Install takes
 	itchNewer   = map[string]core.ItchUpload{}  // Library key -> the newer upload the last check found
+	itchBad     = map[string]string{}           // Library key -> why its last check failed
 	itchPending = map[string]itchUpdate{}       // a downloaded update's path -> its record once applied
 	itchStop    context.CancelFunc              // the download running, if any
 	itchReading bool                            // the library is being read
@@ -46,6 +47,26 @@ type itchUpdate struct {
 
 const storeCheckEvery = 6 * time.Hour
 
+// An update a check finds is kept only in memory, so each record is asked
+// about once after Lootnest starts, however recent its saved CheckedAt.
+var (
+	storeAskedMu sync.Mutex
+	storeAsked   = map[string]bool{} // "itch:" or "gog:" plus the Library key
+)
+
+// storeDue says whether a record checked at t is asked about again now.
+func storeDue(id string, t time.Time) bool {
+	storeAskedMu.Lock()
+	defer storeAskedMu.Unlock()
+	return !storeAsked[id] || time.Since(t) >= storeCheckEvery
+}
+
+func storeChecked(id string) {
+	storeAskedMu.Lock()
+	storeAsked[id] = true
+	storeAskedMu.Unlock()
+}
+
 var errItchOff = errors.New("Connect itch.io first, in Settings, Online.")
 
 func (a *App) itchKey() string {
@@ -57,7 +78,7 @@ func (a *App) itchKey() string {
 func itchForget() {
 	itchMu.Lock()
 	defer itchMu.Unlock()
-	itchOwned, itchUps, itchNewer, itchPending = nil, map[int64][]core.ItchUpload{}, map[string]core.ItchUpload{}, map[string]itchUpdate{}
+	itchOwned, itchUps, itchNewer, itchPending, itchBad = nil, map[int64][]core.ItchUpload{}, map[string]core.ItchUpload{}, map[string]itchUpdate{}, map[string]string{}
 	itchErr, itchFailed = "", time.Time{}
 }
 
@@ -479,7 +500,7 @@ func (a *App) apiItchCheck(only string, now bool) {
 		}
 		errText, asked := "", 0
 		for k, r := range a.store.ItchRecords() {
-			if key == "" || !lib[k] || (only != "" && k != only) || (!now && time.Since(r.CheckedAt) < storeCheckEvery) {
+			if key == "" || !lib[k] || (only != "" && k != only) || (!now && !storeDue("itch:"+k, r.CheckedAt)) {
 				continue
 			}
 			if asked++; asked > 1 {
@@ -491,6 +512,9 @@ func (a *App) apiItchCheck(only string, now bool) {
 			if err != nil {
 				errText = sentence(err)
 				a.logf("Couldn't check itch.io for an update of %s: %v", k, err)
+				itchMu.Lock()
+				itchBad[k] = errText
+				itchMu.Unlock()
 				continue
 			}
 			best, found := core.ItchUpload{}, false
@@ -499,8 +523,10 @@ func (a *App) apiItchCheck(only string, now bool) {
 					best, found = u, true
 				}
 			}
+			storeChecked("itch:" + k)
 			itchMu.Lock()
 			delete(itchNewer, k)
+			delete(itchBad, k)
 			if found && core.ItchNewer(r, best) {
 				itchNewer[k] = best
 			}
@@ -558,7 +584,7 @@ func (a *App) emitItchUpdates(errText string) {
 	}
 	itchMu.Lock()
 	for k, r := range all {
-		recs[k] = map[string]any{"version": r.UserVersion, "checkedAt": r.CheckedAt, "game": games[k]}
+		recs[k] = map[string]any{"version": r.UserVersion, "checkedAt": r.CheckedAt, "game": games[k], "failed": itchBad[k]}
 		if u, ok := itchNewer[k]; ok {
 			list = append(list, map[string]any{"key": k, "version": u.UserVersion, "size": u.Size, "uploadId": u.ID})
 		}

@@ -345,6 +345,11 @@ names each request's host and path, never the key).
    what it replaces; apply it, then **Undo** puts the old files back and
    the page shows the old version again, with the update on offer. Its
    saves are in `backups\saves-...-before-update`.
+   The game is also on the Updates page (1.83), once, saying From itch.io
+   with the same version and update; its **Update** does the same, with
+   the bar and Cancel in its row. The page's **Check again** asks itch.io
+   again at once. Disconnected, the row stays, saying Connect itch.io to
+   check, which opens Settings, Online.
 8. **Disconnect**: the itch.io games leave Not installed, the installed
    ones stay and start, and `itchKey` is gone from `config.json`.
 
@@ -394,6 +399,10 @@ the host of a download, and never a token).
    **Undo** puts the old files back and the page shows the old version
    again, with the update on offer. A game GOG Galaxy installed shows no
    such line: Galaxy updates it.
+   The game is also on the Updates page (1.83), saying From GOG with the
+   same version and update; its **Update** does the same, with the bar
+   and Cancel in its row. Signed out, the row stays, saying Sign in to
+   GOG to check.
 8. **Sign out**: the GOG games leave Not installed, the installed ones
    stay and start, and `gogToken` is gone from `config.json`. Lootnest
    also signs out with a plain message if GOG stops taking the sign-in.

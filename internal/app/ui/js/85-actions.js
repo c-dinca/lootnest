@@ -418,7 +418,15 @@
     },
     async "conflict-ok"(el) { try { await api.dismissConflict(el.dataset.game); await refresh(); } catch (e) { toast(errText(e), "error"); } },
     "upd-filter"(el) { S.updFilter = el.dataset.f === S.updFilter ? "all" : el.dataset.f; render(); },
-    "upd-refresh"() { S.updChecking = true; S.copies = null; render(); api.updates().catch((e) => { S.updChecking = false; toast(errText(e), "error"); render(); }); },
+    "upd-refresh"() {
+      S.updChecking = true; S.copies = null;
+      // The stores' own check, now rather than after six hours.
+      [ITCH, GOG].filter((st) => st.on() && Object.keys(S[st.s].recs).length).forEach((st) => {
+        Object.assign(S[st.s], { checking: true, asked: true });
+        api[st.s + "Check"]("", true).catch((e) => { S[st.s].checking = false; toast(errText(e), "error"); render(); });
+      });
+      render(); api.updates().catch((e) => { S.updChecking = false; toast(errText(e), "error"); render(); });
+    },
     "upd-notes"(el) {
       const r = S.updates && S.updates.games.find((g) => g.key === el.dataset.key);
       const it = r && updItem(r.key);
