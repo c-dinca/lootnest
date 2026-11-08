@@ -962,7 +962,7 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .set-tab:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
 .set-tab[aria-current="true"] { background: var(--bg-active); color: var(--fg-1); font-weight: 650; }
 .set-dot { width: 8px; height: 8px; margin-left: auto; border-radius: var(--radius-round); background: var(--accent); }
-.set-panel { display: grid; gap: var(--space-8); min-width: 0; }
+.set-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); min-width: 0; }
 .set-panel-head p { margin: var(--space-2) 0 0; font-size: var(--fs-14); color: var(--fg-2); }
 .set-sub .ln-section-head { margin-bottom: var(--space-3); }
 .set-version b { font-size: var(--text-body); }
@@ -986,6 +986,30 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
    the text and lines up with the card's inputs and buttons. */
 .settings-page .bk-card { max-width: calc(60ch + var(--space-8) + var(--switch-w) + 2 * var(--space-6)); }
 .settings-page .bk-card .toggle { column-gap: var(--space-8); padding: var(--space-5) var(--space-6); }
+
+/* Storage: the drives, each with a bar of what's used, then every game's
+   sizes. Red only for a drive that's almost full. */
+.st-drives { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(4 * var(--space-16)), 1fr)); gap: var(--gap-in); }
+.st-drives .bk-card { max-width: none; }
+.st-drive { row-gap: var(--space-3); }
+.st-drive .st-meter { flex-basis: 100%; height: var(--space-2); }
+.st-full { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-meta); font-weight: 600; color: var(--fg-1); }
+.st-full .ln-icon { width: var(--icon-sm); height: var(--icon-sm); color: var(--accent); }
+.st-wrap { overflow-x: auto; border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); }
+.st-table { width: 100%; border-collapse: collapse; font-size: var(--text-body); }
+.st-table th, .st-table td { padding: var(--space-3) var(--space-4); border-bottom: var(--hairline) solid var(--edge-1); text-align: right; white-space: nowrap; }
+.st-table tbody tr:last-child > * { border-bottom: 0; }
+.st-table th:first-child { min-width: calc(3 * var(--space-16)); text-align: left; white-space: normal; }
+.st-table thead th { padding-block: var(--space-2); font-size: var(--text-meta); font-weight: 600; color: var(--fg-2); }
+.st-table tbody th b { display: block; font-weight: 600; }
+.st-table tbody th span { font-size: var(--text-meta); font-weight: 400; color: var(--fg-3); }
+.st-table td { color: var(--fg-2); }
+.st-table td:last-child { width: 1%; padding-block: var(--space-1); }
+.st-sort { padding: var(--space-1) 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.st-sort:hover, [aria-sort] > .st-sort { color: var(--fg-1); }
+.st-sort:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-tag); }
+[aria-sort] > .st-sort::after { content: ""; display: inline-block; margin-left: var(--space-1); border: var(--space-1) solid transparent; border-top-color: currentColor; border-bottom: 0; vertical-align: middle; }
+[aria-sort="ascending"] > .st-sort::after { border-top: 0; border-bottom: var(--space-1) solid currentColor; }
 
 /* ---------------------------------------- dialogs, forms, older buttons */
 /* Every dialog (Add game, first run, the profile editor, confirmations) is

@@ -113,6 +113,11 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 	}
 	a.mu.Unlock()
 
+	if g.Launch.Type != "steam" {
+		if err := a.errMoving(g.Launch.Exe); err != nil {
+			return Need{}, err
+		}
+	}
 	if isRunning(g) {
 		return Need{}, fmt.Errorf("%s is already running. Close it first, then pick who's playing.", g.Name)
 	}

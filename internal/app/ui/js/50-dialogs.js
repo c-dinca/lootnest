@@ -40,6 +40,8 @@
       const cv = $("#recap-canvas"), p = player(D.player);
       if (cv && old && D.drawnFor === key) cv.replaceWith(old);
       else if (cv && p) { D.drawnFor = key; D.drawn = drawRecap(cv, p, D.year).catch(() => {}); }
+    } else if (D.kind === "movefolder") {
+      o.innerHTML = viewMoveFolder(D);
     } else if (D.kind === "removepc") {
       o.innerHTML = viewRemovePC(D);
     } else if (D.kind === "trysave") {
@@ -125,23 +127,26 @@
     if (!S.moving) api.moveInfo(appId).catch((e) => { if (S.dialog && S.dialog.kind === "move") { S.dialog.info = { error: errText(e), libraries: [] }; renderOverlay(); } });
   }
 
+  // The frame and the progress of both Move dialogs: Game Mover's and a
+  // folder game's (viewMoveFolder).
+  const moveWrap = (name, inner, sub) => `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Move ${esc(name)}">
+    <div><h2>Move ${esc(name)} to another drive</h2>${sub ? `<p class="sub">${sub}</p>` : ""}</div>${inner}</div></div>`;
+  const moveProgress = (done, total, text, until) => `<div class="mover"><div class="meter"><i style="width:${total ? Math.min(100, Math.round((done / total) * 100)) : 0}%"></i></div><p class="hint" role="status">${esc(text)}</p></div>
+        <p class="hint">You can close this window; Lootnest keeps going and tells you when it's done. ${until}</p>`;
   function viewMove() {
     const D = S.dialog, M = S.moving, I = D.info;
-    const head = (sub) => `<div><h2>Move ${esc(D.name)} to another drive</h2>${sub ? `<p class="sub">${sub}</p>` : ""}</div>`;
-    const wrap = (inner) => `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Move ${esc(D.name)}">${inner}</div></div>`;
+    const wrap = (inner, sub) => moveWrap(D.name, inner, sub);
     if (M && M.appId === D.appId) {
-      const pct = M.total ? Math.min(100, Math.round((M.done / M.total) * 100)) : 0;
       const text = M.step === "steam" ? "Closing Steam" : M.total ? `Copying ${fmtSize(M.done)} of ${fmtSize(M.total)}` : "Starting";
-      return wrap(`${head("")}<div class="mover"><div class="meter"><i style="width:${pct}%"></i></div><p class="hint">${esc(text)}</p></div>
-        <p class="hint">You can close this window; Lootnest keeps going and tells you when it's done. Keep Steam closed until then.</p>
+      return wrap(`${moveProgress(M.done, M.total, text, "Keep Steam closed until then.")}
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     }
-    if (M) {
-      return wrap(`${head("")}<p class="note">Lootnest is moving ${esc(M.name || "another game")}. Wait for it to finish, then move this one.</p>
+    if (M || S.folderMove) {
+      return wrap(`<p class="note">Lootnest is moving ${esc((M && M.name) || "another game")}. Wait for it to finish, then move this one.</p>
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     }
-    if (!I) return wrap(`${head("Working out the game's size")}<div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button></div>`);
-    if (I.error) return wrap(`${head("")}<p class="note">${esc(I.error)}</p><div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
+    if (!I) return wrap(`<div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button></div>`, "Working out the game's size");
+    if (I.error) return wrap(`<p class="note">${esc(I.error)}</p><div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     const cur = I.libraries.find((l) => l.current);
     const others = I.libraries.filter((l) => !l.current);
     const room = (l) => l.free < 0 || l.free >= I.size + MOVE_MARGIN;
@@ -149,10 +154,10 @@
       ? `<div class="choices">${others.map((l) => `<button class="choice${D.pick === l.path ? " on" : ""}" data-action="move-pick" data-lib="${esc(l.path)}" ${room(l) ? "" : "disabled"} aria-pressed="${D.pick === l.path}">
           <span class="dot"></span><span><b>${esc(l.path)}</b><span>${l.free < 0 ? "Free space unknown" : fmtSize(l.free) + " free"}${room(l) ? "" : " · not enough room"}</span></span></button>`).join("")}</div>`
       : `<p class="note">Steam has one library on this PC. To move games to another drive, add a library there in Steam: <b>Settings > Storage</b>, then <b>Add drive</b>. Then come back here.</p>`;
-    return wrap(`${head(`${fmtSize(I.size)} · now in ${esc(cur ? cur.path : "")}`)}${list}
+    return wrap(`${list}
       ${others.length ? `<p class="hint">The game is copied and checked before anything is removed from where it is now.${I.steamRunning ? " Steam closes while the game moves and opens again when it's done." : ""}</p>` : ""}
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
-        ${others.length ? `<button class="btn primary" data-action="move-go" ${D.pick ? "" : "disabled"}>Move</button>` : ""}</div>`);
+        ${others.length ? `<button class="btn primary" data-action="move-go" ${D.pick ? "" : "disabled"}>Move</button>` : ""}</div>`, `${fmtSize(I.size)} · now in ${esc(cur ? cur.path : "")}`);
   }
 
   // --------------------------------------------- game settings (no profiles) --

@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.77.0, beta)
+## Where things stand (1.78.0, beta)
 
 These shipped recently, newest last:
 
@@ -528,6 +528,15 @@ These shipped recently, newest last:
   `stepsBefore`/`stepsAfter(played)` around every start (WM_CLOSE, 10 s,
   Force only if ticked; never in safe mode), `startExe` (start folder,
   runas), `ps_runningApps`, Steam properties link. Drawer in `66-launch.js`.
+
+- **1.78** Storage (a Settings category, `72-storage.js`): sizes counted
+  in the background after scans (`core.DirSize` without following links,
+  `SizeCache` in sizes.json, `sizesSoon`/`sizePass`, never in safe mode),
+  drives (`win.DiskSpace`), a sortable table; Library sort Largest first.
+  Move a folder game to another drive (`MoveGamePlan` refusals,
+  `MoveGame` copy with read-back and compare, `retargetMoved` in one
+  config write, ledger `NoteMoved`, then the Recycle Bin; launches into
+  the moving folder are refused). Store games move with their launcher.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

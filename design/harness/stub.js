@@ -311,6 +311,25 @@
         ? [{ from: f.dir + "\\ProjectPBZ\\Saved\\SaveGames", rel: "ProjectPBZ/Saved/SaveGames", size: 14.6 * 2 ** 20 }, { from: "C:\\Users\\Ana\\AppData\\Local\\PBZ\\Config", size: 48 * 2 ** 10 }] : [] } }), 300);
       return ok();
     },
+    // Sizes: from each name, so they stay the same between shots.
+    ps_sizes: () => {
+      const GB = 2 ** 30, h = (t) => [...t].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 9973, 7);
+      const size = (key, name, dir, profiles) => { const n = h(name); return { key, dir, install: (n % 120 + 2) * GB * 0.93, saves: (n % 40 + 1) * 3.1 * 2 ** 20, profiles: profiles ? (n % 9 + 1) * 41 * 2 ** 20 : 0, copies: (n % 5) * 57 * 2 ** 20 }; };
+      const list = [...games.map((g) => size("game:" + g.id, g.name, "C:\\Program Files (x86)\\Steam\\steamapps\\common\\" + g.name, true)),
+        ...found.filter((f) => !/forza/i.test(f.name)).map((f) => size(f.key, f.name, f.dir, false))];
+      return ok({ games: list, counting: false, safe: false, drives: [
+        { root: "C:\\", free: 31.4 * GB, size: 476 * GB, games: "C:\\Games" }, { root: "D:\\", free: 640 * GB, size: 1863 * GB, games: "D:\\Games" },
+        { root: "E:\\", free: 812 * GB, size: 931 * GB, games: "E:\\Games" }] });
+    },
+    // ?move=hold: the move stays at 35%, for its screenshot.
+    ps_moveFolderGame: (key, dst) => {
+      const f = found.find((x) => x.key === key) || {}, total = 38.2 * 2 ** 30;
+      emit({ type: "folderMoveProgress", key, done: 0.35 * total, total }, 100);
+      const to = dst + "\\" + (f.name || "Game"), newKey = "dir:" + to.toLowerCase();
+      if (q.get("move") !== "hold") setTimeout(() => { if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey }); }, 1500);
+      return ok();
+    },
+    ps_moveFolderCancel: () => ok(),
     ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },
     ps_separateCopies: (group, apart) => { if (apart) SEPARATE.add(group); else SEPARATE.delete(group); return ok(); },
     ps_cover: (appId, name) => (STATE === "offline" ? offline() : ok(gameArt(appId, name, "cover"))),

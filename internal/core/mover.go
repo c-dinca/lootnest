@@ -1,6 +1,7 @@
 package core
 
 import (
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"io"
@@ -105,8 +106,9 @@ func TreeSize(dir string) (files int, bytes int64, err error) {
 }
 
 // moveCopyTree copies src into dst (which must not exist yet), flushing every
-// file to disk. done is called with the bytes copied so far.
-func moveCopyTree(src, dst string, done func(int64)) error {
+// file to disk and reading it back. done is called with the bytes copied so
+// far; stop, if set, cancels the copy when it says so.
+func moveCopyTree(src, dst string, done func(int64), stop func() bool) error {
 	var total int64
 	return filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -131,7 +133,7 @@ func moveCopyTree(src, dst string, done func(int64)) error {
 			if done != nil {
 				done(total + n)
 			}
-		})
+		}, stop)
 		total += n
 		if err != nil {
 			return err
@@ -143,7 +145,7 @@ func moveCopyTree(src, dst string, done func(int64)) error {
 	})
 }
 
-func copyFileSynced(from, to string, info fs.FileInfo, progress func(int64)) (int64, error) {
+func copyFileSynced(from, to string, info fs.FileInfo, progress func(int64), stop func() bool) (int64, error) {
 	in, err := os.Open(from)
 	if err != nil {
 		return 0, err
@@ -154,10 +156,16 @@ func copyFileSynced(from, to string, info fs.FileInfo, progress func(int64)) (in
 		return 0, err
 	}
 	var n int64
+	h := sha1.New()
 	buf := make([]byte, 1<<20)
 	for {
+		if stop != nil && stop() {
+			out.Close()
+			return n, ErrMoveCancelled
+		}
 		k, rerr := in.Read(buf)
 		if k > 0 {
+			h.Write(buf[:k])
 			if _, werr := out.Write(buf[:k]); werr != nil {
 				out.Close()
 				return n, werr
@@ -178,6 +186,9 @@ func copyFileSynced(from, to string, info fs.FileInfo, progress func(int64)) (in
 		return n, err
 	}
 	if err := out.Close(); err != nil {
+		return n, err
+	}
+	if err := verifyCopy(to, n, h.Sum(nil)); err != nil {
 		return n, err
 	}
 	_ = os.Chtimes(to, info.ModTime(), info.ModTime())
@@ -229,13 +240,13 @@ func sameTree(a, b string) error {
 
 // copyChecked copies src to dst through dst+".lootnest-part" and checks the
 // copy before giving it its real name.
-func copyChecked(src, dst string, done func(int64)) error {
+func copyChecked(src, dst string, done func(int64), stop func() bool) error {
 	part := dst + partSuffix
 	_ = os.RemoveAll(part) // left over from a move that was interrupted
 	if err := os.MkdirAll(filepath.Dir(part), 0o755); err != nil {
 		return err
 	}
-	if err := moveCopyTree(src, part, done); err != nil {
+	if err := moveCopyTree(src, part, done, stop); err != nil {
 		_ = os.RemoveAll(part)
 		return err
 	}
@@ -309,7 +320,7 @@ func MoveSteamGame(in SteamInstall, toLib string, done func(int64), check func()
 		if done != nil {
 			done(n)
 		}
-	}); err != nil {
+	}, nil); err != nil {
 		return res, fmt.Errorf("copying the game failed (%v). It stays where it was", err)
 	}
 	undo := func() {
@@ -325,7 +336,7 @@ func MoveSteamGame(in SteamInstall, toLib string, done func(int64), check func()
 			if done != nil {
 				done(gameBytes + n)
 			}
-		}); err != nil {
+		}, nil); err != nil {
 			undo()
 			return res, fmt.Errorf("copying the game's workshop items failed (%v). The game stays where it was", err)
 		}

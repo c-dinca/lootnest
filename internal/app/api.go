@@ -143,6 +143,9 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_storeAction", a.apiStoreAction))
 	must(a.w.Bind("ps_ownedGames", a.apiOwnedGames))
 	must(a.w.Bind("ps_removeGame", a.apiRemoveGame))
+	must(a.w.Bind("ps_sizes", a.apiSizes))
+	must(a.w.Bind("ps_moveFolderGame", a.apiMoveFolderGame))
+	must(a.w.Bind("ps_moveFolderCancel", a.apiMoveFolderCancel))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_gameDetails", a.apiGameDetails))
@@ -686,6 +689,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Filters = []win.FileFilter{{Name: "Lootnest backups (*.zip, *.lnbak)", Spec: "*.zip;*.lnbak"}}
 		case "backupDir":
 			opt.Title = "Choose where backups go"
+			opt.Folder = true
+		case "moveDir":
+			opt.Title = "Choose where the game goes"
 			opt.Folder = true
 		case "exportDir":
 			opt.Title = "Choose where to save the profile"

@@ -248,3 +248,33 @@ its answers:
    run them twice.
 6. Restart in safe mode and Play: nothing is closed or started, and the
    drawer says so.
+
+## 15. Storage and moving a folder game (1.78)
+
+1. Settings, **Storage**: every fixed drive with its free space and a bar;
+   a drive with less than a tenth free says Almost full. The games list
+   fills in a little after the scan (it says It's counting now). Click a
+   column to sort; the sizes look about right next to Explorer's
+   Properties for two games, one from Steam and one in a folder. Games
+   with profiles show their profiles' size, and Lootnest's copies count
+   the copies before swaps, the safety net and save points.
+2. Library, sort by **Largest first**: each cover says about how much it
+   takes. A game's page says it under its name.
+3. A folder game with a save in it (D:\Games\Test): its row's More
+   button, **Move to another drive**. The dialog lists every other drive's
+   Games folder with its free space, greys out one without room, and
+   **Choose a folder** adds your own. Move: a bar shows the copy. When
+   it's done, the toast says where it is, the game plays from the new
+   folder, its save is there, its playtime and collections are kept, and
+   the old folder is in the Recycle Bin. Updates doesn't offer it as a
+   new copy.
+4. Start a move and press **Stop the move**: the toast says it stays where
+   it was, and the new drive has no folder of it (no .lootnest-part).
+5. Start the game, then try to move it: it says to close it first. Keep it
+   offline (Manage) and try: it says to let it go online first.
+6. The same with a profile game started by its .exe: after the move, Play
+   loads the profile into the new folder, and Edit game shows the new
+   paths.
+7. A Steam game's More has **Move with Game Mover**; an Epic or GOG game
+   says its launcher moves it. Restart in safe mode: Storage says sizes
+   aren't counted, and Move says to restart normally.
