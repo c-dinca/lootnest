@@ -14,6 +14,7 @@ const (
 	ModShift    = 0x0004
 	ModNoRepeat = 0x4000
 	VK_F5       = 0x74
+	VK_F12      = 0x7B
 	WM_HOTKEY   = 0x0312
 )
 

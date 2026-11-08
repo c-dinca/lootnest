@@ -451,6 +451,9 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 	case msg == win.WM_HOTKEY && wp == hotkeyPoint:
 		a.quickPoint()
 		return 0, true
+	case msg == win.WM_HOTKEY && wp == hotkeyShot:
+		a.quickShot()
+		return 0, true
 	case msg == win.WM_DPICHANGED:
 		win.ApplyDPIRect(hwnd, lp)
 		return 0, true

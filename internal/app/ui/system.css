@@ -134,6 +134,8 @@
   --drawer-w: 480px;      /* a panel from the right */
   --drawer-w-wide: 720px; /* one holding a form, such as the profile editor */
   --shots-w: 1280px;      /* the screenshot viewer */
+  --pic-thumb-w: 96px;    /* a save point's or screenshot's picture in a list */
+  --pic-thumb-w-sm: 40px; /* a screenshot's on a Timeline row */
   --set-nav-w: 200px;     /* the list of categories in Settings */
   --tab-h: 36px;          /* a row in that list */
   --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */

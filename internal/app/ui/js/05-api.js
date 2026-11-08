@@ -96,6 +96,7 @@
     setOffline: (key, on) => call("ps_setOffline", key, !!on),
     savePoints: (key) => call("ps_savePoints", key),
     gameTimeline: (key) => call("ps_gameTimeline", key),
+    picture: (key, ref) => call("ps_picture", key, ref),
     makeSavePoint: (key, name) => call("ps_makeSavePoint", key, name || ""),
     restoreSavePoint: (key, id) => call("ps_restoreSavePoint", key, id),
     renameSavePoint: (key, id, name) => call("ps_renameSavePoint", key, id, name),

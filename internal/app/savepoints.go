@@ -5,7 +5,9 @@ package app
 import (
 	"errors"
 	"fmt"
+	"image"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +29,7 @@ var pointMu sync.Mutex // one point made or restored at a time
 // it's running.
 type pointTarget struct {
 	key, name, player string
+	proc              string // its process, for a picture while it runs
 	game              *core.Game
 	locs              []core.SaveLoc
 	running           bool
@@ -54,7 +57,7 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 		if len(locs) == 0 {
 			return t, errors.New("This game has no save locations yet. Edit the game to choose them.")
 		}
-		t.name, t.game, t.locs, t.appID = c.Name, &c, locs, core.GameAppID(&c)
+		t.name, t.game, t.locs, t.appID, t.proc = c.Name, &c, locs, core.GameAppID(&c), procName(&c)
 		t.player = a.store.LoadState()[c.ID]
 		t.running = active || isRunning(&c)
 		return t, nil
@@ -83,13 +86,13 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 	if len(t.locs) == 0 {
 		return t, errors.New("Lootnest doesn't know where this game keeps its saves yet. Choose them under Cloud save on its page.")
 	}
-	t.name, t.appID = f.Name, f.SteamID
+	t.name, t.appID, t.proc = f.Name, f.SteamID, strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))
 	a.mu.Lock()
 	t.player = a.seat
 	a.mu.Unlock()
-	if f.ProcessName != "" {
+	if t.proc != "" {
 		if procs, err := win.ProcessNames(); err == nil {
-			t.running = procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))]
+			t.running = procs[t.proc]
 		}
 	}
 	return t, nil
@@ -104,16 +107,33 @@ func (a *App) apiSavePoints(key string) {
 			out["error"], out["points"] = err.Error(), []core.SavePoint{}
 			return
 		}
-		pts := core.SavePoints(a.store.SavePointsDir(key))
-		if pts == nil {
-			pts = []core.SavePoint{}
+		root := a.store.SavePointsDir(key)
+		pts := []pointOut{}
+		for _, p := range core.SavePoints(root) {
+			pts = append(pts, pointOut{p, dataURL(filepath.Join(root, p.ID, core.PointThumb))})
 		}
 		out["points"], out["player"], out["running"], out["profiles"] = pts, t.player, t.running, t.game != nil
 	}()
 }
 
-// makePoint makes a point now, with the playtime and achievements by then.
+// pointOut is a point as the window shows it, with its picture's thumbnail.
+type pointOut struct {
+	core.SavePoint
+	Thumb string `json:"thumb,omitempty"`
+}
+
+// makePoint makes a point now, with the playtime and achievements by then,
+// and a picture of the game when it's running.
 func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error) {
+	var shot image.Image
+	if t.running && t.proc != "" {
+		img, err := captureGame(t.proc)
+		if err != nil {
+			a.logf("No picture for the save point of %s: %v", t.name, err)
+		} else {
+			shot = img
+		}
+	}
 	pointMu.Lock()
 	defer pointMu.Unlock()
 	p.Player = t.player
@@ -134,7 +154,14 @@ func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error)
 	if t.running {
 		tries = 4 // the game may be writing: read back, and again if it was
 	}
-	return core.MakeSavePoint(a.store.SavePointsDir(t.key), t.locs, p, time.Now(), tries, 1500*time.Millisecond)
+	root := a.store.SavePointsDir(t.key)
+	p, err := core.MakeSavePoint(root, t.locs, p, time.Now(), tries, 1500*time.Millisecond)
+	if err == nil && shot != nil {
+		if err := core.SavePointPictures(root, p.ID, shot); err != nil {
+			a.logf("Couldn't keep the picture of the save point %q: %v", p.Name, err)
+		}
+	}
+	return p, err
 }
 
 func (a *App) apiMakeSavePoint(key, name string) error {
@@ -328,48 +355,60 @@ func (a *App) pointBeforeUpdate(key string) {
 
 const hotkeyPoint = 0x4C4E // "LN"
 
-var hotkeyOn bool // only the watch loop changes it
+var hotkeysOn = map[int]bool{} // only the watch loop changes it
 
-// hotkeyTick holds Ctrl+Shift+F5 only while a game runs, so it takes
-// nothing from other programs the rest of the time.
+// hotkeyTick holds Ctrl+Shift+F5 and Ctrl+Shift+F12 only while a game runs,
+// so they take nothing from other programs the rest of the time.
 func (a *App) hotkeyTick(running []achRun) {
 	a.mu.Lock()
-	off := a.cfg.Settings.PointHotkeyOff
+	s := a.cfg.Settings
 	a.mu.Unlock()
-	want := len(running) > 0 && !off
-	if want == hotkeyOn {
+	a.holdHotkey(hotkeyPoint, win.VK_F5, len(running) > 0 && !s.PointHotkeyOff, "Ctrl+Shift+F5 is taken by another program; save points still work from the game's page")
+	a.holdHotkey(hotkeyShot, win.VK_F12, len(running) > 0 && !s.ScreenshotsOff, "Ctrl+Shift+F12 is taken by another program, so it doesn't take screenshots")
+}
+
+func (a *App) holdHotkey(id int, vk uint32, want bool, taken string) {
+	if want == hotkeysOn[id] {
 		return
 	}
-	hotkeyOn = want
+	hotkeysOn[id] = want
 	a.ui(func() {
 		if want {
-			if !win.RegisterHotKey(a.hwnd, hotkeyPoint, win.ModControl|win.ModShift|win.ModNoRepeat, win.VK_F5) {
-				a.logf("Ctrl+Shift+F5 is taken by another program; save points still work from the game's page")
+			if !win.RegisterHotKey(a.hwnd, id, win.ModControl|win.ModShift|win.ModNoRepeat, vk) {
+				a.logf("%s", taken)
 			}
 		} else {
-			win.UnregisterHotKey(a.hwnd, hotkeyPoint)
+			win.UnregisterHotKey(a.hwnd, id)
 		}
 	})
 }
 
-// quickPoint is the hotkey: a point for the game running now.
-func (a *App) quickPoint() {
+// runningNow is the first game running now, with its profile's colour.
+func (a *App) runningNow() (achRun, string, bool) {
 	procs, err := win.ProcessNames()
 	if err != nil {
-		return
+		return achRun{}, "", false
 	}
 	running := a.achRunning(procs)
 	if len(running) == 0 {
+		return achRun{}, "", false
+	}
+	r, color := running[0], ""
+	a.mu.Lock()
+	if p := a.cfg.Player(r.player); p != nil {
+		color = p.Color
+	}
+	a.mu.Unlock()
+	return r, color, true
+}
+
+// quickPoint is the hotkey: a point for the game running now.
+func (a *App) quickPoint() {
+	r, color, ok := a.runningNow()
+	if !ok {
 		return
 	}
-	r := running[0]
 	go func() {
-		color := ""
-		a.mu.Lock()
-		if p := a.cfg.Player(r.player); p != nil {
-			color = p.Color
-		}
-		a.mu.Unlock()
 		t, err := a.pointTarget(r.key)
 		if err == nil {
 			var p core.SavePoint

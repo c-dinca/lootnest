@@ -129,3 +129,24 @@ its answers:
    yours. **Use Steam's again** puts Steam's back.
 5. Open the page again later: the details show at once, without
    **Checking for newer details**.
+
+## 11. Screenshots and save point pictures (1.70)
+
+1. Start a game in borderless or windowed mode. Press **Ctrl+Shift+F12**.
+   A note "Screenshot saved" with the file's name shows over the game.
+   The picture is in `Pictures\Lootnest\Screenshots\<the game's name>`,
+   named by the date and time, and shows the game, not a black frame or
+   another window.
+2. Press it twice within a second: the second file ends in " (2)".
+3. Switch the game to exclusive fullscreen if it has the option, and press
+   it again. Either the picture is right, or the note says "The picture
+   came out black" and nothing is saved. Note which, with the game's name.
+4. Press **Ctrl+Shift+F5** while the game runs. Close the game and open its
+   page: the save point has a small picture of the game, and a click opens
+   it large. The Timeline lists the screenshots with their pictures.
+5. **Go back to it** on that save point: the game's save folder gets its
+   saves back, and no `point.png` or `thumb.png` appears in it.
+6. Settings, Games and swaps, turn **Ctrl+Shift+F12 saves a screenshot**
+   off. While a game runs, Ctrl+Shift+F12 does nothing in Lootnest and
+   reaches the game or other programs again. Settings, General no longer
+   lists it.

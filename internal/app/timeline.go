@@ -82,19 +82,23 @@ func (a *App) logSession(r core.SessionRecord) {
 
 // TimelineItem is one thing that happened in a game.
 type TimelineItem struct {
-	Kind    string    `json:"kind"` // "session", "point", "unlock" or "update"
+	Kind    string    `json:"kind"` // "session", "point", "unlock", "update" or "shot"
 	At      time.Time `json:"at"`
 	Start   time.Time `json:"start,omitzero"` // a session's
 	Profile string    `json:"profile,omitempty"`
 	Seconds int64     `json:"seconds,omitempty"`
-	Name    string    `json:"name,omitempty"`    // the point's or achievement's, or the update's file
+	Name    string    `json:"name,omitempty"`    // the point's or achievement's, or the update's or screenshot's file
 	Version string    `json:"version,omitempty"` // the version an update brought, when known
+	Thumb   string    `json:"thumb,omitempty"`   // a screenshot's thumbnail, as a data: URL
 }
 
-const timelineMax = 200
+const (
+	timelineMax = 200
+	thumbsMax   = 40 // thumbnails sent with one timeline
+)
 
 // apiGameTimeline answers with a "timeline" event: a game's sessions, save
-// points, unlocks and updates, newest first.
+// points, unlocks, updates and screenshots, newest first.
 func (a *App) apiGameTimeline(key string) {
 	go func() {
 		var items []TimelineItem
@@ -167,9 +171,22 @@ func (a *App) apiGameTimeline(key string) {
 				}
 			}
 		}
+		shotsDir := ""
+		if name != "" {
+			shotsDir = core.ScreenshotsDir(picturesDir(), name)
+			for _, s := range core.Screenshots(shotsDir) {
+				items = append(items, TimelineItem{Kind: "shot", At: s.At, Name: s.Name})
+			}
+		}
 		sort.SliceStable(items, func(i, j int) bool { return items[i].At.After(items[j].At) })
 		if len(items) > timelineMax {
 			items = items[:timelineMax]
+		}
+		for i, n := 0, 0; i < len(items) && n < thumbsMax; i++ {
+			if items[i].Kind == "shot" {
+				items[i].Thumb = a.shotThumb(key, shotsDir, items[i].Name)
+				n++
+			}
 		}
 		if items == nil {
 			items = []TimelineItem{}

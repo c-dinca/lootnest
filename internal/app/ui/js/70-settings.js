@@ -6,7 +6,7 @@
       <span class="switch"><input type="checkbox" data-setting="${field}"${invert ? ' data-invert="1"' : ""} ${checked ? "checked" : ""}><span></span></span></label>`;
   }
 
-  const SHORTCUTS = (pointHotkeyOff) => [
+  const SHORTCUTS = (s) => [
     [["Ctrl+K"], "Search your games, and the store if it's on"],
     [["Ctrl+F", "/"], "Find a game in the Library"],
     [["Arrow keys"], "Move between covers in the Library"],
@@ -19,7 +19,8 @@
     [["1 to 9"], "Choose a profile in Who's playing"],
     [["F11"], "Open or leave Big Picture"],
     [["Q", "E"], "Switch tabs in Big Picture"],
-    ...(pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
+    ...(s.pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
+    ...(s.screenshotsOff ? [] : [[["Ctrl+Shift+F12"], "Save a picture of the game that's running"]]),
   ];
   // Settings: plain on purpose. Groups of rows, each saying what it does,
   // with its control on the right. Everything online is off until turned on.
@@ -41,7 +42,7 @@
           ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts. In Big Picture, it comes back when the game closes.", s.hideWhilePlaying)}
           ${sw("openBigPicture", "Open in Big Picture when Lootnest starts", "For a PC by the TV: Lootnest opens on the whole screen, ready for a controller. Not when it starts in the tray with Windows.", s.openBigPicture)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}`)
-        + sub("Keyboard shortcuts", "", `<dl class="set-keys">${SHORTCUTS(s.pointHotkeyOff).map(([keys, what]) => `<dt>${keys.map((k) => `<kbd>${k}</kbd>`).join(", ")}</dt><dd>${what}</dd>`).join("")}</dl>`)],
+        + sub("Keyboard shortcuts", "", `<dl class="set-keys">${SHORTCUTS(s).map(([keys, what]) => `<dt>${keys.map((k) => `<kbd>${k}</kbd>`).join(", ")}</dt><dd>${what}</dd>`).join("")}</dl>`)],
       ["games", "Games and swaps", GI.play, "How profiles' files are swapped, and how Lootnest works with Steam.", () => sub("Swaps", "", `
           ${row("s-backups", "Copies kept per game before each swap", "A copy is made before every swap. The oldest go once there are more than this.", `<input id="s-backups" class="ln-input set-num" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}">`)}
           ${row("s-timeout", "Seconds to wait for a game to start", "If it hasn't started by then, the profile's files stay loaded, and Lootnest still saves them if the game starts later.", `<input id="s-timeout" class="ln-input set-num" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}">`)}
@@ -50,6 +51,7 @@
           ${sw("achToastsOff", "Show achievements as they unlock", "For games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, in the colour of the profile playing. It's a window of Lootnest's own: nothing goes into the game. It shows over windowed and borderless games, and over most fullscreen ones; switch a game to borderless if it doesn't. Never for games with an anti-cheat.", !s.achToastsOff, true)}
           ${sw("soundsOff", "Sounds for unlocks, save points and swaps", "A short sound when an achievement unlocks, a save point is made or a profile's files are loaded, also over the game while Lootnest is hidden. Never for games with an anti-cheat.", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
+          ${sw("screenshotsOff", "Ctrl+Shift+F12 saves a screenshot", "While a game runs, the keys save a picture of it to Pictures\\Lootnest\\Screenshots, taken from outside the game. If it comes out black, switch the game to borderless windowed. Lootnest holds the keys only while a game runs.", !s.screenshotsOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, here and over the screen at the bottom right, as it does over a game.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
         + sub("Updates for your games", "", `
           ${sw("updatePointOff", "A save point before a game updates", "The first time a game starts after an update, Lootnest copies its saves as a save point first, so you can go back if the new version breaks them. It notices an update by Steam's build number, or by the game's .exe changing.", !s.updatePointOff, true)}

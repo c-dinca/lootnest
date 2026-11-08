@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.69.0, beta)
+## Where things stand (1.70.0, beta)
 
 These shipped recently, newest last:
 
@@ -447,6 +447,16 @@ These shipped recently, newest last:
   in `details-edits/` always win (`MergeDetails`); fetched only when a
   game's page opens (`ps_gameDetails`), never for the whole Library.
   `detailsBlock`, a screenshot lightbox (`viewShots`), Edit details.
+
+- **1.70** Roadmap Timeline 3: Ctrl+Shift+F12 while a game runs
+  (`quickShot`, `Settings.ScreenshotsOff`) saves a GDI copy from outside
+  the game (`win.GameWindow`, `CaptureWindow` with PrintWindow, then
+  `CaptureScreen` only when it's in front) to Pictures\Lootnest\
+  Screenshots\<Game> (`core.SaveNewScreenshot` claims names with
+  O_EXCL); a black frame saves nothing and says to go borderless. Save
+  points made while the game runs keep `point.png` and `thumb.png`
+  beside `point.json` (never restored into save folders); `ps_picture`
+  serves them as data URLs; the 1.69 lightbox shows them.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

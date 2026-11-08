@@ -34,9 +34,14 @@ var (
 	coverFlight = map[string]bool{} // downloads in progress, by key
 )
 
-func dataURL(p string) string {
+func dataURL(p string) string { return dataURLMax(p, 4<<20) }
+
+func dataURLMax(p string, limit int64) string {
+	if st, err := os.Stat(p); err != nil || st.Size() >= limit {
+		return ""
+	}
 	b, err := os.ReadFile(p)
-	if err != nil || len(b) >= 4<<20 {
+	if err != nil || int64(len(b)) >= limit {
 		return ""
 	}
 	mime := "image/jpeg"
