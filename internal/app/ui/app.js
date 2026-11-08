@@ -434,7 +434,7 @@
         break;
       }
       case "updates": {
-        S.updates = { games: ev.games || [], newsOn: !!ev.newsOn }; S.updChecking = false;
+        S.updates = { games: ev.games || [], newsOn: !!ev.newsOn, at: Date.now() }; S.updChecking = false;
         updateNavCount();
         if (S.view === "updates") render();
         break;
@@ -3577,8 +3577,8 @@
     return `<div class="copy-card copy-card--done">${GI.tick}<div><b>${C.name ? esc(C.name) + " is carried over to its new copy" : "Carried over"}</b><p>${saves} Playtime, status, collections and settings moved too.</p></div>
       ${C.oldThere && !C.deleted ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="copy-delete-old" data-old="${esc(oldKey)}" ${C.busy ? "disabled" : ""}>Delete the old folder</button></div>` : ""}</div>`;
   }
-  // The Updates page: a summary you can filter by, what needs a look, then a
-  // card per game with its version against the latest, and one clear action.
+  // The Updates page: a list of games you can filter by state, each with its
+  // version against the latest, and beside it what needs a look.
   const vtxt = (v) => (v ? (v.startsWith("build ") ? "Build " + v.slice(6) : v) : "");
   const verIn = (t) => { const m = (t || "").match(/(?:^|[^a-z0-9])v?(\d+(?:\.\d+){1,3}[a-z]?)(?![\d.])/i) || (t || "").match(/\bbuild[\s._-]*(\d{4,})/i); return m ? (/build/i.test(m[0]) ? "build " + m[1] : m[1]) : ""; };
   const updItem = (key) => libraryItems().find((x) => updKey(x) === key) || null;
@@ -3589,36 +3589,35 @@
     if (r.noNews || !U.newsOn) return { k: "dim", text: "Can't tell" };
     return { k: "ok", text: "Up to date" };
   }
-  function updArt(it) {
-    if (!it) return "";
-    loadArt(it); ensureCover(it);
-    const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key] || S.icons[key];
-    return hero ? `<img src="${hero}" alt="">` : cover ? `<img class="soft" src="${cover}" alt="">` : "";
+  // The game's icon, else its cover, else its initial; never its name again.
+  function updArt(it, name) {
+    if (it) ensureCover(it);
+    const k = it && coverKey(it), ic = it && S.icons[k], c = !ic && it && S.covers[k];
+    return ic ? `<img src="${ic}" alt="">` : c ? `<img class="upd-cover" src="${c}" alt="">` : `<b>${esc(initial(name))}</b>`;
   }
-  function updCard(r, U) {
-    const it = updItem(r.key);
+  const updVer = (have, to) => `<div class="upd-ver">
+      <div><span>Your copy</span><b class="ln-num">${have ? esc(have) : "Unknown"}</b></div>
+      ${to ? `<svg class="upd-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg><div><span>${to[0]}</span><b class="ln-num">${esc(to[1])}</b></div>` : ""}</div>`;
+  const midTrunc = (s, n) => s.length <= n ? s : s.slice(0, Math.ceil(n / 2) - 1) + "…" + s.slice(-Math.floor(n / 2));
+  // When the row is narrow, the start gives way and the last 16 characters stay.
+  const updPath = (p) => { const t = midTrunc(p, 56), i = Math.max(t.length - 16, Math.ceil(t.length / 2)); return `<span class="upd-path selectable" title="${esc(p)}"><span>${esc(t.slice(0, i))}</span>${esc(t.slice(i))}</span>`; };
+  function updCard(r, U, lead) {
     const st = updState(r, U);
-    const applied = (r.applied || []).filter((u) => u.state === "applied");
-    const last = applied[0];
+    const last = (r.applied || []).find((u) => u.state === "applied");
     const latest = r.newer ? verIn(r.newer.title) : "";
     const have = r.version ? vtxt(r.version) : "";
-    const art = updArt(it);
-    const ver = `<div class="upd-ver">
-        <div><span>Your copy</span><b class="ln-num">${have ? esc(have) : "Unknown"}</b></div>
-        ${r.newer ? `<svg class="upd-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg><div class="is-new"><span>Latest</span><b class="ln-num">${latest ? esc(vtxt(latest)) : esc(day(r.newer.date))}</b></div>` : ""}</div>`;
-    const note = r.newer ? `<button class="upd-note" data-action="upd-notes" data-key="${esc(r.key)}"><span>Patch notes, ${esc(day(r.newer.date))}</span><b>${esc(r.newer.title)}</b></button>`
-      : last ? `<p class="upd-note-line">Updated ${esc(ago(last.at))}${last.to ? " to " + esc(vtxt(last.to)) : ""}, from <span class="selectable">${esc(last.source)}</span></p>`
-      : r.noNews ? `<p class="upd-note-line">Not on the Steam store, so there are no patch notes to compare with.</p>`
-      : !U.newsOn ? `<p class="upd-note-line">Turn on updates and news to compare with Steam's patch notes.</p>`
-      : `<p class="upd-note-line">Files from ${esc(day(r.changed))}</p>`;
-    const primary = `<button class="ln-button ${r.newer ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="upd-start" data-key="${esc(r.key)}" data-name="${esc(r.name)}">${r.newer ? "Apply the update" : "Apply an update"}</button>`;
+    const ver = updVer(have, r.newer && ["Latest", latest ? vtxt(latest) : day(r.newer.date)]);
+    const note = r.newer ? `<button class="upd-note" data-action="upd-notes" data-key="${esc(r.key)}" title="${esc(r.newer.title)}">Patch notes, ${esc(day(r.newer.date))}</button>`
+      : last ? `<span title="${esc(last.source)}">Updated ${esc(ago(last.at))}${last.to ? " to " + esc(vtxt(last.to)) : ""}</span>`
+      : r.noNews ? `<span>Not on the Steam store</span>`
+      : U.newsOn ? `<span>Files from ${esc(day(r.changed))}</span>` : "";
+    const primary = `<button class="ln-button ${lead ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="upd-start" data-key="${esc(r.key)}" data-name="${esc(r.name)}">${r.newer ? "Apply the update" : "Apply an update"}</button>`;
     return `<li class="upd-card upd-card--${st.k}">
-      <button class="upd-art" data-action="upd-open-game" data-key="${esc(r.key)}" aria-label="Open ${esc(r.name)}'s page">${art || `<span>${esc(r.name)}</span>`}</button>
+      <button class="upd-art" data-action="upd-open-game" data-key="${esc(r.key)}" aria-label="Open ${esc(r.name)}'s page" tabindex="-1">${updArt(updItem(r.key), r.name)}</button>
       <div class="upd-main">
         <div class="upd-title-row"><button class="upd-name" data-action="upd-open-game" data-key="${esc(r.key)}">${esc(r.name)}</button>
           <span class="upd-pill upd-pill--${st.k}"><i aria-hidden="true"></i>${esc(st.text)}</span></div>
-        <p class="upd-meta"><span>${esc(sourceLabel(r.source || "folder"))}</span><span class="selectable">${esc(r.dir)}</span></p>
-        ${note}
+        <p class="upd-meta"><span>${esc(sourceLabel(r.source || "folder"))}</span>${updPath(r.dir)}${note}</p>
       </div>
       ${ver}
       <div class="upd-act">${primary}
@@ -3637,11 +3636,13 @@
   const dlIds = (m) => `data-key="${esc(m.key)}" data-name="${esc(m.game)}" data-path="${esc(m.path)}"`;
   const dlRecycle = (m) => `<button class="ln-button ln-button--secondary ln-button--sm" data-action="dl-recycle" data-path="${esc(m.path)}">Delete the downloaded file</button>`;
   function dlCard(m) {
-    const same = (m.check || {}).state === "same";
-    return `<div class="copy-card dl-card"><span class="upd-art dl-art" aria-hidden="true">${updArt(updItem(m.key)) || `<span>${esc(m.game)}</span>`}</span>
-      <div class="dl-text"><b>${esc(m.game)}</b><p>${dlVer(m)}</p><p class="selectable">${esc(m.name)}</p></div>
-      <div class="gpage-actions">${same ? dlRecycle(m) : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button>`}
-        <button class="ln-button ln-button--ghost ln-button--sm" data-action="dl-ignore" ${dlIds(m)}>Ignore</button></div></div>`;
+    const c = m.check || {}, same = c.state === "same";
+    const note = c.state === "skips" ? `Made for ${esc(vtxt(c.from))}` : same ? "Same version as your copy" : c.state === "older" ? "Older than your copy" : c.to ? "" : "No version in its name";
+    return `<li class="upd-card dl-card"><span class="upd-art" aria-hidden="true">${updArt(updItem(m.key), m.game)}</span>
+      <div class="upd-main"><b class="upd-name">${esc(m.game)}</b><p class="upd-meta">${updPath(m.name)}${note ? `<span>${note}</span>` : ""}</p></div>
+      ${updVer(vtxt(c.have), ["In Downloads", c.to ? vtxt(c.to) : "Unknown"])}
+      <div class="upd-act">${same ? dlRecycle(m) : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button>`}
+        <button class="ln-button ln-button--ghost ln-button--sm" data-action="dl-ignore" ${dlIds(m)}>Ignore</button></div></li>`;
   }
   function dlNote(it) {
     const uk = updKey(it), m = uk && (S.dl || []).find((x) => x.key === uk && x.newer);
@@ -3651,36 +3652,36 @@
   function viewUpdates() {
     const U = S.updates;
     const checking = S.updChecking;
-    const head = `<header class="upd-head"><div><h1>Updates</h1><p>Games no store keeps up to date. Lootnest compares your copy with Steam's patch notes, and applies an update you bring with a copy of everything first.</p></div>
-      <div class="upd-head-act"><button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-refresh" ${checking ? 'aria-busy="true" disabled' : ""}>${checking ? '<span class="ln-spinner" aria-hidden="true"></span>Checking' : `${GI.refresh}Check again`}</button></div></header>`;
-    if (!U) { api.updates().catch(() => {}); return `<div class="upd-page ln-root">${head}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`; }
+    const refresh = `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-refresh" ${checking ? 'aria-busy="true" disabled' : ""}>${checking ? '<span class="ln-spinner" aria-hidden="true"></span>Checking' : `${GI.refresh}Check again`}</button>`;
+    const head = (act) => `<header class="upd-head"><div><h1>Updates</h1><p>Games no store keeps up to date. Lootnest compares your copy with Steam's patch notes, and applies an update you bring with a copy of everything first.</p></div>${act}</header>`;
+    if (!U) { api.updates().catch(() => {}); return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`; }
     if (!S.copies) api.newCopies().catch(() => {});
     if (!U.games.length) {
-      return `<div class="upd-page ln-root">${head}${emptyState(GI.load, "Nothing to keep up to date here", "Steam, Epic, GOG and the other launchers keep their own games up to date. Games in a folder, from Hydra or added by hand show up here, with their version against the latest.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)}</div>`;
+      return `<div class="upd-page ln-root">${head(refresh)}${emptyState(GI.load, "Nothing to keep up to date here", "Steam, Epic, GOG and the other launchers keep their own games up to date. Games in a folder, from Hydra or added by hand show up here, with their version against the latest.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)}</div>`;
     }
     const offers = S.copies || [];
     const done = Object.keys(S.carried).filter((k) => S.carried[k].done && !S.carried[k].deleted);
     const broke = U.games.filter((g) => ((g.applied || []).find((u) => u.state === "applied") || {}).broke);
     const nNew = U.games.filter((g) => g.newer).length;
-    const nUpd = U.games.reduce((n, g) => n + (g.applied || []).filter((u) => u.state === "applied").length, 0);
     const nLook = offers.length + broke.length;
     const F = S.updFilter || "all";
-    const stat = (k, n, label, tone) => `<button class="upd-stat${tone ? " upd-stat--" + tone : ""}" data-action="upd-filter" data-f="${k}" aria-pressed="${F === k}"><b class="ln-num" data-count="${n}">${n}</b><span>${label}</span></button>`;
-    const stats = `<div class="upd-stats" role="group" aria-label="Show">
-      ${stat("all", U.games.length, U.games.length === 1 ? "game kept track of" : "games kept track of")}
-      ${stat("new", nNew, nNew === 1 ? "newer version out" : "newer versions out", nNew ? "new" : "")}
-      ${stat("ok", U.games.filter((g) => updState(g, U).k === "ok").length, "up to date", "")}
-      ${stat("dim", U.games.filter((g) => updState(g, U).k === "dim").length, "can't tell", "")}</div>`;
+    const seg = (k, n, label) => `<button data-action="upd-filter" data-f="${k}" aria-pressed="${F === k}">${k === "new" && n ? '<i class="upd-dot" aria-hidden="true"></i>' : ""}${label}<span class="ln-count ln-num">${n}</span></button>`;
+    const filter = `<div class="ln-segmented upd-filter" role="group" aria-label="Show">
+      ${seg("all", U.games.length, "All")}${seg("new", nNew, "Newer version out")}
+      ${seg("ok", U.games.filter((g) => updState(g, U).k === "ok").length, "Up to date")}${seg("dim", U.games.filter((g) => updState(g, U).k === "dim").length, "Can't tell")}</div>`;
     const news = U.newsOn ? "" : `<div class="upd-callout"><div><b>Find out when a newer version is out</b><p>Lootnest reads each game's patch notes from Steam's news feed and compares their date with your copy. Only the game's Steam id, or its name, is sent.</p></div><button class="ln-button ln-button--secondary ln-button--sm" data-action="news-on">Turn it on</button></div>`;
     const dl = S.dl || [];
-    const found = dl.length ? `<section class="upd-look" aria-label="Found in your Downloads"><div class="upd-sec-head"><h2>Found in your Downloads</h2><span class="upd-sec-n ln-num">${dl.length}</span></div>${dl.map(dlCard).join("")}</section>` : "";
-    const look = nLook || done.length ? `<section class="upd-look" aria-label="Needs a look"><div class="upd-sec-head"><h2>Needs a look</h2><span class="upd-sec-n ln-num">${nLook}</span></div>
+    const found = dl.length ? `<section aria-label="Found in your Downloads"><div class="upd-sec-head"><h2>Found in your Downloads</h2><span class="upd-sec-n ln-num">${dl.length}</span></div><ul class="upd-cards">${dl.map(dlCard).join("")}</ul></section>` : "";
+    const look = !(nLook || done.length) ? "" : `<section class="upd-look" aria-label="Needs a look"><div class="upd-sec-head"><h2>Needs a look</h2><span class="upd-sec-n ln-num">${nLook}</span></div>
       ${done.map(carriedCard).join("")}${offers.map((o) => copyCard(o, false)).join("")}
-      ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn">${GI.alert}<div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}</section>` : "";
+      ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn">${GI.alert}<div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}
+      </section>`;
     const list = U.games.filter((g) => F === "all" || updState(g, U).k === F || (F === "new" && g.newer))
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || a.name.localeCompare(b.name));
-    const cards = list.length ? `<ol class="upd-cards">${list.map((r) => updCard(r, U)).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
-    return `<div class="upd-page ln-root">${head}${stats}${news}${found}${look}<section aria-label="Your games"><div class="upd-sec-head"><h2>${F === "all" ? "Your games" : esc({ new: "Newer version out", ok: "Up to date", dim: "Can't tell" }[F])}</h2><span class="upd-sec-n ln-num">${list.length}</span></div>${cards}</section></div>`;
+    const cards = list.length ? `<ol class="upd-cards">${list.map((r, i) => updCard(r, U, i === 0 && !!r.newer)).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
+    return `<div class="upd-page ln-root">${head("")}<div class="upd-cols">
+      <div class="upd-main-col">${found}${news}<section aria-label="Your games">${filter}${cards}</section></div>
+      <aside class="upd-aside">${look}<div class="upd-check">${refresh}<span>Checked ${esc(ago(U.at))}</span></div></aside></div></div>`;
   }
   // An update's history: every one Lootnest applied, newest first.
   function viewUpdHistory() {

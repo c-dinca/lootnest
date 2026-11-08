@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.58.12
+
+- The Updates page is one list of your games, a row each: the game's icon, its name, where it is, your version against the latest and one button. Long folder paths keep their start and their end.
+- The counts at the top of Updates are one row of filters: All, Newer version out, Up to date and Can't tell.
+- Only the first game with a newer version out has the red button. The rest are plain.
+- What needs a look, Check again and when Lootnest last checked sit in a narrow column beside the list. On a smaller window they come first, above it.
+- Updates found in your Downloads are rows like the rest.
+
 ## 1.58.11
 
 - Pages with nothing in them yet start on the same left edge as every other page, without a box in the middle. The empty Library shows dashed covers where your games will go, and one line on where Lootnest looked.
