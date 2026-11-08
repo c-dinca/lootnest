@@ -86,8 +86,8 @@
   --blur-glass:   blur(32px) saturate(150%);
   --blur-backdrop: blur(100px) saturate(115%);
   --backdrop-opacity: 0.34;
-  --blur-art-soft: blur(24px) saturate(110%);  /* a cover standing in for missing wide art */
   --blur-art-icon: blur(40px) saturate(130%);  /* a game's icon washed behind it */
+  --art-focal: 50% 30%;  /* where a cover cut from wide art is centred */
   --scrim-backdrop: linear-gradient(180deg, oklch(0.183 0.010 276 / 0.1), oklch(0.183 0.010 276 / 0.85) 35%, var(--bg-ground) 55%);  /* the ground's oklch */
   --scrim-art:  /* keeps the title readable over any art */
     linear-gradient(90deg, oklch(0.12 0.010 276 / 0.8) 0%, oklch(0.12 0.010 276 / 0.45) 40%, transparent 68%),
@@ -133,6 +133,8 @@
   --bar-state-min: 192px; /* the play bar's state line before the bar wraps */
   --drawer-w: 480px;      /* a panel from the right */
   --drawer-w-wide: 720px; /* one holding a form, such as the profile editor */
+  --logo-w: clamp(240px, 28vw, 520px);  /* a game's logo in place of its name on its page */
+  --logo-h: clamp(88px, 15vh, 176px);
   --shots-w: 1280px;      /* the screenshot viewer */
   --pic-thumb-w: 96px;    /* a save point's or screenshot's picture in a list */
   --pic-thumb-w-sm: 40px; /* a screenshot's on a Timeline row */
@@ -393,13 +395,22 @@
   background: var(--bg-raised);
 }
 .ln-tile__none > * { position: relative; }
-.ln-tile__none b { font: 700 var(--fs-14)/var(--lh-snug) var(--font-ui); color: var(--fg-1); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ln-tile__none b { font: 700 var(--fs-14)/var(--lh-snug) var(--font-ui); color: var(--fg-1); overflow-wrap: anywhere; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ln-tile__none span { font-size: var(--fs-12); color: var(--fg-3); }
 .ln-tile__none img { width: var(--space-10); height: var(--space-10); object-fit: contain; }
 .ln-tile__none img + b { margin-bottom: auto; }
+.ln-tile__none img.ln-tile__logo { width: 100%; height: auto; max-height: 50%; margin: auto 0; object-fit: contain; }
 .ln-tile__none.with-icon::before { content: ""; position: absolute; inset: -30%; background: var(--icon) center / cover no-repeat; filter: var(--blur-art-icon); opacity: .38; }
 /* A playing badge sits in the top corner: the name starts below it. */
 .ln-tile__cover:has(.ln-tile__badge) .ln-tile__none { padding-top: var(--space-10); }
+
+/* A game's other art standing in (artFor in the window's script): wide art
+   made from a cover is the whole cover over a blur of itself; a cover cut
+   from wide art keeps its focal point. */
+.ln-art-wide { position: absolute; inset: 0; display: block; overflow: hidden; background: var(--bg-surface); }
+.ln-art-wide::before { content: ""; position: absolute; inset: -15%; background: var(--art) center / cover no-repeat; filter: var(--blur-art-icon); opacity: .6; }
+.ln-art-wide > .ln-art-wide__img { position: relative; inset: auto; display: block; width: auto; max-width: 100%; height: 100%; margin-inline: auto; object-fit: contain; }
+img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 
 /* ================================================================ skeleton */
 .ln-skeleton { background: var(--glass-ctl-hover); border-radius: var(--radius-tag); animation: ln-pulse 1.4s var(--ease-in-out) infinite alternate; }

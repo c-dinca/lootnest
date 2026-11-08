@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.71.0
+
+- Choose your own cover, wide art or logo for any game: open the game, then Manage, Cover and art. Pick a PNG, JPEG or WebP picture of up to 20 MB. Lootnest keeps its own copy, and your picture stays where it was, as it was.
+- Remove your cover (or wide art, or logo), under each one you changed, deletes Lootnest's copy, and the game's own art shows again.
+- Your art follows the game when Lootnest carries it over to a new copy in another folder.
+- Games with only some art use what they have: a game with only wide art gets a cover cut from it, and one with only a cover gets wide art made from the whole cover over a blur of itself, on its page, on Home and in Big Picture.
+- A game with no art at all gets a cover set in type: its name, or its logo when there is one, with its store at the bottom, so no game shows an empty box.
+- A game's logo, when it has one, stands in for its name at the top of its page.
+
 ## 1.70.0
 
 - Ctrl+Shift+F12 while a game runs saves a picture of it to Pictures\Lootnest\Screenshots, in a folder named after the game. A note over the game says it's saved, with the file's name. The picture is taken from outside the game, as any screenshot tool does; nothing goes into the game.

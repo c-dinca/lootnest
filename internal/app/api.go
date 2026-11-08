@@ -94,6 +94,9 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_addLibraryGame", a.apiAddLibraryGame))
 	must(a.w.Bind("ps_gameIcon", a.apiGameIcon))
 	must(a.w.Bind("ps_art", a.apiArt))
+	must(a.w.Bind("ps_customArt", a.apiCustomArt))
+	must(a.w.Bind("ps_setCustomArt", a.apiSetCustomArt))
+	must(a.w.Bind("ps_clearCustomArt", a.apiClearCustomArt))
 	must(a.w.Bind("ps_setAvatar", a.apiSetAvatar))
 	must(a.w.Bind("ps_removeAvatar", a.apiRemoveAvatar))
 	must(a.w.Bind("ps_setBanner", a.apiSetBanner))
@@ -187,6 +190,7 @@ type AppState struct {
 	Shelf     map[string]map[string]core.ShelfEntry `json:"shelf"`     // player id -> Library key -> their take
 	Activity  core.Activity                         `json:"activity"`  // time played per day
 	Conflicts map[string]SteamCloudNote             `json:"conflicts"` // game id -> what Steam Cloud replaced, until dismissed
+	CustomArt map[string]map[string]string          `json:"customArt"` // Library key -> kind -> file name of the art the user chose
 }
 
 func (a *App) apiState() AppState {
@@ -202,6 +206,7 @@ func (a *App) apiState() AppState {
 	st.Sources = a.gameSources(cfg)
 	st.Recent = a.store.LoadRecent()
 	st.Shelf = a.store.LoadShelf()
+	st.CustomArt = a.store.CustomArt()
 	st.Playtime = core.WithOffsets(a.store.LoadPlaytime(), st.Shelf)
 	st.Avatars, st.Banners = map[string]string{}, map[string]string{}
 	for _, p := range cfg.Players {
@@ -652,6 +657,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "image":
 			opt.Title = "Choose a picture"
 			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.gif)", Spec: "*.png;*.jpg;*.jpeg;*.gif"}}
+		case "art":
+			opt.Title = "Choose a picture"
+			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.webp)", Spec: "*.png;*.jpg;*.jpeg;*.webp"}}
 		case "backup":
 			opt.Title = "Choose a Lootnest backup or profile"
 			opt.Filters = []win.FileFilter{{Name: "Lootnest backups (*.zip, *.lnbak)", Spec: "*.zip;*.lnbak"}}

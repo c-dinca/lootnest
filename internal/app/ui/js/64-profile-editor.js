@@ -106,7 +106,7 @@
         ...libraryItems().filter((it) => playtimeOf(it)[p.id]).sort((a, b) => playtimeOf(b)[p.id] - playtimeOf(a)[p.id]),
         ...libraryItems().filter((it) => it.kind === "game" && hasProfile(it.id, p.id))]
         .filter((it) => !seen.has(recentKey(it)) && seen.add(recentKey(it))).slice(0, 24);
-      const covers = mine.map((it) => { ensureCover(it); const c = S.covers[coverKey(it)]; return `<span class="pcard-cover" title="${esc(it.name)}"${c ? ` style="background-image:url('${c}')"` : ""}></span>`; }).join("");
+      const covers = mine.map((it) => { ensureCover(it); const c = artFor(it, "cover").url; return `<span class="pcard-cover" title="${esc(it.name)}"${c ? ` style="background-image:url('${c}')"` : ""}></span>`; }).join("");
       return `<button class="pcard ln-player" data-action="open-player" data-player="${esc(p.id)}" style="--player:${esc(p.color)}">
         <span class="pcard-banner">${bannerHTML(p)}</span>
         <span class="pcard-who">${lnAvatar(p, "72")}<span class="pcard-name"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : last ? `${esc(last.it.name)}, ${esc(ago(last.r.at))}` : st.top ? `Most played: ${esc(st.top.name)}` : "No games played yet"}</span></span></span>

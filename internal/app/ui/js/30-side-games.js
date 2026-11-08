@@ -10,7 +10,7 @@
     return out;
   }
   function sideRow(it, cur) {
-    const ck = coverKey(it), c = S.covers[ck], ic = !c && S.icons[ck];
+    const ck = coverKey(it), c = artFor(it, "cover").url, ic = !c && S.icons[ck];
     const s = it.g && session(it.g.id);
     const owner = it.g && S.d.active[it.g.id];
     const thumb = c ? `<img class="ready" src="${c}" alt="">` : ic ? `<img class="ready icon" src="${ic}" alt="">` : `<b>${esc(initial(it.name))}</b>`;

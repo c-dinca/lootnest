@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.70.0, beta)
+## Where things stand (1.71.0, beta)
 
 These shipped recently, newest last:
 
@@ -457,6 +457,14 @@ These shipped recently, newest last:
   points made while the game runs keep `point.png` and `thumb.png`
   beside `point.json` (never restored into save folders); `ps_picture`
   serves them as data URLs; the 1.69 lightbox shows them.
+
+- **1.71** Roadmap UI 1: custom cover, wide art and logo per game
+  (`Store.SetCustomArt` copies a checked PNG, JPEG or WebP into
+  `covers\custom` with `art.json`; `ClearCustomArt` deletes only that
+  copy; `RekeyGame` moves it last), Manage, Cover and art. In app.js
+  `artFor(it, kind)` picks custom, store, the other kind (crop or a
+  cover over its own blur), then `typeCover` (name or logo); a logo
+  replaces the title on the game page. Harness `?art=partial|missing`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

@@ -42,6 +42,7 @@
     covers: {},        // cover key -> data: URL, or "" when there is none (yet)
     icons: {},         // cover key -> the game exe's icon as a data: URL, or "" (shown when there's no cover)
     art: {},           // "hero:<appid>" / "logo:<appid>" -> Steam's wide art and logo, or ""
+    custom: {},        // "<Library key>:<file>" -> art the user chose (Manage, Cover and art), or ""
     news: {},          // cover key -> {items, newer, none, error} from Steam's news feed, or {loading: true}
     details: {},       // Library key -> {details, edited, fetching, error} from ps_gameDetails, or {loading: true}
     detOpen: new Set(), // Library keys whose summary is shown in full

@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -24,7 +24,19 @@
   const ART = window.__ART || {};
   // ?art=bright: a near-white hero for Baldur's Gate 3, our own gradient, to check text over light art.
   if (q.get("art") === "bright") ART["1086940-hero"] = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="620"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="oklch(0.97 0 0)"/><stop offset="1" stop-color="oklch(0.9 0.02 240)"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>');
-  const art = (id, k) => ART[id + "-" + k] || "";
+  // ?art=missing: no game has any art. ?art=partial: Hollow Tale has only
+  // wide art, Onimusha only a logo, and Phantom Blade Zero a cover of the user's own.
+  const ARTQ = q.get("art");
+  const art = (id, k) => (ARTQ === "missing" ? "" : ART[id + "-" + k] || "");
+  // Custom art (ps_setCustomArt): "<Library key>:<kind>" -> data: URL. The
+  // picture is our own, drawn here.
+  const MINE = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="oklch(0.42 0.09 160)"/><stop offset="1" stop-color="oklch(0.18 0.04 250)"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="300" cy="330" r="150" fill="oklch(0.85 0.08 90)" opacity=".85"/><path d="M0 700 200 520 330 640 450 540 600 680V900H0z" fill="oklch(0.12 0.02 250)"/></svg>');
+  const CUSTOM = ARTQ === "partial" ? { "dir:d:\\games\\phantom blade zero:cover": MINE } : {};
+  const customIndex = () => {
+    const out = {};
+    Object.keys(CUSTOM).forEach((k) => { const i = k.lastIndexOf(":"), key = k.slice(0, i), kind = k.slice(i + 1); (out[key] = out[key] || {})[kind] = `custom-${kind}.png`; });
+    return out;
+  };
 
   const PLAYERS = [
     { id: "p1", name: "Cristian", color: "#6C9BD2" },
@@ -63,8 +75,8 @@
     { key: "dir:c:\\xboxgames\\forza horizon 5", name: "Forza Horizon 5", source: "xbox", exe: "", uri: "shell:AppsFolder\\x_8wekyb3d8bbwe!Game", _art: 1551360 },
     { key: "dir:d:\\games\\gtav", name: "Grand Theft Auto V", source: "rockstar", exe: "D:\\Games\\GTAV\\GTA5.exe", _art: 271590 },
     { key: "dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero", source: "folder", exe: "D:\\Games\\Phantom Blade Zero\\PBZ.exe" }, // no art
-    { key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", steamId: 777, exe: "D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe" }, // no art
-    { key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", source: "added", added: true, exe: "D:\\Games\\Onimusha\\Onimusha.exe" }, // no art
+    { key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale", source: "hydra", steamId: 777, exe: "D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe", ...(ARTQ === "partial" ? { _art: 413150, _only: "hero" } : {}) }, // no art (?art=partial: wide art only)
+    { key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", source: "added", added: true, exe: "D:\\Games\\Onimusha\\Onimusha.exe", ...(ARTQ === "partial" ? { _art: 1086940, _only: "logo" } : {}) }, // no art (?art=partial: a logo only)
     // The same game from two stores (core.GroupCopies): two Steam and Epic pairs, and GOG with a folder copy.
     { key: "steam:1145350", name: "Hades II", source: "steam", appId: 1145350, ready: true },
     { key: "dir:c:\\epic games\\cyberpunk 2077", name: "Cyberpunk 2077", source: "epic", exe: "C:\\Epic Games\\Cyberpunk 2077\\bin\\x64\\Cyberpunk2077.exe", _art: 1091500 },
@@ -106,6 +118,7 @@
   playtime["dir:c:\\epic games\\cyberpunk 2077"] = { p1: 16 * 3600 };
   recent["dir:d:\\games\\onimusha"] = { at: iso(43 * 60e3) };
   recent["steam:413150"] = { at: iso(9 * d) };
+  if (ARTQ === "partial") recent["dir:d:\\games\\phantom blade zero"] = { at: iso(20 * 60e3) }; // on the shelves, wide art made from its cover
   steamTime["steam:1091500"] = 84 * 3600; steamTime["game:cs2"] = 412 * 3600; steamTime["steam:250900"] = 133 * 3600;
   shelf.p1 = { "game:cs2": { status: "playing", rating: 4, updated: iso(d) }, "steam:1091500": { status: "playing", updated: iso(2 * d) }, "game:ittakestwo": { status: "finished", rating: 5, note: "Best co-op game", updated: iso(20 * d) } };
   const sessions = STATE === "playing" && games[0] ? [{ gameId: "cs2", playerId: ids[ids.length > 1 ? 1 : 0], phase: "playing", since: iso(40 * 60e3) }] : [];
@@ -135,6 +148,7 @@
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, avatars: {}, banners: {}, shelf,
+    customArt: customIndex(),
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
@@ -175,6 +189,10 @@
     const f = found.find((x) => x.name === name);
     return f && f._art;
   };
+  const gameArt = (appId, name, kind) => {
+    const f = !appId && found.find((x) => x.name === name);
+    return f && f._only && f._only !== kind ? "" : art(appOf(appId, name), kind);
+  };
   const NEWS = [
     { title: "Patch 2.3: new co-op mode and 40 fixes", date: iso(2 * d), update: true, summary: "Play the campaign with a friend, plus balance changes across every class.", url: "https://store.steampowered.com/news/1", body: "<p>Patch notes.</p>", image: art(1091500, "hero") },
     { title: "Developer update: the road to 3.0", date: iso(12 * d), update: false, summary: "What we're working on for the next big update.", url: "https://store.steampowered.com/news/2", body: "<p>Roadmap.</p>" },
@@ -203,8 +221,11 @@
     ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [], groups: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN, groups: GROUPS.filter((g) => !SEPARATE.has(g.key)) }),
     ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },
     ps_separateCopies: (group, apart) => { if (apart) SEPARATE.add(group); else SEPARATE.delete(group); return ok(); },
-    ps_cover: (appId, name, key) => (STATE === "offline" ? offline() : ok(art(appOf(appId, name), "cover"))),
-    ps_art: (appId, name, key, kind) => (STATE === "offline" ? ok("") : ok(art(appOf(appId, name), kind))),
+    ps_cover: (appId, name) => (STATE === "offline" ? offline() : ok(gameArt(appId, name, "cover"))),
+    ps_art: (appId, name, key, kind) => (STATE === "offline" ? ok("") : ok(gameArt(appId, name, kind))),
+    ps_customArt: (key, kind) => ok(CUSTOM[key + ":" + kind] || ""),
+    ps_setCustomArt: (key, kind) => { CUSTOM[key + ":" + kind] = kind === "cover" ? MINE : art(1086940, kind); return ok(); },
+    ps_clearCustomArt: (key, kind) => { delete CUSTOM[key + ":" + kind]; return ok(); },
     // Onimusha has an icon in its exe; the other games have none.
     ps_gameIcon: (exe) => ok(/onimusha/i.test(exe) ? "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="6" fill="#7a1f2b"/><path d="M9 23 16 7l7 16-7-4z" fill="#e8c36a"/></svg>') : ""),
     ps_gameNews: (key) => { if (STATE === "offline") emit({ type: "news", key, error: "Couldn't reach Steam's news feed.", items: [] }); else if (STATE !== "loading") emit({ type: "news", key, items: NEWS, newer: /phantom/i.test(key) ? { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true } : undefined }); return ok(); },
@@ -431,6 +452,7 @@
     ps_browse: (id, kind) => {
       if (kind === "installer") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\setup-pbz-update-1.0.3.exe" });
       else if (kind === "trySaveFile" || kind === "trySaveDir") emit({ type: "browse", reqId: id, path: kind === "trySaveFile" ? "C:\\Users\\cris\\Downloads\\BG3 Act 3 save from Mihnea.zip" : "C:\\Users\\cris\\Downloads\\BG3 save" });
+      else if (kind === "art") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Pictures\\My cover.png" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
       return ok();
