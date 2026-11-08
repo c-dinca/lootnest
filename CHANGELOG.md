@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.58.10
+
+- Big Picture is easier to read from the sofa: larger tabs that start beside the name, and room at every edge of the screen.
+- The game in focus in Big Picture has a clear light outline that shows on dark and bright pictures alike, without the red glow.
+- The prompts at the bottom of Big Picture no longer cut into the last row. Rows fade out above them, and "Play as…" now reads "Play as someone else".
+- Collections with five games or more keep their own row in Big Picture, up to three. The smaller ones share one Collections row. Choose one to see its games in the Library, and press B to go back to it on Home.
+
 ## 1.58.9
 
 - The Library's title, its game count and the search sit on one line.
