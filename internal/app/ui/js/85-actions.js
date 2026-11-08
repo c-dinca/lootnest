@@ -349,7 +349,7 @@
       const demo = [{ name: "This is how an unlock looks", percent: 4.2 }];
       achPop(demo, "", (seated() || {}).id); unlockSound(demo);
       api.testToast().then(() => toast("A note shows at the bottom right of the screen for five seconds. If none does, Show recent activity says why.")).catch((e) => toast(errText(e), "error")); },
-    "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined, itch: false }); renderOverlay(); } },
+    "upd-another"() { const D = S.dialog; if (D) { Object.assign(D, { path: null, plan: null, check: null, done: null, undone: false, error: "", step: "", full: undefined, itch: false, gog: false }); renderOverlay(); } },
     "upd-full"(el) { const D = S.dialog; if (D) D.full = el.checked; },
     async "upd-run"() {
       const D = S.dialog;
@@ -377,7 +377,7 @@
       const r = await browse(el.dataset.kind, "");
       if (r.cancelled || !r.path) return;
       if (r.error) { toast(r.error, "error"); return; }
-      Object.assign(D, { path: r.path, plan: null, error: "", busy: true, done: null });
+      Object.assign(D, { path: r.path, plan: null, error: "", busy: true, done: null, itch: false, gog: false });
       renderOverlay();
       api.updatePlan(D.key, r.path).catch((e) => { D.busy = false; D.error = errText(e); renderOverlay(); });
     },
@@ -583,6 +583,31 @@
     "itch-cancel": () => api.itchCancel().catch(() => {}),
     "itch-check"(el) { Object.assign(S.itch, { checking: true, asked: true }); render(); api.itchCheck(el.dataset.key, true).catch((e) => { S.itch.checking = false; toast(errText(e), "error"); render(); }); },
     async "itch-update"(el) { try { await api.itchUpdate(el.dataset.key); } catch (e) { toast(errText(e), "error"); } },
+    "gog-login": () => api.open("gogLogin", "").catch((e) => toast(errText(e), "error")),
+    async "gog-signin"() {
+      const I = S.gog, v = ($("#s-gogcode") || {}).value || "";
+      Object.assign(I, { busy: true, error: "" }); render();
+      try { await api.gogSignIn(v); } catch (e) { Object.assign(I, { busy: false, error: errText(e) }); render(); }
+    },
+    async "gog-signout"() {
+      const ok = await confirmDialog({ title: "Sign out of GOG?", body: "Lootnest forgets your GOG sign-in and stops listing your GOG games. The games you installed from GOG stay, with their saves.", ok: "Sign out" });
+      if (!ok) return;
+      try { await api.gogSignOut(); Object.assign(S.gog, { updates: [], error: "" }); await refresh(); toast("You're signed out of GOG."); } catch (e) { toast(errText(e), "error"); }
+    },
+    "gog-refresh"() { S.gog.refreshing = true; render(); api.gogRefresh().catch((e) => { S.gog.refreshing = false; toast(errText(e), "error"); render(); }); },
+    async "gog-dir"() {
+      const D = S.dialog, r = await browse("gogDir", D.dir);
+      if (r.path && S.dialog === D) { D.dir = r.path; D.free = -1; renderOverlay(); api.gogInstallers(D.id, r.path).catch(() => {}); }
+    },
+    async "gog-install"(el) {
+      const D = S.dialog;
+      if (!D || D.kind !== "gog") return;
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.gogInstall({ id: D.id, installerId: el.dataset.installer, parent: D.dir }); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
+    "gog-cancel": () => api.gogCancel().catch(() => {}),
+    "gog-check"(el) { Object.assign(S.gog, { checking: true, asked: true }); render(); api.gogCheck(el.dataset.key, true).catch((e) => { S.gog.checking = false; toast(errText(e), "error"); render(); }); },
+    async "gog-update"(el) { try { await api.gogUpdate(el.dataset.key); } catch (e) { toast(errText(e), "error"); } },
     async "pn-dir"() {
       const D = S.dialog, r = await browse("playniteDir", D.dir);
       if (r.path && S.dialog === D) { D.dir = r.path; playnitePreview(D); }
@@ -777,6 +802,7 @@
     async "store-act"(el) {
       const it = itemFor(el), t = it && storeActText(it.source, el.dataset.act, it.name);
       if (it && it.source === "itch" && it.kind === "owned") { openItch(it); return; }
+      if (it && it.source === "gog" && it.kind === "owned") { openGog(it); return; }
       try { await api.storeAction(el.dataset.key, el.dataset.act); toast(t ? t[2] : "The launcher is opening."); } catch (e) { toast(errText(e), "error"); }
     },
     "remove-pc"(el) {
@@ -1201,6 +1227,7 @@
       if (n) n.focus();
       return;
     }
+    if (el.id === "gog-in" && S.dialog && S.dialog.kind === "gog") { S.dialog.pick = el.value; renderOverlay(); const n = $("#gog-in"); if (n) n.focus(); return; }
     if (el.id === "itch-up" && S.dialog && S.dialog.kind === "itch") { S.dialog.pick = +el.value; renderOverlay(); const n = $("#itch-up"); if (n) n.focus(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }

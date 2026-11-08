@@ -144,6 +144,13 @@ type Settings struct {
 	ItchKey  string `json:"itchKey,omitempty"`
 	ItchUser string `json:"itchUser,omitempty"`
 	ItchDir  string `json:"itchDir,omitempty"`
+	// GOG (app/gog.go): GogToken is the refresh token of the user's GOG
+	// sign-in, encrypted like ItchKey, and GogUser the account it's for.
+	// GogDir is where games installed from GOG go (empty: Games in the
+	// user's folder).
+	GogToken string `json:"gogToken,omitempty"`
+	GogUser  string `json:"gogUser,omitempty"`
+	GogDir   string `json:"gogDir,omitempty"`
 	// Backups to a folder the user picks (usually one a cloud app syncs):
 	// BackupDir is that folder (backups go in <dir>\Lootnest), BackupAuto
 	// makes one after each session, BackupKeep is how many this PC keeps.

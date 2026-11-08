@@ -102,6 +102,13 @@
       case "itchDone":
         itchEvent(ev);
         break;
+      case "gog":
+      case "gogInstallers":
+      case "gogProgress":
+      case "gogUpdates":
+      case "gogDone":
+        gogEvent(ev);
+        break;
       case "playnitePlan":
       case "playniteDone":
         playniteEvent(ev);
@@ -253,8 +260,13 @@
       }
       case "owned": {
         S.owned = ev.games || [];
-        S.owned.forEach((o) => { if (o.cover && !S.covers["n:" + o.name.toLowerCase()]) S.covers["n:" + o.name.toLowerCase()] = o.cover; });
+        S.owned.forEach((o) => {
+          const k = "n:" + o.name.toLowerCase();
+          if (o.cover && !S.covers[k]) S.covers[k] = o.cover;
+          if (o.hero && !S.art["hero:" + k]) S.art["hero:" + k] = o.hero;
+        });
         if (S.itch.refreshing && !ev.itchReading) { S.itch.refreshing = false; S.itch.error = ev.itchError || ""; if (S.view === "settings") render(); if (!ev.itchError) toast("Lootnest read your itch.io library again."); }
+        if (S.gog.refreshing && !ev.gogReading) { S.gog.refreshing = false; S.gog.error = ev.gogError || ""; if (S.view === "settings") render(); if (!ev.gogError) toast("Lootnest read your GOG library again."); }
         renderSideGames();
         if (S.view === "library" || S.view === "game" && S.page && S.page.kind === "owned") render();
         break;
@@ -311,7 +323,7 @@
         else if (ev.error) toast(ev.error, "error");
         else toast(ev.undone ? "The update was undone" : "Updated");
         api.downloads().catch(() => {});
-        if (!ev.error) api.itchRecords().catch(() => {}); // a record from itch.io may have changed
+        if (!ev.error) { api.itchRecords().catch(() => {}); api.gogRecords().catch(() => {}); } // a record from itch.io or GOG may have changed
         S.updates = null; S.news = {}; api.updates().catch(() => {});
         break;
       }

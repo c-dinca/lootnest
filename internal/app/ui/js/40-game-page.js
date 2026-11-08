@@ -277,7 +277,7 @@
         <div class="gpage-others">${startWith}${turnOn("secondary")}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
-      note = page ? also + dlNote(it) + itchNote(it) + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + antiCheatNote(it) : "";
+      note = page ? also + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + antiCheatNote(it) : "";
       side = page ? playersPanel(it) + collectionsBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
@@ -306,7 +306,7 @@
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun ? `<div class="gpage-others">${other}${newRun}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
       head = { play: other + (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${possessive(pname(loaded))} files are loaded` : "Nobody's files yet" };
-      note = page ? conflictBanner(g) + dlNote(it) + itchNote(it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";
+      note = page ? conflictBanner(g) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",

@@ -104,7 +104,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 
 **Phases.**
 - 1, M: itch.io: library, download and install a build, check for a newer upload. Done in 1.81.
-- 2, L: GOG: sign in, library, offline installers and patches for owned games, updates through the installer flow (1.40).
+- 2, L: GOG: sign in, library, offline installers for owned games, updates through the installer flow (1.40). Done in 1.82, with the full installer for updates rather than GOG's patches.
 - 3, S: both show on the Updates page with the other folder games.
 
 **Will not do.** Any source other than the store the user bought from; sharing or caching downloads between users.

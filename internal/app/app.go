@@ -106,7 +106,7 @@ func SystemCSS() string { return inlineFonts(uiSystemCSS) }
 // pageHTML is the UI with its stylesheet, script, fonts and sounds inlined. Its
 // Content-Security-Policy allows only this one script (by a nonce made for
 // each start), images and fonts from data: URLs, Steam's image servers and
-// itch.io's covers, and nothing else: no other scripts, no inline handlers,
+// itch.io's and GOG's covers, and nothing else: no other scripts, no inline handlers,
 // no fetches.
 func pageHTML() string {
 	nonce := make([]byte, 18)
@@ -245,6 +245,7 @@ func Run(opt Options) error {
 	a.openBP = cfg.Settings.OpenBigPicture && !first && !opt.StartHidden && opt.LaunchGame == "" && !a.safe
 	a.logf("Lootnest %s started (steam: %q)", Version, a.env.SteamPath)
 	core.ItchTrace = func(host, path string) { a.logf("itch.io: asked %s%s", host, path) }
+	core.GogTrace = func(host, path string) { a.logf("GOG: asked %s%s", host, path) }
 	if a.safe {
 		a.logf("Safe mode: the safety net, Downloads, achievement and update checks, Steam set-up, hotkeys, cloud uploads and backups are off")
 	}

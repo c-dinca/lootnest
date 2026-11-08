@@ -102,7 +102,7 @@
     const checking = S.updChecking;
     const refresh = `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-refresh" ${checking ? 'aria-busy="true" disabled' : ""}>${checking ? '<span class="ln-spinner" aria-hidden="true"></span>Checking' : `${GI.refresh}Check again`}</button>`;
     const head = (act) => `<header class="upd-head"><div><h1>Updates</h1><p>Games no store keeps up to date. Lootnest compares your copy with Steam's patch notes, and applies an update you bring with a copy of everything first.</p></div>${act}</header>`;
-    if (!U) { api.updates().catch(() => {}); if (itchOn()) api.itchCheck("", false).catch(() => {}); return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`; }
+    if (!U) { api.updates().catch(() => {}); if (itchOn()) api.itchCheck("", false).catch(() => {}); if (gogOn()) api.gogCheck("", false).catch(() => {}); return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`; }
     if (!S.copies) api.newCopies().catch(() => {});
     if (!U.games.length) {
       return `<div class="upd-page ln-root">${head(refresh)}${emptyState(GI.load, "Nothing to keep up to date here", "Steam, Epic, GOG and the other launchers keep their own games up to date. Games in a folder, from Hydra or added by hand show up here, with their version against the latest.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)}</div>`;
@@ -149,7 +149,7 @@
   function viewUpdateDrawer() {
     const D = S.dialog;
     const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${D.busy ? "disabled" : ""}>${label}</button>`;
-    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: D.itch ? "Downloaded from itch.io. Nothing in the game's folder changes until you apply it." : "With an update you have: a folder, a .zip, .7z or .rar, or an installer", body, foot });
+    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: D.itch ? "Downloaded from itch.io. Nothing in the game's folder changes until you apply it." : D.gog ? "Downloaded from GOG. Nothing in the game's folder changes until you run it." : "With an update you have: a folder, a .zip, .7z or .rar, or an installer", body, foot });
     const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip, .7z or .rar")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}${btn('data-action="upd-pick" data-kind="installer"', "Run an installer", "ln-button--ghost")}</div>`;
     if (D.done) {
       const u = D.done, dlm = !D.undone && (S.dl || []).find((m) => m.path === D.path);
@@ -169,7 +169,7 @@
       if (D.full === undefined) D.full = room;
       const steps = { copying: "Copying the game first. A big game takes a few minutes.", installer: "The installer is running. Finish it, then come back here.", checking: "Checking what the installer changed" };
       if (D.busy) return shell(lnInline("", steps[D.step] || "Getting ready", D.step === "installer" ? "Lootnest records what changes in the game's folder when it closes." : ""));
-      return shell(`<div class="gpage-sub">${gpHead("Run an installer")}<p class="gpage-hint">Lootnest copies the saves, runs <span class="selectable">${esc(P.name)}</span>, then records what it changed in <span class="selectable">${esc(D.dir)}</span>. Point the installer at that folder.</p></div>
+      return shell(`<div class="gpage-sub">${gpHead("Run an installer")}<p class="gpage-hint">Lootnest copies the saves, runs <span class="selectable">${esc(P.name)}</span>, then records what it changed in <span class="selectable">${esc(D.dir)}</span>. ${D.gog ? "GOG's installer goes into that folder without questions and shows its own progress." : "Point the installer at that folder."}</p></div>
         <label class="toggle"><span><b>Keep a copy of the game first, so it can be undone</b><p>${esc(fmtBytes(P.gameSize))}${room ? "" : `, more than the room free (${esc(fmtBytes(free))})`}. Once the installer is done, only the files it changed are kept.</p></span>
           <span class="switch"><input type="checkbox" data-action="upd-full" ${D.full ? "checked" : ""} ${room ? "" : "disabled"}><span></span></span></label>
         ${D.error ? lnInline("error", esc(D.error)) : ""}`,

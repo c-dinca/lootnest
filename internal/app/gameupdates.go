@@ -98,6 +98,9 @@ func (a *App) updTarget(key string) (updTarget, error) {
 			return t, nil
 		}
 	}
+	if t, ok := a.gogUpdTarget(key); ok {
+		return t, nil
+	}
 	return updTarget{}, errors.New("Lootnest can't update that game: its own launcher does, or it isn't in the Library any more.")
 }
 
@@ -368,6 +371,7 @@ func (a *App) apiUpdateUndo(key, id string) error {
 		a.logf("Undid the update of %s from %s", t.Name, u.Source)
 		out["update"] = u
 		a.itchUndone(key, id)
+		a.gogUndone(key, id)
 	}()
 	return nil
 }
@@ -436,10 +440,19 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		before, _ := core.SnapshotDir(t.Dir)
 		step("installer")
 		a.logf("Running %s to update %s", path, t.Name)
-		if _, err := win.RunAndWait(a.hwnd, path, filepath.Dir(path)); err != nil {
+		// GOG's installer runs without questions, so only its exit code
+		// says it stopped part way.
+		args := gogArgs(key, path, t.Dir)
+		code, err := win.RunAndWait(a.hwnd, path, args, filepath.Dir(path))
+		if err != nil {
 			_ = os.RemoveAll(keep)
 			out["error"] = sentence(err)
 			return
+		}
+		stopped := ""
+		if args != "" && code != 0 {
+			stopped = fmt.Sprintf("GOG's installer stopped before it finished (code %d).", code)
+			a.logf("ERROR updating %s: the installer ended with code %d", t.Name, code)
 		}
 		// Some installers hand the work to another process: wait until the
 		// folder stops changing.
@@ -457,6 +470,9 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		if len(added)+len(changed)+len(removed) == 0 {
 			_ = os.RemoveAll(keep)
 			out["error"] = "The installer didn't change anything in " + t.Dir + ". It may have installed somewhere else."
+			if stopped != "" {
+				out["error"] = stopped + " Nothing in " + t.Dir + " changed."
+			}
 			return
 		}
 		u, err := core.RecordInstallerUpdate(t.Dir, fullCopy, keep, t.Name, filepath.Base(path), added, changed, removed, time.Now())
@@ -469,7 +485,12 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		}
 		a.logf("%s's installer changed %d files, added %d and removed %d", t.Name, len(changed), len(added), len(removed))
 		out["update"] = u
+		if stopped != "" {
+			out["error"] = stopped + " Undo puts back the files it changed."
+			return
+		}
 		a.itchApplied(key, path, u.ID)
+		a.gogApplied(key, path, u.ID)
 	}()
 	return nil
 }

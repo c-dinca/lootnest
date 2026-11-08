@@ -74,6 +74,7 @@
     found: { scanning: true, games: [] },
     owned: null,      // games you have in a store, not installed (owned event); null until asked
     itch: { busy: false, refreshing: false, error: "", recs: {}, updates: [], run: null, checking: false, asked: false, seen: new Set() }, // itch.io, 73-itch.js
+    gog: { busy: false, refreshing: false, error: "", recs: {}, updates: [], run: null, checking: false, asked: false, seen: new Set() }, // GOG, 74-gog.js
     adding: false,
     hooksBusy: false,
     moving: null,     // {appId, name, step, done, total} while Game Mover copies a game
