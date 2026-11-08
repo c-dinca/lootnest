@@ -700,15 +700,16 @@
     $("#app").classList.toggle("is-single", single);
     if (alone && !seated() && people()[0]) { S.seat = people()[0].id; api.setSeat(S.seat).catch(() => {}); }
     const seat = seated();
-    $("#who-head").innerHTML = alone ? `<span>Playing as</span>` : `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu">${GI.swap}${seat ? "Switch" : "Sit down"}</button>` : ""}`;
+    $("#who-head").innerHTML = alone ? `<span>Playing as</span>` : `<span>Who's here</span>${ps.length ? `<button class="who-switch" data-action="seat-menu" aria-haspopup="menu" aria-label="${seat ? "Switch" : "Sit down"}" title="Who's at the PC?">${GI.swap}<span>${seat ? "Switch" : "Sit down"}</span></button>` : ""}`;
     $("#who").innerHTML = grouped(ps).map((p) => {
       const s = playing[p.id];
       const g = s && game(s.gameId);
       const on = seat && seat.id === p.id;
-      return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}${parentOf(p) ? " who-run" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}"
+      return `<button class="who-item ln-player${s ? " playing" : ""}${on ? " seated" : ""}${parentOf(p) ? " who-run" : ""}" style="--player:${esc(p.color)}" data-action="seat" data-player="${esc(p.id)}" aria-pressed="${!!on}" aria-label="${esc(p.name)}${g ? `, playing ${esc(g.name)}` : ""}"
         title="${alone ? (on ? `Play starts as ${esc(p.name)}.` : `Play as ${esc(p.name)} from now on.`) : on ? `${esc(p.name)} is at the PC. Click to leave the seat empty.` : `Sit ${esc(p.name)} at the PC: Play starts as ${esc(p.name)}.`}">${lnAvatar(p)}<span class="who-name">${esc(p.name)}${on && !single ? ` <span class="ln-tag ln-tag--player">${alone ? "Playing" : "Seated"}</span>` : ""}</span>
         <span class="what">${g ? `Playing ${esc(g.name)}` : ""}</span></button>`;
     }).join("");
+    $("#who").scrollLeft = 0;
   }
   // A menu in #ctx under the button that opened it.
   function menuUnder(el, html) {
@@ -733,6 +734,9 @@
     render();
     toast(S.seat ? `${solo() ? "" : `${pname(S.seat)} is at the PC. `}Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
+
+  // The Lootnest mark, as in the sidebar.
+  const BRAND_MARK = '<svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>';
 
 
   // ----------------------------------------------------------- big picture --
@@ -861,7 +865,7 @@
     const fresh = !main;
     if (fresh) {
       el.innerHTML = `<div class="bp-bg" aria-hidden="true"><div class="bp-bg-l"></div><div class="bp-bg-l"></div></div>
-      <header class="bp-top"><div class="bp-brand"><svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>Lootnest</div>
+      <header class="bp-top"><div class="bp-brand">${BRAND_MARK}<span class="bp-brand-name">Lootnest</span></div>
         <nav class="bp-tabs">${glyph("LB")}${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-go="tab" data-t="${k}" tabindex="-1">${l}</button>`).join("")}${glyph("RB")}</nav>
         <div class="bp-right">${seatHTML}<time class="bp-clock ln-num"></time>
           <button class="bp-exit" data-go="exit" tabindex="-1" title="Leave Big Picture">${glyph("Start")}Leave</button></div></header>
@@ -2793,6 +2797,7 @@
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const p = ps[0], me = { ...p, name: welcomeName(p) };
     return `<div class="welcome ln-root" role="dialog" aria-modal="true" aria-labelledby="wl-title">
+      <span class="wl-brand">${BRAND_MARK}</span>
       <div class="wl-me ln-player" style="--player:${esc(p.color || "#6c9bd2")}">
         <span id="wl-av">${lnAvatar(me, "160")}</span>
         <input type="text" class="wl-name" id="wl-name" data-field="pname" data-i="0" value="${/^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="Your name" maxlength="24" aria-label="Your name">

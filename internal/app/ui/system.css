@@ -137,6 +137,9 @@
   --tab-h: 36px;          /* a row in that list */
   --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */
   --prun-h: 44px;         /* a run under its person on Profiles */
+  --who-face: 44px;       /* a face in Who's here on a short window */
+  --nav-h-short: 30px;    /* a sidebar nav row on a short window */
+  --welcome-w: 1040px;    /* the first start's two columns, together */
   --prun-indent: calc(72px + var(--space-4) - var(--space-3));  /* a run's picture under its person's name */
   --switch-w: 36px;
 
@@ -543,6 +546,7 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 }
 .ln-drawer:focus { outline: none; }
 .ln-drawer--wide { --drawer-w: var(--drawer-w-wide); }
+@media (max-width: 900px) { .ln-drawer { --drawer-w: 100vw; } }
 .ln-drawer__head { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-6) var(--space-6) var(--space-5); border-bottom: var(--hairline) solid var(--edge-1); }
 .ln-drawer__head > div { flex: 1; min-width: 0; }
 .ln-drawer__head h2 { margin: 0; font: 700 var(--text-section)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-section); overflow-wrap: anywhere; }
