@@ -98,6 +98,8 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 
 ## 7. Your games from GOG and itch.io, downloaded and updated in Lootnest
 
+Done: all three phases shipped by 1.83.
+
 **What users get.** The games you own on GOG (DRM-free) and itch.io install, update and roll back inside Lootnest, with no other launcher. The update case the stores don't cover: a game in a folder that no launcher keeps current.
 
 **Approach.** Only games the user owns, through each store's own API, signed in by the user: GOG's account and installer endpoints, and itch.io's API with the user's own key. Downloads go through the update center that already exists: saves copied first, the version checked, every replaced file kept, Undo. Off until the user signs in.
@@ -105,7 +107,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 **Phases.**
 - 1, M: itch.io: library, download and install a build, check for a newer upload. Done in 1.81.
 - 2, L: GOG: sign in, library, offline installers for owned games, updates through the installer flow (1.40). Done in 1.82, with the full installer for updates rather than GOG's patches.
-- 3, S: both show on the Updates page with the other folder games.
+- 3, S: both show on the Updates page with the other folder games. Done in 1.83.
 
 **Will not do.** Any source other than the store the user bought from; sharing or caching downloads between users.
 

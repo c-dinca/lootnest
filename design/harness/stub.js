@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1&itchrun=hold&gog=1&gogrun=hold
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -116,7 +116,8 @@
   // ?itch=1: an itch.io account with three games not installed (the first
   // with two downloads), and Onimusha installed from it, with an update out.
   // ?itch=1&itchrun=hold: an install or update stops part way through its download.
-  const ITCH = q.get("itch") === "1", ITCH_HOLD = q.get("itchrun") === "hold", ITCH_KEY = "dir:d:\\games\\onimusha";
+  // ?itch=out: the same records, disconnected. Moss Lane is up to date.
+  const ITCH = ["1", "out"].includes(q.get("itch")), ITCH_OUT = q.get("itch") === "out", ITCH_HOLD = q.get("itchrun") === "hold", ITCH_KEY = "dir:d:\\games\\onimusha";
   const plate = (a, b, w = 630, h = 500) => "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`);
   const ITCH_OWNED = [
     { key: "owned:itch:101", name: "Lantern Keeper", source: "itch", storeId: "101", keyId: 9001, cover: plate("oklch(0.55 0.12 60)", "oklch(0.25 0.05 280)") },
@@ -141,7 +142,8 @@
   // ?gog=1: signed in to GOG with three games not installed (the second in
   // two languages, the third in three files), and Hollow Knight installed
   // from it, with an update out. ?gog=1&gogrun=hold: a download stops part way.
-  const GOG = q.get("gog") === "1", GOG_HOLD = q.get("gogrun") === "hold", GOG_KEY = "dir:c:\\gog games\\hollow knight";
+  // ?gog=out: the same records, signed out. Cinder Vale was never checked.
+  const GOG = ["1", "out"].includes(q.get("gog")), GOG_OUT = q.get("gog") === "out", GOG_HOLD = q.get("gogrun") === "hold", GOG_KEY = "dir:c:\\gog games\\hollow knight";
   const GOG_OWNED = [
     { key: "owned:gog:1207664643", name: "Ember Archive", source: "gog", storeId: "1207664643", hero: plate("oklch(0.5 0.13 30)", "oklch(0.22 0.04 300)", 392, 220) },
     { key: "owned:gog:1207664644", name: "Saltmarsh Run", source: "gog", storeId: "1207664644", hero: plate("oklch(0.58 0.08 160)", "oklch(0.26 0.05 220)", 392, 220) },
@@ -166,7 +168,10 @@
     steps.forEach((st) => setTimeout(() => emit({ type: "gogProgress", key, stage: st, done: 0, total: 0, file: 0, files: 0 }, 0), (t += 500)));
     setTimeout(() => emit(done, 0), (t += 500));
   }
-  const gogRecs = () => ({ [GOG_KEY]: { version: "1.5.68", checkedAt: iso(2 * h), game: "" } });
+  const gogRecs = () => ({ [GOG_KEY]: { version: "1.5.68", checkedAt: iso(2 * h), game: "" }, "dir:c:\\gog games\\cinder vale": { version: "2.0.3", checkedAt: "0001-01-01T00:00:00Z", game: "" } });
+  const itchRecs = () => ({ [ITCH_KEY]: { version: "1.2.0", checkedAt: iso(3 * h), game: "" }, "dir:d:\\games\\itch\\moss lane": { version: "0.8.1", checkedAt: iso(h), game: "" } });
+  if (ITCH) found.push({ key: "dir:d:\\games\\itch\\moss lane", name: "Moss Lane", source: "folder", exe: "D:\\Games\\itch\\Moss Lane\\MossLane.exe" });
+  if (GOG) found.push({ key: "dir:c:\\gog games\\cinder vale", name: "Cinder Vale", source: "gog", exe: "C:\\GOG Games\\Cinder Vale\\CinderVale.exe" });
   if (N === "0") { games = []; found = []; GROUPS = []; }
   if (N === "400") {
     const pool = [730, 1091500, 1426210, 413150, 367520, 1086940, 1145350, 1551360, 271590, 250900, 0, 0];
@@ -211,8 +216,8 @@
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     gameDetails: q.get("details") !== "0", // ?details=0: Game details off
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
-    itchUser: ITCH ? "player1" : "",
-    gogUser: GOG ? "player1" : "",
+    itchUser: ITCH && !ITCH_OUT ? "player1" : "",
+    gogUser: GOG && !GOG_OUT ? "player1" : "",
   };
   // As core.WithOffsets: each profile's correction on top, never below 0.
   const withOffsets = () => {
@@ -395,11 +400,11 @@
     },
     ps_itchCancel: () => { emit({ type: "itchDone", key: "owned:itch:101", name: "Lantern Keeper", cancelled: true }); return ok(); },
     ps_itchCheck: () => {
-      if (ITCH) emit({ type: "itchUpdates", records: { [ITCH_KEY]: { version: "1.2.0", checkedAt: iso(3 * h), game: "" } }, list: [{ key: ITCH_KEY, version: "1.3.0", size: 412e6, uploadId: 77 }], error: "" }, 200);
+      if (ITCH) emit({ type: "itchUpdates", records: itchRecs(), list: settings.itchUser ? [{ key: ITCH_KEY, version: "1.3.0", size: 412e6, uploadId: 77 }] : [], error: "" }, 200);
       return ok();
     },
     ps_itchRecords: () => {
-      if (ITCH) emit({ type: "itchUpdates", records: { [ITCH_KEY]: { version: "1.2.0", checkedAt: iso(3 * h), game: "" } }, list: [], error: "" }, 0);
+      if (ITCH) emit({ type: "itchUpdates", records: itchRecs(), list: [], error: "" }, 0);
       return ok();
     },
     ps_itchUpdate: (key) => { itchRun(key, [], { type: "itchDone", key, name: "Onimusha: Way of the Sword", path: "C:\\Users\\you\\AppData\\Roaming\\Lootnest\\downloads\\itch\\7\\onimusha-1.3.0.zip", updKey: "found:" + key }); return ok(); },
@@ -423,7 +428,7 @@
     },
     ps_gogCancel: () => { emit({ type: "gogDone", key: "owned:gog:1207664645", name: "The Long Field", cancelled: true }); return ok(); },
     ps_gogCheck: () => {
-      if (GOG) emit({ type: "gogUpdates", records: gogRecs(), list: [{ key: GOG_KEY, version: "1.5.78", size: 9.6e8 }], error: "" }, 200);
+      if (GOG) emit({ type: "gogUpdates", records: gogRecs(), list: settings.gogUser ? [{ key: GOG_KEY, version: "1.5.78", size: 9.6e8 }] : [], error: "" }, 200);
       return ok();
     },
     ps_gogRecords: () => {

@@ -97,6 +97,8 @@
     const R = S[st.s].recs;
     return it.kind === "found" ? (R[it.id] ? it.id : "") : Object.keys(R).find((k) => R[k].game === it.id) || "";
   }
+  const storeChecked = (rec) => !!rec.checkedAt && new Date(rec.checkedAt).getFullYear() > 1;
+  const storeOut = (n) => `${n.version ? `Version ${esc(n.version)} is out` : "A newer download is out"}, ${esc(fmtBytes(n.size || 0))}`;
   // A game Lootnest installed from the store: its version, the last check,
   // and an update when there's one.
   function storeNote(st, it) {
@@ -105,9 +107,9 @@
     if (!I.seen.has(k)) { I.seen.add(k); api[st.s + "Check"](k, false).catch(() => {}); }
     const R = I.run && I.run.key === k ? I.run : null, newer = I.updates.find((u) => u.key === k);
     if (R) return `<div class="gpage-note itch-note">${GI.load}${itchMeter(R, R.stage === "download" ? ` <button class="gpage-link" data-action="${st.s}-cancel">Cancel</button>` : "", st.text)}</div>`;
-    const checked = rec.checkedAt && new Date(rec.checkedAt).getFullYear() > 1 ? ` Checked ${esc(ago(rec.checkedAt))}.` : "";
+    const checked = storeChecked(rec) ? ` Checked ${esc(ago(rec.checkedAt))}.` : "";
     const said = (rec.version ? `Version ${esc(rec.version)}, installed from ${st.label}.` : `Installed from ${st.label}.`) + checked;
-    const out = newer ? ` ${newer.version ? `Version ${esc(newer.version)} is out` : "A newer download is out"}, ${esc(fmtBytes(newer.size || 0))}.` : "";
+    const out = newer ? ` ${storeOut(newer)}.` : "";
     const act = !st.on() ? "" : newer
       ? `<button class="gpage-link" data-action="${st.s}-update" data-key="${esc(k)}">Update</button>`
       : `<button class="gpage-link" data-action="${st.s}-check" data-key="${esc(k)}" ${I.checking ? "disabled" : ""}>${I.checking ? "Checking" : "Check for an update"}</button>`;
@@ -131,7 +133,7 @@
       I.run = ev;
       if (prev && prev.key === ev.key && prev.stage === ev.stage && prev.file === ev.file && runs.length) { runs.forEach((n) => itchPatch(n, ev)); return true; }
       if (D && D.key === ev.key) renderOverlay();
-      if (storePageKey(st) === ev.key) render();
+      if (storePageKey(st) === ev.key || (S.view === "updates" && I.recs[ev.key])) render();
       return true;
     }
     if (kind === "Updates") {
@@ -139,7 +141,8 @@
       I.recs = ev.records || {}; I.updates = ev.list || []; I.checking = false;
       if (ev.error && I.asked) toast(ev.error, "error");
       I.asked = false;
-      if (storePageState(st) !== was) render();
+      updateNavCount();
+      if (storePageState(st) !== was || S.view === "updates") render();
       return true;
     }
     if (kind !== "Done") return false;
@@ -158,7 +161,7 @@
       loadFound().then(refresh);
       st.installed(key);
     }
-    if (S.view === "game" || S.view === "library") render();
+    if (S.view === "game" || S.view === "library" || S.view === "updates") render();
     return true;
   }
 

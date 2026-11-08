@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.82.0, beta)
+## Where things stand (1.83.0, beta)
 
 These shipped recently, newest last:
 
@@ -587,6 +587,15 @@ These shipped recently, newest last:
   installer flow (`gogArgs`, `gogApplied`, `gogUndone`); a failed
   installer keeps the old record. UI notes shared in 73-itch.js
   (`storeNote`, `storeRunEvent`). Harness `?gog=1&gogrun=hold`.
+- **1.83** Roadmap 7 phase 3, so section 7 is done: itch.io and GOG
+  installs are rows on the Updates page (`storeUpdRows`, `storeUpdCard`,
+  sharing `updRow`/`updMore`; the store's row wins over a folder row with
+  the same key), counted under New and Needs a look only while the store
+  is connected; Check again asks both stores too. `itchBad`/`gogBad`
+  carry why a check failed. The 6 h throttle (`storeDue`) asks each
+  record once per run, since found updates live only in memory.
+  `S.updAsking` keeps the page from asking again while it loads.
+  Harness `?itch=1|out&gog=1|out`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

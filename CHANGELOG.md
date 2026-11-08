@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.83.0
+
+- **Games you installed from itch.io or GOG are on the Updates page**, with your other games no launcher keeps up to date. Each row says where its updates come from and which version you have.
+- When itch.io or GOG has a newer version, the row says which one and how big it is, it counts under Newer version out, and it shows under Needs a look. **Update** works as it does on the game's page: the download's progress and Cancel show in the row, then the update panel opens, with the saves copied first.
+- A game that is up to date says when Lootnest last checked. One Lootnest couldn't check says why. **Check again** asks itch.io and GOG too, at once; otherwise Lootnest asks them at most every six hours.
+- Disconnected from itch.io or signed out of GOG, the games stay on the page, with a link to Settings, Online to connect again.
+- A game that's both a folder game and an itch.io install shows once, with the itch.io line.
+- After Lootnest starts, it asks itch.io and GOG about each game once, even if it checked a little earlier, so an update it found before you closed it still shows.
+
 ## 1.82.0
 
 - **Your GOG games, installed and updated in Lootnest.** In Settings, Online, choose **Sign in to GOG**: GOG's own sign-in page opens in your browser, the same one GOG Galaxy uses. Once you've signed in, copy the address GOG ends on and paste it into Lootnest. Lootnest keeps the sign-in encrypted on this PC, and only reads your library and downloads your games' installers.
