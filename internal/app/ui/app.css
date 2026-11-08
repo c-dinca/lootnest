@@ -1032,46 +1032,60 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 
 /* Achievements page: one profile's, across every game. */
 .ach-page { display: grid; gap: var(--space-6); }
-.ach-summary { display: grid; gap: var(--space-5); padding: var(--space-5) var(--space-6) var(--space-6); }
-.ach-summary-who { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.ach-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); row-gap: var(--space-4); padding: 0; }
-.ach-stats dd { font: 750 var(--fs-40)/1 var(--font-title); }
-.ach-stats dd small { margin-left: 2px; font-size: var(--fs-18); font-weight: 650; color: var(--fg-2); }
-.ach-cols { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); gap: var(--space-10); align-items: start; }
+.ach-cols { display: grid; grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr); gap: var(--space-10); align-items: start; }
+.ach-main { display: grid; gap: var(--space-6); min-width: 0; }
+.ach-side { display: grid; gap: var(--space-8); min-width: 0; }
+.ach-side .ach b { white-space: normal; overflow-wrap: anywhere; }
+.ach-pick { justify-self: start; }
+.ach-pick.ln-segmented { flex-wrap: wrap; }
+.ach-pick button { padding-left: var(--space-2); }
+.ach-headline { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-4); }
+.ach-headline p { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); margin: 0; }
+.ach-hl-num { font: 600 var(--fs-40)/1 var(--font-title); letter-spacing: var(--track-title); color: var(--fg-2); }
+.ach-hl-num b { font-weight: 750; color: var(--fg-1); }
+.ach-hl-pct { font-size: var(--fs-14); color: var(--fg-2); }
+.ach-headline .ach-bar { grid-column: 1 / -1; }
 @media (max-width: 1100px) { .ach-cols { grid-template-columns: minmax(0, 1fr); } }
 .ach-cols .ln-section-head { align-items: baseline; }
-.ach-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.ach-games { display: grid; grid-template-columns: 1fr; gap: 0; margin: 0; padding: 0; list-style: none; }
 .ach-gcard {
-  display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: var(--space-4);
-  width: 100%; height: 100%; padding: var(--space-3); color: var(--fg-1); font: inherit; text-align: left; cursor: pointer;
-  background: var(--bg-surface);
-  border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel);
-  transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+  display: grid; grid-template-columns: var(--space-10) minmax(0, 1fr) calc(var(--space-10) * 3) auto; align-items: center; gap: var(--space-4);
+  width: 100%; padding: var(--space-2) 0; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer;
+  background: none; border: 0; border-bottom: var(--hairline) solid var(--edge-1); border-radius: 0;
 }
-.ach-gcard:hover { border-color: var(--edge-3); background: var(--bg-raised); }
-.ach-gcard:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.ach-gcover { width: 64px; }
+.ach-gcard:hover .ach-game-name b { text-decoration: underline; text-underline-offset: 3px; }
+.ach-gcard:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.ach-gcard .ach-bar span { background: var(--fg-3); }
+.ach-gcover { width: var(--space-10); }
 /* Small covers: the name is beside them, so the icon alone, or the name. */
 .ach-gcover .nocover, .cs-cover .nocover { padding: var(--space-1); }
-.ach-gcover .nocover b, .cs-cover .nocover b { font-size: var(--fs-12); }
-.ach-gcover .nocover.with-icon b, .cs-cover .nocover.with-icon b { display: none; }
+.ach-gcover .nocover b { display: none; }
+.cs-cover .nocover b { font-size: var(--fs-12); }
+.cs-cover .nocover.with-icon b { display: none; }
 .ach-gcover img.icon, .cs-cover img.icon { left: 20%; top: 20%; width: 60%; height: auto; aspect-ratio: 1; }
-.ach-gbody { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
-.ach-gbody .ach-bar { justify-self: stretch; }
+.ach-gbody { display: grid; gap: var(--space-1); justify-items: start; min-width: 0; }
 .ach-game-name { display: flex; align-items: center; gap: var(--space-2); min-width: 0; max-width: 100%; }
 .ach-game-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-15); font-weight: 700; }
-.ach-game-num { font-size: var(--fs-13); color: var(--fg-2); }
+.ach-game-num { min-width: calc(var(--space-16) + var(--space-2)); font-size: var(--fs-13); color: var(--fg-2); text-align: right; white-space: nowrap; }
 .ach-game-num b { font-weight: 700; color: var(--fg-1); }
 .ach-gnote { font-size: var(--fs-12); color: var(--fg-3); }
-.ach-ms .ln-section-head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
-.ach-ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
-.ach-ms-grid li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-4); background: var(--bg-surface); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
+.ach-ms summary { display: flex; align-items: center; gap: var(--space-2); width: fit-content; margin-left: calc(var(--space-2) * -1); padding: var(--space-3) var(--space-2); border-radius: var(--radius-ctl); font: 700 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); list-style: none; cursor: pointer; }
+.ach-ms summary::-webkit-details-marker { display: none; }
+.ach-ms summary:hover { background: var(--glass-ctl-active); }
+.ach-ms summary:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.ach-ms summary svg { width: var(--space-4); height: var(--space-4); flex: none; fill: none; stroke: var(--fg-2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transform: rotate(-90deg); transition: transform var(--dur-2) var(--ease-out); }
+.ach-ms[open] summary svg { transform: none; }
+.ach-ms summary .ln-count { font: 600 var(--fs-14)/1 var(--font-ui); letter-spacing: 0; color: var(--fg-2); }
+.ach-ms > p { margin: 0 0 var(--space-2); font-size: var(--fs-13); color: var(--fg-2); }
+.ach-ms-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-8); margin: 0; padding: 0; list-style: none; }
+.ach-ms-grid li { display: grid; grid-template-columns: var(--space-10) minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); border-radius: 0; }
+@media (max-width: 800px) { .ach-ms-grid { grid-template-columns: minmax(0, 1fr); } }
 .ach-ms-grid b { display: block; font-size: var(--fs-14); font-weight: 650; }
 .ach-ms-grid div > span:not(.ach-bar) { display: block; margin-top: 2px; font-size: var(--fs-12); color: var(--fg-2); }
 .ach-ms-grid .ach-bar { display: block; margin-top: var(--space-2); }
 .ach-ms-grid .ach-bar span { background: var(--fg-3); }
-.ach-ms-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-ctl); background: var(--glass-ctl-active); color: var(--fg-3); }
-.ach-ms-grid li.done .ach-ms-icon { background: var(--bg-raised); color: var(--success); }
+.ach-ms-icon { display: grid; place-items: center; width: var(--space-10); height: var(--space-10); color: var(--fg-3); }
+.ach-ms-grid li.done .ach-ms-icon { color: var(--success); }
 .ach-ms-grid li:not(.done) b { color: var(--fg-2); }
 
 /* Runs: a profile that's a run of a person shows under them. */
@@ -1546,34 +1560,6 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 .ach-gring { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex: none; }
 .ach-gring .ach-ring-n { position: absolute; font: 700 11px/1 var(--font-ui); color: var(--fg-1); }
 .ach-gring .ach-ring-n small { font-size: 8px; color: var(--fg-3); }
-.ach-gcard { grid-template-columns: 64px minmax(0, 1fr) auto; }
-.ach-gcard { transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
-
-/* The summary: a big ring and the numbers beside it. */
-.ach-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-8); }
-.ach-hero-ring { position: relative; display: grid; place-items: center; width: 132px; height: 132px; }
-.ach-hero-ring .ach-ring circle { stroke-width: 2.6; }
-.ach-hero-ring .ach-ring-n { position: absolute; font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); }
-.ach-hero-ring .ach-ring-n small { font-size: var(--fs-15); color: var(--fg-2); margin-left: 1px; }
-@media (max-width: 700px) { .ach-hero { grid-template-columns: 1fr; } }
-
-/* Rarest unlocked: the ones to be proud of, on show. */
-.ach-show-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
-.ach-show-card { --tier: var(--tier-common); }
-.ach-show-card.tier-ultra { --tier: var(--tier-ultra); }
-.ach-show-card.tier-rare { --tier: var(--tier-rare); }
-.ach-show-card.tier-uncommon { --tier: var(--tier-uncommon); }
-.ach-show-card button { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-4); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-1); text-align: left; cursor: pointer; overflow: hidden; transition: border-color var(--dur-2) var(--ease-out); }
-.ach-show-card button:hover { border-color: var(--edge-3); }
-.ach-show-card button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.ach-show-card .ach-ico { width: 56px; height: 56px; }
-.ach-show-card .ach-ico > .ln-icon { width: 26px; height: 26px; }
-.ach-show-body { display: grid; gap: 2px; min-width: 0; }
-.ach-show-body em { font: 700 var(--fs-12)/1.2 var(--font-ui); font-style: normal; color: var(--tier); }
-.ach-show-body b { font: 700 var(--fs-15)/var(--lh-snug) var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ach-show-body span { font-size: var(--fs-12); color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ach-show-pct { display: grid; justify-items: end; font: 750 var(--fs-18)/1 var(--font-title); color: var(--fg-1); }
-.ach-show-pct small { font: 500 var(--fs-12)/1.4 var(--font-ui); color: var(--fg-3); }
 
 /* An unlock in the window, at the top right. */
 .ach-pops { position: fixed; top: var(--space-4); right: var(--space-4); z-index: 90; display: grid; gap: var(--space-2); justify-items: end; pointer-events: none; }

@@ -140,6 +140,7 @@
     setTab: pref("setTab", "general"), // the Settings category open
     allAch: null,     // the Achievements page: every game's, null until read
     achPage: "",      // whose the Achievements page shows
+    achMs: false,     // the Achievements page's milestones are open
     statusWho: {},    // Library key -> whose status the game page shows
     tag: "",          // the Library's collection filter ("" for all)
     status: "",       // the Library's status filter ("" for any)
@@ -3944,43 +3945,44 @@
       const it = itemByKey(g.key);
       return it ? { g, it, unlocked: own ? own.unlocked : g.unlocked, recent: own ? own.recent : g.recent, rarest: (own ? own.rarest : g.rarest) || [], shared: !g.players } : null;
     }).filter(Boolean);
-    const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-page" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
+    const chips = ps.length > 4 ? `<select id="ach-pick" class="ln-input ach-pick" aria-label="Whose achievements">${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === who ? "selected" : ""}>${esc(possessive(p.name))} achievements</option>`).join("")}</select>`
+      : ps.length > 1 ? `<div class="ln-segmented ach-pick" role="group" aria-label="Whose achievements">${ps.map((p) => `<button data-action="ach-page" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     if (!rows.length) {
       return `<div class="ach-page ln-root">${head}${chips}${emptyState(GI.trophy, "No achievements found yet", "Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.")}</div>`;
     }
-    const total = rows.reduce((n, r) => n + r.unlocked, 0), perfect = rows.filter((r) => r.unlocked && r.unlocked === r.g.total).length;
+    const total = rows.reduce((n, r) => n + r.unlocked, 0);
     const ms = who && player(who) ? milestones(player(who), rows) : [];
     const msDone = ms.filter((x) => x.done).length;
-    const msHTML = ms.length ? `<section class="ach-ms"><div class="ln-section-head"><div><h2>Lootnest milestones</h2><p>${msDone} of ${ms.length}, for any game, from the time ${esc(pname(who))} plays through Lootnest.</p></div></div>
-      <ul class="ach-ms-grid">${ms.map((x) => `<li class="${x.done ? "done" : ""}"><span class="ach-ms-icon">${GI.trophy}</span><div><b>${esc(x.name)}</b><span>${x.done ? esc(x.desc) : esc(x.desc) + ". " + esc(fmtGoal(x))}</span>${x.done ? "" : `<span class="ach-bar" aria-hidden="true"><span style="width:${Math.round((x.cur / x.goal) * 100)}%"></span></span>`}</div></li>`).join("")}</ul></section>` : "";
+    const msHTML = ms.length ? `<details class="ach-ms"${S.achMs ? " open" : ""}><summary><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg>Lootnest milestones <span class="ln-count ln-num">${msDone} of ${ms.length}</span></summary>
+      <p>For any game, from the time ${esc(pname(who))} plays through Lootnest.</p>
+      <ul class="ach-ms-grid">${ms.map((x) => `<li class="${x.done ? "done" : ""}"><span class="ach-ms-icon">${GI.trophy}</span><div><b>${esc(x.name)}</b><span>${x.done ? esc(x.desc) : esc(x.desc) + ". " + esc(fmtGoal(x))}</span>${x.done ? "" : `<span class="ach-bar" aria-hidden="true"><span style="width:${Math.round((x.cur / x.goal) * 100)}%"></span></span>`}</div></li>`).join("")}</ul></details>` : "";
     const latest = rows.flatMap((r) => (r.recent || []).map((a) => ({ a, r }))).sort((x, y) => new Date(y.a.at || 0) - new Date(x.a.at || 0)).slice(0, 10);
     const games = rows.slice().sort((x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || x.g.name.localeCompare(y.g.name));
     const p = player(who);
     const all = rows.reduce((n, r) => n + r.g.total, 0), allPct = all ? Math.round((total / all) * 100) : 0;
-    const cu = (n, suffix) => `<span data-countup="${n}" data-suffix="${suffix ? esc(suffix) : ""}">${n}${suffix || ""}</span>`;
     // The rarest they've unlocked anywhere, on show.
     const rarest = rows.flatMap((r) => r.rarest.map((a) => ({ a, r }))).sort((x, y) => x.a.percent - y.a.percent).slice(0, 4);
-    const show = rarest.length ? `<section class="ach-show" aria-label="Rarest unlocked"><div class="ln-section-head"><div><h2>Rarest unlocked</h2></div></div>
-      <ul class="ach-show-row">${rarest.map(({ a, r }) => { const t = tierOf(a.percent); return `<li class="ach-show-card tier-${t}"><button data-action="open-sheet" ${itemAttr(r.it)}>${achIcon(a)}
-        <span class="ach-show-body"><em>${TIERS[t]}</em><b>${esc(a.name)}</b><span>${esc(r.g.name)}</span></span><span class="ach-show-pct ln-num">${esc(pctText(a.percent))}<small>of players</small></span></button></li>`; }).join("")}</ul></section>` : "";
+    const show = rarest.length ? `<section aria-label="Rarest unlocked"><div class="ln-section-head"><div><h2>Rarest unlocked</h2></div></div>
+      <ul class="ach-list">${rarest.map(({ a, r }) => achRow(a, r.g.key, esc(r.g.name))).join("")}</ul></section>` : "";
     return `<div class="ach-page ln-root">${head}
-      <div class="ach-summary ln-glass">${chips ? `<div class="ach-summary-who">${chips}</div>` : ""}
-        <div class="ach-hero">
-          <div class="ach-hero-ring">${ring(allPct, 132)}</div>
-          <dl class="ln-meta ach-stats">${gpStat(cu(total), "unlocked", p)}${gpStat(cu(perfect), perfect === 1 ? "game at 100%" : "games at 100%")}${gpStat(cu(rows.length), rows.length === 1 ? "game with achievements" : "games with achievements")}${gpStat(cu(all - total), "still to get")}</dl>
-        </div></div>
-      ${show}
       <div class="ach-cols">
-        <section><div class="ln-section-head"><div><h2>Games</h2></div><span class="ach-count ln-num">${rows.length}</span></div>
-          <ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = Math.round((r.unlocked / r.g.total) * 100); return `<li><button class="ach-gcard${pct === 100 ? " done" : ""}" data-action="open-sheet" ${itemAttr(r.it)}>
+        <div class="ach-main">${chips}
+          <div class="ach-headline">${p ? lnAvatar(p, "48") : ""}<p><span class="ach-hl-num"><b class="ln-num" data-countup="${total}">${total}</b> of <span class="ln-num">${all}</span></span><span class="ach-hl-pct ln-num">${allPct}%</span></p>
+            <span class="ach-bar" aria-hidden="true"><span style="width:${allPct}%"></span></span></div>
+          <section><div class="ln-section-head"><div><h2>Games</h2></div><span class="ach-count ln-num">${rows.length}</span></div>
+          <ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = Math.round((r.unlocked / r.g.total) * 100); return `<li><button class="ach-gcard" data-action="open-sheet" ${itemAttr(r.it)}>
             <span class="ach-gcover cover">${coverHTML(r.it)}</span>
             <span class="ach-gbody"><span class="ach-game-name"><b>${esc(r.g.name)}</b></span>
-              <span class="ach-game-num"><b class="ln-num">${r.unlocked}</b> of <span class="ln-num">${r.g.total}</span>${pct === 100 ? ", all of them" : ""}</span>
               ${r.shared ? `<span class="ln-tag">${r.g.source === "steam" ? "Steam account" : "Shared"}</span>` : `<span class="ach-gnote">${esc(possessive(pname(who)))} own</span>`}</span>
-            <span class="ach-gring">${ring(pct)}</span></button></li>`; }).join("")}</ul></section>
-        <section class="ach-latest"><div class="ln-section-head"><div><h2>Latest unlocked</h2></div></div>
+            <span class="ach-bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
+            <span class="ach-game-num"><b class="ln-num">${r.unlocked}</b> of <span class="ln-num">${r.g.total}</span></span></button></li>`; }).join("")}</ul></section>
+          ${msHTML}
+        </div>
+        <div class="ach-side">${show}
+          <section class="ach-latest"><div class="ln-section-head"><div><h2>Latest unlocked</h2></div></div>
           ${latest.length ? `<ul class="ach-list">${latest.map(({ a, r }) => achRow(a, r.g.key, `${esc(r.g.name)}${a.at && new Date(a.at).getFullYear() > 2000 ? ", " + esc(ago(a.at)) : ""}`)).join("")}</ul>` : `<p class="home-hint">Nothing unlocked yet.</p>`}</section>
-      </div>${msHTML}</div>`;
+        </div>
+      </div></div>`;
   }
 
   // Cloud saves: each player's saves in a folder a cloud app syncs (or a
@@ -5053,6 +5055,7 @@
     else if (f === "path") { const p = g.paths.find((x) => x._k === el.dataset.k); if (p) p.path = el.value; }
   });
 
+  document.addEventListener("toggle", (ev) => { if (ev.target.classList && ev.target.classList.contains("ach-ms")) S.achMs = ev.target.open; }, true);
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
@@ -5064,6 +5067,7 @@
     if (el.id === "lib-tag") { S.tag = el.value; render(); return; }
     if (el.id === "lib-status") { S.status = el.value; render(); return; }
     if (el.id === "lib-who") { S.who = el.value; render(); return; }
+    if (el.id === "ach-pick") { S.achPage = el.value; render(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }
     if (el.dataset.field === "path" && S.edit) { const p = S.edit.game.paths.find((x) => x._k === el.dataset.k); if (p) checkPath(p); }
