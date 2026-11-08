@@ -50,9 +50,8 @@
       : `<p class="set-note">No games in the Library yet.</p>`;
     const note = Z.safe ? "Lootnest is in safe mode, so it doesn't count sizes. Restart it normally to see them."
       : `Sizes are about right: Lootnest counts them in the background after it looks for games, a game at a time.${Z.counting ? " It's counting now." : ""} Saves inside a game's folder count in its install too.`;
-    const sub = (title, n, body) => `<section class="set-sub"><div class="ln-section-head ln-section-head--minor"><h2>${title}</h2></div>${n ? `<p class="set-note">${n}</p>` : ""}${body}</section>`;
-    return sub("Drives", "", drives ? `<div class="st-drives">${drives}</div>` : `<p class="set-note">Windows didn't list any drives.</p>`)
-      + sub("Games", note, table);
+    return setSub("Drives", "", drives ? `<div class="st-drives">${drives}</div>` : `<p class="set-note">Windows didn't list any drives.</p>`)
+      + setSub("Games", note, table);
   }
   function storageMenu(el) {
     const it = itemFor(el);

@@ -175,6 +175,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))
 	must(a.w.Bind("ps_saveLaunchOptions", a.apiSaveLaunchOptions))
 	must(a.w.Bind("ps_runningApps", a.apiRunningApps))
+	must(a.w.Bind("ps_controllers", a.apiControllers))
 	must(a.w.Bind("ps_steamProperties", a.apiSteamProperties))
 	must(a.w.Bind("ps_playniteFind", a.apiPlayniteFind))
 	must(a.w.Bind("ps_playnitePreview", a.apiPlaynitePreview))

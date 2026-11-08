@@ -891,7 +891,7 @@
     "add-player"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); render(); const ins = document.querySelectorAll('[data-field="pname"]'); ins[ins.length - 1].focus(); },
     "remove-player"(el) { S.players.splice(+el.dataset.i, 1); render(); },
     "shelf-all"(el) { S.tag = el.dataset.tag; render(); const t = $(".lib-tools"); if (t) t.scrollIntoView({ block: "start" }); },
-    "set-tab"(el) { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); render(); const v = $("#view"); if (v) v.scrollTop = 0; },
+    "set-tab"(el) { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); ctlAsked = false; render(); const v = $("#view"); if (v) v.scrollTop = 0; },
     "reset-players"() { S.players = null; render(); },
     "edit-profiles"() { S.dialog = { kind: "profiles" }; renderOverlay(); focusOverlay(); },
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },

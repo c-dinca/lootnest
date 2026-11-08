@@ -52,6 +52,25 @@ func TestProcessNames(t *testing.T) {
 	}
 }
 
+// A CI machine has no pads; the calls must still answer, and a service
+// every Windows has must read as installed and running.
+func TestControllers(t *testing.T) {
+	for _, d := range PadDevices() {
+		if len(d.Chain) == 0 {
+			t.Fatalf("a device without an instance id: %+v", d)
+		}
+	}
+	if n := len(XInputPads()); n > 4 {
+		t.Fatalf("%d XInput slots", n)
+	}
+	if ok, run := ServiceState("EventLog"); !ok || !run {
+		t.Fatalf("EventLog: installed %v, running %v", ok, run)
+	}
+	if ok, _ := ServiceState("NoSuchServiceLootnest"); ok {
+		t.Fatal("a service that doesn't exist reads as installed")
+	}
+}
+
 func TestKnownFoldersAndDisk(t *testing.T) {
 	for name, p := range map[string]string{"Documents": Documents(), "Saved Games": SavedGames(), "LocalLow": LocalLow(), "Program Files": ProgramFiles(), "Downloads": Downloads()} {
 		if p == "" {

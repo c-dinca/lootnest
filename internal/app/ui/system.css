@@ -148,6 +148,7 @@
   --gp-head-art: 40px;    /* the game's cover in that head */
   --ach-col-min: 340px;   /* a column of the Achievements tab's list */
   --tl-col-w: 420px;      /* a column of days on the Timeline tab */
+  --ctl-col-w: 400px;     /* a column on Settings, Controllers */
   --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */
   --prun-h: 44px;         /* a run under its person on Profiles */
   --welcome-w: 1040px;    /* the first start's two columns, together */

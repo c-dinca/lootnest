@@ -46,6 +46,7 @@
       for (const k in S.details) if (S.details[k].error) delete S.details[k]; // asked again on this visit
     }
     if (view === "cloud") { loadBackupInfo(); loadSaves(); }
+    if (view === "settings") ctlAsked = false;
     if (view !== "players") S.players = null;
     if (view !== "library") S.libSel.clear();
   }
