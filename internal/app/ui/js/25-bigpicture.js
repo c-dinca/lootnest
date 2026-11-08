@@ -26,7 +26,27 @@
     sfx("close");
   }
   function bpSoon() { if (BP.timer) return; BP.timer = requestAnimationFrame(() => { BP.timer = 0; if (BP.on) renderBP(false); }); }
-  const glyph = (b) => `<span class="bp-g bp-g--${b.toLowerCase()}" aria-hidden="true">${b}</span>`;
+  // The buttons, named by what they do here as on an Xbox pad, the way each
+  // kind of pad labels them. Face buttons by position: A bottom, B right, X
+  // left, Y top; a Nintendo pad confirms with its right-hand A (padRole).
+  const PADS = {
+    xbox: { A: "A", B: "B", X: "X", Y: "Y", LB: "LB", RB: "RB", Start: "Menu", View: "View" },
+    playstation: { A: "cross", B: "circle", X: "square", Y: "triangle", LB: "L1", RB: "R1", Start: "Options", View: "Create" },
+    nintendo: { A: "A", B: "B", X: "Y", Y: "X", LB: "L", RB: "R", Start: "+", View: "\u2212" },
+    generic: { A: "bottom", B: "right", X: "left", Y: "top", LB: "L", RB: "R", Start: "Start", View: "Select" },
+  };
+  const dot = (x, y, on) => `<circle cx="${x}" cy="${y}" r="${on ? 3 : 1.5}" fill="currentColor" stroke="none"/>`;
+  const PAD_SHAPES = {
+    cross: '<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>', circle: '<circle cx="10" cy="10" r="5"/>',
+    square: '<rect x="5.25" y="5.25" width="9.5" height="9.5" rx=".5"/>', triangle: '<path d="M10 4.75 15.5 14.5h-11z"/>',
+    ...Object.fromEntries(["top", "right", "bottom", "left"].map((k) => [k, dot(10, 4.5, k === "top") + dot(15.5, 10, k === "right") + dot(10, 15.5, k === "bottom") + dot(4.5, 10, k === "left")])),
+  };
+  const pad = { prev: [], held: "", next: 0, raf: 0, fam: "", hello: 0, joined: [] };
+  const glyph = (b) => {
+    const f = pad.fam || "xbox", v = PADS[f][b], face = b.length === 1;
+    const cls = f === "xbox" || !face ? " bp-g--" + b.toLowerCase() : "";
+    return `<span class="bp-g${cls}" aria-hidden="true">${PAD_SHAPES[v] ? gsvg(PAD_SHAPES[v]) : esc(v)}</span>`;
+  };
   function bpArt(it, wide) {
     loadArt(it); ensureCover(it);
     const key = coverKey(it), hero = S.art["hero:" + key], cover = S.covers[key];
@@ -105,7 +125,7 @@
       ${small.length ? `<section class="bp-row"><h2>Collections</h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
       ${bpRow("all", "Your games", all.slice(0, 40), false)}</div>`;
   }
-  let bpSeat = "", bpFootX = false;
+  let bpSeat = "", bpFootX = false, bpFam = "";
   function renderBP(first) {
     let el = $("#bp");
     if (!el) { el = document.createElement("div"); el.id = "bp"; el.className = "bp ln-root"; el.setAttribute("role", "application"); el.setAttribute("aria-label", "Big Picture"); document.body.appendChild(el); }
@@ -122,7 +142,8 @@
     const now = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     const sub = BP.detail || BP.choose;
     const sound = BP.sounds ? "Sounds on" : "Sounds off";
-    const fresh = !main;
+    const fresh = !main, fam = bpFam !== pad.fam;
+    bpFam = pad.fam;
     if (fresh) {
       el.innerHTML = `<div class="bp-bg" aria-hidden="true"><div class="bp-bg-l"></div><div class="bp-bg-l"></div></div>
       <header class="bp-top"><div class="bp-brand">${BRAND_MARK}<span class="bp-brand-name">Lootnest</span></div>
@@ -132,13 +153,20 @@
       <main class="bp-main"></main>
       <footer class="bp-foot"></footer>`;
       main = el.querySelector(".bp-main");
-    } else if (seatHTML !== bpSeat) {
-      el.querySelectorAll(".bp-right .bp-seat").forEach((x) => x.remove());
-      el.querySelector(".bp-right").insertAdjacentHTML("afterbegin", seatHTML);
+    } else {
+      if (seatHTML !== bpSeat) {
+        el.querySelectorAll(".bp-right .bp-seat").forEach((x) => x.remove());
+        el.querySelector(".bp-right").insertAdjacentHTML("afterbegin", seatHTML);
+      }
+      if (fam) {
+        const [lb, rb] = el.querySelectorAll(".bp-tabs > .bp-g");
+        lb.outerHTML = glyph("LB"); rb.outerHTML = glyph("RB");
+        el.querySelector(".bp-exit > .bp-g").outerHTML = glyph("Start");
+      }
     }
     bpSeat = seatHTML;
     const closeHint = !!BP.detail && bpRunning(bpItem(BP.detail));
-    if (fresh || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
+    if (fresh || fam || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
     bpFootX = closeHint;
     el.querySelector(".bp-tabs").classList.toggle("is-dim", !!sub);
     el.querySelectorAll(".bp-tab").forEach((t) => t.setAttribute("aria-current", String(BP.tab === t.dataset.t && !sub)));
@@ -292,44 +320,80 @@
   }, true);
   setInterval(() => { const c = BP.on && $("#bp .bp-clock"); if (c) c.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); }, 15000);
 
-  // The controller: read every frame while one is connected. Start opens
-  // Big Picture from anywhere in Lootnest; in it, the stick and the D-pad
-  // move (held, they repeat), A chooses, B goes back.
-  const pad = { prev: [], held: "", next: 0, raf: 0 };
+  // The controller: read every frame while one is connected. Start (or the
+  // PS button) opens Big Picture from anywhere in Lootnest; in it, the stick
+  // and the D-pad move (held, they repeat), A chooses, B goes back. The
+  // glyphs follow the pad that last sent a press.
+  // Vendor ids first: many pads, Xbox ones included, call themselves "Wireless Controller".
+  const PAD_IDS = [[/vendor: ?045e/, "xbox"], [/vendor: ?054c/, "playstation"], [/vendor: ?057e/, "nintendo"],
+    [/xbox|xinput/, "xbox"], [/dualsense|dualshock|playstation/, "playstation"], [/pro controller|joy-con|nintendo/, "nintendo"]];
+  const padFamily = (id) => { const s = (id || "").toLowerCase(), m = PAD_IDS.find(([re]) => re.test(s)); return m ? m[1] : "generic"; };
+  const realPad = (g) => padFamily(g.id) !== "xbox";
+  // The standard mapping's buttons; 16 is the PS or Home button, 17 the touchpad.
+  const PAD_ROLES = { 0: "A", 1: "B", 2: "X", 3: "Y", 4: "LB", 5: "RB", 8: "View", 9: "Start", 16: "Start", 17: "View" };
+  const padRole = (fam, i) => (fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
+  const padDir = (g) => {
+    const b = (i) => !!(g.buttons[i] && g.buttons[i].pressed), ax = g.axes[0] || 0, ay = g.axes[1] || 0;
+    return b(12) || ay < -0.55 ? "up" : b(13) || ay > 0.55 ? "down" : b(14) || ax < -0.55 ? "left" : b(15) || ax > 0.55 ? "right" : "";
+  };
+  const padsNow = () => (navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : []);
   function padLoop(t) {
     pad.raf = 0;
-    const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
+    const pads = padsNow();
     if (!pads.length) return;
-    const g = pads[0], b = (i) => !!(g.buttons[i] && g.buttons[i].pressed);
-    const edge = (i) => b(i) && !pad.prev[i];
+    // DS4Windows, Steam Input and x360ce add an Xbox twin of another pad.
+    // While that pad holds a button, an Xbox pad's presses are its twin's echo
+    // and are left out; each role acts once a frame. The glyphs stay the real
+    // pad's, as the twin may be the only one that sends input.
+    const real = pads.filter(realPad);
+    const echo = real.some((g) => g.buttons.some((x) => x.pressed));
+    const roles = new Set();
+    let fam = pad.fam || padFamily((real[0] || pads[0]).id), dir = "";
+    for (const g of pads) {
+      const f = padFamily(g.id), now = g.buttons.map((x) => x.pressed), was = pad.prev[g.index] || [];
+      pad.prev[g.index] = now;
+      if (f === "xbox" && echo) continue;
+      now.forEach((p, i) => { if (p && !was[i]) { if (f !== "xbox" || !real.length) fam = f; const r = padRole(f, i); if (r) roles.add(r); } });
+      dir = dir || padDir(g);
+    }
     if (document.hasFocus()) {
-      if (edge(9)) { if (BP.on) bpClose(); else bpOpen(); }
+      if (fam !== pad.fam) { pad.fam = fam; if (BP.on) renderBP(false); }
+      if (roles.has("Start")) { if (BP.on) bpClose(); else bpOpen(); }
       if (BP.on && !S.picker && !S.dialog) {
-        if (edge(0)) bpSelect(document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-go]"));
-        if (edge(1)) bpBack();
-        if (edge(2)) bpX();
-        if (edge(3)) bpY();
-        if (edge(4)) bpTab(-1);
-        if (edge(5)) bpTab(1);
-        if (edge(8)) bpSelect({ dataset: { go: "sound" } });
-        const ax = g.axes[0] || 0, ay = g.axes[1] || 0;
-        const dir = b(12) || ay < -0.55 ? "up" : b(13) || ay > 0.55 ? "down" : b(14) || ax < -0.55 ? "left" : b(15) || ax > 0.55 ? "right" : "";
+        if (roles.has("A")) bpSelect(document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-go]"));
+        if (roles.has("B")) bpBack();
+        if (roles.has("X")) bpX();
+        if (roles.has("Y")) bpY();
+        if (roles.has("LB")) bpTab(-1);
+        if (roles.has("RB")) bpTab(1);
+        if (roles.has("View")) bpSelect({ dataset: { go: "sound" } });
         if (dir && (dir !== pad.held || t >= pad.next)) { bpMove(dir); pad.next = t + (dir !== pad.held ? 380 : 120); }
-        pad.held = dir;
       } else if (BP.on && S.dialog && !S.picker) {
         const o = $("#overlay"), a = document.activeElement;
-        if (edge(0) && a !== o && o.contains(a)) a.click();
-        if (edge(1) && S.dialog.kind !== "welcome") closeDialog(false);
-        const step = edge(12) || edge(14) ? -1 : edge(13) || edge(15) ? 1 : 0;
+        if (roles.has("A") && a !== o && o.contains(a)) a.click();
+        if (roles.has("B") && S.dialog.kind !== "welcome") closeDialog(false);
+        const step = !dir || dir === pad.held ? 0 : dir === "up" || dir === "left" ? -1 : 1;
         const bs = step ? [...o.querySelectorAll("button:not([disabled])")] : [];
         if (bs.length) bs[(Math.max(bs.indexOf(a), step < 0 ? 0 : -1) + step + bs.length) % bs.length].focus();
       }
+      pad.held = dir;
     }
-    pad.prev = g.buttons.map((x) => x.pressed);
     pad.raf = requestAnimationFrame(padLoop);
   }
-  window.addEventListener("gamepadconnected", () => { if (!pad.raf) pad.raf = requestAnimationFrame(padLoop); toast("Controller connected. Press Start for Big Picture."); });
-  window.addEventListener("focus", () => { if (!pad.raf && navigator.getGamepads && [...navigator.getGamepads()].some(Boolean)) pad.raf = requestAnimationFrame(padLoop); });
+  window.addEventListener("gamepadconnected", (ev) => {
+    if (!pad.raf) pad.raf = requestAnimationFrame(padLoop);
+    // The next frame picks the glyphs again. A twin connects with its pad:
+    // one note for both, named for the real one.
+    pad.fam = "";
+    if (ev.gamepad) pad.joined.push(ev.gamepad);
+    clearTimeout(pad.hello);
+    pad.hello = setTimeout(() => {
+      const js = pad.joined, g = js.find(realPad) || js[js.length - 1];
+      pad.joined = [];
+      if (g) toast(`Controller connected. Press the ${PADS[padFamily(g.id)].Start} button for Big Picture.`);
+    }, 300);
+  });
+  window.addEventListener("focus", () => { if (!pad.raf && padsNow().length) pad.raf = requestAnimationFrame(padLoop); });
 
   // Kenney's Interface Sounds (CC0), inlined at start as {name: base64}
   // like the fonts. Moving and choosing in Big Picture are off with the

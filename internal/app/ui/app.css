@@ -1744,6 +1744,7 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-g--x { background: var(--pad-x); color: var(--pad-x-on); box-shadow: none; }
 .bp-g--y { background: var(--pad-y); color: var(--pad-y-on); box-shadow: none; }
 .bp-g--lb, .bp-g--rb, .bp-g--start, .bp-g--view { border-radius: var(--radius-ctl); }
+.bp-g .ln-icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: 2; }
 
 .bp-main { overflow-y: auto; overflow-x: hidden; padding: var(--space-4) 0 calc(var(--bp-foot-h) + var(--space-8)); scroll-padding: var(--space-4) 0 calc(var(--bp-foot-h) + var(--space-8)); -webkit-mask-image: var(--mask-bp); mask-image: var(--mask-bp); scrollbar-width: none; }
 .bp-main::-webkit-scrollbar { display: none; }

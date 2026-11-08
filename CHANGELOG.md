@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.68.0
+
+- Big Picture shows your controller's own buttons: cross, circle, square and triangle with L1, R1, Options and Create on a PlayStation controller; A, B, X, Y with L, R, + and minus on a Switch Pro controller or Joy-Cons, where A on the right chooses and B goes back, as on the Switch; and Menu and View on an Xbox controller. Other controllers show which side of the four buttons to press.
+- The buttons follow the controller you last pressed, so two different controllers each get theirs.
+- The PS or Home button opens and leaves Big Picture like Options or Start, and a PlayStation controller's touchpad click turns the sounds on or off like Create.
+- With DS4Windows, Steam Input or x360ce running, the copy of your controller they add no longer makes one press count twice.
+
 ## 1.67.0
 
 - Back and Forward work as in a browser: Alt+Left or Backspace goes back to the page you were on, Alt+Right goes forward again, and so do the back and forward buttons on a mouse. Back puts the page where you had scrolled it, so leaving a game's page returns you to the same spot in the Library.
