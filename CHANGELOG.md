@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.86.0
+
+- **Mods**, a new tab on a game's page. **Add a mod** takes one you have, a .zip, .7z or .rar, or a folder, and shows what it would do first: how many files it adds, which game files it replaces, and where in the game's folder it goes. Lootnest keeps its own copy, so the file you chose can go afterwards. It never downloads a mod.
+- Turn each mod on or off and move it up or down; a later mod wins where two have the same file. **Apply** copies the saves, keeps every game file a mod replaces, then puts the mods in, checking each file as it goes. **Put the game back as it was** brings every replaced file back and takes out every file the mods added.
+- A file that changed while the game was modded, from a game update or your own edit, is never thrown away: Lootnest keeps it in its own folder before it puts the game back.
+- If Lootnest closes or the PC turns off part way, it finishes the change the next time it starts. A file in use stops it with a plain message, and it finishes once the game is closed. Until then the game doesn't start from Lootnest, and **Put the game back as it was** still works.
+- Lootnest won't put a mod in when it would replace or add a store's, its copy protection's or a Steam emulator's files (such as steam_api64.dll or a steam_settings folder), or the game's own program. Games under Program Files or WindowsApps, and games with an anti-cheat, can't have mods. Lootnest now also recognises Vanguard, FACEIT and EA AntiCheat.
+
 ## 1.85.0
 
 - **What controller a game expects**, on its page under Details and in Big Picture: Full controller support, Partial controller support (some menus may need the mouse), with the buttons of the pad you're using. When Steam lists DualShock or DualSense support, the page says PlayStation controllers work too.

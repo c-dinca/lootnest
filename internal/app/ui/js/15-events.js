@@ -208,6 +208,33 @@
         loadFound().then(refresh); // the page's new key is in the Library first
         break;
       }
+      case "modPlan": {
+        const D = S.dialog;
+        if (D && D.kind === "modplan" && D.key === ev.key && D.path === ev.path) { Object.assign(D, { busy: false, mod: ev.mod || null, plan: ev.plan || null, refused: ev.refused || "", error: ev.error || "" }); renderOverlay(); }
+        break;
+      }
+      case "modsProgress": {
+        const R = (S.modsRun[ev.key] = Object.assign(S.modsRun[ev.key] || {}, { done: ev.done, total: ev.total }));
+        const box = [...document.querySelectorAll(".gp-mods")].find((e) => e.dataset.key === ev.key);
+        const bar = box && box.querySelector(".meter i"), line = box && box.querySelector(".mover [role=status]");
+        if (bar) bar.style.width = `${R.total ? Math.round((R.done / R.total) * 100) : 0}%`;
+        if (line) line.textContent = modsRunText(R);
+        break;
+      }
+      case "modsDone": {
+        delete S.modsRun[ev.key];
+        const r = ev.result || {};
+        if (ev.error) toast(ev.error, "error");
+        else toast((ev.what === "apply" ? "The mods are in the game's folder." : ev.what === "remove" ? "The mod is out of the game's folder and removed." : "The game is back as it was.")
+          + (r.changed ? ` ${r.changed} file${r.changed === 1 ? "" : "s"} had changed since the mods went in; Lootnest kept ${r.changed === 1 ? "it" : "them"}.` : ""),
+          "", r.changed ? { label: "Show", run: () => api.open("modsChanged", ev.key).catch((e) => toast(errText(e), "error")) } : undefined);
+        loadMods(ev.key);
+        break;
+      }
+      case "modsFinished":
+        S.mods = {};
+        if (S.view === "game") render();
+        break;
       case "details":
         S.details[ev.key] = ev;
         if (S.view === "game") render();

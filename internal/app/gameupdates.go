@@ -78,18 +78,25 @@ func (a *App) updTargets() []updTarget {
 			continue
 		}
 		t := updTarget{Key: "game:" + g.ID, Name: g.Name, Source: src[g.ID], Exe: exe, Process: g.ProcessName, game: &g}
-		for _, f := range all {
-			if a.isFoundGame(&g, f) && len(f.Dir) > len(t.Dir) {
-				t.Dir, t.SteamID = f.Dir, f.SteamID
-			}
-		}
-		if t.Dir == "" {
-			t.Dir = core.GameFolderOf(exe, containers)
-		}
+		t.Dir, t.SteamID = a.exeGameDir(&g, exe, all, containers)
 		out = append(out, t)
 	}
 	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
 	return out
+}
+
+// exeGameDir is the folder of a game with profiles that starts from exe: the
+// deepest a scan found it in, else the one exe's path suggests.
+func (a *App) exeGameDir(g *core.Game, exe string, all []core.FoundGame, containers []string) (dir string, steamID int) {
+	for _, f := range all {
+		if a.isFoundGame(g, f) && len(f.Dir) > len(dir) {
+			dir, steamID = f.Dir, f.SteamID
+		}
+	}
+	if dir == "" {
+		dir = core.GameFolderOf(exe, containers)
+	}
+	return dir, steamID
 }
 
 func (a *App) updTarget(key string) (updTarget, error) {
@@ -240,7 +247,7 @@ func (a *App) apiUpdateApply(key, path string) error {
 			out["error"] = fmt.Sprintf("There isn't enough room on %s: the update and the copy of the files it replaces need %s.", strings.ToUpper(filepath.VolumeName(t.Dir)), gb(p.Bytes+p.Kept))
 			return
 		}
-		if err := a.keepSavesBeforeUpdate(t); err != nil {
+		if err := a.keepSavesBefore(t, "update"); err != nil {
 			out["error"] = "Nothing was changed: Lootnest couldn't copy the saves first (" + err.Error() + ")."
 			return
 		}
@@ -311,8 +318,9 @@ func (a *App) planUpdate(t updTarget, path string) (*core.UpdatePlan, error) {
 	return p, nil
 }
 
-// keepSavesBeforeUpdate copies the game's saves to backups first.
-func (a *App) keepSavesBeforeUpdate(t updTarget) error {
+// keepSavesBefore copies the game's saves to backups before an update or
+// mods (what) change its folder.
+func (a *App) keepSavesBefore(t updTarget, what string) error {
 	if t.game != nil {
 		a.mu.Lock()
 		keep := a.cfg.Settings.BackupsToKeep
@@ -322,7 +330,7 @@ func (a *App) keepSavesBeforeUpdate(t updTarget) error {
 	}
 	locs := a.savesOf(*t.found).Locs
 	locs = append(locs, a.netLocs(*t.found)...)
-	dir := filepath.Join(a.store.BackupsDir(), "saves-"+gameSavesKey(*t.found), time.Now().Format("20060102-150405")+"-before-update")
+	dir := filepath.Join(a.store.BackupsDir(), "saves-"+gameSavesKey(*t.found), time.Now().Format("20060102-150405")+"-before-"+what)
 	seen := map[string]bool{}
 	for i, l := range locs {
 		if seen[strings.ToLower(l.Resolved)] {
@@ -432,7 +440,7 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 				return
 			}
 		}
-		if err := a.keepSavesBeforeUpdate(t); err != nil {
+		if err := a.keepSavesBefore(t, "update"); err != nil {
 			_ = os.RemoveAll(keep)
 			out["error"] = "Nothing was changed: Lootnest couldn't copy the saves first (" + err.Error() + ")."
 			return

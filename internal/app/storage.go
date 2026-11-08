@@ -220,6 +220,9 @@ func (a *App) apiMoveFolderGame(key, dst string) error {
 	if err != nil {
 		return errors.New("Only a game in a folder of its own moves from here.")
 	}
+	if core.ModJournalPending(a.modsRoot(key)) {
+		return errors.New("The last change to this game's mods didn't finish. Apply them, or put the game back as it was, on its Mods tab, then move it.")
+	}
 	moveMu.Lock()
 	if movingApp != 0 || movingGame != "" {
 		moveMu.Unlock()
@@ -287,21 +290,22 @@ func (a *App) inUse(t updTarget) bool {
 }
 
 // errMoving is why a game that starts from p (its exe or folder) can't
-// start now: its folder is being moved to another drive. Else nil.
+// start now: its folder is being moved to another drive, or its mods are
+// changing. Else nil.
 func (a *App) errMoving(p string) error {
+	if p == "" {
+		return nil
+	}
 	moveMu.Lock()
 	dir, name := movingDir, movingGame
 	moveMu.Unlock()
-	if dir == "" || p == "" {
-		return nil
-	}
 	if r, err := a.env.ResolveExe(p); err == nil {
 		p = r
 	}
-	if !isInside(p, dir) {
-		return nil
+	if dir != "" && isInside(p, dir) {
+		return fmt.Errorf("Lootnest is moving %s to another drive. Start it once the move is done.", name)
 	}
-	return fmt.Errorf("Lootnest is moving %s to another drive. Start it once the move is done.", name)
+	return a.errModding(p)
 }
 
 // moveFolderGame does the move, and says where the game is now and, if the
@@ -459,6 +463,7 @@ func (a *App) retargetMoved(m core.GameMove, dst string) error {
 	for _, d := range [][2]string{
 		{a.store.SavePointsDir(oldKey), a.store.SavePointsDir(newKey)},
 		{a.updatesDir(updTarget{Key: updKey(oldKey), Name: f.Name}), a.updatesDir(updTarget{Key: updKey(newKey), Name: f.Name})},
+		{a.modsRoot(oldKey), a.modsRoot(newKey)},
 	} {
 		if dirExists(d[0]) && !dirExists(d[1]) {
 			if err := os.Rename(d[0], d[1]); err != nil {

@@ -2037,3 +2037,16 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .lo-apps { max-height: calc(var(--space-8) * 8); overflow: auto; }
 .pn-marks { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 .pn-opts .toggle { padding-block: var(--space-2); }
+
+/* Mods (67-mods.js): the set as rows on hairlines, in the order they go in. */
+.mod-list { margin: var(--space-3) 0 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
+.mod-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.mod-row .pt-main { flex: 1; }
+.mod-row.is-off .pt-main b { color: var(--fg-2); }
+.mod-actions { display: flex; align-items: center; gap: var(--space-1); }
+.mod-actions .switch { margin-left: var(--space-2); }
+.gp-mods > .gpage-hint { max-width: 66ch; }
+.gp-mods .mover { margin-top: var(--space-3); }
+.gp-mods .gpage-actions { margin-top: var(--space-4); }
+.mod-files { margin: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
+.mod-files li { padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); font-size: var(--fs-13); color: var(--fg-2); overflow-wrap: anywhere; }

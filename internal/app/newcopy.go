@@ -314,7 +314,7 @@ func (a *App) apiKeepSavesNow(key string) error {
 	}
 	go func() {
 		out := map[string]any{"key": key, "kept": true}
-		if err := a.keepSavesBeforeUpdate(t); err != nil {
+		if err := a.keepSavesBefore(t, "update"); err != nil {
 			out["error"] = err.Error()
 		}
 		a.emit("updateDone", out)

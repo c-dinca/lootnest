@@ -442,3 +442,44 @@ pad: a Bluetooth DualSense must keep working in games afterwards.
    says the game may see your pad twice. **Edit details**, Controller,
    **Keyboard and mouse only**: the page says **Keyboard and mouse only**.
    With Game details off, this page links to it.
+
+## 20. Mods (1.86)
+
+Use a folder game you can reinstall, outside Program Files (D:\Games\Test),
+and make a copy of its folder before you start (D:\Games\Test-copy).
+
+1. Its page, **Mods**: Vanilla, and a line that mods go in by copy.
+   **Add a mod**, **Choose a .zip, .7z or .rar**: a mod archive whose
+   files sit in a folder of its own (a texture pack wrapped in
+   "ModName\Data\..."). The panel shows how many files it adds and
+   replaces, the replaced files, and Into Data (or the folder it matched).
+   Nothing in the game's folder changed (compare with the copy).
+   **Add to the list**.
+2. Add a second mod that replaces one of the same files, and put it
+   below the first. **Apply**: the bar shows the files, the toast says
+   the mods are in, the state says Modded: 2 mods, and the shared file is
+   the second mod's. %LOCALAPPDATA%\Lootnest\backups has a
+   saves-...-before-mods copy. Play: the game runs with both mods.
+3. Turn the second off: Changes not applied yet. **Apply**: the shared
+   file is the first mod's again.
+4. **Put the game back as it was**: Vanilla. Compare the game's folder
+   with the copy (WinMerge, or `fc /b` on the replaced files): the same
+   files, byte for byte, and no folders the mods made.
+5. Apply again, then change one replaced file by hand (or update the game
+   in between) and edit a file a mod added. Put it back: the toast says 2
+   files changed, and its Show opens where they are kept
+   (%LOCALAPPDATA%\Lootnest\mods\<hash>\changed\<time>); both are there, and
+   the game's file is the original again.
+6. Apply a big mod and end Lootnest in Task Manager part way. Start it
+   again: the log says it finished the last mods run, and the tab says
+   Modded. Start the game, then Apply or Put back: it says to close it
+   first.
+7. Refusals: a mod with steam_api64.dll, steam_settings\ or
+   ColdClientLoader.ini, and one with the game's own .exe, each say why
+   in the panel and add nothing to the list. A game with EasyAntiCheat or
+   BattlEye has no Mods tab and its note says mods are off; a Steam game
+   under Program Files has no Mods tab either. Restart in safe mode:
+   Apply and Put back are off and the tab says why.
+8. With two mods applied, remove one: it asks, takes only that one out
+   (the other stays in the game), then it's gone from the list; the
+   archive you added it from is still in Downloads.

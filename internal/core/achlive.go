@@ -121,8 +121,9 @@ func RarityText(percent float64) string {
 }
 
 // AntiCheat names the anti-cheat a game's folder ships with (Easy
-// Anti-Cheat, BattlEye), or "". Lootnest keeps its windows away from those
-// games unless the user turns them on for one.
+// Anti-Cheat, BattlEye, Vanguard, FACEIT, EA AntiCheat), or "". Lootnest
+// keeps its windows away from those games unless the user turns them on for
+// one, and never puts mods into them.
 func AntiCheat(dir string) string {
 	if dir == "" {
 		return ""
@@ -132,6 +133,7 @@ func AntiCheat(dir string) string {
 		"easyanticheat_eos_setup.exe": "Easy Anti-Cheat", "easyanticheat_setup.exe": "Easy Anti-Cheat",
 		"start_protected_game.exe": "Easy Anti-Cheat",
 		"battleye":                 "BattlEye", "beservice.exe": "BattlEye", "beservice_x64.exe": "BattlEye",
+		"vgk.sys": "Vanguard", "vgc.exe": "Vanguard",
 	}
 	look := func(d string) string {
 		es, err := os.ReadDir(d)
@@ -139,8 +141,15 @@ func AntiCheat(dir string) string {
 			return ""
 		}
 		for _, e := range es {
-			if n, ok := names[strings.ToLower(e.Name())]; ok {
-				return n
+			n := strings.ToLower(e.Name())
+			if ac, ok := names[n]; ok {
+				return ac
+			}
+			if ext := filepath.Ext(n); strings.HasPrefix(n, "faceit") && (ext == ".exe" || ext == ".sys") {
+				return "FACEIT"
+			}
+			if strings.HasPrefix(n, "eaanticheat") {
+				return "EA AntiCheat"
 			}
 		}
 		return ""
