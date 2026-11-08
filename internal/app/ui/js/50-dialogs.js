@@ -28,10 +28,10 @@
         <button class="btn primary" data-action="dialog-ok">${esc(D.ok || "OK")}</button></div></div></div>`;
     } else if (D.kind === "newrun") {
       const g = game(D.gameId), per = player(D.person), M = S.mods["game:" + D.gameId];
-      const mods = M && M.sets && onIds(M, per && per.id).length ? `<label class="toggle"><span><b>Start with mods</b><p>The run gets its own copy of ${esc(possessive(per.name))} mods, ${onIds(M, per.id).length} on now. Off, it starts without mods.</p></span>
+      const mods = M && M.sets && onIds(M, per && per.id).length ? `<label class="toggle"><span><b>Start with mods</b><p>A copy of ${esc(possessive(per.name))} mods, ${onIds(M, per.id).length} on now.</p></span>
           <span class="switch"><input type="checkbox" id="newrun-mods" ${D.mods === false ? "" : "checked"} ${D.busy ? "disabled" : ""}><span></span></span></label>` : "";
       o.innerHTML = g && per ? `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="A new run">
-        <div><h2>A new run of ${esc(g.name)}</h2><p class="sub">A playthrough of its own, with its own saves and settings, such as a hardcore try or new game+. Next, choose to start it from nothing or from a copy of ${esc(possessive(per.name))} saves. Those stay as they are.</p></div>
+        <div><h2>A new run of ${esc(g.name)}</h2><p class="sub">Its own saves and settings. ${esc(possessive(per.name))} saves stay as they are.</p></div>
         <input type="text" class="ln-input" id="newrun-name" maxlength="24" placeholder="${esc(per.name)} hardcore" value="${esc(D.name || "")}" aria-label="The run's name">
         ${mods}<div class="dialog-foot"><span class="error-text grow" id="newrun-error">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
         <button class="btn primary" data-action="new-run-go" ${D.busy ? "disabled" : ""}>Start the run</button></div></div></div>` : "";
@@ -145,17 +145,17 @@
   const moveWrap = (name, inner, sub) => `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Move ${esc(name)}">
     <div><h2>Move ${esc(name)} to another drive</h2>${sub ? `<p class="sub">${sub}</p>` : ""}</div>${inner}</div></div>`;
   const moveProgress = (done, total, text, until) => `<div class="mover"><div class="meter"><i style="width:${total ? Math.min(100, Math.round((done / total) * 100)) : 0}%"></i></div><p class="hint" role="status">${esc(text)}</p></div>
-        <p class="hint">You can close this window; Lootnest keeps going and tells you when it's done. ${until}</p>`;
+        <p class="hint">${until}</p>`;
   function viewMove() {
     const D = S.dialog, M = S.moving, I = D.info;
     const wrap = (inner, sub) => moveWrap(D.name, inner, sub);
     if (M && M.appId === D.appId) {
       const text = M.step === "steam" ? "Closing Steam" : M.total ? `Copying ${fmtSize(M.done)} of ${fmtSize(M.total)}` : "Starting";
-      return wrap(`${moveProgress(M.done, M.total, text, "Keep Steam closed until then.")}
+      return wrap(`${moveProgress(M.done, M.total, text, "Keep Steam closed until it's done.")}
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     }
     if (M || S.folderMove) {
-      return wrap(`<p class="note">Lootnest is moving ${esc((M && M.name) || "another game")}. Wait for it to finish, then move this one.</p>
+      return wrap(`<p class="note">Lootnest is moving ${esc((M && M.name) || "another game")}. Wait for it to finish.</p>
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     }
     if (!I) return wrap(`<div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button></div>`, "Working out the game's size");
@@ -165,12 +165,12 @@
     const room = (l) => l.free < 0 || l.free >= I.size + MOVE_MARGIN;
     const list = others.length
       ? `<div class="choices">${others.map((l) => `<button class="choice${D.pick === l.path ? " on" : ""}" data-action="move-pick" data-lib="${esc(l.path)}" ${room(l) ? "" : "disabled"} aria-pressed="${D.pick === l.path}">
-          <span class="dot"></span><span><b>${esc(l.path)}</b><span>${l.free < 0 ? "Free space unknown" : fmtSize(l.free) + " free"}${room(l) ? "" : " · not enough room"}</span></span></button>`).join("")}</div>`
-      : `<p class="note">Steam has one library on this PC. To move games to another drive, add a library there in Steam: <b>Settings > Storage</b>, then <b>Add drive</b>. Then come back here.</p>`;
+          <span class="dot"></span><span><b>${esc(l.path)}</b><span>${l.free < 0 ? "Free space unknown" : fmtSize(l.free) + " free"}${room(l) ? "" : ", not enough room"}</span></span></button>`).join("")}</div>`
+      : `<p class="note">Steam has one library on this PC. Add one on another drive in Steam, under <b>Settings</b>, <b>Storage</b>.</p>`;
     return wrap(`${list}
-      ${others.length ? `<p class="hint">The game is copied and checked before anything is removed from where it is now.${I.steamRunning ? " Steam closes while the game moves and opens again when it's done." : ""}</p>` : ""}
+      ${others.length ? `<p class="hint">Copied and checked before anything is removed.${I.steamRunning ? " Steam closes while it moves." : ""}</p>` : ""}
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
-        ${others.length ? `<button class="btn primary" data-action="move-go" ${D.pick ? "" : "disabled"}>Move</button>` : ""}</div>`, `${fmtSize(I.size)} · now in ${esc(cur ? cur.path : "")}`);
+        ${others.length ? `<button class="btn primary" data-action="move-go" ${D.pick ? "" : "disabled"}>Move</button>` : ""}</div>`, `${fmtSize(I.size)}, now in ${esc(cur ? cur.path : "")}`);
   }
 
   // --------------------------------------------- game settings (no profiles) --
@@ -187,7 +187,7 @@
     const f = (S.found.games || []).find((x) => x.key === D.key);
     if (!f) return "";
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="${esc(f.name)} settings">
-      <div><h2>${esc(f.name)} settings</h2><p class="sub">These settings don't depend on profiles and stay if you turn them on.</p></div>
+      <div><h2>${esc(f.name)} settings</h2></div>
       <div class="field"><label for="gs-name">Name in the Library</label>
         <input id="gs-name" type="text" value="${esc(f.name)}" maxlength="60" placeholder="${esc(f.scanName || f.name)}" spellcheck="false">
         ${f.scanName ? `<p class="hint">Found as ${esc(f.scanName)}. Leave it empty to use that name again.</p>` : ""}</div>
@@ -203,10 +203,8 @@
     const who = D.playerId && player(D.playerId) ? pname(D.playerId) : "";
     return `<div class="scrim"><div class="dialog narrow" role="alertdialog" aria-modal="true" aria-label="An anti-cheat blocked ${esc(g.name)}">
       <div><h2>An anti-cheat blocked ${esc(g.name)}</h2>
-        <p class="sub">Anti-cheats such as FACEIT AC only let Steam start the game, so Lootnest couldn't start it.</p></div>
-      <div class="note">Lootnest can fix this now: Steam will start ${esc(g.name)} by itself (Steam restarts once, about 10 seconds), and ${who ? `the game starts for <b>${esc(who)}</b>` : "you choose who's playing"}.
-        <br>Lootnest also puts a <b>${esc(g.name)} (Lootnest)</b> shortcut on your desktop. Start the game from it, or from Play here, and it asks who's playing every time.</div>
-      ${who ? `<p class="hint">${esc(possessive(who))} files are loaded.</p>` : ""}
+        <p class="sub">Its anti-cheat only lets Steam start it.</p></div>
+      <p class="note">Fixing it lets Steam start ${esc(g.name)} itself (Steam restarts once) and adds a <b>${esc(g.name)} (Lootnest)</b> desktop shortcut that asks who's playing.${who ? ` ${esc(possessive(who))} files are loaded.` : ""}</p>
       <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Not now</button>
         <button class="btn primary" data-action="fix-blocked" ${D.busy ? "disabled" : ""}>${D.busy ? "Fixing and starting" : "Fix it and start the game"}</button></div>
     </div></div>`;
@@ -243,9 +241,9 @@
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="Ask who's playing when started from Steam">
       <div class="page-head" style="margin:0"><div><h2>Ask who's playing when started from Steam</h2>
-        <p class="sub">Do this once per game. Afterwards, pressing Play in Steam opens the picker, loads that person's files, then starts the game.</p></div>
+        <p class="sub">Once per game. Then Play in Steam asks who's playing first.</p></div>
         <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
-      ${H && H.games.some((h) => !h.detected && !h.direct) ? `<div class="note"><b>Easiest:</b> let Lootnest do it. ${H.steamRunning ? "Steam closes and reopens by itself (about 10 seconds)." : "Steam is closed, so this takes a second."}
+      ${H && H.games.some((h) => !h.detected && !h.direct) ? `<div class="note">${H.steamRunning ? "Steam closes and opens again by itself." : "Changes the games' launch options in Steam."}
         <div class="row" style="margin-top:10px"><button class="btn primary" data-action="hooks-apply" ${S.hooksBusy ? "disabled" : ""}>${S.hooksBusy ? "Setting up" : "Set up automatically"}</button></div></div>
       <p class="hint">Or by hand:</p>` : ""}
       <ol class="steps">
@@ -255,7 +253,7 @@
       </ol>
       ${H && H.error ? `<div class="note">${esc(H.error)}</div>` : ""}
       <div class="hooks">${body}</div>
-      <div class="dialog-foot" style="justify-content:space-between"><span class="hint">Steam can take a minute to save the change. Games outside Steam: use the desktop shortcut from the game's menu.</span>
+      <div class="dialog-foot" style="justify-content:space-between"><span class="hint">Steam can take a minute to save it.</span>
         <button class="btn" data-action="steam-recheck">Check again</button></div>
     </div></div>`;
   }
@@ -275,11 +273,11 @@
         : `<p class="hint">No installed Steam game matches “${esc(D.q)}”.</p>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="Add a game">
-      <div class="page-head" style="margin:0"><div><h2>Add a game</h2><p class="sub">It goes into your Library, ready to play. Turn on profiles from its panel if more than one person plays it.</p></div>
+      <div class="page-head" style="margin:0"><div><h2>Add a game</h2></div>
       <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
       ${S.d.steam.found ? `<input type="text" id="steam-q" placeholder="Search your Steam games" value="${esc(D.q || "")}" autocomplete="off">` : ""}
       ${list}
-      <div class="dialog-foot" style="justify-content:space-between"><span class="hint">Epic, GOG, Battle.net, Xbox and standalone games: choose the .exe.</span>
+      <div class="dialog-foot" style="justify-content:space-between"><span class="hint">Any other game: choose its .exe.</span>
       <button class="btn" data-action="add-exe">Choose an .exe</button></div>
     </div></div>`;
   }

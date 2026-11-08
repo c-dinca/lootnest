@@ -288,8 +288,8 @@
     const body = !U ? lnInline("", "Reading the captures") : !U.items.length ? "<p>Every capture is matched to a game.</p>"
       : `<ul class="cap-list">${U.items.slice(0, UNSORTED_SHOWN).map((c) => `<li class="cap-row">${capThumb(null, c)}<div class="cap-main"><b>${esc(capWhat(c))}</b><span>${esc(when(c))}</span><span class="cap-file" title="${esc(c.path)}">${esc(c.path.split(/[\\/]/).pop())}</span></div>
           <select class="ln-input" data-assign="${esc(c.path)}" aria-label="${esc("The game of " + capLabel(c))}">${opts}</select></li>`).join("")}</ul>`;
-    return drawer({ label: "Unsorted captures", title: "Unsorted captures", sub: U && U.total ? `${U.total} ${U.total === 1 ? "capture" : "captures"} Lootnest couldn't match to a game${U.total > UNSORTED_SHOWN ? `, the newest ${UNSORTED_SHOWN} here` : ", newest first"}` : "", body,
-      foot: `<p class="gpage-hint ln-drawer__note">Choosing a game puts the capture on its Timeline. Lootnest only notes it down: the file stays where it is, as it is.</p>` });
+    return drawer({ label: "Unsorted captures", title: "Unsorted captures", sub: U && U.total ? `${U.total} not matched to a game${U.total > UNSORTED_SHOWN ? `, the newest ${UNSORTED_SHOWN} here` : ""}` : "", body,
+      foot: `<p class="gpage-hint ln-drawer__note">The files stay where they are.</p>` });
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
@@ -384,7 +384,7 @@
     const d = (R && R.details) || {}, typed = D.vals || {};
     const field = (id, label, value, hint) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="text" value="${esc(typed[id] ?? value ?? "")}" maxlength="200" spellcheck="false">${hint ? `<p class="hint">${hint}</p>` : ""}</div>`;
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Edit details of ${esc(it.name)}">
-      <div><h2>Edit details</h2><p class="sub">Your changes stay on this PC and win over Steam's. Only what you change is kept.</p></div>
+      <div><h2>Edit details</h2><p class="sub">Your changes win over Steam's.</p></div>
       <div class="field"><label for="de-summary">Summary</label><textarea id="de-summary" rows="4" maxlength="2000">${esc(typed["de-summary"] ?? d.summary ?? "")}</textarea></div>
       ${field("de-developer", "Developer", (d.developers || []).join(", "))}
       ${field("de-publisher", "Publisher", (d.publishers || []).join(", "))}

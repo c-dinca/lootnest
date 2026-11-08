@@ -34,14 +34,11 @@
     const I = S.itch, s = cfg().settings;
     const b = (attrs, label, kind = "secondary") => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
     const refresh = I.refreshing ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true" disabled><span class="ln-spinner" aria-hidden="true"></span>Refreshing</button>` : b('data-action="itch-refresh"', "Refresh library");
-    if (s.itchUser) return `<div class="bk-row"><div><b>Connected as ${esc(s.itchUser)}</b>
-        <p>Your itch.io games that aren't installed show in the Library under Not installed. The key is encrypted on this PC and sent only to itch.io.</p>${I.error ? `<p class="error-text">${esc(I.error)}</p>` : ""}</div>
+    if (s.itchUser) return `<div class="bk-row"><div><b>Connected as ${esc(s.itchUser)}</b>${I.error ? `<p class="error-text">${esc(I.error)}</p>` : ""}</div>
       <div class="set-itch-acts">${refresh}${b('data-action="itch-disconnect"', "Disconnect", "ghost")}</div></div>`;
-    return `<div class="bk-row set-wide"><div><label for="s-itchkey"><b>API key</b></label>
-        <p>Make one on itch.io, then paste it here.</p>
-        <p><button class="gpage-link" data-action="itch-keys">Make a key on itch.io</button></p>${I.error ? `<p class="error-text">${esc(I.error)}</p>` : ""}</div>
+    return `<div class="bk-row set-wide"><div class="set-wide-head"><label for="s-itchkey"><b>API key</b></label>${b('data-action="itch-keys"', "Make a key on itch.io", "ghost")}</div>
       <div class="set-itch-acts"><input id="s-itchkey" class="ln-input" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key" ${I.busy ? "disabled" : ""}>
-        ${I.busy ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true" disabled><span class="ln-spinner" aria-hidden="true"></span>Connecting</button>` : b('data-action="itch-connect"', "Connect")}</div></div>`;
+        ${I.busy ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true" disabled><span class="ln-spinner" aria-hidden="true"></span>Connecting</button>` : b('data-action="itch-connect"', "Connect")}${I.error ? `<p class="error-text">${esc(I.error)}</p>` : ""}</div></div>`;
   }
 
   function openItch(it) {
@@ -54,11 +51,11 @@
     const D = S.dialog, R = S.itch.run && S.itch.run.key === D.key ? S.itch.run : null;
     const shell = (body, foot) => drawer({ label: `Install ${esc(D.name)}`, title: `Install ${esc(D.name)}`, sub: "From your itch.io library", body, foot });
     const close = `<span class="grow"></span><button class="ln-button ln-button--ghost ln-button--sm" data-action="dialog-cancel">Close</button>`;
-    if (R) return shell(itchMeter(R) + `<p class="gpage-hint">You can close this panel; Lootnest keeps going and tells you when the game is in your Library.</p>`,
+    if (R) return shell(itchMeter(R),
       `${R.stage === "download" ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="itch-cancel">Cancel the download</button>` : ""}${close}`);
     if (D.error && !D.uploads) return shell(lnInline("error", esc(D.error)), close);
     if (!D.uploads) return shell(lnInline("", "Asking itch.io for the game's downloads"), close);
-    if (!D.uploads.length) return shell(`<p>itch.io has no download of ${esc(D.name)} for Windows that Lootnest can install: a .zip, .7z or .rar, or an installer.</p>`, close);
+    if (!D.uploads.length) return shell(`<p>No Windows download Lootnest can install: a .zip, .7z, .rar or an installer.</p>`, close);
     const up = D.uploads.find((u) => u.id === D.pick) || D.uploads[0];
     // Room as Go checks it: the download on Lootnest's drive, and for a game
     // Lootnest puts in a folder, the download and the game on that folder's.
@@ -72,8 +69,8 @@
       : `<p><b>${esc(label(up))}</b></p>`;
     const folder = !installer ? `<div class="gpage-sub lo-sec">${gpHead("Folder")}
         <div class="lo-pick"><span class="selectable">${esc(D.target || D.dir)}</span><button class="ln-button ln-button--ghost ln-button--sm" data-action="itch-dir">Change</button></div>
-        <p class="gpage-hint">Lootnest makes this folder for the game and never installs into one that has files in it.</p></div>`
-      : `<div class="gpage-sub lo-sec">${gpHead("Installer")}<p class="gpage-hint">Lootnest runs the game's own installer, which asks where the game goes. Once it closes, Lootnest finds the game and adds it to your Library.</p></div>`;
+        <p class="gpage-hint">A new folder. Lootnest never installs into one with files in it.</p></div>`
+      : `<div class="gpage-sub lo-sec">${gpHead("Installer")}<p class="gpage-hint">The game's own installer asks where it goes.</p></div>`;
     const body = `<div class="gpage-sub lo-sec itch-dl">${gpHead("Download")}${which}
         <dl class="ln-facts"><div><dt>Size</dt><dd class="ln-num">${esc(fmtBytes(size))}</dd></div>
           ${room.map(([drv, free], i) => `<div><dt>Free on ${esc(drv)}${room.length > 1 && i ? ", for the download" : ""}</dt><dd class="ln-num">${free >= 0 ? esc(fmtBytes(free)) : "Not known"}</dd></div>`).join("")}</dl>

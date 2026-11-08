@@ -187,34 +187,34 @@
       <span class="pt-facts"><span>${esc(when(u.at))}</span><span>${u.added.length} added, ${u.replaced.length} replaced</span><span class="selectable">${esc(u.source)}</span>${u.state !== "applied" ? "<span>Undone</span>" : ""}${u.broke ? "<span>Closed right after starting</span>" : ""}</span></div>
       <div class="pt-actions">${u === firstApplied && !u.noUndo ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(r.key)}" data-id="${esc(u.id)}" data-name="${esc(r.name)}">Undo</button>` : ""}</div></li>`).join("");
     return drawer({ label: `${esc(r.name)} update history`, title: "Update history", sub: `${esc(r.name)}${r.version ? ", version " + esc(vtxt(r.version)) : ""}`,
-      body: list.length ? `<ol class="pt-list pt-list--all">${rows}</ol>` : `<p>Lootnest hasn't applied an update to ${esc(r.name)} yet.</p>`,
-      foot: `<p class="gpage-hint ln-drawer__note">Updates come off newest first. Each one's replaced files are kept in Lootnest's backups.</p>` });
+      body: list.length ? `<ol class="pt-list pt-list--all">${rows}</ol>` : `<p>No updates applied yet</p>`,
+      foot: `<p class="gpage-hint ln-drawer__note">Undo goes newest first.</p>` });
   }
   function viewUpdateDrawer() {
     const D = S.dialog;
     const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${D.busy ? "disabled" : ""}>${label}</button>`;
-    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: D.itch ? "Downloaded from itch.io. Nothing in the game's folder changes until you apply it." : D.gog ? "Downloaded from GOG. Nothing in the game's folder changes until you run it." : "With an update you have: a folder, a .zip, .7z or .rar, or an installer", body, foot });
+    const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: D.itch ? "Downloaded from itch.io" : D.gog ? "Downloaded from GOG" : "", body, foot });
     const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip, .7z or .rar")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}${btn('data-action="upd-pick" data-kind="installer"', "Run an installer", "ln-button--ghost")}</div>`;
     if (D.done) {
       const u = D.done, dlm = !D.undone && (S.dl || []).find((m) => m.path === D.path);
       return shell(D.undone ? `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Undone</b><p>${esc(D.name)} is as it was before the update from ${esc(u.source)}.</p></div></div></div>`
-        : `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Updated</b><p>${u.added.length} files added and ${u.replaced.length} replaced or removed, from ${esc(u.source)}. ${u.noUndo ? "The saves are kept. No copy of the game was kept, so it can't be undone." : "The saves and the old files are kept, so you can undo it."} The first time you start it, Lootnest checks it runs.</p></div></div></div>`,
+        : `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Updated</b><p>${u.added.length} files added, ${u.replaced.length} replaced or removed. ${u.noUndo ? "The saves are kept; it can't be undone." : "The saves and the old files are kept."}</p></div></div></div>`,
         D.undone ? `<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`
           : `${u.noUndo ? "" : btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}${btn('data-action="upd-another"', "Apply another update", "ln-button--ghost")}${dlm ? dlRecycle(dlm) : ""}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
     }
-    const intro = `<p class="gpage-hint">Lootnest doesn't download updates. Choose one you have, and Lootnest shows what it changes before anything happens. If an update comes in parts (.part1.rar, .part2.rar), choose the first. For an installer (.exe), run it yourself.</p>`;
+    const intro = `<p class="gpage-hint">For an update in parts, choose the first (.part1.rar).</p>`;
     if (!D.path) return shell(`${intro}${choose}`);
-    if (D.busy && !D.plan) return shell(lnInline("", D.opening ? "Opening the archive" : "Reading the update", D.opening ? "A big update takes a minute or two. Nothing in the game's folder changes yet." : ""));
+    if (D.busy && !D.plan) return shell(lnInline("", D.opening ? "Opening the archive" : "Reading the update"));
     if (D.error && !D.plan) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     const P = D.plan;
     if (!P) return shell(`${intro}${choose}`);
     if (P.kind === "installer") {
       const free = D.free ?? P.free ?? -1, room = free < 0 || free >= P.gameSize * 1.05;
       if (D.full === undefined) D.full = room;
-      const steps = { copying: "Copying the game first. A big game takes a few minutes.", installer: "The installer is running. Finish it, then come back here.", checking: "Checking what the installer changed" };
-      if (D.busy) return shell(lnInline("", steps[D.step] || "Getting ready", D.step === "installer" ? "Lootnest records what changes in the game's folder when it closes." : ""));
-      return shell(`<div class="gpage-sub">${gpHead("Run an installer")}<p class="gpage-hint">Lootnest copies the saves, runs <span class="selectable">${esc(P.name)}</span>, then records what it changed in <span class="selectable">${esc(D.dir)}</span>. ${D.gog ? "GOG's installer goes into that folder without questions and shows its own progress." : "Point the installer at that folder."}</p></div>
-        <label class="toggle"><span><b>Keep a copy of the game first, so it can be undone</b><p>${esc(fmtBytes(P.gameSize))}${room ? "" : `, more than the room free (${esc(fmtBytes(free))})`}. Once the installer is done, only the files it changed are kept.</p></span>
+      const steps = { copying: "Copying the game first", installer: "The installer is running. Finish it, then come back here.", checking: "Checking what the installer changed" };
+      if (D.busy) return shell(lnInline("", steps[D.step] || "Getting ready"));
+      return shell(`<div class="gpage-sub">${gpHead("Run an installer")}<p class="gpage-hint">Saves are copied first. ${D.gog ? "It goes into" : "Point it at"} <span class="selectable">${esc(D.dir)}</span>.</p></div>
+        <label class="toggle"><span><b>Copy the game first, so it can be undone</b><p>${esc(fmtBytes(P.gameSize))}${room ? "" : `, more than the room free (${esc(fmtBytes(free))})`}</p></span>
           <span class="switch"><input type="checkbox" data-action="upd-full" ${D.full ? "checked" : ""} ${room ? "" : "disabled"}><span></span></span></label>
         ${D.error ? lnInline("error", esc(D.error)) : ""}`,
         `${btn('data-action="upd-pick" data-kind="installer"', "Choose another", "ln-button--ghost")}<span class="grow"></span>${btn('data-action="upd-run"', "Run the installer", "ln-button--primary")}`);
@@ -227,19 +227,19 @@
         <div><dt>Your copy</dt><dd>${C.have ? ver(C.have) : "Not known"}</dd></div>
         ${C.from ? `<div><dt>This update is for</dt><dd>${ver(C.from)}</dd></div>` : ""}
         <div><dt>It brings</dt><dd>${ver(C.to)}</dd></div></dl>
-        ${C.state === "skips" ? `<p class="find-low">This update is for ${ver(C.from)}, and your copy is ${ver(C.have)}. Updates usually need to go in order: apply the one${C.from ? ` that brings ${ver(C.from)}` : "s in between"} first, or the game may not start.</p>`
+        ${C.state === "skips" ? `<p class="find-low">This update is for ${ver(C.from)}, and your copy is ${ver(C.have)}. Apply the one${C.from ? ` that brings ${ver(C.from)}` : "s in between"} first, or the game may not start.</p>`
           : C.state === "older" ? `<p class="find-low">This update brings ${ver(C.to)}, older than your copy's ${ver(C.have)}.</p>`
           : C.state === "same" ? `<p class="find-low">Your copy already has ${ver(C.to)}.</p>`
           : C.state === "ok" ? `<p class="find-ok">The next update for your copy.</p>`
-          : `<p class="gpage-hint">Lootnest reads versions from names, such as "v1.0.2 to v1.0.3". ${C.have ? "" : "Your copy's folder name has none, so it can't check the order."}</p>`}</div>` : "";
+          : `<p class="gpage-hint">${C.have ? "The order can't be checked." : "Your copy's folder name has no version."}</p>`}</div>` : "";
     const body = `${versions}<div class="gpage-sub">${gpHead("What it does")}<dl class="ln-facts">
         <div><dt>Replaces</dt><dd>${P.replace} file${P.replace === 1 ? "" : "s"}</dd></div>
         <div><dt>Adds</dt><dd>${P.added} file${P.added === 1 ? "" : "s"}</dd></div>
         <div><dt>Size</dt><dd>${esc(fmtBytes(P.bytes))}</dd></div></dl>
         <p class="gpage-hint">From <span class="selectable">${esc(P.source)}</span>${P.skipped ? `. The files inside its folder "${esc(P.skipped)}" go into the game's folder` : ""}.</p></div>
       <div class="gpage-sub">${gpHead("Where they go")}<dl class="ln-facts gpage-paths">${where}</dl><p class="gpage-hint selectable">${esc(D.dir)}</p></div>
-      ${P.readme && P.readme.length ? `<div class="gpage-sub">${gpHead("Notes that came with it")}<p class="gpage-hint">${P.readme.map(esc).join(", ")}: shown, not copied. Read them in case the update asks for anything else.</p></div>` : ""}
-      <div class="gpage-sub"><p class="gpage-hint">First, Lootnest copies the saves and the ${P.replace} files it replaces (${esc(fmtBytes(P.kept))}), so <b>Undo</b> puts everything back. ${room}</p></div>
+      ${P.readme && P.readme.length ? `<div class="gpage-sub">${gpHead("Notes that came with it")}<p class="gpage-hint">${P.readme.map(esc).join(", ")}: read them first, they're not copied.</p></div>` : ""}
+      <div class="gpage-sub"><p class="gpage-hint">The saves and the ${P.replace} files it replaces (${esc(fmtBytes(P.kept))}) are copied first, for <b>Undo</b>. ${room}</p></div>
       ${D.error ? lnInline("error", esc(D.error)) : ""}`;
     return shell(body, `${btn('data-action="upd-pick" data-kind="' + (P.kind === "zip" ? "update" : "updateDir") + '"', "Choose another", "ln-button--ghost")}<span class="grow"></span>${D.busy ? `<button class="ln-button ln-button--primary ln-button--sm" aria-busy="true" disabled><span class="ln-spinner" aria-hidden="true"></span>Applying</button>` : btn('data-action="upd-apply"', "Apply the update", "ln-button--primary")}`);
   }

@@ -142,7 +142,7 @@ The look is **Arcade** (1.93, the owner's choice; DESIGN.md): game hardware.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.94.0, beta)
+## Where things stand (1.95.0, beta)
 
 These shipped recently, newest last:
 
@@ -721,6 +721,15 @@ These shipped recently, newest last:
   cartridge via the shared `slideInd` in 20-render.js, keys, Play red or
   the profile's colour, `bp-screen-in`), and the explanatory text cut
   from those pages (one short line kept only before file changes).
+- **1.95** Arcade, part 3: Settings on one row system (`setRow`,
+  `setLine`, `setSub` drawing the section label; label left, control
+  right, `--set-row-h` 56px, content capped at `--set-nav-w + --set-w`),
+  Controllers as two aligned columns and app rows with a status lamp
+  (`.ctl-lamp`), Profiles as person cards with runs inside, the picker
+  as big keys that light and press (`.picked`), the profile editor in a
+  wide drawer, every older `.btn` restyled as a key, and dialogs with
+  one foot (Cancel and the main key). Explanatory text cut across all
+  of them.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

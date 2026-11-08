@@ -19,7 +19,7 @@
     const v = PADS[fam][b];
     return `<span class="ctl-g ctl-g--${b.toLowerCase()}">${PAD_SHAPES[v] ? gsvg(PAD_SHAPES[v]) : esc(v)}</span>`;
   }).join("")}</span>`;
-  const ctlRow = (fam, name, meta, note) => `<div class="ctl-pad">${padFaces(fam)}<div><b>${esc(name)}</b>${meta.length ? `<p>${meta.map(esc).join(", ")}</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}</div></div>`;
+  const ctlRow = (fam, name, meta, note) => `<div class="bk-row ctl-pad">${padFaces(fam)}<div><b>${esc(name)}</b>${meta.length ? `<p>${meta.map(esc).join(", ")}</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}</div></div>`;
   const BUS = { usb: "USB", bluetooth: "Bluetooth" };
   const FAMILY = { xbox: "Xbox buttons", playstation: "PlayStation buttons", nintendo: "Nintendo buttons", generic: "Buttons by position" };
 
@@ -34,7 +34,7 @@
       p.slot ? `Xbox-style (XInput) slot ${p.slot}` : p.xinput ? "Xbox-style (XInput)" : "",
     ].filter(Boolean)));
     const slots = C.xinput.filter((x) => !C.pads.some((p) => p.slot === x.slot));
-    if (slots.length) mine.push(`<div class="bk-row"><div><b>Xbox-style (XInput) slots in use</b><p>${slots.map((x) => `Slot ${x.slot}: ${x.wireless ? "wireless " : ""}${esc(x.kind)}`).join(". ")}.</p></div></div>`);
+    if (slots.length) mine.push(setRow("Xbox-style (XInput) slots in use", slots.map((x) => `Slot ${x.slot}: ${x.wireless ? "wireless " : ""}${esc(x.kind)}`).join(", ")));
     // The name Windows gave the same pad, so the two columns agree.
     const xpads = C.pads.filter((p) => p.xinput);
     const nameOf = (id) => {
@@ -45,17 +45,18 @@
       return id.replace(/\s*\(.*$/, "") || "Controller";
     };
     const seen = web.map((g) => {
-      const fam = padFamily(g.id), meta = [FAMILY[fam], g.mapping === "standard" ? "" : "its own layout, so some buttons may be elsewhere"];
-      const twin = fam === "xbox" && web.some(realPad) && (copies ? "Lootnest ignores this one while the other pad is in use: it's a copy another app made." : "Lootnest ignores this one while the other pad is in use, in case it's a copy another app made.");
+      const fam = padFamily(g.id), meta = [FAMILY[fam], g.mapping === "standard" ? "" : "its own layout"];
+      const twin = fam === "xbox" && web.some(realPad) && (copies ? "Ignored: a copy another app made" : "Ignored while the other pad is in use");
       return ctlRow(fam, nameOf(g.id), meta.filter(Boolean), twin);
     });
-    const pads = !mine.length && !seen.length ? setSub("On this PC", C.failed ? "Windows didn't answer. Open this page again to ask once more." : "Connect a controller. Lootnest reads what Windows says about it and never changes its settings.", "")
-      : `<div class="ctl-cols">${setSub("On this PC", C.failed ? "Windows didn't answer. Open this page again to ask once more." : "What Windows lists. Lootnest only reads it, and never sends anything to a controller.", mine.length ? `<div class="bk-card">${mine.join("")}</div>` : `<p class="set-note">Windows lists no controller.</p>`)}
-        ${setSub("What Lootnest sees", "What Lootnest and Big Picture see right now. A controller shows here once you press one of its buttons.", seen.length ? `<div class="bk-card">${seen.join("")}</div>` : `<p class="set-note">None yet. Press a button on your controller.</p>`)}</div>`;
-    const tools = C.translators.length ? setSub("Apps that change your controllers", "Each makes games see your pad differently.", `<div class="bk-card">${C.translators.map((t) =>
-      `<div class="bk-row"><div><b>${esc(t.name)}</b><p>${esc(t.does)}</p></div><span class="ln-tag">${t.running ? "Running now" : "Installed"}</span></div>`).join("")}</div>
-      ${C.notes.map((n) => `<p class="ctl-note">${esc(n)}</p>`).join("")}`) : "";
-    const det = cfg().settings.gameDetails ? "" : `<p class="set-note"><button class="gpage-link" data-action="details-on">Turn on Game details</button> to see which games support a controller.</p>`;
+    const card = (rows) => `<div class="bk-card">${rows}</div>`;
+    const col = (title, rows, none) => setSub(title, "", card(rows.length ? rows.join("") : setRow(none, "")));
+    const pads = !mine.length && !seen.length ? setSub("On this PC", "", card(C.failed ? setRow("Windows didn't answer", "Open this page again to ask once more.") : setRow("No controller connected", "")))
+      : `<div class="ctl-cols">${col("On this PC", mine, C.failed ? "Windows didn't answer" : "Windows lists none")}${col("What Lootnest sees", seen, "Press a button on your controller")}</div>`;
+    const tools = C.translators.length ? setSub("Apps that change your controllers", "", card(C.translators.map((t) =>
+      setRow(esc(t.name), esc(t.does), `<span class="ctl-lamp${t.running ? " is-on" : ""}">${t.running ? "Running now" : "Installed"}</span>`)).join(""))
+      + C.notes.map((n) => `<p class="ctl-note">${GI.alert}<span>${esc(n)}</span></p>`).join("")) : "";
+    const det = cfg().settings.gameDetails ? "" : setSub("Games", "", card(setRow("Controller support on game pages", "", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="details-on">Turn on Game details</button>`)));
     return `<div class="ctl-page">${pads + tools + det}</div>`;
   }
 

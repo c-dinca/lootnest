@@ -21,13 +21,10 @@
     const b = (attrs, label, kind = "secondary") => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
     const spin = (label) => `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true" disabled><span class="ln-spinner" aria-hidden="true"></span>${label}</button>`;
     const err = I.error ? `<p class="error-text">${esc(I.error)}</p>` : "";
-    if (s.gogUser) return `<div class="bk-row"><div><b>Signed in as ${esc(s.gogUser)}</b>
-        <p>Your GOG games that aren't installed show in the Library under Not installed. The sign-in is encrypted on this PC and sent only to GOG.</p>${err}</div>
+    if (s.gogUser) return `<div class="bk-row"><div><b>Signed in as ${esc(s.gogUser)}</b>${err}</div>
       <div class="set-itch-acts">${I.refreshing ? spin("Refreshing") : b('data-action="gog-refresh"', "Refresh library")}${b('data-action="gog-signout"', "Sign out", "ghost")}</div></div>`;
-    return `<div class="bk-row set-wide"><div><b>Sign in</b>
-        <p>GOG's sign-in page opens in your browser. Once you've signed in, GOG shows a nearly empty page: copy its whole address from the address bar and paste it here.</p>
-        <p><button class="gpage-link" data-action="gog-login">Sign in to GOG</button></p></div>
-      <div class="set-itch-acts"><input id="s-gogcode" class="ln-input" aria-label="The address GOG showed after you signed in" type="text" autocomplete="off" spellcheck="false" placeholder="Paste the address, https://embed.gog.com/on_login_success..." ${I.error ? 'aria-describedby="s-gogcode-err"' : ""} ${I.busy ? "disabled" : ""}>
+    return `<div class="bk-row set-wide"><div class="set-wide-head"><div><b>Sign in</b><p>Sign in to GOG in your browser, then copy the address of the empty page it ends on and paste it here.</p></div>${b('data-action="gog-login"', "Sign in to GOG")}</div>
+      <div class="set-itch-acts"><input id="s-gogcode" class="ln-input" aria-label="The address GOG showed after you signed in" type="text" autocomplete="off" spellcheck="false" placeholder="https://embed.gog.com/on_login_success..." ${I.error ? 'aria-describedby="s-gogcode-err"' : ""} ${I.busy ? "disabled" : ""}>
         ${I.busy ? spin("Signing in") : b('data-action="gog-signin"', "Finish signing in")}${I.error ? `<p id="s-gogcode-err" class="error-text">${esc(I.error)}</p>` : ""}</div></div>`;
   }
 
@@ -41,11 +38,11 @@
     const D = S.dialog, R = S.gog.run && S.gog.run.key === D.key ? S.gog.run : null;
     const shell = (body, foot) => drawer({ label: `Install ${esc(D.name)}`, title: `Install ${esc(D.name)}`, sub: "From your GOG library", body, foot });
     const close = `<span class="grow"></span><button class="ln-button ln-button--ghost ln-button--sm" data-action="dialog-cancel">Close</button>`;
-    if (R) return shell(itchMeter(R, "", gogStageText) + `<p class="gpage-hint">You can close this panel; Lootnest keeps going and tells you when the game is in your Library.</p>`,
+    if (R) return shell(itchMeter(R, "", gogStageText),
       `${R.stage === "download" ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="gog-cancel">Cancel the download</button>` : ""}${close}`);
     if (D.error && !D.installers) return shell(lnInline("error", esc(D.error)), close);
     if (!D.installers) return shell(lnInline("", "Asking GOG for the game's installers"), close);
-    if (!D.installers.length) return shell(`<p>GOG has no offline installer of ${esc(D.name)} for Windows.</p>`, close);
+    if (!D.installers.length) return shell(`<p>No offline installer for Windows</p>`, close);
     const x = D.installers.find((i) => i.id === D.pick) || D.installers[0], size = x.size || 0, parts = (x.files || []).length;
     // Room as Go checks it: the game on its folder's drive, the rest of the download on Lootnest's.
     const drive = (D.dir || "").slice(0, 2).toUpperCase(), rest = Math.max(0, size - (D.kept || 0));
@@ -61,7 +58,7 @@
         ${short ? `<p class="find-low">There isn't enough room on ${esc(short[0])}: this needs about ${esc(fmtBytes(short[2]))}.</p>` : ""}</div>
       <div class="gpage-sub lo-sec">${gpHead("Folder")}
         <div class="lo-pick"><span class="selectable">${esc(D.target || D.dir)}</span><button class="ln-button ln-button--ghost ln-button--sm" data-action="gog-dir">Change</button></div>
-        <p class="gpage-hint">Lootnest downloads GOG's installer, then runs it into this folder without questions. It never installs into a folder that has files in it.</p></div>
+        <p class="gpage-hint">A new folder. Lootnest never installs into one with files in it.</p></div>
       ${D.error ? lnInline("error", esc(D.error)) : ""}`;
     return shell(body, `<span class="grow"></span><button class="ln-button ln-button--ghost ln-button--sm" data-action="dialog-cancel">Cancel</button>
       <button class="ln-button ln-button--primary ln-button--sm" data-action="gog-install" data-installer="${esc(x.id)}" ${short || D.busy ? "disabled" : ""}>${D.kept ? "Continue installing" : "Install"}</button>`);

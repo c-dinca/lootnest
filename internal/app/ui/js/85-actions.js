@@ -229,7 +229,7 @@
     },
     "back-library": () => pageBack(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
-    "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: el.dataset.tab || "look" }; renderOverlay(); },
+    "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: el.dataset.tab || "look" }; renderOverlay(); focusOverlay(); },
     "pe-tab"(el) { S.dialog.tab = el.dataset.tab; renderOverlay(); },
     "pe-set"(el) { S.dialog.p[el.dataset.f] = el.dataset.v; renderOverlay(); },
     "pe-color"(el) { S.dialog.p.color = el.dataset.color; renderOverlay(); },
@@ -1245,7 +1245,7 @@
       if (f) D.p[f] = f === "bannerY" ? +el.value : el.value;
       if (f === "name") { const n = $("#pe-prev-name"); if (n) n.textContent = el.value; }
       else if (f === "tagline") { const n = $("#pe-prev-tag"); if (n) n.textContent = el.value; }
-      else if (f === "color") { const d = $(".dialog.pe"); if (d) d.style.setProperty("--c", el.value); document.querySelectorAll('.dialog.pe [style*="--c"]').forEach((a) => a.style.setProperty("--c", el.value)); }
+      else if (f === "color") { const d = $(".pe"); if (d) d.style.setProperty("--c", el.value); document.querySelectorAll('.pe [style*="--c"]').forEach((a) => a.style.setProperty("--c", el.value)); }
       else if (f === "bannerY") { const a = $(".pe-pbanner .art"); if (a) a.style.backgroundPosition = `center ${el.value}%`; }
       else if (f === "banner" || f === "avatarGame") renderOverlay();
       if (el.id === "pe-q") { D.q = el.value; renderOverlay(); }

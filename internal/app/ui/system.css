@@ -189,17 +189,22 @@
   --shots-w: 1280px;      /* the screenshot viewer */
   --pic-thumb-w: 96px;    /* a save point's or screenshot's picture in a list */
   --pic-thumb-w-sm: 40px; /* a screenshot's on a Timeline row */
-  --set-nav-w: 200px;     /* the list of categories in Settings */
-  --tab-h: 36px;          /* a row in that list, and a tab in a row of tabs */
+  --set-nav-w: 232px;     /* the list of categories in Settings */
+  --set-w: 880px;         /* a Settings category's rows, at most */
+  --set-row-h: 56px;      /* a row in Settings with one line; a short line under it makes it taller */
+  --set-ctl-w: 280px;     /* a text box or a list on the right of a Settings row */
+  --set-tile: 28px;       /* a category's icon in that list */
+  --lamp-dot: 8px;        /* a status lamp beside its word */
+  --tab-h: 36px;          /* a tab in a row of tabs */
   --gp-head-h: 64px;      /* a game page's compact head, once its play bar has scrolled away */
   --gp-head-art: 40px;    /* the game's cover in that head */
   --ach-col-min: 340px;   /* a column of the Achievements tab's list */
   --tl-col-w: 420px;      /* a column of days on the Timeline tab */
-  --ctl-col-w: 400px;     /* a column on Settings, Controllers */
-  --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */
-  --prun-h: 44px;         /* a run under its person on Profiles */
+  --pcard-w: 340px;       /* a person's card on Profiles, at least */
+  --slot-w: clamp(184px, 14vw, 232px);      /* a profile's key in Who's playing */
+  --slot-run-w: clamp(152px, 11vw, 184px);  /* a run's, beside its person's */
+  --prun-h: 44px;         /* a run in its person's card on Profiles */
   --welcome-w: 1040px;    /* the first start's two columns, together */
-  --prun-indent: calc(72px + var(--space-4) - var(--space-3));  /* a run's picture under its person's name */
   --switch-w: 44px; --switch-h: 24px; --knob: 16px;
   --boot-mark: 72px;      /* the mark on the splash while Lootnest opens */
 
