@@ -160,8 +160,8 @@ type Settings struct {
 	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
 	// runs (on unless turned off).
 	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`
-	// SoundsOff silences the window's sounds for unlocks, save points and
-	// swaps (on unless turned off).
+	// SoundsOff silences the sounds for unlocks, save points and swaps, in
+	// the window and over a running game (on unless turned off).
 	SoundsOff bool `json:"soundsOff,omitempty"`
 	// DownloadsOff stops Lootnest looking in the Downloads folder for
 	// updates to games no launcher updates (on unless turned off; it reads

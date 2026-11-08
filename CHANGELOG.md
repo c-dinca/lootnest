@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.64.1
+
+- While a game runs and Lootnest's window is hidden, an achievement unlock and a save point made with Ctrl+Shift+F5 now play their short sound over the game, as they do in the window. Turning off the sounds (Settings, Games and swaps) silences these too, and games with an anti-cheat never get them.
+
 ## 1.64.0
 
 - Searching for a game forgives more: accents, apostrophes and punctuation don't matter, words can come in any order, and initials work, so "baldurs" and "bg3" both find Baldur's Gate 3. This holds in the Library, the sidebar's filter, Ctrl+K and wherever else you look a game up by name.

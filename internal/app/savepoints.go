@@ -376,7 +376,8 @@ func (a *App) quickPoint() {
 			if p, err = a.makePoint(t, core.SavePoint{Name: "Quick save point, " + time.Now().Format("15:04")}); err == nil {
 				win.ShowToast(win.Toast{Kicker: "Save point made", Title: p.Name, Line: r.name + ". Go back to it from the game's page.", Accent: color})
 				a.logf("Save point %q for %s (hotkey)", p.Name, r.name)
-				a.emit("savePointMade", map[string]any{"key": r.key, "point": p, "hotkey": true})
+				native := core.AntiCheat(r.dir) == "" && a.nativeSound(pointWAV)
+				a.emit("savePointMade", map[string]any{"key": r.key, "point": p, "hotkey": true, "native": native})
 				a.apiSavePoints(r.key)
 				return
 			}
