@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.58.17
+
+- Text comes in fewer sizes with clearer steps between them: page titles, section titles, then body text and secondary lines.
+- Small titles, such as a game's name on a missing cover or the headings on Updates, use the same face as the rest of the text, so they read more clearly at that size.
+- Update notes are set in the same light grey as the rest of the text.
+- Longer notes and profile bios wrap at a comfortable line length.
+- Tiny text in the sidebar and in Big Picture's button hints is a little larger.
+
 ## 1.58.16
 
 - Cloud saves opens on any save that changed on two PCs, with when it changed on each and the two choices, Keep this PC's or Use the other PC's. The buttons wrap instead of being cut off.
