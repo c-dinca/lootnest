@@ -1,5 +1,5 @@
 // Builds dist/page.html: the real UI (internal/app/ui) put together the way
-// app.go's pageHTML does, with stub.js and the art cache in front of app.js.
+// app.go's pageHTML does, with stub.js and the art cache in front of the script (ui/js/*.js joined in name order).
 import fs from "node:fs";
 import path from "node:path";
 const here = path.dirname(new URL(import.meta.url).pathname);
@@ -17,10 +17,12 @@ if (fs.existsSync(cache)) {
     if (m) art[`${m[1]}-${m[2]}`] = `data:image/${m[3] === "png" ? "png" : "jpeg"};base64,` + fs.readFileSync(path.join(cache, f)).toString("base64");
   }
 }
-// Like app.go: the sounds inlined into app.js as {name: base64}.
+// Like app.go: the sounds inlined into the script as {name: base64}.
 const sounds = Object.fromEntries(fs.readdirSync(path.join(ui, "sounds")).filter((f) => f.endsWith(".ogg"))
   .map((f) => [f.slice(0, -4), fs.readFileSync(path.join(ui, "sounds", f)).toString("base64")]));
-const js = fs.readFileSync(path.join(ui, "app.js"), "utf8").replace("/*@SOUNDS*/{}", () => JSON.stringify(sounds));
+const jsDir = path.join(ui, "js");
+const js = fs.readdirSync(jsDir).filter((f) => f.endsWith(".js")).sort()
+  .map((f) => fs.readFileSync(path.join(jsDir, f), "utf8")).join("").replace("/*@SOUNDS*/{}", () => JSON.stringify(sounds));
 const stub = fs.readFileSync(path.join(here, "stub.js"), "utf8");
 const html = fs.readFileSync(path.join(ui, "index.html"), "utf8")
   .replace("/*@CSS*/", () => css)

@@ -45,7 +45,10 @@ What makes it different, and the direction to keep pushing:
   runs in a goroutine and comes back as an event.
 - `internal/win`: Win32 helpers (DPAPI, window closing, tray and so on).
 - `internal/app/ui`: `index.html`, `system.css` (tokens and `ln-`
-  components), `app.css`, and `app.js` (one module, about 3,000 lines).
+  components), `app.css`, and the script in `js/`: one closure cut into
+  ordered parts (`00-head.js` to `99-boot.js`, about 5,600 lines) that
+  `app.go` (`uiJS`) and the harness join in name order. A part isn't valid
+  on its own; put new code in the part it belongs to.
 - `cmd/lootnest`, `cmd/setup` (the installer and its `setup.html`),
   `tools/mkicon.py` (draws the icon), `build.sh`.
 - `site/`: the website (https://c-dinca.github.io/lootnest/), plain
@@ -80,7 +83,7 @@ What makes it different, and the direction to keep pushing:
   - `go test ./internal/core/`
   - `GOOS=windows go vet ./internal/app`
   - `GOOS=windows go build ./cmd/lootnest`
-  - `node --check internal/app/ui/app.js`
+  - `node tools/checkjs.mjs` (joins `ui/js` and checks the syntax)
 
   For UI changes, also screenshot the change in the harness and look at it.
 - CI has a `windows` job (windows-latest: `go test ./internal/core/
@@ -125,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.66.0, beta)
+## Where things stand (1.67.0, beta)
 
 These shipped recently, newest last:
 
@@ -425,6 +428,11 @@ These shipped recently, newest last:
   games Lootnest starts (`followFound`, `foundTick`); `ps_gameTimeline`
   merges sessions, save points, timed unlocks and applied updates;
   `timelineBlock` on the game page.
+- **1.67** Roadmap UI 0, first part: the script split into `ui/js` (a pure
+  move; the join was byte-identical to the old `app.js`), and Back and
+  Forward (`hist`, `noteVisit` in `render()`, `goHist`, `pageBack`; Alt+Left
+  and Alt+Right, Backspace, the mouse's side buttons), in memory, up to 50
+  pages with their scroll. The editor isn't a stop.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

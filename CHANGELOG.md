@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.67.0
+
+- Back and Forward work as in a browser: Alt+Left or Backspace goes back to the page you were on, Alt+Right goes forward again, and so do the back and forward buttons on a mouse. Back puts the page where you had scrolled it, so leaving a game's page returns you to the same spot in the Library.
+- The back link at the top of a game's page goes to the page you came from and names it, such as Library or the game you were looking at before. Esc does the same.
+- Settings, General lists the new shortcuts.
+
 ## 1.66.0
 
 - A game's page has a Timeline under Save points: your sessions (when they started and ended), save points, achievement unlocks and applied updates, grouped by day. It starts with the latest few, and Show more goes further back.

@@ -83,10 +83,10 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 
 **What users get.** The game page becomes the centre, with tabs. Home's hero follows the seated profile, art-less games get type covers, Back works, Ctrl+K runs commands, and density, scale, contrast and motion are set per profile.
 
-**Approach.** One hero and shelf language, tokens only, WCAG 2.2 AA and Steam's 2025 bar ([GamingOnLinux](https://gamingonlinux.com/2025/09/steam-update-gives-wider-store-pages-library-sorting-desktop-accessibility-controls-and-lots-more)). Key constraint: the CSP nonce and no build step rule out injected CSS, and `app.js` is about 5,000 lines in one closure another team is editing, so the split waits for the polish backlog and is a pure move.
+**Approach.** One hero and shelf language, tokens only, WCAG 2.2 AA and Steam's 2025 bar ([GamingOnLinux](https://gamingonlinux.com/2025/09/steam-update-gives-wider-store-pages-library-sorting-desktop-accessibility-controls-and-lots-more)). Key constraint: the CSP nonce and no build step rule out injected CSS, and the window's script is one closure in ordered parts in `ui/js`, joined in name order by `app.go` and the harness.
 
 **Phases.**
-- 0, M: split `app.js` into ordered files joined into one closure; role type tokens; routing with Back; an accessibility harness; the tab slot API.
+- 0, M: split `app.js` into ordered files joined into one closure; role type tokens; routing with Back; an accessibility harness; the tab slot API. The split and Back shipped in 1.67.
 - 1, M: art fallback chain, type covers, logo art, palette tint, custom art copied into `covers\custom`.
 - 2, L: game page tabs, a facts column, a compact sticky head.
 - 3, M: five nav items with a Saves hub; the command palette.
