@@ -69,7 +69,6 @@
     const g = padsNow(), fam = g.length && d.controller !== "none" ? padFamily((g.find(realPad) || g[0]).id) : "";
     const twice = d.controller === "full" && S.ctl && S.ctl.copiers || [];
     return `<div class="ctl-pad gp-ctl">${fam ? padFaces(fam) : ""}<div><b>${says}</b>
-      ${d.controller === "partial" ? "<p>Some menus may need the mouse.</p>" : ""}
-      ${d.controller !== "none" && (d.pads || []).includes("playstation") ? "<p>Steam says PlayStation controllers work too.</p>" : ""}
+      ${d.controller !== "none" && (d.pads || []).includes("playstation") ? "<p>PlayStation controllers too</p>" : ""}
       ${twice.length ? `<p>${esc(andList(twice))} ${twice.length > 1 ? "are" : "is"} running: this game may see your pad twice.</p>` : ""}</div></div>`;
   }

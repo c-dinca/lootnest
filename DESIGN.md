@@ -30,7 +30,7 @@ The kitchen sink is dev only. Nothing in `design/` is built into `Lootnest.exe`.
 9. **Motion is calm and exact.** Under 400ms all told, never bouncy, only transform and opacity (a label's wipe is a clip), once per arrival, and nothing on a redraw the keyboard caused. Content is all there without it, and under `prefers-reduced-motion` nothing moves.
 10. **One dominant action per view.** Play leads Home and the game page. Everything else is a ghost or secondary key, or lives in Manage.
 11. **The swap is the signature moment** and gets the craft: the profile's colour, the avatar, and an exact copy line. Routine screens stay quiet so it stands out.
-12. **Big Picture is the same system at 10-foot scale:** type about 1.5x, a 5% safe area, a double focus ring, a fixed prompt bar, and every screen reachable with the D-pad.
+12. **Big Picture is the same system at 10-foot scale:** the shell's colour behind it, its tabs a sliding cartridge in each section's colour, rows under labels, keys for its buttons, type about 1.5x, a 5% safe area, a double focus ring with a shell-coloured gap, a fixed prompt bar, and every screen reachable with the D-pad.
 
 Every UI change is checked in the harness at 1024, 1280, 1440, 1920 and 2560 wide, with `players=6`, `games=0` and `art=missing`, with no sideways scroll.
 
@@ -197,10 +197,9 @@ All in `system.css`, prefixed `ln-` (the switch is `.switch`). Every interactive
 
 ## Moving pages over
 
-The Arcade system, the shell (top bar and sidebar), the motion and Home shipped in 1.93. The rest follow, one batch per version:
+The Arcade system, the shell (top bar and sidebar), the motion and Home shipped in 1.93; the Library, the game page and Big Picture in 1.94. The rest follow, one batch per version:
 
-1. Library, the game page and Big Picture.
-2. Settings, Profiles, dialogs and drawers.
-3. Saves, Updates, Achievements, the Store, the first run and empty states.
+1. Settings, Profiles, dialogs and drawers.
+2. Saves, Updates, Achievements, the Store, the first run and empty states.
 
 Until a page's batch, it already takes the new tokens, keys, labels and motion, and keeps its own layout.

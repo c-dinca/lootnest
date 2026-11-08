@@ -259,11 +259,11 @@
   --bp-foot-h: calc(var(--bp-safe-y) + var(--space-16));  /* the prompt bar, its prompts above the safe area */
   --bp-tile-w: clamp(160px, 11vw, 240px);
   --bp-tile-wide-w: clamp(320px, 24vw, 520px);
-  --focus-ring-bp: 0 0 0 2px var(--bg-ground), 0 0 0 5px var(--focus-ring);
+  --focus-ring-bp: 0 0 0 3px var(--shell), 0 0 0 7px var(--focus-ring);
   --mask-bp: linear-gradient(180deg, transparent, #000 var(--space-4), #000 calc(100% - var(--bp-foot-h) - var(--space-8)), transparent calc(100% - var(--bp-foot-h)));  /* rows fade out before the prompt bar */
   --scrim-bp:  /* the focused game's art behind Big Picture */
     linear-gradient(90deg, oklch(0.15 0.04 282 / 0.96) 0%, oklch(0.15 0.04 282 / 0.7) 45%, oklch(0.15 0.04 282 / 0.35) 100%),
-    linear-gradient(0deg, var(--bg-ground) 4%, transparent 55%);
+    linear-gradient(0deg, var(--shell) 4%, transparent 55%);
   --shadow-logo: drop-shadow(0 8px 24px oklch(0 0 0 / 0.6));
   /* A controller's face buttons, in the colours players know. */
   --pad-a: oklch(0.72 0.17 145); --pad-a-on: oklch(0.18 0.03 145);

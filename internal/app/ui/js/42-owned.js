@@ -25,7 +25,7 @@
     return t || (act === "uninstall" ? ["Uninstall in Windows Settings", "Opens Installed apps, where you find the game", `Installed apps is opening in Windows Settings. Find ${name} there.`] : null);
   }
   const storeActs = (it) => (it.kind === "owned" ? ["install"] : (S.found.acts || {})[it.id] || []);
-  const storeRow = (it, act, opt) => { const t = storeActText(it.source, act, it.name); return t ? gpRow(`data-action="store-act" ${itemAttr(it)} data-act="${act}"`, act === "uninstall" ? GI.trash : act === "open" ? GI.next : GI.check, t[0], t[1], opt) : ""; };
+  const storeRow = (it, act, opt) => { const t = storeActText(it.source, act, it.name); return t ? gpRow(`data-action="store-act" ${itemAttr(it)} data-act="${act}"`, act === "uninstall" ? GI.trash : act === "open" ? GI.next : GI.check, t[0], act === "uninstall" ? t[1] : "", opt) : ""; };
   const storeItem = (it, act) => { const t = storeActText(it.source, act, it.name); return t ? `<button${act === "uninstall" ? ' class="danger"' : ""} data-action="store-act" ${itemAttr(it)} data-act="${act}">${esc(t[0])}</button>` : ""; };
   // A game in a folder of its own, outside any store: Remove from this PC.
   const removable = (it) => it.kind === "found" && UPDATABLE.includes(it.source) && !it.appId && !it.f.uri && !!it.f.dir;
@@ -46,7 +46,7 @@
         <div class="gpage-title"><h1 class="${it.name.length > 22 && !logo ? "long" : ""}">${logo ? `<img class="gpage-logo" src="${logo}" alt="${esc(it.name)}">` : esc(it.name)}</h1>
           <p class="gpage-meta"><span>${esc(store)}</span></p></div></section>
       <div class="gpage-body"><section class="gpage-bar" aria-label="Install">${installButton(it, "ln-button--primary ln-button--lg", t ? t[0] : "")}
-        <div class="gpage-state"><b>Not installed</b><span>${it.source === "itch" ? "In your itch.io library." : it.source === "gog" ? "In your GOG library." : `Found in the files ${esc(store)} keeps on this PC.`}${t ? ` ${esc(t[1])}.` : ""}</span></div></section></div></div>`;
+        <div class="gpage-state"><b>Not installed</b><span>In your ${esc(store)} library</span></div></section></div></div>`;
   }
 
   // Remove from this PC: what's copied first, then the folder to the Recycle Bin.

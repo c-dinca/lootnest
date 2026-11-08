@@ -171,15 +171,15 @@
     const stores = [["all", "All stores"], ...LAUNCHERS.filter((k) => have.has(k) || S.store === k).map((k) => [k, sourceLabel(k)]),
       ...(have.has("other") || S.store === "other" ? [["other", "Other"]] : [])];
     const head = `<header class="lib-head"><div class="lib-title"><h1>Library</h1>
-        <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</span></div>
+        <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "No games yet"}</span></div>
         <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
         <button class="ln-button ln-button--ghost lib-views" id="lib-views" data-action="lib-views" aria-haspopup="menu" aria-expanded="false"><span>${esc((viewsSaved().find(viewIs) || {}).name || "Views")}</span>${gsvg('<path d="M6.5 8.25 10 11.75l3.5-3.5"/>')}</button>
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
         <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>
         <button class="ln-button ln-button--ghost" data-action="sources">Sources</button></div></header>`;
     if (!all.length && !scanning) {
-      return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1><p>Every game on this PC, in one place.</p></header>
-        ${emptyState(homeIcon, "No games found yet", "Lootnest looks everywhere games are installed on this PC. If yours isn't found, add it by hand: point Lootnest at its folder or its .exe.",
+      return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1></header>
+        ${emptyState(homeIcon, "No games found yet", "",
           `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button><button class="ln-button ln-button--ghost" data-action="sources">Sources</button>`,
           `<p class="ln-empty__where">Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.</p>`, true)}</div>`;
     }
@@ -200,7 +200,6 @@
           <select id="lib-sort" class="ln-input" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l === "Name" ? "Sort by name" : l}</option>`).join("")}</select>`}
           <div class="ln-segmented lib-size" role="group" aria-label="Cover size">${sizes.map(([k, l, h]) => `<button data-action="density" data-size="${k}" aria-pressed="${S.density === k}" aria-label="${l}" title="${l}">${h ? `<span style="--h:${h}px"></span>` : '<i class="lib-size-list" aria-hidden="true"></i>'}</button>`).join("")}</div>
         </div></div>
-      ${scanning ? lnInline("", "Looking for games on this PC", "Games appear as they're found.") : ""}
       <div class="lib-grid size-${esc(S.density)}" id="grid">${gridHTML()}</div>
       <div class="lib-sel" id="lib-sel" role="region" aria-label="Selected games"${S.libSel.size ? "" : " hidden"}>${libSelHTML()}</div></div>`;
   }
@@ -235,7 +234,7 @@
         <button class="ctx-icon" data-action="view-rename" ${a} aria-label="Rename ${esc(v.name)}" title="Rename">${GI.edit}</button>
         <button class="ctx-icon" data-action="view-delete" ${a} aria-label="Delete ${esc(v.name)}" title="Delete">${GI.trash}</button></div>`;
     }).join("");
-    return `<div class="ctx-title">Saved views</div>${rows || '<p class="ctx-note">Save the filters, sort and cover size you use often, and get them back in one click.</p>'}<hr>
+    return `<div class="ctx-title">Saved views</div>${rows || '<p class="ctx-note">None yet</p>'}<hr>
       <button data-action="view-new"${vs.length >= 20 ? ' disabled title="Lootnest keeps up to 20 views."' : ""}>${GI.plus}Save this view</button>`;
   }
   function viewNaming(old, value) {
@@ -251,7 +250,7 @@
     try { await api.saveView(v, old); } catch (e) { toast(errText(e), "error"); viewNaming(old, name); return; }
     closeContext(true);
     await refresh();
-    toast(old ? `Renamed ${old} to ${name}.` : `Saved ${name}. Find it under Views.`);
+    toast(old ? `Renamed ${old} to ${name}.` : `Saved ${name}.`);
   }
 
   // Picking games in the Library: Ctrl+click one, Shift+click a run of
@@ -290,15 +289,15 @@
     const n = S.libSel.size;
     if (!n) return "";
     const items = libSelItems(), owned = S.filter === "owned", fav = items.length && items.every((it) => tagsOf(it).includes(FAV));
-    const b = (act, label, extra = "") => `<button class="ln-button ln-button--ghost ln-button--sm" data-action="${act}"${extra}>${label}</button>`;
+    const b = (act, label, extra = "", kind = "secondary") => `<button class="ln-button ln-button--${kind} ln-button--sm" data-action="${act}"${extra}>${label}</button>`;
     const menu = ' aria-haspopup="menu" aria-expanded="false"';
     return `<span class="lib-sel-n" role="status"><b class="ln-num">${n}</b> selected</span>
       <div class="lib-sel-acts">${b("sel-tags", "Add to collection", menu)}
         ${S.tag && !owned ? b("sel-untag", `Remove from ${esc(S.tag)}`) : ""}
         ${owned ? "" : b("sel-status", "Set status", menu)}
         ${b("sel-fav", fav ? "Remove from Favourites" : "Favourite")}
-        ${owned ? "" : b("sel-hide", "Hide from the Library", items.some(canHide) ? "" : ' disabled title="Only games Lootnest found can be hidden. Games with profiles and games you added are taken out from their own page."')}</div>
-      ${b("sel-clear", `${GI.x}Clear selection`)}`;
+        ${owned ? "" : b("sel-hide", "Hide from the Library", items.some(canHide) ? "" : ' disabled title="Only games Lootnest found can be hidden."')}</div>
+      ${b("sel-clear", `${GI.x}Clear`, ' aria-label="Clear selection"', "ghost")}`;
   }
   function selStatusHTML() {
     const me = seated();
@@ -339,7 +338,7 @@
     const who = pname(c.player) || "Someone";
     const when = new Date(c.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
     return `<div class="gp-conflict">${banner(`Steam Cloud replaced ${esc(possessive(who))} files on ${esc(when)}`,
-      `${esc(who)}'s profile stayed as it was. That session's files, from Steam Cloud, are kept as a copy, so nothing was lost. Turn Steam Cloud off for ${esc(g.name)} in its Steam properties if this keeps happening.`,
+      `${esc(possessive(who))} profile stayed as it was, and the session's files are kept as a copy. If this keeps happening, turn Steam Cloud off in the game's Steam properties.`,
       bBtn("secondary", `data-action="copies" data-game="${esc(g.id)}"`, "See the copies") + bBtn("ghost", `data-action="conflict-ok" data-game="${esc(g.id)}"`, "Got it"), false, "warn")}</div>`;
   }
   // A game that ships with an anti-cheat: what Lootnest does and doesn't do.
@@ -349,7 +348,7 @@
     if (!(key in S.facts)) { S.facts[key] = null; api.gameFacts(dir).then((f) => { S.facts[key] = f || {}; if (f && f.antiCheat && S.view === "game") render(); }).catch(() => { S.facts[key] = {}; }); }
     const f = S.facts[key];
     if (!f || !f.antiCheat) return "";
-    return `<p class="gpage-note gp-ac">${GI.shield || GI.copy}Ships with ${esc(f.antiCheat)}. Lootnest never touches the game's own files: profiles swap only its settings and saves, no notes show over it, and mods are off for it. Progress kept on the game's servers stays with the account.</p>`;
+    return `<p class="gpage-note gp-ac">${GI.shield || GI.copy}Ships with ${esc(f.antiCheat)}. Profiles swap only its settings and saves; progress on the game's servers stays with the account. Mods are off.</p>`;
   }
   // The copies made before each swap, with Put back on each.
   function viewCopies() {
@@ -368,7 +367,7 @@
   // A page with nothing in it yet: what it's for, and the way to fill it.
   // ghosts draws dashed covers where a page's games will go.
   function emptyState(ic, title, text, actions, extra, ghosts) {
-    return `<section class="ln-empty"><h2>${ic}${title}</h2><p>${text}</p>
+    return `<section class="ln-empty"><h2>${ic}${title}</h2>${text ? `<p>${text}</p>` : ""}
       ${actions ? `<div class="ln-empty__act">${actions}</div>` : ""}${extra || ""}${ghosts ? `<div class="ln-ghosts" aria-hidden="true">${"<span></span>".repeat(16)}</div>` : ""}</section>`;
   }
   // Recent games, as at the top of Steam's library: the last few played, on
@@ -569,7 +568,7 @@
     if (!saveCheckAsked) { saveCheckAsked = true; api.saveCheck(false).catch(() => {}); }
     const C = S.saveCheck;
     if (!C || !(C.oneDrive || []).some((g) => g.key === recentKey(it))) return "";
-    return `<p class="${cls}">These saves are in ${esc(C.oneDriveIn)}, which OneDrive syncs.</p>`;
+    return `<p class="${cls}">In ${esc(C.oneDriveIn)}, synced by OneDrive</p>`;
   }
   // Each person and the game they played last; a click sits them at the PC.
   function playersBlock(all) {
@@ -656,14 +655,14 @@
     const n = all.filter((it) => !it.appId).length;
     if (!n) return "";
     return banner(`Find covers and artwork for ${n === 1 ? "1 game" : n + " games"}`,
-      `Lootnest looks ${n === 1 ? "it" : "them"} up on the Steam store by name, and on SteamGridDB if you add a key in Settings. Only the games' names are sent. Everything found is saved on this PC.`,
+      "Looked up by name on the Steam store. Only the names are sent.",
       bBtn("ghost", 'data-action="covers-later"', "Not now") + bBtn("primary", 'data-action="covers-on"', "Find covers"));
   }
 
   function gridHTML() {
     const items = shownItems(), shown = new Set(items.map(recentKey));
     S.libSel.forEach((k) => { if (!shown.has(k)) S.libSel.delete(k); }); // only games still shown stay picked
-    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.filter === "owned" ? `Every game ${["Steam", "Epic", gogOn() && "GOG", itchOn() && "itch.io"].filter(Boolean).join(", ").replace(/, ([^,]*)$/, " and $1")} know you have is installed.` : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
+    if (!items.length) return `<p class="lib-none">${S.q ? `No game matches “${esc(S.q)}”.` : S.filter === "owned" ? `Everything ${["Steam", "Epic", gogOn() && "GOG", itchOn() && "itch.io"].filter(Boolean).join(", ").replace(/, ([^,]*)$/, " and $1")} list as yours is installed.` : S.who ? `${esc(pname(S.who))} has no games here yet.` : "No games here."}</p>`;
     if (S.density === "list") {
       return `<div class="lib-list-head" aria-hidden="true"><span></span><span>Name</span><span>Last played</span><span>Time played</span><span>Profiles</span><span></span></div>${items.map(listRowHTML).join("")}`;
     }

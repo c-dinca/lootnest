@@ -4,9 +4,7 @@
   // is put into the game.
   const launchHow = (it) => (it.kind === "found" ? (it.f.appId ? "steam" : it.f.uri ? "launcher" : "exe") : it.g.launch.type === "uri" ? "launcher" : it.g.launch.type);
   function launchRow(it) {
-    const how = launchHow(it);
-    return gpRow(`data-action="launch-options" ${itemAttr(it)}`, GI.launch, "Launch options",
-      how === "exe" ? "Options, start folder, administrator, and apps around play" : how === "steam" ? "Options for Steam, and apps to close or start around play" : "Apps to close or start around play");
+    return gpRow(`data-action="launch-options" ${itemAttr(it)}`, GI.launch, "Launch options", "");
   }
   function openLaunch(it) {
     const o = (cfg().launchOpts || {})[recentKey(it)] || {}, copy = (l) => (l || []).map((x) => ({ ...x }));

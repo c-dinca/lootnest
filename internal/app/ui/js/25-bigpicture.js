@@ -6,6 +6,7 @@
   // arrows, Enter, Escape, Q and E.
   const BP = { on: false, tab: "home", tag: "", detail: null, choose: null, focus: "", from: "", keep: false, timer: 0, sounds: pref("bpSounds", "1") === "1" };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
+  const BP_SEC = { home: "home", library: "library", achievements: "ach", profiles: "profiles" };
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
   const bpKey = (it) => it.kind + ":" + it.id;
   function bpOpen() {
@@ -67,7 +68,7 @@
     return `<button class="bp-tile bp-tile--wide bp-tile--tag" data-bp data-bpid="c:${esc(t)}" data-go="tag" data-tag="${esc(t)}">
       <span class="bp-tile-art">${covers}<span class="bp-tag-name"><b>${esc(t)}</b>${list.length} ${list.length === 1 ? "game" : "games"}</span></span></button>`;
   }
-  const bpRow = (id, title, list, wide) => (list.length ? `<section class="bp-row"><h2>${esc(title)}</h2><div class="bp-row-track" data-row="${esc(id)}">${list.map((it) => bpTile(it, wide)).join("")}</div></section>` : "");
+  const bpRow = (id, title, list, wide) => (list.length ? `<section class="bp-row"><h2><span class="ln-label">${esc(title)}</span></h2><div class="bp-row-track" data-row="${esc(id)}">${list.map((it) => bpTile(it, wide)).join("")}</div></section>` : "");
   function bpScreen() {
     const all = libraryItems();
     if (BP.choose) {
@@ -83,33 +84,33 @@
       const A = S.ach[key], det = cfg().settings.gameDetails && (S.details[key] || {}).details;
       achFor(it); // reads its achievements if it hasn't yet
       const logo = artFor(it, "logo").url;
-      const playLabel = it.g ? (seat ? `Play as ${esc(seat.name)}` : "Play") : "Play";
+      const as = it.g && seat;
       return `<div class="bp-detail">
         <div class="bp-detail-text">${logo ? `<img class="bp-logo" src="${logo}" alt="${esc(it.name)}">` : `<h1>${esc(it.name)}</h1>`}
           <p class="bp-meta">${[esc(storeNames(it)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : "", det && CTL_SAYS[det.controller]].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
-          <div class="bp-actions"><button class="bp-btn bp-btn--primary" data-bp data-bpid="play" data-go="play" data-k="${esc(bpKey(it))}">${GI.play}${playLabel}</button>
+          <div class="bp-actions"><button class="bp-btn ${as ? `bp-btn--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-btn--primary"'} data-bp data-bpid="play" data-go="play" data-k="${esc(bpKey(it))}">${GI.play}${as ? `Play as ${esc(seat.name)}` : "Play"}</button>
             ${it.g && cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="playas" data-go="choose" data-k="${esc(bpKey(it))}">${glyph("Y")}Play as someone else</button>` : ""}
             ${bpRunning(it) ? `<button class="bp-btn" data-bp data-bpid="close" data-go="close-game" data-k="${esc(bpKey(it))}">${glyph("X")}Close the game</button>` : ""}
             <button class="bp-btn" data-bp data-bpid="back" data-go="back">${glyph("B")}Back</button></div></div></div>`;
     }
     if (!all.length && (BP.tab === "library" || BP.tab === "home")) {
-      return `<div class="bp-empty"><h2>No games yet</h2><p class="bp-sub">Add games in Lootnest's Library, then open Big Picture again.</p>
-        <button class="bp-btn bp-btn--primary" data-bp data-bpid="exit" data-go="exit">${glyph("Start")}Leave Big Picture</button></div>`;
+      return `<div class="bp-empty"><h2>No games yet</h2>
+        <button class="bp-btn" data-bp data-bpid="exit" data-go="exit">${glyph("Start")}Leave Big Picture</button></div>`;
     }
     if (BP.tab === "library") {
       const list = BP.tag ? all.filter((it) => tagsOf(it).includes(BP.tag)) : all;
-      return `<div class="bp-grid-wrap"><h2 class="bp-h">${BP.tag ? esc(BP.tag) : "All games"} <span>${list.length}</span></h2><div class="bp-grid">${list.map((it) => bpTile(it, false)).join("")}</div></div>`;
+      return `<div class="bp-grid-wrap"><h2 class="bp-h"><span class="ln-label">${BP.tag ? esc(BP.tag) : "All games"}<span class="ln-count ln-num">${list.length}</span></span></h2><div class="bp-grid">${list.map((it) => bpTile(it, false)).join("")}</div></div>`;
     }
     if (BP.tab === "profiles") {
       const ps = cfg().players, seat = seated(), alone = solo();
-      return `<div class="bp-choose"><h1>${alone ? "Playing as" : "Who's here?"}</h1><p class="bp-sub">${alone ? "A to play as this one." : "Whoever sits down plays as themselves. A to sit down."}</p>
+      return `<div class="bp-choose"><h1>${alone ? "Playing as" : "Who's here?"}</h1>
         <div class="bp-people">${ps.map((p) => `<button class="bp-person ln-player${seat && seat.id === p.id ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="seat:${esc(p.id)}" data-go="seat" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${seat && seat.id === p.id ? (alone ? "Playing" : "Sitting here") : alone ? "Play as this" : "Sit down"}</span></button>`).join("")}</div></div>`;
     }
     if (BP.tab === "achievements") {
       const rows = (S.allAch ? S.allAch.games : []).map((g) => ({ g, it: itemByKey(g.key) })).filter((r) => r.it);
       if (!rows.length) return `<div class="bp-empty"><h2>${S.allAch ? "No achievements found yet" : "Reading achievements"}</h2></div>`;
       const who = (seated() || cfg().players[0] || {}).id;
-      return `<div class="bp-grid-wrap"><h2 class="bp-h">Achievements</h2><div class="bp-ach">${rows.map(({ g, it }) => {
+      return `<div class="bp-grid-wrap"><h2 class="bp-h"><span class="ln-label">Achievements</span></h2><div class="bp-ach">${rows.map(({ g, it }) => {
         const own = g.players && g.players[who], u = own ? own.unlocked : g.unlocked, pct = Math.round((u / g.total) * 100);
         return `<button class="bp-achcard" data-bp data-bpid="a:${esc(bpKey(it))}" data-k="${esc(bpKey(it))}" data-go="open"><span class="ach-gring">${ring(pct, 64)}</span><span><b>${esc(g.name)}</b><span>${u} of ${g.total}</span></span></button>`; }).join("")}</div></div>`;
     }
@@ -121,7 +122,7 @@
     const small = names.filter((t) => !big.includes(t));
     return `<div class="bp-home">${bpRow("recent", "Continue playing", recent.length ? recent : all.slice(0, 12), true)}
       ${big.map((t) => bpRow("tag:" + t, t, tags[t], false)).join("")}
-      ${small.length ? `<section class="bp-row"><h2>Collections</h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
+      ${small.length ? `<section class="bp-row"><h2><span class="ln-label">Collections</span></h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
       ${bpRow("all", "Your games", all.slice(0, 40), false)}</div>`;
   }
   let bpSeat = "", bpFootX = false, bpFam = "";
@@ -146,7 +147,7 @@
     if (fresh) {
       el.innerHTML = `<div class="bp-bg" aria-hidden="true"><div class="bp-bg-l"></div><div class="bp-bg-l"></div></div>
       <header class="bp-top"><div class="bp-brand">${BRAND_MARK}<span class="bp-brand-name">Lootnest</span></div>
-        <nav class="bp-tabs">${glyph("LB")}${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-go="tab" data-t="${k}" tabindex="-1">${l}</button>`).join("")}${glyph("RB")}</nav>
+        <nav class="bp-tabs"><span class="bp-ind" aria-hidden="true"></span>${glyph("LB")}${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-go="tab" data-t="${k}" tabindex="-1">${l}</button>`).join("")}${glyph("RB")}</nav>
         <div class="bp-right">${seatHTML}<time class="bp-clock ln-num"></time>
           <button class="bp-exit" data-go="exit" tabindex="-1" title="Leave Big Picture">${glyph("Start")}Leave</button></div></header>
       <main class="bp-main"></main>
@@ -168,7 +169,9 @@
     if (fresh || fam || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
     bpFootX = closeHint;
     el.querySelector(".bp-tabs").classList.toggle("is-dim", !!sub);
-    el.querySelectorAll(".bp-tab").forEach((t) => t.setAttribute("aria-current", String(BP.tab === t.dataset.t && !sub)));
+    el.querySelectorAll(".bp-tab").forEach((t) => t.setAttribute("aria-current", String(BP.tab === t.dataset.t)));
+    el.dataset.sec = BP_SEC[BP.tab];
+    slideInd(el.querySelector(".bp-ind"), el.querySelector('.bp-tab[aria-current="true"]'));
     el.querySelector(".bp-clock").textContent = now;
     const snd = el.querySelector(".bp-sound");
     snd.setAttribute("aria-pressed", String(BP.sounds));
