@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.77.0
+
+- Each game has **Launch options**, under Manage. For a game Lootnest starts by its .exe: the options it starts with, the folder it starts in, and Run as administrator. Windows asks each time a game starts as administrator, and the game then has full rights over the PC, so it's only for games that need it.
+- For a Steam game, the options you type here are given to Steam when Lootnest starts the game, and **Open its properties in Steam** takes you to the game's own launch options there. Games their launcher starts, such as Xbox games, can't take options from Lootnest, and the panel says so.
+- **Before you play**: choose apps to close before a game starts, from the apps open now or by name. Lootnest asks them to close as if you closed their windows, and waits up to 10 seconds. An app that only goes to the tray, such as Discord, closes only if you turn on Force for it, which ends it without asking.
+- Start programs before a game, and after it closes, with their own options. After play, Lootnest can open the apps it closed again. If the game isn't seen running, only the apps it closed open again.
+- A game's options moved from Game settings to Launch options, so there's one place for them.
+- These run only for games you start from Lootnest (or from Steam's Play, for games with profiles), and not in safe mode. Lootnest only closes and starts the programs you choose; it never touches the game itself. The log lists each step.
+
 ## 1.76.0
 
 - The sidebar works like Steam's library. The menu at its top picks which games it lists: All games, Installed, Favourites, Not installed, or the games one profile has played or has files for.

@@ -217,3 +217,34 @@ its answers:
 6. Remove from this PC isn't offered for store games. For a folder that
    holds other games (add D:\Games itself as a game), the dialog says
    Lootnest won't remove it.
+
+## 14. Launch options, and before and after play (1.77)
+
+1. A folder game: Manage, **Launch options**. Type an option the game
+   reads (such as `-windowed`), choose another folder in **Start in**,
+   Save, then Play: the game gets the option and starts in that folder
+   (Process Explorer shows both). **Use the game's folder** puts it back.
+2. Turn on **Run as administrator** and Play: Windows asks first, and
+   saying no says so in a toast. Say yes: the game runs, its session shows
+   on the Timeline when it closes, and its saves are still kept.
+3. A Steam game: the drawer has Options, a note that the rest is set in
+   Steam, and
+   **Open its properties in Steam**, which opens the game's Properties in
+   Steam. If it opens something else, or nothing, note your Steam
+   version.
+4. Before you play: open Discord and Notepad (with unsaved text). Add
+   Discord from **Add an open app** (apps in the Windows folder, such as
+   Windows 10's Notepad, aren't listed there) and type notepad.exe; turn
+   on Force for Discord only. Add a
+   program to start before (such as OBS) and one after. Play: a toast says
+   Lootnest is closing Discord and Notepad, Notepad
+   asks to save and the game starts once you answer, or after 10 seconds
+   if you don't; Discord, which goes to the tray, is ended after 10
+   seconds. Notepad is never ended. Close the game: the program for after
+   starts, and Discord (and Notepad, if it closed) open again. The log
+   (Settings, Show recent activity) says each step.
+5. The same with a profile game, from Play and from Steam's own Play
+   button: the steps run around the swap. Pressing Play twice doesn't
+   run them twice.
+6. Restart in safe mode and Play: nothing is closed or started, and the
+   drawer says so.

@@ -150,6 +150,9 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_openGameFolder", a.apiOpenGameFolder))
 	must(a.w.Bind("ps_foundShortcut", a.apiFoundShortcut))
 	must(a.w.Bind("ps_steamVerify", a.apiSteamVerify))
+	must(a.w.Bind("ps_saveLaunchOptions", a.apiSaveLaunchOptions))
+	must(a.w.Bind("ps_runningApps", a.apiRunningApps))
+	must(a.w.Bind("ps_steamProperties", a.apiSteamProperties))
 	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
@@ -663,6 +666,12 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			}
 		}
 		switch kind {
+		case "program":
+			opt.Title = "Choose a program to start"
+			opt.Filters = []win.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
+		case "workDir":
+			opt.Title = "Choose the folder the game starts in"
+			opt.Folder = true
 		case "exe":
 			opt.Title = "Choose the game's .exe"
 			opt.Filters = []win.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}

@@ -216,6 +216,9 @@ type Config struct {
 	Primary map[string]string `json:"primary,omitempty"`
 	// Separate: the group keys of games the user shows as separate copies.
 	Separate []string `json:"separate,omitempty"`
+	// LaunchOpts: how each game starts and what runs before and after play,
+	// by Library key (core/launchopts.go).
+	LaunchOpts map[string]LaunchOptions `json:"launchOpts,omitempty"`
 }
 
 // LibraryPref is what the user changed about a Library game that has no

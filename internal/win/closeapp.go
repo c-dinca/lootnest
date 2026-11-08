@@ -3,6 +3,8 @@
 package win
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -82,4 +84,96 @@ func ForegroundIs(name string) bool {
 	var pid uint32
 	procGetWindowThreadProcessId.Call(foreground(), uintptr(unsafe.Pointer(&pid)))
 	return pid != 0 && processIDs(name)[pid]
+}
+
+// ProcessPaths returns the full paths of the running processes named name
+// (lower case, without .exe), each once.
+func ProcessPaths(name string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for pid := range processIDs(name) {
+		if p := processPath(pid); p != "" && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func processPath(pid uint32) string {
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
+	if err != nil {
+		return ""
+	}
+	defer windows.CloseHandle(h)
+	buf := make([]uint16, windows.MAX_LONG_PATH)
+	n := uint32(len(buf))
+	if windows.QueryFullProcessImageName(h, 0, &buf[0], &n) != nil {
+		return ""
+	}
+	return windows.UTF16ToString(buf[:n])
+}
+
+// KillProcesses ends the processes named name (lower case, without .exe)
+// at once, without asking them, and returns how many it ended.
+func KillProcesses(name string) int {
+	n := 0
+	for pid := range processIDs(name) {
+		h, err := windows.OpenProcess(windows.PROCESS_TERMINATE, false, pid)
+		if err != nil {
+			continue
+		}
+		if windows.TerminateProcess(h, 1) == nil {
+			n++
+		}
+		windows.CloseHandle(h)
+	}
+	return n
+}
+
+// RunningApp is a program with a window open.
+type RunningApp struct {
+	Name string `json:"name"` // its file name, "Discord.exe"
+	Path string `json:"path"`
+}
+
+var (
+	procGetWindowTextLengthW = user32.NewProc("GetWindowTextLengthW")
+	appsMu                   sync.Mutex
+	appsPIDs                 map[uint32]bool
+	appsCB                   = syscall.NewCallback(func(hwnd, _ uintptr) uintptr {
+		if vis, _, _ := procIsWindowVisible.Call(hwnd); vis != 0 {
+			if n, _, _ := procGetWindowTextLengthW.Call(hwnd); n > 0 {
+				var pid uint32
+				procGetWindowThreadProcessId.Call(hwnd, uintptr(unsafe.Pointer(&pid)))
+				appsPIDs[pid] = true
+			}
+		}
+		return 1
+	})
+)
+
+// RunningApps lists the programs with a visible, titled window, each once,
+// leaving out Windows' own (in the Windows folder) and this one.
+func RunningApps() []RunningApp {
+	appsMu.Lock()
+	appsPIDs = map[uint32]bool{}
+	procEnumWindows.Call(appsCB, 0)
+	pids := appsPIDs
+	appsPIDs = nil
+	appsMu.Unlock()
+	sys := strings.ToLower(os.Getenv("SystemRoot")) + `\`
+	self := uint32(os.Getpid())
+	seen := map[string]bool{}
+	out := []RunningApp{}
+	for pid := range pids {
+		p := processPath(pid)
+		low := strings.ToLower(p)
+		if p == "" || pid == self || strings.HasPrefix(low, sys) || seen[low] {
+			continue
+		}
+		seen[low] = true
+		out = append(out, RunningApp{Name: filepath.Base(p), Path: p})
+	}
+	return out
 }

@@ -447,6 +447,7 @@ func (a *App) apiAddFound(keys []string) (AddResult, error) {
 			res.Failed = append(res.Failed, f.Name+": "+err.Error())
 			continue
 		}
+		a.moveLaunchOpts(f.Key, g)
 		res.Added = append(res.Added, g.Name)
 		if g.Launch.Type == "steam" {
 			res.Steam++

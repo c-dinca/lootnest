@@ -37,16 +37,23 @@ var ErrCancelledByUser = errors.New("it was cancelled at Windows' prompt")
 // needs administrator rights gets Windows' prompt), waits for it to close,
 // and returns its exit code.
 func RunAndWait(owner uintptr, exe, dir string) (uint32, error) {
-	return shellRun(owner, "open", exe, "", dir, windows.SW_SHOWNORMAL)
+	return shellRun(owner, "open", exe, "", dir, windows.SW_SHOWNORMAL, true)
 }
 
 // RunElevatedAndWait runs a program as administrator (Windows asks the user
 // first), hidden, and waits for it.
 func RunElevatedAndWait(owner uintptr, exe, args string) (uint32, error) {
-	return shellRun(owner, "runas", exe, args, "", windows.SW_HIDE)
+	return shellRun(owner, "runas", exe, args, "", windows.SW_HIDE, true)
 }
 
-func shellRun(owner uintptr, verbName, exe, args, dir string, show int32) (uint32, error) {
+// StartElevated starts a program as administrator (Windows asks the user
+// first) and doesn't wait for it.
+func StartElevated(owner uintptr, exe, args, dir string) error {
+	_, err := shellRun(owner, "runas", exe, args, dir, windows.SW_SHOWNORMAL, false)
+	return err
+}
+
+func shellRun(owner uintptr, verbName, exe, args, dir string, show int32, wait bool) (uint32, error) {
 	verb, _ := windows.UTF16PtrFromString(verbName)
 	file, err := windows.UTF16PtrFromString(exe)
 	if err != nil {
@@ -74,6 +81,9 @@ func shellRun(owner uintptr, verbName, exe, args, dir string, show int32) (uint3
 		return 0, nil // handed to a process that was already running
 	}
 	defer windows.CloseHandle(info.hProcess)
+	if !wait {
+		return 0, nil
+	}
 	if _, err := windows.WaitForSingleObject(info.hProcess, windows.INFINITE); err != nil {
 		return 0, err
 	}

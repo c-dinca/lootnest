@@ -247,6 +247,9 @@ func (a *App) apiCarryOver(oldKey, newKey string) error {
 		}
 		a.mu.Lock()
 		if core.RekeyConfig(a.cfg, oldKey, newKey) {
+			if o, ok := a.cfg.LaunchOpts[newKey]; ok {
+				a.cfg.LaunchOpts[newKey] = o.Moved(old.Dir, nw.Dir)
+			}
 			_ = a.store.SaveConfig(a.cfg)
 		}
 		a.mu.Unlock()

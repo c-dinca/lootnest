@@ -325,8 +325,8 @@ func (s *Store) RekeyGame(from, to string) error {
 	return s.rekeyCustomArt(from, to)
 }
 
-// RekeyConfig moves a Library game's settings and collections to its new key.
-// It reports whether cfg changed.
+// RekeyConfig moves a Library game's settings, launch options and
+// collections to its new key. It reports whether cfg changed.
 func RekeyConfig(cfg *Config, from, to string) bool {
 	changed := false
 	if p, ok := cfg.LibraryPrefs[from]; ok {
@@ -337,6 +337,13 @@ func RekeyConfig(cfg *Config, from, to string) bool {
 			cfg.LibraryPrefs[to] = p
 		}
 		delete(cfg.LibraryPrefs, from)
+		changed = true
+	}
+	if o, ok := cfg.LaunchOpts[from]; ok {
+		if _, has := cfg.LaunchOpts[to]; !has {
+			cfg.LaunchOpts[to] = o
+		}
+		delete(cfg.LaunchOpts, from)
 		changed = true
 	}
 	if tags, ok := cfg.Tags[from]; ok {

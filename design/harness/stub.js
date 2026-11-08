@@ -167,7 +167,7 @@
   let FIRSTP = FIRST && [{ id: "p1", name: "Cris", color: "#6C9BD2" }]; // until Continue saves it
   const state = () => ({
     version: "1.45.0", stage: "beta", safe: q.get("safe") === "1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, tagOrder: TAGORDER, offline: OFFLINE },
+    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, tagOrder: TAGORDER, offline: OFFLINE, launchOpts: LAUNCH },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
@@ -177,6 +177,9 @@
   });
 
   const OFFLINE = {};
+  // Launch options (core.LaunchOptions), by Library key: Phantom Blade Zero closes Discord and starts OBS first.
+  const LAUNCH = { "dir:d:\\games\\phantom blade zero": { workDir: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64", closeApps: [{ name: "Discord.exe", force: true }, { name: "chrome.exe" }],
+    startBefore: [{ path: "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe", args: "--startreplaybuffer --minimize-to-tray" }], reopenClosed: true } };
   const DETEDITS = {};
   const detailsEv = (key) => {
     const appId = key === "game:bg3" ? 1086940 : key === "game:cs2" ? 730 : key === "game:ittakestwo" ? 1426210 : ((found.find((f) => f.key === key) || {}).appId || 0);
@@ -563,6 +566,8 @@
     ps_browse: (id, kind) => {
       if (kind === "installer") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\setup-pbz-update-1.0.3.exe" });
       else if (kind === "trySaveFile" || kind === "trySaveDir") emit({ type: "browse", reqId: id, path: kind === "trySaveFile" ? "C:\\Users\\cris\\Downloads\\BG3 Act 3 save from Mihnea.zip" : "C:\\Users\\cris\\Downloads\\BG3 save" });
+      else if (kind === "program") emit({ type: "browse", reqId: id, path: "C:\\Program Files\\MSI Afterburner\\MSIAfterburner.exe" });
+      else if (kind === "workDir") emit({ type: "browse", reqId: id, path: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64" });
       else if (kind === "art") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Pictures\\My cover.png" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
@@ -604,6 +609,15 @@
     ps_downloads: () => { setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
     ps_ignoreDownload: (path) => { DL = DL.filter((m) => m.path !== path); setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
     ps_recycleDownload: (path) => { DL = DL.filter((m) => m.path !== path); setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
+    ps_saveLaunchOptions: (key, args, o) => { LAUNCH[key] = o; return ok(); },
+    ps_runningApps: () => ok([
+      { name: "Discord.exe", path: "C:\\Users\\cris\\AppData\\Local\\Discord\\app-1.0.9170\\Discord.exe" },
+      { name: "msedge.exe", path: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" },
+      { name: "Spotify.exe", path: "C:\\Users\\cris\\AppData\\Roaming\\Spotify\\Spotify.exe" },
+      { name: "steamwebhelper.exe", path: "C:\\Program Files (x86)\\Steam\\bin\\cef\\cef.win7x64\\steamwebhelper.exe" },
+      { name: "WhatsApp.exe", path: "C:\\Program Files\\WindowsApps\\WhatsApp\\WhatsApp.exe" },
+    ]),
+    ps_steamProperties: () => ok(),
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };
   // Everything else answers quietly (the harness never changes anything).
