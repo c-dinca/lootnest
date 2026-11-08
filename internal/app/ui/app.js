@@ -1879,7 +1879,7 @@
   function newsSection(title, items, showGame) {
     if (!items.length) return "";
     const pic = (it, n) => n.image || S.art["hero:" + coverKey(it)] || S.covers[coverKey(it)] || "";
-    const meta = (it, n) => `<span class="news-meta"><time class="ln-num">${esc(day(n.date))}</time>${n.update ? '<span class="ln-tag ln-tag--accent">Update</span>' : ""}${showGame ? `<span>${esc(it.name)}</span>` : ""}</span>`;
+    const meta = (it, n) => `<span class="news-meta"><time class="ln-num">${esc(day(n.date))}</time>${n.update ? '<span class="ln-tag ln-tag--strong">Update</span>' : ""}${showGame ? `<span>${esc(it.name)}</span>` : ""}</span>`;
     const [f, ...rest] = items;
     const fp = pic(f.it, f.n);
     const featured = `<button class="news-feature" data-action="read-news" data-key="${esc(coverKey(f.it))}" data-i="${f.i}">
@@ -3543,7 +3543,7 @@
     const what = [o.profiles ? "its profiles and their saves" : o.saves.length ? `its saves (${o.saves.map(esc).join(", ")})` : "", "playtime, status, collections and settings"].filter(Boolean).join(", ");
     return `<div class="copy-card"><div><b>${esc(o.new.name)} looks like a new copy of ${esc(o.old.name)}</b>
       <p>${o.oldGone ? `The old folder, <span class="selectable">${esc(o.old.dir)}</span>, is gone.` : `The old copy is still in <span class="selectable">${esc(o.old.dir)}</span>.`} Lootnest can carry over ${what}.</p></div>
-      <div class="gpage-actions">${btn(`data-action="copy-carry" ${ids}`, C.busy ? "Carrying over" : "Carry everything over", "ln-button--primary")}${compact ? "" : btn(`data-action="copy-dismiss" ${ids}`, "Not the same game", "ln-button--ghost")}</div></div>`;
+      <div class="gpage-actions">${btn(`data-action="copy-carry" ${ids}`, C.busy ? "Carrying over" : "Carry everything over")}${compact ? "" : btn(`data-action="copy-dismiss" ${ids}`, "Not the same game", "ln-button--ghost")}</div></div>`;
   }
   function carriedCard(oldKey) {
     const C = S.carried[oldKey];
@@ -3615,7 +3615,7 @@
     const same = (m.check || {}).state === "same";
     return `<div class="copy-card dl-card"><span class="upd-art dl-art" aria-hidden="true">${updArt(updItem(m.key)) || `<span>${esc(m.game)}</span>`}</span>
       <div class="dl-text"><b>${esc(m.game)}</b><p>${dlVer(m)}</p><p class="selectable">${esc(m.name)}</p></div>
-      <div class="gpage-actions">${same ? dlRecycle(m) : `<button class="ln-button ${m.newer ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button>`}
+      <div class="gpage-actions">${same ? dlRecycle(m) : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button>`}
         <button class="ln-button ln-button--ghost ln-button--sm" data-action="dl-ignore" ${dlIds(m)}>Ignore</button></div></div>`;
   }
   function dlNote(it) {
@@ -3651,7 +3651,7 @@
     const found = dl.length ? `<section class="upd-look" aria-label="Found in your Downloads"><div class="upd-sec-head"><h2>Found in your Downloads</h2><span class="upd-sec-n ln-num">${dl.length}</span></div>${dl.map(dlCard).join("")}</section>` : "";
     const look = nLook || done.length ? `<section class="upd-look" aria-label="Needs a look"><div class="upd-sec-head"><h2>Needs a look</h2><span class="upd-sec-n ln-num">${nLook}</span></div>
       ${done.map(carriedCard).join("")}${offers.map((o) => copyCard(o, false)).join("")}
-      ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn">${GI.alert}<div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--primary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}</section>` : "";
+      ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn">${GI.alert}<div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}</section>` : "";
     const list = U.games.filter((g) => F === "all" || updState(g, U).k === F || (F === "new" && g.newer))
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || a.name.localeCompare(b.name));
     const cards = list.length ? `<ol class="upd-cards">${list.map((r) => updCard(r, U)).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
@@ -3776,7 +3776,7 @@
   // requirements beside this PC. Opt-in, in Settings, Online.
   const money = (n, cur) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: cur }).format(n); } catch (e) { return n.toFixed(2) + " " + cur; } };
   const cents = (p) => (p ? money(p.final / 100, p.currency) : "");
-  const offTag = (pct) => (pct > 0 ? `<span class="ln-tag ln-tag--accent">${pct}% off</span>` : "");
+  const offTag = (pct) => (pct > 0 ? `<span class="ln-tag ln-tag--strong ln-num">-${pct}%</span>` : "");
   function viewFind() {
     const on = cfg().settings.findGames;
     const search = on ? `<div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="find-q" class="ln-input" placeholder="Search the store" value="${esc(S.find.q)}" autocomplete="off" spellcheck="false" aria-label="Search the store"></label></div>` : "";
@@ -3936,8 +3936,7 @@
         <div class="ach-hero">
           <div class="ach-hero-ring">${ring(allPct, 132)}</div>
           <dl class="ln-meta ach-stats">${gpStat(cu(total), "unlocked", p)}${gpStat(cu(perfect), perfect === 1 ? "game at 100%" : "games at 100%")}${gpStat(cu(rows.length), rows.length === 1 ? "game with achievements" : "games with achievements")}${gpStat(cu(all - total), "still to get")}</dl>
-        </div>
-        <div class="ach-bar ach-summary-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${total}" aria-label="${total} of ${all} achievements"><span style="width:${allPct}%"></span></div></div>
+        </div></div>
       ${show}
       <div class="ach-cols">
         <section><div class="ln-section-head"><div><h2>Games</h2></div><span class="ach-count ln-num">${rows.length}</span></div>

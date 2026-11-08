@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.58.3
+
+- Racing Red is kept for a few things on each page: the main button, the game's progress and the page you're on in the sidebar. It no longer marks a cover or the scrollbar you point at, and page titles have no red line under them.
+- The Update tag on patch notes and the discount on store prices are plain grey tags now, and a discount reads as "-50%".
+- In Settings, the category you're in is a plain highlight. The sidebar's current page keeps its red bar and icon on a grey fill instead of a pink one.
+- On the Updates page, Apply the update is the only red button; a newer version keeps a small red dot without the pulse, and the card has no red edge. Review and apply, Carry everything over and Undo the update are plain buttons.
+- On the Achievements page, the summary keeps its red ring and drops the long bar under it, which showed the same figure. Each game's ring, here and in Big Picture, and Lootnest's milestones are grey. A game at 100% keeps its gold ring.
+
 ## 1.58.2
 
 - Panels, cards and pop-up dialogs are solid now instead of see-through, so text on them is easier to read. The Library's filters bar stays put at the top of the page without the games showing through it, and lines up with the grid.
