@@ -30,6 +30,9 @@ type Env struct {
 	// SaveDB is the list of where games keep their saves (savedb.go), or
 	// nil when "Find save locations online" is off or it isn't downloaded.
 	SaveDB func() *SaveDB
+	// PluginSaves are the save locations plugins list, suggested after
+	// SaveDB's (nil without any).
+	PluginSaves func() []PluginSaveDB
 }
 
 var envVarRe = regexp.MustCompile(`%([A-Za-z0-9_()]+)%`)

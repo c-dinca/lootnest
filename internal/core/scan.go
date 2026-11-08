@@ -42,6 +42,8 @@ type FoundGame struct {
 	// id, Epic's namespace:item:app, Ubisoft's, Battle.net's code), for
 	// the store's own links (StoreAction).
 	StoreID string `json:"storeId,omitempty"`
+	// SourceName names a plugin's source (Source is "plugin:<id>").
+	SourceName string `json:"sourceName,omitempty"`
 }
 
 // MergeAdded puts the games the user added by hand into the scan results.
@@ -289,7 +291,7 @@ func ProposePaths(sugg []Suggestion, preset *Preset) []string {
 	var out []string
 	var picked []string
 	for _, s := range sugg {
-		if s.Size > 1<<30 {
+		if s.Size > 1<<30 || s.Plugin != "" {
 			continue
 		}
 		overlap := false
@@ -573,6 +575,11 @@ func sourceRank(s string) int {
 		return 1
 	case "shortcut":
 		return 2
+	}
+	// A plugin's games come last: a game Lootnest finds by itself keeps its
+	// own source, so turning the plugin off never takes it away.
+	if strings.HasPrefix(s, "plugin:") {
+		return 4
 	}
 	return 3
 }

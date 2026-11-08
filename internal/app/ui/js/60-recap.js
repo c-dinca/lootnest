@@ -135,14 +135,14 @@
       items.forEach((it) => {
         const t = (playtimeOf(it) || {})[p.id] || 0;
         if (!t && !st.recent.some((x) => x.it === it)) return;
-        const l = sourceLabel(it.source);
+        const l = sourceLabel(it.source, it.f);
         by[l] = by[l] || { n: 0, t: 0 }; by[l].n++; by[l].t += t;
       });
       const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n || b[1].t - a[1].t);
       const max = Math.max(1, ...rows.map((r) => r[1].n));
       return rows.length ? sec("Collection", `<ul class="bars">${rows.map(([l, v]) => `<li><span class="bl">${esc(l)}</span>
           <span class="bt"><span style="width:${Math.max(4, (v.n / max) * 100)}%"></span></span><span class="bv">${v.n} ${v.n === 1 ? "game" : "games"}${v.t ? ", " + esc(hours(v.t)) : ""}</span></li>`).join("")}</ul>
-          <p class="hint">${items.length} games in the Library on this PC, from ${new Set(items.map((it) => sourceLabel(it.source))).size} places.</p>`) : "";
+          <p class="hint">${items.length} games in the Library on this PC, from ${new Set(items.map((it) => sourceLabel(it.source, it.f))).size} places.</p>`) : "";
     }
     if (s === "recent") {
       if (!st.recent.length) return "";

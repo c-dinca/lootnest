@@ -72,6 +72,8 @@ func (a *App) emitDetails(key string, fetched *core.GameDetails, extra map[strin
 	if fetched != nil && fetched.Unknown {
 		fetched = nil
 	}
+	under, from := a.pluginDetails(key)
+	fetched = core.LayerDetails(under, from, fetched)
 	e := core.LoadDetailsEdit(DataDir(), key)
 	if fetched != nil || !e.Empty() {
 		out["details"], out["edited"] = core.MergeDetails(fetched, e), !e.Empty()
@@ -82,6 +84,9 @@ func (a *App) emitDetails(key string, fetched *core.GameDetails, extra map[strin
 // apiGameDetails answers with "details" events for the game at key.
 func (a *App) apiGameDetails(key string) {
 	if !a.detailsOn() {
+		if len(a.plugins().meta) > 0 {
+			go a.emitDetails(key, nil, nil)
+		}
 		return
 	}
 	detailsMu.Lock()
@@ -143,7 +148,8 @@ func (a *App) apiSaveDetailsEdit(key string, e core.DetailsEdit) error {
 			kept = nil
 		}
 	}
-	if err := core.SaveDetailsEdit(dir, key, core.CleanDetailsEdit(e, kept)); err != nil {
+	under, from := a.pluginDetails(key)
+	if err := core.SaveDetailsEdit(dir, key, core.CleanDetailsEdit(e, core.LayerDetails(under, from, kept))); err != nil {
 		return err
 	}
 	a.emitDetails(key, kept, nil)

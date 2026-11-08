@@ -209,6 +209,7 @@
     image: gsvg('<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="1.5"/><circle cx="7.5" cy="8.25" r="1.25"/><path d="m3.75 14.75 4-4 3 3 2-2 3.5 3.5"/>'),
     launch: gsvg('<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="1.5"/><path d="M8.75 7.75v4.5L12.5 10z"/>'),
     pad: gsvg('<path d="M6.5 6h7a3.5 3.5 0 0 1 3.4 2.7l.85 3.75a2 2 0 0 1-3.4 1.8L12.6 12.5H7.4l-1.75 1.75a2 2 0 0 1-3.4-1.8l.85-3.75A3.5 3.5 0 0 1 6.5 6z"/><path d="M6.5 8.25v2.5M5.25 9.5h2.5M13 8.75v.01M14.5 10.25v.01"/>'),
+    puzzle: gsvg('<path d="M4 6.5h3.25a1.75 1.75 0 1 1 3.5 0H14v3.25a1.75 1.75 0 1 1 0 3.5V16H4z"/>'),
     star: gsvg('<path d="M10 3.25l2.05 4.3 4.7.65-3.42 3.27.83 4.68L10 13.9l-4.16 2.25.83-4.68L3.25 8.2l4.7-.65z"/>'),
   };
   // A player's avatar in the system's style: their picture, a game's cover,
@@ -247,7 +248,7 @@
     const real = h.url;
     const title = logo ? `<img class="gpage-logo" src="${logo}" alt="${esc(it.name)}">` : esc(it.name);
     const rec = (S.d.recent || {})[recentKey(it)];
-    const meta = [esc(sourceLabel(it.source))];
+    const meta = [esc(sourceLabel(it.source, it.f))];
     const installed = page && installOf(groupOf(it) || it); // every copy, as in the Library
     if (installed) meta.push(`<span class="ln-num">${esc(about(installed))}</span> on this PC`);
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
@@ -266,7 +267,7 @@
       // A game from more than one store: which copy starts, and the others.
       const grp = page && groupOf(it);
       const startWith = grp ? `<button class="ln-button ln-button--ghost" data-action="start-with" data-key="${esc(f.key)}" aria-haspopup="menu">${GI.swap}Start with</button>` : "";
-      const also = grp ? `<p class="gpage-note">${GI.copy}<span>Also in ${andList(grp.copies.filter((c) => c.id !== it.id).map((c) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(c.id)}" title="${esc(c.f.dir || "")}">${esc(sourceLabel(c.source))}</button>`))}. Each copy keeps its own saves and play time.</span></p>` : "";
+      const also = grp ? `<p class="gpage-note">${GI.copy}<span>Also in ${andList(grp.copies.filter((c) => c.id !== it.id).map((c) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(c.id)}" title="${esc(c.f.dir || "")}">${esc(sourceLabel(c.source, c.f))}</button>`))}. Each copy keeps its own saves and play time.</span></p>` : "";
       // Home: Play, when it was played, and the way to turn profiles on.
       if (!page) bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>

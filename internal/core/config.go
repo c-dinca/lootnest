@@ -49,6 +49,9 @@ type Player struct {
 	NowNote    string   `json:"nowNote,omitempty"`
 	Favorites  []string `json:"favorites,omitempty"`
 	Sections   []string `json:"sections,omitempty"`
+	// Theme is the id of the theme plugin whose colours show while this
+	// profile is seated; "" is Lootnest's own.
+	Theme string `json:"theme,omitempty"`
 }
 
 // ProfileSections are the parts a profile page can show, in their default
@@ -507,6 +510,9 @@ func ValidatePlayers(ps []Player) error {
 			}
 		}
 		p.BannerY = min(max(p.BannerY, 0), 100)
+		if !pluginIDRe.MatchString(p.Theme) {
+			p.Theme = ""
+		}
 		seen := map[string]bool{}
 		secs := p.Sections[:0:0]
 		for _, sec := range p.Sections {

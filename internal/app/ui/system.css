@@ -58,7 +58,7 @@
   --fg-on-light: #111217;                /* text on Ice Grey: 14.7:1 */
 
   --accent:      #EF233C;                /* Racing Red: marks, bars, switches; never small text */
-  --accent-wash: oklch(0.612 0.231 22.6 / 0.16);
+  --accent-wash: color-mix(in oklch, var(--accent) 16%, transparent);
   --accent-hover: oklch(0.660 0.230 22.6); /* the red button on hover */
   --fg-on-accent: oklch(0.140 0.020 20);   /* bold text on Racing Red: 4.7:1, 5.7:1 on hover */
 

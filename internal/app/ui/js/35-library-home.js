@@ -4,8 +4,10 @@
     return { loading: `Loading ${possessive(n)} files`, mods: s.mods && s.mods.off ? "Putting the game back as it was" : `Putting ${possessive(n)} mods in`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${possessive(n)} progress` }[s.phase] || "";
   }
 
-  const sourceLabel = (src) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", xbox: "Xbox", ea: "EA app", ubisoft: "Ubisoft Connect", battlenet: "Battle.net",
-    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", hydra: "Hydra", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src] || "Other");
+  // A plugin's games carry their source's own name (f.sourceName).
+  const sourceLabel = (src, f) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", xbox: "Xbox", ea: "EA app", ubisoft: "Ubisoft Connect", battlenet: "Battle.net",
+    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", hydra: "Hydra", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src]
+    || ((src || "").startsWith("plugin:") ? (f && f.sourceName) || "Plugin" : "Other"));
   // Each store and launcher is its own filter; folders, shortcuts and games
   // added by hand are "Other".
   const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra"];
@@ -41,9 +43,9 @@
   const groupOf = (it) => (it.kind === "found" && copyGroups(everyItem()).find((grp) => grp.copies.some((c) => c.id === it.id))) || null;
   const copiesOf = (it) => it.copies || [it];
   const andList = (list) => new Intl.ListFormat("en", { type: "conjunction" }).format(list);
-  const storeNames = (it) => andList(copiesOf(it).map((c) => sourceLabel(c.source)));
+  const storeNames = (it) => andList(copiesOf(it).map((c) => sourceLabel(c.source, c.f)));
   // A small neutral mark per store a game is in.
-  const storeMarks = (it) => it.copies ? `<span class="lib-stores">${it.copies.map((c) => `<span class="ln-tag">${esc(sourceLabel(c.source))}</span>`).join("")}</span>` : esc(sourceLabel(it.source));
+  const storeMarks = (it) => it.copies ? `<span class="lib-stores">${it.copies.map((c) => `<span class="ln-tag">${esc(sourceLabel(c.source, c.f))}</span>`).join("")}</span>` : esc(sourceLabel(it.source, it.f));
 
   // Name search that forgives: accents, punctuation and spacing don't
   // matter, words can come in any order, and initials work ("bg3").
@@ -474,7 +476,7 @@
   // "Mihai, yesterday": who played it last, in their colour.
   function playedBy(it) {
     const r = copiesOf(it).map((c) => (S.d.recent || {})[recentKey(c)]).filter(Boolean).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
-    if (!r) return `<span class="by">${esc(sourceLabel(it.source))}</span>`;
+    if (!r) return `<span class="by">${esc(sourceLabel(it.source, it.f))}</span>`;
     const p = r.player && player(r.player);
     return p ? `<span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span><span class="by">${esc(p.name)}, ${esc(ago(r.at))}</span>` : `<span class="by">${esc(cap(ago(r.at)))}</span>`;
   }
@@ -679,7 +681,7 @@
     if (it.kind === "owned") {
       return `<div class="lib-row is-owned${S.libSel.has(recentKey(it)) ? " is-sel" : ""}" data-k="${esc(recentKey(it))}"><button class="lib-row-open" data-action="open-sheet" ${itemAttr(it)}>
         <span class="lib-row-thumb">${thumb}</span>
-        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source))}, not installed</small></span>
+        <span class="lib-row-name"><b>${esc(it.name)}</b><small>${esc(sourceLabel(it.source, it.f))}, not installed</small></span>
         <span class="lib-row-cell"></span><span class="lib-row-cell"></span><span class="lib-row-cell"></span></button>${installButton(it, "ln-button--secondary ln-button--sm lib-row-play", "Install")}</div>`;
     }
     const prof = owners.length ? owners.map((p) => `<span class="ln-mark ln-player${p.id === owner ? " is-loaded" : ""}" style="--player:${esc(p.color)}" title="${esc(p.name)}${p.id === owner ? ", files loaded" : ""}"></span>`).join("") : `<span class="lib-row-dim">Off</span>`;
@@ -758,7 +760,7 @@
   function typeCover(it, cls, o = {}) {
     const logo = artFor(it, "logo").url, ic = !logo && S.icons[coverKey(it)];
     const name = logo ? `<img class="ln-tile__logo" src="${logo}" alt="">` : `${o.icon && ic ? `<img src="${ic}" alt="">` : ""}<b>${esc(it.name)}</b>`;
-    return plate(ic, "ln-tile__type" + (cls ? " " + cls : ""), `${name}${o.store === false ? "" : `<span>${esc(sourceLabel(it.source))}</span>`}`, o.attr);
+    return plate(ic, "ln-tile__type" + (cls ? " " + cls : ""), `${name}${o.store === false ? "" : `<span>${esc(sourceLabel(it.source, it.f))}</span>`}`, o.attr);
   }
   function coverHTML(it) {
     const key = coverKey(it), a = artFor(it, "cover");
@@ -787,7 +789,7 @@
       : S.sort === "size" ? (installOf(it) ? about(installOf(it)) : S.sizes ? "Size not counted yet" : "Counting") : "";
     const meta = sortCap ? `<span class="ln-num">${esc(sortCap)}</span>`
       : owner && player(owner) ? `<span class="ln-mark ln-player" style="--player:${esc(color(owner))}"></span>${esc(possessive(pname(owner)))} files`
-      : g ? "Profiles on" : it.kind === "owned" ? `${esc(sourceLabel(it.source))}, not installed` : storeMarks(it);
+      : g ? "Profiles on" : it.kind === "owned" ? `${esc(sourceLabel(it.source, it.f))}, not installed` : storeMarks(it);
     const attr = itemAttr(it), k = recentKey(it);
     return `<div class="card lib-card${s ? " busy" : ""}${it.kind === "owned" ? " is-owned" : ""}${bySort && S.libSel.has(k) ? " is-sel" : ""}"${bySort ? ` data-k="${esc(k)}"` : ""}>
       <button class="ln-tile" data-action="open-sheet" ${attr} aria-label="${esc(it.name)}${sortCap ? `, ${esc(sortCap)}` : owner && player(owner) ? `, ${esc(possessive(pname(owner)))} files loaded` : ""}"><div class="ln-tile__cover cover">${coverHTML(it)}${bars}${badge}${bySort ? `<span class="lib-check" aria-hidden="true">${GI.tick}</span>` : ""}</div>

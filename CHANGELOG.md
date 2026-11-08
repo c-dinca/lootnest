@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.89.0
+
+- **Plugins**, a new category in Settings. **Install from file** takes a plugin's .zip. Plugins are data only: they can add games to the Library, suggest save locations, fill in game details and change colours. They can't run anything, go online, or touch your saves.
+- Lootnest checks every file in a plugin before it installs it, and refuses one that holds anything but data (such as a program or a script), a file outside its own folder, a file over 8 MB, more than 32 MB or more than 500 files, and says why.
+- Each plugin can be turned off, removed, or rolled back to the version it replaced. Turning off one that adds games takes its games out of the Library; games with profiles, and every save, stay as they are.
+- **Games from other apps**: a plugin can read where another app lists its games, such as RetroArch's playlists or another launcher's file, and add them to the Library. Lootnest only reads those files and registry keys.
+- **Save locations**: a plugin's list of where games keep their saves shows as suggestions, marked with the plugin's name. They're never used until you choose them.
+- **Game details**: a plugin's summaries, genres, developers and release dates fill in what Steam's details leave empty, also with Game details off. Your own edits still win.
+- **Themes**: a plugin can change Lootnest's colours, only the background, text, line and accent colours, and only if every text stays readable (WCAG AA contrast). Each profile picks its theme in Edit profile, Look; it shows while that profile is at the PC.
+- In safe mode every plugin is off.
+
 ## 1.88.0
 
 - **Mods go in as links when they can.** When the game is on the same drive as Lootnest's copy of a mod, each file goes into the game's folder as a link to that copy, so it takes no extra space and Apply is quicker. On another drive, or if a link can't be made, the file is copied as before. Settings and save files (.ini, .cfg, .json, .txt and the like, and anything in a Config or Saves folder) are always copied, because games rewrite them.

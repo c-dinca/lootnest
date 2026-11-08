@@ -898,6 +898,23 @@
     "move-open"(el) { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; openMove(+el.dataset.app, el.dataset.name); },
     "st-sort"(el) { S.stSort = el.dataset.col; setPref("stSort", S.stSort); render(); },
     "st-more"(el) { storageMenu(el); },
+    async "plugin-install"() {
+      S.pluginError = "";
+      const r = await browse("plugin", "");
+      if (!r.path) { if (r.error) toast(r.error, "error"); return; }
+      try { const m = await api.installPlugin(r.path); await pluginsDone(`Installed ${m.name} ${m.version}.`); }
+      catch (e) { S.pluginError = errText(e); render(); }
+    },
+    async "plugin-rollback"(el) {
+      try { const m = await api.rollbackPlugin(el.dataset.id); await pluginsDone(`${m.name} is back to ${m.version}.`); } catch (e) { toast(errText(e), "error"); }
+    },
+    async "plugin-remove"(el) {
+      const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.id);
+      if (!p) return;
+      const games = (p.provides || []).includes("sources") ? " The games it added leave the Library; games with profiles stay as they are." : "";
+      if (!await confirmDialog({ title: `Remove ${p.name}?`, body: `Its files go from Lootnest's plugins folder.${games} Your saves aren't touched.`, ok: "Remove" })) return;
+      try { await api.removePlugin(p.id); await pluginsDone(`Removed ${p.name}.`); } catch (e) { toast(errText(e), "error"); }
+    },
     "movefolder-open"(el) { const it = itemFor(el); closeContext(); if (it) openMoveFolder(it); },
     "movefolder-pick"(el) { if (S.dialog && S.dialog.kind === "movefolder") { S.dialog.pick = el.dataset.path; renderOverlay(); } },
     async "movefolder-browse"() {
@@ -957,7 +974,7 @@
     "add-player"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); render(); const ins = document.querySelectorAll('[data-field="pname"]'); ins[ins.length - 1].focus(); },
     "remove-player"(el) { S.players.splice(+el.dataset.i, 1); render(); },
     "shelf-all"(el) { S.tag = el.dataset.tag; render(); const t = $(".lib-tools"); if (t) t.scrollIntoView({ block: "start" }); },
-    "set-tab"(el) { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); ctlAsked = false; render(); const v = $("#view"); if (v) v.scrollTop = 0; },
+    "set-tab"(el) { S.setTab = el.dataset.tab; S.pluginError = ""; setPref("setTab", S.setTab); ctlAsked = false; render(); const v = $("#view"); if (v) v.scrollTop = 0; },
     "reset-players"() { S.players = null; render(); },
     "edit-profiles"() { S.dialog = { kind: "profiles" }; renderOverlay(); focusOverlay(); },
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },
@@ -1108,7 +1125,7 @@
     "start-with"(el) {
       const it = everyItem().find((x) => x.kind === "found" && x.id === el.dataset.key), grp = it && groupOf(it);
       if (!grp) return;
-      const m = menuUnder(el, `<div class="ctx-title">Start with</div>${grp.copies.map((c) => `<button data-action="start-copy" data-group="${esc(grp.key)}" data-key="${esc(c.id)}" role="menuitemradio" aria-checked="${c.id === it.id}" title="${esc(c.f.dir || "")}"><span class="grow">${esc(sourceLabel(c.source))}</span>${c.id === it.id ? GI.tick : ""}</button>`).join("")}`);
+      const m = menuUnder(el, `<div class="ctx-title">Start with</div>${grp.copies.map((c) => `<button data-action="start-copy" data-group="${esc(grp.key)}" data-key="${esc(c.id)}" role="menuitemradio" aria-checked="${c.id === it.id}" title="${esc(c.f.dir || "")}"><span class="grow">${esc(sourceLabel(c.source, c.f))}</span>${c.id === it.id ? GI.tick : ""}</button>`).join("")}`);
       const first = m.querySelector('[aria-checked="true"]') || m.querySelector("button");
       if (first) first.focus({ preventScroll: true });
     },
@@ -1279,6 +1296,12 @@
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
+    if (el.dataset.pluginOn) {
+      const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.pluginOn), on = el.checked;
+      api.setPluginOn(el.dataset.pluginOn, on).then(() => pluginsDone(p && !on && (p.provides || []).includes("sources") ? `${p.name} is off. Its games left the Library; games with profiles stay as they are.` : ""),
+        (e) => { el.checked = !on; toast(errText(e), "error"); });
+      return;
+    }
     if (el.dataset.backup === "auto") { saveBackup({ auto: el.checked }); return; }
     if (el.dataset.backup === "sync") { S.saves = null; saveBackup({ sync: el.checked }).then(loadSaves); return; }
     if (el.dataset.backup === "keep") { saveBackup({ keep: parseInt(el.value, 10) || 0 }); return; }

@@ -74,6 +74,7 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 		all = append(all, hydra...)
 	}
 
+	all = append(all, a.pluginGames()...)
 	all = append(all, core.ScanFolders(roots, containers)...)
 
 	// Shortcuts the user made (common for games installed by hand).
@@ -161,7 +162,8 @@ func (a *App) libraryGames() []core.FoundGame {
 	if a.found == nil {
 		a.found = a.store.LoadLibrary()
 	}
-	return core.ApplyLibraryPrefs(core.MergeAdded(a.found, a.cfg.AddedGames), a.cfg.LibraryPrefs)
+	found := core.DropPluginGames(a.found, a.plugins().sources)
+	return core.ApplyLibraryPrefs(core.MergeAdded(found, a.cfg.AddedGames), a.cfg.LibraryPrefs)
 }
 
 // visibleFound hides games already in Lootnest and ones the user dismissed.
@@ -256,7 +258,7 @@ func (a *App) startScan() {
 			list, checks = a.scanPC()
 		}()
 		fresh := len(list)
-		list = core.MergeFound(saved, list, dirExists)
+		list = core.DropPluginGames(core.MergeFound(saved, list, dirExists), a.plugins().sources)
 		a.mu.Lock()
 		a.found = list
 		a.scanning = false

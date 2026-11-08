@@ -46,7 +46,7 @@
       for (const k in S.details) if (S.details[k].error) delete S.details[k]; // asked again on this visit
     }
     if (view === "cloud") { loadBackupInfo(); loadSaves(); }
-    if (view === "settings") ctlAsked = false;
+    if (view === "settings") { ctlAsked = false; S.pluginError = ""; }
     if (view !== "players") S.players = null;
     if (view !== "library") S.libSel.clear();
   }
@@ -234,6 +234,7 @@
     b.innerHTML = seat ? `${lnAvatar(seat)}<span class="bar-label">${esc(seat.name)}</span>` : `<span class="bar-nobody">${GI.person}</span><span class="bar-label">Sit down</span>`;
     b.setAttribute("aria-label", label + ". Who's here");
     b.title = label;
+    applyTheme();
   }
   // A menu in #ctx under the button that opened it, growing from it. The
   // same button closes it again.

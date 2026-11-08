@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.88.0, beta)
+## Where things stand (1.89.0, beta)
 
 These shipped recently, newest last:
 
@@ -651,6 +651,19 @@ These shipped recently, newest last:
   changed content kept in `changed\`. `ModConflicts`, conflict lines
   and the `modconf` drawer; drag to reorder (`ps_modOrder` takes the
   full order).
+- **1.89** Roadmap Plugins 1, data only (docs/PLUGINS.md): a .zip with
+  `plugin.json` and only data files (`checkPluginZip`,
+  `CheckPluginDir`; 8 MB per file, 32 MB, 500 files), installed into
+  `plugins\<id>` with the old version kept in `plugins\.old` for
+  `RollbackPlugin`; on/off in plugins.json; all off in safe mode.
+  Sources (`pluginsources.go`: folder, json, ini, vdf, registry read via
+  `win.ReadRegKey` KEY_READ; Source `plugin:<id>`, ranked after Lootnest's
+  own), save presets as suggestions only (`Env.PluginSaves`, never
+  proposed), local metadata layered under Steam's and the user's
+  (`LayerDetails`), themes (`plugintheme.go`: an allowlist of 14 colour
+  tokens, contrast pairs checked in Go incl. glass over ground and the
+  status colours; `Player.Theme`, `applyTheme` on the seat). UI
+  `79-plugins.js`, Settings, Plugins. Harness `?plugins=1&theme=1`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

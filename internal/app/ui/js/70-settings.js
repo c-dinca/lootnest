@@ -78,6 +78,7 @@
           `<div class="bk-row"><div><b>${esc(name)}</b></div>${b("secondary", `data-action="found-unhide" data-key="${esc(k)}"`, "Show again")}</div>`).join("")) : "")],
       ["controllers", "Controllers", GI.pad, "The controllers on this PC, and the apps that change how games see them.", viewControllers],
       ["storage", "Storage", GI.drive, "What your games take on each drive, and moving a game to another one.", viewStorage],
+      ["plugins", "Plugins", GI.puzzle, "Plugins are data only: they can add games to the Library, suggest save locations, fill in game details and change colours. They can't run anything, go online, or touch your saves.", viewPlugins],
       ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
           ${sw("findGames", "Store", "The Store page, and the search in the top bar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}

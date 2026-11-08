@@ -17,6 +17,9 @@ type Suggestion struct {
 	Reason   string `json:"reason"`
 	Size     int64  `json:"size"`
 	Modified string `json:"modified"`
+	// Plugin names the plugin that listed it: a suggestion only, never
+	// proposed by itself (ProposePaths).
+	Plugin string `json:"plugin,omitempty"`
 }
 
 func norm(s string) string {
@@ -102,8 +105,22 @@ func (e *Env) SuggestPaths(gameName, installDir string, appID int) []Suggestion 
 		out = append(out, s)
 	}
 
-	for _, abs := range e.listedSaves(gameName, installDir, appID) {
+	var db *SaveDB
+	if e.SaveDB != nil {
+		db = e.SaveDB()
+	}
+	for _, abs := range e.listedSaves(db, gameName, installDir, appID) {
 		push(abs, "Listed on PCGamingWiki")
+	}
+	if e.PluginSaves != nil {
+		for _, p := range e.PluginSaves() {
+			for _, abs := range e.listedSaves(p.DB, gameName, installDir, appID) {
+				n := len(out)
+				if push(abs, "From "+p.Name); len(out) > n {
+					out[n].Plugin = p.Name
+				}
+			}
+		}
 	}
 
 	if appID > 0 && e.SteamUser != nil {
@@ -229,15 +246,12 @@ func FindExe(dir, processName string) string {
 	return found
 }
 
-// listedSaves is where the save locations list says the game keeps its saves
-// and settings, as they exist on this PC. Files that share a folder become
+// listedSaves is where a save locations list (db, may be nil) says the
+// game keeps its saves and settings, as they exist on this PC. Files that share a folder become
 // that folder, so a profile swaps one location instead of each file, unless
 // the folder is the game's own install folder (or holds it).
-func (e *Env) listedSaves(gameName, installDir string, appID int) []string {
-	if e.SaveDB == nil {
-		return nil
-	}
-	dg := e.SaveDB().Find(appID, gameName, filepath.Base(installDir))
+func (e *Env) listedSaves(db *SaveDB, gameName, installDir string, appID int) []string {
+	dg := db.Find(appID, gameName, filepath.Base(installDir))
 	if dg == nil {
 		return nil
 	}

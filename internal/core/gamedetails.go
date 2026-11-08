@@ -57,7 +57,10 @@ type GameDetails struct {
 	Controller string `json:"controller,omitempty"`
 	// Pads are the pad families Steam's categories name beside full or
 	// partial support (which means an Xbox pad): only "playstation" so far.
-	Pads    []string  `json:"pads,omitempty"`
+	Pads []string `json:"pads,omitempty"`
+	// From names the plugin that filled in what Steam left empty (set as
+	// the page is sent, never kept).
+	From    string    `json:"from,omitempty"`
 	Fetched time.Time `json:"fetched"`
 	// Unknown: the Steam store doesn't have the game, kept so it isn't
 	// asked again on every visit.

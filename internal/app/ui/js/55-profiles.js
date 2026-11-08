@@ -112,7 +112,7 @@
     }
     const act = S.d.activity || {};
     const longest = (act.longest || {})[p.id], sessions = (act.sessions || {})[p.id] || 0;
-    const sources = new Set(items.filter((it) => ((playtimeOf(it) || {})[p.id] || 0) > 0 || recent.some((x) => x.it === it)).map((it) => sourceLabel(it.source)));
+    const sources = new Set(items.filter((it) => ((playtimeOf(it) || {})[p.id] || 0) > 0 || recent.some((x) => x.it === it)).map((it) => sourceLabel(it.source, it.f)));
     return { total, top, topT, recent, profiles, played, streak, best, longest, sessions, sources };
   }
 

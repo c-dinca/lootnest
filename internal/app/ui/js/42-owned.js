@@ -38,7 +38,7 @@
   // A game you own but haven't installed: its art, and Install with its store.
   function ownedView(it) {
     loadArt(it); ensureCover(it);
-    const h = artFor(it, "hero"), logo = artFor(it, "logo").url, store = sourceLabel(it.source);
+    const h = artFor(it, "hero"), logo = artFor(it, "logo").url, store = sourceLabel(it.source, it.f);
     const art = h.url ? artImg(h, "hero", "gpage-art") : `<div class="gpage-plate" aria-hidden="true"><span>${esc(initial(it.name))}</span></div>`;
     const t = storeActText(it.source, "install", it.name);
     return `<div class="gpage ln-root is-owned${h.url ? "" : " no-art"}"><section class="gpage-hero">${art}

@@ -12,7 +12,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 
 **Phases.**
 - 0, S: harden the WebView2 bridge (top frame only, check message Source in Go, drop the upstream echo), as [Microsoft advises](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/security); safe mode.
-- 1, L: install from file; library sources (JSON, INI, VDF, registry, folders); Ludusavi-format save presets as suggestions only; local metadata; token-only themes checked for AA contrast, per profile.
+- 1, L: install from file; library sources (JSON, INI, VDF, registry, folders); Ludusavi-format save presets as suggestions only; local metadata; token-only themes checked for AA contrast, per profile. Shipped in 1.89: Settings, Plugins installs a .zip into `plugins\<id>` after checking every file (`core/plugins.go`), keeps the replaced version for Roll back, and reads sources (`pluginsources.go`, registry through `win.ReadRegKey`), saves and metadata (`pluginmeta.go`) and themes (`plugintheme.go`, the contrast pairs in Go); the format is in [PLUGINS.md](PLUGINS.md).
 - 2, M: online metadata, declared hosts only, a per-plugin switch in Settings, Online, keys in DPAPI, requests logged.
 - 3, M: Ed25519 signatures with the key pinned per plugin; rollback.
 - 4, XL: script plugins with a read-only API; save points only as requests the user confirms.
