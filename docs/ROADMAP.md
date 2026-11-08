@@ -14,7 +14,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 - 0, S: harden the WebView2 bridge (top frame only, check message Source in Go, drop the upstream echo), as [Microsoft advises](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/security); safe mode.
 - 1, L: install from file; library sources (JSON, INI, VDF, registry, folders); Ludusavi-format save presets as suggestions only; local metadata; token-only themes checked for AA contrast, per profile. Shipped in 1.89: Settings, Plugins installs a .zip into `plugins\<id>` after checking every file (`core/plugins.go`), keeps the replaced version for Roll back, and reads sources (`pluginsources.go`, registry through `win.ReadRegKey`), saves and metadata (`pluginmeta.go`) and themes (`plugintheme.go`, the contrast pairs in Go); the format is in [PLUGINS.md](PLUGINS.md).
 - 2, M: online metadata, declared hosts only, a per-plugin switch in Settings, Online, keys in DPAPI, requests logged.
-- 3, M: Ed25519 signatures with the key pinned per plugin; rollback.
+- 3, M: Ed25519 signatures with the key pinned per plugin; rollback. Shipped in 1.90: `signature.json` over a sorted list of every file's SHA-256 (`core/pluginsign.go`, `PluginDigest`, `VerifyPlugin`), the key pinned per id in plugins.json on first use, a key change only through a confirm for the key shown (`InstallPluginNewKey`), no unsigned version over a signed one, Roll back offered only for a kept version with the pinned key, and `cmd/plugsign` for authors; rollback shipped in 1.89.
 - 4, XL: script plugins with a read-only API; save points only as requests the user confirms.
 - 5, L: panels in sandboxed iframes under a strict CSP.
 
@@ -137,7 +137,7 @@ Groundwork and safety first, then offline work with no Windows-only code, then w
 9. Timeline 2 and 4 (L, S).
 10. Controllers 2 and 3 (M, M).
 11. Mods 1 to 3 (L, M, M).
-12. Plugins 1 and 3 (L, M).
+12. Plugins 1 and 3 (L, M). Done in 1.89 and 1.90.
 13. UI 3 to 5 (M each).
 14. Game details 2 to 4; Plugins 2.
 15. Controllers 4 and Mods 4 (L, L): undocumented Steam and game formats.

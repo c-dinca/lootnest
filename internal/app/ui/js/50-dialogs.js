@@ -23,6 +23,7 @@
     if (D.kind === "confirm") {
       o.innerHTML = `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="alertdialog" aria-modal="true">
         <div><h2>${esc(D.title)}</h2><p class="sub">${esc(D.body)}</p></div>
+        ${D.facts ? `<dl class="ln-facts">${D.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
         <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">${esc(D.cancel || "Cancel")}</button>
         <button class="btn primary" data-action="dialog-ok">${esc(D.ok || "OK")}</button></div></div></div>`;
     } else if (D.kind === "newrun") {

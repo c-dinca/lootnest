@@ -581,3 +581,30 @@ PC), a saves plugin (a game whose save folder exists), a metadata plugin
 8. Safe mode (Shift on open): Plugins says every plugin is off, the
    switches and Install from file are disabled, the theme isn't shown and
    the sources plugin's game isn't in the Library.
+
+## 24. Signed plugins (1.90)
+
+With Go on any PC: `go run ./cmd/plugsign keygen` in an empty folder, then
+make a theme plugin folder from docs/PLUGINS.md and
+`go run ./cmd/plugsign sign <folder>`. Zip the folder's contents as
+1.0.0. Make 1.1.0 the same way, and 1.2.0 signed with a second key
+(keygen in another folder).
+
+1. Install 1.0.0: its row says Signed, key and the fingerprint keygen
+   printed. An unsigned plugin's row says Not signed, in the same grey.
+2. Change one colour in theme.json inside a copy of the 1.0.0 .zip, without
+   signing again: it's refused, the signature doesn't match its files.
+3. Install 1.2.0 (the second key): a dialog names both keys, with Cancel
+   focused. Cancel: 1.0.0 stays. Install 1.1.0: it installs, no dialog.
+4. Install 1.2.0 again and choose **Install with the new key**: the row
+   shows the new fingerprint and no **Roll back**, as 1.1.0 has the old
+   key. With the dialog open, replace the .zip with one signed with a third
+   key and accept: the dialog asks again, naming the third key.
+5. Install an unsigned 1.3.0 of the same id: refused, it isn't signed and
+   the version you have is.
+6. Edit theme.json in %LOCALAPPDATA%\Lootnest\plugins\<id>, then open
+   Settings, Plugins without restarting: the plugin is off with the reason.
+   Delete its signature.json: the reason says the signature is gone, with
+   the key.
+7. **Remove** it: the dialog says Lootnest forgets its key; installing the
+   1.0.0 .zip again works with no dialog.

@@ -17,6 +17,7 @@
     const rows = P.plugins.map((p) => `<div class="bk-row pl-row"><div>
         <b>${esc(p.name)}${p.version ? ` <span class="set-opt"><span class="ln-num">${esc(p.version)}</span>${p.author ? `, by ${esc(p.author)}` : ""}</span>` : ""}</b>
         ${p.description ? `<p>${esc(p.description)}</p>` : ""}
+        ${p.problem ? "" : `<p class="pl-key">${p.key ? `Signed, key <span class="ln-num">${esc(p.key)}</span>` : "Not signed"}</p>`}
         ${(p.provides || []).length ? `<p class="pl-kinds">${p.provides.map((k) => `<span class="ln-tag">${PLUGIN_KINDS[k] || esc(k)}</span>`).join("")}</p>` : ""}
         ${p.problem ? `<p class="error-text">${esc(p.problem)}</p>` : ""}</div>
       <div class="pl-acts">${p.older && !safe ? b(`data-action="plugin-rollback" data-id="${esc(p.id)}"`, `Roll back to ${esc(p.older)}`) : ""}
@@ -26,6 +27,19 @@
       <button class="ln-button ln-button--secondary ln-button--sm" data-action="plugin-install" ${safe ? "disabled" : ""}>Install from file</button></div>`;
     const note = safe ? "Lootnest is in safe mode, so every plugin is off. Restart it normally to use them." : "";
     return setSub("Installed", note, `<div class="bk-card">${install}${rows || `<div class="bk-row"><div><p>No plugins yet.</p></div></div>`}</div>`);
+  }
+  // An install's answer (ps_installPlugin): a version signed with another
+  // key than the one pinned is asked about first, Cancel by default, and
+  // only the key shown installs.
+  async function pluginInstalled(path, r, newKey) {
+    if (r.keyChange) {
+      const k = r.keyChange;
+      if (!await confirmDialog({ title: `A new key for ${k.name}`, body: `This version of ${k.name} is signed with a different key than the one you installed. That can mean a new author or someone else's copy.`,
+        facts: [["The key you installed", k.pinned], ["This version's key", k.key]], ok: "Install with the new key", safe: true })) return;
+      return pluginInstalled(path, await api.installPluginNewKey(path, k.key), true);
+    }
+    const m = r.plugin;
+    await pluginsDone(`Installed ${m.name} ${m.version}.${m.pinnedNow ? ` It's signed now, with key ${m.key}, and later versions must have the same key.` : newKey ? ` Later versions must have its new key, ${m.key}.` : ""}`);
   }
   async function pluginsDone(text) {
     S.pluginError = "";

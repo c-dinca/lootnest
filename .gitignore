@@ -4,3 +4,4 @@ cmd/setup/payload/
 *.exe
 design/harness/.cache/
 design/harness/dist/
+plugsign.key

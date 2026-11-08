@@ -2,6 +2,8 @@ package core
 
 import (
 	"archive/zip"
+	"crypto/ed25519"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -57,6 +59,7 @@ type Plugin struct {
 	PluginManifest
 	On      bool   `json:"on"`
 	Older   string `json:"older,omitempty"` // the version Roll back brings back
+	Key     string `json:"key,omitempty"`   // the fingerprint of the key it's signed with
 	Problem string `json:"problem,omitempty"`
 	Dir     string `json:"-"`
 }
@@ -214,10 +217,32 @@ func pluginFiles(dir, sub string, exts ...string) []string {
 	return out
 }
 
+// PluginInstalled is what an install did. PinnedNow is a signed version
+// replacing an unsigned install: its key is pinned from now on.
+type PluginInstalled struct {
+	PluginManifest
+	Key       string `json:"key,omitempty"`
+	PinnedNow bool   `json:"pinnedNow,omitempty"`
+}
+
 // InstallPlugin installs a plugin from a .zip or a folder. It's checked
-// in full in a folder of its own first; a plugin with the same id is
-// replaced only then, and kept in plugins\.old for Roll back.
-func InstallPlugin(dataDir, src string) (*PluginManifest, error) {
+// in full in a folder of its own first, its signature too; a plugin with
+// the same id is replaced only then, and kept in plugins\.old for Roll
+// back. A version signed with another key than the pinned one is refused
+// with a *PluginKeyChange.
+func InstallPlugin(dataDir, src string) (*PluginInstalled, error) {
+	return installPlugin(dataDir, src, "")
+}
+
+// InstallPluginNewKey installs a version signed with another key than the
+// pinned one, and pins the new key, once the user accepted it: accepted is
+// the fingerprint they saw. A version signed with any other key is refused
+// with a *PluginKeyChange again.
+func InstallPluginNewKey(dataDir, src, accepted string) (*PluginInstalled, error) {
+	return installPlugin(dataDir, src, accepted)
+}
+
+func installPlugin(dataDir, src, accepted string) (*PluginInstalled, error) {
 	root := PluginsDir(dataDir)
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
@@ -250,7 +275,21 @@ func InstallPlugin(dataDir, src string) (*PluginManifest, error) {
 	if err != nil {
 		return nil, err
 	}
+	key, err := pluginKey(tmp)
+	if err != nil {
+		return nil, err
+	}
+	state := loadPlugins(dataDir)
+	var kc *PluginKeyChange
+	if err := checkPluginPin(m, state.Keys[m.ID], key, "this version is"); err != nil && !(errors.As(err, &kc) && accepted != "" && kc.Key == accepted) {
+		return nil, err
+	}
 	dst := filepath.Join(root, m.ID)
+	out := &PluginInstalled{PluginManifest: *m}
+	if key != nil {
+		out.Key = KeyFingerprint(key)
+		out.PinnedNow = state.Keys[m.ID] == "" && isDir(dst)
+	}
 	var kept string
 	if isDir(dst) {
 		old := "0.0.0"
@@ -272,14 +311,13 @@ func InstallPlugin(dataDir, src string) (*PluginManifest, error) {
 		}
 		return nil, err
 	}
-	on := loadPluginsOn(dataDir)
-	if _, ok := on[m.ID]; !ok {
-		on[m.ID] = true
-		if err := writeJSONAtomic(pluginsState(dataDir), pluginsFile{On: on}); err != nil {
-			return m, err
-		}
+	if _, ok := state.On[m.ID]; !ok {
+		state.On[m.ID] = true
 	}
-	return m, nil
+	if key != nil {
+		state.Keys[m.ID] = base64.StdEncoding.EncodeToString(key)
+	}
+	return out, writeJSONAtomic(pluginsState(dataDir), state)
 }
 
 // checkPluginZip checks a .zip's list of files before anything in it is
@@ -309,11 +347,14 @@ func checkPluginZip(src string) error {
 	return nil
 }
 
+// pluginsFile is plugins.json: which plugins are on, and the key pinned
+// for each signed one (base64).
 type pluginsFile struct {
-	On map[string]bool `json:"on"`
+	On   map[string]bool   `json:"on"`
+	Keys map[string]string `json:"keys,omitempty"`
 }
 
-func loadPluginsOn(dataDir string) map[string]bool {
+func loadPlugins(dataDir string) pluginsFile {
 	var f pluginsFile
 	if b, err := os.ReadFile(pluginsState(dataDir)); err == nil {
 		_ = json.Unmarshal(b, &f)
@@ -321,7 +362,10 @@ func loadPluginsOn(dataDir string) map[string]bool {
 	if f.On == nil {
 		f.On = map[string]bool{}
 	}
-	return f.On
+	if f.Keys == nil {
+		f.Keys = map[string]string{}
+	}
+	return f
 }
 
 // SetPluginOn turns an installed plugin on or off.
@@ -329,15 +373,15 @@ func SetPluginOn(dataDir, id string, on bool) error {
 	if !pluginIDRe.MatchString(id) || !isDir(filepath.Join(PluginsDir(dataDir), id)) {
 		return errors.New("that plugin isn't installed")
 	}
-	m := loadPluginsOn(dataDir)
-	m[id] = on
-	return writeJSONAtomic(pluginsState(dataDir), pluginsFile{On: m})
+	st := loadPlugins(dataDir)
+	st.On[id] = on
+	return writeJSONAtomic(pluginsState(dataDir), st)
 }
 
 // ListPlugins is every installed plugin, by name.
 func ListPlugins(dataDir string) []Plugin {
 	ents, _ := os.ReadDir(PluginsDir(dataDir))
-	on := loadPluginsOn(dataDir)
+	st := loadPlugins(dataDir)
 	var out []Plugin
 	for _, e := range ents {
 		if !e.IsDir() || !pluginIDRe.MatchString(e.Name()) {
@@ -345,16 +389,29 @@ func ListPlugins(dataDir string) []Plugin {
 		}
 		dir := filepath.Join(PluginsDir(dataDir), e.Name())
 		p := Plugin{Dir: dir}
-		if m, err := CheckPluginDir(dir); err != nil || m.ID != e.Name() {
+		m, err := CheckPluginDir(dir)
+		var key ed25519.PublicKey
+		if err == nil {
+			if key, err = pluginKey(dir); err == nil && key == nil && st.Keys[m.ID] != "" {
+				pin, _ := base64.StdEncoding.DecodeString(st.Keys[m.ID])
+				err = fmt.Errorf("its signature is gone, and the version you installed was signed with key %s", KeyFingerprint(pin))
+			} else if err == nil {
+				err = checkPluginPin(m, st.Keys[m.ID], key, "its files are")
+			}
+		}
+		if err != nil || m.ID != e.Name() {
 			p.ID, p.Name = e.Name(), e.Name()
 			p.Problem = "It no longer checks out, so it's off"
 			if err != nil {
 				p.Problem += ": " + err.Error()
 			}
 		} else {
-			p.PluginManifest, p.On = *m, on[m.ID]
+			p.PluginManifest, p.On = *m, st.On[m.ID]
+			if key != nil {
+				p.Key = KeyFingerprint(key)
+			}
 		}
-		p.Older = olderPlugin(dataDir, p.ID, p.Version)
+		p.Older = olderPlugin(dataDir, p.ID, p.Version, st.Keys[p.ID])
 		out = append(out, p)
 	}
 	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
@@ -373,14 +430,16 @@ func ActivePlugins(dataDir string) []Plugin {
 }
 
 // olderPlugin is the newest version kept in plugins\.old that's older than
-// the one installed ("" for none).
-func olderPlugin(dataDir, id, current string) string {
+// the one installed and signed as the pin says ("" for none).
+func olderPlugin(dataDir, id, current, pinned string) string {
 	ents, _ := os.ReadDir(pluginOld(dataDir, id))
 	best := ""
 	for _, e := range ents {
 		v := e.Name()
 		if e.IsDir() && pluginVersionRe.MatchString(v) && (current == "" || CompareVersions(v, current) < 0) && (best == "" || CompareVersions(v, best) > 0) {
-			best = v
+			if key, err := pluginKey(filepath.Join(pluginOld(dataDir, id), v)); err == nil && checkPluginPin(&PluginManifest{ID: id}, pinned, key, "") == nil {
+				best = v
+			}
 		}
 	}
 	return best
@@ -397,7 +456,8 @@ func RollbackPlugin(dataDir, id string) (*PluginManifest, error) {
 	if m, err := readPluginManifest(dst); err == nil {
 		cur = m.Version
 	}
-	v := olderPlugin(dataDir, id, cur)
+	st := loadPlugins(dataDir)
+	v := olderPlugin(dataDir, id, cur, st.Keys[id])
 	if v == "" {
 		return nil, errors.New("no older version of it is kept")
 	}
@@ -408,6 +468,10 @@ func RollbackPlugin(dataDir, id string) (*PluginManifest, error) {
 	}
 	if m.ID != id {
 		return nil, errors.New("the version kept is another plugin")
+	}
+	key, err := pluginKey(kept)
+	if err != nil {
+		return nil, fmt.Errorf("the version kept no longer checks out: %w", err)
 	}
 	// The current version is kept in its place, so a roll back can be undone.
 	aside := ""
@@ -428,13 +492,26 @@ func RollbackPlugin(dataDir, id string) (*PluginManifest, error) {
 		}
 		return nil, err
 	}
+	if key != nil && st.Keys[id] == "" {
+		st.Keys[id] = base64.StdEncoding.EncodeToString(key)
+		return m, writeJSONAtomic(pluginsState(dataDir), st)
+	}
 	return m, nil
 }
 
-// RemovePlugin deletes plugins\<id> and nothing else.
+// RemovePlugin deletes plugins\<id> and forgets its pinned key, so the
+// next install of that id is a first one again.
 func RemovePlugin(dataDir, id string) error {
 	if !pluginIDRe.MatchString(id) {
 		return errors.New("that plugin isn't installed")
 	}
-	return os.RemoveAll(filepath.Join(PluginsDir(dataDir), id))
+	if err := os.RemoveAll(filepath.Join(PluginsDir(dataDir), id)); err != nil {
+		return err
+	}
+	st := loadPlugins(dataDir)
+	if _, ok := st.Keys[id]; !ok {
+		return nil
+	}
+	delete(st.Keys, id)
+	return writeJSONAtomic(pluginsState(dataDir), st)
 }
