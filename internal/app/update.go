@@ -163,7 +163,7 @@ func (a *App) apiInstallUpdate() error {
 		}
 		a.emit("updateStep", map[string]any{"step": "downloading", "version": rel.Version})
 		path := filepath.Join(updatesDir(), fmt.Sprintf("Lootnest-Setup-%s.exe", rel.Version))
-		if err := download(rel.SetupURL, path); err != nil {
+		if err := downloadRelease(rel, path); err != nil {
 			fail(err)
 			return
 		}
@@ -186,8 +186,34 @@ func (a *App) apiInstallUpdate() error {
 
 var downloadHTTP = &http.Client{Timeout: 5 * time.Minute}
 
+// downloadRelease fetches the release's installer: from its download link,
+// then, if that fails, the same file through GitHub's API. Each is tried
+// twice. Whichever answers, the file is checked against the release's
+// SHA-256 before it runs.
+func downloadRelease(rel core.Release, path string) error {
+	var first error
+	for _, try := range []struct{ url, accept string }{
+		{rel.SetupURL, ""}, {rel.AssetURL, "application/octet-stream"},
+	} {
+		if try.url == "" {
+			continue
+		}
+		for n := 0; n < 2; n++ {
+			err := download(try.url, try.accept, path)
+			if err == nil {
+				return nil
+			}
+			if first == nil {
+				first = err
+			}
+			time.Sleep(2 * time.Second)
+		}
+	}
+	return first
+}
+
 // download saves url to path through a temporary file.
-func download(url, path string) error {
+func download(url, accept, path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -196,6 +222,9 @@ func download(url, path string) error {
 		return err
 	}
 	req.Header.Set("User-Agent", Name+"/"+Version)
+	if accept != "" {
+		req.Header.Set("Accept", accept)
+	}
 	resp, err := downloadHTTP.Do(req)
 	if err != nil {
 		return err

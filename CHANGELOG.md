@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.73.1
+
+- Updating Lootnest from inside the app works again when GitHub's download link for a release fails, as it did on 8 November with "504 Gateway Timeout". Lootnest now tries the link twice, then gets the same file through GitHub's API, and still checks it against the release's SHA-256 before it runs.
+
 ## 1.73.0
 
 - The screenshots and clips you already make with Game Bar, Steam, NVIDIA, AMD and OBS show on each game's Timeline, as "Screenshot (Steam)" or "Clip (Game Bar)" with a small picture, beside your sessions, save points and unlocks. A line at the top counts them by app.
