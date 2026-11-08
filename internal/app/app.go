@@ -126,7 +126,12 @@ type App struct {
 	hooksPending bool
 	found        []core.FoundGame
 	scanning     bool
+	sources      []core.SourceCheck // what the last scan saw of each source
+	sourcesAt    time.Time
 	seat         string // the profile seated in the window ("Who's here")
+	bigPicture   bool   // the window is in Big Picture
+	hidFor       string // the game Big Picture's window hid itself for
+	openBP       bool   // open in Big Picture once the page is ready
 
 	tray           *win.Tray
 	quitting       bool
@@ -216,6 +221,7 @@ func Run(opt Options) error {
 	}
 	a.cfg, a.firstRun = cfg, first
 	a.pending = opt.LaunchGame
+	a.openBP = cfg.Settings.OpenBigPicture && !first && !opt.StartHidden && opt.LaunchGame == ""
 	a.logf("Lootnest %s started (steam: %q)", Version, a.env.SteamPath)
 	if opt.MigrateErr != nil {
 		a.logf("Couldn't move PlaySwap's data to the Lootnest folder yet (%v); using %s for now", opt.MigrateErr, DataDir())
@@ -506,7 +512,11 @@ func (a *App) quit(force bool) {
 
 // show brings the window up and makes sure the web view inside it is
 // visible and sized (it can stay blank if the window was created hidden).
+// Once shown, the window is no longer hidden for a game Big Picture started.
 func (a *App) show() {
+	a.mu.Lock()
+	a.hidFor = ""
+	a.mu.Unlock()
 	a.checkIfStale()
 	win.Present(a.hwnd)
 	if a.w != nil {

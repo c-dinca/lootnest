@@ -170,6 +170,9 @@ type Settings struct {
 	// UpdatePointOff stops the save point made before the first start of a
 	// game that updated since it last started (on unless turned off).
 	UpdatePointOff bool `json:"updatePointOff,omitempty"`
+	// OpenBigPicture opens Big Picture when Lootnest starts with its window
+	// (not in the tray). Off by default.
+	OpenBigPicture bool `json:"openBigPicture,omitempty"`
 }
 
 type Config struct {

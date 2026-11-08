@@ -280,6 +280,9 @@ func (a *App) globalPercent(appID int, online bool) map[string]float64 {
 // apiBigPicture fills the screen with the window for Big Picture, or puts it
 // back.
 func (a *App) apiBigPicture(on bool) {
+	a.mu.Lock()
+	a.bigPicture = on
+	a.mu.Unlock()
 	a.ui(func() {
 		if on {
 			win.Present(a.hwnd)

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.62.0
+
+- Big Picture keeps you on the couch: when a game you started from Big Picture closes, Lootnest comes back on the whole screen, on the game you played. If you switched to another app or opened Lootnest yourself while playing, it stays out of the way.
+- A game's screen in Big Picture has Close the game while it runs, on the X button, and the hints at the bottom say so. Lootnest asks first, with Keep playing chosen, because anything the game hasn't saved may be lost. The desktop's Close the game asks the same way.
+- Open in Big Picture when Lootnest starts, in Settings, General. It's off unless you turn it on, and it never applies when Lootnest starts in the tray with Windows.
+- The Library has Sources, next to Scan again (also when no games were found). For each store, launcher and folder Lootnest reads, it shows how many games it found, when it last looked, and why it found none: installed with no games yet, or its library couldn't be read. Stores that aren't on this PC are listed on one line. Lootnest only reads what's on this PC; it never installs or fetches anything for a store.
+
 ## 1.61.0
 
 - When a game has updated since you last played it, Lootnest makes a save point before it starts, named Before the update, so you can go back if the new version breaks your saves. It notices an update by Steam's build number, or by the game's .exe changing. If the point can't be made, the game starts anyway. Turn it off in Settings, Games and swaps.

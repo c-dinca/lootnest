@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -33,8 +34,8 @@ func TestHydraGames(t *testing.T) {
 	// Hydra is running: its database stays open (and locked) while Lootnest reads.
 	defer db.Close()
 
-	got := HydraGames(src, filepath.Join(root, "tmp"), []string{games})
-	if len(got) != 1 {
+	got, err := HydraGames(src, filepath.Join(root, "tmp"), []string{games})
+	if err != nil || len(got) != 1 {
 		t.Fatalf("HydraGames = %+v", got)
 	}
 	g := got[0]
@@ -45,7 +46,11 @@ func TestHydraGames(t *testing.T) {
 	if isDir(filepath.Join(root, "tmp")) {
 		t.Fatal("the copy should be removed")
 	}
-	if HydraGames(filepath.Join(root, "none"), filepath.Join(root, "tmp"), nil) != nil {
+	if got, err := HydraGames(filepath.Join(root, "none"), filepath.Join(root, "tmp"), nil); got != nil || err != nil {
 		t.Fatal("no Hydra, no games")
+	}
+	_ = os.MkdirAll(filepath.Join(root, "empty-db"), 0o755)
+	if _, err := HydraGames(filepath.Join(root, "empty-db"), filepath.Join(root, "tmp"), nil); err == nil {
+		t.Fatal("a hydra-db Lootnest can't open should say why")
 	}
 }

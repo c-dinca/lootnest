@@ -15,14 +15,34 @@ import (
 )
 
 // scanPC finds games from Steam, Epic, GOG, common game folders on every
-// drive, and desktop / Start menu shortcuts.
-func (a *App) scanPC() []core.FoundGame {
+// drive, and desktop / Start menu shortcuts. It also says, per source, what
+// it found there and why it found nothing.
+func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	env := a.env
 	var all []core.FoundGame
 	all = append(all, env.ScanSteam()...)
 
+	// The other launchers: from Windows' installed programs, the Xbox app's
+	// folders, the itch app's and Hydra's library.
+	var entries []core.UninstallEntry
+	for _, e := range win.InstalledPrograms() {
+		entries = append(entries, core.UninstallEntry(e))
+	}
+	installed := core.InstalledLaunchers(entries)
+	errs := map[string]error{}
+	there := func(src, dir string) {
+		if dirExists(dir) {
+			installed[src] = dir
+		}
+	}
+	if env.SteamPath != "" {
+		installed["steam"] = env.SteamPath
+	}
 	if pd := win.ProgramData(); pd != "" {
-		all = append(all, core.EpicGames(filepath.Join(pd, "Epic", "EpicGamesLauncher", "Data", "Manifests"))...)
+		manifests := filepath.Join(pd, "Epic", "EpicGamesLauncher", "Data", "Manifests")
+		there("epic", manifests)
+		there("riot", filepath.Join(pd, "Riot Games"))
+		all = append(all, core.EpicGames(manifests)...)
 	}
 	for _, g := range win.GOGGames() {
 		exe := g.Exe
@@ -34,18 +54,24 @@ func (a *App) scanPC() []core.FoundGame {
 		}
 	}
 
-	// The other launchers: from Windows' installed programs, the Xbox app's
-	// folders, the itch app's and Hydra's library.
-	var entries []core.UninstallEntry
-	for _, e := range win.InstalledPrograms() {
-		entries = append(entries, core.UninstallEntry(e))
-	}
 	all = append(all, core.LauncherGames(entries)...)
-	all = append(all, core.XboxGames(win.XboxGameFolders())...)
+	xbox := win.XboxGameFolders()
+	if len(xbox) > 0 {
+		installed["xbox"] = xbox[0]
+	}
+	all = append(all, core.XboxGames(xbox)...)
 	roots, containers := gameFolders(env)
 	if ad := os.Getenv("APPDATA"); ad != "" {
-		all = append(all, core.ItchGames(filepath.Join(ad, "itch", "apps"))...)
-		all = append(all, core.HydraGames(filepath.Join(ad, "hydralauncher", "hydra-db"), filepath.Join(DataDir(), "hydra-tmp"), containers)...)
+		itch, hydraDB := filepath.Join(ad, "itch", "apps"), filepath.Join(ad, "hydralauncher", "hydra-db")
+		there("itch", itch)
+		there("hydra", hydraDB)
+		all = append(all, core.ItchGames(itch)...)
+		hydra, err := core.HydraGames(hydraDB, filepath.Join(DataDir(), "hydra-tmp"), containers)
+		if err != nil {
+			errs["hydra"] = err
+			a.logf("ERROR reading Hydra's library: %v", err)
+		}
+		all = append(all, hydra...)
 	}
 
 	all = append(all, core.ScanFolders(roots, containers)...)
@@ -78,7 +104,8 @@ func (a *App) scanPC() []core.FoundGame {
 		name := strings.TrimSuffix(filepath.Base(lnk), filepath.Ext(lnk))
 		all = append(all, core.FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(root)), Name: name, Source: "shortcut", Exe: target, Dir: root})
 	}
-	return env.FinishFound(all)
+	list := env.FinishFound(all)
+	return list, core.SourceChecks(list, installed, errs)
 }
 
 // gameFolders lists the folders the scan looks inside (roots) and the
@@ -219,19 +246,23 @@ func (a *App) startScan() {
 	go func() {
 		start := time.Now()
 		var list []core.FoundGame
+		var checks []core.SourceCheck
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
 					a.logf("ERROR scan crashed: %v", r)
 				}
 			}()
-			list = a.scanPC()
+			list, checks = a.scanPC()
 		}()
 		fresh := len(list)
 		list = core.MergeFound(saved, list, dirExists)
 		a.mu.Lock()
 		a.found = list
 		a.scanning = false
+		if checks != nil {
+			a.sources, a.sourcesAt = checks, time.Now()
+		}
 		a.mu.Unlock()
 		if err := a.store.SaveLibrary(list); err != nil {
 			a.logf("ERROR saving the library: %v", err)
@@ -268,6 +299,19 @@ func (a *App) apiFound() FoundState {
 }
 
 func (a *App) apiScan() { a.startScan() }
+
+// Sources is what the last scan since Lootnest started saw of each place
+// games come from. At is zero before the first scan ends.
+type Sources struct {
+	At      time.Time          `json:"at"`
+	Sources []core.SourceCheck `json:"sources"`
+}
+
+func (a *App) apiSources() Sources {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return Sources{At: a.sourcesAt, Sources: append([]core.SourceCheck{}, a.sources...)}
+}
 
 func (a *App) apiIgnoreFound(key string) error {
 	a.mu.Lock()

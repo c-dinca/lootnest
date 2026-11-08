@@ -71,6 +71,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_cancelRequest", a.apiCancelRequest))
 	must(a.w.Bind("ps_found", a.apiFound))
 	must(a.w.Bind("ps_scan", a.apiScan))
+	must(a.w.Bind("ps_sources", a.apiSources))
 	must(a.w.Bind("ps_ignoreFound", a.apiIgnoreFound))
 	must(a.w.Bind("ps_unhideFound", a.apiUnhideFound))
 	must(a.w.Bind("ps_addFound", a.apiAddFound))
@@ -135,17 +136,17 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
 
-func (a *App) apiReady() map[string]string {
+func (a *App) apiReady() map[string]any {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	first := !a.ready
 	a.ready = true
-	p, r := a.pending, a.pendReq
-	a.pending, a.pendReq = "", ""
+	p, r, bp := a.pending, a.pendReq, a.openBP
+	a.pending, a.pendReq, a.openBP = "", "", false
 	if first {
 		go a.logf("Interface loaded")
 	}
-	return map[string]string{"launch": p, "reqId": r}
+	return map[string]any{"launch": p, "reqId": r, "bigPicture": bp}
 }
 
 type SteamStatus struct {

@@ -41,6 +41,7 @@
     cancelRequest: (id) => call("ps_cancelRequest", id),
     found: () => call("ps_found"),
     scan: () => call("ps_scan"),
+    sources: () => call("ps_sources"),
     ignoreFound: (k) => call("ps_ignoreFound", k),
     unhideFound: (k) => call("ps_unhideFound", k),
     addFound: (keys) => call("ps_addFound", keys),
@@ -129,6 +130,7 @@
     pinfo: {},        // game id -> player id -> {saved, size} of their profile
     ach: {},          // Library key -> achievements read from this PC (null: none)
     doctor: {},       // Library key -> Achievement Doctor's check (achDoctor event)
+    sources: null,    // what the last scan saw of each source (the Sources drawer)
     points: {},       // Library key -> its save points (savePoints event)
     facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
     sideQ: "",        // the filter over the sidebar's games
@@ -285,7 +287,7 @@
         openPicker(ev.gameId, ev.reqId ? "steam" : "play", ev.reqId);
         break;
       case "found":
-        loadFound();
+        loadFound().then(() => { if (S.dialog && S.dialog.kind === "sources") loadSources(); });
         break;
       case "hooks":
         loadHooks().then(() => { render(); if (S.dialog && S.dialog.kind === "steam") renderOverlay(); });
@@ -338,6 +340,9 @@
         break;
       case "bigPicture":
         if (ev.on) bpOpen(); else bpClose();
+        break;
+      case "bpReturn": // the game started from Big Picture closed: back where it was
+        if (BP.on) { renderBP(false); sfx("open"); }
         break;
       case "saveCheck":
         S.saveCheck = ev.check || null;
@@ -811,6 +816,7 @@
           <p class="bp-meta">${[esc(sourceLabel(it.source)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : ""].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
           <div class="bp-actions"><button class="bp-btn bp-btn--primary" data-bp data-bpid="play" data-go="play" data-k="${esc(bpKey(it))}">${GI.play}${playLabel}</button>
             ${it.g && cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="playas" data-go="choose" data-k="${esc(bpKey(it))}">${glyph("Y")}Play as someone else</button>` : ""}
+            ${bpRunning(it) ? `<button class="bp-btn" data-bp data-bpid="close" data-go="close-game" data-k="${esc(bpKey(it))}">${glyph("X")}Close the game</button>` : ""}
             <button class="bp-btn" data-bp data-bpid="back" data-go="back">${glyph("B")}Back</button></div></div></div>`;
     }
     if (!all.length && (BP.tab === "library" || BP.tab === "home")) {
@@ -845,7 +851,7 @@
       ${small.length ? `<section class="bp-row"><h2>Collections</h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
       ${bpRow("all", "Your games", all.slice(0, 40), false)}</div>`;
   }
-  let bpSeat = "";
+  let bpSeat = "", bpFootX = false;
   function renderBP(first) {
     let el = $("#bp");
     if (!el) { el = document.createElement("div"); el.id = "bp"; el.className = "bp ln-root"; el.setAttribute("role", "application"); el.setAttribute("aria-label", "Big Picture"); document.body.appendChild(el); }
@@ -870,13 +876,16 @@
         <div class="bp-right">${seatHTML}<time class="bp-clock ln-num"></time>
           <button class="bp-exit" data-go="exit" tabindex="-1" title="Leave Big Picture">${glyph("Start")}Leave</button></div></header>
       <main class="bp-main"></main>
-      <footer class="bp-foot">${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button></footer>`;
+      <footer class="bp-foot"></footer>`;
       main = el.querySelector(".bp-main");
     } else if (seatHTML !== bpSeat) {
       el.querySelectorAll(".bp-right .bp-seat").forEach((x) => x.remove());
       el.querySelector(".bp-right").insertAdjacentHTML("afterbegin", seatHTML);
     }
     bpSeat = seatHTML;
+    const closeHint = !!BP.detail && bpRunning(bpItem(BP.detail));
+    if (fresh || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
+    bpFootX = closeHint;
     el.querySelector(".bp-tabs").classList.toggle("is-dim", !!sub);
     el.querySelectorAll(".bp-tab").forEach((t) => t.setAttribute("aria-current", String(BP.tab === t.dataset.t && !sub)));
     el.querySelector(".bp-clock").textContent = now;
@@ -952,6 +961,17 @@
     renderBP(false);
     actions["play-as"]({ dataset: { game: it.id, player: p } });
   }
+  const bpRunning = (it) => { const s = it && it.g && session(it.g.id); return !!s && s.phase === "playing"; };
+  function bpCloseGame(k) {
+    const it = bpItem(k);
+    if (!bpRunning(it)) return;
+    sfx("go");
+    actions["close-game"]({ dataset: { game: it.g.id } });
+  }
+  function bpX() {
+    const el = document.activeElement;
+    bpCloseGame((el && el.dataset && el.dataset.k) || BP.detail);
+  }
   function bpSelect(el) {
     if (!el) return;
     const go = el.dataset.go;
@@ -959,6 +979,7 @@
     else if (go === "play") bpPlay(bpItem(el.dataset.k));
     else if (go === "tag") { BP.tab = "library"; BP.tag = el.dataset.tag; BP.focus = ""; BP.keep = true; sfx("go"); renderBP(true); }
     else if (go === "choose") { BP.choose = el.dataset.k; BP.focus = ""; sfx("go"); renderBP(true); }
+    else if (go === "close-game") bpCloseGame(el.dataset.k);
     else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
     else if (go === "back") bpBack();
     else if (go === "seat") { actions.seat({ dataset: { player: el.dataset.p } }); sfx("go"); renderBP(false); }
@@ -1011,6 +1032,7 @@
     else if (k === "q" || k === "PageUp") { ev.preventDefault(); bpTab(-1); }
     else if (k === "e" || k === "PageDown") { ev.preventDefault(); bpTab(1); }
     else if (k === "y") { ev.preventDefault(); bpY(); }
+    else if (k === "x") { ev.preventDefault(); bpX(); }
     ev.stopImmediatePropagation();
   }, true);
   setInterval(() => { const c = BP.on && $("#bp .bp-clock"); if (c) c.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); }, 15000);
@@ -1030,6 +1052,7 @@
       if (BP.on && !S.picker && !S.dialog) {
         if (edge(0)) bpSelect(document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-go]"));
         if (edge(1)) bpBack();
+        if (edge(2)) bpX();
         if (edge(3)) bpY();
         if (edge(4)) bpTab(-1);
         if (edge(5)) bpTab(1);
@@ -1355,11 +1378,12 @@
         <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "Every game on this PC, in one place."}</span></div>
         <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
-        <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button></div></header>`;
+        <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>
+        <button class="ln-button ln-button--ghost" data-action="sources">Sources</button></div></header>`;
     if (!all.length && !scanning) {
       return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1><p>Every game on this PC, in one place.</p></header>
         ${emptyState(homeIcon, "No games found yet", "Lootnest looks everywhere games are installed on this PC. If yours isn't found, add it by hand: point Lootnest at its folder or its .exe.",
-          `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`,
+          `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button><button class="ln-button ln-button--ghost" data-action="sources">Sources</button>`,
           `<p class="ln-empty__where">Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.</p>`, true)}</div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"], ["rating", "Highest rated"]];
@@ -2222,6 +2246,28 @@
     return shell(`<p class="gpage-hint">${bad ? `Most likely: ${esc(bad.title.charAt(0).toLowerCase() + bad.title.slice(1))}.` : "Everything Lootnest checks is in place."}</p><ol class="doc-steps">${steps}</ol>${nameBlock}`,
       `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)}>Check again</button>`);
   }
+  // Sources: what the last scan found in each store, launcher
+  // and folder, and why it found nothing there.
+  function viewSources() {
+    const R = S.sources;
+    const read = R && R.at && !R.at.startsWith("0001") ? ` Last looked ${ago(R.at)}.` : "";
+    const scanBtn = (kind) => `<button class="ln-button ln-button--${kind} ln-button--sm" data-action="sources-rescan" ${S.found.refreshing ? 'aria-busy="true"' : ""}>${S.found.refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`;
+    const shell = (body) => drawer({ label: "Sources", title: "Sources", sub: `Each place the Library reads, and what it found there.${read}`, body,
+      foot: `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span>${scanBtn("secondary")}` });
+    if (!R) return shell(lnInline("", "Reading"));
+    if (!R.sources.length) return shell(`<p class="gpage-hint">${S.found.refreshing ? "Lootnest is looking for games now. This fills in when it's done." : "Nothing read since Lootnest started. Scan again to look now."}</p>`);
+    const tone = { ok: "ok", warn: "mid", info: "" };
+    const name = (src) => ({ folder: "Game folders", shortcut: "Shortcuts" })[src] || sourceLabel(src);
+    const away = R.sources.filter((x) => !x.installed).map((x) => name(x.source));
+    return shell(`<ol class="doc-steps">${R.sources.filter((x) => x.installed).map((x) => `<li class="doc-step run-card${tone[x.state] ? " run-card--" + tone[x.state] : ""}"><div class="run-head"><span class="run-dot"></span>
+      <div class="grow"><b>${esc(name(x.source))}</b>${x.reason ? `<p>${esc(x.reason)}</p>` : ""}${x.path ? `<p class="doc-path selectable">${esc(x.path)}</p>` : ""}</div>
+      ${x.found ? `<span class="src-n ln-num" aria-label="${x.found} ${x.found === 1 ? "game" : "games"}">${x.found}</span>` : ""}</div>
+      ${x.state === "warn" ? `<div>${scanBtn("secondary")}</div>` : ""}</li>`).join("")}</ol>${away.length ? `<p class="gpage-hint">Not on this PC: ${esc(away.join(", "))}.</p>` : ""}`);
+  }
+  async function loadSources() {
+    try { S.sources = await api.sources(); } catch (e) { S.sources = { sources: [] }; }
+    if (S.dialog && S.dialog.kind === "sources") renderOverlay();
+  }
   function viewAchDrawer() {
     const it = dialogItem(S.dialog);
     if (!it) return "";
@@ -2399,7 +2445,7 @@
   // ---------------------------------------------------------------- dialogs --
   let confirmResolve = null;
   function confirmDialog(o) {
-    return new Promise((resolve) => { confirmResolve = resolve; S.dialog = Object.assign({ kind: "confirm" }, o); renderOverlay(); setTimeout(() => { const b = $(".dialog .btn.primary, .dialog .btn.danger-primary"); if (b) b.focus(); }, 20); });
+    return new Promise((resolve) => { confirmResolve = resolve; S.dialog = Object.assign({ kind: "confirm" }, o); renderOverlay(); setTimeout(() => { const b = $(o.safe ? '.dialog [data-action="dialog-cancel"]' : ".dialog .btn.primary, .dialog .btn.danger-primary"); if (b) b.focus(); }, 20); });
   }
   function closeDialog(v) { const wasSteam = S.dialog && S.dialog.kind === "steam"; S.dialog = null; renderOverlay(); if (wasSteam) render();
     if (drawerFrom) { focusBack(drawerFrom); drawerFrom = null; } if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); } }
@@ -2478,6 +2524,8 @@
       const r = $("#pt-rename"); if (r && document.activeElement !== r) { r.focus(); r.select(); }
     } else if (D.kind === "achdoc") {
       o.innerHTML = viewAchDoctor();
+    } else if (D.kind === "sources") {
+      o.innerHTML = viewSources();
     } else if (D.kind === "offer") {
       o.innerHTML = viewOffer();
     } else if (D.kind === "update") {
@@ -3540,7 +3588,8 @@
       ["general", "General", GI.sliders, "How Lootnest starts, closes and tells you things.", () => card(`
           ${sw("autostart", "Start with Windows", "Lootnest opens quietly in the tray when you sign in, so it's always watching your games.", S.d.autostart)}
           ${sw("closeToTray", "Keep running when the window is closed", "Closing the window leaves Lootnest in the tray. Quit from the tray icon.", s.closeToTray)}
-          ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts.", s.hideWhilePlaying)}
+          ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts. In Big Picture, it comes back when the game closes.", s.hideWhilePlaying)}
+          ${sw("openBigPicture", "Open in Big Picture when Lootnest starts", "For a PC by the TV: Lootnest opens on the whole screen, ready for a controller. Not when it starts in the tray with Windows.", s.openBigPicture)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}`)],
       ["games", "Games and swaps", GI.play, "How profiles' files are swapped, and how Lootnest works with Steam.", () => sub("Swaps", "", `
           ${row("s-backups", "Copies kept per game before each swap", "A copy is made before every swap. The oldest go once there are more than this.", `<input id="s-backups" class="ln-input set-num" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}">`)}
@@ -4779,7 +4828,7 @@
       const g = game(el.dataset.game), s = g && session(g.id);
       if (!g) return;
       const n = s ? pname(s.playerId) : "";
-      const ok = await confirmDialog({ title: `Close ${g.name}?`, body: `The game is asked to quit, as if you closed its window. Anything it hasn't saved yet may be lost.${n ? ` Once it closes, ${n}'s progress goes back to their profile.` : ""}`, ok: "Close the game" });
+      const ok = await confirmDialog({ title: `Close ${g.name}?`, body: `The game is asked to quit, as if you closed its window. Anything it hasn't saved yet may be lost.${n ? ` Once it closes, ${n}'s progress goes back to their profile.` : ""}`, ok: "Close the game", cancel: "Keep playing", safe: true });
       if (!ok) return;
       try { await api.closeGame(g.id); toast(`Asked ${g.name} to close`); } catch (e) { toast(errText(e), "error"); }
     },
@@ -5039,6 +5088,8 @@
       } catch (e) { toast(errText(e), "error"); }
       S.hooksBusy = false; render(); if (S.dialog) renderOverlay();
     },
+    sources() { S.sources = null; S.dialog = { kind: "sources" }; renderOverlay(); focusOverlay(); loadSources(); },
+    "sources-rescan"() { actions.rescan(); renderOverlay(); },
     rescan() { S.rescanning = new Set((S.found.games || []).map((f) => f.key)); S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [] }; render(); api.scan(); },
     async "add-all"() {
       const keys = (S.found.games || []).filter((f) => f.ready).map((f) => f.key);
@@ -5346,6 +5397,7 @@
     try {
       const r = await api.ready();
       if (r && r.launch) openPicker(r.launch, r.reqId ? "steam" : "play", r.reqId);
+      else if (r && r.bigPicture) bpOpen();
     } catch (e) { /* ignore */ }
   }
   boot();

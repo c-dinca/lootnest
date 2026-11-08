@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright&boot=<ms>
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright&boot=<ms>&bp=1
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -148,7 +148,18 @@
   ];
 
   const api = {
-    ps_ready: () => ok({}),
+    // ?bp=1: "Open in Big Picture when Lootnest starts" is on.
+    ps_ready: () => ok(q.get("bp") === "1" ? { bigPicture: true } : {}),
+    ps_closeGame: () => ok(),
+    // The last scan, per source: a mix of found, not installed, no games and an error.
+    ps_sources: () => ok({ at: iso(2 * 60e3 + 5e3), sources: [
+      ["steam", 7, "ok", "", "C:\\Program Files (x86)\\Steam"], ["epic", 0, "info", "Not installed"],
+      ["gog", 0, "info", "Installed, no games yet", "C:\\Program Files (x86)\\GOG Galaxy"], ["xbox", 1, "ok", "", "D:\\XboxGames"],
+      ["ea", 0, "info", "Not installed"], ["ubisoft", 0, "info", "Installed, no games yet"], ["battlenet", 0, "info", "Not installed"],
+      ["riot", 0, "info", "Not installed"], ["amazon", 0, "info", "Not installed"], ["rockstar", 0, "info", "Not installed"],
+      ["itch", 0, "info", "Not installed"], ["hydra", 0, "warn", "Couldn't read its library: leveldb: manifest corrupted (field 'comparer'): missing [file=MANIFEST-000004]", "C:\\Users\\you\\AppData\\Roaming\\hydralauncher\\hydra-db"],
+      ["folder", 3, "ok", ""], ["shortcut", 1, "ok", ""],
+    ].map(([source, found, state, reason, path]) => ({ source, found, installed: reason !== "Not installed", state, reason, path: path || "" })) }),
     ps_state: () => (STATE === "loading" || BOOT ? new Promise((r) => setTimeout(() => r(state()), BOOT || 60)) : ok(state())),
     ps_found: () => ok(STATE === "loading" ? { scanning: true, refreshing: true, games: [] } : { scanning: false, refreshing: false, games: found, hidden: HIDDEN }),
     ps_cover: (appId, name, key) => (STATE === "offline" ? offline() : ok(art(appOf(appId, name), "cover"))),
