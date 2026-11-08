@@ -1515,7 +1515,7 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .bar-search:focus-within { flex-basis: var(--bar-search-open); }
 .bar-search .ln-search { width: 100%; }
 .bar-search .ln-input { height: var(--ctl-sm); font-size: var(--fs-13); }
-.bar-kbd, .ctx kbd { padding: 1px 5px; border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/var(--lh-snug) var(--font-ui); color: var(--fg-3); }
+.bar-kbd, .ctx kbd, .gq-key { padding: 1px 5px; border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-tag); font: 600 var(--fs-12)/var(--lh-snug) var(--font-ui); color: var(--fg-3); }
 .bar-kbd { position: absolute; right: var(--space-2); pointer-events: none; transition: opacity var(--dur-1) var(--ease-out); }
 .bar-search .ln-input:focus ~ .bar-kbd, .bar-search .ln-input:not(:placeholder-shown) ~ .bar-kbd { opacity: 0; }
 .gq-pop { position: absolute; z-index: 40; top: calc(100% + var(--space-1)); right: 0; width: min(420px, calc(100vw - var(--space-6))); max-height: min(520px, 75vh); overflow: auto; display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-panel); background: var(--bg-raised); box-shadow: var(--shadow-overlay); transform-origin: 100% 0; animation: menu-in var(--dur-2) var(--ease-out); }
@@ -1786,6 +1786,34 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 .upd-act { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-1); }
 .upd-act .ln-button--icon { width: var(--ctl-sm); }
 .upd-empty { margin: 0; padding: var(--space-6) 0; color: var(--fg-2); }
+
+/* Saves: what needs a look, the newest copies as rows, each game, then Cloud saves. */
+.saves-page { display: grid; gap: var(--space-12); align-content: start; container: saves-page / inline-size; }
+.upd-head .sv-stats { margin-top: var(--space-4); }
+.sv-none { color: var(--fg-3); }
+.sv-sec { min-width: 0; scroll-margin-top: var(--space-6); }
+.sv-sec > .ln-button--ghost { margin-top: var(--space-2); }
+.sv-list { margin: 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
+.sv-row { display: grid; grid-template-columns: minmax(0, 1fr) calc(2 * var(--space-16)) calc(2 * var(--space-16)) calc(var(--space-16) + var(--space-4)) calc(2 * var(--space-16)); align-items: center; gap: var(--space-4); min-height: var(--ctl-lg); padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); font-size: var(--text-meta); color: var(--fg-2); }
+.sv-what { display: grid; gap: var(--space-1); min-width: 0; }
+.sv-what > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-game { max-width: 100%; padding: 0; border: 0; background: none; color: var(--fg-1); font: inherit; font-size: var(--text-body); font-weight: 650; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.sv-game:hover { text-decoration: underline; }
+.sv-game:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--space-1); border-radius: var(--radius-tag); }
+.sv-who { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; white-space: nowrap; }
+.sv-when { white-space: nowrap; }
+.sv-size { text-align: right; white-space: nowrap; }
+.sv-act { justify-self: end; }
+.sv-table th .sv-game { display: block; }
+.sv-table td:last-child { width: auto; padding-block: var(--space-3); }
+.cloud-page .ln-section-head h3 { margin: 0; font: 700 var(--fs-18)/var(--lh-tight) var(--font-ui); }
+/* A narrow page puts who, when and the size under the game's name. */
+@container saves-page (max-width: 760px) {
+  .sv-row { display: flex; flex-wrap: wrap; column-gap: var(--space-3); }
+  .sv-what { flex: 1 0 100%; }
+  .sv-who:empty { display: none; }
+  .sv-act { margin-left: auto; }
+}
 /* A narrow list puts the versions under the name. */
 @container upd-list (max-width: 760px) { .upd-cards { grid-template-columns: var(--space-12) minmax(0, 1fr) auto; } .upd-ver { grid-column: 2; grid-row: 2; } .upd-act { grid-column: 3; grid-row: 1 / span 2; } }
 

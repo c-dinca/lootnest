@@ -113,6 +113,7 @@
     deleteSavePoint: (key, id) => call("ps_deleteSavePoint", key, id),
     branchSavePoint: (key, id, name) => call("ps_branchSavePoint", key, id, name || ""),
     saveCheck: (fresh) => call("ps_saveCheck", !!fresh),
+    savesOverview: () => call("ps_savesOverview"),
     reportProblem: () => call("ps_reportProblem"),
     bigPicture: (on) => call("ps_bigPicture", !!on),
     newCopies: () => call("ps_newCopies"),

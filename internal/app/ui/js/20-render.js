@@ -40,12 +40,12 @@
   }
   // What arriving on a page resets, and the game page's game.
   function enterView(view, P) {
-    S.view = view; S.menuFor = null; S.edit = null;
+    S.view = view; S.menuFor = null; S.edit = null; S.svCloud = false;
     if (P) {
       S.page = P; S.selected = { kind: P.kind, id: P.id }; tlAsked.clear(); docked.bar = docked.tabs = false;
       for (const k in S.details) if (S.details[k].error) delete S.details[k]; // asked again on this visit
     }
-    if (view === "cloud") { loadBackupInfo(); loadSaves(); }
+    if (view === "saves") { loadBackupInfo(); loadSaves(); askSaves(); }
     if (view === "settings") { ctlAsked = false; S.pluginError = ""; }
     if (view !== "players") S.players = null;
     if (view !== "library") S.libSel.clear();
@@ -73,7 +73,7 @@
     else if (S.view === "players") v.innerHTML = viewPlayers();
     else if (S.view === "player") v.innerHTML = viewPlayer();
     else if (S.view === "settings") v.innerHTML = viewSettings();
-    else if (S.view === "cloud") v.innerHTML = viewCloud();
+    else if (S.view === "saves") v.innerHTML = viewSaves();
     else if (S.view === "achievements") v.innerHTML = viewAchievements();
     else if (S.view === "find") v.innerHTML = viewFind();
     else if (S.view === "updates") v.innerHTML = viewUpdates();
@@ -87,6 +87,7 @@
     S.animateView = false;
     hist.at = here();
     v.scrollTop = keepScroll;
+    if (S.view === "saves" && S.svCloud) svToCloud();
     if (S.view === "game") fitDetails();
     stickHead();
     if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
@@ -100,7 +101,7 @@
   // The sections as tabs, with one line under the current section that
   // slides from tab to tab. Profiles and Settings mark theirs with a fill.
   // Narrow windows keep the first three tabs and put the rest under More.
-  const PAGE_NAMES = { home: "Home", library: "Library", find: "Store", updates: "Updates", achievements: "Achievements", cloud: "Cloud saves", players: "Profiles", settings: "Settings" };
+  const PAGE_NAMES = { home: "Home", library: "Library", find: "Store", updates: "Updates", achievements: "Achievements", saves: "Saves", players: "Profiles", settings: "Settings" };
   function renderBar(to) {
     const top = to || (S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view);
     document.querySelectorAll(".topbar [data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));

@@ -552,7 +552,7 @@
     const stats = [C.profiles && gpStat(C.profiles, "With profiles"), C.net && gpStat(C.net, "With copies"),
       C.points && gpStat(C.points, "With save points")].filter(Boolean).join("");
     // A problem: its tone, and one link to see to it (a menu when it's more than one game).
-    const fix = (kind, list, label) => list.length === 1 ? `<button class="gpage-link" data-action="open-sheet" data-key="${esc(list[0].key)}">${label}</button>`
+    const fix = (kind, list, label) => list.length === 1 ? `<button class="gpage-link" data-action="open-sheet" ${list[0].key.startsWith("game:") ? `data-game="${esc(list[0].key.slice(5))}"` : `data-key="${esc(list[0].key)}"`} data-tab="saves">${label}</button>`
       : `<button class="gpage-link" data-action="sc-games" data-kind="${kind}" aria-haspopup="menu">${label}</button>`;
     const line = (tone, text) => `<li class="sc-line${tone ? " sc-line--" + tone : ""}">${tone ? GI.alert : "<span></span>"}<span>${text}</span></li>`;
     const gone = C.gone || [], lines = [];
@@ -561,7 +561,7 @@
     const od = C.oneDrive || [];
     if (od.length) lines.push(line("", `${n(od.length, "1 game keeps", "# games keep")} saves in ${esc(C.oneDriveIn)}, which OneDrive syncs. <button class="gpage-link" data-action="sc-games" data-kind="oneDrive" aria-haspopup="menu">Which games</button>`));
     lines.push(line("", C.cloud ? "Cloud saves are on." : `Cloud saves are off. <button class="gpage-link" data-action="nav" data-view="cloud">Set them up</button>`));
-    return `<section class="home-block sc"><div class="ln-section-head"><div><h2>Your saves</h2>${stats ? "<p>Games Lootnest looks after</p>" : ""}</div></div>${stats ? `<dl class="ln-meta sc-stats">${stats}</dl>` : ""}<ul class="sc-lines">${lines.join("")}</ul></section>`;
+    return `<section class="home-block sc"><div class="ln-section-head"><div><h2>Your saves</h2>${stats ? "<p>Games Lootnest looks after</p>" : ""}</div><button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="saves">See all</button></div>${stats ? `<dl class="ln-meta sc-stats">${stats}</dl>` : ""}<ul class="sc-lines">${lines.join("")}</ul></section>`;
   }
   // A game whose saves are in a folder OneDrive syncs (Documents moved
   // into OneDrive): said once, as information.

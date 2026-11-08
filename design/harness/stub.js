@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold&translators=1&hidhide=0
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright|missing|partial&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)&itch=1|out&itchrun=hold&gog=1|out&gogrun=hold&translators=1&hidhide=0&saves=calm
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -9,6 +9,7 @@
   // ?boot=<ms>: the splash shows, and the first state comes after <ms>.
   // Without it the splash is taken out, so screenshots never catch it.
   const BOOT = +(q.get("boot") || 0);
+  const CALM = q.get("saves") === "calm" || N === "0"; // ?saves=calm: nothing on Saves needs a look
   if (!BOOT) document.getElementById("boot")?.remove();
   // ?hidden=1: two games hidden from the Library.
   const HIDDEN = q.get("hidden") === "1" ? { "steam:1245620": "Elden Ring", "dir:d:\\games\\old racer": "Old Racer" } : {};
@@ -244,7 +245,7 @@
   const state = () => ({
     version: "1.45.0", stage: "beta", safe: q.get("safe") === "1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
     config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, tagOrder: TAGORDER, offline: OFFLINE, launchOpts: LAUNCH, views: VIEWS },
-    conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
+    conflicts: CALM ? {} : { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, avatars: {}, banners: {}, shelf,
@@ -606,7 +607,7 @@
       status: STATE === "error" ? { error: "The backup folder (C:\\Users\\cris\\OneDrive) isn't there. Is the drive connected, and the cloud app running?", errorAt: iso(60e3), last: iso(3 * d), size: 48e6 } : { last: iso(25 * 60e3), size: 48211000 },
       folders: [{ name: "OneDrive", path: "C:\\Users\\cris\\OneDrive" }, { name: "Google Drive", path: "G:\\My Drive" }],
     }),
-    ps_savesStatus: () => { if (STATE !== "loading") emit({ type: "savesStatus", status: STATE === "error" ? { error: "The cloud folder (C:\\Users\\cris\\OneDrive) isn't there.", games: [], players: [] } : { games: [{ gameId: "cs2", playerId: "p1", state: "same", computer: "COCONUT", changed: iso(h) }, { gameId: "cs2", playerId: ids[1] || "p1", state: "conflict", computer: "LAPTOP", changed: iso(3 * h), here: iso(2 * h) }, { gameId: "bg3", playerId: "p1", state: "down", computer: "LAPTOP", changed: iso(3 * h) }], players: [] } }); return ok(); },
+    ps_savesStatus: () => { if (STATE !== "loading") emit({ type: "savesStatus", status: STATE === "error" ? { error: "The cloud folder (C:\\Users\\cris\\OneDrive) isn't there.", games: [], players: [] } : { games: [{ gameId: "cs2", playerId: "p1", state: "same", computer: "COCONUT", changed: iso(h) }, { gameId: "cs2", playerId: ids[1] || "p1", state: CALM ? "same" : "conflict", computer: "LAPTOP", changed: iso(3 * h), here: iso(2 * h) }, { gameId: "bg3", playerId: "p1", state: "down", computer: "LAPTOP", changed: iso(3 * h) }], players: [] } }); return ok(); },
     ps_findGames: (term) => {
       const cap = (id) => `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/capsule_231x87.jpg`;
       const all = [
@@ -720,9 +721,30 @@
     ps_bigPicture: () => ok(),
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {
-      setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
-        unknown: [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: 1,
+      setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: CALM ? [] : [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
+        unknown: CALM ? [] : [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: CALM ? 0 : 1,
         ...(q.has("onedrive") ? { oneDriveIn: "Documents", oneDrive: [{ key: "game:bg3", name: "Baldur's Gate 3" }, { key: "dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero" }] } : { oneDrive: [] }) } }), 120);
+      return ok();
+    },
+    // Saves: every copy kept, newest first, and their sums per game.
+    ps_savesOverview: () => {
+      const c = (key, kind, id, ago, size, more) => ({ key, kind, id, at: iso(ago), size, ...more });
+      const pbz = "dir:d:\\games\\phantom blade zero", tale = "dir:d:\\games\\hydra\\hollow tale";
+      const recent = N === "0" ? [] : [
+        c("game:bg3", "point", "20261107-214500", 10 * 60e3, 9e7, { name: "Before the update", owner: "p1" }),
+        c("game:bg3", "swap", "20261107-201500", 40 * 60e3, 15e6, { owner: "p2" }),
+        c("game:bg3", "point", "20261107-201500", 40 * 60e3, 9e7, { name: "Before the Netherbrain", owner: "p1" }),
+        c(pbz, "net", "n1", 3 * h, 2.3e6),
+        c("game:cs2", "swap", "20261107-181000", 3 * h, 7.3e6, { owner: "p1" }),
+        c(tale, "net", "t1", 9 * h, 412e3),
+        c("game:bg3", "swap", "20261106-210000", d, 14e6, { owner: "p2" }),
+        c(pbz, "net", "n2", 2 * d, 2.1e6),
+        c("game:bg3", "point", "20261104-210000", 3 * d, 8e7, { name: "Act 2 start", owner: "p1" }),
+        c(tale, "net", "t2", 4 * d, 398e3),
+      ];
+      const games = [];
+      recent.forEach((x) => { let g = games.find((y) => y.key === x.key); if (!g) games.push((g = { key: x.key, last: x.at, copies: 0, points: 0, size: 0 })); g.copies++; g.size += x.size; if (x.kind === "point") g.points++; });
+      setTimeout(() => emit({ type: "savesOverview", recent, games }), 80);
       return ok();
     },
     ps_savePoints: (key) => {

@@ -37,6 +37,11 @@
     tag: "",          // the Library's collection filter ("" for all)
     status: "",       // the Library's status filter ("" for any)
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
+    svo: null,        // Saves: {recent, games} from ps_savesOverview
+    svMore: false,    // Saves lists every recent copy, not the first few
+    svSort: "last",   // Saves: the Per game column sorted by
+    svCloud: false,   // Saves opened for its Cloud saves section
+    svBusy: "",       // Saves: the copy being put back from Recent copies
     find: { q: "", hits: null, error: "" }, // Store: the search and what came back
     front: null,      // Store rows before a search: {daily, specials, top, deals} or {error}
     gq: { q: "", hits: null, sel: -1 }, // the search in the top bar

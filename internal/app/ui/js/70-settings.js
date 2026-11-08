@@ -7,7 +7,7 @@
   }
 
   const SHORTCUTS = (s) => [
-    [["Ctrl+K"], "Search your games, and the store if it's on"],
+    [["Ctrl+K"], "Run a command, or search your games, and the store if it's on"],
     [["Ctrl+F", "/"], "Find a game in the Library"],
     [["Arrow keys"], "Move between covers in the Library"],
     [["Home", "End"], "First or last cover"],
@@ -37,6 +37,8 @@
   const setSub = (title, note, body) => `<section class="set-sub"><div class="ln-section-head ln-section-head--minor"><h2>${title}</h2></div>${note ? `<p class="set-note">${note}</p>` : ""}${body}</section>`;
   // Settings: plain on purpose. Groups of rows, each saying what it does,
   // with its control on the right. Everything online is off until turned on.
+  // The categories, by key, as the list on the left names them.
+  const SET_CATS = { general: "General", games: "Games and swaps", controllers: "Controllers", storage: "Storage", plugins: "Plugins", online: "Online", updates: "Updates", cloud: "Cloud saves", data: "Data and activity", about: "About" };
   function viewSettings() {
     const s = cfg().settings, st = S.d.steam, hidden = Object.entries((S.found && S.found.hidden) || {});
     const row = (forId, title, desc, control) => `<div class="bk-row"><div><label for="${forId}"><b>${title}</b></label>${desc ? `<p>${desc}</p>` : ""}</div>${control}</div>`;
@@ -49,14 +51,14 @@
     const versionRow = `<div class="bk-row set-version"><div><b>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}</b><p>${S.update.available ? `Version ${esc(S.update.version)} is ready to install.` : "Updates come from Lootnest's releases on GitHub."}</p></div>${update}</div>`;
     // One category at a time, picked on the left, as in Steam's settings.
     const tabs = [
-      ["general", "General", GI.sliders, "How Lootnest starts, closes and tells you things.", () => card(`
+      ["general", SET_CATS.general, GI.sliders, "How Lootnest starts, closes and tells you things.", () => card(`
           ${sw("autostart", "Start with Windows", "Lootnest opens quietly in the tray when you sign in, so it's always watching your games.", S.d.autostart)}
           ${sw("closeToTray", "Keep running when the window is closed", "Closing the window leaves Lootnest in the tray. Quit from the tray icon.", s.closeToTray)}
           ${sw("hideWhilePlaying", "Hide while a game runs", "The window gets out of the way once the game starts. In Big Picture, it comes back when the game closes.", s.hideWhilePlaying)}
           ${sw("openBigPicture", "Open in Big Picture when Lootnest starts", "For a PC by the TV: Lootnest opens on the whole screen, ready for a controller. Not when it starts in the tray with Windows.", s.openBigPicture)}
           ${sw("notifications", "Notifications", "A short Windows notification when progress is saved.", s.notifications)}`)
         + sub("Keyboard shortcuts", "", `<dl class="set-keys">${SHORTCUTS(s).map(([keys, what]) => `<dt>${keys.map((k) => `<kbd>${k}</kbd>`).join(", ")}</dt><dd>${what}</dd>`).join("")}</dl>`)],
-      ["games", "Games and swaps", GI.play, "How profiles' files are swapped, and how Lootnest works with Steam.", () => sub("Swaps", "", `
+      ["games", SET_CATS.games, GI.play, "How profiles' files are swapped, and how Lootnest works with Steam.", () => sub("Swaps", "", `
           ${row("s-backups", "Copies kept per game before each swap", "A copy is made before every swap. The oldest go once there are more than this.", `<input id="s-backups" class="ln-input set-num" type="number" min="1" max="100" data-setting="backupsToKeep" value="${s.backupsToKeep}">`)}
           ${row("s-timeout", "Seconds to wait for a game to start", "If it hasn't started by then, the profile's files stay loaded, and Lootnest still saves them if the game starts later.", `<input id="s-timeout" class="ln-input set-num" type="number" min="30" max="1800" data-setting="startTimeoutSeconds" value="${s.startTimeoutSeconds}">`)}
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}`)
@@ -76,10 +78,10 @@
             ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`) : `<div class="bk-row"><div><b>Steam isn't on this PC</b><p>Steam games show up here once it's installed.</p></div></div>`}`)
         + (hidden.length ? sub("Hidden games", "Games you hid from the Library. Scans leave them out until you show them again.", hidden.map(([k, name]) =>
           `<div class="bk-row"><div><b>${esc(name)}</b></div>${b("secondary", `data-action="found-unhide" data-key="${esc(k)}"`, "Show again")}</div>`).join("")) : "")],
-      ["controllers", "Controllers", GI.pad, "The controllers on this PC, and the apps that change how games see them.", viewControllers],
-      ["storage", "Storage", GI.drive, "What your games take on each drive, and moving a game to another one.", viewStorage],
-      ["plugins", "Plugins", GI.puzzle, "Plugins are data only: they can add games to the Library, suggest save locations, fill in game details and change colours. They can't run anything, go online, or touch your saves.", viewPlugins],
-      ["online", "Online", GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
+      ["controllers", SET_CATS.controllers, GI.pad, "The controllers on this PC, and the apps that change how games see them.", viewControllers],
+      ["storage", SET_CATS.storage, GI.drive, "What your games take on each drive, and moving a game to another one.", viewStorage],
+      ["plugins", SET_CATS.plugins, GI.puzzle, "Plugins are data only: they can add games to the Library, suggest save locations, fill in game details and change colours. They can't run anything, go online, or touch your saves.", viewPlugins],
+      ["online", SET_CATS.online, GI.globe, "Each of these sends as little as it can, and only once you turn it on.", () => sub("What Lootnest may look up", "", `
           ${sw("findGames", "Store", "The Store page, and the search in the top bar, look any game up on the Steam store, with its deals and requirements, and on CheapShark for its price in other official stores. Only what you search for, or a game's Steam id, is sent.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", s.saveDb)}
           ${sw("gameNews", "Show game updates and news", "Each game's page shows its latest updates and patch notes from Steam's news feed, and tells you when a game no store keeps up to date has a newer version than yours. Only the game's Steam id, or its name, is sent.", s.gameNews)}
@@ -95,17 +97,17 @@
           <div class="bk-row set-wide"><div><label for="s-steamkey"><b>Steam Web API key</b></label>
             <p>Names, descriptions and pictures for achievements Lootnest finds on this PC without them, such as a game in a folder. Get a free key on steamcommunity.com/dev/apikey. Only the game's Steam id and your key are sent, to Steam; what comes back is kept on this PC.</p></div>
             <input id="s-steamkey" class="ln-input" type="password" autocomplete="off" spellcheck="false" data-setting="steamApiKey" value="${esc(s.steamApiKey || "")}" placeholder="Paste your key"></div>`)],
-      ["updates", "Updates", GI.load, "New versions of Lootnest, from its releases on GitHub.", () => card(versionRow + `
+      ["updates", SET_CATS.updates, GI.load, "New versions of Lootnest, from its releases on GitHub.", () => card(versionRow + `
           ${sw("checkUpdates", "Check for updates automatically", "Every few hours, Lootnest asks GitHub for its latest version number and tells you with a notification when a new one is out. Nothing about you or your games is sent.", s.checkUpdates)}
           ${s.checkUpdates ? sw("autoInstallUpdates", "Install updates by themselves", "A new version installs while Lootnest is in the tray and no game is running, then Lootnest opens again in the tray. Your profiles, games and saves stay as they are.", s.autoInstallUpdates) : ""}`)],
-      ["cloud", "Cloud saves", GI.cloud, "Your saves in your own cloud folder, on every PC, with backups of everything.", () => card(`
-          <div class="bk-row"><div><b>Cloud saves and backups</b><p>Where the saves go, sync between PCs, the password and backups of everything are on their own page.</p></div>${b("primary", 'data-action="nav" data-view="cloud"', "Open Cloud saves")}</div>`)],
-      ["data", "Data and activity", GI.folder, "Where Lootnest keeps profiles and backups, and what it did lately.", () => card(`
+      ["cloud", SET_CATS.cloud, GI.cloud, "Your saves in your own cloud folder, on every PC, with backups of everything.", () => card(`
+          <div class="bk-row"><div><b>Cloud saves and backups</b><p>Where the saves go, sync between PCs, the password and backups of everything are on the Saves page.</p></div>${b("primary", 'data-action="nav" data-view="cloud"', "Open Cloud saves")}</div>`)],
+      ["data", SET_CATS.data, GI.folder, "Where Lootnest keeps profiles and backups, and what it did lately.", () => card(`
           <div class="bk-row"><div><b>Data folder</b><p class="selectable">Profiles and backups are stored in ${esc(S.d.dataDir)}</p></div>${b("secondary", 'data-action="open-data"', "Open data folder")}</div>
           <div class="bk-row"><div><b>Import from Playnite</b><p>Bring in time played, statuses, favourites, ratings and notes from Playnite on this PC. Playnite's own files are only read.</p></div><button class="ln-button ln-button--secondary ln-button--sm" data-action="playnite-open" aria-haspopup="dialog">Import from Playnite</button></div>
           <div class="bk-row"><div><b>Recent activity</b><p>Every swap, save and scan, with the reason when something didn't work. Useful when you ask for help.</p></div>${b("secondary", 'data-action="show-log"', "Show recent activity")}</div>
           ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}`) + sub("Captures", "", capturesRows(s))],
-      ["about", "About", GI.info, "The version, how to tell us about a problem, and how to leave.", () => card(`
+      ["about", SET_CATS.about, GI.info, "The version, how to tell us about a problem, and how to leave.", () => card(`
           ${versionRow}
           <div class="bk-row"><div><b>Lootnest is in beta</b><p>Everything that moves your files makes a copy first. If something doesn't work as it should, Report a problem copies the version and the recent activity for you to paste, and opens a new issue on GitHub in your browser. Lootnest sends nothing itself. Read it before you post: it names your games and folders.</p></div>${b("secondary", 'data-action="report-problem"', "Report a problem")}</div>
           <div class="bk-row"><div><b>Uninstalling</b><p>Lootnest uses the Microsoft Edge WebView2 runtime. To uninstall, use Settings, Apps in Windows. Your profiles and backups stay in the data folder.</p></div></div>
@@ -124,7 +126,7 @@
   // the app uploads it.
   async function loadBackupInfo() {
     try { S.backup = await api.backupInfo(); } catch (e) { return; }
-    if ((S.view === "settings" || S.view === "cloud") && !S.dialog) render();
+    if ((S.view === "settings" || S.view === "saves") && !S.dialog) render();
   }
   function fmtBytes(n) {
     if (n < 1024 * 1024) return Math.max(1, Math.round(n / 1024)) + " KB";
