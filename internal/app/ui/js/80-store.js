@@ -1,29 +1,59 @@
   // --------------------------------------------------------- sidebar search --
-  // One search box on every page: your games first, then the store's.
+  // One search box on every page: commands, your games, then the store's.
   let gqTimer = 0;
+  // The commands: each runs an action the window already has, with the
+  // data its button would carry. key is its shortcut from SHORTCUTS; to is
+  // the page it goes to first, where its result shows.
+  const GQ_TOP = 6; // shown while the box is empty
+  function gqCommands() {
+    const keys = SHORTCUTS(cfg().settings), key = (what) => ((keys.find(([, w]) => w === what) || [[""]])[0][0]);
+    const cmd = (name, action, data = {}, k = "", to = "") => ({ name, action, data, key: k, to });
+    const out = [];
+    const open = S.view === "game" && S.page && everyItem().find((x) => x.kind === S.page.kind && x.id === S.page.id);
+    const run = (S.d.sessions || []).find((x) => x.phase === "playing" && game(x.gameId)), it = run ? itemByKey("game:" + run.gameId) : open;
+    const P = it && it.kind !== "owned" && pointsFor(it); // asked once, the box redrawn when it comes
+    if (P && P.loaded && !P.error) out.push(cmd(`Make a save point in ${it.name}`, "pt-make", it.kind === "game" ? { game: it.id } : { key: it.id }, run ? key("Make a save point while a game runs") : ""));
+    const M = open && S.mods[recentKey(open)];
+    if (M && modsTabOn(M) && !M.refused) {
+      const k = recentKey(open), o = setsOn(open, M) && player(S.modsFor[k]) ? S.modsFor[k] : "";
+      out.push(cmd(`Add a mod to ${open.name}`, "mod-add", { mods: k, owner: o, name: open.name }));
+    }
+    out.push(cmd("Scan again", "rescan", {}, key("Look for games again")), cmd("Add a game", "add-game"));
+    if (S.view !== "settings") out.push(cmd("Open Settings", "nav", { view: "settings" }));
+    out.push(cmd("Big Picture", "bp-open", {}, key("Open or leave Big Picture")));
+    ["home", "library", "find", "updates", "achievements", "saves", "players"].filter((v) => v !== S.view).forEach((v) => out.push(cmd(`Go to ${PAGE_NAMES[v]}`, "nav", { view: v })));
+    out.push(cmd("Go to Cloud saves", "nav", { view: "cloud" }), cmd("Check for game updates", "upd-refresh", {}, "", "updates"), cmd("Check for Lootnest updates", "update-check"));
+    Object.entries(SET_CATS).filter(([tab]) => tab !== "cloud").forEach(([tab, l]) => out.push(cmd(`Settings: ${l}`, "set-open", { tab })));
+    grouped().filter((p) => p.id !== S.seat).forEach((p) => out.push(cmd(`${solo() ? "Play as" : "Sit down as"} ${p.name}`, "seat-set", { player: p.id })));
+    out.push(S.d.safe ? cmd("Restart normally", "restart-normal") : cmd("Restart in safe mode", "restart-safe"), cmd("Report a problem", "report-problem"));
+    return out;
+  }
   function gqItems() {
     const q = S.gq.q.trim();
-    if (!q) return [];
-    const m = nameMatcher(q), mine = libraryItems().filter((it) => m(it.name)).slice(0, 5).map((it) => ({ mine: it }));
+    if (!q) return gqCommands().slice(0, GQ_TOP).map((c) => ({ cmd: c }));
+    const m = nameMatcher(q), cmds = gqCommands().filter((c) => m(c.name)).slice(0, 5).map((c) => ({ cmd: c }));
+    const mine = libraryItems().filter((it) => m(it.name)).slice(0, 5).map((it) => ({ mine: it }));
     const ownedIds = new Set(mine.map((m) => m.mine.appId).filter(Boolean));
     const store = (S.gq.hits || []).filter((h) => !ownedIds.has(h.appId) && !h.owned).slice(0, 6).map((h) => ({ hit: h }));
-    return [...mine, ...store];
+    return [...cmds, ...mine, ...store];
   }
   function renderGq() {
     const pop = $("#gq-pop"), input = $("#gq");
     if (!pop || !input) return;
     const q = S.gq.q.trim();
-    if (!q || document.activeElement !== input && !pop.contains(document.activeElement)) { pop.hidden = true; input.setAttribute("aria-expanded", "false"); return; }
+    if (document.activeElement !== input && !pop.contains(document.activeElement)) { pop.hidden = true; input.setAttribute("aria-expanded", "false"); return; }
     const items = gqItems(), on = cfg().settings.findGames;
     let i = -1;
     const opt = (inner, extra = "") => { i++; return `<button class="gq-item${i === S.gq.sel ? " is-sel" : ""}" role="option" aria-selected="${i === S.gq.sel}" data-action="gq-open" data-i="${i}" ${extra}>${inner}</button>`; };
-    const mine = items.filter((x) => x.mine), store = items.filter((x) => x.hit);
+    const cmds = items.filter((x) => x.cmd), mine = items.filter((x) => x.mine), store = items.filter((x) => x.hit);
+    const cmdHTML = cmds.length ? `<div class="gq-group"><span class="gq-label">Commands</span>${cmds.map((x) => opt(`<span class="gq-name">${esc(x.cmd.name)}</span>${x.cmd.key ? `<kbd class="gq-key">${esc(x.cmd.key)}</kbd>` : ""}`)).join("")}</div>` : "";
+    if (!q) { pop.innerHTML = cmdHTML; pop.hidden = false; input.setAttribute("aria-expanded", "true"); return; }
     const mineHTML = mine.length ? `<div class="gq-group"><span class="gq-label">Your games</span>${mine.map((m) => opt(`<span class="gq-name">${esc(m.mine.name)}</span><span class="gq-meta">${esc(m.mine.kind === "game" ? "Profiles on" : storeNames(m.mine))}</span>`)).join("")}</div>` : "";
     const storeHTML = !on ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Turn on the Store to search every game, with prices and whether it runs here.</p></div>`
       : S.gq.hits === null ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Looking it up</p></div>`
       : store.length ? `<div class="gq-group"><span class="gq-label">Store</span>${store.map((x) => opt(`${x.hit.image ? `<img src="${esc(x.hit.image)}" alt="">` : ""}<span class="gq-name">${esc(x.hit.name)}</span><span class="gq-meta">${x.hit.price ? esc(cents(x.hit.price)) : ""}</span>`)).join("")}</div>` : "";
-    const none = !mine.length && on && S.gq.hits && !store.length ? `<p class="gq-note">Nothing called "${esc(q)}".</p>` : "";
-    pop.innerHTML = `${mineHTML}${storeHTML}${none}${on ? `<button class="gq-all" data-action="gq-all">See everything for "${esc(q)}" in the Store</button>` : ""}`;
+    const none = !cmds.length && !mine.length && on && S.gq.hits && !store.length ? `<p class="gq-note">Nothing called "${esc(q)}".</p>` : "";
+    pop.innerHTML = `${cmdHTML}${mineHTML}${storeHTML}${none}${on ? `<button class="gq-all" data-action="gq-all">See everything for "${esc(q)}" in the Store</button>` : ""}`;
     pop.hidden = false; input.setAttribute("aria-expanded", "true");
   }
   function gqClose() { S.gq.sel = -1; const pop = $("#gq-pop"); if (pop) pop.hidden = true; const i = $("#gq"); if (i) i.setAttribute("aria-expanded", "false"); }
@@ -31,7 +61,13 @@
     const x = gqItems()[i];
     if (!x) return;
     gqClose(); $("#gq").blur();
-    if (x.mine) openSheet(x.mine.kind, x.mine.id, null);
+    if (x.cmd) {
+      $("#gq").value = S.gq.q = "";
+      const el = document.createElement("button"); // stands in for the command's button
+      Object.assign(el.dataset, x.cmd.data);
+      if (x.cmd.to && S.view !== x.cmd.to) actions.nav({ dataset: { view: x.cmd.to } });
+      actions[x.cmd.action](el);
+    } else if (x.mine) openSheet(x.mine.kind, x.mine.id, null);
     else actions["find-open"]({ dataset: { app: String(x.hit.appId), name: x.hit.name } });
   }
   function gqAll() {
@@ -248,13 +284,13 @@
     const f = (B.folders || []).find((x) => x.path.toLowerCase() === (B.dir || "").toLowerCase());
     return f ? f.name : "Your folder";
   }
-  // Cloud saves: where the saves go, every game's state for each player,
-  // and the backups of everything.
-  function viewCloud() {
+  // Cloud saves, a section of Saves: where the saves go, every game's state
+  // for each player, and the backups of everything.
+  function cloudSection() {
     const B = S.backup;
-    const head = (sum) => `<header class="lib-head"><h1>Cloud saves</h1>
-      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p>${sum || ""}</header>`;
-    if (!B) { loadBackupInfo(); return `<div class="cloud-page ln-root">${head()}${lnInline("", "Reading your cloud folder")}</div>`; }
+    const wrap = (body, sum) => `<section class="cloud-page sv-sec" id="sv-cloud" aria-labelledby="sv-cloud-h"><div class="ln-section-head"><div><h2 id="sv-cloud-h">Cloud saves</h2>
+      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p></div></div>${sum || ""}${body}</section>`;
+    if (!B) { loadBackupInfo(); return wrap(lnInline("", "Reading your cloud folder")); }
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
     if (!B.dir) {
       const rows = PROVIDERS.map((pv) => {
@@ -263,12 +299,12 @@
           ? found.map((f) => `<div class="cs-option"><div><b>${esc(pv.name)}</b><span class="selectable">${esc(f.path)}</span></div>${b("primary", `data-action="backup-use" data-dir="${esc(f.path)}"`, "Use " + esc(f.name))}</div>`).join("")
           : `<div class="cs-option"><div><b>${esc(pv.name)}</b><span>Install ${esc(pv.name)} and sign in with ${esc(pv.account)}, then come back here.</span></div>${b("secondary", `data-action="open-download" data-url="${esc(pv.url)}"`, "Get " + esc(pv.name))}</div>`;
       }).join("");
-      return `<div class="cloud-page ln-root">${head()}
-        <section class="cloud-setup"><div class="ln-section-head"><div><h2>Where should your saves go?</h2><p>Lootnest writes the files to that folder, and the cloud app uploads them with your account.</p></div></div>
+      return wrap(`
+        <div class="cloud-setup"><div class="ln-section-head"><div><h3>Where should your saves go?</h3><p>Lootnest writes the files to that folder, and the cloud app uploads them with your account.</p></div></div>
           <div class="cs-options">${rows}
             <div class="cs-option"><div><b>USB drive or another folder</b><span>A drive you carry between PCs, a NAS, or any folder.</span></div>${b("secondary", 'data-action="backup-pick"', "Choose a folder")}</div></div>
           <p class="cs-note">Signing in to Microsoft or Google right in Lootnest, without their apps, comes in a later version.</p>
-          <div class="bk-restore">${b("ghost", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back.</span></div></section></div>`;
+          <div class="bk-restore">${b("ghost", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back.</span></div></div>`);
     }
     const st = B.status, V = S.saves;
     const last = st.running ? "Backing up now" : st.last ? `Last backup ${esc(ago(st.last))}, ${esc(fmtBytes(st.size))}` : "No backup yet";
@@ -317,10 +353,10 @@
     // An explanation shows its first sentence; the rest folds under More.
     const brief = (t) => { const i = t.indexOf(". "); return i < 0 || t.length <= 72 ? `<p class="tg-line">${t}</p>` : `<div class="tg-brief"><p class="tg-line">${t.slice(0, i + 1)}</p><details class="tg-more"><summary>More</summary><p>${t.slice(i + 2)}</p></details></div>`; };
     const path = B.target || "";
-    return `<div class="cloud-page ln-root">${head(sum)}
+    return wrap(`
       <div class="cloud-cols">
-        <div class="cloud-main">${conflicts ? `<section class="cs-conflicts">${conflicts}</section>` : ""}<section><div class="ln-section-head"><div><h2>Games</h2></div></div>${games}</section>
-          <section class="cloud-backups"><div class="ln-section-head"><div><h2>Backups of everything</h2></div></div>
+        <div class="cloud-main">${conflicts ? `<section class="cs-conflicts">${conflicts}</section>` : ""}<section><div class="ln-section-head"><div><h3>Games</h3></div></div>${games}</section>
+          <section class="cloud-backups"><div class="ln-section-head"><div><h3>Backups of everything</h3></div></div>
             <div class="bk-card">
               <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p>Profiles, games and saves in one file, to restore on a new PC.</p>`}</div>
                 ${st.running ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Backing up</button>` : b("secondary ln-button--sm", 'data-action="backup-now"', "Back up now")}</div>
@@ -331,7 +367,7 @@
             <div class="bk-restore">${b("ghost ln-button--sm", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back. What's here now is saved first.</span></div></section>
         </div>
         <aside class="cloud-side">
-          <section><div class="ln-section-head"><div><h2>Your cloud folder</h2></div></div>
+          <section><div class="ln-section-head"><div><h3>Your cloud folder</h3></div></div>
             <div class="bk-card">
               <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><span class="bk-path"><b class="selectable" title="${esc(path)}">${esc(midTrunc(path, 44))}</b><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="copy-path" data-path="${esc(path)}" aria-label="Copy the path" title="Copy the path">${GI.copy}</button></span></div>
                 <div class="gpage-actions">${b("ghost ln-button--sm", 'data-action="backup-pick"', "Change")}${b("ghost ln-button--sm", 'data-action="backup-open"', "Open folder")}</div></div>
@@ -344,7 +380,7 @@
                 <div class="gpage-actions">${B.encrypted ? b("ghost ln-button--sm", 'data-action="backup-pw" data-on="1"', "Change password") + b("ghost ln-button--sm", 'data-action="backup-pw" data-on="0"', "Remove password") : b("secondary ln-button--sm", 'data-action="backup-pw" data-on="1"', B.locked ? "Enter the password" : "Set a password")}</div></div>
             </div></section>
         </aside>
-      </div></div>`;
+      </div>`, sum);
   }
   async function saveBackup(change) {
     const B = S.backup;

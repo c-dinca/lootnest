@@ -2,11 +2,13 @@
   const actions = {
     nav(el, ev) {
       if (S.view === "edit" && !confirmLeaveEdit()) return;
-      const view = el.dataset.view;
-      if (view === S.view) { $("#view").scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" }); return; }
+      // Cloud saves is a section of Saves: its links land on it there.
+      const cloud = el.dataset.view === "cloud", view = cloud ? "saves" : el.dataset.view;
+      const c = view === S.view && cloud && $("#sv-cloud"), behavior = reduced() ? "auto" : "smooth";
+      if (view === S.view) { S.svCloud = false; if (c) c.scrollIntoView({ behavior }); else $("#view").scrollTo({ top: 0, behavior }); return; }
       if (ev) uiSound("tab");
       renderBar(view);
-      swapPage(() => { enterView(view); S.animateView = true; render(); $("#view").scrollTop = 0; });
+      swapPage(() => { enterView(view); S.svCloud = cloud; S.animateView = true; render(); if (!cloud) $("#view").scrollTop = 0; });
     },
     "hist-back"() { goHist(true); },
     "hist-fwd"() { goHist(false); },
@@ -93,7 +95,8 @@
     async "pt-make"(el) {
       const it = itemFor(el);
       if (!it) return;
-      const key = recentKey(it), inp = $("#pt-new"), P = S.points[key] || (S.points[key] = {});
+      const b = $('.pt-make [data-action="pt-make"]'), mine = b && b.dataset.game === el.dataset.game && b.dataset.key === el.dataset.key; // the box is this game's
+      const key = recentKey(it), inp = mine ? $("#pt-new") : null, P = S.points[key] || (S.points[key] = {});
       P.busy = true; render();
       try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
@@ -219,7 +222,11 @@
       achAsked.delete("game:" + id);
       toast(shared ? "Achievements are shared now." : "Each profile gets its own achievements from the next swap.");
     },
-    "open-sheet": (el) => openSheet(el.dataset.game ? "game" : isOwnedKey(el.dataset.key) ? "owned" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
+    "open-sheet"(el) {
+      const kind = el.dataset.game ? "game" : isOwnedKey(el.dataset.key) ? "owned" : "found", id = el.dataset.game || el.dataset.key;
+      if (el.dataset.tab) S.gameTab[kind + ":" + id] = el.dataset.tab; // such as a game's Saves, from Saves
+      openSheet(kind, id, el.closest(".card"));
+    },
     "back-library": () => pageBack(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
     "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: el.dataset.tab || "look" }; renderOverlay(); },
@@ -311,8 +318,8 @@
       const ok = await confirmDialog({ title: "Restore these saves?", body, ok: "Restore" });
       if (!ok) return;
       const G = S.gsaves[el.dataset.key];
-      if (G) G.busy = true; render();
-      try { await (local ? api.gameSaveRestoreLocal : api.gameSaveRestore)(el.dataset.key, el.dataset.id); } catch (e) { if (G) G.busy = false; toast(errText(e), "error"); render(); }
+      if (G) G.busy = true; S.svBusy = el.dataset.id; render();
+      try { await (local ? api.gameSaveRestoreLocal : api.gameSaveRestore)(el.dataset.key, el.dataset.id); } catch (e) { if (G) G.busy = false; S.svBusy = ""; toast(errText(e), "error"); render(); }
     },
     async "find-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
@@ -409,12 +416,14 @@
       if (back) { S.dialog = back; renderOverlay(); }
       if (!ok) return;
       if (S.dialog) { S.dialog.busy = true; renderOverlay(); }
+      if (S.view === "saves") { S.svBusy = el.dataset.id; render(); }
       try {
         await api.restoreBackup(el.dataset.game, el.dataset.id);
         toast(`${possessive(who)} files from ${el.dataset.when} are back.`);
+        S.svBusy = ""; if (S.view === "saves") askSaves();
         const l = await api.gameBackups(el.dataset.game);
         if (S.dialog && S.dialog.kind === "copies") { S.dialog.busy = false; S.dialog.list = l || []; renderOverlay(); }
-      } catch (e) { if (S.dialog) { S.dialog.busy = false; renderOverlay(); } toast(errText(e), "error"); }
+      } catch (e) { if (S.dialog) { S.dialog.busy = false; renderOverlay(); } if (S.svBusy) { S.svBusy = ""; render(); } toast(errText(e), "error"); }
     },
     async "conflict-ok"(el) { try { await api.dismissConflict(el.dataset.game); await refresh(); } catch (e) { toast(errText(e), "error"); } },
     "upd-filter"(el) { S.updFilter = el.dataset.f === S.updFilter ? "all" : el.dataset.f; render(); },
@@ -435,7 +444,7 @@
     "sc-games"(el) {
       const kind = el.dataset.kind, list = (S.saveCheck && S.saveCheck[kind]) || [];
       const title = { gone: "Saves gone from their folders", oneDrive: "Saves OneDrive syncs" }[kind] || "Where saves are kept";
-      const m = menuUnder(el, `<div class="ctx-title">${title}</div>${list.map((g) => `<button data-action="open-sheet" ${g.key.startsWith("game:") ? `data-game="${esc(g.key.slice(5))}"` : `data-key="${esc(g.key)}"`}>${esc(g.name)}</button>`).join("")}`);
+      const m = menuUnder(el, `<div class="ctx-title">${title}</div>${list.map((g) => `<button data-action="open-sheet" ${g.key.startsWith("game:") ? `data-game="${esc(g.key.slice(5))}"` : `data-key="${esc(g.key)}"`}${kind === "oneDrive" ? "" : ' data-tab="saves"'}>${esc(g.name)}</button>`).join("")}`);
       const f = m.querySelector("button"); if (f) f.focus({ preventScroll: true });
     },
     "upd-history"(el) { S.dialog = { kind: "updhist", key: el.dataset.key }; renderOverlay(); focusOverlay(); },
@@ -665,6 +674,10 @@
     },
     "covers-later"() { S.hideCoverHint = true; render(); },
     "restart-normal"() { api.restart(false).catch((e) => toast(errText(e), "error")); },
+    "restart-safe"() { api.restart(true).catch((e) => toast(errText(e), "error")); },
+    "sv-more"() { S.svMore = !S.svMore; render(); },
+    "sv-sort"(el) { S.svSort = el.dataset.col; render(); },
+    "set-open"(el) { if (S.view === "settings") actions["set-tab"](el); else { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); actions.nav({ dataset: { view: "settings" } }); } },
     async "updates-yes"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.checkUpdates = true; s.autoInstallUpdates = true; s.updatesAsked = true;
@@ -1368,7 +1381,11 @@
       if (n) { S.gq.sel = ev.key === "ArrowDown" ? (S.gq.sel + 1) % n : (S.gq.sel <= 0 ? n - 1 : S.gq.sel - 1); renderGq(); }
     } else if (ev.key === "Enter") {
       ev.preventDefault();
-      if (S.gq.sel >= 0 && S.gq.sel < n) gqOpen(S.gq.sel); else if (cfg().settings.findGames) gqAll(); else if (n) gqOpen(0);
+      // A command runs only once picked; otherwise Enter searches as before.
+      if (S.gq.sel >= 0 && S.gq.sel < n) gqOpen(S.gq.sel);
+      else if (!S.gq.q.trim()) return;
+      else if (cfg().settings.findGames) gqAll();
+      else { const j = gqItems().findIndex((x) => x.mine); if (j >= 0) gqOpen(j); }
     } else if (ev.key === "Escape") {
       ev.preventDefault(); ev.stopPropagation();
       gqClose(); ev.target.blur();

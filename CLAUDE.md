@@ -132,7 +132,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.90.0, beta)
+## Where things stand (1.91.0, beta)
 
 These shipped recently, newest last:
 
@@ -674,6 +674,14 @@ These shipped recently, newest last:
   a plugin whose files changed on disk is turned off with a reason.
   Remove forgets the pin. `plugsign keygen|sign` for authors
   (plugsign.key 0600, gitignored).
+- **1.91** Roadmap UI 3: the Saves hub (view `saves`, `76-saves.js`) in
+  Cloud saves' tab (six tabs kept): stats, Needs a look, Recent copies
+  (`core.SavesOverview` over `eng.Backups`, `SavePoints` and the safety
+  net; `ps_savesOverview`), Per game (sortable), then the old Cloud view
+  as `cloudSection()` (`nav` maps view `cloud` to it). Ctrl+K runs
+  commands (`gqCommands` in 80-store.js; existing actions only; Enter
+  runs a command only when one is picked). `SET_CATS` is the one list of
+  Settings categories; `open-sheet` takes `data-tab`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

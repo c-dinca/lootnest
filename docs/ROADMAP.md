@@ -89,7 +89,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 - 0, M: split `app.js` into ordered files joined into one closure; role type tokens; routing with Back; an accessibility harness; the tab slot API. The split and Back shipped in 1.67.
 - 1, M: art fallback chain, type covers, logo art, palette tint, custom art copied into `covers\custom`.
 - 2, L: game page tabs, a facts column, a compact sticky head. The tabs and the head shipped in 1.72; the side column stays on Overview.
-- 3, M: five nav items with a Saves hub; the command palette.
+- 3, M: five nav items with a Saves hub; the command palette. Shipped in 1.91 with the top bar's six tabs kept: Saves takes Cloud saves' place, and Cloud saves is a section of it. Ctrl+K runs commands above its search.
 - 4, M: density, WebView2 zoom, contrast, forced colours, motion, per profile.
 - 5, M: post-session summary, cover-to-hero transition, spotlight shelves.
 - 6, S, optional: OLED ground, [Mica](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwm_systembackdrop_type) on Windows 11 22621 and later.
@@ -138,7 +138,7 @@ Groundwork and safety first, then offline work with no Windows-only code, then w
 10. Controllers 2 and 3 (M, M).
 11. Mods 1 to 3 (L, M, M).
 12. Plugins 1 and 3 (L, M). Done in 1.89 and 1.90.
-13. UI 3 to 5 (M each).
+13. UI 3 to 5 (M each). UI 3 done in 1.91.
 14. Game details 2 to 4; Plugins 2.
 15. Controllers 4 and Mods 4 (L, L): undocumented Steam and game formats.
 16. Later, if wanted: Plugins 4 and 5, Timeline 5, Controllers 5, UI 6. Mods 5 only on the owner's explicit decision.

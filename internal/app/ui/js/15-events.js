@@ -80,7 +80,11 @@
         break;
       case "saveCheck":
         S.saveCheck = ev.check || null;
-        if (S.view === "home" || S.view === "game") render();
+        if (S.view === "home" || S.view === "game" || S.view === "saves") render();
+        break;
+      case "savesOverview":
+        S.svo = { recent: ev.recent || [], games: ev.games || [] };
+        if (S.view === "saves") render();
         break;
       case "timeline":
         S.timeline[ev.key] = ev.items || [];
@@ -128,6 +132,7 @@
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
         if (S.view === "game") render();
+        renderGq(); // the box's Make a save point
         break;
       case "savePointMade": {
         const P = S.points[ev.key] || (S.points[ev.key] = {});
@@ -137,6 +142,7 @@
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
         else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
+        if (S.view === "saves") askSaves();
         break;
       }
       case "offline":
@@ -373,11 +379,13 @@
         else if (ev.restored) toast(ev.skipped ? `Restored; ${ev.skipped} save location${ev.skipped === 1 ? "" : "s"} this PC doesn't have ${ev.skipped === 1 ? "was" : "were"} left out` : "Restored");
         if (ev.changed) { S.gsaves = {}; if (S.view === "game") render(); }
         if (ev.key) { const G = S.gsaves[ev.key]; if (G) G.busy = false; }
+        S.svBusy = "";
+        if (S.view === "saves") askSaves();
         break;
       }
       case "savesStatus":
         S.saves = ev.status;
-        if (S.view === "cloud") render();
+        if (S.view === "saves") render();
         break;
       case "savesChanged":
         if (ev.done && S.syncAsked) {
@@ -385,7 +393,7 @@
           if (ev.error) toast(ev.error, "error");
           else toast(ev.up || ev.down ? [ev.up ? `${ev.up} uploaded` : "", ev.down ? `${ev.down} brought down` : ""].filter(Boolean).join(", ") : "Everything is up to date");
         }
-        if (S.view === "cloud") loadSaves();
+        if (S.view === "saves") loadSaves();
         break;
       case "restoreInfo": {
         const D = S.dialog;

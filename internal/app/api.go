@@ -42,6 +42,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_assignCapture", a.apiAssignCapture))
 	must(a.w.Bind("ps_openCapture", a.apiOpenCapture))
 	must(a.w.Bind("ps_saveCheck", a.apiSaveCheck))
+	must(a.w.Bind("ps_savesOverview", a.apiSavesOverview))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
 	must(a.w.Bind("ps_restoreBackup", a.apiRestoreBackup))

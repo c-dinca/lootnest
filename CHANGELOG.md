@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.91.0
+
+- **Saves**, in the top bar where Cloud saves was: everything Lootnest keeps of your saves in one place. At the top, how many games have profiles, how many have copies, your save points and when the newest copy was made.
+- **Needs a look** comes first: a game whose saves are gone from its folder, files Steam Cloud replaced, saves changed on two PCs, a cloud folder that didn't work, and games whose save folder Lootnest doesn't know yet.
+- **Recent copies** lists the newest copies across your games: the safety net's copies, save points and copies made before a swap, with who they belong to, when, and their size. **Restore**, **Go back to it** and **Put back** work as they do on the game's page, and still copy what's there first.
+- **Cloud saves** is now a section of Saves, with everything it had. It comes after Per game; links to it from Home and Settings land there.
+- **Per game** lists every game with copies or profiles: its profiles, newest copy, save points and the space its copies take. Sort by any column, and a game's name opens its Saves tab.
+- Home's **Your saves** has a **See all** link to Saves, and its link for one game opens that game's Saves tab.
+- **Ctrl+K runs commands.** The search box lists commands above your games: go to any page or Settings category, Scan again, Add a game, Add a mod on a game's page, Make a save point for the game running or the one open, check for updates, sit down as a profile, Big Picture, restart in safe mode and Report a problem. With the box empty it shows a few; arrows choose and Enter runs the one chosen. With none chosen, Enter does what it did before: the first of your games, or the Store search. Esc closes, and each command shows its shortcut if it has one.
+
 ## 1.90.0
 
 - **Signed plugins.** A plugin's author can sign it, and Settings, Plugins says on each row whether it's signed and with which key (Signed, key 1A2B 3C4D 5E6F 7A8B), or Not signed. Unsigned plugins still install as before.

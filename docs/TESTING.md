@@ -608,3 +608,24 @@ make a theme plugin folder from docs/PLUGINS.md and
    the key.
 7. **Remove** it: the dialog says Lootnest forgets its key; installing the
    1.0.0 .zip again works with no dialog.
+
+## 25. Saves and Ctrl+K (1.91)
+
+1. Open **Saves** in the top bar (where Cloud saves was). The numbers under
+   the title match the Library: games with profiles, games with copies,
+   save points and the newest copy's time.
+2. Delete a folder game's in-folder saves and let the safety net notice:
+   **Needs a look** names the game; **Open its saves** opens its Saves tab.
+3. Under **Recent copies**, **Restore** on a safety net copy, **Go back to
+   it** on a save point and **Put back** on a copy before a swap each ask
+   first, then do what the same button on the game's page does, and the
+   list is read again.
+4. Sort **Per game** by each column; a game's name opens its Saves tab.
+5. Home's **Set them up** and Settings, Cloud saves' button open Saves at
+   its Cloud saves section, with everything that page had.
+6. Ctrl+K with the box empty lists a few commands. Type `set`: Open
+   Settings and the categories; arrow down to one and Enter opens it.
+   Type the start of a game's name and press Enter without choosing: the
+   game opens (or the Store search, when it's on), never a command. With a game
+   running, **Make a save point** shows Ctrl+Shift+F5 and makes one.
+   Esc closes the list.
