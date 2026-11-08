@@ -31,6 +31,15 @@ const html = fs.readFileSync(path.join(ui, "index.html"), "utf8")
   .replaceAll("@NONCE@", "harness");
 fs.mkdirSync(path.join(here, "dist"), { recursive: true });
 fs.writeFileSync(path.join(here, "dist", "page.html"), html);
+// Design directions being tried (dev only): design/directions/<name>.css is
+// laid over app.css in dist/page-<name>.html.
+const dirs = path.join(here, "../directions");
+if (fs.existsSync(dirs)) {
+  for (const f of fs.readdirSync(dirs).filter((f) => f.endsWith(".css"))) {
+    const extra = fs.readFileSync(path.join(dirs, f), "utf8");
+    fs.writeFileSync(path.join(here, "dist", "page-" + f.slice(0, -4) + ".html"), html.replace("</style>", () => "\n" + extra + "\n</style>"));
+  }
+}
 // The kitchen sink: every system component in every state (dev only).
 const ks = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kitchen sink · Lootnest</title><style>${withFonts(system)}\n${fs.readFileSync(path.join(here, "kitchen-sink.css"), "utf8")}</style></head>
