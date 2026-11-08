@@ -713,41 +713,32 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 }
 
 /* --------------------------------------------------------------- players */
-/* The household: a card per person, then their names and colours. A
+/* The household: a row per person, their runs under them. A
    player's own colour (.ln-player) stands in for --c on their pages. */
 .pcard, .profile-page { --c: var(--player-fill); }
-.players-count { margin: var(--space-6) 0 0; font-size: var(--fs-13); color: var(--fg-3); }
-.pcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--space-5); margin-top: var(--space-4); }
-.pcards.one { grid-template-columns: minmax(0, 760px); }
-.pgroup > .pcard { min-height: 100%; }
+.pcards { margin-top: var(--space-6); border-top: var(--hairline) solid var(--edge-1); }
+/* A row per person: who, their numbers, then as many recent covers as fit. */
 .pcard {
-  container-type: inline-size;
-  position: relative; isolation: isolate; display: flex; flex-direction: column; gap: var(--space-4);
-  padding: 0 0 var(--space-5); overflow: hidden; text-align: left; cursor: pointer; font: inherit; color: var(--fg-1);
-  background: var(--bg-surface);
-  border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel);
-  transition: border-color var(--dur-1) var(--ease-out);
+  position: relative; isolation: isolate; display: flex; flex-flow: row wrap; align-items: center; gap: var(--space-6);
+  width: calc(100% + 2 * var(--space-3)); min-height: var(--pcover-h); margin-inline: calc(-1 * var(--space-3)); padding: var(--space-4) var(--space-3); overflow: hidden; text-align: left; cursor: pointer; font: inherit; color: var(--fg-1);
+  background: none; border: 0; border-radius: var(--radius-ctl);
+  transition: background-color var(--dur-1) var(--ease-out);
 }
-.pcard:hover { border-color: var(--player-fill); }
-.pcard:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.pcard-banner { position: relative; display: block; height: 96px; overflow: hidden; isolation: isolate; }
-.pcard-banner .art { -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade); }
-.pcard-who { display: flex; align-items: flex-end; gap: var(--space-4); margin-top: -48px; padding: 0 var(--space-5); min-width: 0; }
-.pcard-who .ln-avatar { box-shadow: 0 0 0 4px var(--bg-surface); }
-.pcard-name { display: grid; gap: 2px; min-width: 0; padding-bottom: var(--space-1); }
+.pcard:hover { background: var(--glass-ctl); }
+.pcard:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+/* Only a banner the profile was given shows, faint behind its row. */
+.pcard-banner { position: absolute; inset: 0; z-index: -1; opacity: .2; }
+.pcard-banner:has(.art.plain) { display: none; }
+.pcard-who { display: flex; flex: 0 0 34ch; align-items: center; gap: var(--space-4); min-width: 0; }
+.pcard-name { display: grid; gap: 2px; min-width: 0; }
 .pcard-name b { font: 700 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
 .pcard-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
-.pcard-covers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); padding: 0 var(--space-5); }
-.pcard-cover:nth-child(n+5) { display: none; }
-/* A wide card shows more of their games, each at most 104px across. */
-@container (min-width: 560px) {
-  .pcard-covers { grid-template-columns: repeat(8, minmax(0, 104px)); }
-  .pcard-cover:nth-child(n+5) { display: block; }
-}
-.pcard-cover { aspect-ratio: 2 / 3; border-radius: var(--radius-ctl); background: var(--bg-raised) center / cover no-repeat; box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }
-.pcard-nums { display: flex; margin-top: auto !important; padding: var(--space-4) var(--space-5) 0; border-top: var(--hairline) solid var(--edge-1); margin: 0 var(--space-5); padding-left: 0; padding-right: 0; }
-.pcard-nums > span { display: grid; flex: 1; gap: 2px; font-size: var(--fs-12); color: var(--fg-2); }
-.pcard-nums > span + span { padding-left: var(--space-4); border-left: var(--hairline) solid var(--edge-1); }
+.pcard-covers { display: grid; flex: 1 1 var(--pcover-w); grid-template-columns: repeat(auto-fill, var(--pcover-w)); grid-auto-rows: var(--pcover-h); gap: var(--space-2); height: var(--pcover-h); min-width: 0; overflow: hidden; }
+.pcard-cover { border-radius: var(--radius-ctl); background: var(--bg-raised) center / cover no-repeat; box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }
+.pcard-nums { display: flex; flex: 0 0 34ch; }
+.pcard-nums > span { display: grid; flex: 1; gap: 2px; padding: 0 var(--space-4); font-size: var(--fs-12); color: var(--fg-2); }
+.pcard-nums > span:first-child { padding-left: 0; }
+.pcard-nums > span + span { border-left: var(--hairline) solid var(--edge-1); }
 .pcard-nums b { font: 700 var(--fs-18)/1.1 var(--font-ui); color: var(--fg-1); }
 
 .players { display: grid; border-top: var(--hairline) solid var(--edge-1); }
@@ -836,7 +827,7 @@ ul.pp-recent { display: grid; max-width: 720px; margin: 0; padding: 0; list-styl
 .toggle:last-child { border-bottom: 0; }
 .toggle b { font-weight: 600; }
 .toggle p { margin: 2px 0 0; max-width: 72ch; font-size: var(--fs-13); color: var(--fg-2); }
-.switch { position: relative; flex: none; width: 36px; height: 20px; }
+.switch { position: relative; flex: none; width: var(--switch-w); height: 20px; }
 .switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .switch span { position: absolute; inset: 0; border-radius: var(--radius-round); background: var(--glass-ctl-hover); box-shadow: inset 0 0 0 var(--hairline) var(--edge-2); transition: background-color var(--dur-2) var(--ease-out); }
 .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: var(--radius-round); background: var(--fg-2); transition: transform var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
@@ -899,10 +890,10 @@ ul.pp-recent { display: grid; max-width: 720px; margin: 0; padding: 0; list-styl
 /* -------------------------------------------------------------- settings */
 /* A list of categories on the left and one category at a time on the
    right, as in Steam's settings. */
-.set-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-10); margin-top: var(--space-8); align-items: start; }
-.set-nav { position: sticky; top: var(--space-6); display: grid; gap: 2px; padding: var(--space-2); background: var(--bg-surface); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
+.set-layout { display: grid; grid-template-columns: var(--set-nav-w) minmax(0, 1fr); gap: var(--space-10); align-items: start; }
+.set-nav { position: sticky; top: var(--space-6); display: grid; gap: 2px; padding: 0; background: none; border: 0; }
 .set-tab {
-  position: relative; display: flex; align-items: center; gap: var(--space-3); width: 100%; height: 40px; padding: 0 var(--space-3);
+  position: relative; display: flex; align-items: center; gap: var(--space-3); width: 100%; height: var(--tab-h); padding: 0 var(--space-3);
   border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2);
   font: 550 var(--fs-14)/1 var(--font-ui); text-align: left; cursor: pointer;
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
@@ -912,7 +903,7 @@ ul.pp-recent { display: grid; max-width: 720px; margin: 0; padding: 0; list-styl
 .set-tab[aria-current="true"] { background: var(--bg-active); color: var(--fg-1); font-weight: 650; }
 .set-dot { width: 8px; height: 8px; margin-left: auto; border-radius: var(--radius-round); background: var(--accent); }
 .set-panel { display: grid; gap: var(--space-8); min-width: 0; }
-.set-panel-head h2 { margin: 0; font: 750 var(--fs-32)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+.set-panel-head h1 { margin: 0; font: 750 var(--fs-32)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
 .set-panel-head p { margin: var(--space-2) 0 0; font-size: var(--fs-14); color: var(--fg-2); }
 .set-sub .ln-section-head { margin-bottom: var(--space-3); }
 .set-version b { font-size: var(--fs-15); }
@@ -928,7 +919,10 @@ ul.pp-recent { display: grid; max-width: 720px; margin: 0; padding: 0; list-styl
 .set-opt { margin-left: var(--space-1); font-size: var(--fs-12); font-weight: 500; color: var(--fg-3); }
 .settings-page .log { margin: 0; }
 .settings-page .bk-card > * { padding: var(--space-5) var(--space-6); }
-.settings-page .bk-card .toggle { padding: var(--space-5) var(--space-6); }
+/* As wide as 60ch of text and its switch, so the switch sits right after
+   the text and lines up with the card's inputs and buttons. */
+.settings-page .bk-card { max-width: calc(60ch + var(--space-8) + var(--switch-w) + 2 * var(--space-6)); }
+.settings-page .bk-card .toggle { column-gap: var(--space-8); padding: var(--space-5) var(--space-6); }
 
 /* ---------------------------------------- dialogs, forms, older buttons */
 /* Every dialog (Add game, first run, the profile editor, confirmations) is
@@ -1097,11 +1091,11 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .slot.slot-run { width: clamp(160px, 12vw, 200px); padding-top: var(--space-6); }
 .slot.slot-run .name { font-size: var(--fs-24); }
 .slot-of { font-size: var(--fs-12); color: var(--fg-2); }
-.pgroup { display: grid; gap: var(--space-2); align-content: start; }
-.pruns { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
-.prun { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-2) var(--space-3); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-ctl); background: var(--bg-surface); color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
-.prun:hover { background: var(--bg-raised); border-color: var(--player-fill); }
-.prun:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.pgroup { border-bottom: var(--hairline) solid var(--edge-1); }
+.pruns { display: grid; margin: 0 0 var(--space-3) var(--prun-indent); padding: 0; list-style: none; }
+.prun { display: flex; align-items: center; gap: var(--space-3); width: 100%; height: var(--prun-h); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.prun:hover { background: var(--glass-ctl); }
+.prun:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
 .prun b { display: block; font-size: var(--fs-14); font-weight: 650; }
 .prun span span { font-size: var(--fs-12); color: var(--fg-2); }
 .player.player-run { padding-left: var(--space-8); }

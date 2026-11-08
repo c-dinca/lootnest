@@ -3360,8 +3360,8 @@
     </div></div>`;
   }
 
-  // Players: the household. A card per person (their banner, what they
-  // play, their numbers), then their names and colours.
+  // Players: the household, a row per person (who, their numbers, recent
+  // covers) with their runs under them.
   function viewPlayers() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
@@ -3369,19 +3369,20 @@
       const st = playerStats(p);
       const last = st.recent[0];
       // Their games: the latest first, then the ones they've played or have
-      // saves in, so a card is never empty while they have games.
+      // saves in, so a row is never empty while they have games. As many as
+      // a wide window fits; the row clips the rest.
       const seen = new Set(), mine = [...st.recent.map((x) => x.it),
         ...libraryItems().filter((it) => playtimeOf(it)[p.id]).sort((a, b) => playtimeOf(b)[p.id] - playtimeOf(a)[p.id]),
         ...libraryItems().filter((it) => it.kind === "game" && hasProfile(it.id, p.id))]
-        .filter((it) => !seen.has(recentKey(it)) && seen.add(recentKey(it))).slice(0, 8);
+        .filter((it) => !seen.has(recentKey(it)) && seen.add(recentKey(it))).slice(0, 24);
       const covers = mine.map((it) => { ensureCover(it); const c = S.covers[coverKey(it)]; return `<span class="pcard-cover" title="${esc(it.name)}"${c ? ` style="background-image:url('${c}')"` : ""}></span>`; }).join("");
       return `<button class="pcard ln-player" data-action="open-player" data-player="${esc(p.id)}" style="--player:${esc(p.color)}">
         <span class="pcard-banner">${bannerHTML(p)}</span>
         <span class="pcard-who">${lnAvatar(p, "72")}<span class="pcard-name"><b>${esc(p.name)}</b><span>${p.tagline ? esc(p.tagline) : last ? `${esc(last.it.name)}, ${esc(ago(last.r.at))}` : st.top ? `Most played: ${esc(st.top.name)}` : "No games played yet"}</span></span></span>
-        ${covers ? `<span class="pcard-covers" aria-hidden="true">${covers}</span>` : ""}
-        <span class="pcard-nums"><span><b class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</b>played</span><span><b class="ln-num">${st.played}</b>${st.played === 1 ? "game" : "games"}</span><span><b class="ln-num">${st.profiles}</b>with saves</span></span></button>`;
+        <span class="pcard-nums"><span><b class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</b>played</span><span><b class="ln-num">${st.played}</b>${st.played === 1 ? "game" : "games"}</span><span><b class="ln-num">${st.profiles}</b>with saves</span></span>
+        ${covers ? `<span class="pcard-covers" aria-hidden="true">${covers}</span>` : ""}</button>`;
     };
-    // Each person, with their runs listed under their card.
+    // Each person, with their runs listed under them.
     const people = cfg().players.filter((p) => !parentOf(p));
     const cards = people.map((p) => {
       const runs = cfg().players.filter((r) => parentOf(r) === p);
@@ -3389,13 +3390,12 @@
     }).join("");
     const n = cfg().players.length;
     return `<div class="players-page ln-root">
-      <header class="lib-head"><h1>Profiles</h1>
+      <header class="lib-head"><div class="lib-title"><h1>Profiles</h1><span class="lib-meta">${n} of ${MAX_PROFILES}</span></div>
         <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile someone exported from Lootnest on another PC: their saves, picture and play time">Import a profile</button>
-          <button class="ln-button ln-button--secondary" data-action="edit-profiles" aria-haspopup="dialog">${GI.edit}Names and colours${dirty ? '<span class="ln-tag">Not saved</span>' : ""}</button>
+          <button class="ln-button ln-button--ghost" data-action="edit-profiles" aria-haspopup="dialog">${GI.edit}Names and colours${dirty ? '<span class="ln-tag">Not saved</span>' : ""}</button>
           ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--primary" data-action="new-profile" aria-haspopup="dialog">${GI.plus}New profile</button>` : ""}</div>
         <p>Each profile has its own settings, saves and achievements in every game. Make one for everyone who plays, or a few for yourself, one per run.</p></header>
-      <p class="players-count">${n} of ${MAX_PROFILES} profiles. Open one to change its picture, banner and page.</p>
-      <div class="pcards${people.length === 1 ? " one" : ""}">${cards}</div></div>`;
+      <div class="pcards">${cards}</div></div>`;
   }
   // Names and colours, in a panel: every profile at once, saved together.
   function viewProfilesDrawer() {
@@ -3503,12 +3503,11 @@
           <div class="bk-row"><div><b>Quit Lootnest</b><p>It stops watching your games until you open it again.</p></div>${b("danger", 'data-action="quit"', "Quit Lootnest")}</div>`)],
     ];
     const cur = tabs.find((t) => t[0] === S.setTab) || tabs[0];
-    return `<div class="settings-page ln-root">
-      <header class="lib-head"><h1>Settings</h1><p>Lootnest ${esc(S.d.version)}${S.d.stage ? " " + esc(S.d.stage) : ""}. Anything that goes online is off until you turn it on.</p></header>
+    return `<section class="settings-page ln-root" aria-label="Settings">
       <div class="set-layout">
-        <nav class="set-nav" aria-label="Settings">${tabs.map(([k, label, ic]) => `<button class="set-tab" data-action="set-tab" data-tab="${k}"${k === cur[0] ? ' aria-current="true"' : ""}>${ic}<span>${label}</span>${k === "updates" && S.update.available ? '<span class="set-dot" aria-label="An update is ready"></span>' : ""}</button>`).join("")}</nav>
-        <section class="set-panel" aria-labelledby="set-title"><div class="set-panel-head"><h2 id="set-title">${cur[1]}</h2><p>${cur[3]}</p></div>${cur[4]()}</section>
-      </div></div>`;
+        <nav class="set-nav" aria-label="Settings categories">${tabs.map(([k, label, ic]) => `<button class="set-tab" data-action="set-tab" data-tab="${k}"${k === cur[0] ? ' aria-current="true"' : ""}>${ic}<span>${label}</span>${k === "updates" && S.update.available ? '<span class="set-dot" aria-label="An update is ready"></span>' : ""}</button>`).join("")}</nav>
+        <section class="set-panel" aria-labelledby="set-title"><div class="set-panel-head"><h1 id="set-title">${cur[1]}</h1><p>${cur[3]}</p></div>${cur[4]()}</section>
+      </div></section>`;
   }
 
   // ---------------------------------------------------------------- backup --

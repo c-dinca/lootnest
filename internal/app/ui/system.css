@@ -126,6 +126,12 @@
   --bar-state-min: 192px; /* the play bar's state line before the bar wraps */
   --drawer-w: 480px;      /* a panel from the right */
   --drawer-w-wide: 720px; /* one holding a form, such as the profile editor */
+  --set-nav-w: 200px;     /* the list of categories in Settings */
+  --tab-h: 36px;          /* a row in that list */
+  --pcover-w: 80px; --pcover-h: 120px;  /* a profile's recent games on Profiles */
+  --prun-h: 44px;         /* a run under its person on Profiles */
+  --prun-indent: calc(72px + var(--space-4) - var(--space-3));  /* a run's picture under its person's name */
+  --switch-w: 36px;
 
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;
