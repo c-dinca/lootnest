@@ -86,6 +86,7 @@ type syncPlan struct {
 	CloudPID string
 	Key      string
 	Rec      core.SyncRecord
+	Here     time.Time // when they last changed on this PC, for a conflict
 }
 
 // planSync compares a player's saves here with the cloud's. With live, the
@@ -104,8 +105,9 @@ func (a *App) planSync(c *core.Cloud, cfg *core.Config, g *core.Game, pid string
 		dirs = a.liveDirs(g)
 	}
 	var err error
+	sg := a.syncGame(g, false)
 	if p.Active || a.eng.HasProfile(pid, g.ID) {
-		if p.Local, err = core.SyncHash(a.syncGame(g, false), dirs); err != nil {
+		if p.Local, err = core.SyncHash(sg, dirs); err != nil {
 			return nil, err
 		}
 	}
@@ -113,6 +115,9 @@ func (a *App) planSync(c *core.Cloud, cfg *core.Config, g *core.Game, pid string
 	rec, seen := st.Records[pid][p.Key]
 	p.Rec = rec
 	p.Action = core.DecideSync(p.Local, p.Meta, rec, seen)
+	if p.Action == core.SyncConflict {
+		p.Here = core.SavesChanged(sg, dirs)
+	}
 	return p, nil
 }
 
@@ -292,6 +297,7 @@ type SavesGame struct {
 	State    string    `json:"state"` // same, up, down, conflict, none
 	Computer string    `json:"computer,omitempty"`
 	Changed  time.Time `json:"changed,omitempty"`
+	Here     time.Time `json:"here,omitzero"` // changed on this PC, for a conflict
 	Size     int64     `json:"size,omitempty"`
 }
 
@@ -343,7 +349,7 @@ func (a *App) apiSavesStatus() {
 				case p.Action == core.SyncDown:
 					cg.State = "down"
 				case p.Action == core.SyncConflict:
-					cg.State = "conflict"
+					cg.State, cg.Here = "conflict", p.Here
 				default:
 					cg.State = "same"
 				}

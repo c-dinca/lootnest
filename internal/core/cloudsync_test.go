@@ -1,8 +1,10 @@
 package core
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestDecideSync(t *testing.T) {
@@ -157,5 +159,35 @@ func TestSafeSyncName(t *testing.T) {
 		if safeSyncName(n) != ok {
 			t.Errorf("safeSyncName(%q) = %v", n, !ok)
 		}
+	}
+}
+
+func TestSavesChanged(t *testing.T) {
+	root := t.TempDir()
+	dir := func(pe PathEntry) string { return filepath.Join(root, pe.ID) }
+	g := &Game{Paths: []PathEntry{{ID: "a"}, {ID: "b"}, {ID: "gone"}}}
+	if got := SavesChanged(g, dir); !got.IsZero() {
+		t.Fatalf("nothing there: got %v", got)
+	}
+	old, newer := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC), time.Date(2026, 3, 2, 3, 4, 5, 0, time.UTC)
+	write(t, filepath.Join(root, "a", "slot1.sav"), "x")
+	write(t, filepath.Join(root, "b"), "y")
+	for _, p := range []string{filepath.Join(root, "a"), filepath.Join(root, "a", "slot1.sav")} {
+		if err := os.Chtimes(p, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Chtimes(filepath.Join(root, "b"), newer, newer); err != nil {
+		t.Fatal(err)
+	}
+	if got := SavesChanged(g, dir); !got.Equal(newer) {
+		t.Fatalf("got %v, want %v", got, newer)
+	}
+	// A copy keeps the files' times; its new folder's time doesn't count.
+	if err := Mirror(filepath.Join(root, "a"), filepath.Join(root, "c")); err != nil {
+		t.Fatal(err)
+	}
+	if got := SavesChanged(&Game{Paths: []PathEntry{{ID: "c"}}}, dir); !got.Equal(old) {
+		t.Fatalf("copy: got %v, want %v", got, old)
 	}
 }

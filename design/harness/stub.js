@@ -102,9 +102,10 @@
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
   };
+  let FIRSTP = FIRST && [{ id: "p1", name: "Cris", color: "#6C9BD2" }]; // until Continue saves it
   const state = () => ({
     version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
-    config: { version: 2, players: FIRST ? [{ id: "p1", name: "Cris", color: "#6C9BD2" }] : PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, offline: OFFLINE },
+    config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, offline: OFFLINE },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
@@ -152,7 +153,7 @@
       status: STATE === "error" ? { error: "The backup folder (C:\\Users\\cris\\OneDrive) isn't there. Is the drive connected, and the cloud app running?", errorAt: iso(60e3), last: iso(3 * d), size: 48e6 } : { last: iso(25 * 60e3), size: 48211000 },
       folders: [{ name: "OneDrive", path: "C:\\Users\\cris\\OneDrive" }, { name: "Google Drive", path: "G:\\My Drive" }],
     }),
-    ps_savesStatus: () => { if (STATE !== "loading") emit({ type: "savesStatus", status: STATE === "error" ? { error: "The cloud folder (C:\\Users\\cris\\OneDrive) isn't there.", games: [], players: [] } : { games: [{ gameId: "cs2", playerId: "p1", state: "same", computer: "COCONUT", changed: iso(h) }, { gameId: "cs2", playerId: ids[1] || "p1", state: "conflict", computer: "LAPTOP", changed: iso(d) }, { gameId: "bg3", playerId: "p1", state: "down", computer: "LAPTOP", changed: iso(3 * h) }], players: [] } }); return ok(); },
+    ps_savesStatus: () => { if (STATE !== "loading") emit({ type: "savesStatus", status: STATE === "error" ? { error: "The cloud folder (C:\\Users\\cris\\OneDrive) isn't there.", games: [], players: [] } : { games: [{ gameId: "cs2", playerId: "p1", state: "same", computer: "COCONUT", changed: iso(h) }, { gameId: "cs2", playerId: ids[1] || "p1", state: "conflict", computer: "LAPTOP", changed: iso(3 * h), here: iso(2 * h) }, { gameId: "bg3", playerId: "p1", state: "down", computer: "LAPTOP", changed: iso(3 * h) }], players: [] } }); return ok(); },
     ps_findGames: (term) => {
       const cap = (id) => `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/capsule_231x87.jpg`;
       const all = [
@@ -232,7 +233,7 @@
     ps_setTags: (key, tags) => { if (tags.length) TAGS[key] = tags; else delete TAGS[key]; return ok(); },
     ps_setShelf: (pid, key, e) => { shelf[pid] = shelf[pid] || {}; if (e.status) shelf[pid][key] = e; else delete shelf[pid][key]; return ok(); },
     // Saving profiles gives new ones an id, as Go does.
-    ps_savePlayers: (list) => { PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },
+    ps_savePlayers: (list) => { FIRSTP = null; PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },
     // A first-timer is asked how to start, as in Go.
     ps_play: (req) => ok(!req.newProfile && !(profiles[req.gameId] || []).includes(req.playerId) && req.gameId in profiles ? { need: "newMode" } : {}),
     // Each player's profile: saved a while ago, a few MB.

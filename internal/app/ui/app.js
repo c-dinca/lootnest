@@ -987,7 +987,7 @@
   // Tab stays inside what's on top: the picker, a dialog or drawer, or Big Picture.
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Tab") return;
-    const root = S.picker ? $("#overlay .picker") : S.dialog ? $("#overlay .dialog, #overlay .ln-drawer") : BP.on ? $("#bp") : null;
+    const root = S.picker ? $("#overlay .picker") : S.dialog ? $("#overlay .dialog, #overlay .welcome, #overlay .ln-drawer") : BP.on ? $("#bp") : null;
     if (!root) return;
     const els = [...root.querySelectorAll("button, input, select, textarea, [tabindex]")].filter((e) => !e.disabled && e.tabIndex >= 0 && e.getClientRects().length);
     const a = document.activeElement, first = els[0], last = els[els.length - 1];
@@ -2451,7 +2451,7 @@
   function focusOverlay() {
     drawerFrom = document.activeElement;
     setTimeout(() => {
-      const d = $(".ln-drawer"), g = $("#overlay .dialog"), f = g && g.querySelector("input, select, button:not(:disabled)");
+      const d = $(".ln-drawer"), g = $("#overlay .dialog, #overlay .welcome"), f = g && g.querySelector("input, select, button:not(:disabled)");
       if (d) d.focus(); else if (f && !g.contains(document.activeElement)) f.focus();
     }, 30);
   }
@@ -2777,31 +2777,55 @@
   }
 
   // --------------------------------------------------------------- players --
+  // First run: the one profile Lootnest starts with, named from Windows.
+  // More people and runs come later, from Profiles.
+  const SWATCHES = (p, i) => `<div class="swatches" role="radiogroup" aria-label="Colour for ${esc(p.name || "player " + (i + 1))}">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="swatch" data-i="${i}" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>`;
+  const welcomeName = (p) => (p.name || "").trim() || "Player 1";
+  function welcomeLive() {
+    const p = S.players[0], me = { ...p, name: welcomeName(p) };
+    const big = $("#wl-av"), small = $("#wl-who-av");
+    if (big) big.innerHTML = lnAvatar(me, "160");
+    if (small) small.innerHTML = lnAvatar(me, "32");
+    document.querySelectorAll("[data-wl-name]").forEach((e) => { e.textContent = me.name; });
+  }
   function viewWelcome() {
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
-    return `<div class="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Welcome">
-      <div><h2 style="font-size:22px">Welcome to Lootnest</h2><p class="sub">This is your profile. It keeps its own settings, saves and achievements in every game, with a copy made before anything changes. Start runs of your own for a hardcore or new game+ try whenever you like, each with its own saves.</p></div>
-      <div class="players">${ps.map((p, i) => playerRow(p, i, ps.length, true)).join("")}</div>
-      <p class="hint">Sharing this PC? ${ps.length < 4 ? `<button class="gpage-link" data-action="welcome-add">Add someone else</button>, or later in Profiles.` : "Add more later in Profiles."}</p>
-      <div class="dialog-foot"><span class="error-text grow" id="players-error"></span><button class="btn primary" data-action="welcome-done">Continue</button></div>
-    </div></div>`;
+    const p = ps[0], me = { ...p, name: welcomeName(p) };
+    return `<div class="welcome ln-root" role="dialog" aria-modal="true" aria-labelledby="wl-title">
+      <div class="wl-me ln-player" style="--player:${esc(p.color || "#6c9bd2")}">
+        <span id="wl-av">${lnAvatar(me, "160")}</span>
+        <input type="text" class="wl-name" id="wl-name" data-field="pname" data-i="0" value="${/^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="Your name" maxlength="24" aria-label="Your name">
+        ${SWATCHES(p, 0)}
+        <p class="wl-cap">Play and the sidebar show you like this.</p>
+        <div class="wl-preview" aria-hidden="true">
+          <span class="ln-button ln-button--play ln-button--lg">${GI.play}<span>Play as <span data-wl-name>${esc(me.name)}</span></span></span>
+          <span class="who-item seated"><span id="wl-who-av">${lnAvatar(me, "32")}</span><span class="who-name" data-wl-name>${esc(me.name)}</span></span>
+        </div>
+      </div>
+      <div class="wl-about">
+        <h1 id="wl-title">Welcome to Lootnest</h1>
+        <p class="wl-lead">Your games from every launcher in one place. Your profile keeps its own saves, and Lootnest swaps them in before a game starts, with a copy made first.</p>
+        <div class="wl-go"><button class="ln-button ln-button--primary ln-button--lg" data-action="welcome-done">Continue</button><span class="error-text" id="players-error"></span></div>
+        <p class="wl-note">More profiles, and runs of your own, can be added later in Profiles.</p>
+      </div>
+    </div>`;
   }
 
-  function playerRow(p, i, total, welcome) {
+  function playerRow(p, i, total) {
     // While editing, a row can be a run of a person in the list (not of
     // itself, not of a run, and not while it has runs of its own).
     const list = S.players || [];
-    const par = !welcome && p.of && list.find((x) => x.id === p.of && x.id !== p.id && !x.of);
+    const par = p.of && list.find((x) => x.id === p.of && x.id !== p.id && !x.of);
     const hasRuns = p.id && list.some((x) => x.of === p.id);
     const people = list.filter((x) => x !== p && !x.of && x.id && x.name.trim());
-    const of = welcome ? "" : `<select class="ln-input player-of" data-field="pof" data-i="${i}" aria-label="Whose profile" ${hasRuns ? "disabled title=\"It has runs of its own\"" : ""}>
+    const of = `<select class="ln-input player-of" data-field="pof" data-i="${i}" aria-label="Whose profile" ${hasRuns ? "disabled title=\"It has runs of its own\"" : ""}>
         <option value="">A person</option>${people.map((x) => `<option value="${esc(x.id)}" ${par && par.id === x.id ? "selected" : ""}>A run for ${esc(x.name)}</option>`).join("")}</select>`;
     return `<div class="player ln-player${par ? " player-run" : ""}" style="--player:${esc(p.color || "#6c9bd2")}">
       ${lnAvatar({ ...p, name: p.name || "?" }, "32")}
-      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${welcome && /^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="${welcome ? (i === 0 ? "Your name" : "Their name") : par ? par.name + " hardcore" : "Name"}" maxlength="24" aria-label="Name">
+      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${esc(p.name)}" placeholder="${par ? par.name + " hardcore" : "Name"}" maxlength="24" aria-label="Name">
       ${of}
-      ${par ? `<span class="player-same">${esc(possessive(par.name))} colour</span>` : `<div class="swatches" role="radiogroup" aria-label="Colour for ${esc(p.name || "player " + (i + 1))}">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="swatch" data-i="${i}" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>`}
-      ${welcome ? "" : `<button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="remove-player" data-i="${i}" aria-label="Remove ${esc(p.name)}" title="Remove" ${total <= 1 ? "disabled" : ""}>${GI.x}</button>`}
+      ${par ? `<span class="player-same">${esc(possessive(par.name))} colour</span>` : SWATCHES(p, i)}
+      <button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="remove-player" data-i="${i}" aria-label="Remove ${esc(p.name)}" title="Remove" ${total <= 1 ? "disabled" : ""}>${GI.x}</button>
     </div>`;
   }
 
@@ -2857,8 +2881,11 @@
     return { total, top, topT, recent, profiles, played, streak, best, longest, sessions, sources };
   }
 
-  function bannerHTML(p) {
+  // top (null when none): the most played game, whose art stands in when
+  // they chose no banner; without it the page has none.
+  function bannerHTML(p, top) {
     const y = `background-position:center ${p.bannerY || 0}%`;
+    if (!p.banner && top !== undefined) { const u = top && (loadArt(top), artOf(top)); return u ? `<div class="art auto" style="background-image:url('${u}')"></div>` : `<div class="art plain none"></div>`; }
     if (p.banner === "image" && (S.d.banners || {})[p.id]) return `<div class="art" style="background-image:url('${S.d.banners[p.id]}');${y}"></div>`;
     const it = p.banner && p.banner !== "image" && itemByKey(p.banner);
     if (it) { loadArt(it); ensureCover(it); }
@@ -2871,16 +2898,20 @@
     if (!p) { S.view = "players"; return viewPlayers(); }
     const st = playerStats(p);
     const last = st.recent.find((x) => x.it.kind === "game" && !session(x.it.id));
-    const body = sectionsOf(p).map((s) => ppSection(s, p, st)).filter(Boolean).join("");
+    const secs = sectionsOf(p), main = secs.filter((s) => s !== "stats").map((s) => ppSection(s, p, st)).join("");
+    const stats = secs.includes("stats") ? ppSection("stats", p, st) : "";
+    const pickFavs = secs.includes("favorites") && libraryItems().length && !(p.favorites || []).some(itemByKey);
     return `<div class="profile-page ln-root ln-player" style="--player:${esc(p.color)}">
-      <div class="pp-banner">${bannerHTML(p)}<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="nav" data-view="players">${GI.back}Profiles</button></div>
+      <button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="nav" data-view="players">${GI.back}Profiles</button>
+      <div class="pp-banner">${bannerHTML(p, st.top || null)}</div>
       <div class="pp-head">${lnAvatar(p, "120")}
         <div class="pp-name"><h1>${esc(p.name)}</h1>${p.tagline ? `<p class="pp-tag">${esc(p.tagline)}</p>` : ""}${p.bio ? `<p class="pp-bio">${esc(p.bio).replace(/\n/g, "<br>")}</p>` : ""}</div>
         <div class="pp-actions">${last ? `<button class="ln-button ln-button--play ln-button--lg" data-action="play-as" data-game="${esc(last.it.id)}" data-player="${esc(p.id)}">${GI.play}Play ${esc(last.it.name)}</button>` : ""}
           <button class="ln-button ln-button--secondary" data-action="edit-profile" data-player="${esc(p.id)}">Edit profile</button>
+          ${pickFavs ? `<button class="ln-button ln-button--ghost" data-action="edit-profile" data-player="${esc(p.id)}" data-tab="showcase">Pick favourites</button>` : ""}
           <button class="ln-button ln-button--ghost" data-action="recap" data-player="${esc(p.id)}">Year in games</button>
           <button class="ln-button ln-button--ghost" data-action="export-player" data-player="${esc(p.id)}">Export profile</button></div></div>
-      <div class="pp-body">${body || `<p class="hint">Nothing to show yet: <b>Edit profile</b> chooses what this page shows.</p>`}</div>
+      <div class="pp-body">${main || stats ? `${main ? `<div class="pp-main">${main}</div>` : ""}${stats ? `<aside class="pp-side">${stats}</aside>` : ""}` : `<p class="hint">Nothing to show yet: <b>Edit profile</b> chooses what this page shows.</p>`}</div>
     </div>`;
   }
 
@@ -2998,21 +3029,19 @@
         <span class="now-meta">${t ? `<span>${esc(hours(t))} played</span>` : ""}</span></span></button></section>`;
     }
     if (s === "stats") {
-      const stat = (v, l) => `<div class="pstat"><b>${v}</b><span>${l}</span></div>`;
-      return `<section class="pp-section pp-stats">
-        ${stat(st.total ? esc(hours(st.total)) : "None yet", "played with Lootnest")}
-        ${stat(String(st.played), st.played === 1 ? "game played" : "games played")}
-        ${stat(String(st.profiles), st.profiles === 1 ? "game with its saves" : "games with its saves")}
-        ${stat(st.streak ? st.streak + (st.streak === 1 ? " day" : " days") : "None", st.best > st.streak ? `in a row now, best ${st.best}` : "in a row")}
-        ${stat(st.longest ? esc(hours(st.longest.seconds)) : "None yet", st.longest && itemByKey(st.longest.key) ? "longest session, " + esc(itemByKey(st.longest.key).name) : "longest session")}
-        ${stat(st.top ? esc(st.top.name) : "None yet", st.top ? esc(hours(st.topT)) + ", most played" : "most played")}
-      </section>`;
+      const stat = (l, v) => `<div><dt>${l}</dt><dd>${v}</dd></div>`, lg = st.longest && itemByKey(st.longest.key);
+      return sec("Numbers", `<dl class="pp-facts">
+        ${stat("Played with Lootnest", st.total ? esc(hours(st.total)) : "None yet")}
+        ${stat("Games played", st.played)}
+        ${stat("Games with their own saves", st.profiles)}
+        ${stat("Days in a row", (st.streak || "None") + (st.best > st.streak ? `, best ${st.best}` : ""))}
+        ${stat("Longest session", st.longest ? esc(hours(st.longest.seconds)) + (lg ? ", " + esc(lg.name) : "") : "None yet")}
+        ${stat("Most played", st.top ? `${esc(st.top.name)}, ${esc(hours(st.topT))}` : "None yet")}</dl>`);
     }
     if (s === "favorites") {
       const favs = (p.favorites || []).map(itemByKey).filter(Boolean);
       favs.forEach(ensureCover);
-      return sec("Favourite games", favs.length ? `<div class="lib-grid size-l">${favs.map((it) => cardHTML(it)).join("")}</div>`
-        : `<p class="hint">Pick up to six games to show here: <b>Edit profile</b>, then <b>Showcase</b>.</p>`);
+      return favs.length ? sec("Favourite games", `<div class="lib-grid size-l">${favs.map((it) => cardHTML(it)).join("")}</div>`) : "";
     }
     if (s === "activity") return sec("Activity", activityHTML(p, st));
     if (s === "collection") {
@@ -3025,10 +3054,9 @@
       });
       const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n || b[1].t - a[1].t);
       const max = Math.max(1, ...rows.map((r) => r[1].n));
-      return sec("Collection", rows.length ? `<ul class="bars">${rows.map(([l, v]) => `<li><span class="bl">${esc(l)}</span>
+      return rows.length ? sec("Collection", `<ul class="bars">${rows.map(([l, v]) => `<li><span class="bl">${esc(l)}</span>
           <span class="bt"><span style="width:${Math.max(4, (v.n / max) * 100)}%"></span></span><span class="bv">${v.n} ${v.n === 1 ? "game" : "games"}${v.t ? ", " + esc(hours(v.t)) : ""}</span></li>`).join("")}</ul>
-          <p class="hint">${items.length} games in the Library on this PC, from ${new Set(items.map((it) => sourceLabel(it.source))).size} places.</p>`
-        : `<p class="hint">Games you play show up here, by where they come from.</p>`);
+          <p class="hint">${items.length} games in the Library on this PC, from ${new Set(items.map((it) => sourceLabel(it.source))).size} places.</p>`) : "";
     }
     if (s === "recent") {
       if (!st.recent.length) return "";
@@ -3310,7 +3338,7 @@
     let body = "";
     if (tab === "look") {
       const hasPic = !!(S.d.avatars || {})[p.id], hasBanner = !!(S.d.banners || {})[p.id];
-      const kind = p.banner === "image" ? "image" : p.banner && !p.banner.startsWith("style:") ? "game" : "plain";
+      const kind = !p.banner ? "auto" : p.banner === "image" ? "image" : p.banner.startsWith("style:") ? "plain" : "game";
       body = `
       <div class="field"><span class="label">Picture</span><div class="pe-row">
         <button class="btn" data-action="avatar-pick" ${D.busy ? "disabled" : ""}>${D.busy === "avatar" ? "Reading the picture" : hasPic ? "Change picture" : "Choose a picture"}</button>
@@ -3318,7 +3346,7 @@
       <div class="field"><span class="label">Colour</span><div class="pe-row"><div class="swatches">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="pe-color" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>
         <label class="custom-color"><input type="color" value="${esc((p.color || "#6c9bd2").toLowerCase())}" data-pe="color" aria-label="Any colour"><span>Any colour</span></label></div></div>
       <div class="field"><span class="label">Banner</span>
-        <div class="segt">${[["plain", "Colour"], ["image", "Your picture"], ["game", "Game art"]].map(([v, l]) => `<button data-action="pe-banner" data-v="${v}" aria-pressed="${kind === v}">${l}</button>`).join("")}</div>
+        <div class="segt">${[["auto", "Most played"], ["plain", "Colour"], ["image", "Your picture"], ["game", "Game art"]].map(([v, l]) => `<button data-action="pe-banner" data-v="${v}" aria-pressed="${kind === v}">${l}</button>`).join("")}</div>
         ${kind === "game" ? `<select data-pe="banner" aria-label="Game">${gameOptions(p.banner, "Choose a game")}</select>` : ""}
         ${kind === "image" ? `<div class="pe-row"><button class="btn" data-action="banner-pick" ${D.busy ? "disabled" : ""}>${D.busy === "banner" ? "Reading the picture" : "Choose another picture"}</button><button class="btn quiet" data-action="banner-remove">Remove picture</button></div>` : ""}
         ${kind === "image" || kind === "game" ? `<label class="range"><span>Position</span><input type="range" min="0" max="100" step="1" value="${p.bannerY || 0}" data-pe="bannerY"></label>` : ""}
@@ -3351,7 +3379,7 @@
       }).join("")}</ul>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog pe" role="dialog" aria-modal="true" aria-label="Edit ${esc(p.name)}'s profile" style="--c:${esc(p.color)}">
-      <div class="pe-preview"><div class="pe-pbanner">${bannerHTML(p)}</div>${avatarHTML(p, "lg")}
+      <div class="pe-preview"><div class="pe-pbanner">${bannerHTML(p, playerStats(p).top || null)}</div>${avatarHTML(p, "lg")}
         <div class="pe-pname"><b id="pe-prev-name">${esc(p.name)}</b><span id="pe-prev-tag">${esc(p.tagline || "")}</span></div>
         <button class="btn quiet icon" data-action="dialog-cancel" aria-label="Close">${icon.x}</button></div>
       <div class="segt pe-tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-action="pe-tab" data-tab="${k}">${l}</button>`).join("")}</div>
@@ -3403,7 +3431,7 @@
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
     return drawer({ label: "Names and colours", title: "Names and colours", wide: true,
       sub: "A profile's colour marks its files, its Play button and its games everywhere in Lootnest. A run takes its person's colour.",
-      body: `<div class="players">${grouped(ps).map((p) => playerRow(p, ps.indexOf(p), ps.length, false)).join("")}</div>
+      body: `<div class="players">${grouped(ps).map((p) => playerRow(p, ps.indexOf(p), ps.length)).join("")}</div>
         ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add profile</button>` : `<p class="gpage-hint">Lootnest keeps up to ${MAX_PROFILES} profiles.</p>`}`,
       foot: `<span class="error-text players-grow" id="players-error"></span>
         ${dirty ? `<button class="ln-button ln-button--ghost" data-action="reset-players">Discard changes</button>` : ""}
@@ -3433,7 +3461,7 @@
   // invert: the setting turns the thing off (on by default), so the switch
   // shows the opposite.
   function sw(field, title, desc, checked, invert) {
-    return `<label class="toggle"><span><b style="font-weight:500">${title}</b><p>${desc}</p></span>
+    return `<label class="toggle"><span><b style="font-weight:500">${title}</b>${desc.startsWith("<") ? desc : `<p>${desc}</p>`}</span>
       <span class="switch"><input type="checkbox" data-setting="${field}"${invert ? ' data-invert="1"' : ""} ${checked ? "checked" : ""}><span></span></span></label>`;
   }
 
@@ -4006,9 +4034,9 @@
   // and the backups of everything.
   function viewCloud() {
     const B = S.backup;
-    const head = (actions) => `<header class="lib-head"><h1>Cloud saves</h1>${actions ? `<div class="lib-actions">${actions}</div>` : ""}
-      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p></header>`;
-    if (!B) { loadBackupInfo(); return `<div class="cloud-page ln-root">${head("")}${lnInline("", "Reading your cloud folder")}</div>`; }
+    const head = (sum) => `<header class="lib-head"><h1>Cloud saves</h1>
+      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p>${sum || ""}</header>`;
+    if (!B) { loadBackupInfo(); return `<div class="cloud-page ln-root">${head()}${lnInline("", "Reading your cloud folder")}</div>`; }
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
     if (!B.dir) {
       const rows = PROVIDERS.map((pv) => {
@@ -4017,7 +4045,7 @@
           ? found.map((f) => `<div class="cs-option"><div><b>${esc(pv.name)}</b><span class="selectable">${esc(f.path)}</span></div>${b("primary", `data-action="backup-use" data-dir="${esc(f.path)}"`, "Use " + esc(f.name))}</div>`).join("")
           : `<div class="cs-option"><div><b>${esc(pv.name)}</b><span>Install ${esc(pv.name)} and sign in with ${esc(pv.account)}, then come back here.</span></div>${b("secondary", `data-action="open-download" data-url="${esc(pv.url)}"`, "Get " + esc(pv.name))}</div>`;
       }).join("");
-      return `<div class="cloud-page ln-root">${head("")}
+      return `<div class="cloud-page ln-root">${head()}
         <section class="cloud-setup"><div class="ln-section-head"><div><h2>Where should your saves go?</h2><p>Lootnest writes the files to that folder, and the cloud app uploads them with your account.</p></div></div>
           <div class="cs-options">${rows}
             <div class="cs-option"><div><b>USB drive or another folder</b><span>A drive you carry between PCs, a NAS, or any folder.</span></div>${b("secondary", 'data-action="backup-pick"', "Choose a folder")}</div></div>
@@ -4028,7 +4056,7 @@
     const last = st.running ? "Backing up now" : st.last ? `Last backup ${esc(ago(st.last))}, ${esc(fmtBytes(st.size))}` : "No backup yet";
     const failed = st.error && (!st.last || new Date(st.errorAt) > new Date(st.last));
     const label = { same: "Up to date", up: "Changed here, not uploaded yet", none: "Not in the cloud yet", down: "Newer on another PC", conflict: "Changed on two PCs" };
-    let games = "";
+    let games = "", conflicts = "", counts = "";
     if (B.locked || (V && V.locked)) {
       games = banner("This cloud folder has a password", "Saves from your other PC are encrypted. Enter the same password to sync them here.", b("primary", 'data-action="backup-pw" data-on="1"', "Enter the password"));
     } else if (!B.sync) {
@@ -4040,8 +4068,17 @@
     } else if (!V.games.length) {
       games = `<div class="ln-glass ln-state">${GI.save}<div><h3>No saves yet</h3><p>Turn on profiles for a game, play it, and its saves go up here.</p></div></div>`;
     } else {
-      const byGame = {};
-      V.games.forEach((x) => { (byGame[x.gameId] = byGame[x.gameId] || []).push(x); });
+      const byGame = {}, n = {};
+      V.games.forEach((x) => { (byGame[x.gameId] = byGame[x.gameId] || []).push(x); n[x.state] = (n[x.state] || 0) + 1; });
+      const short = { same: "up to date", up: "to upload", none: "not in the cloud yet", down: "newer on another PC", conflict: "changed on two PCs" };
+      counts = Object.keys(short).filter((k) => n[k]).map((k) => `${n[k]} ${short[k]}`).join(", ");
+      conflicts = V.games.filter((x) => x.state === "conflict" && game(x.gameId) && player(x.playerId)).map((x) => {
+        const pl = player(x.playerId), at = `data-game="${esc(x.gameId)}" data-player="${esc(pl.id)}"`;
+        const when = [x.here && `this PC ${ago(x.here)}`, x.computer && `${x.computer} ${ago(x.changed)}`].filter(Boolean).join(", ");
+        return banner(`${esc(game(x.gameId).name)} <span class="ln-tag ln-tag--player ln-player" style="--player:${esc(pl.color)}">${esc(pl.name)}</span>`,
+          `Changed on two PCs${when ? ": " + esc(when) : ""}.`,
+          b("secondary ln-button--sm", `data-action="sync-resolve" ${at} data-answer="here"`, "Keep this PC's") + b("secondary ln-button--sm", `data-action="sync-resolve" ${at} data-answer="cloud"`, `Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}`), false, "warn");
+      }).join("");
       games = `<div class="cs-games">${Object.entries(byGame).map(([gid, rows]) => {
         const g = game(gid);
         if (!g) return "";
@@ -4053,16 +4090,18 @@
             if (!pl) return "";
             const where = x.computer ? `${x.state === "same" ? "Last from" : "From"} ${esc(x.computer)}, ${esc(ago(x.changed))}` : "";
             return `<div class="cs-row state-${esc(x.state)}">${lnAvatar(pl, "20")}<span class="cs-who">${esc(pl.name)}</span>
-              <span class="cs-state">${esc(label[x.state] || "")}</span><span class="cs-where">${where}</span>
-              ${x.state === "conflict" ? `<span class="cs-fix">${b("secondary ln-button--sm", `data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="here"`, "Keep this PC's")}
-                ${b("ghost ln-button--sm", `data-action="sync-resolve" data-game="${esc(gid)}" data-player="${esc(pl.id)}" data-answer="cloud"`, `Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}`)}</span>` : "<span></span>"}</div>`;
+              <span class="cs-state">${esc(label[x.state] || "")}</span><span class="cs-where">${where}</span></div>`;
           }).join("")}</div></div>`;
       }).join("")}</div>
       ${V.players && V.players.length ? `<p class="cs-note">The cloud also has saves for ${esc(V.players.join(", "))}. Add a profile with the same name on <b>Profiles</b> (or import it) to use them here.</p>` : ""}`;
     }
-    return `<div class="cloud-page ln-root">${head(B.sync && !B.locked ? b("primary", 'data-action="sync-now"', "Sync now") : "")}
+    const sum = B.sync && !B.locked ? `<div class="cloud-sum">${counts ? `<span>${esc(counts[0].toUpperCase() + counts.slice(1))}</span>` : ""}${b("primary ln-button--sm", 'data-action="sync-now"', "Sync now")}</div>` : "";
+    // An explanation shows its first sentence; the rest folds under More.
+    const brief = (t) => { const i = t.indexOf(". "); return i < 0 || t.length <= 72 ? `<p class="tg-line">${t}</p>` : `<div class="tg-brief"><p class="tg-line">${t.slice(0, i + 1)}</p><details class="tg-more"><summary>More</summary><p>${t.slice(i + 2)}</p></details></div>`; };
+    const path = B.target || "";
+    return `<div class="cloud-page ln-root">${head(sum)}
       <div class="cloud-cols">
-        <div class="cloud-main"><section><div class="ln-section-head"><div><h2>Games</h2></div></div>${games}</section>
+        <div class="cloud-main">${conflicts ? `<section class="cs-conflicts">${conflicts}</section>` : ""}<section><div class="ln-section-head"><div><h2>Games</h2></div></div>${games}</section>
           <section class="cloud-backups"><div class="ln-section-head"><div><h2>Backups of everything</h2></div></div>
             <div class="bk-card">
               <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p>Profiles, games and saves in one file, to restore on a new PC.</p>`}</div>
@@ -4076,14 +4115,14 @@
         <aside class="cloud-side">
           <section><div class="ln-section-head"><div><h2>Your cloud folder</h2></div></div>
             <div class="bk-card">
-              <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><b class="selectable">${esc(B.target)}</b></div>
+              <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><span class="bk-path"><b class="selectable" title="${esc(path)}">${esc(midTrunc(path, 44))}</b><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="copy-path" data-path="${esc(path)}" aria-label="Copy the path" title="Copy the path">${GI.copy}</button></span></div>
                 <div class="gpage-actions">${b("ghost ln-button--sm", 'data-action="backup-pick"', "Change")}${b("ghost ln-button--sm", 'data-action="backup-open"', "Open folder")}</div></div>
-              <label class="toggle"><span><b>Sync saves between PCs</b><p>Each profile's saves go up after a session and the newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.</p></span>
+              <label class="toggle"><span><b>Sync saves between PCs</b>${brief("Each profile's saves go up after a session. The newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.")}</span>
                 <span class="switch"><input type="checkbox" data-backup="sync" ${B.sync ? "checked" : ""}><span></span></span></label>
-              ${sw("gameSaves", "Keep versions of games outside Steam", "For games without profiles that aren't on Steam (Steam has its own cloud): a new version of their saves when they change and the game is closed. Restore any version from the game's page.", cfg().settings.gameSaves)}
-              ${sw("saveDb", "Find save locations online", "Downloads PCGamingWiki's list of where over 20,000 games keep their saves (from the Ludusavi project, on GitHub) about once a week, so new games come with the right locations for profiles and cloud saves. Nothing about you or your games is sent.", cfg().settings.saveDb)}
+              ${sw("gameSaves", "Keep versions of games outside Steam", brief("A new copy of their saves after they change and the game closes. For games without profiles and not on Steam, which has its own cloud. Restore any version from the game's page."), cfg().settings.gameSaves)}
+              ${sw("saveDb", "Find save locations online", brief("A weekly list of where over 20,000 games keep their saves. It comes from PCGamingWiki, through the Ludusavi project on GitHub, so new games get the right locations for profiles and cloud saves. Nothing about you or your games is sent."), cfg().settings.saveDb)}
               <div class="bk-row"><div><b>${B.locked ? "Has a password" : B.encrypted ? "Encrypted with your password" : "Not encrypted"}</b>
-                <p>${B.encrypted ? "Only someone with the password can open these files. Use the same password on every PC." : B.locked ? "Enter it to sync on this PC." : "Anyone who can open the folder can read the saves. A password encrypts them (AES-256), on every PC that uses this folder."}</p></div>
+                <p>${B.encrypted ? "Only someone with the password can open these files. Use the same password on every PC." : B.locked ? "Enter it to sync on this PC." : "Anyone with the folder can read the saves. A password encrypts them (AES-256), on every PC that uses this folder."}</p></div>
                 <div class="gpage-actions">${B.encrypted ? b("ghost ln-button--sm", 'data-action="backup-pw" data-on="1"', "Change password") + b("ghost ln-button--sm", 'data-action="backup-pw" data-on="0"', "Remove password") : b("secondary ln-button--sm", 'data-action="backup-pw" data-on="1"', B.locked ? "Enter the password" : "Set a password")}</div></div>
             </div></section>
         </aside>
@@ -4337,7 +4376,7 @@
     "open-sheet": (el) => openSheet(el.dataset.game ? "game" : "found", el.dataset.game || el.dataset.key, el.closest(".card")),
     "back-library": () => backToLibrary(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
-    "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: "look" }; renderOverlay(); },
+    "edit-profile"(el) { const p = player(el.dataset.player); if (!p) return; S.dialog = { kind: "profile", p: JSON.parse(JSON.stringify(p)), q: "", tab: el.dataset.tab || "look" }; renderOverlay(); },
     "pe-tab"(el) { S.dialog.tab = el.dataset.tab; renderOverlay(); },
     "pe-set"(el) { S.dialog.p[el.dataset.f] = el.dataset.v; renderOverlay(); },
     "pe-color"(el) { S.dialog.p.color = el.dataset.color; renderOverlay(); },
@@ -4345,7 +4384,7 @@
       const D = S.dialog, v = el.dataset.v;
       if (v === "image") { if (!(S.d.banners || {})[D.p.id]) return actions["banner-pick"](); D.p.banner = "image"; }
       else if (v === "game") { const f = (D.p.favorites || [])[0] || (libraryItems()[0] && recentKey(libraryItems()[0])) || ""; D.p.banner = D.p.banner && D.p.banner !== "image" && !D.p.banner.startsWith("style:") ? D.p.banner : f; }
-      else D.p.banner = "";
+      else D.p.banner = v === "plain" ? "style:plain" : "";
       renderOverlay();
     },
     async "banner-pick"() {
@@ -4594,6 +4633,7 @@
       await saveBackup({ dir: r.path, ...(first ? { auto: true } : {}) });
     },
     "backup-open": () => api.open("backupFolder").catch((e) => toast(errText(e), "error")),
+    "copy-path": (el) => api.copy(el.dataset.path).then(() => toast("Copied"), (e) => toast(errText(e), "error")),
     async "backup-now"() { S.backupAsked = true; try { await api.backupNow(); } catch (e) { S.backupAsked = false; toast(errText(e), "error"); } loadBackupInfo(); },
     "backup-pw"(el) { S.dialog = { kind: "backup-pw", on: el.dataset.on === "1" }; renderOverlay(); setTimeout(() => { const f = $("#bk-pw"); if (f) f.focus(); }, 30); },
     async "backup-pw-save"() {
@@ -4787,7 +4827,13 @@
     "remove-path"(el) { S.edit.game.paths = S.edit.game.paths.filter((p) => p._k !== el.dataset.k); render(); },
     pcgw() { api.open("pcgw", S.edit.game.name).catch((e) => toast(errText(e), "error")); },
     "save-game": saveGame,
-    swatch(el) { S.players[+el.dataset.i].color = el.dataset.color; S.dialog && S.dialog.kind === "welcome" ? renderOverlay() : render(); },
+    swatch(el) {
+      S.players[+el.dataset.i].color = el.dataset.color;
+      if (!S.dialog || S.dialog.kind !== "welcome") { render(); return; }
+      $(".wl-me").style.setProperty("--player", el.dataset.color);
+      el.parentElement.querySelectorAll(".swatch").forEach((b) => b.setAttribute("aria-pressed", b === el));
+      welcomeLive();
+    },
     "add-player"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); render(); const ins = document.querySelectorAll('[data-field="pname"]'); ins[ins.length - 1].focus(); },
     "remove-player"(el) { S.players.splice(+el.dataset.i, 1); render(); },
     "shelf-all"(el) { S.tag = el.dataset.tag; render(); const t = $(".lib-tools"); if (t) t.scrollIntoView({ block: "start" }); },
@@ -4891,7 +4937,6 @@
         if (run) actions["play-as"]({ dataset: { game: D.gameId, player: run.id } });
       } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
     },
-    "welcome-add"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); renderOverlay(); const ins = document.querySelectorAll('[data-field="pname"]'); if (ins.length) ins[ins.length - 1].focus(); },
     "open-data": () => api.open("data").catch((e) => toast(errText(e), "error")),
     "steam-setup": (el) => openSteamSetup(el.dataset.game),
     async "steam-recheck"() { S.hooks = null; renderOverlay(); await loadHooks(); if (S.dialog && S.dialog.kind === "steam") renderOverlay(); render(); },
@@ -5046,7 +5091,7 @@
       render();
       return;
     }
-    if (f === "pname") { S.players[+el.dataset.i].name = el.value; if (S.dialog && S.dialog.kind === "profiles") { const b = $('[data-action="save-players"]'); if (b) b.disabled = false; } return; }
+    if (f === "pname") { S.players[+el.dataset.i].name = el.value; if (S.dialog && S.dialog.kind === "welcome") welcomeLive(); if (S.dialog && S.dialog.kind === "profiles") { const b = $('[data-action="save-players"]'); if (b) b.disabled = false; } return; }
     const E = S.edit;
     if (!E) return;
     const g = E.game;

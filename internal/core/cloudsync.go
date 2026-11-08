@@ -93,6 +93,25 @@ func GameSyncKey(g *Game) string {
 	return "name-" + n
 }
 
+// SavesChanged is the newest time a file in a game's save locations
+// changed (dir as for SyncHash), zero when none is there. Folder times are
+// left out: copies and swaps set them without changing the saves.
+func SavesChanged(g *Game, dir func(PathEntry) string) time.Time {
+	var t time.Time
+	for _, p := range g.Paths {
+		_ = filepath.WalkDir(dir(p), func(_ string, d fs.DirEntry, err error) error {
+			if err != nil || !d.Type().IsRegular() {
+				return nil
+			}
+			if info, err := d.Info(); err == nil && info.ModTime().After(t) {
+				t = info.ModTime()
+			}
+			return nil
+		})
+	}
+	return t
+}
+
 // SyncHash is a hash of a game's saves that is the same on every PC for the
 // same files: dir(entry) is where each save location's files are (the
 // player's profile, or the files in place).
