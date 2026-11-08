@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.73.0
+
+- The screenshots and clips you already make with Game Bar, Steam, NVIDIA, AMD and OBS show on each game's Timeline, as "Screenshot (Steam)" or "Clip (Game Bar)" with a small picture, beside your sessions, save points and unlocks. A line at the top counts them by app.
+- Click a screenshot to see it large, with the game's other pictures. Click a clip and it plays in the app Windows opens videos with.
+- Lootnest matches each capture to its game by Steam's folder for it, by the game's name in the folder or file name, or by when you were playing. It only reads these folders: it never moves, renames or deletes a capture, and nothing goes online.
+- Captures it can't match wait in Settings, Data and activity, Unsorted captures. Choose the game for each, and it shows on that game's Timeline, or mark one as not a game. The same place lists the folders Lootnest reads, and a switch turns it all off.
+- A game with no captures says on its Timeline that Win+Alt+PrtScn takes a screenshot with Game Bar and Win+Alt+R records a clip. If Game Bar's captures are off in Windows, it says so, and where to turn them on.
+- Captures are looked for when the Library is scanned and when a game closes, at most every 10 minutes, and not in safe mode.
+
 ## 1.72.0
 
 - A game's page is now in tabs: Overview, Achievements, Saves, Timeline and News. A tab shows only when the game has something for it, so a game with no news has no News tab.

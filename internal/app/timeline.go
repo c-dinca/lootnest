@@ -78,6 +78,7 @@ func (a *App) logSession(r core.SessionRecord) {
 	if err := a.store.AppendSession(r); err != nil {
 		a.logf("Couldn't add a session of %s to the session log: %v", r.Game, err)
 	}
+	a.scanCapturesSoon() // the clips and screenshots of this session
 }
 
 // TimelineItem is one thing that happened in a game.

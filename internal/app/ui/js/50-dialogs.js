@@ -78,6 +78,8 @@
       o.innerHTML = viewManage();
     } else if (D.kind === "copies") {
       o.innerHTML = viewCopies();
+    } else if (D.kind === "unsorted") {
+      o.innerHTML = viewUnsorted();
     } else if (D.kind === "updhist") {
       o.innerHTML = viewUpdHistory();
     } else if (D.kind === "achdoc") {

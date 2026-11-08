@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.72.0, beta)
+## Where things stand (1.73.0, beta)
 
 These shipped recently, newest last:
 
@@ -472,6 +472,14 @@ These shipped recently, newest last:
   (every point inline, the points drawer is gone), Timeline, News; a
   compact sticky head (`.gp-dock`, one IntersectionObserver in
   `stickHead`, `--gp-head-h`, `scroll-margin-top` on the page's parts).
+
+- **1.73** Roadmap Timeline 2 and 4: captures other apps made (Game
+  Bar, Steam's 760 folders, NVIDIA and AMD game folders, OBS names,
+  Lootnest's own) are indexed in `captures.json`, never moved or
+  changed (`core.CaptureSources`, `ScanCaptures`, `MatchCapture` by app
+  id, name, then session time; `UpdateCaptures`, `AssignCapture`,
+  `CaptureNoGame`); `Settings.CapturesOff`; the Timeline tab shows them,
+  an Unsorted drawer assigns them, and a Game Bar tip shows when none.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

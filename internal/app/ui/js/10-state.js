@@ -7,6 +7,8 @@
     points: {},       // Library key -> its save points (savePoints event)
     timeline: {},     // Library key -> its timeline, newest first (timeline event)
     tlMore: {},       // Library key -> how many timeline entries show
+    captures: {},     // Library key -> other apps' captures of it: {items, counts, gameBarOff} (captures event)
+    unsorted: null,   // captures matched to no game, and the folders read: {items, total, folders}
     gameTab: {},      // "<kind>:<id>" -> the game page's tab open (Overview when none)
     facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
     sideQ: "",        // the filter over the sidebar's games
