@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.58.6
+
+- Home's play bar is simpler for a game without profiles: Play, when you last played it and for how long, and Turn on profiles. "Profiles off" shows once, under the game's name, and the name opens the game's page.
+- Continue playing is one row of wide pictures that fits the page, with the game's news under it. Who's playing, Tonight and Your saves sit in the column beside them.
+- Click a person under Who's playing to sit them at the PC. The one sitting there is marked Seated, as in the sidebar.
+- Your saves shows how many games Lootnest looks after in three figures, and a line only for what needs a look, with one link each. "Choose where games keep saves" now lists every such game, not only the first eight.
+- News on Home is four short posts, two to a row, without the large one at the top.
+
 ## 1.58.5
 
 - A game with no picture no longer opens on a dark empty band. Its page and Home show a soft wash of the game's own icon, or its first letter set large.
