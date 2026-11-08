@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.58.5
+
+- A game with no picture no longer opens on a dark empty band. Its page and Home show a soft wash of the game's own icon, or its first letter set large.
+- Covers without a picture show the game's name, and its icon when Lootnest can read one, in the Library, on Home and in Big Picture. Big Picture no longer shows an empty grey box.
+- When your last game has no picture and the one before it has one, Recent games in the Library shows that one first.
+- A Store picture that doesn't load shows the game's name instead of a broken image.
+
 ## 1.58.4
 
 - Pages come in with one short movement instead of every card and row arriving one after another.

@@ -168,15 +168,11 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .cover { position: relative; aspect-ratio: 2 / 3; border-radius: var(--radius-ctl); overflow: hidden; background: var(--bg-surface); }
 .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s var(--ease), transform .4s var(--ease); }
 .cover img.ready { opacity: 1; }
-/* No cover: the title set in type on a quiet cover (as .ln-tile__none). */
-.nocover { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: var(--space-3); background: var(--bg-raised); font: 750 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); overflow-wrap: anywhere; }
+/* No cover: .ln-tile__none; the game's icon, read later, sits above the name. */
 .nocover[hidden] { display: none; }
-.nocover > span { position: relative; z-index: 1; }
-/* No cover: the game's own icon over a soft wash of its colours. */
-.nocover.with-icon { overflow: hidden; color: var(--text); }
-.nocover.with-icon::before { content: ""; position: absolute; inset: -30%; background: var(--icon) center / cover no-repeat; filter: blur(34px) saturate(1.3); opacity: .38; }
-.nocover.with-icon::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(14, 17, 23, .6)); }
-.cover img.icon { inset: auto; left: 50%; top: 42%; width: 46%; height: auto; aspect-ratio: 1; object-fit: contain; transform: translate(-50%, -50%); filter: drop-shadow(0 10px 22px rgba(0, 0, 0, .45)); }
+.nocover.with-icon b { margin-top: calc(var(--space-10) + var(--space-1)); }
+.cover img.icon { inset: auto; left: var(--space-3); top: var(--space-3); width: var(--space-10); height: var(--space-10); object-fit: contain; }
+.ln-tile__cover:has(.ln-tile__badge) img.icon { top: var(--space-10); }
 /* Play sits on the cover's bottom-right corner; a percentage margin-top is
    relative to the card's width, and the cover is 3:2 tall. */
 
@@ -464,12 +460,16 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 /* ------------------------------------------------------------ game page */
 /* Built from system.css components (DESIGN.md); layout only here. */
 .gpage-hero { position: relative; display: flex; align-items: flex-end; height: clamp(300px, 46vh, 560px); }
-.gpage.no-art .gpage-hero { height: auto; min-height: calc(var(--bar-h) * 4); padding-top: calc(var(--bar-h) + var(--space-4)); }
+.gpage.no-art .gpage-hero { height: auto; min-height: clamp(240px, 32vh, 340px); padding-top: calc(var(--bar-h) + var(--space-4)); overflow: hidden; }
 .gpage-art {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 25%;
   -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade);
 }
 .gpage-art.soft { filter: var(--blur-art-soft); }
+.gpage-art.icon { object-fit: cover; filter: var(--blur-art-icon); opacity: .5; transform: scale(1.4); }
+/* No art at all: the game's first letter, large and quiet, on a plain plate. */
+.gpage-plate { position: absolute; inset: 0; overflow: hidden; background: var(--bg-surface); -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade); }
+.gpage-plate span { position: absolute; right: var(--page-gutter); bottom: calc(-0.2 * var(--fs-plate)); font: 800 var(--fs-plate)/1 var(--font-title); color: var(--bg-raised); }
 .gpage-hero::after { content: ""; position: absolute; inset: 0; background: var(--scrim-art); -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade); pointer-events: none; }
 .gpage-back { position: absolute; z-index: 1; top: var(--space-3); left: calc(var(--page-gutter) - var(--space-2)); color: var(--fg-1); }
 /* Manage, across from Back: everything about the game besides playing it. */
@@ -600,7 +600,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-cap-open:hover .lib-cap-art img { transform: scale(1.03); }
 .lib-cap-open:focus-visible { outline: none; }
 .lib-cap-open:focus-visible .lib-cap-art { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.lib-cap-none { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: var(--space-3); font: 750 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
+.lib-cap-none, .find-noimg { justify-content: flex-end; }
+.lib-cap-none b, .find-noimg b { font: 750 var(--fs-18)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); }
 .lib-cap-text { display: grid; gap: 2px; padding-top: var(--space-2); min-width: 0; }
 .lib-cap-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-14); font-weight: 650; }
 .lib-cap-text > span { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
@@ -1045,7 +1046,11 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-gcard:hover { border-color: var(--edge-3); background: var(--bg-raised); }
 .ach-gcard:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .ach-gcover { width: 64px; }
-.ach-gcover .nocover { padding: var(--space-1); font-size: var(--fs-12); }
+/* Small covers: the name is beside them, so the icon alone, or the name. */
+.ach-gcover .nocover, .cs-cover .nocover { padding: var(--space-1); }
+.ach-gcover .nocover b, .cs-cover .nocover b { font-size: var(--fs-12); }
+.ach-gcover .nocover.with-icon b, .cs-cover .nocover.with-icon b { display: none; }
+.ach-gcover img.icon, .cs-cover img.icon { left: 20%; top: 20%; width: 60%; height: auto; aspect-ratio: 1; }
 .ach-gbody { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
 .ach-gbody .ach-bar { justify-self: stretch; }
 .ach-game-name { display: flex; align-items: center; gap: var(--space-2); min-width: 0; max-width: 100%; }
@@ -1106,6 +1111,8 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .find-card:hover { border-color: var(--accent); background: var(--bg-raised); }
 .find-card:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .find-card img, .find-noimg { display: block; width: 100%; aspect-ratio: 231 / 87; object-fit: cover; background: var(--bg-well); }
+.find-noimg { position: relative; display: flex; background: var(--bg-raised); }
+.find-daily .find-noimg { aspect-ratio: 460 / 215; border-radius: var(--radius-ctl); }
 .find-card-body { display: grid; gap: var(--space-2); padding: var(--space-3); }
 .find-card-body b { font-size: var(--fs-14); font-weight: 600; line-height: var(--lh-snug); }
 .find-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-height: 20px; font-size: var(--fs-13); color: var(--fg-2); }
@@ -1632,8 +1639,9 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-tile-art { position: relative; display: block; aspect-ratio: 2 / 3; border-radius: var(--radius-panel); overflow: hidden; background: var(--bg-raised); box-shadow: 0 10px 24px -14px oklch(0 0 0 / 0.8); transition: box-shadow 220ms var(--ease-emph); }
 .bp-tile--wide .bp-tile-art { aspect-ratio: 16 / 7.5; }
 .bp-tile-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.bp-tile-art img.icon { object-fit: contain; padding: 22%; }
-.bp-tile-art b { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-3); font: 750 var(--fs-18)/1.1 var(--font-title); color: var(--fg-2); text-align: center; background: var(--bg-raised); }
+.bp-tile-art .ln-tile__none { justify-content: flex-end; padding: var(--space-4); }
+.bp-tile-art .ln-tile__none img { width: var(--space-12); height: var(--space-12); margin-bottom: auto; }
+.bp-tile-art .ln-tile__none b { margin: 0; font: 750 var(--fs-24)/var(--lh-tight) var(--font-title); letter-spacing: var(--track-title); -webkit-line-clamp: 3; }
 .bp-tile-name { font: 650 var(--fs-15)/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .0; transform: translateY(-4px); transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
 .bp-tile:focus, .bp-tile:hover { transform: scale(1.08); color: var(--fg-1); z-index: 2; }
 .bp-tile:focus .bp-tile-art, .bp-tile:hover .bp-tile-art { box-shadow: 0 0 0 3px var(--fg-1), 0 22px 44px -16px oklch(0 0 0 / 0.95), 0 0 48px -10px var(--accent); }
