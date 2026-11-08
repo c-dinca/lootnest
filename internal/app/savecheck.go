@@ -89,9 +89,6 @@ func (a *App) saveCheck() saveCheck {
 		}
 	}
 	sort.Slice(c.Unknown, func(i, j int) bool { return strings.ToLower(c.Unknown[i].Name) < strings.ToLower(c.Unknown[j].Name) })
-	if len(c.Unknown) > 8 {
-		c.Unknown = c.Unknown[:8]
-	}
 	return c
 }
 
