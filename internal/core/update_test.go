@@ -44,6 +44,18 @@ func TestParseRelease(t *testing.T) {
 			t.Fatalf("unsafe installer offered: %+v %v", r, err)
 		}
 	}
+	// The API copy of the installer is kept as a fallback, but only from
+	// Lootnest's own repository.
+	const sum = `"size":5,"digest":"sha256:ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"`
+	const link = `"browser_download_url":"https://github.com/c-dinca/lootnest/releases/download/v1.4.0/Lootnest-Setup.exe"`
+	r, _ = ParseRelease([]byte(`{"tag_name":"v1.4.0","assets":[{"name":"Lootnest-Setup.exe",` + link + `,"url":"https://api.github.com/repos/c-dinca/lootnest/releases/assets/7",` + sum + `}]}`))
+	if r.AssetURL != "https://api.github.com/repos/c-dinca/lootnest/releases/assets/7" {
+		t.Fatalf("asset url %q", r.AssetURL)
+	}
+	r, _ = ParseRelease([]byte(`{"tag_name":"v1.4.0","assets":[{"name":"Lootnest-Setup.exe",` + link + `,"url":"https://api.github.com/repos/someone/else/releases/assets/7",` + sum + `}]}`))
+	if r.AssetURL != "" || r.SetupURL == "" {
+		t.Fatalf("a foreign asset url was kept: %+v", r)
+	}
 	if _, err := ParseRelease([]byte(`{"tag_name":"v2.0.0","prerelease":true}`)); err == nil {
 		t.Fatal("pre-releases aren't offered")
 	}

@@ -27,10 +27,17 @@ const SetupAsset = "Lootnest-Setup.exe"
 // offered, whatever the release says.
 const releaseDownloads = "https://github.com/c-dinca/lootnest/releases/download/"
 
+// releaseAssets is the same file through GitHub's API (asked for with
+// Accept: application/octet-stream). Lootnest falls back to it when the
+// download link fails, as github.com's release links can (504s seen on
+// 8 November 2026 for this repository only, while the API served the file).
+const releaseAssets = "https://api.github.com/repos/c-dinca/lootnest/releases/assets/"
+
 type Release struct {
 	Version  string `json:"version"` // "1.4.0"
 	Page     string `json:"page"`    // the release's web page ("What's new")
 	SetupURL string `json:"-"`
+	AssetURL string `json:"-"` // the same file through GitHub's API, a fallback
 	SHA256   string `json:"-"` // hex digest of the setup, when GitHub published one
 	Size     int64  `json:"-"`
 }
@@ -45,6 +52,7 @@ func ParseRelease(b []byte) (Release, error) {
 		Assets     []struct {
 			Name   string `json:"name"`
 			URL    string `json:"browser_download_url"`
+			API    string `json:"url"`
 			Size   int64  `json:"size"`
 			Digest string `json:"digest"`
 		} `json:"assets"`
@@ -63,6 +71,9 @@ func ParseRelease(b []byte) (Release, error) {
 				continue
 			}
 			rel.SetupURL, rel.Size, rel.SHA256 = a.URL, a.Size, strings.ToLower(d)
+			if strings.HasPrefix(a.API, releaseAssets) {
+				rel.AssetURL = a.API
+			}
 		}
 	}
 	return rel, nil
