@@ -30,6 +30,7 @@ const shots = [
   ["library-offline", "state=offline", [nav("library")]],
   ["game-on", "", game('data-game="cs2"')],
   ["game-on-6players", "players=6", game('data-game="bg3"')],
+  ["game-bright", "art=bright", game('data-game="bg3"')],
   ["game-on-playing", "state=playing", game('data-game="cs2"')],
   ["game-off-steam", "", game('data-key="steam:1091500"')],
   ["game-off-noart", "", game('data-key="dir:d:\\\\games\\\\phantom blade zero"')],
@@ -45,6 +46,10 @@ const shots = [
   ["game-manage", "", [...game('data-game="cs2"'), click('[data-action="manage"]')]],
   ["game-ach-all", "", [...game('data-game="bg3"'), click('[data-action="ach-all"]')]],
   ["achievements", "", [nav("achievements")]],
+  ["updates", "", [nav("updates")]],
+  ["store", "", [nav("find")]],
+  ["bp", "", [click('[data-action="bp-open"]')]],
+  ["bp-400", "games=400", [click('[data-action="bp-open"]')]],
   ["players-edit", "", [nav("players"), click('[data-action="edit-profiles"]')]],
   ["cloud", "", [nav("cloud")]],
   ["cloud-setup", "cloud=0", [nav("cloud")]],
@@ -54,7 +59,7 @@ const shots = [
   ["settings-games", "", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]')]],
   ["add-game", "", [nav("library"), click('[data-action="add-game"]')]],
 ];
-const sizes = [[1280, 800, 1], [1920, 1080, 1]];
+const sizes = [[1280, 800, 1], [1440, 900, 1], [1920, 1080, 1]];
 const extra = [["game-on", 1280, 720, 1], ["game-on", 2560, 1440, 1], ["game-on", 1280, 720, 1.5], ["library", 2560, 1440, 1], ["home", 1280, 720, 1.5]];
 
 const b = await chromium.launch();

@@ -1417,8 +1417,8 @@
     const allBtn = all.length ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button>` : "";
     if (!recent.length) {
       return `<div class="home-empty ln-root">${banners}
-        <div class="ln-section-head"><div><h2>Home</h2></div>${allBtn}</div>
-        <div class="ln-glass ln-state">${homeIcon}<div><h3>Nothing played yet</h3><p>Start a game from your Library and it shows up here, with who played it, the others you play and their news.</p>
+        <header class="lib-head"><div><h1>Home</h1></div>${allBtn}</header>
+        <div class="ln-state">${homeIcon}<div><h3>Nothing played yet</h3><p>Start a game from your Library and it shows up here, with who played it, the others you play and their news.</p>
           <div class="ln-actions"><button class="ln-button ln-button--primary" data-action="nav" data-view="library">Open the Library</button></div></div></div></div>`;
     }
     const first = recent[0];
