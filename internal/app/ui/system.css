@@ -143,10 +143,9 @@
   --dur-3: 280ms;   /* the seat changing, a save slot changing hands */
   --dur-spin: 700ms;
   --dur-backdrop: 800ms;  /* the window's colours following the game */
-  --dur-4: 420ms;   /* a page coming in, the sidebar folding */
+  --dur-4: 420ms;   /* the sidebar folding, Big Picture and empty states arriving */
   --ease-emph: cubic-bezier(.16, 1, .3, 1);  /* fast out, long settle: things arriving */
-  --stagger: 22ms;  /* between tiles coming in, one after another */
-  --rise: 10px;     /* how far a page or tile comes up as it arrives */
+  --rise: 6px;      /* how far a page comes up as it arrives */
   --shadow-lift: 0 18px 32px -18px oklch(0.02 0.010 276 / 0.9);  /* a cover lifted under the pointer */
 
   /* Achievement tiers, by the share of players who have one (Steam's

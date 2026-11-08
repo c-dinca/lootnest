@@ -118,7 +118,6 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .who-item:not(.playing) .who-name { grid-row: 1 / span 2; }
 .who-item.playing .ln-avatar { box-shadow: 0 0 0 2px var(--bg-ground), 0 0 0 4px var(--player-fill); }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--dim); }
-@keyframes breathe { 50% { opacity: .35; } }
 
 /* ----------------------------------------------------------------- views */
 .view { --view-pad-top: var(--space-8); overflow: auto; padding: var(--view-pad-top) var(--page-gutter) var(--space-16); min-width: 0; background: transparent; }
@@ -142,11 +141,6 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 .art { position: absolute; inset: 0; background: var(--panel) center 30% / cover no-repeat; z-index: -2; }
 .art.soft { inset: -15%; filter: blur(46px) saturate(1.1); opacity: .5; background-position: center; }
 .art.none { background: var(--raised); }
-
-/* --------------------------------------------------------------- library */
-.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--muted); animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
 
 /* -------------------------------------------------------------- profiles */
 .avatar { position: relative; display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; overflow: hidden;
@@ -188,9 +182,6 @@ h2 { font: 650 20px/1.2 var(--font-display); font-stretch: 92%; margin: 0 0 4px;
 
 
 /* ------------------------------------------------------------- game page */
-.status { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
-.status.big { font-size: 15px; color: var(--text); height: 48px; }
-.status .dot { animation: breathe 1.6s ease-in-out infinite; }
 .facts { margin: 0; display: grid; align-content: start; }
 .facts > div { display: grid; grid-template-columns: 132px 1fr; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); }
 .facts > div:first-child { padding-top: 0; }
@@ -1357,17 +1348,14 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 @media (max-width: 760px) { .side-resize { display: none; } }
 
 /* ================================================================= motion
-   Pages arrive with a short rise; tiles one after another; covers lift under
-   the pointer. Quick and mechanical, never bouncy. */
+   Pages arrive with a short rise; covers lift under the pointer. Quick and mechanical, never bouncy. */
 #view { view-transition-name: page; }
 ::view-transition-old(page) { animation: page-out var(--dur-1) var(--ease-out) both; }
-::view-transition-new(page) { animation: page-in var(--dur-4) var(--ease-emph) both; }
+::view-transition-new(page) { animation: page-in var(--dur-3) var(--ease-emph) both; }
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 @keyframes page-out { to { opacity: 0; } }
 @keyframes page-in { from { opacity: 0; transform: translateY(var(--rise)); } }
-.enter { animation: page-in var(--dur-4) var(--ease-emph) both; }
-.stagger { animation: tile-in var(--dur-4) var(--ease-emph) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }
-@keyframes tile-in { from { opacity: 0; transform: translateY(var(--rise)) scale(.985); } }
+.enter { animation: page-in var(--dur-3) var(--ease-emph) both; }
 .ln-tile__cover { transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
 .ln-tile:hover .ln-tile__cover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
 .ln-tile:active .ln-tile__cover { transform: translateY(-1px); }
@@ -1380,7 +1368,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 
 @media (prefers-reduced-motion: reduce) {
   .app, .sg-thumb img, .ln-tile__cover { transition: none; }
-  .enter, .stagger, .ln-toast, .sg-rows.opening, .sg-live { animation: none; }
+  .enter, .ln-toast, .sg-rows.opening, .sg-live { animation: none; }
   ::view-transition-old(page), ::view-transition-new(page) { animation: none; }
   .ln-tile:hover .ln-tile__cover { transform: none; }
 }
@@ -1395,8 +1383,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .lib-row:hover { background: var(--glass-ctl); }
 .lib-row-open { min-height: 56px; padding: var(--space-2) 0 var(--space-2) var(--space-3); border: 0; background: none; color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; }
 .lib-row-open:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-ctl); }
-.lib-row-thumb { position: relative; width: 30px; height: 40px; border-radius: 2px; overflow: hidden; background: var(--bg-raised); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); transition: transform var(--dur-2) var(--ease-out); }
-.lib-row:hover .lib-row-thumb { transform: scale(1.06); }
+.lib-row-thumb { position: relative; width: 30px; height: 40px; border-radius: 2px; overflow: hidden; background: var(--bg-raised); box-shadow: inset 0 0 0 var(--hairline) var(--edge-1); }
 .lib-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lib-row-thumb img.icon { object-fit: contain; padding: 4px; }
 .lib-row-thumb b { position: absolute; inset: 0; display: grid; place-items: center; font: 750 var(--fs-13)/1 var(--font-title); color: var(--fg-3); }
@@ -1429,10 +1416,9 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .upd-skel .ln-skeleton { height: 112px; border-radius: var(--radius-panel); }
 
 .upd-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
-.upd-stat { display: grid; gap: var(--space-1); justify-items: start; padding: var(--space-4) var(--space-5); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.upd-stat { display: grid; gap: var(--space-1); justify-items: start; padding: var(--space-4) var(--space-5); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); color: var(--fg-2); font: 500 var(--fs-13)/var(--lh-snug) var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
 .upd-stat b { font: 750 var(--fs-32)/1 var(--font-title); letter-spacing: var(--track-title); color: var(--fg-1); }
 .upd-stat:hover { border-color: var(--edge-2); background: var(--bg-raised); }
-.upd-stat:active { transform: scale(.99); }
 .upd-stat:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .upd-stat[aria-pressed="true"] { border-color: var(--edge-3); background: var(--bg-active); }
 @media (max-width: 900px) { .upd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -1454,13 +1440,12 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .dl-muted { color: var(--fg-3); }
 
 .upd-cards { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.upd-card { position: relative; display: grid; grid-template-columns: 184px minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.upd-card { position: relative; display: grid; grid-template-columns: 184px minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--bg-surface); transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
 .upd-card:hover { border-color: var(--edge-2); background: var(--bg-raised); }
 .upd-art { position: relative; display: block; width: 184px; aspect-ratio: 184 / 86; padding: 0; overflow: hidden; border: 0; border-radius: var(--radius-ctl); background: var(--bg-raised); cursor: pointer; }
-.upd-art img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--dur-3) var(--ease-out); }
+.upd-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .upd-art img.soft { filter: var(--blur-art-soft); transform: scale(1.2); }
 .upd-art span { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-2); font: 750 var(--fs-15)/var(--lh-tight) var(--font-title); color: var(--fg-2); text-align: center; }
-.upd-card:hover .upd-art img:not(.soft) { transform: scale(1.04); }
 .upd-art:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .upd-main { display: grid; gap: var(--space-1); min-width: 0; }
 .upd-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
@@ -1491,7 +1476,6 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .upd-empty { padding: var(--space-6); border: var(--hairline) dashed var(--edge-2); border-radius: var(--radius-panel); color: var(--fg-2); text-align: center; }
 @media (max-width: 1180px) { .upd-card { grid-template-columns: 140px minmax(0, 1fr) auto; } .upd-art { width: 140px; } .upd-ver { grid-column: 2; } .upd-act { grid-column: 3; grid-row: 1 / span 2; } }
 @media (max-width: 760px) { .upd-card { grid-template-columns: 1fr; } .upd-art { width: 100%; } .upd-ver, .upd-act { grid-column: auto; grid-row: auto; } }
-@media (prefers-reduced-motion: reduce) { .upd-art img { transition: none; } }
 .upd-ver { min-width: 230px; justify-content: flex-end; }
 .upd-art span { background: var(--bg-raised); }
 @media (max-width: 1180px) { .upd-ver { min-width: 0; justify-content: flex-start; } }
@@ -1506,10 +1490,10 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach.tier-rare { --tier: var(--tier-rare); }
 .ach.tier-uncommon { --tier: var(--tier-uncommon); }
 .ach.tier-common { --tier: var(--tier-common); }
-.ach-ico { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-ctl); background: var(--bg-raised); color: var(--tier, var(--fg-3)); box-shadow: inset 0 0 0 2px var(--tier, var(--edge-2)); overflow: hidden; transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.ach-ico { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-ctl); background: var(--bg-raised); color: var(--tier, var(--fg-3)); box-shadow: inset 0 0 0 2px var(--tier, var(--edge-2)); overflow: hidden; transition: box-shadow var(--dur-2) var(--ease-out); }
 .ach-ico img { width: 100%; height: 100%; object-fit: cover; display: block; padding: 2px; border-radius: var(--radius-ctl); }
 .ach-ico > .ln-icon { width: 22px; height: 22px; }
-.ach.is-on:hover .ach-ico { transform: translateY(-2px) scale(1.06); box-shadow: inset 0 0 0 2px var(--tier), 0 8px 22px -10px var(--tier); }
+.ach.is-on:hover .ach-ico { box-shadow: inset 0 0 0 2px var(--tier), 0 8px 22px -10px var(--tier); }
 .ach.locked .ach-ico { --tier: var(--edge-2); color: var(--fg-3); }
 .ach.locked .ach-ico img { filter: grayscale(1) brightness(.55); }
 .ach-lock { position: absolute; right: 2px; bottom: 2px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: var(--radius-tag); background: var(--bg-ground); color: var(--fg-2); }
@@ -1529,8 +1513,8 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach.is-hidden:hover > div b { text-decoration: underline; text-underline-offset: 3px; }
 .ach.is-hidden:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 /* Ultra rare ones catch the light. */
-.ach.tier-ultra.is-on .ach-ico::after, .ach-show-card.tier-ultra .ach-ico::after, .ach-pop.tier-ultra .ach-ico::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, oklch(1 0 0 / 0.45) 48%, transparent 64%); transform: translateX(-120%); animation: shine 3.6s var(--ease-in-out) infinite; pointer-events: none; }
-@keyframes shine { 0%, 62% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+.ach-pop.tier-ultra .ach-ico::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, oklch(1 0 0 / 0.45) 48%, transparent 64%); transform: translateX(-120%); animation: shine 900ms var(--ease-out) 300ms 1 both; pointer-events: none; }
+@keyframes shine { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
 
 /* Rings: how much of a game is done. */
 .ach-ring { display: block; transform: rotate(-90deg); }
@@ -1547,8 +1531,7 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-gring .ach-ring-n { position: absolute; font: 700 11px/1 var(--font-ui); color: var(--fg-1); }
 .ach-gring .ach-ring-n small { font-size: 8px; color: var(--fg-3); }
 .ach-gcard { grid-template-columns: 64px minmax(0, 1fr) auto; }
-.ach-gcard:hover { transform: translateY(-2px); }
-.ach-gcard { transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.ach-gcard { transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
 
 /* The summary: a big ring and the numbers beside it. */
 .ach-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-8); }
@@ -1597,7 +1580,6 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 
 @media (prefers-reduced-motion: reduce) {
   .ach-ring .fg, .arrive .ach-ring .fg, .arrive .ach-bar span, .ach-pop, .ach-pop .ach-ico, .ach-pop.out, .ach-ico::after { animation: none !important; transition: none; }
-  .ach.is-on:hover .ach-ico, .ach-gcard:hover { transform: none; }
 }
 
 /* ============================================================ big picture
