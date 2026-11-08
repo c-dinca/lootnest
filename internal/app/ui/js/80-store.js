@@ -88,10 +88,9 @@
   function viewFind() {
     const on = cfg().settings.findGames;
     const search = on ? `<div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="find-q" class="ln-input" placeholder="Search the store" value="${esc(S.find.q)}" autocomplete="off" spellcheck="false" aria-label="Search the store"></label></div>` : "";
-    const head = `<header class="lib-head"><h1>Store</h1>${search}<p>Any game, with its price in every official store and whether it runs on this PC.</p></header>`;
-    if (!on) return `<div class="find-page ln-root">${head}<section class="find-off"><h2>Look up any game</h2>
-      <p>The Store asks the Steam store for games, deals and requirements, and CheapShark for prices in other official stores, such as GOG, Humble and Fanatical. Only what you type, or a game's Steam id, is sent. Lootnest opens the store you choose in your browser.</p>
-      <button class="ln-button ln-button--primary" data-action="find-on">Turn on the Store</button></section></div>`;
+    const head = `<header class="lib-head"><h1>Store</h1>${search}</header>`;
+    if (!on) return `<div class="find-page ln-root">${head}${emptyState("The Store is off", "It asks the Steam store and CheapShark. Only what you type, or a game's Steam id, is sent.",
+      `<button class="ln-button ln-button--primary" data-action="find-on">Turn on the Store</button>`)}</div>`;
     return `<div class="find-page ln-root">${head}<div id="find-results">${findResults()}</div></div>`;
   }
   // A Store picture that's missing, or didn't load: the name set in type.
@@ -117,13 +116,13 @@
     if (F.error) return `${lnInline("error", esc(F.error))}<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="store-retry">Try again</button></div>`;
     const row = (title, sub, list) => (list && list.length ? `<section class="find-row"><div class="ln-section-head"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div></div><ul class="find-grid find-grid--wide">${list.map(storeCard).join("")}</ul></section>` : "");
     const d = F.daily;
-    const daily = d ? `<button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="">` : ""}
-      <span class="find-daily-body"><span class="find-daily-label">Today's deal on Steam</span><b>${esc(d.name)}</b><span class="find-card-meta">${d.price ? storePrice(d) : ""}${d.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button>` : "";
+    const daily = d ? `<section class="find-feature"><div class="ln-section-head"><div><h2>Today's deal on Steam</h2></div></div><button class="find-daily" data-action="find-open" data-app="${d.appId}" data-name="${esc(d.name)}">${d.image ? `<img src="${esc(d.image)}" alt="">` : ""}
+      <span class="find-daily-body"><b>${esc(d.name)}</b><span class="find-card-meta">${d.price ? storePrice(d) : ""}${d.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></section>` : "";
     const top = (F.top || []).slice(0, 10);
-    const tops = top.length ? `<section class="find-tops"><div class="ln-section-head"><h2>Top sellers on Steam</h2></div><ol class="find-top-list">${top.map((it, i) => `<li><button data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
+    const tops = top.length ? `<section class="find-tops"><div class="ln-section-head"><h2>Top sellers on Steam</h2></div><ol class="ln-rows find-top-list">${top.map((it, i) => `<li><button data-action="find-open" data-app="${it.appId}" data-name="${esc(it.name)}">
       <span class="ln-num find-rank">${i + 1}</span><span class="find-cap">${it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">` : ""}</span><b>${esc(it.name)}</b><span class="find-card-meta">${storePrice(it)}</span></button></li>`).join("")}</ol></section>` : "";
     const head = daily && tops ? `<div class="find-top">${daily}${tops}</div>` : daily + tops;
-    return `${head}${row("Deals on Steam", "", F.specials)}${row("Best deals in other stores", "Well-reviewed games on sale in official stores, from CheapShark, in US dollars.", F.deals)}`;
+    return `${head}${row("Deals on Steam", "", F.specials)}${row("Best deals in other stores", "From CheapShark, in US dollars", F.deals)}`;
   }
   function findResults() {
     const F = S.find;
@@ -140,11 +139,11 @@
   const gb = (b) => (b >= 2 ** 30 ? `${Math.round(b / 2 ** 30)} GB` : b > 0 ? `${Math.round(b / 2 ** 20)} MB` : "");
   // "Will it run here?": core.WillItRun's verdict, in words and bars.
   const RUNS = {
-    high: ["Runs great here", "Above the recommended requirements, so high settings should be fine.", "Above recommended"],
-    recommended: ["Runs well here", "At the recommended requirements: medium to high settings.", "Recommended"],
-    minimum: ["Runs, on low settings", "At the minimum requirements.", "Minimum"],
-    struggles: ["May struggle", "Just under the minimum: expect low settings and slowdowns.", "Under the minimum"],
-    below: ["Probably won't run well", "Well under the minimum requirements.", "Well under"],
+    high: ["Runs great here", "High settings", "Above recommended"],
+    recommended: ["Runs well here", "Medium to high settings", "Recommended"],
+    minimum: ["Runs, on low settings", "", "Minimum"],
+    struggles: ["May struggle", "Low settings, with slowdowns", "Under the minimum"],
+    below: ["Probably won't run well", "", "Well under"],
   };
   const PART = { Graphics: "graphics card", Processor: "processor", Memory: "memory", Storage: "free space" };
   const runsTone = (r) => (r === "high" || r === "recommended" ? "ok" : r === "minimum" ? "mid" : "low");
@@ -162,13 +161,13 @@
     if (!r) {
       const g = V.parts[0], c = V.parts[1];
       const what = !g.have && !c.have ? "this PC's graphics card and processor" : !g.min && !g.rec && !c.min && !c.rec ? "the parts this game asks for" : "these parts";
-      return `<div class="run-card run-card--unknown"><div class="run-head"><span class="run-dot"></span><div><b>Lootnest can't tell</b><p>It doesn't know ${what} well enough to compare. Compare the names below.</p></div></div></div>`;
+      return `<div class="run-card run-card--unknown"><div class="run-head"><span class="run-dot"></span><div><b>Lootnest can't tell</b><p>It doesn't know ${what} well enough.</p></div></div></div>`;
     }
-    const limit = V.limit && V.runs !== "high" && V.runs !== "recommended" ? ` The ${PART[V.limit]} holds it back.` : "";
+    const limit = V.limit && V.runs !== "high" && V.runs !== "recommended" ? `The ${PART[V.limit]} holds it back` : "";
     const gauges = V.parts.filter((p) => p.known && (p.part === "Graphics" || p.part === "Processor")).map(runGauge).join("");
-    return `<div class="run-card run-card--${runsTone(V.runs)}"><div class="run-head"><span class="run-dot"></span><div><b>${r[0]}</b><p>${r[1]}${limit}</p></div></div>
+    return `<div class="run-card run-card--${runsTone(V.runs)}"><div class="run-head"><span class="run-dot"></span><div><b>${r[0]}</b><p>${[r[1], limit].filter(Boolean).join(". ")}</p></div></div>
       ${gauges ? `<div class="run-gauges">${gauges}</div><p class="run-legend"><i class="run-mark run-mark--min"></i>Minimum<i class="run-mark run-mark--rec"></i>Recommended</p>` : ""}
-      <p class="gpage-hint">An estimate from typical benchmark results; Steam's requirements usually mean 1080p.</p></div>`;
+      <p class="gpage-hint">An estimate, at 1080p</p></div>`;
   }
   function viewOffer() {
     const D = S.dialog, R = S.offers[D.appId];
@@ -176,14 +175,14 @@
     if (!R) return shell(lnInline("", "Getting prices and requirements"));
     if (R.error || !R.offer) return shell(lnInline("error", esc(R.error || "Couldn't get this game.")));
     const O = R.offer, pc = R.pc || {};
-    const btn = (attrs, label, cls = "ln-button--ghost") => `<button class="ln-button ${cls} ln-button--sm" ${attrs}>${label}</button>`;
-    const owned = R.owned ? `<div class="find-owned"><p><b>On this PC.</b> It's in your Library.</p>${btn(`data-action="find-library" data-owned="${esc(R.owned)}"`, "Open its page", "ln-button--secondary")}</div>` : "";
+    const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs}>${label}</button>`;
+    const owned = R.owned ? `<ul class="ln-rows find-owned">${lookRow("In your Library", "", btn(`data-action="find-library" data-owned="${esc(R.owned)}"`, "Open its page"), "on")}</ul>` : "";
     const steam = O.free ? "Free to play" : O.steam ? `<span class="ln-num">${esc(cents(O.steam))}</span>${offTag(O.steam.discount)}` : "Not for sale";
     const deals = (O.deals || []).filter((d) => d.store !== "Steam");
     const prices = `<div class="gpage-sub">${gpHead("Prices")}<dl class="ln-facts">
       <div><dt><b>Steam</b></dt><dd>${steam}${btn(`data-action="find-store" data-url="${esc(O.storeUrl)}"`, "Open")}</dd></div>
       ${deals.map((d) => `<div><dt>${esc(d.store)}</dt><dd><span class="ln-num">${esc(money(d.price, "USD"))}</span>${offTag(d.savings)}${btn(`data-action="find-store" data-url="${esc(d.url)}"`, "Open")}</dd></div>`).join("")}</dl>
-      ${O.free ? "" : `<p class="gpage-hint">${deals.length ? "Other stores' prices are in US dollars, from CheapShark, which lists authorized stores only." : "No other store sells it, according to CheapShark."}${O.lowest ? ` Lowest price ever: ${esc(money(O.lowest, "USD"))}${O.lowestAt ? ", " + esc(new Date(O.lowestAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })) : ""}.` : ""}</p>`}</div>`;
+      ${O.free ? "" : `<p class="gpage-hint">${deals.length ? "Other stores in US dollars, from CheapShark." : "No other store sells it, says CheapShark."}${O.lowest ? ` Lowest price ever: ${esc(money(O.lowest, "USD"))}${O.lowestAt ? ", " + esc(new Date(O.lowestAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })) : ""}.` : ""}</p>`}</div>`;
     const val = (list, label) => ((list || []).find((l) => l.label === label) || {}).value || "";
     const known = ["OS", "Processor", "Memory", "Graphics", "Storage"];
     const labels = [...known, ...new Set([...(O.minimum || []), ...(O.recommended || [])].map((l) => l.label).filter((l) => l && !known.includes(l)))].filter((l) => val(O.minimum, l) || val(O.recommended, l));
@@ -210,7 +209,7 @@
       ${labels.map((l) => `<div class="find-req-row" role="row"><b role="rowheader">${esc(l)}</b><span role="cell">${esc(val(O.minimum, l)) || "–"}</span><span role="cell">${esc(val(O.recommended, l)) || "–"}</span><span role="cell">${mine[l] || ""}</span></div>`).join("")}</div>
       ${notes.length ? `<p class="gpage-hint">${notes.join(". ")}.</p>` : ""}</div>`
       : `<div class="gpage-sub">${gpHead("Will it run here?")}<p class="gpage-hint">The Steam store lists no requirements for this game.</p></div>`;
-    const wiki = `<div class="gpage-sub">${gpHead("Known issues")}<p class="gpage-hint">PCGamingWiki says what's known to go wrong on PC, and how to fix it.</p><div class="gpage-actions">${btn(`data-action="gs-pcgw" data-name="${esc(O.name || D.name)}"`, "Open PCGamingWiki", "ln-button--secondary")}</div></div>`;
+    const wiki = `<div class="gpage-sub">${gpHead("Known issues")}<div class="gpage-actions">${btn(`data-action="gs-pcgw" data-name="${esc(O.name || D.name)}"`, "Open PCGamingWiki")}</div></div>`;
     const hero = O.header ? `<img class="find-hero" src="${esc(O.header)}" alt="">` : "";
     const run = labels.length ? `<div class="gpage-sub">${runCard(V)}</div>` : "";
     return shell(`${hero}${owned}${run}${prices}${reqs}${wiki}`, `<span class="grow"></span>${btn(`data-action="find-store" data-url="${esc(O.storeUrl)}"`, "Open on Steam", "ln-button--primary")}`);
@@ -218,7 +217,7 @@
 
   let allAchAsked = false;
   function viewAchievements() {
-    const head = `<header class="lib-head"><h1>Achievements</h1><p>Every game's achievements on this PC. Each profile has its own where they go with the profile; Steam's belong to the Steam account.</p></header>`;
+    const head = `<header class="lib-head"><h1>Achievements</h1></header>`;
     if (!S.allAch) {
       if (!allAchAsked) { allAchAsked = true; api.allAchievements().catch(() => {}).finally(() => { allAchAsked = false; }); }
       return `<div class="ach-page ln-root">${head}${lnInline("", "Reading achievements on this PC")}</div>`;
@@ -234,39 +233,35 @@
     const chips = ps.length > 4 ? `<select id="ach-pick" class="ln-input ach-pick" aria-label="Whose achievements">${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === who ? "selected" : ""}>${esc(possessive(p.name))} achievements</option>`).join("")}</select>`
       : ps.length > 1 ? `<div class="ln-segmented ach-pick" role="group" aria-label="Whose achievements">${ps.map((p) => `<button data-action="ach-page" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     if (!rows.length) {
-      return `<div class="ach-page ln-root">${head}${chips}${emptyState(GI.trophy, "No achievements found yet", "Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.")}</div>`;
+      return `<div class="ach-page ln-root">${head}${chips}${emptyState("No achievements yet", "Achievements from Steam and the tools beside your games show up here.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)}</div>`;
     }
     const total = rows.reduce((n, r) => n + r.unlocked, 0);
     const ms = who && player(who) ? milestones(player(who), rows) : [];
     const msDone = ms.filter((x) => x.done).length;
-    const msHTML = ms.length ? `<details class="ach-ms"${S.achMs ? " open" : ""}><summary><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg>Lootnest milestones <span class="ln-count ln-num">${msDone} of ${ms.length}</span></summary>
-      <p>For any game, from the time ${esc(pname(who))} plays through Lootnest.</p>
+    const msHTML = ms.length ? `<details class="ach-ms"${S.achMs ? " open" : ""}><summary class="ln-section-head"><span class="ln-label">Lootnest milestones<span class="ln-count ln-num">${msDone} of ${ms.length}</span></span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg></summary>
       <ul class="ach-ms-grid">${ms.map((x) => `<li class="${x.done ? "done" : ""}"><span class="ach-ms-icon">${GI.trophy}</span><div><b>${esc(x.name)}</b><span>${x.done ? esc(x.desc) : esc(x.desc) + ". " + esc(fmtGoal(x))}</span>${x.done ? "" : `<span class="ach-bar" aria-hidden="true"><span style="width:${Math.round((x.cur / x.goal) * 100)}%"></span></span>`}</div></li>`).join("")}</ul></details>` : "";
     const latest = rows.flatMap((r) => (r.recent || []).map((a) => ({ a, r }))).sort((x, y) => new Date(y.a.at || 0) - new Date(x.a.at || 0)).slice(0, 10);
     const games = rows.slice().sort((x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || x.g.name.localeCompare(y.g.name));
-    const p = player(who);
     const all = rows.reduce((n, r) => n + r.g.total, 0), allPct = all ? Math.round((total / all) * 100) : 0;
     // The rarest they've unlocked anywhere, on show.
     const rarest = rows.flatMap((r) => r.rarest.map((a) => ({ a, r }))).sort((x, y) => x.a.percent - y.a.percent).slice(0, 4);
-    const show = rarest.length ? `<section aria-label="Rarest unlocked"><div class="ln-section-head"><div><h2>Rarest unlocked</h2></div></div>
-      <ul class="ach-list">${rarest.map(({ a, r }) => achRow(a, r.g.key, esc(r.g.name))).join("")}</ul></section>` : "";
+    const show = rarest.length ? labelSec("Rarest unlocked", 0, `<ul class="ach-list">${rarest.map(({ a, r }) => achRow(a, r.g.key, esc(r.g.name))).join("")}</ul>`) : "";
+    const full = rows.filter((r) => r.unlocked >= r.g.total).length;
+    const score = labelSec("Score", 0, `<dl class="ln-meta ln-score">
+      <div class="ln-meta__item"><dd class="ln-num"><span data-countup="${total}">${total}</span><small>of ${all}</small></dd><dt>Unlocked</dt></div>
+      ${gpStat(`${allPct}<small>%</small>`, "Complete")}${gpStat(rows.length, rows.length === 1 ? "Game" : "Games")}${gpStat(full, "Finished 100%")}</dl>`);
     return `<div class="ach-page ln-root">${head}
       <div class="ach-cols">
-        <div class="ach-main">${chips}
-          <div class="ach-headline">${p ? lnAvatar(p, "48") : ""}<p><span class="ach-hl-num"><b class="ln-num" data-countup="${total}">${total}</b> of <span class="ln-num">${all}</span></span><span class="ach-hl-pct ln-num">${allPct}%</span></p>
-            <span class="ach-bar" aria-hidden="true"><span style="width:${allPct}%"></span></span></div>
-          <section><div class="ln-section-head"><div><h2>Games</h2></div><span class="ach-count ln-num">${rows.length}</span></div>
-          <ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = Math.round((r.unlocked / r.g.total) * 100); return `<li><button class="ach-gcard" data-action="open-sheet" ${itemAttr(r.it)}>
+        <div class="ach-main">${chips}${score}
+          ${labelSec("Games", rows.length, `<ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = r.unlocked >= r.g.total ? 100 : Math.min(99, Math.round((r.unlocked / r.g.total) * 100)); return `<li><button class="ach-gcard" data-action="open-sheet" ${itemAttr(r.it)}>
             <span class="ach-gcover cover">${coverHTML(r.it)}</span>
-            <span class="ach-gbody"><span class="ach-game-name"><b>${esc(r.g.name)}</b></span>
-              ${r.shared ? `<span class="ln-tag">${r.g.source === "steam" ? "Steam account" : "Shared"}</span>` : `<span class="ach-gnote">${esc(possessive(pname(who)))} own</span>`}</span>
-            <span class="ach-bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
-            <span class="ach-game-num"><b class="ln-num">${r.unlocked}</b> of <span class="ln-num">${r.g.total}</span></span></button></li>`; }).join("")}</ul></section>
+            <span class="ach-gbody"><b class="ach-game-name">${esc(r.g.name)}</b>
+              <span class="ach-game-num"><b class="ln-num">${r.unlocked}</b> of <span class="ln-num">${r.g.total}</span>, ${r.shared ? (r.g.source === "steam" ? "Steam account" : "shared") : `${esc(possessive(pname(who)))} own`}</span></span>
+            <span class="ach-gring">${ring(pct, 48)}</span></button></li>`; }).join("")}</ul>`)}
           ${msHTML}
         </div>
         <div class="ach-side">${show}
-          <section class="ach-latest"><div class="ln-section-head"><div><h2>Latest unlocked</h2></div></div>
-          ${latest.length ? `<ul class="ach-list">${latest.map(({ a, r }) => achRow(a, r.g.key, `${esc(r.g.name)}${a.at && new Date(a.at).getFullYear() > 2000 ? ", " + esc(ago(a.at)) : ""}`)).join("")}</ul>` : `<p class="home-hint">Nothing unlocked yet.</p>`}</section>
+          ${labelSec("Latest unlocked", 0, latest.length ? `<ul class="ach-list">${latest.map(({ a, r }) => achRow(a, r.g.key, `${esc(r.g.name)}${a.at && new Date(a.at).getFullYear() > 2000 ? ", " + esc(ago(a.at)) : ""}`)).join("")}</ul>` : `<p class="home-hint">Nothing unlocked yet.</p>`, "ach-latest")}
         </div>
       </div></div>`;
   }
@@ -274,10 +269,10 @@
   // Cloud saves: each player's saves in a folder a cloud app syncs (or a
   // USB drive), up after every session and down before a game starts.
   const PROVIDERS = [
-    { name: "OneDrive", match: /onedrive/i, account: "your Microsoft account", url: "https://www.microsoft.com/microsoft-365/onedrive/download" },
-    { name: "Google Drive", match: /google drive/i, account: "your Google account", url: "https://www.google.com/drive/download/" },
-    { name: "Dropbox", match: /dropbox/i, account: "your Dropbox account", url: "https://www.dropbox.com/install" },
-    { name: "iCloud Drive", match: /icloud/i, account: "your Apple ID", url: "https://apps.microsoft.com/detail/9pktq5699m62" },
+    { name: "OneDrive", match: /onedrive/i, url: "https://www.microsoft.com/microsoft-365/onedrive/download" },
+    { name: "Google Drive", match: /google drive/i, url: "https://www.google.com/drive/download/" },
+    { name: "Dropbox", match: /dropbox/i, url: "https://www.dropbox.com/install" },
+    { name: "iCloud Drive", match: /icloud/i, url: "https://apps.microsoft.com/detail/9pktq5699m62" },
   ];
   async function loadSaves() { try { await api.savesStatus(); } catch (e) { /* not ready */ } }
   function providerOf(B) {
@@ -288,23 +283,21 @@
   // for each player, and the backups of everything.
   function cloudSection() {
     const B = S.backup;
-    const wrap = (body, sum) => `<section class="cloud-page sv-sec" id="sv-cloud" aria-labelledby="sv-cloud-h"><div class="ln-section-head"><div><h2 id="sv-cloud-h">Cloud saves</h2>
-      <p>Every profile's saves go up after each session. On another PC, the newest come down before the game starts.</p></div></div>${sum || ""}${body}</section>`;
+    const wrap = (body, sum) => `<section class="cloud-page sv-sec" id="sv-cloud" aria-labelledby="sv-cloud-h"><div class="ln-section-head"><div><h2 id="sv-cloud-h">Cloud saves</h2></div></div>${sum || ""}${body}</section>`;
     if (!B) { loadBackupInfo(); return wrap(lnInline("", "Reading your cloud folder")); }
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
     if (!B.dir) {
       const rows = PROVIDERS.map((pv) => {
         const found = (B.folders || []).filter((f) => pv.match.test(f.name));
         return found.length
-          ? found.map((f) => `<div class="cs-option"><div><b>${esc(pv.name)}</b><span class="selectable">${esc(f.path)}</span></div>${b("primary", `data-action="backup-use" data-dir="${esc(f.path)}"`, "Use " + esc(f.name))}</div>`).join("")
-          : `<div class="cs-option"><div><b>${esc(pv.name)}</b><span>Install ${esc(pv.name)} and sign in with ${esc(pv.account)}, then come back here.</span></div>${b("secondary", `data-action="open-download" data-url="${esc(pv.url)}"`, "Get " + esc(pv.name))}</div>`;
+          ? found.map((f) => `<li class="cs-option"><div><b>${esc(pv.name)}</b><span class="selectable">${esc(f.path)}</span></div>${b("secondary ln-button--sm", `data-action="backup-use" data-dir="${esc(f.path)}"`, "Use " + esc(f.name))}</li>`).join("")
+          : `<li class="cs-option"><div><b>${esc(pv.name)}</b><span>Not on this PC</span></div>${b("ghost ln-button--sm", `data-action="open-download" data-url="${esc(pv.url)}"`, "Get " + esc(pv.name))}</li>`;
       }).join("");
       return wrap(`
-        <div class="cloud-setup"><div class="ln-section-head"><div><h3>Where should your saves go?</h3><p>Lootnest writes the files to that folder, and the cloud app uploads them with your account.</p></div></div>
-          <div class="cs-options">${rows}
-            <div class="cs-option"><div><b>USB drive or another folder</b><span>A drive you carry between PCs, a NAS, or any folder.</span></div>${b("secondary", 'data-action="backup-pick"', "Choose a folder")}</div></div>
-          <p class="cs-note">Signing in to Microsoft or Google right in Lootnest, without their apps, comes in a later version.</p>
-          <div class="bk-restore">${b("ghost", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back.</span></div></div>`);
+        <div class="cloud-setup"><div class="ln-section-head"><div><h3>Where your saves go</h3></div></div>
+          <ul class="ln-rows cs-options">${rows}
+            <li class="cs-option"><div><b>USB drive or another folder</b><span>A drive, a NAS, or any folder</span></div>${b("secondary ln-button--sm", 'data-action="backup-pick"', "Choose a folder")}</li></ul>
+          <div class="bk-restore">${b("ghost ln-button--sm", 'data-action="restore-pick"', "Restore from a backup")}<span>What's here now is saved first.</span></div></div>`);
     }
     const st = B.status, V = S.saves;
     const last = st.running ? "Backing up now" : st.last ? `Last backup ${esc(ago(st.last))}, ${esc(fmtBytes(st.size))}` : "No backup yet";
@@ -320,7 +313,7 @@
     } else if (V.error) {
       games = lnInline("error", esc(V.error));
     } else if (!V.games.length) {
-      games = `<div class="ln-glass ln-state">${GI.save}<div><h3>No saves yet</h3><p>Turn on profiles for a game, play it, and its saves go up here.</p></div></div>`;
+      games = `<p class="hint">No saves in the cloud yet</p>`;
     } else {
       const byGame = {}, n = {};
       V.games.forEach((x) => { (byGame[x.gameId] = byGame[x.gameId] || []).push(x); n[x.state] = (n[x.state] || 0) + 1; });
@@ -329,54 +322,52 @@
       conflicts = V.games.filter((x) => x.state === "conflict" && game(x.gameId) && player(x.playerId)).map((x) => {
         const pl = player(x.playerId), at = `data-game="${esc(x.gameId)}" data-player="${esc(pl.id)}"`;
         const when = [x.here && `this PC ${ago(x.here)}`, x.computer && `${x.computer} ${ago(x.changed)}`].filter(Boolean).join(", ");
-        return banner(`${esc(game(x.gameId).name)} <span class="ln-tag ln-tag--player ln-player" style="--player:${esc(pl.color)}">${esc(pl.name)}</span>`,
-          `Changed on two PCs${when ? ": " + esc(when) : ""}.`,
-          b("secondary ln-button--sm", `data-action="sync-resolve" ${at} data-answer="here"`, "Keep this PC's") + b("secondary ln-button--sm", `data-action="sync-resolve" ${at} data-answer="cloud"`, `Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}`), false, "warn");
+        return lookRow(`${esc(game(x.gameId).name)} <span class="ln-tag ln-tag--player ln-player" style="--player:${esc(pl.color)}">${esc(pl.name)}</span>`,
+          `Changed on two PCs${when ? ": " + esc(when) : ""}`,
+          b("secondary ln-button--sm", `data-action="sync-resolve" ${at} data-answer="here"`, "Keep this PC's") + b("secondary ln-button--sm", `data-action="sync-resolve" ${at} data-answer="cloud"`, `Use ${x.computer ? esc(possessive(x.computer)) : "the cloud's"}`));
       }).join("");
-      games = `<div class="cs-games">${Object.entries(byGame).map(([gid, rows]) => {
+      games = `<ul class="ln-rows cs-games">${Object.entries(byGame).map(([gid, rows]) => {
         const g = game(gid);
         if (!g) return "";
         const it = everyItem().find((x) => x.kind === "game" && x.id === gid);
         if (it) ensureCover(it);
-        return `<div class="cs-game"><div class="cs-cover">${it ? `<div class="cover">${coverHTML(it)}</div>` : ""}</div><div class="cs-rows"><b class="cs-name">${esc(g.name)}</b>
+        return `<li class="cs-game"><div class="cs-cover">${it ? `<div class="cover">${coverHTML(it)}</div>` : ""}</div><div class="cs-rows"><b class="cs-name">${esc(g.name)}</b>
           ${rows.map((x) => {
             const pl = player(x.playerId);
             if (!pl) return "";
             const where = x.computer ? `${x.state === "same" ? "Last from" : "From"} ${esc(x.computer)}, ${esc(ago(x.changed))}` : "";
             return `<div class="cs-row state-${esc(x.state)}">${lnAvatar(pl, "20")}<span class="cs-who">${esc(pl.name)}</span>
               <span class="cs-state">${esc(label[x.state] || "")}</span><span class="cs-where">${where}</span></div>`;
-          }).join("")}</div></div>`;
-      }).join("")}</div>
-      ${V.players && V.players.length ? `<p class="cs-note">The cloud also has saves for ${esc(V.players.join(", "))}. Add a profile with the same name on <b>Profiles</b> (or import it) to use them here.</p>` : ""}`;
+          }).join("")}</div></li>`;
+      }).join("")}</ul>
+      ${V.players && V.players.length ? `<p class="cs-note">The cloud also has saves for ${esc(V.players.join(", "))}. A profile with the same name uses them.</p>` : ""}`;
     }
-    const sum = B.sync && !B.locked ? `<div class="cloud-sum">${counts ? `<span>${esc(counts[0].toUpperCase() + counts.slice(1))}</span>` : ""}${b("primary ln-button--sm", 'data-action="sync-now"', "Sync now")}</div>` : "";
-    // An explanation shows its first sentence; the rest folds under More.
-    const brief = (t) => { const i = t.indexOf(". "); return i < 0 || t.length <= 72 ? `<p class="tg-line">${t}</p>` : `<div class="tg-brief"><p class="tg-line">${t.slice(0, i + 1)}</p><details class="tg-more"><summary>More</summary><p>${t.slice(i + 2)}</p></details></div>`; };
+    const sum = B.sync && !B.locked ? `<div class="cloud-sum">${counts ? `<span>${esc(counts[0].toUpperCase() + counts.slice(1))}</span>` : ""}${b("secondary ln-button--sm", 'data-action="sync-now"', "Sync now")}</div>` : "";
     const path = B.target || "";
     return wrap(`
       <div class="cloud-cols">
-        <div class="cloud-main">${conflicts ? `<section class="cs-conflicts">${conflicts}</section>` : ""}<section><div class="ln-section-head"><div><h3>Games</h3></div></div>${games}</section>
+        <div class="cloud-main">${conflicts ? `<ul class="ln-rows cs-conflicts">${conflicts}</ul>` : ""}<section><div class="ln-section-head"><div><h3>Games</h3></div></div>${games}</section>
           <section class="cloud-backups"><div class="ln-section-head"><div><h3>Backups of everything</h3></div></div>
             <div class="bk-card">
-              <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : `<p>Profiles, games and saves in one file, to restore on a new PC.</p>`}</div>
+              <div class="bk-row"><div><b class="${failed ? "error-text" : ""}">${failed ? "The last backup didn't work" : last}</b>${failed ? `<p class="error-text">${esc(st.error)}</p>` : ""}</div>
                 ${st.running ? `<button class="ln-button ln-button--secondary ln-button--sm" aria-busy="true"><span class="ln-spinner" aria-hidden="true"></span>Backing up</button>` : b("secondary ln-button--sm", 'data-action="backup-now"', "Back up now")}</div>
-              <label class="toggle"><span><b>Back up after every game session</b><p>And when Lootnest starts, if the last backup is over a day old.</p></span>
+              <label class="toggle"><span><b>Back up after every game session</b></span>
                 <span class="switch"><input type="checkbox" data-backup="auto" ${B.auto ? "checked" : ""}><span></span></span></label>
               <div class="bk-row"><label for="bk-keep"><b>Backups this PC keeps</b></label><input id="bk-keep" class="ln-input" type="number" min="1" max="50" data-backup="keep" value="${B.keep}" style="width:88px"></div>
             </div>
-            <div class="bk-restore">${b("ghost ln-button--sm", 'data-action="restore-pick"', "Restore from a backup")}<span>On a new PC, or to go back. What's here now is saved first.</span></div></section>
+            <div class="bk-restore">${b("ghost ln-button--sm", 'data-action="restore-pick"', "Restore from a backup")}<span>What's here now is saved first.</span></div></section>
         </div>
         <aside class="cloud-side">
           <section><div class="ln-section-head"><div><h3>Your cloud folder</h3></div></div>
             <div class="bk-card">
               <div class="bk-row"><div class="bk-where"><span class="label">${esc(providerOf(B))}</span><span class="bk-path"><b class="selectable" title="${esc(path)}">${esc(midTrunc(path, 44))}</b><button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="copy-path" data-path="${esc(path)}" aria-label="Copy the path" title="Copy the path">${GI.copy}</button></span></div>
                 <div class="gpage-actions">${b("ghost ln-button--sm", 'data-action="backup-pick"', "Change")}${b("ghost ln-button--sm", 'data-action="backup-open"', "Open folder")}</div></div>
-              <label class="toggle"><span><b>Sync saves between PCs</b>${brief("Each profile's saves go up after a session. The newest come down before a game starts. If they changed on two PCs, Lootnest asks which to keep.")}</span>
+              <label class="toggle"><span><b>Sync saves between PCs</b></span>
                 <span class="switch"><input type="checkbox" data-backup="sync" ${B.sync ? "checked" : ""}><span></span></span></label>
-              ${sw("gameSaves", "Keep versions of games outside Steam", brief("A new copy of their saves after they change and the game closes. For games without profiles and not on Steam, which has its own cloud. Restore any version from the game's page."), cfg().settings.gameSaves)}
-              ${sw("saveDb", "Find save locations online", brief("A weekly list of where over 20,000 games keep their saves. It comes from PCGamingWiki, through the Ludusavi project on GitHub, so new games get the right locations for profiles and cloud saves. Nothing about you or your games is sent."), cfg().settings.saveDb)}
+              ${sw("gameSaves", "Keep versions of games outside Steam", "", cfg().settings.gameSaves)}
+              ${sw("saveDb", "Find save locations online", "A weekly list from PCGamingWiki, through GitHub. Nothing about you is sent.", cfg().settings.saveDb)}
               <div class="bk-row"><div><b>${B.locked ? "Has a password" : B.encrypted ? "Encrypted with your password" : "Not encrypted"}</b>
-                <p>${B.encrypted ? "Only someone with the password can open these files. Use the same password on every PC." : B.locked ? "Enter it to sync on this PC." : "Anyone with the folder can read the saves. A password encrypts them (AES-256), on every PC that uses this folder."}</p></div>
+                ${B.encrypted || B.locked ? "" : "<p>Anyone with the folder can read the saves.</p>"}</div>
                 <div class="gpage-actions">${B.encrypted ? b("ghost ln-button--sm", 'data-action="backup-pw" data-on="1"', "Change password") + b("ghost ln-button--sm", 'data-action="backup-pw" data-on="0"', "Remove password") : b("secondary ln-button--sm", 'data-action="backup-pw" data-on="1"', B.locked ? "Enter the password" : "Set a password")}</div></div>
             </div></section>
         </aside>

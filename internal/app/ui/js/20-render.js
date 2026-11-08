@@ -276,7 +276,12 @@
     toast(S.seat ? `${solo() ? "" : `${pname(S.seat)} is at the PC. `}Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");
   }
 
+  // A labelled section, as every page draws them.
+  const labelSec = (title, n, body, cls = "") => `<section${cls ? ` class="${cls}"` : ""} aria-label="${title}"><div class="ln-section-head"><div><h2>${title}${n ? `<span class="ln-count ln-num">${n}</span>` : ""}</h2></div></div>${body}</section>`;
+  // A row of what needs a look: its lamp, what happened, one short line, its key.
+  const lookRow = (title, line, key, lamp = "warn") => `<li class="look-row"><span class="ln-lamp${lamp ? " ln-lamp--" + lamp : ""}" aria-hidden="true"></span><div><b>${title}</b>${line ? `<p>${line}</p>` : ""}</div>${key ? `<div class="look-key">${key}</div>` : ""}</li>`;
+
   // The Lootnest mark, as in the top bar.
-  const BRAND_MARK = '<svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>';
+  const BRAND_MARK = '<svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path pathLength="1" d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path pathLength="1" d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>';
 
 

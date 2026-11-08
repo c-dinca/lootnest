@@ -142,7 +142,7 @@ The look is **Arcade** (1.93, the owner's choice; DESIGN.md): game hardware.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.95.0, beta)
+## Where things stand (1.96.0, beta)
 
 These shipped recently, newest last:
 
@@ -730,6 +730,15 @@ These shipped recently, newest last:
   wide drawer, every older `.btn` restyled as a key, and dialogs with
   one foot (Cancel and the main key). Explanatory text cut across all
   of them.
+- **1.96** Arcade, part 4: Saves, Updates, Achievements, the Store, the
+  first run and empty pages. Shared pieces in system.css: `.ln-score`
+  (scoreboard, `--text-board`), `.ln-rows` (rows on a panel, `--row-h`),
+  `.ln-lamp` (`--on`, `--warn`); `lookRow` for Needs a look rows;
+  `emptyState(title, line, key, ghosts)` is one pattern (label, line,
+  key). The first run is a boot screen (the gem draws in, a lamp-green
+  scan bar, name and colour, Continue; under 600 ms). Achievement rings
+  are the section colour, green when finished; tier colours only for
+  rarity. site/img regenerated in the new look.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

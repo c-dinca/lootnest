@@ -191,7 +191,7 @@
     const offer = it.kind === "found" && (S.copies || []).find((o) => o.new.key === it.id);
     const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, ${esc(day(N.newer.date))}`,
       uk ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-start" data-key="${esc(uk)}" data-name="${esc(it.name)}">Apply an update</button>` : "") : "";
-    const copyBanner = offer ? `<div class="news-newer">${copyCard(offer, true)}</div>` : "";
+    const copyBanner = offer ? `<ul class="ln-rows news-newer">${copyCard(offer, true)}</ul>` : "";
     if (!items.length && !newer && !offer) return "";
     if (!items.length) return `${copyBanner}<section class="news">${head}${newer}<p class="news-none">No news yet.</p></section>`;
     return copyBanner + (newer ? `<div class="news-newer">${newer}</div>` : "") + newsSection(title, items, false);
@@ -604,6 +604,6 @@
       toast(n ? `Found ${n} new game${n === 1 ? "" : "s"}` : "No new games found");
     }
     if (!S.picker && !S.dialog && ["home", "library", "game"].includes(S.view)) render();
-    else { $("#lib-count").textContent = libraryItems().length || ""; renderSideGames(); const w = $("#wl-scan"); if (w) w.innerHTML = welcomeScan(); }
+    else { $("#lib-count").textContent = libraryItems().length || ""; renderSideGames(); const w = $("#wl-scan"); if (w) welcomeScan(w); }
   }
 

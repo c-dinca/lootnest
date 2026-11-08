@@ -90,6 +90,7 @@
 
   --lamp:        oklch(0.82 0.170 148);  /* a switch that is on, lit like a power LED */
   --lamp-glow:   0 0 10px oklch(0.82 0.170 148 / 0.45);
+  --warning-glow: 0 0 10px oklch(0.85 0.120 78 / 0.45);  /* a lamp that needs a look */
   --lamp-lip:    oklch(0.580 0.150 148);
   --danger:      oklch(0.80 0.110 30);   /* destructive text and icons: 9.3:1 on ground */
   --danger-wash: oklch(0.80 0.110 30 / 0.12);
@@ -164,6 +165,7 @@
   --text-label: 16px;  /* a section's label */
   --text-section: 22px; --text-page: 34px; --text-hero: clamp(var(--fs-40), 4vw, 64px);
   --text-score: 26px;  /* a number you'd read off a scoreboard */
+  --text-board: 40px;  /* a page's own numbers, on its scoreboard panel */
 
   /* Space: 4px steps. */
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
@@ -191,7 +193,8 @@
   --pic-thumb-w-sm: 40px; /* a screenshot's on a Timeline row */
   --set-nav-w: 232px;     /* the list of categories in Settings */
   --set-w: 880px;         /* a Settings category's rows, at most */
-  --set-row-h: 56px;      /* a row in Settings with one line; a short line under it makes it taller */
+  --row-h: 56px;          /* a row on a panel of rows (.ln-rows) and in Settings */
+  --set-row-h: var(--row-h);
   --set-ctl-w: 280px;     /* a text box or a list on the right of a Settings row */
   --set-tile: 28px;       /* a category's icon in that list */
   --lamp-dot: 8px;        /* a status lamp beside its word */
@@ -204,7 +207,7 @@
   --slot-w: clamp(184px, 14vw, 232px);      /* a profile's key in Who's playing */
   --slot-run-w: clamp(152px, 11vw, 184px);  /* a run's, beside its person's */
   --prun-h: 44px;         /* a run in its person's card on Profiles */
-  --welcome-w: 1040px;    /* the first start's two columns, together */
+  --welcome-w: 440px;     /* the first start's column */
   --switch-w: 44px; --switch-h: 24px; --knob: 16px;
   --boot-mark: 72px;      /* the mark on the splash while Lootnest opens */
 
@@ -532,6 +535,27 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-facts dt { display: flex; align-items: center; gap: var(--space-2); color: var(--fg-1); }
 .ln-facts dd { margin: 0; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 
+/* A scoreboard: a page's few numbers on one front panel, each a big
+   number over what it is. One panel, never a strip of equal cards. */
+.ln-score { row-gap: var(--space-4); overflow: hidden; padding: var(--space-5) 0; border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: var(--lip-panel); }
+/* The rule before each number; the panel's edge hides it at the start of a line. */
+.ln-score .ln-meta__item, .ln-score .ln-meta__item:first-child { align-content: end; margin-left: calc(-1 * var(--hairline)); padding: 0 var(--space-8); border-left: var(--hairline) solid var(--edge-2); }
+.ln-score dd { font-size: var(--text-board); }
+.ln-score dd.ln-meta__text { font: 400 var(--text-score)/1 var(--font-title); }
+
+/* Rows on a panel: a page's list of things, each one row high, its name
+   on the left and its facts and key on the right. */
+.ln-rows { margin: 0; padding: 0; list-style: none; border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: var(--lip-panel); }
+.ln-rows > * { display: flex; align-items: center; gap: var(--space-3) var(--space-6); min-height: var(--row-h); padding: var(--space-3) var(--space-6); }
+.ln-rows > * + * { border-top: var(--hairline) solid var(--edge-1); }
+.ln-rows b { font-weight: 650; }
+.ln-rows p { margin: 0; font-size: var(--text-meta); color: var(--fg-2); }
+
+/* A status lamp: grey when off, lit green when on, amber when it needs a look. */
+.ln-lamp { flex: none; width: var(--lamp-dot); height: var(--lamp-dot); border-radius: var(--radius-round); background: var(--fg-3); }
+.ln-lamp--on { background: var(--lamp); box-shadow: var(--lamp-glow); }
+.ln-lamp--warn { background: var(--warning); box-shadow: var(--warning-glow); }
+
 /* ================================================================ labels
    A section's title is a label in the section's colour, dark ink on it,
    sitting on a rule of the same colour that runs across the section, like
@@ -736,20 +760,10 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 @keyframes ln-fade-in { from { opacity: 0; } }
 
 /* ============================================================ empty pages
-   A page with nothing in it yet, in the shape of its content: the title on
-   the page's left edge, what the page is for, the one way to fill it, and
-   dashed covers where its games will go. */
-.ln-empty { display: grid; justify-items: start; gap: var(--space-3); }
-.ln-empty h2 { display: flex; align-items: center; gap: var(--space-3); margin: 0; font: 800 var(--text-section)/var(--lh-tight) var(--font-ui); }
-.ln-empty h2 .ln-icon { color: var(--fg-2); }
-.ln-empty > p { margin: 0; max-width: 46ch; color: var(--fg-2); font-size: var(--fs-14); line-height: var(--lh-body); text-wrap: pretty; }
-.ln-empty__act { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
-.ln-empty > .ln-empty__where { font-size: var(--fs-13); color: var(--fg-2); }
+   A page with nothing in it yet: a label in the section's colour, one
+   line, one key. The Library adds dashed covers where its games will go. */
+.ln-empty { display: grid; justify-items: start; gap: var(--space-4); }
+.ln-empty > .ln-section-head:has(h2) { justify-self: stretch; margin: 0; }
+.ln-empty > p { margin: 0; max-width: 65ch; color: var(--fg-2); font-size: var(--text-body); text-wrap: pretty; }
 .ln-ghosts { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--lib-cover), 1fr)); grid-template-rows: auto; grid-auto-rows: 0; gap: 0 var(--space-5); overflow: hidden; width: 100%; margin-top: var(--space-6); -webkit-mask-image: var(--mask-fade); mask-image: var(--mask-fade); }
 .ln-ghosts span { aspect-ratio: 2 / 3; border: 2px dashed var(--edge-2); border-radius: var(--radius-cover); }
-/* First steps: numbered rows, a check once a step is done. */
-.ln-steps { width: 100%; margin: var(--space-3) 0 0; padding: 0; list-style: none; border-top: var(--hairline) solid var(--edge-1); }
-.ln-steps li { display: grid; grid-template-columns: var(--ctl-sm) 1fr auto; align-items: center; gap: var(--space-3); min-height: calc(var(--ctl-sm) + var(--space-6)); padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--edge-1); }
-.ln-steps li > :first-child { justify-self: center; color: var(--fg-2); font: 650 var(--text-body)/1 var(--font-ui); }
-.ln-steps b { display: block; font-weight: 700; }
-.ln-steps li > div > span { font-size: var(--fs-13); color: var(--fg-2); }

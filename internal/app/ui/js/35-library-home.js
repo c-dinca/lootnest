@@ -170,18 +170,18 @@
     const have = new Set(all.flatMap((it) => copiesOf(it).map((c) => filterOf(c.source))));
     const stores = [["all", "All stores"], ...LAUNCHERS.filter((k) => have.has(k) || S.store === k).map((k) => [k, sourceLabel(k)]),
       ...(have.has("other") || S.store === "other" ? [["other", "Other"]] : [])];
+    const scanKeys = `<button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>
+        <button class="ln-button ln-button--ghost" data-action="sources">Sources</button>`;
     const head = `<header class="lib-head"><div class="lib-title"><h1>Library</h1>
         <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "No games yet"}</span></div>
         <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
         <button class="ln-button ln-button--ghost lib-views" id="lib-views" data-action="lib-views" aria-haspopup="menu" aria-expanded="false"><span>${esc((viewsSaved().find(viewIs) || {}).name || "Views")}</span>${gsvg('<path d="M6.5 8.25 10 11.75l3.5-3.5"/>')}</button>
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
-        <button class="ln-button ln-button--ghost" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>
-        <button class="ln-button ln-button--ghost" data-action="sources">Sources</button></div></header>`;
+        ${scanKeys}</div></header>`;
     if (!all.length && !scanning) {
-      return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1></header>
-        ${emptyState(homeIcon, "No games found yet", "",
-          `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button><button class="ln-button ln-button--secondary" data-action="rescan" ${refreshing ? 'aria-busy="true"' : ""}>${refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button><button class="ln-button ln-button--ghost" data-action="sources">Sources</button>`,
-          `<p class="ln-empty__where">Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.</p>`, true)}</div>`;
+      return `<div class="lib ln-root"><header class="lib-head"><h1>Library</h1><div class="lib-actions">${scanKeys}</div></header>
+        ${emptyState("No games found", `Looked in Steam, Epic, GOG, Xbox, EA and ${LAUNCHERS.length - 5 + 2} more places.`,
+          `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button>`, true)}</div>`;
     }
     const sorts = [["name", "Name"], ["recent", "Recently played"], ["played", "Most played"], ["rating", "Highest rated"], ["size", "Largest first"]];
     const sizes = [["s", "Small covers", 8], ["m", "Medium covers", 11], ["l", "Large covers", 14], ["list", "A list", 0]];
@@ -364,11 +364,10 @@
     return drawer({ label: `${esc(g.name)} copies`, title: "Copies before swaps", sub: `${esc(g.name)}, newest first`, body,
       foot: `<p class="gpage-hint ln-drawer__note">What's there now is copied first.</p><button class="ln-button ln-button--ghost ln-button--sm" data-action="open-backups" data-game="${esc(g.id)}">Open the folder</button>` });
   }
-  // A page with nothing in it yet: what it's for, and the way to fill it.
-  // ghosts draws dashed covers where a page's games will go.
-  function emptyState(ic, title, text, actions, extra, ghosts) {
-    return `<section class="ln-empty"><h2>${ic}${title}</h2>${text ? `<p>${text}</p>` : ""}
-      ${actions ? `<div class="ln-empty__act">${actions}</div>` : ""}${extra || ""}${ghosts ? `<div class="ln-ghosts" aria-hidden="true">${"<span></span>".repeat(16)}</div>` : ""}</section>`;
+  // A page with nothing in it yet: a label, one line, one key. ghosts draws
+  // dashed covers where the Library's games will go.
+  function emptyState(title, line, key, ghosts) {
+    return labelSec(title, 0, `<p>${line}</p>${key || ""}${ghosts ? `<div class="ln-ghosts" aria-hidden="true">${"<span></span>".repeat(16)}</div>` : ""}`, "ln-empty");
   }
   // Recent games, as at the top of Steam's library: the last few played, on
   // their wide art, one click from Play. Only on the Library as it opens,
@@ -422,21 +421,12 @@
     const banners = safeBanner() + updateBanner() + hookBanner();
     const allBtn = all.length ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button>` : "";
     if (!recent.length) {
-      const step = (mark, title, sub, act) => `<li>${mark}<div><b>${title}</b><span>${sub}</span></div>${act}</li>`;
-      const btn = (attrs, label) => `<button class="ln-button ln-button--secondary ln-button--sm" ${attrs}>${label}</button>`;
-      const n = all.length, num = (i) => `<span class="ln-num">${i}</span>`;
-      const steps = [
-        S.found.scanning ? step('<span class="ln-spinner" aria-hidden="true"></span>', "Looking for games on this PC", "Games appear in the Library as they're found.", "")
-          : n ? step(GI.tick, `Lootnest found ${n === 1 ? "1 game" : n + " games"} on this PC`, "From every launcher, game folder and shortcut it knows.", btn('data-action="nav" data-view="library"', "Open the Library"))
-          : step(num(1), "Lootnest found no games on this PC yet", "It looks in every launcher, game folder and shortcut it knows.", btn('data-action="rescan"', "Scan again")),
-        step(num(2), "Add a game from a folder", "A game that isn't found: point Lootnest at its folder or its .exe.", btn('data-action="add-game"', "Add a game")),
-        solo() ? step(num(3), "Start a run of a game", "Open a game and choose New run: a fresh start with its own saves, and yours kept.", n ? btn('data-action="nav" data-view="library"', "Choose a game") : "")
-          : step(GI.tick, "Make a profile for everyone who plays", `${people().length} people have one, each with their own saves, settings and achievements in every game.`, btn('data-action="nav" data-view="players"', "Open Profiles")),
-      ];
+      const key = all.length ? `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`
+        : `<button class="ln-button ln-button--primary" data-action="add-game">${GI.plus}Add a game</button>`;
       return `<div class="home-empty ln-root">${banners}
         <header class="lib-head"><div><h1>Home</h1></div>${allBtn}</header>
         <div class="home-cols">
-          <div class="home-main">${emptyState(homeIcon, "Nothing played yet", n ? "Start a game from your Library and it shows up here, with who played it, the others you play and their news." : "Games you play show up here, with who played them and their news.", "", `<ol class="ln-steps">${steps.join("")}</ol>`)}</div>
+          <div class="home-main">${emptyState("Nothing played yet", S.found.scanning ? "Looking for games on this PC." : "Games you play show up here.", key)}</div>
           <aside class="gpage-aside">${playersBlock(all)}</aside>
         </div></div>`;
     }
@@ -450,7 +440,6 @@
         </div>
       </div></div>`;
   }
-  const homeIcon = '<svg class="ln-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3.25" y="5.5" width="13.5" height="9" rx="2.5"/><path d="M6.75 8.5v3M5.25 10h3M12.5 9.25v.01M14 10.75v.01"/></svg>';
 
   // Shelves, as in the best launchers: the games played lately, then what's
   // new in them. Both only show what Lootnest actually knows.

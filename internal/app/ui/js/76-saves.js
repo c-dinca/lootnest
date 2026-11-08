@@ -19,23 +19,24 @@
 
   function svLook() {
     const C = S.saveCheck || {}, B = S.backup, V = S.saves, rows = [];
-    const card = (title, text, act) => rows.push(`<div class="copy-card copy-card--warn">${GI.alert}<div><b>${title}</b><p>${text}</p></div><div class="gpage-actions">${act}</div></div>`);
-    const btn = (attrs, label, kind = "secondary") => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
-    (C.gone || []).forEach((g) => { const it = itemByKey(g.key); if (it) card(`${esc(possessive(it.name))} saves are gone from its folder`, "Lootnest kept copies of them. Put one back from the game's Saves tab.", svOpen(it, "Open its saves", "ln-button ln-button--secondary ln-button--sm")); });
+    const row = (title, line, key) => rows.push(lookRow(title, line, key));
+    const KEY = "ln-button ln-button--secondary ln-button--sm";
+    const btn = (attrs, label) => `<button class="${KEY}" ${attrs}>${label}</button>`;
+    (C.gone || []).forEach((g) => { const it = itemByKey(g.key); if (it) row(`${esc(possessive(it.name))} saves are gone from its folder`, "Lootnest kept copies of them.", svOpen(it, "Open its saves", KEY)); });
     Object.entries(S.d.conflicts || {}).forEach(([gid, c]) => {
       const g = game(gid), who = pname(c.player) || "Someone";
-      if (g) card(`Steam Cloud replaced ${esc(possessive(who))} files in ${esc(g.name)}`, `On ${esc(svWhen(c.at))}. ${esc(who)}'s profile stayed as it was, and that session's files are kept as a copy.`,
-        btn(`data-action="copies" data-game="${esc(gid)}" aria-haspopup="dialog"`, "See the copies") + btn(`data-action="conflict-ok" data-game="${esc(gid)}"`, "Got it", "ghost"));
+      if (g) row(`Steam Cloud replaced ${esc(possessive(who))} files in ${esc(g.name)}`, `${esc(svWhen(c.at))}. That session's files are kept as a copy.`,
+        btn(`data-action="copies" data-game="${esc(gid)}" aria-haspopup="dialog"`, "See the copies")
+        + `<button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="conflict-ok" data-game="${esc(gid)}" aria-label="Got it" title="Got it">${GI.x}</button>`);
     });
     const two = V && !V.error ? [...new Set((V.games || []).filter((x) => x.state === "conflict" && game(x.gameId) && player(x.playerId)).map((x) => x.gameId))] : [];
-    if (two.length) card(two.length === 1 ? `${esc(possessive(game(two[0]).name))} saves changed on two PCs` : `${two.length} games' saves changed on two PCs`, "Choose which to keep under Cloud saves.", btn('data-action="nav" data-view="cloud"', "Choose"));
+    if (two.length) row(two.length === 1 ? `${esc(possessive(game(two[0]).name))} saves changed on two PCs` : `${two.length} games' saves changed on two PCs`, "", btn('data-action="nav" data-view="cloud"', "Choose"));
     const st = B && B.dir && B.status, failed = st && st.error && (!st.last || new Date(st.errorAt) > new Date(st.last));
     const err = (V && V.error) || (failed && st.error);
-    if (err) card("Cloud saves didn't work", esc(err), btn('data-action="nav" data-view="cloud"', "See Cloud saves"));
+    if (err) row("Cloud saves didn't work", esc(err), btn('data-action="nav" data-view="cloud"', "See Cloud saves"));
     const unk = C.unknown || [];
-    if (C.unknownN) card(C.unknownN === 1 ? `Lootnest doesn't know where ${esc(unk[0] ? unk[0].name : "a game")} keeps its saves` : `Lootnest doesn't know where ${C.unknownN} games keep their saves`,
-      "Without that, it can't keep copies of them. Choose the folder on the game's Saves tab.",
-      unk.length === 1 && itemByKey(unk[0].key) ? svOpen(itemByKey(unk[0].key), "Choose the folder", "ln-button ln-button--secondary ln-button--sm") : btn('data-action="sc-games" data-kind="unknown" aria-haspopup="menu"', "Which games"));
+    if (C.unknownN) row(C.unknownN === 1 ? `Lootnest doesn't know where ${esc(unk[0] ? unk[0].name : "a game")} keeps its saves` : `Lootnest doesn't know where ${C.unknownN} games keep their saves`, "",
+      unk.length === 1 && itemByKey(unk[0].key) ? svOpen(itemByKey(unk[0].key), "Choose the folder", KEY) : btn('data-action="sc-games" data-kind="unknown" aria-haspopup="menu"', "Which games"));
     return rows;
   }
 
@@ -52,10 +53,10 @@
       return `<li class="sv-row"><div class="sv-what">${svOpen(it, esc(it.name))}<span>${c.kind === "point" ? `${SV_KIND.point}: ${esc(c.name)}` : SV_KIND[c.kind]}</span></div>
         <span class="sv-who">${p ? `<span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span>${esc(p.name)}` : ""}</span>
         <span class="sv-when" title="${esc(when)}">${esc(ago(c.at))}</span><span class="sv-size ln-num">${esc(fmtBytes(c.size || 0))}</span>
-        <span class="sv-act">${attrs ? `<button class="ln-button ln-button--ghost ln-button--sm" ${attrs}${busy ? " disabled" : ""}>${label}</button>` : ""}</span></li>`;
+        <span class="sv-act">${attrs ? `<button class="ln-button ln-button--secondary ln-button--sm" ${attrs}${busy ? " disabled" : ""}>${label}</button>` : ""}</span></li>`;
     }).join("");
     const more = list.length > SV_SHOWN ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="sv-more">${S.svMore ? "Show fewer" : `Show ${list.length - SV_SHOWN} more`}</button>` : "";
-    return `<ol class="sv-list">${rows}</ol>${more}`;
+    return `<ol class="ln-rows sv-list">${rows}</ol>${more}`;
   }
 
   function svGames(games) {
@@ -73,15 +74,14 @@
 
   function viewSaves() {
     const O = S.svo, look = svLook(), recent = (O && O.recent) || [], games = (O && O.games) || [];
-    const sec = (id, title, n, body) => `<section class="sv-sec" aria-labelledby="${id}"><div class="ln-section-head"><div><h2 id="${id}">${title}${n ? `<span class="ln-count ln-num">${n}</span>` : ""}</h2></div></div>${body}</section>`;
+    const sec = (title, n, body) => labelSec(title, n, body, "sv-sec");
     const points = games.reduce((n, g) => n + g.points, 0);
     const empty = O && !recent.length && !cfg().games.length;
-    const stats = O && !empty ? `<dl class="ln-meta sv-stats">${gpStat(cfg().games.length, "Games with profiles")}${gpStat(games.length, "Games with copies")}${gpStat(points, "Save points")}
-      <div class="ln-meta__item"><dd class="ln-meta__text">${recent.length ? esc(ago(recent[0].at)) : "None yet"}</dd><dt>Newest copy</dt></div></dl>` : "";
-    const head = `<header class="upd-head"><div><h1>Saves</h1><p>Lootnest keeps a copy before every swap, copies the saves of games outside the stores when they change, and keeps the save points you make. All of it stays on this PC unless Cloud saves is on.</p>${stats}</div></header>`;
+    const stats = O && !empty ? sec("Your saves", 0, `<dl class="ln-meta ln-score">${gpStat(cfg().games.length, "Games with profiles")}${gpStat(games.length, "Games with copies")}${gpStat(points, "Save points")}
+      <div class="ln-meta__item"><dd class="ln-meta__text">${recent.length ? esc(ago(recent[0].at)) : "None yet"}</dd><dt>Newest copy</dt></div></dl>`) : "";
     const body = !O ? `<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div>`
-      : empty ? emptyState(GI.save, "No copies yet", "Turn on profiles for a game, play a game from outside the stores, or make a save point, and its copies show up here.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)
-      : sec("sv-recent-h", "Recent copies", 0, recent.length ? svRecent(recent) : `<p class="upd-empty">No copies yet. Lootnest makes one before the next swap.</p>`);
-    const perGame = O && !empty ? sec("sv-games-h", "Per game", 0, svGames(games)) : "";
-    return `<div class="saves-page ln-root">${head}${look.length ? sec("sv-look-h", "Needs a look", look.length, look.join("")) : ""}${body}${perGame}${cloudSection()}</div>`;
+      : empty ? emptyState("No copies yet", "Copies of your saves show up here.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)
+      : sec("Recent copies", 0, recent.length ? svRecent(recent) : `<p class="upd-empty">None yet</p>`);
+    const perGame = O && !empty ? sec("Per game", 0, svGames(games)) : "";
+    return `<div class="saves-page ln-root"><header class="upd-head"><h1>Saves</h1></header>${stats}${look.length ? sec("Needs a look", look.length, `<ul class="ln-rows">${look.join("")}</ul>`) : ""}${body}${perGame}${cloudSection()}</div>`;
   }
