@@ -273,11 +273,13 @@
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
-        unknown: [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: 1 } }), 120);
+        unknown: [{ key: "dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword" }], unknownN: 1,
+        ...(q.has("onedrive") ? { oneDriveIn: "Documents", oneDrive: [{ key: "game:bg3", name: "Baldur's Gate 3" }, { key: "dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero" }] } : { oneDrive: [] }) } }), 120);
       return ok();
     },
     ps_savePoints: (key) => {
       if (!POINTS[key]) POINTS[key] = key === "game:bg3" ? [
+        { id: "20261107-214500", name: "Before the update", created: iso(10 * 60e3), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"], auto: true, update: true },
         { id: "20261107-201500", name: "Before the Netherbrain", created: iso(40 * 60e3), player: "p1", playtime: 312000, unlocked: 21, size: 9e7, locs: ["a"] },
         { id: "20261107-195000", name: "Before going back to Act 2 start", created: iso(70 * 60e3), player: "p1", playtime: 310000, unlocked: 20, size: 9e7, locs: ["a"], auto: true },
         { id: "20261104-210000", name: "Act 2 start", created: iso(3 * d), player: "p1", playtime: 250000, unlocked: 14, size: 8e7, locs: ["a"] },

@@ -341,7 +341,7 @@
         break;
       case "saveCheck":
         S.saveCheck = ev.check || null;
-        if (S.view === "home") render();
+        if (S.view === "home" || S.view === "game") render();
         break;
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
@@ -1609,8 +1609,18 @@
     const gone = C.gone || [], lines = [];
     if (gone.length) lines.push(line("low", `${gone.length === 1 ? `${esc(gone[0].name)}'s saves are gone from its folder.` : `${gone.length} games' saves are gone from their folders.`} ${fix("gone", gone, gone.length === 1 ? "Put a copy back" : "Put copies back")}`));
     if (C.unknownN) lines.push(line("mid", fix("unknown", C.unknown || [], n(C.unknownN, "Choose where 1 game keeps saves", "Choose where # games keep saves"))));
+    const od = C.oneDrive || [];
+    if (od.length) lines.push(line("", `${n(od.length, "1 game keeps", "# games keep")} saves in ${esc(C.oneDriveIn)}, which OneDrive syncs. <button class="gpage-link" data-action="sc-games" data-kind="oneDrive" aria-haspopup="menu">Which games</button>`));
     lines.push(line("", C.cloud ? "Cloud saves are on." : `Cloud saves are off. <button class="gpage-link" data-action="nav" data-view="cloud">Set them up</button>`));
     return `<section class="home-block sc"><div class="ln-section-head"><div><h2>Your saves</h2>${stats ? "<p>Games Lootnest looks after</p>" : ""}</div></div>${stats ? `<dl class="ln-meta sc-stats">${stats}</dl>` : ""}<ul class="sc-lines">${lines.join("")}</ul></section>`;
+  }
+  // A game whose saves are in a folder OneDrive syncs (Documents moved
+  // into OneDrive): said once, as information.
+  function oneDriveNote(it, cls) {
+    if (!saveCheckAsked) { saveCheckAsked = true; api.saveCheck(false).catch(() => {}); }
+    const C = S.saveCheck;
+    if (!C || !(C.oneDrive || []).some((g) => g.key === recentKey(it))) return "";
+    return `<p class="${cls}">These saves are in ${esc(C.oneDriveIn)}, which OneDrive syncs.</p>`;
   }
   // Each person and the game they played last; a click sits them at the PC.
   function playersBlock(all) {
@@ -2089,7 +2099,7 @@
       // A run of whoever's playing: its own saves, from the start or a copy.
       const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--ghost" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}" title="A new playthrough with its own saves, such as a hardcore try">${GI.plus}New run</button>` : "";
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun ? `<div class="gpage-others">${other}${newRun}</div>` : ""}${details}</section>`;
-      note = page ? conflictBanner(g) + dlNote(it) + antiCheatNote(it) : "";
+      note = page ? conflictBanner(g) + dlNote(it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
@@ -3272,7 +3282,7 @@
         + (full && P.profiles ? b("ln-button--ghost", `data-action="pt-branch" ${attrs} data-player="${esc(p.player || "")}"`, "New run from it") : "")
         + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
     return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
-      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.auto ? '<span>Kept before going back</span>' : ""}</span></div><div class="pt-actions">${actions}</div></li>`;
+      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : ""}</span></div><div class="pt-actions">${actions}</div></li>`;
   }
   function savePointsBlock(it) {
     const P = pointsFor(it);
@@ -3297,7 +3307,7 @@
   }
   function gameSavesBlock(it) {
     if (it.kind !== "found" || it.source === "steam" || it.appId) return "";
-    const head = gpHead("Saves");
+    const head = gpHead("Saves") + oneDriveNote(it, "gpage-hint");
     const G = S.gsaves[it.id];
     if (!G) { if (!gsAsked.has(it.id)) { gsAsked.add(it.id); api.gameSaves(it.id).catch(() => {}); } return `<section class="gpage-block">${head}${lnInline("", "Looking for its saves")}</section>`; }
     if (G.off === "steam") return "";
@@ -3542,6 +3552,7 @@
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, here and over the screen at the bottom right, as it does over a game.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
         + sub("Updates for your games", "", `
+          ${sw("updatePointOff", "A save point before a game updates", "The first time a game starts after an update, Lootnest copies its saves as a save point first, so you can go back if the new version breaks them. It notices an update by Steam's build number, or by the game's .exe changing.", !s.updatePointOff, true)}
           ${sw("downloadsOff", "Look in Downloads for updates to your games", "For games no launcher keeps up to date, Lootnest reads the names of the files and folders in your Downloads folder and tells you when one is a newer version. It looks nowhere else, nothing goes online, and nothing is applied until you review it.", !s.downloadsOff, true)}`)
         + sub("Steam", "", `
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
@@ -4650,7 +4661,8 @@
     },
     "sc-games"(el) {
       const kind = el.dataset.kind, list = (S.saveCheck && S.saveCheck[kind]) || [];
-      const m = menuUnder(el, `<div class="ctx-title">${kind === "gone" ? "Saves gone from their folders" : "Where saves are kept"}</div>${list.map((g) => `<button data-action="open-sheet" data-key="${esc(g.key)}">${esc(g.name)}</button>`).join("")}`);
+      const title = { gone: "Saves gone from their folders", oneDrive: "Saves OneDrive syncs" }[kind] || "Where saves are kept";
+      const m = menuUnder(el, `<div class="ctx-title">${title}</div>${list.map((g) => `<button data-action="open-sheet" ${g.key.startsWith("game:") ? `data-game="${esc(g.key.slice(5))}"` : `data-key="${esc(g.key)}"`}>${esc(g.name)}</button>`).join("")}`);
       const f = m.querySelector("button"); if (f) f.focus({ preventScroll: true });
     },
     "upd-history"(el) { S.dialog = { kind: "updhist", key: el.dataset.key }; renderOverlay(); focusOverlay(); },
