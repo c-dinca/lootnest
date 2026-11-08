@@ -158,6 +158,10 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_saveLaunchOptions", a.apiSaveLaunchOptions))
 	must(a.w.Bind("ps_runningApps", a.apiRunningApps))
 	must(a.w.Bind("ps_steamProperties", a.apiSteamProperties))
+	must(a.w.Bind("ps_playniteFind", a.apiPlayniteFind))
+	must(a.w.Bind("ps_playnitePreview", a.apiPlaynitePreview))
+	must(a.w.Bind("ps_playniteApply", a.apiPlayniteApply))
+	must(a.w.Bind("ps_playniteUndo", a.apiPlayniteUndo))
 	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
@@ -697,6 +701,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Folder = true
 		case "exportDir":
 			opt.Title = "Choose where to save the profile"
+			opt.Folder = true
+		case "playniteDir":
+			opt.Title = "Choose Playnite's folder"
 			opt.Folder = true
 		case "update":
 			opt.Title = "Choose the update"

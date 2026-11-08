@@ -2013,3 +2013,5 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .lo-add .ln-input { flex: 1; min-width: calc(var(--space-8) * 5); }
 .lo-pick > span { flex: 1; min-width: 0; font-size: var(--fs-13); overflow-wrap: anywhere; }
 .lo-apps { max-height: calc(var(--space-8) * 8); overflow: auto; }
+.pn-marks { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.pn-opts .toggle { padding-block: var(--space-2); }

@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.79.0, beta)
+## Where things stand (1.80.0, beta)
 
 These shipped recently, newest last:
 
@@ -545,6 +545,17 @@ These shipped recently, newest last:
   Undo for scanned games only). Saved views (`Config.Views`,
   `core/views.go` `SaveView`/`DeleteView`, max 20; `ps_saveView`), a
   Views menu in the Library head and in the sidebar's menu.
+- **1.80** Import from Playnite (`core/playnite.go`): a read-only
+  LiteDB 4 reader (`readLiteDB`, pages and BSON, files over 512 MB
+  refused; a locked file says to close Playnite), `ReadPlaynite`,
+  `PlayniteImport` matches by store id then name and plans per game;
+  time played goes to `playnite.json` per profile (added once, only
+  what's new), statuses, ratings (`PlayniteStars`) and notes only where
+  the profile has none, favourites and optionally categories or tags as
+  collections. `BackupBeforeImport` copies Lootnest's records into
+  backups\import\<id> first; `UndoImport`. Drawer in `71-playnite.js`,
+  from Settings, Data and activity and the first run. Test libraries in
+  `testdata/playnite` were written by LiteDB 4.1.4 itself.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

@@ -65,8 +65,12 @@ func TestRekeyGameAndCarrySaves(t *testing.T) {
 	_ = s.SetShelf("p1", "old", ShelfEntry{Status: "playing", Note: "Act 2", Offset: 5 * 3600}, at)
 	_ = s.SetShelf("p1", "new", ShelfEntry{Rating: 4, Offset: 3600}, at.Add(time.Hour))
 	_ = writeJSONAtomic(s.CapturesPath(), captureIndex{Captures: []Capture{{Path: "a.png", Key: "old", Manual: true}}})
+	_ = writeJSONAtomic(s.playnitePath(), map[string]map[string]int64{"p1": {"old": 5 * 3600}})
 	if err := s.RekeyGame("old", "new"); err != nil {
 		t.Fatal(err)
+	}
+	if pn := s.PlayniteImported("p1"); pn["new"] != 5*3600 || len(pn) != 1 {
+		t.Fatalf("playnite = %+v", pn)
 	}
 	if pt := s.LoadPlaytime(); pt["new"]["p1"] != 3*3600 || pt["old"] != nil {
 		t.Fatalf("playtime = %+v", pt)

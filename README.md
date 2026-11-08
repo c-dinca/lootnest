@@ -119,6 +119,7 @@ No account and no telemetry; Lootnest works offline. It only goes online when yo
 | **Game details** (Settings, Online) | Only if you turn it on (off by default), when you open a game's page and the copy on your PC is missing or over 30 days old | The game's Steam app id, to `store.steampowered.com` (its summary, genres, developer, publisher, release date, Metacritic score and Steam review score); screenshots load from Steam's image server. Your own edits stay on your PC |
 | **Store** (Settings, Online) | Only if you turn it on (off by default), when you open the Store page, search in it or in the top bar, or open a game there | What you type, to `store.steampowered.com` (with the country Windows is set to, for prices in your currency); a game's Steam id, to `store.steampowered.com` and `www.cheapshark.com`. Your PC's processor, graphics card and memory are read on your PC and never sent |
 | **Find save locations online** (Settings, Online, or Cloud saves) | Only if you turn it on (off by default), then about once a week | Nothing about you or your games: Lootnest downloads the Ludusavi project's list of where games keep their saves (from PCGamingWiki) from `raw.githubusercontent.com` and keeps it on your PC |
+| **Import from Playnite** (Settings, Data and activity) | Only when you press it | Nothing goes online: Lootnest reads Playnite's library files on your PC and never changes them |
 | **Captures from other apps** (Settings, Data and activity) | On by default, when the Library is scanned and when a game closes, at most every 10 minutes | Nothing goes online: Lootnest reads the screenshot and clip folders of Game Bar, Steam, NVIDIA, AMD and OBS on your PC to show them on each game's Timeline, and never moves, renames or deletes a capture |
 
 **Cloud saves and backup** never go online themselves: Lootnest writes the backup file to the folder you choose. If that folder is one OneDrive, Google Drive or Dropbox syncs, that app uploads it, under that app's own terms. With a password, the file is encrypted on your PC first (AES-256-GCM), so the cloud only ever has the encrypted file.
@@ -155,12 +156,19 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `covers`
 - `avatars` and `banners` (pictures for player profiles)
 - `shelf.json` and `activity.json` (each player's shelf and time played per day)
+- `playnite.json` (the time played each import from Playnite brought in, so it's added once)
 - `backup.json` (when the last backup to your folder was made)
 - `sync.json` (what each player's cloud saves were at the last sync)
 - `gamesaves.json` and `savedb.json.gz` (cloud saves of games outside Steam, and the save locations list)
 - `safety-net\` and `safetynet.json` (copies of saves games keep inside their own folder, the last 5 per game)
 - `config.json`
 - `lootnest.log`
+
+## Lootnest and Playnite
+
+Lootnest works alongside [Playnite](https://playnite.link); it doesn't replace it. **Import from Playnite**, in Settings, Data and activity, brings in what Playnite knows about the games on this PC: time played and when last played, statuses (Playing, Beaten, Completed, Abandoned, Plan to Play, On Hold), favourites, ratings (Playnite's score as 1 to 5 stars), notes, and, if you choose, categories and tags as collections. The import is one way: Lootnest reads Playnite's library (`%APPDATA%\Playnite\library`, or the `library` folder of a portable Playnite) and never writes to it. Close Playnite first, because it keeps its library to itself while it's open.
+
+Games are matched by their store and id (Steam, Epic, GOG), then by install folder, then by name. Playnite's games that aren't on this PC aren't added. Statuses, ratings, notes and time played go to the profile you choose. A status, rating or note only comes in for a game that has none; time played is added to what Lootnest counts, and importing again adds only what's new. Lootnest copies its own records to `backups\import` first, and **Undo** puts them back.
 
 ## Building from source
 

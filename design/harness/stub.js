@@ -608,6 +608,7 @@
       else if (kind === "trySaveFile" || kind === "trySaveDir") emit({ type: "browse", reqId: id, path: kind === "trySaveFile" ? "C:\\Users\\cris\\Downloads\\BG3 Act 3 save from Mihnea.zip" : "C:\\Users\\cris\\Downloads\\BG3 save" });
       else if (kind === "program") emit({ type: "browse", reqId: id, path: "C:\\Program Files\\MSI Afterburner\\MSIAfterburner.exe" });
       else if (kind === "workDir") emit({ type: "browse", reqId: id, path: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64" });
+      else if (kind === "playniteDir") emit({ type: "browse", reqId: id, path: "D:\\Apps\\Playnite" });
       else if (kind === "art") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Pictures\\My cover.png" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
@@ -650,6 +651,24 @@
     ps_ignoreDownload: (path) => { DL = DL.filter((m) => m.path !== path); setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
     ps_recycleDownload: (path) => { DL = DL.filter((m) => m.path !== path); setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
     ps_saveLaunchOptions: (key, args, o) => { LAUNCH[key] = o; return ok(); },
+    // As core.PlayniteImport would match the stub Library: every change a
+    // match could bring in, whatever is switched on.
+    ps_playniteFind: () => ok({ dir: N === "0" ? "" : "C:\\Users\\cris\\AppData\\Roaming\\Playnite\\library" }),
+    ps_playnitePreview: (dir, player) => {
+      const ch = (key, name, from, by, c) => ({ key, name, from, by, ...c });
+      const plan = { matched: 9, changes: [
+        ch("game:bg3", "Baldur's Gate 3", "Baldur's Gate 3", "store", { add: 43 * 3600, total: 43 * 3600, lastPlayed: iso(4 * d), status: "playing", stars: 5, favourite: true, categories: ["Co-op"] }),
+        ch("steam:1091500", "Cyberpunk 2077", "Cyberpunk 2077", "store", { add: 12 * 3600, total: 12 * 3600, status: "finished", stars: 4, note: "Phantom Liberty next." }),
+        ch("steam:413150", "Stardew Valley", "Stardew Valley", "store", { add: 88 * 3600, total: 88 * 3600, status: "complete", favourite: true, categories: ["Co-op", "Cozy"] }),
+        ch("dir:c:\\gog games\\hollow knight", "Hollow Knight", "Hollow Knight", "store", { add: 31 * 3600 + 1200, total: 31 * 3600 + 1200, status: "stopped", stars: 4, tags: ["Metroidvania"] }),
+        ch("dir:d:\\games\\phantom blade zero", "Phantom Blade Zero", "Phantom Blade Zero (v1.0.3)", "folder", { add: 5 * 3600, total: 5 * 3600, status: "next" }),
+        ch("dir:d:\\games\\hydra\\hollow tale", "Hollow Tale", "Hollow Tale", "name", { lastPlayed: iso(30 * d), stars: 3 }),
+      ], unmatched: ["Celeste", "Dead Cells", "Disco Elysium", "Hades", "Inscryption", "Outer Wilds", "Return of the Obra Dinn", "Slay the Spire", "Tunic", "Vampire Survivors", "Wingspan"] };
+      emit({ type: "playnitePlan", player, req: dir, dir: /\\library$/.test(dir) ? dir : dir + "\\library", plan }, 300);
+      return ok();
+    },
+    ps_playniteApply: () => { emit({ type: "playniteDone", id: "20261108-120000", games: 6, seconds: 179 * 3600 + 1200, skipped: 0 }, 300); return ok(); },
+    ps_playniteUndo: () => ok(),
     ps_runningApps: () => ok([
       { name: "Discord.exe", path: "C:\\Users\\cris\\AppData\\Local\\Discord\\app-1.0.9170\\Discord.exe" },
       { name: "msedge.exe", path: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" },

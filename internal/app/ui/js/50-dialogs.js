@@ -86,6 +86,8 @@
       o.innerHTML = viewCopies();
     } else if (D.kind === "unsorted") {
       o.innerHTML = viewUnsorted();
+    } else if (D.kind === "playnite") {
+      o.innerHTML = viewPlaynite();
     } else if (D.kind === "updhist") {
       o.innerHTML = viewUpdHistory();
     } else if (D.kind === "achdoc") {
