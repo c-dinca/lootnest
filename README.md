@@ -2,7 +2,7 @@
 
 <h1 align="center">Lootnest</h1>
 
-<p align="center">A free, open-source game manager for Windows.<br>Every game on your PC in one place, and the tools around them: save copies, runs, profiles, save points and achievements.</p>
+<p align="center">Save slots for every game on your PC.<br>Backup tools keep old copies of your saves. Lootnest swaps them: a slot for every run and everyone who plays, in place before the game starts. Free, open source, 14 MB, no account.</p>
 
 <p align="center"><b>In beta.</b> Everything that moves your files makes a copy first.</p>
 
