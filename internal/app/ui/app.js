@@ -2852,7 +2852,7 @@
     if (g) ensureCover(g);
     const gu = g && (S.covers[coverKey(g)] || S.icons[coverKey(g)]);
     const inner = u ? `<img src="${u}" alt="">` : gu ? `<img src="${gu}" alt="">` : esc(p.name.trim().charAt(0).toUpperCase());
-    return `<span class="avatar ${cls || ""}" style="--c:${esc(p.color)}" aria-hidden="true">${inner}</span>`;
+    return `<span class="avatar ln-player ${cls || ""}" style="--c:${esc(p.color)}" aria-hidden="true">${inner}</span>`;
   };
   const itemByKey = (k) => libraryItems().find((it) => recentKey(it) === k || it.id === k);
   const itemAttr = (it) => (it.kind === "game" ? `data-game="${esc(it.id)}"` : `data-key="${esc(it.id)}"`);

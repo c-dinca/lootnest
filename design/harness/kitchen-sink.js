@@ -79,9 +79,8 @@
     <div class="ks-type">
       <div><span class="ks-k">72 / title</span><span style="font:750 var(--fs-72)/1 var(--font-title);letter-spacing:var(--track-title)">Counter-Strike 2</span></div>
       <div><span class="ks-k">56 / title</span><span style="font:750 var(--fs-56)/1 var(--font-title);letter-spacing:var(--track-title)">Baldur's Gate 3</span></div>
-      <div><span class="ks-k">24 / section</span><span style="font:700 var(--fs-24)/1.1 var(--font-title);letter-spacing:var(--track-title)">Continue playing</span></div>
+      <div><span class="ks-k">24 / section</span><span style="font:700 var(--text-section)/1.1 var(--font-title);letter-spacing:var(--track-section)">Continue playing</span></div>
       <div><span class="ks-k">18 / value</span><span class="ln-num" style="font:700 var(--fs-18)/1.1 var(--font-ui)">44 h · 22 h · 412 h</span></div>
-      <div><span class="ks-k">15 / strong</span><span style="font:650 var(--fs-15)/1.3 var(--font-ui)">Your save is in</span></div>
       <div><span class="ks-k">14 / body</span><span style="font:500 var(--fs-14)/1.5 var(--font-ui)">Before a game starts, Lootnest swaps the right person's files into place.</span></div>
       <div><span class="ks-k">13 / secondary</span><span style="font:500 var(--fs-13)/1.5 var(--font-ui);color:var(--fg-2)">A copy is made before every swap.</span></div>
       <div><span class="ks-k">12 / label</span><span style="font:600 var(--fs-12)/1.5 var(--font-ui);color:var(--fg-2)">Steam account</span></div>

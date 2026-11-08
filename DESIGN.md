@@ -116,8 +116,21 @@ With `prefers-reduced-transparency: reduce`, every glass step becomes its solid 
 
 There are two families, both under the **SIL Open Font License 1.1**, which allows embedding them in the exe. They are bundled as woff2 in `internal/app/ui/fonts`.
 
-- **Bricolage Grotesque** is used for titles of 24px and up and the brand row, through `--font-title`. Its axes are optical size 12–96, weight 200–800 and width 75–100. Large titles use `opsz 96` and −0.02em tracking.
-- **Figtree** is used for everything else, through `--font-ui`. Its weight axis runs 300–900.
+- **Bricolage Grotesque** is used for titles of 24px and up and the brand row, through `--font-title`. Its axes are optical size 12–96, weight 200–800 and width 75–100. Titles of 32px and up, and those that grow to 32px, use −0.02em tracking (`--track-title`), and the game title also `opsz 96`; 24px titles use −0.01em (`--track-section`).
+- **Figtree** is used for everything else, through `--font-ui`, at weight 650 to 700 for a title under 24px, with no tracking. Its weight axis runs 300–900.
+
+New text takes a role token, which names a step below:
+
+| Role | Step | Use |
+|---|---|---|
+| `--text-hero` | 40 to 72 | A game's title on its page |
+| `--text-page` | 32 | Page titles |
+| `--text-section` | 24 | Section, drawer and dialog titles |
+| `--text-lead` | 18 | Values that stand out, small headings |
+| `--text-body` | 14 | Body, labels, names, buttons |
+| `--text-meta` | 13 | Secondary lines: dates, counts, notes |
+
+The steps:
 
 | Token | Size | Use |
 |---|---|---|
@@ -125,12 +138,12 @@ There are two families, both under the **SIL Open Font License 1.1**, which allo
 | `--fs-40` / `--fs-32` | 40 / 32 | Page titles |
 | `--fs-24` | 24 | Section titles |
 | `--fs-18` | 18 | Values: hours, counts |
-| `--fs-15` | 15 | Strong lines, large buttons. Not a role (principle 7): new work uses 14 or 18 |
+| `--fs-15` | 15 | Large buttons, the play session, update notes and the brand row only. Not a role (principle 7): new work uses 14 or 18 |
 | `--fs-14` | 14 | Body, buttons |
 | `--fs-13` | 13 | Secondary lines |
 | `--fs-12` | 12 | Tags and keys. Not a role (principle 7): new text uses 13 |
 
-Numbers that sit in columns use tabular figures (`.ln-num`). Labels are sentence case: no all-caps and no tracked-out eyebrows.
+Long prose (notes, bios, banners) is set to at most 65ch with `text-wrap: pretty`. Numbers that sit in columns use tabular figures (`.ln-num`). Labels are sentence case: no all-caps and no tracked-out eyebrows.
 
 ### Space, size, radius, motion
 
