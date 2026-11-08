@@ -3,6 +3,7 @@
 package app
 
 import (
+	_ "embed"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -37,6 +38,29 @@ type achRun struct {
 	game                   *core.Game
 }
 
+// WAV copies of the window's unlock and save point sounds (Kenney, CC0),
+// for while the window is hidden.
+var (
+	//go:embed sounds/unlock.wav
+	unlockWAV []byte
+	//go:embed sounds/point.wav
+	pointWAV []byte
+)
+
+// nativeSound plays b with Windows while the window is hidden, where its own
+// sounds can't be heard, and reports whether it did. Callers leave out games
+// with an anti-cheat.
+func (a *App) nativeSound(b []byte) bool {
+	a.mu.Lock()
+	off := a.cfg.Settings.SoundsOff
+	a.mu.Unlock()
+	if off || win.IsVisible(a.hwnd) {
+		return false
+	}
+	win.PlaySound(b)
+	return true
+}
+
 // Only the watch loop uses achLives.
 var achLives = map[string]*achLive{}
 
@@ -62,13 +86,23 @@ func (a *App) achRunning(procs map[string]bool) []achRun {
 		}
 	}
 	a.mu.Unlock()
+	found := a.libraryGames()
 	for i := range out {
 		if exe, err := a.env.ResolveExe(out[i].game.Launch.Exe); err == nil {
 			out[i].dir = filepath.Dir(exe)
 		}
 		out[i].appID = core.GameAppID(out[i].game)
+		if out[i].dir == "" && out[i].appID > 0 {
+			// A Steam profile game's folder is its scanned one's.
+			for _, f := range found {
+				if f.AppID == out[i].appID {
+					out[i].dir = f.Dir
+					break
+				}
+			}
+		}
 	}
-	for _, f := range a.libraryGames() {
+	for _, f := range found {
 		if f.AppID > 0 || f.ProcessName == "" || !procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
 			continue
 		}
@@ -222,7 +256,7 @@ func (a *App) achShow(r achRun, l *achLive, fresh []string) {
 		}
 	}
 	a.logf("%s: %d achievement(s) unlocked", l.name, len(fresh))
-	a.emit("achUnlocked", map[string]any{"key": r.key, "count": len(fresh), "game": l.name, "player": l.player, "list": shown})
+	a.emit("achUnlocked", map[string]any{"key": r.key, "count": len(fresh), "game": l.name, "player": l.player, "list": shown, "native": a.nativeSound(unlockWAV)})
 }
 
 // apiTestToast shows what a toast over a game looks like.

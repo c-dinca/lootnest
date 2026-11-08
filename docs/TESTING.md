@@ -50,6 +50,9 @@ If any step shows someone else's settings or saves, stop and send the log.
 4. While the game runs, the unlock (and a save point made with
    Ctrl+Shift+F5) also plays a short sound. If it stays silent, note it
    and send the log. Settings, Games and swaps turns these sounds off.
+5. With Lootnest's window hidden behind the game, the unlock and the
+   Ctrl+Shift+F5 save point are each heard once over the game, and not at
+   all with those sounds off.
 
 ## 4. Updates (games in a folder only)
 

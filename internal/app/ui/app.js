@@ -360,7 +360,7 @@
         P.busy = false;
         if (ev.error) toast(ev.error, "error");
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
-        else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); cue("point", ev.key); }
+        else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
         if (S.dialog && S.dialog.kind === "points") renderOverlay();
         break;
@@ -377,7 +377,7 @@
       case "achUnlocked":
         // A game running now unlocked something: its page and the
         // Achievements page read it again, and the window says so.
-        if (ev.list && ev.list.length) { if (!document.hidden) achPop(ev.list, ev.game, ev.player); unlockSound(ev.list); }
+        if (ev.list && ev.list.length) { if (!document.hidden) achPop(ev.list, ev.game, ev.player); if (!ev.native) unlockSound(ev.list); }
         achAsked.delete(ev.key); S.allAch = null;
         if (S.view === "game" || S.view === "achievements") render();
         break;
@@ -3675,7 +3675,7 @@
           ${sw("watchOutsideLaunches", "Follow games started from Steam or elsewhere", "If a game starts without Lootnest, its progress is saved to whoever's files are loaded.", s.watchOutsideLaunches)}`)
         + sub("While you play", "", `
           ${sw("achToastsOff", "Show achievements as they unlock", "For games whose achievements a Steam-compatible tool keeps on this PC, a small note shows over the game when one unlocks, in the colour of the profile playing. It's a window of Lootnest's own: nothing goes into the game. It shows over windowed and borderless games, and over most fullscreen ones; switch a game to borderless if it doesn't. Never for games with an anti-cheat.", !s.achToastsOff, true)}
-          ${sw("soundsOff", "Sounds for unlocks, save points and swaps", "A short sound in Lootnest's window when an achievement unlocks, a save point is made or a profile's files are loaded. Never for games with an anti-cheat.", !s.soundsOff, true)}
+          ${sw("soundsOff", "Sounds for unlocks, save points and swaps", "A short sound when an achievement unlocks, a save point is made or a profile's files are loaded, also over the game while Lootnest is hidden. Never for games with an anti-cheat.", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, here and over the screen at the bottom right, as it does over a game.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
         + sub("Updates for your games", "", `
