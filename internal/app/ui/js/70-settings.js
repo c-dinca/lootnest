@@ -97,6 +97,7 @@
           <div class="bk-row"><div><b>Cloud saves and backups</b><p>Where the saves go, sync between PCs, the password and backups of everything are on their own page.</p></div>${b("primary", 'data-action="nav" data-view="cloud"', "Open Cloud saves")}</div>`)],
       ["data", "Data and activity", GI.folder, "Where Lootnest keeps profiles and backups, and what it did lately.", () => card(`
           <div class="bk-row"><div><b>Data folder</b><p class="selectable">Profiles and backups are stored in ${esc(S.d.dataDir)}</p></div>${b("secondary", 'data-action="open-data"', "Open data folder")}</div>
+          <div class="bk-row"><div><b>Import from Playnite</b><p>Bring in time played, statuses, favourites, ratings and notes from Playnite on this PC. Playnite's own files are only read.</p></div><button class="ln-button ln-button--secondary ln-button--sm" data-action="playnite-open" aria-haspopup="dialog">Import from Playnite</button></div>
           <div class="bk-row"><div><b>Recent activity</b><p>Every swap, save and scan, with the reason when something didn't work. Useful when you ask for help.</p></div>${b("secondary", 'data-action="show-log"', "Show recent activity")}</div>
           ${S.logText ? `<div class="log">${esc(S.logText)}</div>` : ""}`) + sub("Captures", "", capturesRows(s))],
       ["about", "About", GI.info, "The version, how to tell us about a problem, and how to leave.", () => card(`

@@ -140,6 +140,10 @@
     saveLaunchOptions: (key, args, o) => call("ps_saveLaunchOptions", key, args, o),
     runningApps: () => call("ps_runningApps"),
     steamProperties: (appId) => call("ps_steamProperties", appId),
+    playniteFind: () => call("ps_playniteFind"),
+    playnitePreview: (dir, player) => call("ps_playnitePreview", dir, player),
+    playniteApply: (dir, player, o) => call("ps_playniteApply", dir, player, o),
+    playniteUndo: (id) => call("ps_playniteUndo", id),
   };
 
   // Small per-PC preferences (sort, cover size), kept in the WebView's own

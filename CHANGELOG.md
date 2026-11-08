@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.80.0
+
+- **Import from Playnite**, in Settings, Data and activity. Lootnest reads Playnite's library on this PC and brings in, for the games that are here: time played and when they were last played, statuses (Beaten becomes Finished, Completed 100%, Abandoned Dropped, and Plan to Play and On Hold Up next), favourites, ratings (Playnite's score as 1 to 5 stars) and notes. Categories and tags can come in as collections too, if you turn them on.
+- Before you import, the panel lists each game with what it gets, such as +12 h, Finished and 4 stars, and how many of Playnite's games aren't on this PC. Those aren't added: Lootnest only keeps the games that are here.
+- Statuses, ratings, notes and time played go to the profile you choose. A status, rating or note only comes in for a game that has none, and time played is added to what Lootnest counts. Importing again adds only the time that's new.
+- The import only reads Playnite's files and never changes them. Close Playnite first, since it keeps its library to itself while it's open. For a portable Playnite, choose its folder.
+- Lootnest copies its own records before it imports, and Undo on the toast puts them back as they were.
+- The first start mentions it when Playnite is on the PC.
+
 ## 1.79.0
 
 - **Select several games in the Library** and act on them at once. Ctrl+click a cover or a row to select it, Shift+click to select a run of them, Ctrl+A for every game shown, and Esc to clear the selection. With the keyboard, Space selects the game you're on and Shift with the arrows selects the games on the way. A plain click still opens the game.

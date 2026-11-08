@@ -218,7 +218,7 @@ func (l CopyLedger) Matches() []CopyMatch {
 
 // RekeyGame moves what Lootnest recorded for a Library game from one key to
 // another: when it was played, playtime, daily activity, statuses, its
-// captures from other apps and custom art. Anything already recorded under the new key is kept and added to.
+// captures from other apps, Playnite time imported and custom art. Anything already recorded under the new key is kept and added to.
 func (s *Store) RekeyGame(from, to string) error {
 	if from == "" || to == "" || from == to {
 		return errors.New("nothing to move")
@@ -325,6 +325,24 @@ func (s *Store) RekeyGame(from, to string) error {
 	}
 	if changed {
 		if err := writeJSONAtomic(s.ShelfPath(), shelf); err != nil {
+			return err
+		}
+	}
+
+	// The Playnite time an import brought in follows the Offset it went into.
+	pn, repn := map[string]map[string]int64{}, false
+	if b, err := os.ReadFile(s.playnitePath()); err == nil {
+		_ = json.Unmarshal(b, &pn)
+	}
+	for _, games := range pn {
+		if sec, ok := games[from]; ok {
+			games[to] += sec
+			delete(games, from)
+			repn = true
+		}
+	}
+	if repn {
+		if err := writeJSONAtomic(s.playnitePath(), pn); err != nil {
 			return err
 		}
 	}

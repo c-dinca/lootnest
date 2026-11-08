@@ -17,6 +17,10 @@
     return n ? `Found ${n} game${n === 1 ? "" : "s"}` : "No games found on this PC yet";
   }
   function viewWelcome() {
+    if (S.pnFound === undefined) {
+      S.pnFound = "";
+      api.playniteFind().then((r) => { S.pnFound = r.dir || ""; const n = $("#wl-pn"); if (n) n.hidden = !S.pnFound; }, () => {});
+    }
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const p = ps[0], me = { ...p, name: welcomeName(p) };
     return `<div class="welcome ln-root" role="dialog" aria-modal="true" aria-labelledby="wl-title">
@@ -37,6 +41,7 @@
         <p class="wl-scan" id="wl-scan" aria-live="polite">${welcomeScan()}</p>
         <div class="wl-go"><button class="ln-button ln-button--primary ln-button--lg" data-action="welcome-done">Continue</button><span class="error-text" id="players-error"></span></div>
         <p class="wl-note">More profiles, and runs of your own, can be added later in Profiles.</p>
+        <p class="wl-note" id="wl-pn" ${S.pnFound ? "" : "hidden"}>Playnite is on this PC too. You can bring in its time played, statuses and favourites later, in Settings under Data and activity.</p>
       </div>
     </div>`;
   }

@@ -691,7 +691,13 @@ func (s *Store) RecordPlay(key, playerID string, at time.Time) error {
 		next.Players = m
 	}
 	rec[key] = next
-	if len(rec) > 200 {
+	trimRecent(rec)
+	return writeJSONAtomic(s.RecentPath(), rec)
+}
+
+// trimRecent keeps the 200 most recently played games.
+func trimRecent(rec map[string]Played) {
+	for len(rec) > 200 {
 		oldest := ""
 		for k, p := range rec {
 			if oldest == "" || p.At.Before(rec[oldest].At) {
@@ -700,7 +706,6 @@ func (s *Store) RecordPlay(key, playerID string, at time.Time) error {
 		}
 		delete(rec, oldest)
 	}
-	return writeJSONAtomic(s.RecentPath(), rec)
 }
 
 func (s *Store) PlaytimePath() string { return filepath.Join(s.Dir, "playtime.json") }

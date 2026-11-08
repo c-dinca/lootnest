@@ -278,3 +278,28 @@ its answers:
 7. A Steam game's More has **Move with Game Mover**; an Epic or GOG game
    says its launcher moves it. Restart in safe mode: Storage says sizes
    aren't counted, and Move says to restart normally.
+
+## 16. Import from Playnite (1.80)
+
+1. With Playnite 10 installed and a few games in it (one Steam, one Epic
+   or GOG, one in a folder, one not installed), give some a status, a
+   score, a note, a category and Favorite, and close Playnite.
+2. Settings, **Data and activity**, **Import from Playnite**: the panel
+   shows `%APPDATA%\Playnite\library` and a list of the games found on
+   this PC, each with what it gets (+12 h, Finished, 4 stars). The game
+   that isn't installed is under **Show**, not in the list.
+3. Turn switches off and on: the list follows. Choose another profile: the
+   list is read again for it.
+4. Import: a toast says how many games and hours. The games' pages show
+   the time, status, rating and note for that profile, Favourites and
+   collections have them. Playnite's `library` folder has the same files,
+   dates and sizes as before.
+5. Import again: nothing new is listed. Play a game for an hour in
+   Playnite, import again: only that hour is added.
+6. Press **Undo** on the toast: time, statuses, collections and last
+   played are as before the import. `backups\import\<time>` has the
+   copies, and `undone` in it what Undo replaced.
+7. With Playnite open, import: it says to close Playnite. A portable
+   Playnite: **Choose another**, pick its folder, and its games show.
+8. First start with Playnite installed: the welcome screen has a quiet line
+   about it.

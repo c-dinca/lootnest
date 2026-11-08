@@ -95,6 +95,10 @@
         if (S.view === "game") render();
         if (S.unsorted || unsortedAsked) api.unsortedCaptures().catch(() => {});
         break;
+      case "playnitePlan":
+      case "playniteDone":
+        playniteEvent(ev);
+        break;
       case "unsortedCaptures":
         S.unsorted = { items: ev.items || [], total: ev.total || 0, folders: ev.folders || [] };
         {

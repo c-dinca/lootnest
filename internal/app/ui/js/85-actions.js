@@ -557,6 +557,18 @@
     },
     "shot-open"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i: +el.dataset.i }; renderOverlay(); focusOverlay(); } },
     "capture-open"(el) { api.openCapture(el.dataset.path).catch((e) => toast(errText(e), "error")); },
+    "playnite-open": () => openPlaynite(),
+    async "pn-dir"() {
+      const D = S.dialog, r = await browse("playniteDir", D.dir);
+      if (r.path && S.dialog === D) { D.dir = r.path; playnitePreview(D); }
+      else if (r.error) toast(r.error, "error");
+    },
+    "pn-unmatched"() { S.dialog.unmatched = !S.dialog.unmatched; renderOverlay(); },
+    async "pn-go"() {
+      const D = S.dialog;
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.playniteApply(D.dir, D.player, D.opts); } catch (e) { D.busy = false; D.error = errText(e); if (S.dialog === D) renderOverlay(); }
+    },
     "captures-unsorted"() { S.dialog = { kind: "unsorted" }; renderOverlay(); focusOverlay(); api.unsortedCaptures().catch((e) => toast(errText(e), "error")); },
     "pic-open"(el) {
       const it = itemFor(el);
@@ -1154,6 +1166,13 @@
       const it = everyItem().find((x) => recentKey(x) === el.value);
       if (S.dialog && S.dialog.kind === "unsorted") S.dialog.focusAt = [...document.querySelectorAll("[data-assign]")].indexOf(el);
       api.assignCapture(el.dataset.assign, el.value).then(() => toast(it ? `Now on ${it.name}'s Timeline` : "Marked as not a game"), (e) => toast(errText(e), "error"));
+      return;
+    }
+    if (S.dialog && S.dialog.kind === "playnite" && (el.id === "pn-player" || el.dataset.pn)) {
+      const D = S.dialog;
+      if (el.id === "pn-player") { D.player = el.value; playnitePreview(D); } else { D.opts[el.dataset.pn] = el.checked; renderOverlay(); }
+      const n = el.id === "pn-player" ? $("#pn-player") : $(`[data-pn="${el.dataset.pn}"]`);
+      if (n) n.focus();
       return;
     }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
