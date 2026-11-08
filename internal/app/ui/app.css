@@ -485,16 +485,16 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 
 .gpage-body { position: relative; z-index: 1; padding: 0 var(--page-gutter) var(--space-16); margin-top: calc(-1 * var(--overlap-bar)); }
 .gpage-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-6);
-  min-height: var(--overlap-bar); padding: var(--space-5) var(--space-6);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-5);
+  min-height: 0; padding: var(--space-3) var(--space-4);
   background: var(--glass-bar); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
   border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel);
 }
 .gpage-state { display: grid; gap: 2px; padding-left: var(--space-6); border-left: var(--hairline) solid var(--edge-1); }
-.gpage-state b { font-size: var(--fs-15); font-weight: 700; }
-.gpage-state span { font-size: var(--fs-13); color: var(--fg-2); }
+.gpage-state b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-15); font-weight: 700; }
+.gpage-state span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
+.gpage-bar > .gpage-state { flex: 1 1 var(--bar-state-min); min-width: 0; }
 .gpage-others { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding-left: var(--space-6); border-left: var(--hairline) solid var(--edge-1); }
-.gpage-others-label { margin-right: var(--space-1); font-size: var(--fs-13); color: var(--fg-2); }
 .gpage-stats { margin-left: auto; }
 
 .gpage-session {
@@ -667,6 +667,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gp-person-name > .gp-person-saved { color: var(--fg-3); }
 .gp-person-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
 .gp-person-name b { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-14); font-weight: 650; }
+.gp-person-time { font-size: var(--fs-14); }
+.gp-facts { border-top: 0; }
 .gp-person-name > span, .gp-person-name > .gp-person-saved { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
 
 /* News, on the game page and Home: the newest post large, the rest listed. */
@@ -1722,9 +1724,6 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 /* Just you on this PC, with no runs yet: Play is always yours, so the
    sidebar has no one to seat. */
 .is-single #who-head, .is-single #who { display: none; }
-.gp-newrun { border-style: dashed; color: var(--fg-2); }
-.gp-newrun:hover { color: var(--fg-1); border-style: solid; }
-.gp-newrun .ln-icon { width: 14px; height: 14px; }
 
 /* Try a save (dialog trysave) */
 .try-field { display: grid; gap: var(--space-1); font-size: var(--fs-13); color: var(--fg-2); }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.58.7
+
+- A game opened from the sidebar, search or Achievements marks Library in the sidebar, and its Back button says Library.
+- The line under a game's name says how many profiles it has instead of listing every name.
+- A game's play bar is one row: Play, whose files are loaded, Someone else to pick another profile, and New run.
+- Each profile's hours in a game sit beside its name under Profiles, with the Steam account's hours and a link to the copies made before swaps.
+
 ## 1.58.6
 
 - Home's play bar is simpler for a game without profiles: Play, when you last played it and for how long, and Turn on profiles. "Profiles off" shows once, under the game's name, and the name opens the game's page.

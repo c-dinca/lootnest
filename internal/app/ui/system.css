@@ -122,6 +122,7 @@
   --bar-h: 56px;          /* the top bar, and the brand row in the sidebar */
   --page-gutter: clamp(32px, 3vw, 64px);  /* pages use the whole window, with room at the edges */
   --overlap-bar: 64px;    /* how far the play bar sits up into the game's art */
+  --bar-state-min: 192px; /* the play bar's state line before the bar wraps */
   --drawer-w: 480px;      /* a panel from the right */
   --drawer-w-wide: 720px; /* one holding a form, such as the profile editor */
 

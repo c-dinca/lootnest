@@ -1779,7 +1779,7 @@
     const P = { kind, id, cloud: null };
     const go = () => {
       if (S.view === "library") S.libScroll = $("#view").scrollTop;
-      if (S.view === "library" || S.view === "home") { S.from = S.view; S.fromScroll = $("#view").scrollTop; }
+      if (S.view !== "game") { S.from = S.view === "home" ? "home" : "library"; S.fromScroll = S.from === S.view ? $("#view").scrollTop : S.libScroll || 0; }
       S.page = P; S.selected = { kind, id };
       S.view = "game"; S.menuFor = null;
       render(); $("#view").scrollTop = 0;
@@ -2018,11 +2018,10 @@
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
       const ps = cfg().players;
       const withProfile = ps.filter((p) => hasProfile(g.id, p.id));
-      meta.push(withProfile.length ? `Profiles on for ${esc(withProfile.map((p) => p.name).join(", ").replace(/, ([^,]*)$/, " and $1"))}` : "Profiles on");
+      meta.push(!withProfile.length ? "Profiles on" : withProfile.length === 1 ? "1 profile" : withProfile.length + " profiles");
       if (rec) meta.push(esc(lastPlayed(it)));
       // The one Play: whoever's files are loaded, else whoever played last.
       const lead = seated() || player(owner) || (rec && player(rec.player)) || withProfile[0] || ps[0];
-      const others = ps.filter((p) => p !== lead);
       const pt = playtimeOf(it);
       let play, state;
       if (s) {
@@ -2034,13 +2033,11 @@
         const sub = owner && lastBy(it, owner) ? `Played ${esc(ago(lastBy(it, owner)))}` : owner && pt[owner] ? `${esc(hours(pt[owner]))} played` : owner ? "Loaded without playing" : "Playing loads the profile's files first";
         state = `<div class="gpage-state"><b>${owner && player(owner) ? `${esc(possessive(pname(owner)))} files are loaded` : "Nobody's files yet"}</b><span>${sub}</span></div>`;
       }
+      const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--ghost" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog">${solo() ? "Choose a run" : "Someone else"}</button>` : "";
       // A run of whoever's playing: its own saves, from the start or a copy.
-      const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-chip gp-newrun" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}" title="A new playthrough with its own saves, such as a hardcore try">${GI.plus}New run</button>` : "";
-      const chips = !s && (others.length || newRun) ? `<div class="gpage-others">${others.length ? `<span class="gpage-others-label">${solo() ? "or play…" : "or play as…"}</span>` : ""}${others.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" aria-label="Play as ${esc(p.name)}">${lnAvatar(p)}${esc(p.name)}</button>`).join("")}${newRun}</div>` : "";
-      const top = ps.filter((p) => pt[p.id]).sort((a, b) => pt[b.id] - pt[a.id]).slice(0, 3);
-      const stats = top.map((p) => gpStat(hoursValue(pt[p.id]), esc(p.name), p)).join("") + (st ? gpStat(hoursValue(st), "Steam account") : "");
-      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${chips}${details}${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = (page ? conflictBanner(g) + dlNote(it) : "") + `<p class="gpage-note">${GI.copy}A copy is made before every swap. <button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See the copies</button></p>` + (page ? antiCheatNote(it) : "");
+      const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--ghost" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}" title="A new playthrough with its own saves, such as a hardcore try">${GI.plus}New run</button>` : "";
+      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun ? `<div class="gpage-others">${other}${newRun}</div>` : ""}${details}</section>`;
+      note = page ? conflictBanner(g) + dlNote(it) + antiCheatNote(it) : "";
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
@@ -3276,14 +3273,15 @@
     const g = it.g, owner = g && S.d.active[g.id];
     const ps = cfg().players;
     if (!ps.length) return "";
-    const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0);
+    const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0), st = g && steamTime(it);
     const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
     return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Profiles</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
-      const sub = [pt[p.id] ? `${hours(pt[p.id])} played` : g && hasProfile(g.id, p.id) ? "Has saves here" : g ? "Not played yet" : "", lastBy(it, p.id) ? `last ${ago(lastBy(it, p.id))}` : ""].filter(Boolean).join(", ");
+      const last = lastBy(it, p.id);
+      const sub = last ? `Played ${ago(last)}` : g && hasProfile(g.id, p.id) ? "Has saves here" : pt[p.id] ? "" : "Not played yet";
       return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
-        <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b><span>${esc(sub || "Hasn't played yet")}</span>${saved(g, p.id)}</div>
-</div></div>`;
-    }).join("")}</div></section>`;
+        <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${saved(g, p.id)}</div>
+        ${pt[p.id] ? `<span class="gp-person-time ln-num">${esc(hours(pt[p.id]))}</span>` : ""}</div></div>`;
+    }).join("")}</div>${g ? `<dl class="ln-facts gp-facts">${st ? `<div><dt>Steam account</dt><dd class="ln-num">${esc(hours(st))}</dd></div>` : ""}<div><dt>Copies before swaps</dt><dd><button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See them</button></dd></div></dl>` : ""}</section>`;
   }
   function viewProfileEditor() {
     const D = S.dialog, p = D.p, tab = D.tab || "look";
@@ -4660,6 +4658,7 @@
     },
     "update-notes"() { api.open("release").catch((e) => toast(errText(e), "error")); },
     "load-only": (el) => openPicker(el.dataset.game, "load"),
+    "play-pick": (el) => openPicker(el.dataset.game, "play"),
     menu(el) { S.menuFor = S.menuFor === el.dataset.game ? null : el.dataset.game; render(); const m = $(".menu button"); if (m) m.focus(); },
     "edit-game": (el) => { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; editGame(el.dataset.game); },
     async shortcut(el) {
