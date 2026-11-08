@@ -316,6 +316,39 @@
       setTimeout(() => emit({ type: "savePoints", key, points: POINTS[key], player: "p1", running: false, profiles: key.startsWith("game:") }), 80);
       return ok();
     },
+    // A week of Baldur's Gate 3: sessions, save points, unlocks, an update.
+    ps_gameTimeline: (key) => {
+      const p2 = ids[1] || "p1";
+      const ev = (kind, ago, o) => ({ kind, at: iso(ago), ...(kind === "session" ? { start: iso(ago + o.seconds * 1e3) } : {}), ...o });
+      const items = key !== "game:bg3" ? [] : [
+        ev("point", 10 * 60e3, { name: "Before the update", profile: "p1" }),
+        ev("update", 12 * 60e3, { name: "Patch8_Hotfix2.zip", version: "4.1.1.6" }),
+        ev("session", 30 * 60e3, { profile: "p1", seconds: 4800 }),
+        ev("point", 40 * 60e3, { name: "Before the Netherbrain", profile: "p1" }),
+        ev("unlock", 55 * 60e3, { name: "Descent From Avernus", profile: "p1" }),
+        ev("point", 70 * 60e3, { name: "Before going back to Act 2 start", profile: "p1" }),
+        ev("session", d + 2 * h, { profile: p2, seconds: 2700 }),
+        ev("unlock", d + 2.5 * h, { name: "Hag Hunter", profile: p2 }),
+        ev("session", d + 5 * h, { profile: "p1", seconds: 7380 }),
+        ev("unlock", d + 6 * h, { name: "Relic Hunter", profile: "p1" }),
+        ev("session", 2 * d + 3 * h, { profile: "p1", seconds: 3900 }),
+        ev("session", 3 * d + 1 * h, { profile: "p1", seconds: 10800 }),
+        ev("point", 3 * d + 2 * h, { name: "Act 2 start", profile: "p1" }),
+        ev("unlock", 3 * d + 3 * h, { name: "Goblin Hunter", profile: "p1" }),
+        ev("unlock", 3 * d + 4 * h, { name: "The Plot Thickens", profile: "p1" }),
+        ev("session", 4 * d + 2 * h, { profile: p2, seconds: 1500 }),
+        ev("session", 5 * d + 1 * h, { profile: "p1", seconds: 5400 }),
+        ev("update", 5 * d + 3 * h, { name: "BG3_Patch8.7z" }),
+        ev("session", 6 * d + 2 * h, { profile: p2, seconds: 6600 }),
+        ev("point", 6 * d + 3 * h, { name: "Honour mode, gate", profile: p2 }),
+        ev("unlock", 6 * d + 4 * h, { name: "Roleplayer", profile: p2 }),
+        ev("session", 6 * d + 6 * h, { profile: "p1", seconds: 900 }),
+        ev("session", 7 * d + 1 * h, { profile: "p1", seconds: 3000 }),
+        ev("unlock", 7 * d + 2 * h, { name: "Act One", profile: "p1" }),
+      ];
+      setTimeout(() => emit({ type: "timeline", key, items }), 90);
+      return ok();
+    },
     ps_makeSavePoint: (key, name) => {
       const p = { id: "20261107-213000", name: name || "Save point, 7 Nov, 21:30", created: new Date().toISOString(), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"] };
       setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, 400);

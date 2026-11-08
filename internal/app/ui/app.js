@@ -99,6 +99,7 @@
     setNameInGame: (key, dir, pid) => call("ps_setNameInGame", key, dir || "", pid),
     setOffline: (key, on) => call("ps_setOffline", key, !!on),
     savePoints: (key) => call("ps_savePoints", key),
+    gameTimeline: (key) => call("ps_gameTimeline", key),
     makeSavePoint: (key, name) => call("ps_makeSavePoint", key, name || ""),
     restoreSavePoint: (key, id) => call("ps_restoreSavePoint", key, id),
     renameSavePoint: (key, id, name) => call("ps_renameSavePoint", key, id, name),
@@ -135,6 +136,8 @@
     doctor: {},       // Library key -> Achievement Doctor's check (achDoctor event)
     sources: null,    // what the last scan saw of each source (the Sources drawer)
     points: {},       // Library key -> its save points (savePoints event)
+    timeline: {},     // Library key -> its timeline, newest first (timeline event)
+    tlMore: {},       // Library key -> how many timeline entries show
     facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)
@@ -282,6 +285,7 @@
         S.d.active = ev.active || {};
         S.pinfo = {}; // a swap or a session's end writes profiles: read again
         achAsked.clear();
+        tlAsked.clear();
         S.allAch = null;
         onSessions();
         refresh();
@@ -351,6 +355,10 @@
         S.saveCheck = ev.check || null;
         if (S.view === "home" || S.view === "game") render();
         break;
+      case "timeline":
+        S.timeline[ev.key] = ev.items || [];
+        if (S.view === "game") render();
+        break;
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
         if (S.view === "game") render();
@@ -359,6 +367,7 @@
       case "savePointMade": {
         const P = S.points[ev.key] || (S.points[ev.key] = {});
         P.busy = false;
+        tlAsked.delete(ev.key);
         if (ev.error) toast(ev.error, "error");
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
         else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
@@ -1933,6 +1942,7 @@
       if (S.view !== "game") { S.from = S.view === "home" ? "home" : "library"; S.fromScroll = S.from === S.view ? $("#view").scrollTop : S.libScroll || 0; }
       S.page = P; S.selected = { kind, id };
       S.view = "game"; S.menuFor = null;
+      tlAsked.clear(); // read again: a session may have ended since
       render(); $("#view").scrollTop = 0;
       $("#view").focus({ preventScroll: true });
     };
@@ -2200,7 +2210,7 @@
     if (!page) return { top, bar, note, real };
     return `<div class="gpage ln-root${real ? "" : " no-art"}">${top}
       <div class="gpage-body">${bar}${note}
-        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${page ? savePointsBlock(it) : ""}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
+        <div class="gpage-main"><div class="gpage-col">${achievementsBlock(it)}${savePointsBlock(it)}${timelineBlock(it)}<div class="gpage-news">${news}</div></div><aside class="gpage-side">${side}</aside></div>
       </div></div>`;
   }
   // The Manage panel: what you can do with a game besides playing it,
@@ -3411,6 +3421,50 @@
       ${list.length ? `<ol class="pt-list">${list.slice(0, 3).map((p) => pointRow(it, p, false, P)).join("")}</ol>` : ""}
       ${list.length ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="pt-all" ${itemAttr(it)} aria-haspopup="dialog">${list.length > 3 ? `Show all ${list.length}` : "Rename, delete or start a run"}</button></div>` : ""}</section>`;
   }
+  // The game's timeline (ps_gameTimeline): sessions, save points, unlocks
+  // and updates, by day, the latest first.
+  const tlAsked = new Set();
+  function playSpan(sec) {
+    const m = Math.max(1, Math.round(sec / 60));
+    return m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "");
+  }
+  function tlDay(at) {
+    const d = new Date(at), now = new Date();
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(now) - day(d)) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
+  }
+  function tlRow(e) {
+    const who = e.profile && player(e.profile) && cfg().players.length > 1 ? esc(pname(e.profile)) : "";
+    const [ic, text] = {
+      session: [GI.history, who ? `${who} played ${esc(playSpan(e.seconds || 0))}` : `Played ${esc(playSpan(e.seconds || 0))}`],
+      point: [GI.save, who ? `${who} made a save point: ${esc(e.name)}` : `Save point: ${esc(e.name)}`],
+      unlock: [GI.trophy, who ? `${who} unlocked ${esc(e.name)}` : `Unlocked: ${esc(e.name)}`],
+      update: [GI.refresh, e.version ? `Updated to ${esc(e.version)}` : `Updated with ${esc(e.name)}`],
+    }[e.kind] || [];
+    if (!text) return "";
+    const hm = (t) => new Date(t).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const time = e.kind === "session" && e.start ? `${hm(e.start)} to ${hm(e.at)}` : hm(e.at);
+    return `<li class="tl-row"><span class="tl-ic" aria-hidden="true">${ic}</span><span class="tl-what">${text}</span><time class="tl-time ln-num" datetime="${esc(e.at)}">${esc(time)}</time></li>`;
+  }
+  function timelineBlock(it) {
+    const key = recentKey(it);
+    if (!tlAsked.has(key)) { tlAsked.add(key); api.gameTimeline(key).catch(() => {}); }
+    const list = S.timeline[key];
+    if (!list) return "";
+    const head = `<div class="ln-section-head"><div><h2>Timeline</h2></div></div>`;
+    if (!list.length) return `<section class="gpage-block gp-timeline">${head}<p class="gpage-hint">Lootnest keeps a timeline from now on: sessions, save points, unlocks and updates.</p></section>`;
+    const n = S.tlMore[key] || 8, days = [];
+    for (const e of list.slice(0, n)) {
+      const d = tlDay(e.at);
+      if (!days.length || days[days.length - 1].d !== d) days.push({ d, rows: [] });
+      days[days.length - 1].rows.push(tlRow(e));
+    }
+    return `<section class="gpage-block gp-timeline">${head}${days.map((g) => `<div class="tl-day"><h3 class="tl-date">${esc(g.d)}</h3><ol class="tl-list">${g.rows.join("")}</ol></div>`).join("")}
+      ${list.length > n ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="tl-more" data-key="${esc(key)}">Show more</button></div>` : ""}</section>`;
+  }
   function viewPointsDrawer() {
     const it = dialogItem(S.dialog);
     if (!it) return "";
@@ -4458,6 +4512,7 @@
       P.busy = true; render();
       try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
+    "tl-more"(el) { const k = el.dataset.key; S.tlMore[k] = (S.tlMore[k] || 8) + 20; render(); },
     "pt-all"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "points", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
     async "pt-restore"(el) {
       const it = itemFor(el);

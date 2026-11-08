@@ -287,6 +287,7 @@ func (a *App) tick() {
 	if err != nil {
 		return
 	}
+	a.foundTick(procs)
 	state := a.store.LoadState()
 	changed := false
 	type finish struct {
@@ -359,11 +360,12 @@ func (a *App) tick() {
 			if g.ID == a.hidFor {
 				a.hidFor, back = "", s.front
 			}
-			go func(key, player string, since time.Time) {
-				now := time.Now()
+			go func(g core.Game, player string, since time.Time) {
+				now, key := time.Now(), "game:"+g.ID
 				_ = a.store.AddPlaytime(key, player, now.Sub(since))
 				_ = a.store.AddActivity(key, player, since, now)
-			}("game:"+g.ID, s.PlayerID, s.Since)
+				a.logSession(core.SessionRecord{Game: key, Profile: player, Start: since, End: now, Source: "profile", Build: a.profileBuild(&g)})
+			}(*g, s.PlayerID, s.Since)
 			s.Phase = "saving"
 			changed = true
 			finishes = append(finishes, finish{cfg.Clone(), cfg.Game(g.ID), s.PlayerID})
