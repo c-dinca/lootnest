@@ -128,7 +128,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.67.0, beta)
+## Where things stand (1.68.0, beta)
 
 These shipped recently, newest last:
 
@@ -433,6 +433,13 @@ These shipped recently, newest last:
   Forward (`hist`, `noteVisit` in `render()`, `goHist`, `pageBack`; Alt+Left
   and Alt+Right, Backspace, the mouse's side buttons), in memory, up to 50
   pages with their scroll. The editor isn't a stop.
+
+- **1.68** Roadmap Controllers 1: `padFamily(id)` (vendor ids first,
+  then words) gives xbox, playstation, nintendo or generic; `PADS`,
+  `PAD_SHAPES` and `glyph()` draw each family; `padRole` maps Nintendo's
+  confirm to its right-hand A, PS/Home to Start, the touchpad to View;
+  an Xbox twin's presses are dropped while a real pad holds a button
+  (`realPad`). Harness `?pad=ds5|ds4|xbox|switch|generic`.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

@@ -1,6 +1,6 @@
 // Lootnest design harness: stands in for the Go side (window.ps_* and the
 // __ps events) so the real UI runs in a plain browser with fixture data.
-// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright&boot=<ms>&bp=1
+// Scenario from the URL: ?games=13|0|400&players=1|2|6&state=normal|loading|offline|error|playing&cloud=0|1&first=1&hidden=1&art=bright&boot=<ms>&bp=1&pad=ds5|ds4|xbox|switch|generic (comma-separated for more than one)
 // ART is filled in by build.mjs: { "<appId>-cover|hero|logo": dataURL }.
 (function () {
   const q = new URLSearchParams(location.search);
@@ -448,5 +448,20 @@
     "ps_inspectSteam", "ps_inspectExe", "ps_checkPath", "ps_cancelRequest", "ps_ignoreFound", "ps_unhideFound", "ps_foundGame", "ps_addLibraryGame", "ps_saveLibraryPref",
     "ps_setAvatar", "ps_removeAvatar", "ps_setBanner", "ps_removeBanner", "ps_setBackupPassword", "ps_moveInfo", "ps_moveGame", "ps_steamVerify",
     "ps_openGameFolder", "ps_applyHooks", "ps_fixBlocked", "ps_copy", "ps_installUpdate", "ps_quit"].forEach((k) => { if (!window[k]) window[k] = all[k]; });
-  window.__harness = { players: PLAYERS, found, games };
+  // ?pad=ds5,xbox: fake connected controllers, for the glyphs (a DualSense and its Xbox twin here).
+  // Press with __harness.pads[i].buttons[b].pressed = true.
+  const PAD_IDS = {
+    ds5: "DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)",
+    ds4: "Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 09cc)",
+    xbox: "Xbox 360 Controller (XInput STANDARD GAMEPAD)",
+    switch: "Pro Controller (STANDARD GAMEPAD Vendor: 057e Product: 2009)",
+    generic: "USB Gamepad (STANDARD GAMEPAD Vendor: 0079 Product: 0006)",
+  };
+  const pads = (q.get("pad") || "").split(",").filter((k) => PAD_IDS[k]).map((k, index) =>
+    ({ id: PAD_IDS[k], index, connected: true, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 18 }, () => ({ pressed: false, value: 0 })) }));
+  if (pads.length) {
+    navigator.getGamepads = () => pads;
+    setTimeout(() => pads.forEach((gamepad) => window.dispatchEvent(Object.assign(new Event("gamepadconnected"), { gamepad }))));
+  }
+  window.__harness = { players: PLAYERS, found, games, pads };
 })();

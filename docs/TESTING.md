@@ -78,6 +78,11 @@ If any step shows someone else's settings or saves, stop and send the log.
    tabs with LB and RB.
 3. Choose a game, **Play**. It starts as whoever's sitting down.
 4. Press **Start** or F11. The window is back as it was.
+5. With a DualSense and a Switch Pro controller (1.68): each shows its own
+   buttons at the bottom (cross, circle, square, triangle; or A on the
+   right, B at the bottom, + and minus), and the PS or Home button opens
+   and leaves Big Picture. With DS4Windows or Steam Input running, one
+   press moves or chooses once, not twice.
 
 ## 7. The rest, quickly
 
