@@ -349,6 +349,42 @@ func RevealInExplorer(p string) error {
 	return StartDetached(filepath.Join(os.Getenv("SystemRoot"), "explorer.exe"), "/select,"+syscall.EscapeArg(p), "")
 }
 
+var (
+	procSHFileOperationW = shell32.NewProc("SHFileOperationW")
+	ErrRecycleCancelled  = errors.New("the move to the Recycle Bin was cancelled")
+)
+
+// Recycle moves files or folders to the Recycle Bin. Where one can't go
+// there (too big, or a drive without one), Windows asks before deleting it.
+func Recycle(hwnd uintptr, paths ...string) error {
+	var from []uint16
+	for _, p := range paths {
+		u, err := windows.UTF16FromString(p)
+		if err != nil {
+			return err
+		}
+		from = append(from, u...)
+	}
+	op := struct {
+		hwnd      uintptr
+		wFunc     uint32
+		pFrom     *uint16
+		pTo       *uint16
+		fFlags    uint16
+		aborted   int32
+		mappings  uintptr
+		progTitle *uint16
+	}{hwnd: hwnd, wFunc: 3, pFrom: &append(from, 0)[0], // FO_DELETE; each path ends in a NUL, the list in two
+		fFlags: 0x0040 | 0x0010 | 0x0004 | 0x0400 | 0x4000} // FOF_ALLOWUNDO, NOCONFIRMATION, SILENT, NOERRORUI, WANTNUKEWARNING
+	if r, _, _ := procSHFileOperationW.Call(uintptr(unsafe.Pointer(&op))); r != 0 {
+		return errors.New("Windows couldn't move it to the Recycle Bin")
+	}
+	if op.aborted != 0 {
+		return ErrRecycleCancelled
+	}
+	return nil
+}
+
 // ---------------------------------------------------------------- folders --
 
 func KnownFolder(id *windows.KNOWNFOLDERID) string {
@@ -364,6 +400,7 @@ func SavedGames() string { return KnownFolder(windows.FOLDERID_SavedGames) }
 func LocalLow() string   { return KnownFolder(windows.FOLDERID_LocalAppDataLow) }
 func Desktop() string    { return KnownFolder(windows.FOLDERID_Desktop) }
 func Pictures() string   { return KnownFolder(windows.FOLDERID_Pictures) }
+func Downloads() string  { return KnownFolder(windows.FOLDERID_Downloads) }
 func StartMenuPrograms() string {
 	return KnownFolder(windows.FOLDERID_Programs)
 }

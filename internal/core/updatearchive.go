@@ -179,8 +179,12 @@ var (
 // v1.0.3" (from, to), "Update v1.0.3" (to only), or Steam-style build
 // numbers ("Build 16251443"). Empty when the name has none.
 func UpdateVersions(name string) (from, to string) {
-	n := strings.TrimSuffix(filepath.Base(name), filepath.Ext(name))
-	n = strings.TrimSuffix(n, ".part1")
+	n := filepath.Base(name)
+	switch strings.ToLower(filepath.Ext(n)) {
+	case ".zip", ".7z", ".rar", ".exe":
+		n = strings.TrimSuffix(n, filepath.Ext(n)) // a folder's "v1.3" keeps its ".3"
+	}
+	n = rarPartRe.ReplaceAllString(n, "")
 	if m := buildToRe.FindStringSubmatch(n); m != nil {
 		return "build " + m[1], "build " + m[2]
 	}

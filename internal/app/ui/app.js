@@ -86,6 +86,9 @@
     updateApply: (key, path) => call("ps_updateApply", key, path),
     updateUndo: (key, id) => call("ps_updateUndo", key, id),
     updateInstaller: (key, path, full) => call("ps_updateInstaller", key, path, !!full),
+    downloads: () => call("ps_downloads"),
+    ignoreDownload: (path) => call("ps_ignoreDownload", path),
+    recycleDownload: (path) => call("ps_recycleDownload", path),
     setSeat: (id) => call("ps_setSeat", id || ""),
     testToast: () => call("ps_testToast"),
     achDoctor: (key, appId, dir, name) => call("ps_achDoctor", key, appId || 0, dir || "", name),
@@ -146,6 +149,7 @@
     gq: { q: "", hits: null, sel: -1 }, // the search in the sidebar
     updates: null,    // the Updates page: {games, newsOn} from ps_updates
     copies: null,     // "Is this a new copy?" offers from ps_newCopies
+    dl: null,         // updates found in Downloads, from ps_downloads
     carried: {},      // old key -> the result of carrying it over (for the page)
     offers: {},       // Steam app id -> {offer, pc, owned} or {error}, for Find games
     d: null,          // AppState from Go
@@ -440,6 +444,12 @@
         else api.newCopies().catch(() => {});
         break;
       }
+      case "downloadsFound": {
+        const same = JSON.stringify(S.dl) === JSON.stringify(ev.matches || []);
+        S.dl = ev.matches || []; updateNavCount();
+        if (!same && (S.view === "updates" || S.view === "game")) render();
+        break;
+      }
       case "carried": {
         const C = S.carried[ev.old] || {};
         C.busy = false;
@@ -475,6 +485,7 @@
         if (D && D.kind === "update" && D.key === ev.key) { D.busy = false; D.error = ev.error || ""; if (!ev.error) { D.done = ev.update; D.undone = !!ev.undone; } renderOverlay(); }
         else if (ev.error) toast(ev.error, "error");
         else toast(ev.undone ? "The update was undone" : "Updated");
+        api.downloads().catch(() => {});
         S.updates = null; S.news = {}; api.updates().catch(() => {});
         break;
       }
@@ -1993,7 +2004,7 @@
         <div class="gpage-state">${solo() ? `<b>One set of saves</b><span>Keep runs for more than one playthrough</span>` : `<b>Profiles off</b><span>Everyone shares the same settings and saves</span>`}</div>
         <div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}${solo() ? "Keep runs" : "Turn on profiles"}</button>${details}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + (page ? antiCheatNote(it) : "");
+      note = (page ? dlNote(it) : "") + `<p class="gpage-note">${solo() ? "Keep runs of this game, each with its own saves and settings, such as a hardcore try or new game+, and Lootnest swaps the right ones in before it starts." : "Turn on profiles so everyone who plays gets their own settings and saves."} ${f.ready ? "Lootnest already found where this game keeps them." : "You'll choose where this game keeps them."}</p>` + (page ? antiCheatNote(it) : "");
       side = page ? playersPanel(it) + collectionsBlock(it) + gameSavesBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
@@ -2022,7 +2033,7 @@
       const top = ps.filter((p) => pt[p.id]).sort((a, b) => pt[b.id] - pt[a.id]).slice(0, 3);
       const stats = top.map((p) => gpStat(hoursValue(pt[p.id]), esc(p.name), p)).join("") + (st ? gpStat(hoursValue(st), "Steam account") : "");
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${chips}${details}${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
-      note = (page ? conflictBanner(g) : "") + `<p class="gpage-note">${GI.copy}A copy is made before every swap. <button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See the copies</button></p>` + (page ? antiCheatNote(it) : "");
+      note = (page ? conflictBanner(g) + dlNote(it) : "") + `<p class="gpage-note">${GI.copy}A copy is made before every swap. <button class="gpage-link" data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog">See the copies</button></p>` + (page ? antiCheatNote(it) : "");
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
@@ -3428,6 +3439,8 @@
           ${sw("soundsOff", "Sounds for unlocks, save points and swaps", "A short sound in Lootnest's window when an achievement unlocks, a save point is made or a profile's files are loaded. Never for games with an anti-cheat.", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "While a game runs, the keys copy its saves as a save point, to go back to from its page. Lootnest holds the keys only while a game runs.", !s.pointHotkeyOff, true)}
           ${s.achToastsOff ? "" : row("s-toast", "See how it looks", "Shows one now, here and over the screen at the bottom right, as it does over a game.", `<button id="s-toast" class="ln-button ln-button--secondary ln-button--sm" data-action="test-toast">Show one</button>`)}`)
+        + sub("Updates for your games", "", `
+          ${sw("downloadsOff", "Look in Downloads for updates to your games", "For games no launcher keeps up to date, Lootnest reads the names of the files and folders in your Downloads folder and tells you when one is a newer version. It looks nowhere else, nothing goes online, and nothing is applied until you review it.", !s.downloadsOff, true)}`)
         + sub("Steam", "", `
           ${sw("autoSteamHooks", "Set up Steam automatically", "Steam games you add get a launch option so Steam's Play button asks who's playing. Removed games get their own options back.", s.autoSteamHooks)}
           ${st.found ? row("s-steam", "Steam account", st.accountError ? `<span class="error-text">${esc(st.accountError)}</span>` : "The account on this PC whose Steam launch options Lootnest sets.", `<select id="s-steam" class="ln-input" data-setting="steamAccountId">
@@ -3518,7 +3531,8 @@
   const UPDATABLE = ["folder", "added", "shortcut", "hydra", "other"];
   const updKey = (it) => (it.kind === "game" ? (it.g.launch.type === "exe" && UPDATABLE.includes(it.source) ? "game:" + it.id : "") : UPDATABLE.includes(it.source) && !it.appId ? "found:" + it.id : "");
   function updateNavCount() {
-    const n = (S.updates ? S.updates.games.filter((g) => g.newer).length : 0) + (S.copies ? S.copies.length : 0);
+    const keys = new Set([...(S.updates ? S.updates.games : []), ...(S.dl || [])].filter((g) => g.newer).map((g) => g.key));
+    const n = keys.size + (S.copies ? S.copies.length : 0);
     const el = $("#upd-count"); if (el) el.textContent = n ? String(n) : "";
   }
   // "Is this a new copy?": a game reinstalled as a whole new version.
@@ -3586,6 +3600,29 @@
         <button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="upd-more" data-key="${esc(r.key)}" data-name="${esc(r.name)}" aria-label="More for ${esc(r.name)}" aria-haspopup="menu" title="More">${GI.more || "&#8943;"}</button></div>
     </li>`;
   }
+  // Updates already in Downloads, matched by name: each goes through the
+  // same drawer as one the user chooses.
+  function dlVer(m) {
+    const c = m.check || {}, mute = (t) => `<span class="dl-muted">${t}</span>`;
+    if (m.newer) return `${esc(vtxt(c.have))} to ${esc(vtxt(c.to))}${c.state === "skips" ? " " + mute(`(made for ${esc(vtxt(c.from))})`) : ""}`;
+    if (c.state === "same") return mute("Same version as your copy");
+    if (c.state === "older") return mute(`${esc(vtxt(c.to))}, older than your copy`);
+    return mute(c.to ? `Brings ${esc(vtxt(c.to))}. Your copy's version isn't known.` : "No version in its name");
+  }
+  const dlIds = (m) => `data-key="${esc(m.key)}" data-name="${esc(m.game)}" data-path="${esc(m.path)}"`;
+  const dlRecycle = (m) => `<button class="ln-button ln-button--secondary ln-button--sm" data-action="dl-recycle" data-path="${esc(m.path)}">Delete the downloaded file</button>`;
+  function dlCard(m) {
+    const same = (m.check || {}).state === "same";
+    return `<div class="copy-card dl-card${m.newer ? "" : " dl-card--dim"}"><span class="upd-art dl-art" aria-hidden="true">${updArt(updItem(m.key)) || `<span>${esc(m.game)}</span>`}</span>
+      <div class="dl-text"><b>${esc(m.game)}</b><p>${dlVer(m)}</p><p class="selectable">${esc(m.name)}</p></div>
+      <div class="gpage-actions">${same ? dlRecycle(m) : `<button class="ln-button ${m.newer ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button>`}
+        <button class="ln-button ln-button--ghost ln-button--sm" data-action="dl-ignore" ${dlIds(m)}>Ignore</button></div></div>`;
+  }
+  function dlNote(it) {
+    const uk = updKey(it), m = uk && (S.dl || []).find((x) => x.key === uk && x.newer);
+    return m ? `<p class="gpage-note">${GI.load}<span>An update is in your Downloads: <span class="selectable">${esc(m.name)}</span>, ${dlVer(m)}.</span>
+      <button class="gpage-link" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button></p>` : "";
+  }
   function viewUpdates() {
     const U = S.updates;
     const checking = S.updChecking;
@@ -3610,13 +3647,15 @@
       ${stat("ok", U.games.filter((g) => updState(g, U).k === "ok").length, "up to date", "")}
       ${stat("dim", U.games.filter((g) => updState(g, U).k === "dim").length, "can't tell", "")}</div>`;
     const news = U.newsOn ? "" : `<div class="upd-callout"><div><b>Find out when a newer version is out</b><p>Lootnest reads each game's patch notes from Steam's news feed and compares their date with your copy. Only the game's Steam id, or its name, is sent.</p></div><button class="ln-button ln-button--secondary ln-button--sm" data-action="news-on">Turn it on</button></div>`;
+    const dl = S.dl || [];
+    const found = dl.length ? `<section class="upd-look" aria-label="Found in your Downloads"><div class="upd-sec-head"><h2>Found in your Downloads</h2><span class="upd-sec-n ln-num">${dl.length}</span></div>${dl.map(dlCard).join("")}</section>` : "";
     const look = nLook || done.length ? `<section class="upd-look" aria-label="Needs a look"><div class="upd-sec-head"><h2>Needs a look</h2><span class="upd-sec-n ln-num">${nLook}</span></div>
       ${done.map(carriedCard).join("")}${offers.map((o) => copyCard(o, false)).join("")}
       ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn"><div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--primary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}</section>` : "";
     const list = U.games.filter((g) => F === "all" || updState(g, U).k === F || (F === "new" && g.newer))
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || a.name.localeCompare(b.name));
     const cards = list.length ? `<ol class="upd-cards">${list.map((r) => updCard(r, U)).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
-    return `<div class="upd-page ln-root">${head}${stats}${news}${look}<section aria-label="Your games"><div class="upd-sec-head"><h2>${F === "all" ? "Your games" : esc({ new: "Newer version out", ok: "Up to date", dim: "Can't tell" }[F])}</h2><span class="upd-sec-n ln-num">${list.length}</span></div>${cards}</section></div>`;
+    return `<div class="upd-page ln-root">${head}${stats}${news}${found}${look}<section aria-label="Your games"><div class="upd-sec-head"><h2>${F === "all" ? "Your games" : esc({ new: "Newer version out", ok: "Up to date", dim: "Can't tell" }[F])}</h2><span class="upd-sec-n ln-num">${list.length}</span></div>${cards}</section></div>`;
   }
   // An update's history: every one Lootnest applied, newest first.
   function viewUpdHistory() {
@@ -3639,11 +3678,11 @@
     const shell = (body, foot) => drawer({ label: `Update ${esc(D.name)}`, title: `Update ${esc(D.name)}`, sub: "With an update you have: a folder, a .zip, .7z or .rar, or an installer", body, foot });
     const choose = `<div class="gpage-actions">${btn('data-action="upd-pick" data-kind="update"', "Choose a .zip, .7z or .rar")}${btn('data-action="upd-pick" data-kind="updateDir"', "Choose a folder", "ln-button--ghost")}${btn('data-action="upd-pick" data-kind="installer"', "Run an installer", "ln-button--ghost")}</div>`;
     if (D.done) {
-      const u = D.done;
+      const u = D.done, dlm = !D.undone && (S.dl || []).find((m) => m.path === D.path);
       return shell(D.undone ? `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Undone</b><p>${esc(D.name)} is as it was before the update from ${esc(u.source)}.</p></div></div></div>`
         : `<div class="run-card run-card--ok"><div class="run-head"><span class="run-dot"></span><div><b>Updated</b><p>${u.added.length} files added and ${u.replaced.length} replaced or removed, from ${esc(u.source)}. ${u.noUndo ? "The saves are kept. No copy of the game was kept, so it can't be undone." : "The saves and the old files are kept, so you can undo it."} The first time you start it, Lootnest checks it runs.</p></div></div></div>`,
         D.undone ? `<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`
-          : `${u.noUndo ? "" : btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}${btn('data-action="upd-another"', "Apply another update", "ln-button--ghost")}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
+          : `${u.noUndo ? "" : btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}${btn('data-action="upd-another"', "Apply another update", "ln-button--ghost")}${dlm ? dlRecycle(dlm) : ""}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
     }
     const intro = `<p class="gpage-hint">Lootnest doesn't download updates. Choose one you have, and Lootnest shows what it changes before anything happens. If an update comes in parts (.part1.rar, .part2.rar), choose the first. For an installer (.exe), run it yourself.</p>`;
     if (!D.path) return shell(`${intro}${choose}`);
@@ -4104,6 +4143,7 @@
       await api.saveSettings({ settings: s, autostart });
       if (f === "downloadCovers" || f === "gridDbKey") { S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); }
       if (f === "steamApiKey" || f === "achRarity") { S.ach = {}; achAsked.clear(); S.allAch = null; }
+      if (f === "downloadsOff") api.downloads().catch(() => {});
       await refresh();
     } catch (e) { toast(errText(e), "error"); await refresh(); }
   }
@@ -4394,6 +4434,19 @@
       if (!D || !D.plan) return;
       D.busy = true; D.step = ""; D.error = ""; renderOverlay();
       try { await api.updateInstaller(D.key, D.path, D.full); } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
+    },
+    "dl-review"(el) {
+      const D = S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name, path: el.dataset.path, busy: true };
+      renderOverlay(); focusOverlay();
+      api.updatePlan(D.key, D.path).catch((e) => { D.busy = false; D.error = errText(e); renderOverlay(); });
+    },
+    async "dl-recycle"(el) {
+      try { await api.recycleDownload(el.dataset.path); S.dl = (S.dl || []).filter((m) => m.path !== el.dataset.path); updateNavCount(); render(); if (S.dialog) renderOverlay(); toast("Moved to the Recycle Bin"); }
+      catch (e) { toast(errText(e), "error"); }
+    },
+    async "dl-ignore"(el) {
+      S.dl = (S.dl || []).filter((m) => m.path !== el.dataset.path); updateNavCount(); render();
+      try { await api.ignoreDownload(el.dataset.path); } catch (e) { toast(errText(e), "error"); }
     },
     "upd-start"(el) { S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name }; renderOverlay(); focusOverlay(); },
     async "upd-pick"(el) {
@@ -5091,7 +5144,9 @@
     render();
     loadHooks().then(() => { if (!S.picker) render(); });
     loadFound();
-    setTimeout(() => { if (!S.updates) api.updates().catch(() => {}); }, 8000); // the Updates count in the sidebar
+    setTimeout(() => { if (!S.updates) api.updates().catch(() => {}); api.downloads().catch(() => {}); }, 8000); // the Updates count in the sidebar
+    let dlAsked = 0; // and on coming back to the window, at most every 30 s
+    window.addEventListener("focus", () => { if (Date.now() - dlAsked > 30000) { dlAsked = Date.now(); api.downloads().catch(() => {}); } });
     if (S.d.firstRun) setTimeout(() => { const i = $('[data-field="pname"]'); if (i) i.focus(); }, 50);
     try {
       const r = await api.ready();

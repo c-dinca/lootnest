@@ -49,6 +49,8 @@ func TestUpdateVersions(t *testing.T) {
 		"Game Build 16301122.zip":                          {"", "build 16301122"},
 		"Update.part1.rar":                                 {"", ""},
 		"Hotfix 2.zip":                                     {"", ""},
+		"Hollow Tale v1.3":                                 {"", "1.3"},
+		"Game.v1.3.part01.rar":                             {"", "1.3"},
 	} {
 		f, to := UpdateVersions(name)
 		if f != want[0] || to != want[1] {

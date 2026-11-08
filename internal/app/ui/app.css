@@ -1473,6 +1473,11 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .upd-look .upd-sec-head { margin-bottom: var(--space-1); }
 .copy-card { border-left-width: 3px; background: var(--glass-panel); }
 .copy-card--warn { border-left-color: var(--warning); }
+.dl-card--dim { border-left-color: var(--edge-2); }
+.dl-card .dl-art { flex: none; cursor: default; }
+.dl-text { display: grid; gap: var(--space-1); flex: 1 1 calc(var(--space-16) * 4); min-width: 0; }
+.dl-text p.selectable { font-size: var(--fs-12); color: var(--fg-3); }
+.dl-muted { color: var(--fg-3); }
 
 .upd-cards { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .upd-card { position: relative; display: grid; grid-template-columns: 184px minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); background: var(--glass-panel); transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }

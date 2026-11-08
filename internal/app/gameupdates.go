@@ -106,6 +106,10 @@ func (t updTarget) running() bool {
 		return false
 	}
 	procs, _ := win.ProcessNames()
+	return t.runningIn(procs)
+}
+
+func (t updTarget) runningIn(procs map[string]bool) bool {
 	return procs[strings.ToLower(strings.TrimSuffix(t.Process, ".exe"))]
 }
 

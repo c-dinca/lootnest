@@ -53,13 +53,31 @@ func TestProcessNames(t *testing.T) {
 }
 
 func TestKnownFoldersAndDisk(t *testing.T) {
-	for name, p := range map[string]string{"Documents": Documents(), "Saved Games": SavedGames(), "LocalLow": LocalLow(), "Program Files": ProgramFiles()} {
+	for name, p := range map[string]string{"Documents": Documents(), "Saved Games": SavedGames(), "LocalLow": LocalLow(), "Program Files": ProgramFiles(), "Downloads": Downloads()} {
 		if p == "" {
 			t.Errorf("%s: empty", name)
 		}
 	}
 	if DiskFree(os.TempDir()) <= 0 {
 		t.Error("no free space reported for the temp folder")
+	}
+}
+
+func TestRecycle(t *testing.T) {
+	dir := t.TempDir()
+	a, b := filepath.Join(dir, "Game.v1.3.part1.rar"), filepath.Join(dir, "Game.v1.3.part2.rar")
+	for _, p := range []string{a, b} {
+		if err := os.WriteFile(p, []byte("lootnest test"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := Recycle(0, a, b); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{a, b} {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Errorf("%s is still there", p)
+		}
 	}
 }
 

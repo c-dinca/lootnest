@@ -125,7 +125,7 @@ What makes it different, and the direction to keep pushing:
   profile's colour.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.55.0, beta)
+## Where things stand (1.58.0, beta)
 
 These shipped recently, newest last:
 
@@ -335,6 +335,32 @@ These shipped recently, newest last:
   `core.DecodePNGDataURL`, `core.RecapFileName`) writes it to
   Pictures\Lootnest and shows it in Explorer. Per profile; a household
   recap is still open.
+
+- **1.55.1 to 1.55.4** Fixes from an audit run by agents (scratchpad
+  backlog): restores copy every location a version writes
+  (`Cloud.VersionTargets`, `keepBeforeRestore`); run names fit 24 runes
+  and don't repeat (`app/names.go`: `trimRunes`, `trimWords`,
+  `freeName`); one-file archives in Try a save (`onlyFile`), archives
+  over 2 GB refused (`StageUpdateMax`); Big Picture toggle, Back, dialogs
+  above it, no background blink; solo seat with runs, focus kept inside
+  dialogs (`focusOverlay`, `focusBack`).
+- **1.56** Library: scan results render at once, toasts can carry an
+  action (Undo for Hide, `ps_unhideFound`), hidden games in Settings,
+  right-click on every game row.
+- **1.57** Real UI sounds: Kenney's Interface Sounds (CC0) embedded in
+  `ui/sounds` and inlined like the fonts; `sfx()` over decoded buffers;
+  unlock, save point and swap sounds behind `Settings.SoundsOff`.
+- **1.58** Updates found in Downloads (`core/downloads.go`
+  `MatchDownloads`, `app/downloads.go`): only the user's Downloads
+  folder, matched by name and version to Library games outside the
+  stores, announced once, applied through the existing update drawer;
+  the downloaded file goes to the Recycle Bin on request
+  (`win.Recycle`). `Settings.DownloadsOff` turns it off. Lootnest still
+  never finds or fetches anything.
+
+The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
+features. A design plan from research (19 batches) is being applied;
+its principles go into DESIGN.md.
 
 Not checked on a real PC yet: the owner was on 1.19.x at the last log.
 Everything from 1.40 on that touches Windows is unchecked there too:
