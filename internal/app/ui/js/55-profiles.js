@@ -4,45 +4,41 @@
   const SWATCHES = (p, i) => `<div class="swatches" role="radiogroup" aria-label="Colour for ${esc(p.name || "player " + (i + 1))}">${S.d.colors.map((c) => `<button class="swatch" style="background:${c}" data-action="swatch" data-i="${i}" data-color="${c}" aria-pressed="${c.toLowerCase() === (p.color || "").toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>`;
   const welcomeName = (p) => (p.name || "").trim() || "Player 1";
   function welcomeLive() {
-    const p = S.players[0], me = { ...p, name: welcomeName(p) };
-    const big = $("#wl-av"), small = $("#wl-who-av");
-    if (big) big.innerHTML = lnAvatar(me, "160");
-    if (small) small.innerHTML = lnAvatar(me, "32");
-    document.querySelectorAll("[data-wl-name]").forEach((e) => { e.textContent = me.name; });
+    const p = S.players[0], big = $("#wl-av");
+    if (big) big.innerHTML = lnAvatar({ ...p, name: welcomeName(p) }, "72");
   }
-  // While the first scan runs, and what it found.
-  function welcomeScan() {
-    if (S.found.scanning || S.found.refreshing) return `<span class="ln-spinner" aria-hidden="true"></span>Looking for games on this PC`;
-    const n = libraryItems().length;
-    return n ? `Found ${n} game${n === 1 ? "" : "s"}` : "No games found on this PC yet";
+  // The first scan: a bar that runs while it looks, full once it's done.
+  // Drawn once; later scan events only set its state and text.
+  function welcomeScan(el) {
+    const n = libraryItems().length, busy = S.found.scanning || S.found.refreshing;
+    const text = busy ? "Looking for games on this PC" : n ? `Found ${n} game${n === 1 ? "" : "s"}` : "No games found on this PC yet";
+    if (!el) return `<span class="wl-meter${busy ? "" : " is-done"}" aria-hidden="true"><i></i></span><span>${text}</span>`;
+    el.firstElementChild.classList.toggle("is-done", !busy);
+    el.lastElementChild.textContent = text;
   }
+  // First start, as a console boots: the gem, one line, the scan, and the
+  // one choice that matters, who you are.
   function viewWelcome() {
     if (S.pnFound === undefined) {
       S.pnFound = "";
       api.playniteFind().then((r) => { S.pnFound = r.dir || ""; const n = $("#wl-pn"); if (n) n.hidden = !S.pnFound; }, () => {});
     }
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
-    const p = ps[0], me = { ...p, name: welcomeName(p) };
+    const p = ps[0];
     return `<div class="welcome ln-root" role="dialog" aria-modal="true" aria-labelledby="wl-title">
-      <span class="wl-brand">${BRAND_MARK}</span>
-      <div class="wl-me ln-player" style="--player:${esc(p.color || "#6c9bd2")}">
-        <span id="wl-av">${lnAvatar(me, "160")}</span>
-        <input type="text" class="wl-name" id="wl-name" data-field="pname" data-i="0" value="${/^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="Your name" maxlength="24" aria-label="Your name">
-        ${SWATCHES(p, 0)}
-        <p class="wl-cap">Play and the top bar show you like this.</p>
-        <div class="wl-preview" aria-hidden="true">
-          <span class="ln-button ln-button--play ln-button--lg">${GI.play}<span>Play as <span data-wl-name>${esc(me.name)}</span></span></span>
-          <span class="bar-me"><span id="wl-who-av">${lnAvatar(me, "32")}</span><span class="bar-label" data-wl-name>${esc(me.name)}</span></span>
+      <span class="wl-gem">${BRAND_MARK}</span>
+      <h1 id="wl-title" class="wl-in" style="--i:0">Welcome to Lootnest</h1>
+      <p class="wl-lead wl-in" style="--i:1">Every game on this PC, each profile with its own saves.</p>
+      <p class="wl-scan wl-in" style="--i:2" id="wl-scan" aria-live="polite">${welcomeScan()}</p>
+      <div class="wl-me wl-in ln-player" style="--i:3;--player:${esc(p.color || "#6c9bd2")}">
+        <span id="wl-av">${lnAvatar({ ...p, name: welcomeName(p) }, "72")}</span>
+        <div class="wl-who">
+          <input type="text" class="wl-name" id="wl-name" data-field="pname" data-i="0" value="${/^Player \d$/.test(p.name) ? "" : esc(p.name)}" placeholder="Your name" maxlength="24" aria-label="Your name">
+          ${SWATCHES(p, 0)}
         </div>
       </div>
-      <div class="wl-about">
-        <h1 id="wl-title">Welcome to Lootnest</h1>
-        <p class="wl-lead">Your games from every launcher in one place. Your profile keeps its own saves, and Lootnest swaps them in before a game starts, with a copy made first.</p>
-        <p class="wl-scan" id="wl-scan" aria-live="polite">${welcomeScan()}</p>
-        <div class="wl-go"><button class="ln-button ln-button--primary ln-button--lg" data-action="welcome-done">Continue</button><span class="error-text" id="players-error"></span></div>
-        <p class="wl-note">More profiles, and runs of your own, can be added later in Profiles.</p>
-        <p class="wl-note" id="wl-pn" ${S.pnFound ? "" : "hidden"}>Playnite is on this PC too. You can bring in its time played, statuses and favourites later, in Settings under Data and activity.</p>
-      </div>
+      <div class="wl-go wl-in" style="--i:4"><button class="ln-button ln-button--primary ln-button--lg" data-action="welcome-done">Continue</button><span class="error-text" id="players-error"></span></div>
+      <p class="wl-note" id="wl-pn" ${S.pnFound ? "" : "hidden"}>Playnite is on this PC. Bring in its time played later, in Settings.</p>
     </div>`;
   }
 

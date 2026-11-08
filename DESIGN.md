@@ -119,6 +119,7 @@ Three families, all under the **SIL Open Font License 1.1**, embedded as woff2 i
 | `--text-hero` | 40 to 64 | A game's name on its page and on Home |
 | `--text-page` | 34 | Page titles |
 | `--text-score` | 26 | Numbers you read off a scoreboard |
+| `--text-board` | 40 | A page's own numbers on its scoreboard panel (Saves, Achievements) |
 | `--text-section` | 22 | Drawer, dialog and empty-page titles (Atkinson 800) |
 | `--text-lead` | 18 | Values that stand out |
 | `--text-label` | 16 | A section's label (Atkinson 800) |
@@ -171,6 +172,9 @@ All in `system.css`, prefixed `ln-` (the switch is `.switch`). Every interactive
 | Tag | `.ln-tag`, `--player`, `--strong`, `--sec`, `.ln-mark` | | Short states such as Playing, Steam, Update. |
 | Game tile | `.ln-tile` | Owners bar (tall bar = loaded), badge, no-art cover, stand-in art, skeleton | The cover is the content, a cartridge that lifts. |
 | Metadata | `.ln-meta`, `.ln-facts` | Values first (scoreboard numbers), then what they are; side-column rows | |
+| Scoreboard | `.ln-meta.ln-score` | One front panel of a page's own numbers (`--text-board`), a hairline before each | Under the section's label; never a strip of equal cards. |
+| Rows on a panel | `.ln-rows` | Each row `--row-h` high: the thing on the left, its facts and key on the right | Copies, updates, what needs a look, Top sellers. |
+| Lamp | `.ln-lamp`, `--on`, `--warn` | Grey off, lit green on, amber needs a look | Always beside its words. |
 | Action list | `.ln-list`, `.ln-row`, `--danger` | | Hairline-ruled rows grouped by intent. |
 | Tabs | `.ln-tabs` | The current tab is a cartridge: raised, the section's colour along its top | Arrows, Home and End move between tabs. |
 | Segmented control | `.ln-segmented` | A well with keys; the chosen one raised with a band of the section's colour | Radio group; arrows move the choice. |
@@ -178,7 +182,7 @@ All in `system.css`, prefixed `ln-` (the switch is `.switch`). Every interactive
 | Banner | `.ln-banner` | A panel on its lip; its icon a lit lamp | A notice that needs a decision. |
 | Drawer | `.ln-drawer`, `--wide` | Head, a body that scrolls, an optional foot | Slides in from the right; Escape and the scrim close it. |
 | Toast | `.ln-toast`, `--success`, `--error` | One optional ghost action | Same words as the action that caused it. |
-| Empty / loading / error | `.ln-state`, `.ln-empty`, `.ln-ghosts`, `.ln-steps` | | Says what's going on and what to do. |
+| Empty / loading / error | `.ln-state`, `.ln-empty`, `.ln-ghosts` | An empty page: its label, one line, one key; the Library adds dashed covers | Says what's going on and what to do. |
 | Backdrop | `.ln-backdrop` | The game's art, blurred | Only behind the hero and Big Picture. |
 
 ## Accessibility
@@ -197,9 +201,4 @@ All in `system.css`, prefixed `ln-` (the switch is `.switch`). Every interactive
 
 ## Moving pages over
 
-The Arcade system, the shell (top bar and sidebar), the motion and Home shipped in 1.93; the Library, the game page and Big Picture in 1.94. The rest follow, one batch per version:
-
-1. Settings, Profiles, dialogs and drawers.
-2. Saves, Updates, Achievements, the Store, the first run and empty states.
-
-Until a page's batch, it already takes the new tokens, keys, labels and motion, and keeps its own layout.
+The Arcade system, the shell (top bar and sidebar), the motion and Home shipped in 1.93; the Library, the game page and Big Picture in 1.94; Settings, Profiles, dialogs and drawers in 1.95; Saves, Updates, Achievements, the Store, the first run and empty pages in 1.96. Next is a copy sweep across every page.

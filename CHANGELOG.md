@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.96.0
+
+- **Saves in Arcade.** Your saves are a scoreboard at the top: games with profiles, games with copies, save points and the newest copy, in large numbers. What needs a look comes next, one row each with an amber lamp and the one key that sorts it. Recent copies, Per game and Cloud saves are rows on panels, each with its key on the right.
+- **Updates in Arcade.** The filters are one bar of keys with their counts in large numbers. Each game is a row with its art, your version against the latest and its key. What needs a look sits in the side column under its label, with a lamp on each.
+- **Achievements in Arcade.** Your score is a scoreboard: unlocked, complete, games and games finished 100%. Each game is a card with a ring of how much is done, lilac as it fills and green once it's all done. Gold, blue, green and silver now mean only how rare an achievement is.
+- **The Store in Arcade.** Today's deal stands as tall as Top sellers beside it, Top sellers is a panel of rows, and deals lift under the pointer like covers. In a game's panel, every store has an Open key, and the requirements sit on a panel beside this PC's parts.
+- **A new first start.** Lootnest comes up like a console: the gem drops into the nest, then one line, a green bar that runs while it looks for games and fills when it's done, your name and colour, and Continue. All of it arrives in under 0.6 seconds, and nothing moves with Windows' animation effects off.
+- **Empty pages are the same everywhere:** a label in the page's colour, one line, one key.
+- **Less to read.** Saves, Updates, Achievements and the Store lose their introductions and the notes that repeated what's on screen. A short line stays only where something changes files or sends something online.
+- The website's screenshots show the new look.
+
 ## 1.95.0
 
 - **Settings in Arcade.** The categories sit on a panel at the left, each with its icon, and the one you're in lights up in its section's colour. Every category is groups of rows under labels, with the setting's name on the left and its switch, box or key on the right, all lined up and the same height.
