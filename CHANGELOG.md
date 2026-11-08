@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.58.2
+
+- Panels, cards and pop-up dialogs are solid now instead of see-through, so text on them is easier to read. The Library's filters bar stays put at the top of the page without the games showing through it, and lines up with the grid.
+- Fewer glows and stripes. Achievement cards, the rarest unlocked and the Updates summary are plain panels; a game at 100% keeps its full gold ring.
+- An achievement unlock in the window shows the profile's colour as a small dot instead of a coloured edge.
+- Warnings, such as Steam Cloud replacing a profile's files or a game closing right after an update, show a warning sign instead of a coloured stripe down the side.
+
 ## 1.58.1
 
 - Every page now starts at the same distance from the sidebar. The Store, Updates and Achievements pages, and Home before you've played anything, sat a little further to the right than the Library, Home and Cloud saves.

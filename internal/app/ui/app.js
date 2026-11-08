@@ -1337,7 +1337,7 @@
     const when = new Date(c.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
     return `<div class="gp-conflict">${banner(`Steam Cloud replaced ${esc(possessive(who))} files on ${esc(when)}`,
       `${esc(who)}'s profile stayed as it was. That session's files, from Steam Cloud, are kept as a copy, so nothing was lost. Turn Steam Cloud off for ${esc(g.name)} in its Steam properties if this keeps happening.`,
-      bBtn("secondary", `data-action="copies" data-game="${esc(g.id)}"`, "See the copies") + bBtn("ghost", `data-action="conflict-ok" data-game="${esc(g.id)}"`, "Got it"))}</div>`;
+      bBtn("secondary", `data-action="copies" data-game="${esc(g.id)}"`, "See the copies") + bBtn("ghost", `data-action="conflict-ok" data-game="${esc(g.id)}"`, "Got it"), false, "warn")}</div>`;
   }
   // A game that ships with an anti-cheat: what Lootnest does and doesn't do.
   function antiCheatNote(it) {
@@ -1604,7 +1604,7 @@
   }
 
   // Notices at the top of Home and the Library (system.css .ln-banner).
-  const banner = (title, text, actions, busy) => `<div class="ln-banner ln-root">${busy ? '<span class="ln-spinner" aria-hidden="true"></span>' : ""}<div class="ln-banner__text"><b>${title}</b><p>${text}</p></div>${actions ? `<div class="ln-banner__actions">${actions}</div>` : ""}</div>`;
+  const banner = (title, text, actions, busy, tone) => `<div class="ln-banner ln-root">${tone === "warn" ? GI.alert : busy ? '<span class="ln-spinner" aria-hidden="true"></span>' : ""}<div class="ln-banner__text"><b>${title}</b><p>${text}</p></div>${actions ? `<div class="ln-banner__actions">${actions}</div>` : ""}</div>`;
   const bBtn = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
 
   // Asked once: keep Lootnest up to date by itself, or not.
@@ -3138,9 +3138,9 @@
       const t = tierOf(a.percent);
       const el = document.createElement("div");
       el.className = `ach-pop${t ? " tier-" + t : ""}`;
-      if (p) el.style.setProperty("--player", p.color);
+      if (p) { el.classList.add("ln-player"); el.style.setProperty("--player", p.color); }
       el.style.animationDelay = i * 160 + "ms";
-      el.innerHTML = `${achIcon(Object.assign({}, a, { unlocked: true }))}<div><span class="ach-pop-k">Achievement unlocked${p && cfg().players.length > 1 ? " for " + esc(p.name) : ""}</span><b>${esc(a.name || "Achievement")}</b>
+      el.innerHTML = `${achIcon(Object.assign({}, a, { unlocked: true }))}<div><span class="ach-pop-k">${p ? '<span class="dot" aria-hidden="true"></span>' : ""}Achievement unlocked${p && cfg().players.length > 1 ? " for " + esc(p.name) : ""}</span><b>${esc(a.name || "Achievement")}</b>
         <span class="ach-pop-l">${a.percent ? `<em>${TIERS[t]}</em>, ${esc(pctText(a.percent))} of players` : esc(a.description || game || "")}</span></div>`;
       box.appendChild(el);
       setTimeout(() => { el.classList.add("out"); el.addEventListener("animationend", () => el.remove(), { once: true }); setTimeout(() => el.remove(), 800); }, 5600 + i * 160);
@@ -3549,7 +3549,7 @@
     const C = S.carried[oldKey];
     if (!C || !C.done) return "";
     const saves = C.profile ? `${esc(pname(C.profile))}'s files are in the new copy.` : C.saves.length ? `${C.saves.length} save location${C.saves.length === 1 ? "" : "s"} came along${C.saves.some((x) => x.replaced) ? ", and the new copy's own are in backups" : ""}.` : "It had no saves inside its folder.";
-    return `<div class="copy-card copy-card--done"><div><b>${C.name ? esc(C.name) + " is carried over to its new copy" : "Carried over"}</b><p>${saves} Playtime, status, collections and settings moved too.</p></div>
+    return `<div class="copy-card copy-card--done">${GI.tick}<div><b>${C.name ? esc(C.name) + " is carried over to its new copy" : "Carried over"}</b><p>${saves} Playtime, status, collections and settings moved too.</p></div>
       ${C.oldThere && !C.deleted ? `<div class="gpage-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="copy-delete-old" data-old="${esc(oldKey)}" ${C.busy ? "disabled" : ""}>Delete the old folder</button></div>` : ""}</div>`;
   }
   // The Updates page: a summary you can filter by, what needs a look, then a
@@ -3613,7 +3613,7 @@
   const dlRecycle = (m) => `<button class="ln-button ln-button--secondary ln-button--sm" data-action="dl-recycle" data-path="${esc(m.path)}">Delete the downloaded file</button>`;
   function dlCard(m) {
     const same = (m.check || {}).state === "same";
-    return `<div class="copy-card dl-card${m.newer ? "" : " dl-card--dim"}"><span class="upd-art dl-art" aria-hidden="true">${updArt(updItem(m.key)) || `<span>${esc(m.game)}</span>`}</span>
+    return `<div class="copy-card dl-card"><span class="upd-art dl-art" aria-hidden="true">${updArt(updItem(m.key)) || `<span>${esc(m.game)}</span>`}</span>
       <div class="dl-text"><b>${esc(m.game)}</b><p>${dlVer(m)}</p><p class="selectable">${esc(m.name)}</p></div>
       <div class="gpage-actions">${same ? dlRecycle(m) : `<button class="ln-button ${m.newer ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm" data-action="dl-review" ${dlIds(m)} aria-haspopup="dialog">Review and apply</button>`}
         <button class="ln-button ln-button--ghost ln-button--sm" data-action="dl-ignore" ${dlIds(m)}>Ignore</button></div></div>`;
@@ -3651,7 +3651,7 @@
     const found = dl.length ? `<section class="upd-look" aria-label="Found in your Downloads"><div class="upd-sec-head"><h2>Found in your Downloads</h2><span class="upd-sec-n ln-num">${dl.length}</span></div>${dl.map(dlCard).join("")}</section>` : "";
     const look = nLook || done.length ? `<section class="upd-look" aria-label="Needs a look"><div class="upd-sec-head"><h2>Needs a look</h2><span class="upd-sec-n ln-num">${nLook}</span></div>
       ${done.map(carriedCard).join("")}${offers.map((o) => copyCard(o, false)).join("")}
-      ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn"><div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--primary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}</section>` : "";
+      ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return `<div class="copy-card copy-card--warn">${GI.alert}<div><b>${esc(g.name)} closed right after starting</b><p>It's the first start since the update from ${esc(u.source)}. If it doesn't work, Undo puts the game back as it was.</p></div><div class="gpage-actions">${u.noUndo ? "" : `<button class="ln-button ln-button--primary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`}</div></div>`; }).join("")}</section>` : "";
     const list = U.games.filter((g) => F === "all" || updState(g, U).k === F || (F === "new" && g.newer))
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || a.name.localeCompare(b.name));
     const cards = list.length ? `<ol class="upd-cards">${list.map((r) => updCard(r, U)).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
@@ -3913,7 +3913,7 @@
     }).filter(Boolean);
     const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-page" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(p.name)}</button>`).join("")}</div>` : "";
     if (!rows.length) {
-      return `<div class="ach-page ln-root">${head}${chips}<div class="ln-glass ln-state">${GI.trophy}<div><h3>No achievements found yet</h3>
+      return `<div class="ach-page ln-root">${head}${chips}<div class="ln-state">${GI.trophy}<div><h3>No achievements found yet</h3>
         <p>Lootnest reads them from Steam's library on this PC, and from the file a Steam-compatible tool keeps next to a game's saves. Play a game that has achievements and they show up here.</p></div></div></div>`;
     }
     const total = rows.reduce((n, r) => n + r.unlocked, 0), perfect = rows.filter((r) => r.unlocked && r.unlocked === r.g.total).length;
