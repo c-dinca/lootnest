@@ -10,6 +10,13 @@
   const HIDDEN = q.get("hidden") === "1" ? { "steam:1245620": "Elden Ring", "dir:d:\\games\\old racer": "Old Racer" } : {};
   const now = Date.now(), h = 3600e3, d = 24 * h;
   const iso = (ms) => new Date(now - ms).toISOString();
+  // Updates found in Downloads (ps_downloads).
+  let DL = [
+    { key: "found:dir:d:\\games\\hydra\\hollow tale", game: "Hollow Tale", path: "C:\\Users\\you\\Downloads\\Hollow Tale v1.3", name: "Hollow Tale v1.3", kind: "folder",
+      size: 812e6, modTime: iso(2 * h), check: { have: "1.2", to: "1.3", state: "ok" }, newer: true },
+    { key: "found:dir:d:\\games\\phantom blade zero", game: "Phantom Blade Zero", path: "C:\\Users\\you\\Downloads\\Phantom.Blade.Zero.Update.v1.0.3.part1.rar", name: "Phantom.Blade.Zero.Update.v1.0.3.part1.rar", kind: "rar",
+      size: 2.1e9, modTime: iso(26 * h), check: { to: "1.0.3", state: "unknown" }, newer: false },
+  ];
   const ART = window.__ART || {};
   const art = (id, k) => ART[id + "-" + k] || "";
 
@@ -336,6 +343,9 @@
       return ok();
     },
     ps_updateUndo: (key) => { setTimeout(() => emit({ type: "updateDone", key, undone: true, update: { id: "x", source: "HollowTale-1.2.zip", added: [], replaced: [], state: "undone" } }), 400); return ok(); },
+    ps_downloads: () => { setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
+    ps_ignoreDownload: (path) => { DL = DL.filter((m) => m.path !== path); setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
+    ps_recycleDownload: (path) => { DL = DL.filter((m) => m.path !== path); setTimeout(() => emit({ type: "downloadsFound", matches: DL }), 80); return ok(); },
     ps_steamGames: () => ok([{ appId: 1091500, name: "Cyberpunk 2077", installDir: "Cyberpunk 2077" }]),
   };
   // Everything else answers quietly (the harness never changes anything).

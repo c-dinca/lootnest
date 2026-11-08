@@ -262,6 +262,9 @@ func (a *App) watch() {
 				a.achTick(procs)
 			}
 		}
+		if n%60 == 0 { // every ~2 min: updates that landed in Downloads
+			go a.downloadsCheck()
+		}
 		if n%15 == 0 { // every ~30 s: finish Steam set-up once Steam is closed
 			a.mu.Lock()
 			pending := a.hooksPending

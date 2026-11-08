@@ -162,6 +162,10 @@ type Settings struct {
 	// SoundsOff silences the window's sounds for unlocks, save points and
 	// swaps (on unless turned off).
 	SoundsOff bool `json:"soundsOff,omitempty"`
+	// DownloadsOff stops Lootnest looking in the Downloads folder for
+	// updates to games no launcher updates (on unless turned off; it reads
+	// only names, on this PC).
+	DownloadsOff bool `json:"downloadsOff,omitempty"`
 }
 
 type Config struct {

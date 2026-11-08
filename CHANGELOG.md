@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.58.0
+
+- **Updates you already downloaded, found for you.** For games no launcher keeps up to date, Lootnest looks at the names in your Downloads folder (and the folders directly in it) and spots an update for one of your games: a folder, a .zip, .7z or .rar (the first part of a set), or an installer. It tells you once with a notification, after that game closes if it's running.
+- The Updates page has a Found in your Downloads list, with the version each one moves you to. Review and apply opens the usual update panel with the file already chosen, so the saves are copied first and Undo works as before. Ignore hides one until the file changes.
+- A game's page says when an update for it is in your Downloads, with the same Review and apply.
+- Once an update from Downloads is applied, or for a file with the version you already have, Delete the downloaded file moves it (every part of a .rar set) to the Recycle Bin.
+- Lootnest reads only names, on this PC, and looks nowhere else. Turn it off in Settings, Games and swaps.
+- Versions in a folder's name, such as "Hollow Tale v1.3", are read correctly when you choose a folder as an update.
+
 ## 1.57.0
 
 - **Real sounds in Big Picture.** Moving, choosing, switching tabs and going back play short recorded sounds instead of the old beeps. They also play when your PC is set to reduce motion; the sound button at the bottom of Big Picture still turns them off.
