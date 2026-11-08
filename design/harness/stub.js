@@ -128,7 +128,7 @@
   };
   let FIRSTP = FIRST && [{ id: "p1", name: "Cris", color: "#6C9BD2" }]; // until Continue saves it
   const state = () => ({
-    version: "1.45.0", stage: "beta", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
+    version: "1.45.0", stage: "beta", safe: q.get("safe") === "1", firstRun: FIRST, loadError: STATE === "error" ? "config.json was unreadable and was renamed to config.json.broken: unexpected end of JSON input" : "",
     config: { version: 2, players: FIRSTP || PLAYERS, games: FIRST ? [] : games, settings, libraryPrefs: {}, addedGames: [], ignoredFound: Object.keys(HIDDEN), tags: TAGS, offline: OFFLINE },
     conflicts: { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
@@ -164,6 +164,7 @@
   const api = {
     // ?bp=1: "Open in Big Picture when Lootnest starts" is on.
     ps_ready: () => ok(q.get("bp") === "1" ? { bigPicture: true } : {}),
+    ps_restart: () => ok(null),
     ps_closeGame: () => ok(),
     // The last scan, per source: a mix of found, not installed, no games and an error.
     ps_sources: () => ok({ at: iso(2 * 60e3 + 5e3), sources: [

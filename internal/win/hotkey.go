@@ -28,3 +28,11 @@ func RegisterHotKey(hwnd uintptr, id int, mods uint32, vk uint32) bool {
 func UnregisterHotKey(hwnd uintptr, id int) {
 	procUnregisterHotKey.Call(hwnd, uintptr(id))
 }
+
+var procGetAsyncKeyState = user32.NewProc("GetAsyncKeyState")
+
+// ShiftDown says whether a Shift key is held right now.
+func ShiftDown() bool {
+	r, _, _ := procGetAsyncKeyState.Call(0x10) // VK_SHIFT
+	return r&0x8000 != 0
+}

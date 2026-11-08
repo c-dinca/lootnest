@@ -133,6 +133,9 @@ func (a *App) saveRecord(pid, key, local, cloud string) {
 // syncUp uploads a player's saves for a game when only this PC changed
 // them (after a session, or after their files were swapped out).
 func (a *App) syncUp(cfg *core.Config, g *core.Game, pid string) {
+	if a.safe {
+		return
+	}
 	syncMu.Lock()
 	defer syncMu.Unlock()
 	c, err := a.cloud(cfg.Settings)

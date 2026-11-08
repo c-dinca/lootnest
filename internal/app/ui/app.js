@@ -10,6 +10,7 @@
   };
   const api = {
     ready: () => call("ps_ready"),
+    restart: (safe) => call("ps_restart", safe),
     state: () => call("ps_state"),
     savePlayers: (p) => call("ps_savePlayers", p),
     saveGame: (g) => call("ps_saveGame", g),
@@ -1545,7 +1546,7 @@
   function viewHome() {
     const all = libraryItems();
     const recent = recentItems(all, false);
-    const banners = updateBanner() + hookBanner();
+    const banners = safeBanner() + updateBanner() + hookBanner();
     const allBtn = all.length ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="library">All ${all.length === 1 ? "1 game" : all.length + " games"}</button>` : "";
     if (!recent.length) {
       const step = (mark, title, sub, act) => `<li>${mark}<div><b>${title}</b><span>${sub}</span></div>${act}</li>`;
@@ -1745,6 +1746,8 @@
   // Notices at the top of Home and the Library (system.css .ln-banner).
   const banner = (title, text, actions, busy, tone) => `<div class="ln-banner ln-root">${tone === "warn" ? GI.alert : busy ? '<span class="ln-spinner" aria-hidden="true"></span>' : ""}<div class="ln-banner__text"><b>${title}</b><p>${text}</p></div>${actions ? `<div class="ln-banner__actions">${actions}</div>` : ""}</div>`;
   const bBtn = (kind, attrs, label) => `<button class="ln-button ln-button--${kind}" ${attrs}>${label}</button>`;
+
+  const safeBanner = () => S.d.safe ? banner("Safe mode", "The safety net, cloud uploads and other background work are off until Lootnest restarts normally.", bBtn("secondary", 'data-action="restart-normal"', "Restart normally")) : "";
 
   // Asked once: keep Lootnest up to date by itself, or not.
   function updatesPrompt() {
@@ -4917,6 +4920,7 @@
       try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     "covers-later"() { S.hideCoverHint = true; render(); },
+    "restart-normal"() { api.restart(false).catch((e) => toast(errText(e), "error")); },
     async "updates-yes"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.checkUpdates = true; s.autoInstallUpdates = true; s.updatesAsked = true;

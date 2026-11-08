@@ -561,6 +561,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 
 /* ------------------------------------------------------------------ home */
 .home-empty .home-cols { margin-top: var(--space-8); }
+.home-empty > .ln-banner { margin-bottom: var(--space-6); }
 .lib > .ln-empty { margin-top: var(--space-8); }
 .ach-page > .ln-empty { margin-top: var(--space-2); }
 .home-banners { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
