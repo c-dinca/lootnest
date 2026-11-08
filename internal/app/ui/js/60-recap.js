@@ -25,7 +25,7 @@
     const x = cv.getContext("2d");
     try { await document.fonts.ready; } catch (e) { /* the fallbacks will do */ }
     const C = { bg: "#111217", fg: "#DFE5EB", fg2: "#A7B0BC", line: "rgba(223,229,235,0.14)", red: "#EF233C", me: p.color || "#6C9BD2" };
-    const font = (w, px, fam, stretch) => { x.font = `${w} ${px}px ${fam === "t" ? "Bricolage, sans-serif" : "Figtree, sans-serif"}`; try { x.fontStretch = stretch || "normal"; } catch (e) { /* older engines */ } };
+    const font = (w, px, fam) => { x.font = `${w} ${px}px ${fam === "t" ? '"Tilt Warp", sans-serif' : '"Atkinson Next", sans-serif'}`; };
     const fit = (t, max) => { if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + "…").width > max) t = t.slice(0, -1); return t + "…"; };
     x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
     // The most played game's art, faded behind the year.
@@ -46,7 +46,7 @@
     font(700, 30, "u"); x.fillStyle = C.fg; x.textBaseline = "middle"; x.fillText("Lootnest", pad + 46, 92);
     // The year, big.
     x.textBaseline = "alphabetic";
-    font(720, 260, "t", "condensed"); x.fillStyle = C.fg; x.fillText(String(year), pad - 8, 390);
+    font(720, 260, "t"); x.fillStyle = C.fg; x.fillText(String(year), pad - 8, 390);
     font(600, 40, "u"); x.fillStyle = C.fg2; x.fillText(fit(`${possessive(p.name)} year in games`, W - pad * 2), pad, 452);
     // Four numbers.
     const stats = [[Math.round(R.total / 3600), "hours"], [R.days, R.days === 1 ? "day played" : "days played"], [R.games, R.games === 1 ? "game" : "games"], [R.best, R.best === 1 ? "day in a row" : "days in a row"]];
@@ -54,7 +54,7 @@
     stats.forEach(([v, l], i) => {
       const sx = pad + i * sw;
       x.fillStyle = C.line; x.fillRect(sx, 506, sw - 24, 2);
-      font(720, 92, "t", "condensed"); x.fillStyle = i === 0 ? C.me : C.fg; x.fillText(String(v), sx, 604);
+      font(720, 92, "t"); x.fillStyle = i === 0 ? C.me : C.fg; x.fillText(String(v), sx, 604);
       font(500, 26, "u"); x.fillStyle = C.fg2; x.fillText(l, sx, 642);
     });
     // The most played, with its cover, then the next four as bars.
@@ -67,7 +67,7 @@
         x.drawImage(cov, (iw - cw / f) * 0.5, (ih - ch / f) * 0.3, cw / f, ch / f, pad, y, cw, ch); x.restore(); }
       const tx = cov ? pad + 186 : pad;
       font(600, 26, "u"); x.fillStyle = C.fg2; x.fillText("Most played", tx, y + 44);
-      font(720, 64, "t", "condensed"); x.fillStyle = C.fg; x.fillText(fit(R.top[0].name, W - pad - tx), tx, y + 118);
+      font(720, 64, "t"); x.fillStyle = C.fg; x.fillText(fit(R.top[0].name, W - pad - tx), tx, y + 118);
       font(600, 30, "u"); x.fillStyle = C.me; x.fillText(hours(R.top[0].sec), tx, y + 166);
       y += 262;
     }

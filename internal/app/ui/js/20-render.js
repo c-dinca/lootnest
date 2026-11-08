@@ -62,6 +62,7 @@
     renderSideGames();
     const v = $("#view");
     noteVisit(v.scrollTop);
+    document.documentElement.dataset.sec = secOf();
     renderBar();
     const keepScroll = v.scrollTop;
     // A page still arriving carries on from where its entrance was.
@@ -96,18 +97,24 @@
     if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
     renderOverlay();
     loadCovers();
-    backdropForView();
     if (BP.on) bpSoon();
   }
 
   // ------------------------------------------------------------- top bar --
-  // The sections as tabs, with one line under the current section that
-  // slides from tab to tab. Profiles and Settings mark theirs with a fill.
-  // Narrow windows keep the first three tabs and put the rest under More.
+  // The sections as tabs. The current one is a cartridge that slides from
+  // tab to tab; Profiles and Settings light theirs. Narrow windows keep the
+  // first three tabs and put the rest under More.
   const PAGE_NAMES = { home: "Home", library: "Library", find: "Store", updates: "Updates", achievements: "Achievements", saves: "Saves", players: "Profiles", settings: "Settings" };
+  // Each section's colour (data-sec on the window, --sec in CSS). A game's
+  // page is the Library's; a Settings category has one only when it is a
+  // section's own.
+  const SEC = { home: "home", library: "library", game: "library", edit: "library", find: "store", updates: "updates", achievements: "ach", saves: "saves", players: "profiles", player: "profiles" };
+  const SET_SEC = { games: "library", online: "store", updates: "updates", cloud: "saves" };
+  const secOf = () => (S.view === "settings" ? SET_SEC[S.setTab] : SEC[S.view]) || "neutral";
   function renderBar(to) {
     const top = to || (S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view);
     document.querySelectorAll(".topbar [data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
+    $("#topbar").dataset.sec = (top === S.view ? secOf() : SEC[top]) || "neutral"; // a game's page keeps the tab it came from
     $("#hist-back").disabled = !hist.back.length;
     $("#hist-fwd").disabled = !hist.fwd.length;
     placeInd(false);
@@ -117,10 +124,9 @@
     const el = !cur ? null : cur.offsetParent ? cur : more;
     more.classList.toggle("is-current", el === more);
     if (!el) { ind.style.opacity = "0"; return; }
-    const cs = getComputedStyle(el), l = parseFloat(cs.paddingLeft), w = el.offsetWidth - l - parseFloat(cs.paddingRight);
     const jump = still || ind.style.opacity !== "1";
     if (jump) ind.style.transition = "none";
-    ind.style.transform = `translateX(${el.offsetLeft + l}px) scaleX(${w})`;
+    ind.style.transform = `translateX(${el.offsetLeft}px) scaleX(${el.offsetWidth})`;
     ind.style.opacity = "1";
     if (jump) { void ind.offsetWidth; ind.style.transition = ""; }
   }
@@ -130,30 +136,6 @@
     toggleMenu(el, hid.map((t) => `<button data-action="nav" data-view="${t.dataset.view}" role="menuitem"${t.hasAttribute("aria-current") ? ' aria-current="page"' : ""}><span class="grow">${PAGE_NAMES[t.dataset.view]}</span>${(t.querySelector(".count") || {}).textContent || ""}</button>`).join(""));
   }
 
-  // ------------------------------------------------------------ backdrop --
-  // The window takes on the colours of the game in focus: its art, blurred
-  // far out of shape, behind everything. It follows the game the pointer
-  // rests on in the Library, and the game whose page is open.
-  // New art is decoded first (for at most --dur-1), so it fades in whole;
-  // in a page change it fades as quickly as the page (#backdrop.with-page).
-  let bdShown = "", bdFront = 0, bdTimer = 0, bdSeq = 0;
-  function setBackdrop(url) {
-    if (url === bdShown) return;
-    bdShown = url;
-    const seq = ++bdSeq, im = url && new Image(), quick = !!swapping;
-    if (im) im.src = url;
-    Promise.race([im && im.decode(), new Promise((ok) => setTimeout(ok, ms("--dur-1")))]).catch(() => {}).then(() => seq === bdSeq && showBackdrop(url, quick));
-  }
-  function showBackdrop(url, quick) {
-    const layers = document.querySelectorAll("#backdrop .bd");
-    if (layers.length < 2) return;
-    $("#backdrop").classList.toggle("with-page", quick);
-    const next = layers[bdFront ^ 1], cur = layers[bdFront];
-    if (url) next.style.backgroundImage = `url("${url}")`;
-    next.classList.toggle("on", !!url);
-    cur.classList.remove("on");
-    bdFront ^= 1;
-  }
   const artOf = (it) => (it && (artFor(it, "hero").url || S.icons[coverKey(it)])) || "";
   function itemFor(el) {
     const host = el && el.closest("[data-game], [data-key]");
@@ -162,17 +144,6 @@
     if (isOwnedKey(id)) return ownedItem(id);
     return everyItem().find((x) => x.kind === kind && x.id === id) || null;
   }
-  // The colours change when a game is chosen, not as the pointer passes:
-  // Home takes the game played last, a game's page that game, and the
-  // Library the game opened last.
-  function defaultBackdrop() {
-    const find = (p) => p && everyItem().find((x) => x.kind === p.kind && x.id === p.id);
-    if (S.view === "game" && S.page) return artOf(find(S.page));
-    if (S.view === "home") return artOf(recentItems(libraryItems(), false)[0]);
-    if (S.view === "library") return artOf(find(S.selected));
-    return "";
-  }
-  function backdropForView() { clearTimeout(bdTimer); setBackdrop(defaultBackdrop()); }
 
   // ---------------------------------------------------------- right-click --
   function contextItems(it, host) {
@@ -236,14 +207,17 @@
   // The seat: who's at the PC, until someone switches or Lootnest quits.
   // Every Play is theirs; "or play as…" and the picker are for anyone else.
   const seated = () => (S.seat && player(S.seat)) || null;
+  let seatShown = null; // who the seat showed last: a new face pops in
   function renderSeat() {
     // Just you: someone is always seated, so Play is yours.
     if (solo() && !seated() && people()[0]) { S.seat = people()[0].id; api.setSeat(S.seat).catch(() => {}); }
-    const seat = seated(), b = $("#bar-me");
+    const seat = seated(), b = $("#bar-me"), sat = seat && seatShown !== null && seat.id !== seatShown;
+    seatShown = seat ? seat.id : "";
     const s = seat && (S.d.sessions || []).find((x) => x.phase === "playing" && x.playerId === seat.id), g = s && game(s.gameId);
     const label = seat ? `${solo() ? "Playing as" : "At the PC:"} ${seat.name}${g ? `, playing ${g.name}` : ""}` : "Nobody's at the PC";
     b.classList.toggle("playing", !!g);
     b.innerHTML = seat ? `${lnAvatar(seat)}<span class="bar-label">${esc(seat.name)}</span>` : `<span class="bar-nobody">${GI.person}</span><span class="bar-label">Sit down</span>`;
+    if (sat && !reduced()) b.querySelector(".ln-avatar").classList.add("sat");
     b.setAttribute("aria-label", label + ". Who's here");
     b.title = label;
     applyTheme();

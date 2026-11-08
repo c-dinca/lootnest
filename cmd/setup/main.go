@@ -33,7 +33,7 @@ var page string
 var Version = "1.0.0"
 
 const (
-	bg     = 0x111217 // Obsidian, the page's ground
+	bg     = 0x141529 // --bg-ground, the page's ground
 	border = 0x2A3142 // the app's window edge
 )
 

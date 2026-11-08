@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.93.0
+
+- **A new look, Arcade.** Lootnest now looks like a piece of game hardware: a dark indigo frame (the top bar and the sidebar) around a lighter screen where the page is. Home is the first page made for it; the other pages take the new colours, buttons and section titles now, and get their own layouts in the next versions.
+- **Every section has its colour.** Home is yellow, Library teal, Store blue, Updates orange, Achievements lilac, Saves green and Profiles pink. A section's title is a label in that colour on a line of it, and a game's page is the Library's teal.
+- **The tab you're on** is a block that slides to the next tab when you change page, and takes that section's colour on the way.
+- **Buttons are keys.** They sit on a lip and go down when you press them. Play is the red key, or the colour of the profile it plays as. Switches that are on light up green.
+- **New type.** Page titles, game names, Play and big numbers are set in Tilt Warp; everything else in Atkinson Hyperlegible Next, made to be read at a glance, with Figtree's plain digits. All three are built in.
+- **Page changes in order.** The page you leave fades as the new one comes in, its top settles into place, the section titles wipe in one after another, then the rest fades in, all in under half a second. Covers lift under the pointer, drawers slide in from the right, dialogs and menus grow into place, and your picture pops in when you sit down. With Windows' animation effects off, nothing moves.
+- Home: the game you played last on a front panel with a big Play key, then Continue playing, News, Who's playing, Tonight and Your saves under yellow labels. Your saves explains its numbers under its title instead of cutting the note short.
+
 ## 1.92.0
 
 - **Smoother page changes.** The page you go to appears at once and fades in while the one you left fades out over it, so the window is never empty between pages. A page arrives as one piece instead of section by section, and the whole change takes about a third of a second.

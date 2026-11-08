@@ -12,9 +12,10 @@
     flushSwap();
     const v = $("#view"), old = v.firstElementChild, top = v.scrollTop;
     if (reduced() || !old) { update(); return; }
-    const ghost = document.createElement("div"), r = v.getBoundingClientRect(), bd = $("#backdrop");
+    const ghost = document.createElement("div"), r = v.getBoundingClientRect();
     ghost.className = "view page-ghost";
     ghost.inert = true;
+    ghost.style.setProperty("--sec", getComputedStyle(v).getPropertyValue("--sec")); // the page you leave keeps its colour
     Object.assign(ghost.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
     let shown = false;
     const show = () => {
@@ -30,7 +31,6 @@
       sync(at) { ghost.getAnimations().forEach((a) => { if (a.startTime == null) a.startTime = at; }); },
       done() { if (!shown) { shown = true; v.classList.remove("is-arriving"); } ghost.remove(); if (swapping === sw) swapping = null; },
     };
-    bd.classList.add("with-page"); // the window's colours change with the page (setBackdrop)
     v.classList.add("is-arriving");
     try { update(); } catch (e) { sw.done(); throw e; }
     old.classList.remove("enter");
@@ -42,17 +42,25 @@
     const art = [...v.querySelectorAll("img[src]")].filter((i) => { const b = i.getBoundingClientRect(); return b.bottom > vr.top && b.top < vr.bottom; }).slice(0, 24);
     Promise.race([Promise.all(art.map((i) => i.decode().catch(() => {}))), new Promise((ok) => setTimeout(ok, ms("--dur-1")))]).then(show);
   }
-  // A page arriving: one entrance for the page as a whole. A redraw while
-  // it arrives (a cover coming in) carries on from where it was (at, when
-  // the entrance of the page it replaces started); while a change waits
-  // for its art, the page waits too.
+  // A page arriving, once: its head settles, the labels of the sections
+  // in view wipe in one after another (up to five), the rest fades in (the
+  // order is in app.css, motion). A redraw while it arrives (a cover coming
+  // in) carries on from where it was (at, when the entrance of the page it
+  // replaces started); while a change waits for its art, the page waits too.
   let arrival = 0;
+  const ENTRANCE = ["page-in", "head-in", "label-in", "part-in"];
   function enter(page, at) {
     if (reduced() || swapping && $("#view").classList.contains("is-arriving")) return;
+    const vr = $("#view").getBoundingClientRect();
+    let i = 0;
+    page.querySelectorAll(".ln-section-head:not(.ln-section-head--minor)").forEach((h) => {
+      const r = h.getBoundingClientRect();
+      if (i < 5 && r.height && r.bottom > vr.top && r.top < vr.bottom) { h.classList.add("wipe"); h.style.setProperty("--i", i++); }
+    });
     page.classList.add("enter");
-    const runs = page.getAnimations().filter((a) => a.animationName === "page-in");
+    const runs = page.getAnimations({ subtree: true }).filter((a) => ENTRANCE.includes(a.animationName));
     if (at != null) { runs.forEach((a) => (a.startTime = at)); if (swapping) swapping.sync(at); }
-    Promise.all(runs.map((a) => a.finished)).then(() => page.classList.remove("enter"), () => {});
+    Promise.allSettled(runs.map((a) => a.finished)).then(() => page.classList.remove("enter"));
   }
 
   function openSheet(kind, id, fromEl) {
