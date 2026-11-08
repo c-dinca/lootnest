@@ -751,7 +751,7 @@
     async "mod-keep"() {
       const D = S.dialog;
       if (!D || !D.mod) return;
-      try { await api.modToggle(D.key, D.mod.id, true); } catch (e) { D.error = errText(e); renderOverlay(); return; }
+      try { await api.modToggle(D.key, D.owner, D.mod.id, true); } catch (e) { D.error = errText(e); renderOverlay(); return; }
       closeDialog();
       toast(`${D.mod.name} is on the list. Apply puts it into the game's folder.`);
       loadMods(D.key);
@@ -762,17 +762,17 @@
       closeDialog();
     },
     async "mod-toggle"(el) {
-      try { await api.modToggle(el.dataset.mods, el.dataset.id, el.checked); } catch (e) { toast(errText(e), "error"); }
+      try { await api.modToggle(el.dataset.mods, el.dataset.owner, el.dataset.id, el.checked); } catch (e) { toast(errText(e), "error"); }
       loadMods(el.dataset.mods);
     },
     async "mod-move"(el) {
-      try { await api.modOrder(el.dataset.mods, el.dataset.id, +el.dataset.by); } catch (e) { toast(errText(e), "error"); }
+      try { await api.modOrder(el.dataset.mods, el.dataset.owner, el.dataset.id, +el.dataset.by); } catch (e) { toast(errText(e), "error"); }
       loadMods(el.dataset.mods);
     },
     async "mod-remove"(el) {
       const key = el.dataset.mods, M = S.mods[key] || {}, inGame = ((M.deployed || {}).mods || []).includes(el.dataset.id);
       const ok = await confirmDialog({ title: `Remove ${el.dataset.name}?`, ok: "Remove",
-        body: `${inGame ? "It's in the game's folder now, so Lootnest takes it out first; the other mods that are on stay in. " : ""}Lootnest deletes its own copy of the mod. The archive or folder you added it from stays where it is.` });
+        body: `${inGame ? "It's in the game's folder now, so Lootnest takes it out first; the other mods that are on stay in. " : ""}Lootnest deletes its own copy of the mod${Object.keys(M.sets || {}).length > 1 ? ", so it goes from every profile's mods" : ""}. The archive or folder you added it from stays where it is.` });
       if (!ok) return;
       S.modsRun[key] = { what: "remove", done: 0, total: 0 }; // before the answer, which can come first
       try { if (!(await api.modRemove(key, el.dataset.id))) { delete S.modsRun[key]; loadMods(key); } }
@@ -781,7 +781,11 @@
     async "mods-apply"(el) {
       const key = el.dataset.mods;
       S.modsRun[key] = { what: "apply", done: 0, total: 0 }; render();
-      try { await api.modsApply(key); } catch (e) { delete S.modsRun[key]; render(); toast(errText(e), "error"); }
+      try { await api.modsApply(key, el.dataset.owner); } catch (e) { delete S.modsRun[key]; render(); toast(errText(e), "error"); }
+    },
+    async "mods-own"(el) {
+      try { await api.modSetOwn(el.dataset.mods, el.dataset.owner, true); } catch (e) { toast(errText(e), "error"); }
+      loadMods(el.dataset.mods);
     },
     async "mods-restore"(el) {
       const key = el.dataset.mods;
@@ -1040,7 +1044,8 @@
         await api.savePlayers([...cfg().players, { id: "", name, color: per.color, of: per.id }]);
         await refresh();
         if (S.dialog !== D) return;
-        const run = cfg().players.find((p) => p.name === name && p.of === per.id);
+        const run = cfg().players.find((p) => p.name === name && p.of === per.id), box = $("#newrun-mods");
+        if (run && box) await api.modSetOwn("game:" + D.gameId, run.id, box.checked).then(() => loadMods("game:" + D.gameId), (e) => toast(errText(e), "error"));
         S.dialog = null; renderOverlay();
         if (run) actions["play-as"]({ dataset: { game: D.gameId, player: run.id } });
       } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
@@ -1275,6 +1280,8 @@
     if (el.id === "lib-status") { S.status = el.value; render(); return; }
     if (el.id === "lib-who") { S.who = el.value; render(); return; }
     if (el.id === "ach-pick") { S.achPage = el.value; render(); return; }
+    if (el.id === "mods-for") { S.modsFor[el.dataset.mods] = el.value; render(); return; }
+    if (el.id === "newrun-mods" && S.dialog) { S.dialog.mods = el.checked; return; }
     if (el.dataset.assign) {
       if (!el.value) return;
       const it = everyItem().find((x) => recentKey(x) === el.value);

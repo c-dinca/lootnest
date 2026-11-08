@@ -50,7 +50,7 @@
     if (P.working) {
       const to = player(P.playerId), from = P.from && P.from !== P.playerId && player(P.from);
       const s = session(g.id);
-      const line = s && s.phase === "launching" ? `Starting ${esc(g.name)}` : P.mode !== "load" ? `Loading ${esc(possessive(pname(P.playerId)))} files and starting ${esc(g.name)}` : `Loading ${esc(possessive(pname(P.playerId)))} files`;
+      const m = s && s.phase === "mods" && s.mods, line = m ? `${esc(sessionText(s))}${m.total ? `, ${m.done} of ${m.total} files` : ""}` : s && s.phase === "launching" ? `Starting ${esc(g.name)}` : P.mode !== "load" ? `Loading ${esc(possessive(pname(P.playerId)))} files and starting ${esc(g.name)}` : `Loading ${esc(possessive(pname(P.playerId)))} files`;
       return `<div class="picker ln-root" role="dialog" aria-label="${esc(line)}"><div class="picker-head"><div></div></div>
         <div class="swap" aria-live="polite">
           <div class="swap-bay">${from ? `<div class="swap-out" aria-hidden="true">${lnAvatar(from, "120")}</div>` : ""}<div class="swap-in">${to ? lnAvatar(to, "120") : ""}</div></div>

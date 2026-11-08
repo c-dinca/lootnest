@@ -53,8 +53,8 @@ func addMod(t *testing.T, root, game string, files map[string]string, name strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	set := append(LoadModSet(root), ModEntry{ID: m.ID, On: true})
-	if err := SaveModSet(root, set); err != nil {
+	set := append(LoadModSet(root, ""), ModEntry{ID: m.ID, On: true})
+	if err := SaveModSet(root, "", set); err != nil {
 		t.Fatal(err)
 	}
 	return m
@@ -205,7 +205,7 @@ func TestDeployAndPutBack(t *testing.T) {
 	vanilla := folderHashes(t, game)
 	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A", "Data/new/a.esp": "a", "settings.ini": "settings A"}, "a.zip")
 	b := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock B"}, "b.zip")
-	res, err := ApplyMods(root, game, "", []*Mod{a, b}, time.Now(), nil)
+	res, err := ApplyMods(root, game, "", "", []*Mod{a, b}, time.Now(), nil)
 	if err != nil || res.Changed != 0 {
 		t.Fatal(res, err)
 	}
@@ -220,7 +220,7 @@ func TestDeployAndPutBack(t *testing.T) {
 		t.Fatalf("deployed: %+v", d)
 	}
 	// Apply again with one mod: the first set comes out, the new one goes in.
-	if _, err := ApplyMods(root, game, "", []*Mod{a}, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" {
@@ -229,7 +229,7 @@ func TestDeployAndPutBack(t *testing.T) {
 	if err := RemoveMod(root, a.ID); err == nil {
 		t.Fatal("a mod in the game's folder was removed")
 	}
-	if _, err := ApplyMods(root, game, "", nil, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := folderHashes(t, game); !reflect.DeepEqual(got, vanilla) {
@@ -238,7 +238,7 @@ func TestDeployAndPutBack(t *testing.T) {
 	if LoadDeployed(root) != nil || exists(filepath.Join(root, "originals")) {
 		t.Fatal("records left after putting the game back")
 	}
-	if err := RemoveMod(root, a.ID); err != nil || exists(filepath.Join(root, a.ID)) || len(LoadModSet(root)) != 1 {
+	if err := RemoveMod(root, a.ID); err != nil || exists(filepath.Join(root, a.ID)) || len(LoadModSet(root, "")) != 1 {
 		t.Fatal("remove", err)
 	}
 }
@@ -255,7 +255,7 @@ func TestModRunCutShortIsFinished(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := ApplyMods(root, game, "", []*Mod{a}, time.Now(), nil); !errors.Is(err, stop) {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); !errors.Is(err, stop) {
 		t.Fatal(err)
 	}
 	if !ModJournalPending(root) || LoadDeployed(root) != nil {
@@ -275,7 +275,7 @@ func TestModRunCutShortIsFinished(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := ApplyMods(root, game, "", nil, time.Now(), nil); !errors.Is(err, stop) {
+	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); !errors.Is(err, stop) {
 		t.Fatal(err)
 	}
 	modStep = nil
@@ -293,13 +293,13 @@ func TestModRunCutShortIsFinished(t *testing.T) {
 func TestPutBackKeepsChangedFiles(t *testing.T) {
 	game, root := modGame(t)
 	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A", "Data/new/a.ini": "a", "Data/new/b.esp": "b"}, "a.zip")
-	if _, err := ApplyMods(root, game, "", []*Mod{a}, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	// A game update rewrote a replaced file, and the user edited an added one.
 	write(t, filepath.Join(game, "Data", "textures", "rock.dds"), "updated rock")
 	write(t, filepath.Join(game, "Data", "new", "a.ini"), "edited")
-	res, err := ApplyMods(root, game, "", nil, time.Now(), nil)
+	res, err := ApplyMods(root, game, "", "", nil, time.Now(), nil)
 	if err != nil || res.Changed != 2 {
 		t.Fatal(res, err)
 	}
@@ -327,7 +327,7 @@ func TestDeployKeepsAFileThatAppeared(t *testing.T) {
 	if _, _, err := FinishModJournal(root); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ApplyMods(root, game, "", nil, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if read(t, filepath.Join(game, "Data", "new.esp")) != "the user's" {
@@ -345,7 +345,7 @@ func stuckApply(t *testing.T) (game, root string, a *Mod, hidden func()) {
 	if err := os.Rename(staged, staged+".away"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ApplyMods(root, game, "", []*Mod{a}, time.Now(), nil); err == nil || !ModJournalPending(root) {
+	if _, err := ApplyMods(root, game, "", "", []*Mod{a}, time.Now(), nil); err == nil || !ModJournalPending(root) {
 		t.Fatal("the run should stop part way", err)
 	}
 	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" || !exists(filepath.Join(root, "originals", "settings.ini")) {
@@ -372,7 +372,7 @@ func TestPutBackWhenADeployCantFinish(t *testing.T) {
 	if _, _, err := FinishModJournal(root); err == nil {
 		t.Fatal("the deploy can't finish without its file")
 	}
-	if _, err := ApplyMods(root, game, "", nil, time.Now(), nil); err != nil {
+	if _, err := ApplyMods(root, game, "", "", nil, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "vanilla rock" || read(t, filepath.Join(game, "settings.ini")) != "vanilla settings" {
@@ -380,5 +380,121 @@ func TestPutBackWhenADeployCantFinish(t *testing.T) {
 	}
 	if ModJournalPending(root) || LoadDeployed(root) != nil || exists(filepath.Join(root, "originals")) || exists(filepath.Join(game, "Data", "textures", "rock.dds"+tmpSuffix)) {
 		t.Fatal("records left after putting the game back")
+	}
+}
+
+func modIDs(set []ModEntry) []string {
+	out := []string{}
+	for _, e := range set {
+		out = append(out, e.ID+map[bool]string{true: "+", false: "-"}[e.On])
+	}
+	return out
+}
+
+func TestModSetOldFile(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, "set.json"), `[{"id":"ma","on":true},{"id":"mb","on":false}]`)
+	if got := modIDs(LoadModSet(root, "")); !reflect.DeepEqual(got, []string{"ma+", "mb-"}) {
+		t.Fatalf("1.86's list isn't the game's set: %v", got)
+	}
+	if owner, set := ModSetFor(root, "p1", ""); owner != "" || !reflect.DeepEqual(modIDs(set), []string{"ma+", "mb-"}) {
+		t.Fatalf("a profile with no set of its own: %q %v", owner, modIDs(set))
+	}
+	if err := SaveModSet(root, "p1", []ModEntry{{ID: "mb", On: true}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := modIDs(LoadModSet(root, "")); !reflect.DeepEqual(got, []string{"ma+", "mb-"}) {
+		t.Fatalf("the game's set changed with a profile's: %v", got)
+	}
+}
+
+func TestModSetFor(t *testing.T) {
+	root := t.TempDir()
+	must := func(owner string, set ...ModEntry) {
+		if err := SaveModSet(root, owner, set); err != nil {
+			t.Fatal(err)
+		}
+	}
+	must("", ModEntry{ID: "ma", On: true})
+	must("person", ModEntry{ID: "mb", On: true})
+	must("run2", ModEntry{ID: "mc", On: true}, ModEntry{ID: "ma"})
+	for _, c := range []struct {
+		id, of, owner string
+		set           []string
+	}{
+		{"", "", "", []string{"ma+", "mb-", "mc-"}},
+		{"other", "", "", []string{"ma+", "mb-", "mc-"}},            // a person with none: the game's
+		{"person", "", "person", []string{"mb+", "ma-", "mc-"}},     // their own
+		{"run1", "person", "person", []string{"mb+", "ma-", "mc-"}}, // a run with none: its person's
+		{"run2", "person", "run2", []string{"mc+", "ma-", "mb-"}},   // a run with its own
+		{"run3", "other", "", []string{"ma+", "mb-", "mc-"}},        // a run of a person with none: the game's
+	} {
+		owner, set := ModSetFor(root, c.id, c.of)
+		if owner != c.owner || !reflect.DeepEqual(modIDs(set), c.set) {
+			t.Errorf("%s of %q: %q %v, want %q %v", c.id, c.of, owner, modIDs(set), c.owner, c.set)
+		}
+	}
+}
+
+// Two profiles with different sets take turns: each run leaves the folder
+// with exactly that profile's mods, recorded as theirs, and vanilla between.
+func TestModSetsTwoProfiles(t *testing.T) {
+	game, root := modGame(t)
+	vanilla := folderHashes(t, game)
+	a := addMod(t, root, game, map[string]string{"Data/textures/rock.dds": "rock A"}, "a.zip")
+	b := addMod(t, root, game, map[string]string{"Data/meshes/tree.nif": "tree B", "Data/new/b.esp": "b"}, "b.zip")
+	if err := SaveModSet(root, "p1", []ModEntry{{ID: a.ID, On: true}, {ID: b.ID}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveModSet(root, "p2", []ModEntry{{ID: b.ID, On: true}}); err != nil {
+		t.Fatal(err)
+	}
+	play := func(id, of string) *ModsDeployed {
+		t.Helper()
+		owner, set := ModSetFor(root, id, of)
+		var on []string
+		for _, e := range set {
+			if e.On {
+				on = append(on, e.ID)
+			}
+		}
+		mods, err := LoadMods(root, on)
+		if err == nil {
+			_, err = ApplyMods(root, game, "", owner, mods, time.Now(), nil)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		return LoadDeployed(root)
+	}
+	if d := play("p1", ""); d == nil || d.Owner != "p1" || !reflect.DeepEqual(d.Mods, []string{a.ID}) {
+		t.Fatalf("p1: %+v", d)
+	}
+	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" || read(t, filepath.Join(game, "Data", "meshes", "tree.nif")) != "vanilla tree" {
+		t.Fatal("p1's mods aren't the ones in")
+	}
+	if d := play("p2", ""); d == nil || d.Owner != "p2" || !reflect.DeepEqual(d.Mods, []string{b.ID}) {
+		t.Fatalf("p2: %+v", d)
+	}
+	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "vanilla rock" || read(t, filepath.Join(game, "Data", "meshes", "tree.nif")) != "tree B" {
+		t.Fatal("p1's mods weren't taken out before p2's went in")
+	}
+	if d := play("p2run", "p2"); d == nil || d.Owner != "p2" {
+		t.Fatalf("a run didn't play with its person's set: %+v", d)
+	}
+	if err := SaveModSet(root, "", []ModEntry{{ID: a.ID}, {ID: b.ID}}); err != nil {
+		t.Fatal(err)
+	}
+	if d := play("p3", ""); d != nil {
+		t.Fatalf("a profile using the game's empty set left mods in: %+v", d)
+	}
+	if got := folderHashes(t, game); !reflect.DeepEqual(got, vanilla) {
+		t.Fatalf("not back to vanilla:\n%v\n%v", got, vanilla)
+	}
+	if err := RemoveMod(root, b.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := modIDs(LoadModSet(root, "p1")); !reflect.DeepEqual(got, []string{a.ID + "+"}) || len(LoadModSet(root, "p2")) != 0 {
+		t.Fatalf("a removed mod stayed in a set: %v", got)
 	}
 }

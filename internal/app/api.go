@@ -170,6 +170,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_addMod", a.apiAddMod))
 	must(a.w.Bind("ps_modToggle", a.apiModToggle))
 	must(a.w.Bind("ps_modOrder", a.apiModOrder))
+	must(a.w.Bind("ps_modSetOwn", a.apiModSetOwn))
 	must(a.w.Bind("ps_modRemove", a.apiModRemove))
 	must(a.w.Bind("ps_modsApply", a.apiModsApply))
 	must(a.w.Bind("ps_modsRestore", a.apiModsRestore))

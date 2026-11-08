@@ -237,6 +237,9 @@ func (a *App) apiUpdateApply(key, path string) error {
 		defer func() { a.emit("updateDone", out) }()
 		updMu.Lock()
 		defer updMu.Unlock()
+		if !a.modsOffBefore(t, out) {
+			return
+		}
 		p, err := a.planUpdate(t, path) // again: it may have changed since
 		if err != nil {
 			out["error"] = sentence(err)
@@ -370,6 +373,9 @@ func (a *App) apiUpdateUndo(key, id string) error {
 		defer func() { a.emit("updateDone", out) }()
 		updMu.Lock()
 		defer updMu.Unlock()
+		if !a.modsOffBefore(t, out) {
+			return
+		}
 		u, err := core.UndoUpdate(t.Dir, filepath.Join(a.updatesDir(t), id))
 		if err != nil {
 			a.logf("ERROR undoing an update of %s: %v", t.Name, err)
@@ -382,6 +388,22 @@ func (a *App) apiUpdateUndo(key, id string) error {
 		a.gogUndone(key, id)
 	}()
 	return nil
+}
+
+// modsOffBefore takes the game's mods out before an update changes its
+// folder, and says whether to go on. The "updateDone" event then carries
+// modsOff: they're not put back, as they may not fit the new version.
+// Called with updMu held.
+func (a *App) modsOffBefore(t updTarget, out map[string]any) bool {
+	off, err := a.modsOffFor(t)
+	if err != nil {
+		out["error"] = err.Error()
+		return false
+	}
+	if off {
+		out["modsOff"] = true
+	}
+	return true
 }
 
 // sentence makes an error read as a sentence on the page.
@@ -424,6 +446,9 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		step := func(s string) { a.emit("updateProgress", map[string]any{"key": key, "step": s}) }
 		updMu.Lock()
 		defer updMu.Unlock()
+		if !a.modsOffBefore(t, out) {
+			return
+		}
 		keep := filepath.Join(a.updatesDir(t), time.Now().Format("20060102-150405"))
 		fullCopy := ""
 		if full {

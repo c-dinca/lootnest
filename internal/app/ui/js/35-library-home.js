@@ -1,7 +1,7 @@
   // --------------------------------------------------------------- library --
   function sessionText(s) {
     const n = pname(s.playerId);
-    return { loading: `Loading ${possessive(n)} files`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${possessive(n)} progress` }[s.phase] || "";
+    return { loading: `Loading ${possessive(n)} files`, mods: s.mods && s.mods.off ? "Putting the game back as it was" : `Putting ${possessive(n)} mods in`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${possessive(n)} progress` }[s.phase] || "";
   }
 
   const sourceLabel = (src) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", xbox: "Xbox", ea: "EA app", ubisoft: "Ubisoft Connect", battlenet: "Battle.net",

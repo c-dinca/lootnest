@@ -13,6 +13,7 @@
     facts: {},        // Library key -> what its folder says (anti-cheat), from ps_gameFacts
     mods: {},         // Library key -> its mods and what's in its folder (ps_mods), or null while asked
     modsRun: {},      // Library key -> a change to its mods under way: {what, done, total}
+    modsFor: {},      // Library key -> whose set its Mods tab shows: a profile id, "" for the game's
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)
     sideSort: pref("sideSort", "name"), // name, recent or played

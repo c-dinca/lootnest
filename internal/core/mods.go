@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,16 +21,16 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Mods, phase 1 (docs/ROADMAP.md, section 2): one set of mods per game, put
-// into its folder by copy. The user brings each mod, an archive or a folder;
+// Mods, phases 1 and 2 (docs/ROADMAP.md, section 2): sets of mods per game
+// and per profile, put into its folder by copy. The user brings each mod, an archive or a folder;
 // Lootnest never downloads one, never ships a loader, and never uses links
 // or a virtual file system.
 //
 // A game's mods live in Lootnest's data folder, under mods\<key hash>:
 //
 //	<mod id>\mod.json, <mod id>\files\  each mod, laid out as it goes into the game's folder
-//	set.json         the mods in order, on or off; a later mod wins on the same file
-//	deployed.json    what's in the game's folder now: each file, its mod and hash
+//	set.json         the sets by owner: the mods in order, on or off; a later mod wins on the same file
+//	deployed.json    what's in the game's folder now: whose set, each file, its mod and hash
 //	originals\       every game file a mod replaced, kept before it was touched
 //	changed\<time>\  files the game or the user changed while it was modded
 //	journal.json     a run that started, finished on the next start if cut short
@@ -59,7 +60,8 @@ type Mod struct {
 	Files  []ModFile `json:"files"`
 }
 
-// ModEntry is a mod's place in a game's set.
+// ModEntry is a mod's place in a set. The mods are kept once for the game
+// and shared; each set only says which are on and in what order.
 type ModEntry struct {
 	ID string `json:"id"`
 	On bool   `json:"on"`
@@ -77,6 +79,7 @@ type DeployedFile struct {
 // ModsDeployed is what's in a game's folder from its mods.
 type ModsDeployed struct {
 	At    time.Time      `json:"at"`
+	Owner string         `json:"owner,omitempty"` // whose set: "" the game's, else a profile id
 	Mods  []string       `json:"mods"`
 	Files []DeployedFile `json:"files"`
 	Dirs  []string       `json:"dirs,omitempty"` // folders it made, deepest first
@@ -101,12 +104,13 @@ type ModsResult struct {
 // modJournal is a run that started: "undeploy" (then the mods in Then go
 // in) or "deploy" (Plan goes in).
 type modJournal struct {
-	Op   string        `json:"op"`
-	Game string        `json:"game"`
-	Exe  string        `json:"exe,omitempty"`
-	At   time.Time     `json:"at"`
-	Then []string      `json:"then,omitempty"`
-	Plan *ModsDeployed `json:"plan,omitempty"`
+	Op    string        `json:"op"`
+	Game  string        `json:"game"`
+	Owner string        `json:"owner,omitempty"`
+	Exe   string        `json:"exe,omitempty"`
+	At    time.Time     `json:"at"`
+	Then  []string      `json:"then,omitempty"`
+	Plan  *ModsDeployed `json:"plan,omitempty"`
 }
 
 // ModsDir is where one game's mods are kept, by its Library key.
@@ -462,12 +466,12 @@ func PlanMods(gameDir, mainExe string, mods []*Mod, deployed *ModsDeployed) (*Mo
 	return p, nil
 }
 
-// ApplyMods makes the game's folder hold exactly mods, in order: what's in
-// from mods now comes out first, then mods go in. With no mods, it only puts
+// ApplyMods makes the game's folder hold exactly mods, in order, as owner's
+// set: what's in from mods now comes out first, then mods go in. With no mods, it only puts
 // the game back as it was. Every step is in the journal first, so a run
 // cut short is finished by FinishModJournal. step, if not nil, hears how
 // far it is.
-func ApplyMods(root, gameDir, mainExe string, mods []*Mod, now time.Time, step func(done, total int)) (ModsResult, error) {
+func ApplyMods(root, gameDir, mainExe, owner string, mods []*Mod, now time.Time, step func(done, total int)) (ModsResult, error) {
 	last, err := readModJournal(root)
 	if err != nil {
 		return ModsResult{}, err
@@ -491,7 +495,7 @@ func ApplyMods(root, gameDir, mainExe string, mods []*Mod, now time.Time, step f
 			return ModsResult{}, err // refused before anything changes
 		}
 	}
-	j := &modJournal{Op: "undeploy", Game: gameDir, Exe: mainExe, At: now.UTC()}
+	j := &modJournal{Op: "undeploy", Game: gameDir, Exe: mainExe, Owner: owner, At: now.UTC()}
 	for _, m := range mods {
 		j.Then = append(j.Then, m.ID)
 	}
@@ -568,7 +572,7 @@ func runModJournal(root string, j *modJournal, step func(done, total int)) (Mods
 			_ = os.Remove(modJournalPath(root)) // the game is as it was, so there's nothing to finish
 			return res, err
 		}
-		j = &modJournal{Op: "deploy", Game: j.Game, Exe: j.Exe, At: j.At, Plan: &ModsDeployed{At: j.At, Mods: j.Then, Files: p.files, Dirs: p.dirs}}
+		j = &modJournal{Op: "deploy", Game: j.Game, Exe: j.Exe, Owner: j.Owner, At: j.At, Plan: &ModsDeployed{At: j.At, Owner: j.Owner, Mods: j.Then, Files: p.files, Dirs: p.dirs}}
 		if err := writeJSONSynced(modJournalPath(root), j); err != nil {
 			return res, err
 		}
@@ -819,18 +823,64 @@ func LoadDeployed(root string) *ModsDeployed {
 	return &d
 }
 
-// LoadModSet is a game's mods in order.
-func LoadModSet(root string) []ModEntry {
-	var out []ModEntry
-	if b, err := os.ReadFile(filepath.Join(root, "set.json")); err == nil {
-		_ = json.Unmarshal(b, &out)
+// LoadModSets is a game's sets by owner: "" is the game's own, used when
+// profiles are off or a profile has no set of its own, else a profile id.
+// The one list 1.86 kept is the game's set.
+func LoadModSets(root string) map[string][]ModEntry {
+	out := map[string][]ModEntry{}
+	b, err := os.ReadFile(filepath.Join(root, "set.json"))
+	if err != nil {
+		return out
 	}
+	var old []ModEntry
+	if json.Unmarshal(b, &old) == nil {
+		out[""] = old
+		return out
+	}
+	_ = json.Unmarshal(b, &out)
 	return out
 }
 
-// SaveModSet writes a game's mods in order.
-func SaveModSet(root string, set []ModEntry) error {
-	return writeJSONSynced(filepath.Join(root, "set.json"), set)
+// LoadModSet is owner's own set in order.
+func LoadModSet(root, owner string) []ModEntry { return LoadModSets(root)[owner] }
+
+// SaveModSet writes owner's own set.
+func SaveModSet(root, owner string, set []ModEntry) error {
+	sets := LoadModSets(root)
+	sets[owner] = set
+	return writeJSONSynced(filepath.Join(root, "set.json"), sets)
+}
+
+// ModSetFor is the set a profile plays with and whose it is: its own, else
+// its person's when it's a run (of), else the game's. Every mod the game
+// keeps is in it; those only other sets have are at the end, off.
+func ModSetFor(root, profileID, of string) (string, []ModEntry) {
+	return ModSetIn(LoadModSets(root), profileID, of)
+}
+
+// ModSetIn is ModSetFor over sets already loaded.
+func ModSetIn(sets map[string][]ModEntry, profileID, of string) (string, []ModEntry) {
+	owner := ""
+	for _, o := range []string{profileID, of} {
+		if _, ok := sets[o]; ok && o != "" {
+			owner = o
+			break
+		}
+	}
+	out := slices.Clone(sets[owner])
+	seen := map[string]bool{}
+	for _, e := range out {
+		seen[e.ID] = true
+	}
+	for _, o := range slices.Sorted(maps.Keys(sets)) {
+		for _, e := range sets[o] {
+			if !seen[e.ID] {
+				seen[e.ID] = true
+				out = append(out, ModEntry{ID: e.ID})
+			}
+		}
+	}
+	return owner, out
 }
 
 // LoadMods reads mods by id.
@@ -866,7 +916,7 @@ func validModID(id string) bool {
 	return id != "" && id == filepath.Base(id) && strings.HasPrefix(id, "m")
 }
 
-// RemoveMod deletes Lootnest's copy of a mod and takes it out of the set.
+// RemoveMod deletes Lootnest's copy of a mod and takes it out of every set.
 // A mod with files in the game's folder must come out of it first.
 func RemoveMod(root, id string) error {
 	if !validModID(id) {
@@ -879,14 +929,12 @@ func RemoveMod(root, id string) error {
 			}
 		}
 	}
-	set := LoadModSet(root)
-	for i, e := range set {
-		if e.ID == id {
-			if err := SaveModSet(root, append(set[:i:i], set[i+1:]...)); err != nil {
-				return err
-			}
-			break
-		}
+	sets := LoadModSets(root)
+	for o, set := range sets {
+		sets[o] = slices.DeleteFunc(set, func(e ModEntry) bool { return e.ID == id })
+	}
+	if err := writeJSONSynced(filepath.Join(root, "set.json"), sets); err != nil {
+		return err
 	}
 	return removeAll(filepath.Join(root, id))
 }
@@ -895,8 +943,10 @@ func RemoveMod(root, id string) error {
 // nor in its folder: adds that weren't finished.
 func pruneMods(root string) {
 	keep := map[string]bool{}
-	for _, e := range LoadModSet(root) {
-		keep[e.ID] = true
+	for _, set := range LoadModSets(root) {
+		for _, e := range set {
+			keep[e.ID] = true
+		}
 	}
 	if d := LoadDeployed(root); d != nil {
 		for _, f := range d.Files {

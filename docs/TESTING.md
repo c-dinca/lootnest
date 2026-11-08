@@ -483,3 +483,33 @@ and make a copy of its folder before you start (D:\Games\Test-copy).
 8. With two mods applied, remove one: it asks, takes only that one out
    (the other stays in the game), then it's gone from the list; the
    archive you added it from is still in Downloads.
+
+## 21. Mods for each profile (1.87)
+
+Use the folder game from section 20 with profiles on, two people (Player 1,
+Player 2), and two mods kept for it, A and B, that replace the same file.
+
+1. **Mods**, **Mods for**: Player 1, **Make its own**, A on and B off.
+   Player 2, **Make its own**, B on and A off. The line under the select
+   says which set is in the game's folder now.
+2. Play as Player 1: the swap moment says it's putting Player 1's mods
+   in, then the game starts with A. Close it. Play as Player 2: Player 1's
+   saves go back, Player 2's come in, then A comes out and B goes in. The
+   shared file is B's. Both games keep their own saves.
+3. **New run** for Player 1 with **Start with mods** on: the run's set has
+   A on. Another run with it off: its set has every mod off, and playing
+   it puts the game back as it was first.
+4. Restart in safe mode and Play as Player 2 while A is in: the game
+   starts as it is, and the log says nothing about mods.
+5. With B in, apply an update from the update panel (and once with an
+   installer): the mods come out first, the update goes in, and a toast
+   says mods are off after the update. The Mods tab says Vanilla; nothing
+   went back in on its own. Play as Player 1, then Player 2: the game stays
+   vanilla. Apply from the Mods tab, then Play as the other person: the
+   sets switch again.
+6. Start Play while Lootnest is still applying mods from the Mods tab (a
+   big mod): the game doesn't start, and the message says Lootnest is
+   changing its mods. Rename a mod's folder under
+   %LOCALAPPDATA%\Lootnest\mods\<hash> and Play as the other person: the
+   game is put back as it was and starts without mods, and the log says
+   why.

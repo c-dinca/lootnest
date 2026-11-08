@@ -349,6 +349,7 @@
         if (D && D.kind === "update" && D.key === ev.key) { D.busy = false; D.error = ev.error || ""; if (!ev.error) { D.done = ev.update; D.undone = !!ev.undone; } renderOverlay(); }
         else if (ev.error) toast(ev.error, "error");
         else toast(ev.undone ? "The update was undone" : "Updated");
+        if (ev.modsOff) { toast(ev.error ? "The mods are out of the game's folder. Apply them again from the Mods tab." : "Mods are off after the update. Apply them again from the Mods tab."); S.mods = {}; }
         api.downloads().catch(() => {});
         if (!ev.error) { api.itchRecords().catch(() => {}); api.gogRecords().catch(() => {}); } // a record from itch.io or GOG may have changed
         S.updates = null; S.news = {}; api.updates().catch(() => {});
