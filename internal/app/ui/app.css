@@ -1908,6 +1908,19 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .room.is-dim.is-page .room-art { filter: var(--room-dim-page); }
 :root.art-behind .view { --bg-surface: var(--glass-panel-page); --lip-panel: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light); }
 
+/* ============================================================== settings
+   Since the rework (R6): Settings sits over the last game played like the
+   other pages; the categories are a glass column with a light on the
+   current one, icons bare (no tiles), and every board is glass. */
+.set-nav { padding: var(--space-2); border-radius: var(--radius-glass); background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light); }
+.set-tab { border-radius: var(--radius-key); }
+.set-tab:hover { background: var(--glass-ctl); }
+.set-tab[aria-current="true"] { background: var(--glass-ctl-hover); box-shadow: var(--key-light); font-weight: 700; }
+.set-ic { width: auto; height: auto; background: none; color: var(--fg-3); }
+.set-ic .ln-icon { width: var(--icon-md); height: var(--icon-md); }
+.set-tab:hover .set-ic { color: var(--fg-2); }
+.set-tab[aria-current="true"] .set-ic { background: none; color: var(--fg-1); }
+
 /* ================================================================ updates
    One dense list of games, filtered by state, each with its version against
    the latest and one action; beside it, a narrow column of what needs a look. */
