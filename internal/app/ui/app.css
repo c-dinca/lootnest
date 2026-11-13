@@ -1901,6 +1901,13 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .form-foot { bottom: var(--space-3); margin: var(--space-8) 0 0; padding: var(--space-3) var(--space-4); border-top: 0; border-radius: var(--radius-panel); background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), var(--glass-light); }
 .swap .ln-avatar { box-shadow: var(--key-light), 0 20px 60px -20px color-mix(in oklab, var(--player-fill) 70%, transparent); }
 
+/* ================================================================= pages
+   Since the rework (R5): Saves, Updates, Achievements and Profiles sit
+   over the last game played, blurred and dark (renderRoom adds
+   .art-behind), and their panels let it through as glass. */
+.room.is-dim.is-page .room-art { filter: var(--room-dim-page); }
+:root.art-behind .view { --bg-surface: var(--glass-panel-page); --lip-panel: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light); }
+
 /* ================================================================ updates
    One dense list of games, filtered by state, each with its version against
    the latest and one action; beside it, a narrow column of what needs a look. */
