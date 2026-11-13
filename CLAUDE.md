@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.99.0, beta)
+## Where things stand (1.100.0, beta)
 
 These shipped recently, newest last:
 
@@ -775,6 +775,13 @@ These shipped recently, newest last:
   else the latest with art, dimmed (`--room-dim`; the veil stops at 35%
   there); covers at `--radius-cover` 10 lift 5px on `--ease-spring`; the
   tools bar is glass, its menus pills; the selection bar is glass.
+- **1.100** The rework, R3, a game's page: the room is the game (the
+  page's own art, plate and hero scrim are hidden), the logo or name and
+  facts over it (`--scrim-title` under the facts), Back and Manage glass;
+  `.gpage-body` is one glass sheet (`--glass-strong`, `--radius-glass`)
+  holding the play row, the tabs in a well and every tab; the docked
+  head (`.gp-head`) and the screenshot lightbox are glass. Home keeps its
+  own stage (`.gpage.home`). Drawers from Manage are R4.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

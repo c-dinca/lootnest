@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.100.0
+
+The new look reaches a game's page.
+
+- **The game is the window.** Its art fills everything behind the page, with its logo or name, the store, its size and how many profiles over it. Back and Manage float as glass.
+- **Everything else sits on one sheet of glass**: Play, the tabs and what each tab holds, from achievements to save points, mods, the timeline and news.
+- **Scroll down and a slim bar stays at the top** with the game, its tabs and Play.
+- **Screenshots open on glass** over the game, without a frame around the picture.
+
 ## 1.99.0
 
 The new look reaches the Library.

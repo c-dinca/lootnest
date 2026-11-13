@@ -136,6 +136,7 @@
   --scrim-room:            /* the art fades to obsidian low and on the left, so pages read */
     linear-gradient(180deg, rgb(17 18 23 / 0.12) 0%, rgb(17 18 23 / 0.18) 34%, rgb(17 18 23 / 0.8) 64%, var(--bg-ground) 82%),
     linear-gradient(90deg, rgb(17 18 23 / 0.82) 0%, rgb(17 18 23 / 0.25) 46%, transparent 72%);
+  --scrim-title: radial-gradient(48% 34% at 0% 100%, rgb(17 18 23 / 0.62), transparent 100%);  /* the facts under a game's name, over bright art */
   --room-dim: blur(36px) brightness(0.62) saturate(1.35);  /* behind the Library */
   /* The mesh: a wash of the seated profile's colour low on the left, a
      faint red one top left, as on the website. */
