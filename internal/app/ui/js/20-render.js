@@ -151,17 +151,18 @@
   function roomItem() {
     if (S.view === "game" && S.page) return S.page.kind === "owned" ? ownedItem(S.page.id) : everyItem().find((x) => x.kind === S.page.kind && x.id === S.page.id);
     if (S.view === "home") return S.roomPick || recentItems(libraryItems(), false)[0] || null;
+    // The Library: the game under the pointer, else the last played, dark.
+    if (S.view === "library") return S.libFocus || recentItems(libraryItems(), false).find((x) => artFor(x, "hero").from === "hero") || null;
     return null;
   }
   function renderRoom() {
     const room = $("#room"), art = room.querySelector(".room-art");
     veil();
-    const keep = S.view === "library";
-    const it = keep ? null : roomItem();
+    const it = roomItem();
     const a = it && artFor(it, "hero"), url = a && a.from === "hero" ? a.url : "";
-    room.classList.toggle("is-dim", keep && !!roomKey);
-    room.classList.toggle("is-flat", !keep && !url);
-    if (keep || !url || url === roomKey) return;
+    room.classList.toggle("is-dim", S.view === "library");
+    room.classList.toggle("is-flat", !url);
+    if (!url || url === roomKey) return;
     roomKey = url;
     const img = new Image();
     img.alt = ""; img.decoding = "async"; img.src = url;
@@ -177,13 +178,22 @@
   let veilQueued = false;
   function veil() {
     const v = $("#view"), f = Math.min(1, v.scrollTop / Math.max(1, v.clientHeight * 0.6));
-    $("#room").style.setProperty("--room-veil", (f * 0.9).toFixed(3));
+    $("#room").style.setProperty("--room-veil", (f * (S.view === "library" ? 0.35 : 0.9)).toFixed(3));
   }
   $("#view").addEventListener("scroll", () => {
     if (veilQueued) return;
     veilQueued = true;
     requestAnimationFrame(() => { veilQueued = false; veil(); });
   }, { passive: true });
+  // In the Library, resting on a cover brings that game's art into the room.
+  let focusT = 0;
+  $("#view").addEventListener("pointerover", (ev) => {
+    if (S.view !== "library") return;
+    const host = ev.target.closest && ev.target.closest(".ln-tile, .lib-cap, .lib-row");
+    if (!host) return;
+    clearTimeout(focusT);
+    focusT = setTimeout(() => { const it = itemFor(ev.target) || itemFor(host.querySelector("[data-game], [data-key]")); if (it && it !== S.libFocus) { S.libFocus = it; renderRoom(); } }, 220);
+  });
   // Settings, Appearance: see-through panels, the art behind pages, motion.
   function applyAppearance() {
     const s = cfg().settings || {}, c = document.documentElement.classList;

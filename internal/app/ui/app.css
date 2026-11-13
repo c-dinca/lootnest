@@ -1819,6 +1819,18 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
    flush with the top of the page (its top padding is --space-8). */
 .lib-tools { position: sticky; top: calc(var(--view-pad-top) * -1); z-index: 4; padding-block: var(--space-3); background: var(--bg-ground); border-bottom: var(--hairline) solid var(--edge-1); }
 
+/* The Library since the rework (R2): covers over the room, which takes
+   the art of the game the pointer rests on, blurred and dark. The tools
+   are a sheet of glass that stays at the top; the menus are pills; the
+   selection bar floats as glass. */
+.lib-tools { margin-inline: calc(-1 * var(--space-3)); padding-inline: var(--space-3); border-bottom: 0; border-radius: var(--radius-panel); background: rgb(17 18 23 / 0.72); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge); }
+.lib-tools select.ln-input, .lib-head .ln-search .ln-input { border: 0; border-radius: var(--radius-round); background-color: var(--glass-ctl); }
+.lib-tools select.ln-input:hover, .lib-head .ln-search .ln-input:hover { background-color: var(--glass-ctl-hover); }
+.lib-head .ln-search .ln-input:focus { background-color: var(--glass-ctl-active); }
+.lib-sel { background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), var(--glass-light); }
+.lib-cap-art { border-radius: var(--radius-cover); box-shadow: 0 14px 30px -18px rgb(0 0 0 / 0.9); transition: transform var(--dur-3) var(--ease-spring), box-shadow var(--dur-2) var(--ease-out); }
+.lib-cap-open:hover .lib-cap-art { transform: translateY(calc(-1 * var(--lift))); box-shadow: var(--shadow-lift); }
+
 /* ================================================================ updates
    One dense list of games, filtered by state, each with its version against
    the latest and one action; beside it, a narrow column of what needs a look. */
