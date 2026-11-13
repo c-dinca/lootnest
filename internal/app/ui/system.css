@@ -109,7 +109,8 @@
   --glass-chrome:  var(--glass);           /* the picker, over the game's art */
   --glass-bar:     var(--glass);           /* the play dock */
   --glass-panel:   var(--glass-strong);    /* panels on art */
-  --glass-overlay: rgb(24 26 33 / 0.94);   /* toasts, menus, dialogs */
+  --glass-overlay: rgb(24 26 33 / 0.94);
+  --glass-panel-page: rgb(24 26 33 / 0.58);  /* a page's panels over the dim room */   /* toasts, menus, dialogs */
   --glass-ctl:        rgb(255 255 255 / 0.075);
   --glass-ctl-hover:  rgb(255 255 255 / 0.13);
   --glass-ctl-active: rgb(0 0 0 / 0.25);
@@ -139,6 +140,7 @@
     linear-gradient(90deg, rgb(17 18 23 / 0.82) 0%, rgb(17 18 23 / 0.25) 46%, transparent 72%);
   --scrim-title: radial-gradient(48% 34% at 0% 100%, rgb(17 18 23 / 0.62), transparent 100%);  /* the facts under a game's name, over bright art */
   --room-dim: blur(36px) brightness(0.62) saturate(1.35);  /* behind the Library */
+  --room-dim-page: blur(48px) brightness(0.42) saturate(1.1);  /* behind Saves, Updates, Achievements, Profiles */
   /* The mesh: a wash of the seated profile's colour low on the left, a
      faint red one top left, as on the website. */
   --mesh-seat: 22%;
@@ -325,10 +327,10 @@
    Settings, Appearance, See-through panels off (.glass-off on <html>). */
 @media (prefers-reduced-transparency: reduce) {
   :root:not(.glass-on) { --glass: var(--bg-surface); --glass-strong: var(--bg-surface); --glass-chrome: var(--bg-surface); --glass-bar: var(--bg-surface);
-    --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --blur-scrim: none; --backdrop-opacity: 0; }
+    --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --glass-panel-page: var(--bg-surface); --blur-glass: none; --blur-scrim: none; --backdrop-opacity: 0; }
 }
 :root.glass-off { --glass: var(--bg-surface); --glass-strong: var(--bg-surface); --glass-chrome: var(--bg-surface); --glass-bar: var(--bg-surface);
-  --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --blur-scrim: none; --backdrop-opacity: 0; }
+  --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --glass-panel-page: var(--bg-surface); --blur-glass: none; --blur-scrim: none; --backdrop-opacity: 0; }
 
 /* ============================================================== base bits */
 html { font-synthesis: none; }

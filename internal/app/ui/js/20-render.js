@@ -152,17 +152,25 @@
     if (S.view === "game" && S.page) return S.page.kind === "owned" ? ownedItem(S.page.id) : everyItem().find((x) => x.kind === S.page.kind && x.id === S.page.id);
     if (S.view === "home") return S.roomPick || recentItems(libraryItems(), false)[0] || null;
     // The Library: the game under the pointer, else the last played, dark.
-    if (S.view === "library") return S.libFocus || recentItems(libraryItems(), false).find((x) => artFor(x, "hero").from === "hero") || null;
+    if (S.view === "library") return S.libFocus || lastWithArt();
     // Editing a game: that game, dark, as behind the Library.
     if (S.view === "edit" && S.edit && !S.edit.isNew) return everyItem().find((x) => x.kind === "game" && x.id === S.edit.game.id) || null;
+    // Saves, Updates, Achievements and Profiles: the last game played, dark,
+    // so no page sits on bare obsidian.
+    if (PAGE_ROOM.has(S.view)) return lastWithArt();
     return null;
   }
+  const DIM_ROOM = new Set(["library", "edit", "saves", "updates", "achievements", "players"]);
+  const PAGE_ROOM = new Set(["saves", "updates", "achievements", "players"]);
+  const lastWithArt = () => recentItems(libraryItems(), false).find((x) => artFor(x, "hero").from === "hero") || null;
   function renderRoom() {
     const room = $("#room"), art = room.querySelector(".room-art");
     veil();
     const it = roomItem();
     const a = it && artFor(it, "hero"), url = a && a.from === "hero" ? a.url : "";
-    room.classList.toggle("is-dim", S.view === "library" || S.view === "edit");
+    room.classList.toggle("is-dim", DIM_ROOM.has(S.view));
+    room.classList.toggle("is-page", PAGE_ROOM.has(S.view));
+    document.documentElement.classList.toggle("art-behind", !!url && PAGE_ROOM.has(S.view));
     room.classList.toggle("is-flat", !url);
     if (!url || url === roomKey) return;
     roomKey = url;
@@ -180,7 +188,7 @@
   let veilQueued = false;
   function veil() {
     const v = $("#view"), f = Math.min(1, v.scrollTop / Math.max(1, v.clientHeight * 0.6));
-    $("#room").style.setProperty("--room-veil", (f * (S.view === "library" || S.view === "edit" ? 0.35 : 0.9)).toFixed(3));
+    $("#room").style.setProperty("--room-veil", (f * (DIM_ROOM.has(S.view) ? 0.35 : 0.9)).toFixed(3));
   }
   $("#view").addEventListener("scroll", () => {
     if (veilQueued) return;

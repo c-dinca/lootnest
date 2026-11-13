@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.102.0
+
+The new look reaches Saves, Updates, Achievements and Profiles.
+
+- **These pages sit over the game you played last**, blurred and dark, instead of a plain background.
+- **Their panels are glass**, so the art shows faintly through the numbers and the rows.
+
 ## 1.101.0
 
 The new look reaches everything that opens over a page.

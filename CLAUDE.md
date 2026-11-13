@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.101.0, beta)
+## Where things stand (1.102.0, beta)
 
 These shipped recently, newest last:
 
@@ -789,6 +789,13 @@ These shipped recently, newest last:
   profile's colour; the editor (`viewEdit`) has its game as a dim room
   (`roomItem`) and a floating glass `.form-foot`. Drawers were glass
   since R0.
+- **1.102** The rework, R5, the other pages: Saves, Updates,
+  Achievements and Profiles (`PAGE_ROOM` in 20-render.js) have the last
+  game played with wide art as the room (`lastWithArt`), dimmer than the
+  Library's (`.room.is-page`, `--room-dim-page`); `html.art-behind`
+  turns `--bg-surface` inside `.view` into `--glass-panel-page`, so
+  their panels are glass. A profile's page keeps its own banner; the
+  Store keeps its feature art; dialogs and drawers were R4.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
