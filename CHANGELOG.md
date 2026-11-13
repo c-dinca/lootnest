@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.97.0
+
+The first part of a new look for the whole of Lootnest. The rest of the pages follow in the next versions.
+
+- **The website's colours.** Obsidian instead of indigo, Ice Grey text, and no more colour for each section: Racing Red is the gem, the Updates count and one main button. Play is always the colour of whoever is at the PC.
+- **One sidebar, no top bar.** The sidebar floats over the window as a sheet of glass. It holds search (Ctrl+K), the sections with a light that slides to the one you're in, your games, and at the bottom who's at the PC, Profiles, Big Picture and Settings. It still folds to a rail with Ctrl+B and can be dragged wider.
+- **The game fills the window.** On a game's page, its art fills the whole window behind the page and fades to black at the bottom and the left. Pages without a game of their own sit on plain obsidian, and the Library keeps the last game's art, blurred and dark.
+- **A wash of your colour.** The window takes a soft glow of the colour of whoever is at the PC.
+- **New icons**, smaller and sharper, from Phosphor Icons. The section you're in has a filled icon.
+- **Buttons that feel better.** Every button has a fine light along its top and presses down a little when clicked. Tabs and choices are pills; switches are rounded and light up green.
+- **Section titles are plain titles**, with no coloured labels.
+- **Menus, panels and messages are glass** over what's behind them; panels that open from the right float in from the edge.
+- **Settings, Appearance:** turn off see-through panels, turn off the game's art behind pages, and choose Full, Less or no motion.
+
 ## 1.96.0
 
 - **Saves in Arcade.** Your saves are a scoreboard at the top: games with profiles, games with copies, save points and the newest copy, in large numbers. What needs a look comes next, one row each with an amber lamp and the one key that sorts it. Recent copies, Per game and Cloud saves are rows on panels, each with its key on the right.

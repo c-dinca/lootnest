@@ -14,7 +14,7 @@ import (
 
 // ---------------------------------------------------------------------------
 // A plugin's theme (theme.json): new values for Lootnest's colour tokens,
-// never raw CSS. Only ThemeTokens can be set, only to hex or oklch()
+// never raw CSS. Only ThemeTokens can be set, only to hex, rgb() or oklch()
 // colours, and every pair of text and background the app uses must pass
 // WCAG AA with them (themePairs), or the theme is refused with the pair
 // that fails. A theme is chosen per profile.
@@ -23,37 +23,37 @@ import (
 // ThemeTokens are the tokens a theme may set, with Lootnest's own values
 // (system.css; a test keeps them the same).
 var ThemeTokens = map[string]string{
-	"--bg-well":      "oklch(0.175 0.036 282)",
-	"--bg-ground":    "oklch(0.205 0.040 282)",
-	"--bg-surface":   "oklch(0.250 0.044 282)",
-	"--bg-raised":    "oklch(0.295 0.046 282)",
-	"--bg-active":    "oklch(0.345 0.048 282)",
+	"--bg-well":      "#0f1015",
+	"--bg-ground":    "#111217",
+	"--bg-surface":   "#181a21",
+	"--bg-raised":    "#1f222b",
+	"--bg-active":    "#282b35",
 	"--fg-1":         "#DFE5EB",
-	"--fg-2":         "oklch(0.830 0.024 280)",
-	"--fg-3":         "oklch(0.730 0.030 280)",
+	"--fg-2":         "#a6aeb9",
+	"--fg-3":         "#8c94a0",
 	"--accent":       "#EF233C",
-	"--accent-hover": "oklch(0.660 0.230 22.6)",
-	"--fg-on-accent": "oklch(0.140 0.020 20)",
-	"--edge-1":       "oklch(0.80 0.06 282 / 0.12)",
-	"--edge-2":       "oklch(0.80 0.06 282 / 0.20)",
-	"--edge-3":       "oklch(0.85 0.06 282 / 0.38)",
+	"--accent-hover": "#f43b52",
+	"--fg-on-accent": "#1a0a0d",
+	"--edge-1":       "rgb(255 255 255 / 0.07)",
+	"--edge-2":       "rgb(255 255 255 / 0.12)",
+	"--edge-3":       "rgb(255 255 255 / 0.22)",
 }
 
 // themeGlass are the layers a theme can't change, over the ground; text on
 // them is checked too, so a light theme can't put dark text on the dark
-// shell (the top bar and the sidebar).
+// glass (the sidebar, the play dock, menus).
 var themeGlass = [][2]string{
-	{"the shell", "oklch(0.165 0.034 282)"},
-	{"the play bar", "oklch(0.250 0.044 282 / 0.94)"},
-	{"menus and dialogs", "oklch(0.270 0.046 282 / 0.97)"},
+	{"the sidebar", "rgb(17 18 23 / 0.46)"},
+	{"the play dock", "rgb(17 18 23 / 0.62)"},
+	{"menus and dialogs", "rgb(24 26 33 / 0.94)"},
 }
 
 // themeFixed are text colours a theme can't change (errors, warnings,
 // done), checked on the theme's backgrounds.
 var themeFixed = map[string]string{
-	"--danger":  "oklch(0.80 0.110 30)",
-	"--warning": "oklch(0.85 0.120 78)",
-	"--success": "oklch(0.82 0.170 148)",
+	"--danger":  "#ff8a7a",
+	"--warning": "#f2c14e",
+	"--success": "#7be08f",
 }
 
 var tokenWords = map[string]string{
@@ -128,7 +128,7 @@ func CheckTheme(tokens map[string]string) error {
 		}
 		c, err := parseColor(v)
 		if err != nil {
-			return fmt.Errorf("its theme's %s isn't a hex or oklch() colour", k)
+			return fmt.Errorf("its theme's %s isn't a hex, rgb() or oklch() colour", k)
 		}
 		if c.a < 1 && !strings.HasPrefix(k, "--edge-") {
 			return fmt.Errorf("its theme's %s must be a solid colour", k)
@@ -157,6 +157,7 @@ type rgba struct{ r, g, b, a float64 }
 
 var (
 	hexColor   = regexp.MustCompile(`^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
+	rgbColor   = regexp.MustCompile(`^rgba?\(\s*([0-9.]+)[\s,]+([0-9.]+)[\s,]+([0-9.]+)\s*(?:[/,]\s*([0-9.]+%?)\s*)?\)$`)
 	oklchColor = regexp.MustCompile(`^oklch\(\s*([0-9.]+%?)\s+([0-9.]+)\s+([0-9.]+)(?:deg)?\s*(?:/\s*([0-9.]+%?)\s*)?\)$`)
 )
 
@@ -169,6 +170,28 @@ func parseColor(s string) (rgba, error) {
 		}
 		n, _ := strconv.ParseUint(h, 16, 32)
 		return rgba{float64(n>>16&255) / 255, float64(n>>8&255) / 255, float64(n&255) / 255, 1}, nil
+	}
+	if m := rgbColor.FindStringSubmatch(strings.ToLower(s)); m != nil {
+		ch := func(v string) (float64, bool) {
+			f, err := strconv.ParseFloat(v, 64)
+			return f / 255, err == nil && f <= 255
+		}
+		r, ok1 := ch(m[1])
+		g, ok2 := ch(m[2])
+		b, ok3 := ch(m[3])
+		a, ok4 := 1.0, true
+		if m[4] != "" {
+			v, div := m[4], 1.0
+			if strings.HasSuffix(v, "%") {
+				v, div = strings.TrimSuffix(v, "%"), 100
+			}
+			f, err := strconv.ParseFloat(v, 64)
+			a, ok4 = f/div, err == nil && f/div <= 1
+		}
+		if !ok1 || !ok2 || !ok3 || !ok4 {
+			return rgba{}, errors.New("not a colour")
+		}
+		return rgba{r, g, b, a}, nil
 	}
 	m := oklchColor.FindStringSubmatch(strings.ToLower(s))
 	if m == nil {

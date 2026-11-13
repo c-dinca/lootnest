@@ -341,13 +341,13 @@ func TestPluginTheme(t *testing.T) {
 		want   string
 	}{
 		"low contrast":   {map[string]string{"--fg-3": "#555a60"}, "dates and counts (--fg-3) on wells and inputs is"},
-		"light theme":    {map[string]string{"--bg-ground": "#f4f4f4", "--bg-well": "#ffffff", "--bg-surface": "#eeeeee", "--bg-raised": "#e6e6e6", "--bg-active": "#dddddd", "--fg-1": "#111111", "--fg-2": "#222222", "--fg-3": "#333333"}, "the shell"},
+		"light theme":    {map[string]string{"--bg-ground": "#f4f4f4", "--bg-well": "#ffffff", "--bg-surface": "#eeeeee", "--bg-raised": "#e6e6e6", "--bg-active": "#dddddd", "--fg-1": "#111111", "--fg-2": "#222222", "--fg-3": "#333333"}, "on the play dock"},
 		"mid grey":       {map[string]string{"--bg-ground": "#6c6c6c", "--bg-well": "#6a6a6a", "--bg-surface": "#6d6d6d", "--bg-raised": "#6e6e6e", "--bg-active": "#6e6e6e", "--fg-1": "#ffffff", "--fg-2": "#ffffff", "--fg-3": "#ffffff", "--accent": "#000000", "--accent-hover": "#000000", "--fg-on-accent": "#ffffff"}, "error text (--danger) on"},
 		"red text":       {map[string]string{"--fg-on-accent": "#ffffff"}, "text on the accent (--fg-on-accent) on the accent"},
 		"size token":     {map[string]string{"--fs-14": "40px"}, "--fs-14, which a theme can't change"},
 		"font token":     {map[string]string{"--font-ui": "Comic Sans"}, "can't change"},
-		"not a colour":   {map[string]string{"--bg-ground": "url(x.png)"}, "isn't a hex or oklch() colour"},
-		"named colour":   {map[string]string{"--accent": "red"}, "isn't a hex or oklch() colour"},
+		"not a colour":   {map[string]string{"--bg-ground": "url(x.png)"}, "isn't a hex, rgb() or oklch() colour"},
+		"named colour":   {map[string]string{"--accent": "red"}, "isn't a hex, rgb() or oklch() colour"},
 		"see-through bg": {map[string]string{"--bg-ground": "oklch(0.1 0 0 / 0.5)"}, "must be a solid colour"},
 		"nothing":        {map[string]string{}, "sets no colours"},
 	}

@@ -87,7 +87,7 @@ They fill in what Steam's details leave empty, and show with Game details off to
 }
 ```
 
-Only these tokens can be set, each to a hex (`#rgb`, `#rrggbb`) or `oklch()` colour; only the lines may be see-through:
+Only these tokens can be set, each to a hex (`#rgb`, `#rrggbb`), `rgb()` or `oklch()` colour; only the lines may be see-through:
 
 | Tokens | What they colour |
 |---|---|
@@ -100,7 +100,7 @@ Sizes, fonts, spacing, the glass layers and anything else stay Lootnest's, and t
 
 A theme is refused, with the pair that fails, unless every pair passes WCAG 2 contrast, with the theme's colours and Lootnest's own for the rest:
 
-- `--fg-1`, `--fg-2` and `--fg-3` on `--bg-well`, `--bg-ground`, `--bg-surface`, `--bg-raised`, and on the sidebar's, the play bar's and the menus' glass over `--bg-ground`: 4.5:1;
+- `--fg-1`, `--fg-2` and `--fg-3` on `--bg-well`, `--bg-ground`, `--bg-surface`, `--bg-raised`, and on the sidebar's, the play dock's and the menus' glass over `--bg-ground`: 4.5:1;
 - `--fg-1` and `--fg-2` on `--bg-active`: 4.5:1;
 - `--fg-on-accent` on `--accent` and `--accent-hover`: 4.5:1;
 - Lootnest's error, warning and done colours (`--danger`, `--warning`, `--success`, which a theme can't change) on `--bg-well`, `--bg-ground`, `--bg-surface` and `--bg-raised`: 4.5:1;

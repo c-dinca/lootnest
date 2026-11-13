@@ -51,7 +51,7 @@
     const cur = S.view === "game" && S.page ? S.page : null;
     const isCur = (it) => cur && cur.kind === it.kind && copiesOf(it).some((c) => c.id === cur.id);
     const rows = (list) => list.map((it) => sideRow(it, isCur(it))).join("");
-    const chev = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg>';
+    const chev = ph("caret-down");
     const group = (id, title, list, opts = {}) => {
       if (!list.length) return "";
       const closed = !opts.open && S.sideClosed.has(id);

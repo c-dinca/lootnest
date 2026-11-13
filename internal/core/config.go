@@ -191,6 +191,12 @@ type Settings struct {
 	// SoundsOff silences the sounds for unlocks, save points and swaps, in
 	// the window and over a running game (on unless turned off).
 	SoundsOff bool `json:"soundsOff,omitempty"`
+	// Appearance. GlassOff makes every see-through panel solid; RoomOff
+	// keeps the game's art out from behind the pages (obsidian everywhere);
+	// Motion is "" (full), "less" (fades only) or "off".
+	GlassOff bool   `json:"glassOff,omitempty"`
+	RoomOff  bool   `json:"roomOff,omitempty"`
+	Motion   string `json:"motion,omitempty"`
 	// DownloadsOff stops Lootnest looking in the Downloads folder for
 	// updates to games no launcher updates (on unless turned off; it reads
 	// only names, on this PC).

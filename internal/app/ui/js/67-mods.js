@@ -5,8 +5,7 @@
   // profile and run that wants one: the mods are shared, each set says which
   // are on and in what order, and Play switches to the set of whoever plays.
   // A run without one uses its person's, a person without one the game's.
-  const MI = { up: gsvg('<path d="M5 12.5 10 7.5l5 5"/>'), down: gsvg('<path d="M5 7.5l5 5 5-5"/>'),
-    grip: gsvg('<circle cx="7.5" cy="5.5" r="1"/><circle cx="12.5" cy="5.5" r="1"/><circle cx="7.5" cy="10" r="1"/><circle cx="12.5" cy="10" r="1"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="12.5" cy="14.5" r="1"/>', true) };
+  const MI = { up: ph("caret-up"), down: ph("caret-down"), grip: ph("dots-six-vertical") };
   function modsOf(it) {
     const key = recentKey(it);
     if (!(key in S.mods)) { S.mods[key] = null; loadMods(key); }

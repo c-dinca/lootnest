@@ -63,6 +63,7 @@
     const v = $("#view");
     noteVisit(v.scrollTop);
     document.documentElement.dataset.sec = secOf();
+    applyAppearance();
     renderBar();
     const keepScroll = v.scrollTop;
     // A page still arriving carries on from where its entrance was.
@@ -96,6 +97,7 @@
     stickHead();
     if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
     renderOverlay();
+    renderRoom();
     loadCovers();
     if (BP.on) bpSoon();
   }
@@ -113,18 +115,21 @@
   const secOf = () => (S.view === "settings" ? SET_SEC[S.setTab] : SEC[S.view]) || "neutral";
   function renderBar(to) {
     const top = to || (S.view === "game" ? S.from : S.view === "edit" ? "library" : S.view === "player" ? "players" : S.view);
-    document.querySelectorAll(".topbar [data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
-    $("#topbar").dataset.sec = (top === S.view ? secOf() : SEC[top]) || "neutral"; // a game's page keeps the tab it came from
+    document.querySelectorAll("#side [data-view]").forEach((t) => (t.dataset.view === top ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")));
     $("#hist-back").disabled = !hist.back.length;
     $("#hist-fwd").disabled = !hist.fwd.length;
     placeInd(false);
   }
   function placeInd(still) {
-    const ind = $("#bar-ind"), more = $("#bar-more"), cur = $('.bar-tab[aria-current="page"]');
-    const el = !cur ? null : cur.offsetParent ? cur : more;
-    more.classList.toggle("is-current", el === more);
-    if (!el) { ind.style.opacity = "0"; return; }
-    slideInd(ind, el, still);
+    const ind = $("#bar-ind"), el = $('.bar-tab[aria-current="page"]');
+    if (!el || !el.offsetParent) { ind.style.opacity = "0"; return; }
+    // The sidebar's light: it slides down or up to the current section.
+    const jump = still || ind.style.opacity !== "1";
+    if (jump) ind.style.transition = "none";
+    ind.style.transform = `translateY(${el.offsetTop}px)`;
+    ind.style.height = el.offsetHeight + "px";
+    ind.style.opacity = "1";
+    if (jump) { void ind.offsetWidth; ind.style.transition = ""; }
   }
   // A cartridge under the current tab: it slides to the next one, and
   // jumps when it first shows or the bar is resized.
@@ -136,6 +141,44 @@
     if (jump) { void ind.offsetWidth; ind.style.transition = ""; }
   }
   new ResizeObserver(() => placeInd(true)).observe($("#bar-tabs"));
+
+  // ------------------------------------------------------------- the room --
+  // The art of the game in focus fills the window behind everything (Home's
+  // game, a game's page; the Library keeps the last one, blurred and dark);
+  // pages without a game of their own sit on flat obsidian. One art gives
+  // way to the next over --room-fade.
+  let roomKey = "";
+  function roomItem() {
+    if (S.view === "game" && S.page) return S.page.kind === "owned" ? ownedItem(S.page.id) : everyItem().find((x) => x.kind === S.page.kind && x.id === S.page.id);
+    if (S.view === "home") return S.roomPick || recentItems(libraryItems(), false)[0] || null;
+    return null;
+  }
+  function renderRoom() {
+    const room = $("#room"), art = room.querySelector(".room-art");
+    const keep = S.view === "library";
+    const it = keep ? null : roomItem();
+    const a = it && artFor(it, "hero"), url = a && a.from === "hero" ? a.url : "";
+    room.classList.toggle("is-dim", keep && !!roomKey);
+    room.classList.toggle("is-flat", !keep && !url);
+    if (keep || !url || url === roomKey) return;
+    roomKey = url;
+    const img = new Image();
+    img.alt = ""; img.decoding = "async"; img.src = url;
+    const show = () => {
+      art.querySelectorAll("img").forEach((o) => { o.classList.remove("on"); setTimeout(() => o.remove(), 900); });
+      art.appendChild(img);
+      requestAnimationFrame(() => img.classList.add("on"));
+    };
+    img.decode ? img.decode().then(show, show) : show();
+  }
+  // Settings, Appearance: see-through panels, the art behind pages, motion.
+  function applyAppearance() {
+    const s = cfg().settings || {}, c = document.documentElement.classList;
+    c.toggle("glass-off", !!s.glassOff);
+    c.toggle("room-off", !!s.roomOff);
+    c.toggle("motion-less", s.motion === "less");
+    c.toggle("motion-off", s.motion === "off");
+  }
   function moreMenu(el) {
     const hid = [...document.querySelectorAll(".bar-tab[data-view]")].filter((t) => !t.offsetParent);
     toggleMenu(el, hid.map((t) => `<button data-action="nav" data-view="${t.dataset.view}" role="menuitem"${t.hasAttribute("aria-current") ? ' aria-current="page"' : ""}><span class="grow">${PAGE_NAMES[t.dataset.view]}</span>${(t.querySelector(".count") || {}).textContent || ""}</button>`).join(""));
@@ -223,6 +266,7 @@
     b.classList.toggle("playing", !!g);
     b.innerHTML = seat ? `${lnAvatar(seat)}<span class="bar-label">${esc(seat.name)}</span>` : `<span class="bar-nobody">${GI.person}</span><span class="bar-label">Sit down</span>`;
     if (sat && !reduced()) b.querySelector(".ln-avatar").classList.add("sat");
+    $("#room").style.setProperty("--seat-c", seat ? seat.color : "transparent");
     b.setAttribute("aria-label", label + ". Who's here");
     b.title = label;
     applyTheme();
@@ -237,7 +281,7 @@
     const b = el.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight; // the size before it grows in
     const left = Math.max(8, Math.min(b.left, innerWidth - w - 8));
     m.style.left = left + "px";
-    m.style.top = Math.min(b.bottom + 4, innerHeight - h - 8) + "px";
+    m.style.top = (b.bottom + 4 + h > innerHeight - 8 ? Math.max(8, b.top - h - 4) : b.bottom + 4) + "px";
     m.style.transformOrigin = `${Math.round(b.left + b.width / 2 - left)}px 0`;
     ctxFrom = el;
     if (el.hasAttribute("aria-haspopup")) el.setAttribute("aria-expanded", "true");

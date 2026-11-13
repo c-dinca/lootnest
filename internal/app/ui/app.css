@@ -1487,111 +1487,123 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .sc-line--low { --tone: var(--danger); }
 
 /* =================================================================== shell
-   The shell is one piece of dark plastic: a bar across the window (the
-   brand, Back and Forward, the sections as tabs, the search, then Big
-   Picture, Profiles, who's here and Settings) and, under it, the sidebar
-   with the games, as in Steam's library: what's being played, the last
-   few, each collection, then all of them. It's as wide as you drag it, or
-   folds to a rail of covers (Ctrl+B). The page is a screen set into it. */
-.app { grid-template-columns: var(--side-w) minmax(0, 1fr); grid-template-rows: var(--bar-h) minmax(0, 1fr); transition: grid-template-columns var(--dur-4) var(--ease-emph); }
+   Since the rework (docs/REWORK.md) there's no top bar: one floating
+   glass sidebar holds the brand, Back and Forward, search (Ctrl+K), the
+   sections with a light that slides to the current one, the games, and at
+   its foot who's at the PC, Profiles, Big Picture and Settings. Behind
+   it all is the room (#room): the art of the game in focus. */
+.app { grid-template-columns: var(--side-w) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); transition: grid-template-columns var(--dur-4) var(--ease-emph); }
 .app.no-anim { transition: none; }
-.topbar {
-  grid-column: 1 / -1; position: relative; z-index: 4; display: flex; align-items: center; gap: var(--space-4); min-width: 0;
-  padding: 0 var(--space-4) 0 var(--space-5); background: var(--shell); font-family: var(--font-ui);
-  transition: --sec var(--dur-3) var(--ease-emph);
-}
+
+/* The room: two layers of art crossfading, the scrim, the mesh. */
+.room { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--bg-ground); }
+.room-art { position: absolute; inset: 0; transition: filter var(--dur-backdrop) var(--ease-emph), transform var(--dur-backdrop) var(--ease-emph), opacity var(--room-fade) var(--ease-out); }
+.room-art img { position: absolute; inset: 0 0 auto; width: 100%; height: var(--room-h); object-fit: cover; object-position: center 30%; opacity: 0; transform: scale(1.04);
+  transition: opacity var(--room-fade) var(--ease-out), transform 8s linear; }
+.room-art img.on { opacity: 1; transform: none; }
+.room-art::after { content: ""; position: absolute; inset: 0; background: var(--scrim-room); }
+.room.is-dim .room-art { filter: var(--room-dim); transform: scale(1.08); }
+.room.is-flat .room-art { opacity: 0; }
+.room-mesh { position: absolute; inset: 0; transition: background var(--dur-backdrop) var(--ease-out);
+  background: radial-gradient(44vw 40vh at 26% 88%, color-mix(in oklab, var(--seat-c, transparent) var(--mesh-seat), transparent), transparent 70%),
+    radial-gradient(30vw 30vh at 4% 0%, var(--mesh-red), transparent 70%); }
+:root.room-off .room-art { display: none; }
+.view { background: none; border-radius: 0; }
+
+/* The sidebar: one sheet of glass, floating 12px in from the window's
+   edges. */
+.side { position: relative; z-index: 3; display: flex; flex-direction: column; min-height: 0; margin: var(--space-3) 0 var(--space-3) var(--space-3); padding: var(--space-4) var(--space-2) var(--space-2);
+  overflow: hidden; border-radius: var(--radius-glass); font-family: var(--font-ui);
+  background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 1px var(--glass-edge), var(--glass-light), 0 24px 60px -24px rgb(0 0 0 / 0.7); }
+.side-top { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-1) var(--space-3) var(--space-2); }
+.brand { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; font: 400 var(--fs-18)/1 var(--font-title); color: var(--fg-1); }
+.brand-mark { width: 22px; height: 22px; flex: none; }
+.brand-mark circle { stroke: var(--accent); }  /* the gem: Racing Red */
 .brand-name { white-space: nowrap; }
-/* Beta, as a sticker. */
-.brand-stage { padding: var(--space-1) var(--space-2); border-radius: var(--radius-tag); background: var(--fg-1); color: var(--fg-on-light); font: 800 var(--fs-12)/1 var(--font-ui); }
-.bar-hist { display: flex; flex: none; gap: var(--space-1); }
-.bar-btn, .side-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); flex: none; padding: 0; border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2); font: 600 var(--fs-13)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
-.bar-btn { min-width: var(--ctl-sm); height: var(--ctl-sm); }
+.brand-stage { padding: 3px 7px; border-radius: var(--radius-round); background: var(--glass-ctl-hover); color: var(--fg-2); font: 750 11px/1 var(--font-ui); }
+.bar-hist { display: flex; flex: none; gap: 2px; }
+
+/* Icon keys in the sidebar: no cap until the pointer is on one. */
+.bar-btn, .side-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); flex: none; padding: 0; border: 0; border-radius: var(--radius-key-sm); background: none; color: var(--fg-2); font: 600 var(--fs-13)/1 var(--font-ui); cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.bar-btn { width: var(--ctl-sm); height: var(--ctl-sm); }
 .side-btn { width: 28px; height: 28px; color: var(--fg-3); }
-.bar-btn svg, .side-btn svg { width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.side-btn svg { width: var(--icon-sm); height: var(--icon-sm); }
-.bar-btn:hover:not(:disabled), .side-btn:hover { background: var(--bg-raised); color: var(--fg-1); }
-.bar-btn:active:not(:disabled), .side-btn:active { transform: translateY(1px); transition-duration: var(--dur-press); }
+.bar-btn .ln-icon { width: var(--icon-md); height: var(--icon-md); }
+.side-btn .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.bar-btn:hover:not(:disabled), .side-btn:hover { background: var(--glass-ctl); color: var(--fg-1); }
+.bar-btn:active:not(:disabled), .side-btn:active { transform: translateY(1px) scale(0.96); transition-duration: var(--dur-press); }
 .bar-btn:disabled { color: var(--fg-disabled); cursor: default; }
 .bar-btn:focus-visible, .side-btn:focus-visible, .bar-tab:focus-visible, .bar-me:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
-/* Profiles and Settings, when open: a key lit along its top in the
-   section's colour. */
-.bar-btn[aria-current="page"] { background: var(--bg-ground); color: var(--fg-1); box-shadow: inset 0 var(--slot-band) 0 var(--sec); }
-.bar-labeled { padding: 0 var(--space-3) 0 var(--space-2); }
+.bar-btn[aria-current="page"] { background: var(--glass-ctl-on); color: var(--fg-1); box-shadow: var(--key-light); }
 .side-btn[aria-pressed="true"] { color: var(--fg-1); background: var(--glass-ctl-on); }
 
-/* The sections. The current one is a cartridge in its slot: the screen's
-   colour, so it runs into the page it opens, with the section's colour
-   along its top. It slides from tab to tab and changes colour on the way. */
-.bar-tabs { position: relative; display: flex; flex: none; align-self: stretch; }
-.bar-tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: var(--space-2); flex: none; height: 100%; padding: var(--space-1) var(--space-3) 0; border: 0; background: none; color: var(--fg-2); font: 600 var(--fs-14)/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color var(--dur-1) var(--ease-out); }
-.bar-tab:hover { color: var(--fg-1); }
-.bar-tab[aria-current="page"], .bar-more.is-current { color: var(--fg-1); font-weight: 750; }
-.bar-tab .count { display: inline-grid; place-items: center; min-width: var(--patch); height: var(--patch); padding: 0 var(--space-1); border-radius: var(--radius-tag); background: var(--bg-raised); color: var(--fg-2); font: 700 var(--fs-12)/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-.bar-tab .count:empty { display: none; }
-.bar-more { display: none; }
-.bar-more svg { width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.bar-ind { position: absolute; left: 0; top: var(--space-2); bottom: 0; width: 1px; background: linear-gradient(180deg, var(--sec) 0 var(--slot-band), var(--bg-ground) var(--slot-band)); transform-origin: 0 0; opacity: 0; pointer-events: none; transition: transform var(--dur-3) var(--ease-emph), opacity var(--dur-2) var(--ease-out); }
-
-/* The search: on every page, wider while it's in use. */
-.bar-search { position: relative; flex: 0 1 var(--bar-search-w); min-width: var(--bar-search-min); margin-left: auto; transition: flex-basis var(--dur-2) var(--ease-out); }
-.bar-search:focus-within { flex-basis: var(--bar-search-open); }
+/* Search: a well near the top; its results open beside the sidebar, wide. */
+.bar-search { position: relative; flex: none; margin: 0 var(--space-1) var(--space-3); }
 .bar-search .ln-search { width: 100%; }
-.bar-search .ln-input { height: var(--ctl-sm); border-color: var(--edge-1); font-size: var(--fs-13); }
-.bar-kbd, .ctx kbd, .gq-key, .pt-make kbd { padding: 1px 5px; border: 0; border-radius: var(--radius-tag); background: var(--bg-raised); box-shadow: inset 0 -2px 0 var(--shell-lip); font: 650 var(--fs-12)/var(--lh-snug) var(--font-ui); color: var(--fg-2); }
+.bar-search .ln-search > .ln-icon { position: absolute; left: var(--space-3); width: var(--icon-sm); height: var(--icon-sm); color: var(--fg-3); pointer-events: none; }
+.bar-search .ln-input { height: 38px; padding-left: 36px; border: 0; border-radius: var(--radius-key); background: var(--glass-ctl-active); font-size: var(--fs-13); }
+.bar-search .ln-input:focus { background: rgb(0 0 0 / 0.35); }
+.bar-kbd, .ctx kbd, .gq-key, .pt-make kbd { padding: 1px 6px; border: 0; border-radius: var(--radius-tag); background: var(--glass-ctl-hover); font: 700 11px/var(--lh-snug) var(--font-ui); color: var(--fg-2); }
 .bar-kbd { position: absolute; right: var(--space-2); pointer-events: none; transition: opacity var(--dur-1) var(--ease-out); }
 .bar-search .ln-input:focus ~ .bar-kbd, .bar-search .ln-input:not(:placeholder-shown) ~ .bar-kbd { opacity: 0; }
-.gq-pop { position: absolute; z-index: 40; top: calc(100% + var(--space-1)); right: 0; width: min(420px, calc(100vw - var(--space-6))); max-height: min(520px, 75vh); overflow: auto; display: grid; gap: var(--space-2); padding: var(--space-2); border: 0; border-radius: var(--radius-panel); background: var(--glass-overlay); box-shadow: var(--shadow-overlay); transform-origin: 100% 0; animation: menu-in var(--dur-2) var(--ease-out); }
+.gq-pop { position: fixed; z-index: 40; top: var(--space-3); left: calc(var(--side-w) + var(--space-5)); width: min(560px, calc(100vw - var(--side-w) - var(--space-10))); max-height: min(560px, 80vh); overflow: auto; display: grid; gap: var(--space-2); padding: var(--space-2);
+  border: 0; border-radius: var(--radius-panel); background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), var(--glass-light); transform-origin: 0 0; animation: menu-in var(--dur-2) var(--ease-out); }
 .gq-pop[hidden] { display: none; }
 
-/* Who's here: the seated profile's picture and name, opening its menu. */
-.bar-end { display: flex; align-items: center; flex: none; gap: var(--space-1); }
-.bar-me { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--ctl-sm); padding: 0 var(--space-3) 0 var(--space-1); border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-1); font: 700 var(--fs-13)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
-/* Someone sits down: their picture pops into the seat. */
+/* The sections: a row each, an icon then the word; the current one's
+   icon fills and a light slides to it. */
+.bar-tabs { position: relative; display: grid; flex: none; gap: 2px; padding: 0 var(--space-1); }
+.bar-tab { position: relative; z-index: 1; display: flex; align-items: center; gap: var(--space-3); height: 40px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-key); background: none; color: var(--fg-2); font: 700 var(--fs-14)/1 var(--font-ui); text-align: left; white-space: nowrap; cursor: pointer; transition: color var(--dur-1) var(--ease-out); }
+.bar-tab:hover { color: var(--fg-1); }
+.bar-tab[aria-current="page"] { color: var(--fg-1); }
+.bar-tab .ln-icon { width: var(--icon-md); height: var(--icon-md); }
+.ph-on { display: none; }
+[aria-current="page"] > .ph-off { display: none; }
+[aria-current="page"] > .ph-on { display: block; }
+.bar-tab .bar-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bar-tab .count { display: inline-grid; place-items: center; min-width: var(--patch); height: 18px; padding: 0 6px; border-radius: var(--radius-round); background: var(--glass-ctl-hover); color: var(--fg-2); font: 750 11px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+.bar-tab .count:empty { display: none; }
+.bar-tab[data-view="updates"] .count { background: var(--accent); color: var(--fg-on-accent); }
+.bar-more { display: none; }
+.bar-ind { position: absolute; z-index: 0; left: var(--space-1); right: var(--space-1); top: 0; height: 40px; border-radius: var(--radius-key); background: var(--glass-ctl-hover); box-shadow: var(--key-light); opacity: 0; pointer-events: none; transition: transform var(--dur-page) var(--ease-spring), opacity var(--dur-2) var(--ease-out); }
+
+/* Short windows: the sections tighten so the games keep the room. */
+@media (max-height: 820px) {
+  .side { padding-top: var(--space-3); }
+  .side-top { padding-bottom: var(--space-2); }
+  .bar-search { margin-bottom: var(--space-2); }
+  .bar-search .ln-input { height: 34px; }
+  .bar-tab, .bar-ind { height: 34px; }
+  .side-foot { padding: var(--space-1); }
+}
+
+/* Who's at the PC, Profiles, Big Picture and Settings, at the foot. */
+.side-foot { display: flex; align-items: center; gap: var(--space-1); flex: none; margin-top: var(--space-2); padding: var(--space-2); border-radius: var(--radius-panel); background: var(--glass-ctl-active); }
+.side-foot-keys { display: flex; gap: 2px; margin-left: auto; }
+.bar-me { display: inline-flex; align-items: center; gap: var(--space-2); flex: 1; min-width: 0; height: 40px; padding: 0 var(--space-2) 0 var(--space-1); border: 0; border-radius: var(--radius-key); background: none; color: var(--fg-1); font: 700 var(--fs-13)/1 var(--font-ui); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.bar-me .ln-avatar { --size: 32px; }
 .bar-me .ln-avatar.sat { animation: seat-pop var(--dur-3) var(--ease-emph); }
-@keyframes seat-pop { from { opacity: 0; transform: scale(.9); } }
-.bar-me:hover, .bar-me[aria-expanded="true"] { background: var(--bg-raised); }
-.bar-me .bar-label { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-me:hover, .bar-me[aria-expanded="true"] { background: var(--glass-ctl); }
+.bar-me .bar-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-me.playing .ln-avatar { box-shadow: 0 0 0 2px var(--shell), 0 0 0 4px var(--player-fill); }
-.bar-nobody { display: inline-grid; place-items: center; width: calc(var(--ctl-sm) - var(--space-2)); height: calc(var(--ctl-sm) - var(--space-2)); border: 2px dashed var(--edge-3); border-radius: var(--radius-round); color: var(--fg-2); }
+.bar-nobody { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 2px dashed var(--edge-3); border-radius: var(--radius-round); color: var(--fg-2); }
 .bar-nobody .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+@keyframes seat-pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); } }
 .ctx .me-who { height: auto; min-height: var(--ctl-md); padding-block: var(--space-1); }
 .ctx .me-who small { display: block; font-size: var(--fs-12); color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctx .me-run { padding-left: var(--space-8); }
 .ctx .me-who.playing .ln-avatar { box-shadow: 0 0 0 2px var(--bg-raised), 0 0 0 3px var(--player-fill); }
 .ctx [aria-current="page"] { font-weight: 650; }
 
-/* Narrower windows: the tabs and the search give room first, then
-   Profiles and the seat lose their words, then the sections after the
-   third go under More. */
-@media (max-width: 1240px) {
-  .topbar { gap: var(--space-3); }
-  .bar-tab { padding-inline: var(--space-2); }
-  .bar-search { flex-basis: calc(var(--bar-search-w) * 0.75); }
-  .bar-me .bar-label { display: none; }
-  .bar-me { padding-right: var(--space-1); }
-}
-@media (max-width: 1100px) {
-  .topbar { gap: var(--space-3); padding-inline: var(--space-3); }
-  .bar-labeled { padding: 0; }
-  .topbar .bar-label, .brand-stage, .bar-kbd { display: none; }
-  .bar-me { padding-right: var(--space-1); }
-  .bar-tab { padding-inline: var(--space-2); }
-}
-@media (max-width: 1000px) {
-  .bar-tabs .bar-tab[data-view]:nth-child(n+4) { display: none; }
-  .bar-more { display: inline-flex; }
-}
-
-/* The sidebar: the games, under the bar, the window's full height. */
-.side { position: relative; z-index: 3; display: flex; flex-direction: column; min-height: 0; padding: var(--space-2) var(--space-2) var(--space-2); overflow: hidden; background: var(--shell); font-family: var(--font-ui); }
+/* The sidebar's games. */
 .side-head { display: flex; align-items: center; justify-content: space-between; flex: none; padding: 0 0 var(--space-1) var(--space-1); }
 .side-tools { display: flex; gap: 2px; }
 .side-filter { position: relative; display: flex; flex: none; align-items: center; margin: 0 0 var(--space-2); }
-.side-filter svg { position: absolute; left: var(--space-2); width: 14px; height: 14px; fill: none; stroke: var(--fg-3); stroke-width: 1.5; stroke-linecap: round; pointer-events: none; }
-.side-filter input { width: 100%; height: var(--ctl-sm); padding: 0 var(--space-2) 0 28px; border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-ctl); background: var(--bg-well); color: var(--fg-1); font: 500 var(--fs-13)/1 var(--font-ui); transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
+.side-filter .ln-icon { position: absolute; left: var(--space-2); width: var(--icon-xs); height: var(--icon-xs); color: var(--fg-3); pointer-events: none; }
+.side-filter input { width: 100%; height: var(--ctl-sm); padding: 0 var(--space-2) 0 28px; border: 0; border-radius: var(--radius-key-sm); background: var(--glass-ctl-active); color: var(--fg-1); font: 500 var(--fs-13)/1 var(--font-ui); transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
 .side-filter input::placeholder { color: var(--fg-3); }
 .side-filter input:hover { border-color: var(--edge-2); }
-.side-filter input:focus { outline: none; border-color: var(--edge-3); background: var(--bg-well); }
+.side-filter input:focus { outline: none; background: rgb(0 0 0 / 0.35); }
 .side-games { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 calc(var(--space-2) * -1); padding: 0 var(--space-2) var(--space-2); scrollbar-gutter: stable; }
 .side-games::-webkit-scrollbar { width: 8px; }
 .side-games::-webkit-scrollbar-thumb { border-width: 2px; }
@@ -1670,10 +1682,15 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .app.resizing { transition: none; }
 
 /* Folded: a rail of covers, with the button that opens it again. */
-.app.side-folded { --side-w: var(--side-rail); }
+.app.side-folded { --side-w: calc(var(--side-rail) + var(--space-3)); }
 .side-folded .side-head { justify-content: center; padding: 0 0 var(--space-2); }
 .side-folded .side-head .side-show, .side-folded .sg-headrow, .side-folded .sg-newrow, .side-folded .sg-hint, .side-folded .sg-folder.is-empty, .side-folded .side-tools > :not(.side-collapse), .side-folded .side-filter, .side-folded .side-update, .side-folded .side-resize, .side-folded .sg-head, .side-folded .sg-name, .side-folded .sg-mark { display: none; }
-.side-folded .side-collapse svg { transform: scaleX(-1); }
+.side-folded .side-collapse .ln-icon { transform: scaleX(-1); }
+.side-folded .side-top .brand-name, .side-folded .side-top .brand-stage, .side-folded .bar-hist, .side-folded .bar-search, .side-folded .bar-tab .bar-label, .side-folded .bar-tab .count, .side-folded .bar-me .bar-label, .side-folded .side-foot-keys { display: none; }
+.side-folded .side-top { justify-content: center; padding-inline: 0; }
+.side-folded .bar-tab { justify-content: center; padding: 0; }
+.side-folded .side-foot { justify-content: center; padding: var(--space-1); }
+.side-folded .bar-me { flex: none; padding: 0 var(--space-1); }
 .side-folded .side-games { margin: 0 -4px; padding: 0 4px; scrollbar-width: none; }
 .side-folded .side-games::-webkit-scrollbar { display: none; }
 .side-folded .sg-group.closed .sg-rows { display: grid; }

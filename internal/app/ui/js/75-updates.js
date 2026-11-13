@@ -44,7 +44,7 @@
   }
   const updVer = (have, to) => `<div class="upd-ver">
       <div><span>Your copy</span><b class="ln-num">${have ? esc(have) : "Unknown"}</b></div>
-      ${to ? `<svg class="upd-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg><div><span>${to[0]}</span><b class="ln-num">${esc(to[1])}</b></div>` : ""}</div>`;
+      ${to ? `${ph("arrow-right").replace('class="ln-icon ph"', 'class="ln-icon ph upd-arrow"')}<div><span>${to[0]}</span><b class="ln-num">${esc(to[1])}</b></div>` : ""}</div>`;
   const midTrunc = (s, n) => s.length <= n ? s : s.slice(0, Math.ceil(n / 2) - 1) + "…" + s.slice(-Math.floor(n / 2));
   // When the row is narrow, the start gives way and the last 16 characters stay.
   const updPath = (p) => { const t = midTrunc(p, 56), i = Math.max(t.length - 16, Math.ceil(t.length / 2)); return `<span class="upd-path selectable" title="${esc(p)}"><span>${esc(t.slice(0, i))}</span>${esc(t.slice(i))}</span>`; };

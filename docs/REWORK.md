@@ -132,7 +132,7 @@ including the small ones (empty states, errors, menus, toasts).
 
 Tick when merged. The names are the view functions in `internal/app/ui/js`.
 
-- Shell: [ ] sidebar (`30-side-games.js`, sections, seat, Settings) [ ] room and mesh [ ] `renderBar` removed [ ] boot splash (`index.html` #boot) [ ] Back/Forward [ ] Ctrl+K (`renderGq`) [ ] context menu (#ctx) [ ] toasts (#toasts) [ ] safe-mode banner
+- Shell: [x] sidebar (`30-side-games.js`, sections, seat, Settings) [x] room and mesh [x] the top bar removed (`renderBar` drives the sidebar's sections) [ ] boot splash (`index.html` #boot) [ ] Back/Forward [x] Ctrl+K (`renderGq`) [ ] context menu (#ctx) [x] toasts (#toasts) [ ] safe-mode banner
 - Home: [ ] `viewHome` [ ] Tonight [ ] save check [ ] news [ ] `viewWelcome` (first run)
 - Library: [ ] `viewLibrary` [ ] shelves [ ] list view [ ] Not installed (`42-owned.js`) [ ] selection bar [ ] Views [ ] `viewSources` [ ] `viewAddDialog`
 - Game page: [ ] `viewGame` [ ] tabs and blocks (`62-game-blocks.js`) [ ] `viewShots` [ ] `viewDetailsEdit` [ ] `viewEdit` [ ] `viewGameSettings` [ ] `viewManage` [ ] `viewLaunch` [ ] Mods (`67-mods.js`, `viewModPlan`, `viewModConflicts`) [ ] `viewCopies` [ ] `viewRestore` [ ] `viewMove` [ ] `viewMoveFolder` [ ] `viewRemovePC` [ ] `viewTrySave` [ ] `viewAchDoctor` [ ] `viewBlocked` [ ] `viewUnsorted` [ ] `viewItchInstall` [ ] `viewGogInstall`

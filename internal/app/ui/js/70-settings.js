@@ -40,7 +40,7 @@
   // A group of rows under its label, with an optional short line.
   const setSub = (title, note, body) => `<section class="set-sub">${title ? `<div class="ln-section-head"><div><h2>${title}</h2></div></div>` : ""}${note ? `<p class="set-note">${note}</p>` : ""}${body}</section>`;
   // The categories, by key, as the list on the left names them.
-  const SET_CATS = { general: "General", games: "Games and swaps", controllers: "Controllers", storage: "Storage", plugins: "Plugins", online: "Online", updates: "Updates", cloud: "Cloud saves", data: "Data and activity", about: "About" };
+  const SET_CATS = { general: "General", appearance: "Appearance", games: "Games and swaps", controllers: "Controllers", storage: "Storage", plugins: "Plugins", online: "Online", updates: "Updates", cloud: "Cloud saves", data: "Data and activity", about: "About" };
   function viewSettings() {
     const s = cfg().settings, st = S.d.steam, hidden = Object.entries((S.found && S.found.hidden) || {});
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
@@ -60,6 +60,10 @@
           ${sw("openBigPicture", "Open in Big Picture", "", s.openBigPicture)}
           ${sw("notifications", "Notify me when progress is saved", "", s.notifications)}`)
         + sub("Keyboard shortcuts", "", SHORTCUTS(s).map(([keys, what]) => `<div class="bk-row set-key"><div>${what}</div><span class="set-kbds">${keys.map((k) => `<kbd>${k}</kbd>`).join("")}</span></div>`).join(""))],
+      ["appearance", SET_CATS.appearance, ph("palette"), () => sub("", "", `
+          ${sw("glassOff", "See-through panels", "Off makes every panel solid", !s.glassOff, true)}
+          ${sw("roomOff", "Art behind pages", "The game you're looking at fills the window", !s.roomOff, true)}
+          ${setRow("Motion", "", `<div class="ln-segmented" role="radiogroup" aria-label="Motion">${[["", "Full"], ["less", "Less"], ["off", "Off"]].map(([v, l]) => `<button type="button" role="radio" aria-checked="${(s.motion || "") === v}" data-action="set-motion" data-value="${v}">${l}</button>`).join("")}</div>`)}`)],
       ["games", SET_CATS.games, GI.play, () => sub("Swaps", "", `
           ${setRow("Copies kept per game before each swap", "The oldest go once there are more.", num("s-backups", "backupsToKeep", 1, 100), "s-backups")}
           ${setRow("Seconds to wait for a game to start", "", num("s-timeout", "startTimeoutSeconds", 30, 1800), "s-timeout")}

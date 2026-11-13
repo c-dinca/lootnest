@@ -9,6 +9,7 @@
     b.classList.add("gone");
   }
   setTimeout(bootDone, 4000);
+  paintIcons(document);
   async function boot() {
     try {
       S.d = await api.state();

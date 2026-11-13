@@ -238,7 +238,7 @@
     const total = rows.reduce((n, r) => n + r.unlocked, 0);
     const ms = who && player(who) ? milestones(player(who), rows) : [];
     const msDone = ms.filter((x) => x.done).length;
-    const msHTML = ms.length ? `<details class="ach-ms"${S.achMs ? " open" : ""}><summary class="ln-section-head"><span class="ln-label">Lootnest milestones<span class="ln-count ln-num">${msDone} of ${ms.length}</span></span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg></summary>
+    const msHTML = ms.length ? `<details class="ach-ms"${S.achMs ? " open" : ""}><summary class="ln-section-head"><span class="ln-label">Lootnest milestones<span class="ln-count ln-num">${msDone} of ${ms.length}</span></span>${ph("caret-down")}</summary>
       <ul class="ach-ms-grid">${ms.map((x) => `<li class="${x.done ? "done" : ""}"><span class="ach-ms-icon">${GI.trophy}</span><div><b>${esc(x.name)}</b><span>${x.done ? esc(x.desc) : esc(x.desc) + ". " + esc(fmtGoal(x))}</span>${x.done ? "" : `<span class="ach-bar" aria-hidden="true"><span style="width:${Math.round((x.cur / x.goal) * 100)}%"></span></span>`}</div></li>`).join("")}</ul></details>` : "";
     const latest = rows.flatMap((r) => (r.recent || []).map((a) => ({ a, r }))).sort((x, y) => new Date(y.a.at || 0) - new Date(x.a.at || 0)).slice(0, 10);
     const games = rows.slice().sort((x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || x.g.name.localeCompare(y.g.name));

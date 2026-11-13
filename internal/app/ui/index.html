@@ -12,49 +12,51 @@
   <svg class="boot-mark" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path pathLength="1" d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path pathLength="1" d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>
   <span class="boot-name">Lootnest</span>
 </div>
+<div id="room" class="room" aria-hidden="true"><div class="room-art"></div><div class="room-mesh"></div></div>
 <div id="app" class="app">
-  <header class="topbar" id="topbar">
-    <div class="brand" aria-label="Lootnest">
-      <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>
-      <span class="brand-name">Lootnest</span><span class="brand-stage" title="Lootnest is in beta">Beta</span>
+  <aside class="side" id="side" aria-label="Lootnest">
+    <div class="side-top">
+      <div class="brand" aria-label="Lootnest">
+        <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 10.25c0 3.7 3.25 6.25 7.25 6.25s7.25-2.55 7.25-6.25"/><path d="M5.75 10.25c0 2.2 1.9 3.5 4.25 3.5s4.25-1.3 4.25-3.5"/><circle cx="10" cy="6.25" r="2.5"/></svg>
+        <span class="brand-name">Lootnest</span><span class="brand-stage" title="Lootnest is in beta">Beta</span>
+      </div>
+      <div class="bar-hist">
+        <button class="bar-btn" id="hist-back" data-action="hist-back" aria-label="Back (Alt+Left)" title="Back (Alt+Left)" disabled><i data-ph="caret-left"></i></button>
+        <button class="bar-btn" id="hist-fwd" data-action="hist-fwd" aria-label="Forward (Alt+Right)" title="Forward (Alt+Right)" disabled><i data-ph="caret-right"></i></button>
+      </div>
     </div>
-    <div class="bar-hist">
-      <button class="bar-btn" id="hist-back" data-action="hist-back" aria-label="Back (Alt+Left)" title="Back (Alt+Left)" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 5 7 10l5 5"/></svg></button>
-      <button class="bar-btn" id="hist-fwd" data-action="hist-fwd" aria-label="Forward (Alt+Right)" title="Forward (Alt+Right)" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5"/></svg></button>
+    <div class="bar-search" role="search">
+      <label class="ln-search"><i data-ph="magnifying-glass"></i><input type="search" id="gq" class="ln-input" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Run a command, or search your games and the store (Ctrl+K)" aria-controls="gq-pop" aria-expanded="false"><kbd class="bar-kbd" aria-hidden="true">Ctrl K</kbd></label>
     </div>
     <nav class="bar-tabs" id="bar-tabs" aria-label="Sections">
-      <button class="bar-tab" data-action="nav" data-view="home">Home</button>
-      <button class="bar-tab" data-action="nav" data-view="library">Library<span class="count" id="lib-count"></span></button>
-      <button class="bar-tab" data-action="nav" data-view="find">Store</button>
-      <button class="bar-tab" data-action="nav" data-view="updates">Updates<span class="count" id="upd-count"></span></button>
-      <button class="bar-tab" data-action="nav" data-view="achievements">Achievements</button>
-      <button class="bar-tab" data-action="nav" data-view="saves">Saves</button>
-      <button class="bar-tab bar-more" id="bar-more" data-action="tabs-more" aria-haspopup="menu" aria-expanded="false">More<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg></button>
       <span class="bar-ind" id="bar-ind" aria-hidden="true"></span>
+      <button class="bar-tab" data-action="nav" data-view="home"><i data-ph="house" data-two></i><span class="bar-label">Home</span></button>
+      <button class="bar-tab" data-action="nav" data-view="library"><i data-ph="squares-four" data-two></i><span class="bar-label">Library</span><span class="count" id="lib-count"></span></button>
+      <button class="bar-tab" data-action="nav" data-view="find"><i data-ph="storefront" data-two></i><span class="bar-label">Store</span></button>
+      <button class="bar-tab" data-action="nav" data-view="updates"><i data-ph="arrow-circle-up" data-two></i><span class="bar-label">Updates</span><span class="count" id="upd-count"></span></button>
+      <button class="bar-tab" data-action="nav" data-view="achievements"><i data-ph="trophy" data-two></i><span class="bar-label">Achievements</span></button>
+      <button class="bar-tab" data-action="nav" data-view="saves"><i data-ph="vault" data-two></i><span class="bar-label">Saves</span></button>
+      <button class="bar-tab bar-more" id="bar-more" data-action="tabs-more" aria-haspopup="menu" aria-expanded="false" hidden>More</button>
     </nav>
-    <div class="bar-search" role="search">
-      <label class="ln-search"><svg class="ln-icon" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8.75" cy="8.75" r="4.75"/><path d="M12.25 12.25 16 16"/></svg><input type="search" id="gq" class="ln-input" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Run a command, or search your games and the store (Ctrl+K)" aria-controls="gq-pop" aria-expanded="false"><kbd class="bar-kbd" aria-hidden="true">Ctrl K</kbd></label>
-      <div id="gq-pop" class="gq-pop ln-root" role="listbox" aria-label="Search results" hidden></div>
-    </div>
-    <div class="bar-end">
-      <button class="bar-btn" data-action="bp-open" aria-label="Big Picture (F11)" title="Big Picture, for a controller (F11)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6.5 6.5h7a4 4 0 0 1 3.9 4.9l-.6 2.6a2 2 0 0 1-3.4.9L11.6 13H8.4l-1.8 1.9a2 2 0 0 1-3.4-.9l-.6-2.6A4 4 0 0 1 6.5 6.5z"/><path d="M6.5 9v2.5M5.25 10.25h2.5M13 9.75h.01M14.75 11.25h.01"/></svg></button>
-      <button class="bar-btn bar-labeled" data-action="nav" data-view="players" title="Profiles"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7.5" cy="6.75" r="2.75"/><path d="M2.75 16.5c.65-2.9 2.6-4.5 4.75-4.5s4.1 1.6 4.75 4.5"/><circle cx="14" cy="7.5" r="2"/><path d="M13.4 12.1c2.1.25 3.4 1.8 3.95 4.15"/></svg><span class="bar-label">Profiles</span></button>
-      <button class="bar-me" id="bar-me" data-action="me-menu" aria-haspopup="menu" aria-expanded="false"></button>
-      <button class="bar-btn" data-action="nav" data-view="settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.35 8.35 17.11 8.56 17.11 11.44 15.35 11.65 14.95 12.61 16.04 14.01 14.01 16.04 12.61 14.95 11.65 15.35 11.44 17.11 8.56 17.11 8.35 15.35 7.39 14.95 5.99 16.04 3.96 14.01 5.05 12.61 4.65 11.65 2.89 11.44 2.89 8.56 4.65 8.35 5.05 7.39 3.96 5.99 5.99 3.96 7.39 5.05 8.35 4.65 8.56 2.89 11.44 2.89 11.65 4.65 12.61 5.05 14.01 3.96 16.04 5.99 14.95 7.39z"/><circle cx="10" cy="10" r="2.25"/></svg></button>
-    </div>
-  </header>
-  <aside class="side" id="side" aria-label="Your games">
     <div class="side-head">
       <select id="side-show" class="ln-input side-show" aria-label="Which games the list shows"></select>
       <span class="side-tools">
-        <button class="side-btn" data-action="side-sort" id="side-sort" aria-label="Sort the games" title="Sort"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4v12M3.5 13.5 6 16l2.5-2.5M14 16V4M11.5 6.5 14 4l2.5 2.5"/></svg></button>
-        <button class="side-btn" data-action="add-game" aria-label="Add a game" title="Add a game"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg></button>
-        <button class="side-btn side-collapse" data-action="side-toggle" aria-label="Fold the sidebar (Ctrl+B)" title="Fold the sidebar (Ctrl+B)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M8 4v12M12.5 8.25 10.75 10l1.75 1.75"/></svg></button>
+        <button class="side-btn" data-action="side-sort" id="side-sort" aria-label="Sort the games" title="Sort"><i data-ph="sort-ascending"></i></button>
+        <button class="side-btn" data-action="add-game" aria-label="Add a game" title="Add a game"><i data-ph="plus"></i></button>
+        <button class="side-btn side-collapse" data-action="side-toggle" aria-label="Fold the sidebar (Ctrl+B)" title="Fold the sidebar (Ctrl+B)"><i data-ph="sidebar-simple"></i></button>
       </span>
     </div>
-    <label class="side-filter"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5h13M6 10h8M8.5 15h3"/></svg><input id="side-q" type="search" placeholder="Filter games" autocomplete="off" spellcheck="false" aria-label="Filter your games"></label>
+    <label class="side-filter"><i data-ph="funnel"></i><input id="side-q" type="search" placeholder="Filter games" autocomplete="off" spellcheck="false" aria-label="Filter your games"></label>
     <div id="side-games" class="side-games"></div>
     <div id="side-update" class="side-update"></div>
+    <div class="side-foot">
+      <button class="bar-me" id="bar-me" data-action="me-menu" aria-haspopup="menu" aria-expanded="false"></button>
+      <span class="side-foot-keys">
+        <button class="bar-btn" data-action="nav" data-view="players" aria-label="Profiles" title="Profiles"><i data-ph="users-three"></i></button>
+        <button class="bar-btn" data-action="bp-open" aria-label="Big Picture (F11)" title="Big Picture, for a controller (F11)"><i data-ph="television-simple"></i></button>
+        <button class="bar-btn" data-action="nav" data-view="settings" aria-label="Settings" title="Settings"><i data-ph="gear-six" data-two></i></button>
+      </span>
+    </div>
     <div class="side-resize" id="side-resize" role="separator" aria-orientation="vertical" aria-label="Resize the sidebar" title="Drag to resize. Double-click to reset."></div>
   </aside>
   <main id="view" class="view" tabindex="-1"></main>
@@ -62,6 +64,7 @@
 <div id="overlay"></div>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="ctx" class="ctx" role="menu" hidden></div>
+<div id="gq-pop" class="gq-pop ln-root" role="listbox" aria-label="Search results" hidden></div>
 <script nonce="@NONCE@">/*@JS*/</script>
 </body>
 </html>
