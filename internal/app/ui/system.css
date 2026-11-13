@@ -40,102 +40,115 @@
   unicode-range: U+0030-0039;
 }
 
-/* The current section's colour: registered, so it can ease from one
-   section's to the next. */
+/* The current section: kept as a token so older rules still read, but
+   neutral since the rework (no section colours). */
 @property --sec {
   syntax: "<color>";
   inherits: true;
-  initial-value: oklch(0.830 0.024 280);
+  initial-value: #a6aeb9;
 }
 
 /* ================================================================ tokens */
 :root {
-  /* Colour: game hardware. A dark indigo shell (the top bar and the
-     sidebar) around a lighter indigo screen (the page), one step of
-     lightness per layer. Ice Grey (#DFE5EB) is the text. Racing Red
-     (#EF233C) is the gem and the Play key, nothing else. Contrast is
-     WCAG 2; DESIGN.md has the table. */
-  --shell:      oklch(0.165 0.034 282);  /* the top bar and the sidebar */
-  --shell-lip:  oklch(0.120 0.030 282);  /* the dark edge under a key or a panel */
-  --bg-well:    oklch(0.175 0.036 282);  /* sunk: inputs, wells */
-  --bg-ground:  oklch(0.205 0.040 282);  /* the screen: every page */
-  --bg-surface: oklch(0.250 0.044 282);  /* panels */
-  --bg-raised:  oklch(0.295 0.046 282);  /* keys */
-  --bg-active:  oklch(0.345 0.048 282);  /* a key pointed at, selected */
+  /* Colour: the website's (docs/REWORK.md). Obsidian ground, one step of
+     lightness per layer, Ice Grey (#DFE5EB) text. Racing Red (#EF233C) is
+     the gem, the Updates badge and one primary key where there's no Play;
+     the Play key is the seated profile's colour. Contrast is WCAG 2;
+     DESIGN.md has the table. */
+  --shell:      #111217;                 /* the ground the sidebar floats over */
+  --shell-lip:  #0b0c10;                 /* the darkest edge, under floating layers */
+  --bg-well:    #0f1015;                 /* sunk: inputs, wells */
+  --bg-ground:  #111217;                 /* every page: obsidian */
+  --bg-surface: #181a21;                 /* panels */
+  --bg-raised:  #1f222b;                 /* raised panels and solid keys */
+  --bg-active:  #282b35;                 /* a key pointed at, selected */
 
-  --fg-1: #DFE5EB;                       /* Ice Grey: 14.2:1 on ground, 9.2:1 on active */
-  --fg-2: oklch(0.830 0.024 280);        /* 10.6:1 on ground, 6.9:1 on active */
-  --fg-3: oklch(0.730 0.030 280);        /* 7.5:1 on ground, 4.9:1 on active */
-  --fg-disabled: oklch(0.520 0.030 280); /* disabled controls (exempt from AA) */
-  --fg-on-light: oklch(0.180 0.030 282); /* dark ink: on Ice Grey, a label, a lit lamp */
-  --ink-on-sec: var(--fg-on-light);      /* on every section colour: 8.7:1 or more */
+  --fg-1: #DFE5EB;                       /* Ice Grey: 14.7:1 on ground, 11.1:1 on active */
+  --fg-2: #a6aeb9;                       /* 8.4:1 on ground, 6.3:1 on active */
+  --fg-3: #8c94a0;                       /* 6.1:1 on ground, 4.6:1 on active */
+  --fg-disabled: #5d636e;                /* disabled controls (exempt from AA) */
+  --fg-on-light: #111217;                /* dark ink: on Ice Grey, a lit lamp, a profile's colour */
+  --ink-on-sec: var(--fg-on-light);
 
-  /* Cartridge colours: each section has one. It is the band of the
-     current tab, the label on every section title and its rule. Fills
-     only, with dark ink on them. */
-  --sec-home:     oklch(0.86 0.160 92);   /* yellow */
-  --sec-library:  oklch(0.82 0.120 195);  /* teal; a game's page too */
-  --sec-store:    oklch(0.77 0.130 255);  /* blue */
-  --sec-updates:  oklch(0.80 0.150 60);   /* orange */
-  --sec-ach:      oklch(0.77 0.140 305);  /* lilac */
-  --sec-saves:    oklch(0.82 0.170 148);  /* green */
-  --sec-profiles: oklch(0.80 0.130 355);  /* pink */
-  --sec-neutral:  var(--fg-2);            /* Settings' own categories */
-  --sec-wash: color-mix(in oklch, var(--sec) 16%, transparent);
+  /* No section colours since the rework: every one is the same quiet grey,
+     so a rule that still reads one shows nothing loud. */
+  --sec-home: var(--fg-2); --sec-library: var(--fg-2); --sec-store: var(--fg-2); --sec-updates: var(--fg-2);
+  --sec-ach: var(--fg-2); --sec-saves: var(--fg-2); --sec-profiles: var(--fg-2); --sec-neutral: var(--fg-2);
+  --sec-wash: transparent;
 
-  --accent:      #EF233C;                /* Racing Red: the gem and the Play key only */
-  --accent-hover: oklch(0.660 0.230 22.6);
-  --accent-lip:  oklch(0.470 0.170 24);  /* under the red key */
-  --fg-on-accent: oklch(0.140 0.020 20); /* bold text on Racing Red: 4.7:1, 5.7:1 on hover */
+  --accent:      #EF233C;                /* Racing Red */
+  --accent-hover: #f43b52;
+  --accent-lip:  #a3121f;
+  --fg-on-accent: #1a0a0d;               /* bold text on Racing Red: 4.6:1 */
 
-  --lamp:        oklch(0.82 0.170 148);  /* a switch that is on, lit like a power LED */
-  --lamp-glow:   0 0 10px oklch(0.82 0.170 148 / 0.45);
-  --warning-glow: 0 0 10px oklch(0.85 0.120 78 / 0.45);  /* a lamp that needs a look */
-  --lamp-lip:    oklch(0.580 0.150 148);
-  --danger:      oklch(0.80 0.110 30);   /* destructive text and icons: 9.3:1 on ground */
-  --danger-wash: oklch(0.80 0.110 30 / 0.12);
-  --success:     oklch(0.82 0.170 148);  /* the lamp's green */
-  --fg-on-success: var(--fg-on-light);   /* 11.5:1 */
-  --warning:     oklch(0.85 0.120 78);   /* amber, apart from Home's yellow: 11.2:1 on ground */
+  --lamp:        #7be08f;                /* on, lit like a power LED */
+  --lamp-glow:   0 0 10px rgb(123 224 143 / 0.45);
+  --warning-glow: 0 0 10px rgb(242 193 78 / 0.45);
+  --lamp-lip:    #2f6b3c;
+  --danger:      #ff8a7a;                /* destructive text and icons: 8.4:1 on ground */
+  --danger-wash: rgb(255 138 122 / 0.12);
+  --success:     #7be08f;
+  --fg-on-success: var(--fg-on-light);
+  --warning:     #f2c14e;                /* 10.4:1 on ground */
 
-  --edge-1: oklch(0.80 0.06 282 / 0.12); /* hairline between things */
-  --edge-2: oklch(0.80 0.06 282 / 0.20); /* control edge */
-  --edge-3: oklch(0.85 0.06 282 / 0.38); /* control edge on hover */
-  --edge-hi: oklch(0.95 0.02 282 / 0.22);/* the light edge of a lifted cover */
+  --edge-1: rgb(255 255 255 / 0.07);     /* hairline between things */
+  --edge-2: rgb(255 255 255 / 0.12);     /* control edge */
+  --edge-3: rgb(255 255 255 / 0.22);     /* control edge on hover */
+  --edge-hi: rgb(255 255 255 / 0.20);    /* the light edge of a lifted cover */
   --focus-ring: var(--fg-1);
 
-  /* Solid plastic. Art shows only in the hero and Big Picture; the
-     surfaces over it are nearly opaque. */
-  --glass-chrome:  oklch(0.165 0.034 282 / 0.78);  /* the picker: the shell, with the game behind it blurred */
-  --glass-bar:     oklch(0.250 0.044 282 / 0.94);  /* the play bar */
-  --glass-panel:   oklch(0.250 0.044 282 / 0.90);  /* panels on art */
-  --glass-overlay: oklch(0.270 0.046 282 / 0.97);  /* toasts, menus, dialogs */
-  --glass-ctl:        oklch(0.80 0.06 282 / 0.07);
-  --glass-ctl-hover:  oklch(0.80 0.06 282 / 0.13);
-  --glass-ctl-active: oklch(0.10 0.03 282 / 0.30);
-  --glass-ctl-on:     oklch(0.80 0.06 282 / 0.18);
-  --blur-glass:   blur(24px) saturate(140%);
+  /* Glass, only over art (the room, a game's art, a picture): obsidian at
+     42% or more, blurred and a little more saturated, a 1px light edge and
+     a light along the top. Text on it stays AA because the room is dimmed
+     under every glass surface (--scrim-*). Menus, dialogs and toasts float
+     over anything, so they're nearly solid. */
+  --glass:         rgb(17 18 23 / 0.46);   /* the sidebar, the play dock, the game's sheet */
+  --glass-strong:  rgb(17 18 23 / 0.62);   /* glass that holds body text */
+  --glass-edge:    rgb(255 255 255 / 0.09);
+  --glass-light:   inset 0 1px 0 rgb(255 255 255 / 0.07);
+  --glass-chrome:  var(--glass);           /* the picker, over the game's art */
+  --glass-bar:     var(--glass);           /* the play dock */
+  --glass-panel:   var(--glass-strong);    /* panels on art */
+  --glass-overlay: rgb(24 26 33 / 0.94);   /* toasts, menus, dialogs */
+  --glass-ctl:        rgb(255 255 255 / 0.075);
+  --glass-ctl-hover:  rgb(255 255 255 / 0.13);
+  --glass-ctl-active: rgb(0 0 0 / 0.25);
+  --glass-ctl-on:     rgb(255 255 255 / 0.16);
+  --blur-glass:   blur(22px) saturate(150%);
   --blur-backdrop: blur(100px) saturate(115%);
   --backdrop-opacity: 0.34;
   --blur-art-icon: blur(40px) saturate(130%);  /* a game's icon washed behind it */
   --art-focal: 50% 30%;  /* where a cover cut from wide art is centred */
-  --scrim-backdrop: linear-gradient(180deg, oklch(0.205 0.040 282 / 0.2), oklch(0.205 0.040 282 / 0.88) 35%, var(--bg-ground) 55%);  /* the ground's oklch */
+  --scrim-backdrop: linear-gradient(180deg, rgb(17 18 23 / 0.2), rgb(17 18 23 / 0.88) 35%, var(--bg-ground) 55%);
   --scrim-art:  /* keeps the title readable over any art */
-    linear-gradient(90deg, oklch(0.15 0.04 282 / 0.82) 0%, oklch(0.15 0.04 282 / 0.45) 40%, transparent 68%),
-    linear-gradient(0deg, oklch(0.205 0.04 282 / 0.9) 0%, oklch(0.18 0.04 282 / 0.3) 40%, transparent 62%),
-    linear-gradient(180deg, oklch(0.15 0.04 282 / 0.45) 0%, transparent 18%);
+    linear-gradient(90deg, rgb(11 12 16 / 0.82) 0%, rgb(11 12 16 / 0.45) 40%, transparent 68%),
+    linear-gradient(0deg, rgb(17 18 23 / 0.9) 0%, rgb(17 18 23 / 0.3) 40%, transparent 62%),
+    linear-gradient(180deg, rgb(11 12 16 / 0.45) 0%, transparent 18%);
   --mask-fade: linear-gradient(180deg, #000 50%, transparent 100%);
-  --scrim-modal: oklch(0.10 0.03 282 / 0.66);   /* behind a dialog */
-  --scrim-drawer: oklch(0.10 0.03 282 / 0.44);  /* behind a drawer: the page it belongs to stays readable */
-  --shadow-overlay: 0 18px 44px -14px oklch(0.06 0.03 282 / 0.75), 0 0 0 1px oklch(0.80 0.06 282 / 0.14);  /* floating layers only */
-  --shadow-lift: 0 18px 30px -14px oklch(0.04 0.03 282 / 0.95);  /* a cover lifted under the pointer */
+  --scrim-modal: rgb(8 9 12 / 0.66);   /* behind a dialog */
+  --scrim-drawer: rgb(8 9 12 / 0.44);  /* behind a drawer */
+  --shadow-overlay: 0 24px 60px -20px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.09);  /* floating layers only */
+  --shadow-lift: 0 18px 30px -14px rgb(0 0 0 / 0.95);  /* a cover lifted under the pointer */
+
+  /* The room: the art of the game in focus behind everything. */
+  --room-h: 82%;           /* how far down the window the art reaches */
+  --room-fade: 700ms;      /* one art giving way to the next */
+  --scrim-room:            /* the art fades to obsidian low and on the left, so pages read */
+    linear-gradient(180deg, rgb(17 18 23 / 0.12) 0%, rgb(17 18 23 / 0.18) 34%, rgb(17 18 23 / 0.8) 64%, var(--bg-ground) 82%),
+    linear-gradient(90deg, rgb(17 18 23 / 0.82) 0%, rgb(17 18 23 / 0.25) 46%, transparent 72%);
+  --room-dim: blur(30px) brightness(0.42) saturate(1.2);  /* behind the Library */
+  /* The mesh: a wash of the seated profile's colour low on the left, a
+     faint red one top left, as on the website. */
+  --mesh-seat: 22%;
+  --mesh-red: rgb(239 35 60 / 0.06);
 
   /* Keys sit on a lip and go down when pressed; panels sit on one too. */
   --lip: 3px;          /* a key's lip */
   --press: 2px;        /* how far a key goes down */
-  --lip-key:   inset 0 calc(-1 * var(--lip)) 0 var(--shell-lip);
-  --lip-down:  inset 0 calc(var(--press) - var(--lip)) 0 var(--shell-lip);  /* the lip, pressed */
-  --lip-panel: 0 var(--lip) 0 var(--shell-lip);
+  /* Since the rework keys have no lip: these give the light and the rim. */
+  --lip-key:   var(--key-light);
+  --lip-down:  var(--key-down);
+  --lip-panel: 0 0 0 var(--hairline) var(--edge-1);
   --rule: 3px;         /* the rule a section's label sits on */
   --label-pad: 6px var(--space-3) 4px;  /* a label: more above, as the face sits high in its line */
   --patch: 20px;       /* a count on a label or a tab */
@@ -214,21 +227,34 @@
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;
   --ctl-play: 56px; --play-w: 172px;  /* Play in the play bar */
-  --icon-sm: 16px; --icon-md: 18px;
+  --icon-xs: 14px; --icon-sm: 16px; --icon-md: 18px; --icon-lg: 24px; --icon-empty: 40px;
+  --ctl-key: 38px;       /* a key */
+  --text-play: 17px;     /* the Play key's word */
+  /* A key's fine top light and rim, and the shade it takes when down. */
+  --key-light: inset 0 1px 0 rgb(255 255 255 / 0.13), inset 0 0 0 1px rgb(255 255 255 / 0.05);
+  --key-light-strong: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  --key-down: inset 0 1px 3px rgb(0 0 0 / 0.3);
   --hairline: 1px;
   --focus-width: 2px;
 
   /* Radius by role. Never one radius for everything. */
   --radius-label: 2px;    /* a section's label: square-ish, like a sticker */
   --radius-tag: 4px;      /* tags, keyboard keys, small marks */
-  --radius-ctl: 6px;      /* keys, rows, inputs */
+  --radius-ctl: 8px;      /* rows, inputs */
+  --radius-key: 10px;     /* keys */
+  --radius-key-sm: 8px;   /* small keys */
+  --radius-play: 12px;    /* the Play key */
+  --radius-glass: 20px;   /* the sidebar and the sheets of glass */
   --radius-cover: 8px;    /* covers */
-  --radius-panel: 10px;   /* panels, toasts, menus */
-  --radius-dialog: 14px;  /* dialogs, the play bar */
+  --radius-panel: 14px;   /* panels, toasts, menus */
+  --radius-dialog: 18px;  /* dialogs, the play bar */
   --radius-round: 999px;  /* avatars only */
 
-  /* Motion: quick and mechanical, never bouncy, under 400ms all told. */
+  /* Motion: quick, with long settles; springs only for lights that slide
+     and things that land (the sidebar's light, a selected cover). */
   --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-spring: cubic-bezier(.34, 1.4, .5, 1);
+  --dur-page: 600ms;    /* a page rising into place */
   --ease-in-out: cubic-bezier(.65, 0, .35, 1);
   --ease-emph: cubic-bezier(.16, 1, .3, 1);  /* fast out, long settle: things arriving */
   --dur-press: 90ms;    /* a key going down */
@@ -270,7 +296,7 @@
   --focus-ring-bp: 0 0 0 3px var(--shell), 0 0 0 7px var(--focus-ring);
   --mask-bp: linear-gradient(180deg, transparent, #000 var(--space-4), #000 calc(100% - var(--bp-foot-h) - var(--space-8)), transparent calc(100% - var(--bp-foot-h)));  /* rows fade out before the prompt bar */
   --scrim-bp:  /* the focused game's art behind Big Picture */
-    linear-gradient(90deg, oklch(0.15 0.04 282 / 0.96) 0%, oklch(0.15 0.04 282 / 0.7) 45%, oklch(0.15 0.04 282 / 0.35) 100%),
+    linear-gradient(90deg, rgb(11 12 16 / 0.96) 0%, rgb(11 12 16 / 0.7) 45%, rgb(11 12 16 / 0.35) 100%),
     linear-gradient(0deg, var(--shell) 4%, transparent 55%);
   --shadow-logo: drop-shadow(0 8px 24px oklch(0 0 0 / 0.6));
   /* A controller's face buttons, in the colours players know. */
@@ -293,15 +319,14 @@
 [data-sec="profiles"] { --sec: var(--sec-profiles); }
 [data-sec="neutral"]  { --sec: var(--sec-neutral); }
 
+/* Solid instead of see-through: Windows' transparency effects off, or
+   Settings, Appearance, See-through panels off (.glass-off on <html>). */
 @media (prefers-reduced-transparency: reduce) {
-  :root {
-    --glass-chrome: var(--shell);
-    --glass-bar: var(--bg-surface);
-    --glass-panel: var(--bg-surface);
-    --glass-overlay: var(--bg-raised);
-    --backdrop-opacity: 0;
-  }
+  :root:not(.glass-on) { --glass: var(--bg-surface); --glass-strong: var(--bg-surface); --glass-chrome: var(--bg-surface); --glass-bar: var(--bg-surface);
+    --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --backdrop-opacity: 0; }
 }
+:root.glass-off { --glass: var(--bg-surface); --glass-strong: var(--bg-surface); --glass-chrome: var(--bg-surface); --glass-bar: var(--bg-surface);
+  --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --backdrop-opacity: 0; }
 
 /* ============================================================== base bits */
 html { font-synthesis: none; }
@@ -312,6 +337,8 @@ html { font-synthesis: none; }
 }
 .ln-num { font-variant-numeric: tabular-nums; }
 .ln-icon { width: var(--icon-md); height: var(--icon-md); flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+/* Phosphor's icons are filled shapes (ph() in js/01-icons.js). */
+.ln-icon.ph { fill: currentColor; stroke: none; }
 
 /* A player's colour, set inline as style="--player: #d9738e", becomes a set
    of tokens every player-aware component reads. */
@@ -332,66 +359,69 @@ html { font-synthesis: none; }
 .ln-glass { background: var(--glass-panel); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border: var(--hairline) solid var(--edge-1); border-radius: var(--radius-panel); }
 
 /* =================================================================== keys
-   Buttons are keys: they sit on a lip and go down when pressed (the lip
-   folds under them), quickly down and a little slower back up. */
+   Every key has a fine light along its top edge and a faint rim (::after),
+   goes down 1px and to 98% when pressed, and loses the light while it's
+   down. Icon first, then the word, 8px apart, the icon 16px. */
 .ln-button {
-  position: relative;
+  position: relative; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  height: var(--ctl-md); padding: 0 var(--space-4);
-  border: var(--hairline) solid transparent; border-radius: var(--radius-ctl);
+  height: var(--ctl-key); padding: 0 15px;
+  border: 0; border-radius: var(--radius-key);
   background: none; color: var(--fg-1);
-  font: 700 var(--fs-14)/1 var(--font-ui);
+  font: 700 13.5px/1 var(--font-ui);
   white-space: nowrap; cursor: pointer;
-  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out),
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), filter var(--dur-1) var(--ease-out),
     transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
 }
+.ln-button::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; box-shadow: var(--key-light); transition: box-shadow var(--dur-1) var(--ease-out); }
+.ln-button--ghost::after { box-shadow: none; }
 .ln-button .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
 .ln-button:focus-visible, .ln-button[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.ln-button:active:not(:disabled), .ln-button[data-force~="active"] { transition-duration: var(--dur-press); }
-.ln-button--sm { height: var(--ctl-sm); padding: 0 var(--space-3); font-size: var(--fs-13); }
-.ln-button--lg { height: var(--ctl-lg); padding: 0 var(--space-6) 0 var(--space-5); font-size: var(--fs-15); }
-.ln-button--icon { width: var(--ctl-md); padding: 0; }
+.ln-button:active:not(:disabled), .ln-button[data-force~="active"] { transform: translateY(1px) scale(0.98); transition-duration: var(--dur-press); }
+.ln-button:active:not(:disabled)::after, .ln-button[data-force~="active"]::after { box-shadow: var(--key-down); }
+.ln-button--sm { height: var(--ctl-sm); padding: 0 var(--space-3); gap: 6px; font-size: var(--fs-13); border-radius: var(--radius-key-sm); }
+.ln-button--sm .ln-icon { width: var(--icon-xs); height: var(--icon-xs); }
+.ln-button--lg { height: var(--ctl-lg); padding: 0 var(--space-5) 0 var(--space-4); font-size: var(--fs-15); border-radius: var(--radius-play); }
+.ln-button--icon { width: var(--ctl-key); padding: 0; }
 .ln-button--icon.ln-button--sm { width: var(--ctl-sm); }
 
-/* Primary: the red key. The one main action on a page (Play when profiles
-   are off, Save, Sync now), with bold near-black text. */
-.ln-button--primary { background: var(--accent); color: var(--fg-on-accent); font-weight: 800; box-shadow: inset 0 calc(-1 * var(--lip)) 0 var(--accent-lip); }
-.ln-button--primary:hover, .ln-button--primary[data-force~="hover"] { background: var(--accent-hover); }
-.ln-button--primary .ln-icon { stroke-width: 2; }
+/* Primary: Racing Red, with a slight sheen. The one main action where
+   there's no Play key (Save, Sync now, Apply). */
+.ln-button--primary { background: linear-gradient(180deg, var(--accent-hover), var(--accent)); color: var(--fg-on-accent); font-weight: 800; }
+.ln-button--primary:hover, .ln-button--primary[data-force~="hover"] { filter: brightness(1.07); }
 
-/* Secondary: a raised key, for everything else that is a button. */
-.ln-button--secondary { background: var(--bg-raised); box-shadow: var(--lip-key), inset 0 0 0 var(--hairline) var(--edge-1); }
-.ln-button--secondary:hover, .ln-button--secondary[data-force~="hover"] { background: var(--bg-active); }
+/* Secondary: white 7.5% over whatever is under it, so it works on glass
+   and on obsidian alike. */
+.ln-button--secondary { background: var(--glass-ctl); }
+.ln-button--secondary:hover, .ln-button--secondary[data-force~="hover"] { background: var(--glass-ctl-hover); }
 
-/* Ghost: a key with no cap, for navigation and quiet actions (Back,
-   Later, Close). It shows its cap under the pointer. */
+/* Ghost: no cap until the pointer is on it (Back, Later, Close). */
 .ln-button--ghost { color: var(--fg-2); }
-.ln-button--ghost:hover, .ln-button--ghost[data-force~="hover"] { background: var(--bg-raised); color: var(--fg-1); }
-.ln-button--ghost:active:not(:disabled), .ln-button--ghost[data-force~="active"] { background: var(--bg-surface); }
+.ln-button--ghost:hover, .ln-button--ghost[data-force~="hover"] { background: var(--glass-ctl); color: var(--fg-1); }
+.ln-button--ghost:active:not(:disabled), .ln-button--ghost[data-force~="active"] { background: var(--glass-ctl-active); }
 
-/* Destructive: text and icon in the danger colour; the confirm step fills. */
-.ln-button--danger { color: var(--danger); background: var(--danger-wash); box-shadow: var(--lip-key); }
+/* Destructive: the danger colour on a wash of it. */
+.ln-button--danger { color: var(--danger); background: var(--danger-wash); }
 .ln-button--danger:hover, .ln-button--danger[data-force~="hover"] { background: color-mix(in oklch, var(--danger) 22%, transparent); }
 
-/* Play as someone: the player's own colour, on a lip of it. Needs
-   .ln-player on it or above. */
-.ln-button--play { background: var(--player-fill); color: var(--player-on); font-weight: 800; box-shadow: inset 0 calc(-1 * var(--lip)) 0 var(--player-lip);
-  transition: background-color var(--dur-3) var(--ease-out), color var(--dur-3) var(--ease-out), transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out); }
-.ln-button--play .ln-icon { fill: currentColor; stroke: none; }
-.ln-button--play:hover, .ln-button--play[data-force~="hover"] { background: var(--player-fill-hover); }
-
-/* Down: every key with a lip. */
-.ln-button:is(.ln-button--primary, .ln-button--secondary, .ln-button--play, .ln-button--danger):active:not(:disabled),
-.ln-button:is(.ln-button--primary, .ln-button--secondary, .ln-button--play, .ln-button--danger)[data-force~="active"] { transform: translateY(var(--press)); }
-.ln-button--secondary:active:not(:disabled), .ln-button--secondary[data-force~="active"],
-.ln-button--danger:active:not(:disabled), .ln-button--danger[data-force~="active"] { box-shadow: var(--lip-down); }
-.ln-button--primary:active:not(:disabled), .ln-button--primary[data-force~="active"] { box-shadow: inset 0 calc(var(--press) - var(--lip)) 0 var(--accent-lip); }
-.ln-button--play:active:not(:disabled), .ln-button--play[data-force~="active"] { background: var(--player-fill-active); box-shadow: inset 0 calc(var(--press) - var(--lip)) 0 var(--player-lip); }
+/* Play as someone: their colour, a sheen, a soft glow of it underneath,
+   Tilt Warp. Needs .ln-player on it or above. */
+.ln-button--play {
+  background: linear-gradient(180deg, var(--player-fill-hover), var(--player-fill)); color: var(--player-on);
+  font: 400 var(--text-play)/1 var(--font-title); letter-spacing: 0.005em;
+  box-shadow: 0 12px 30px -12px color-mix(in oklch, var(--player-fill) 80%, transparent), 0 1px 0 rgb(0 0 0 / 0.35);
+  transition: background-color var(--dur-3) var(--ease-out), color var(--dur-3) var(--ease-out), filter var(--dur-1) var(--ease-out), transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
+}
+.ln-button--play::after { box-shadow: var(--key-light-strong); }
+.ln-button--play .ln-icon { width: var(--icon-xs); height: var(--icon-xs); fill: currentColor; stroke: none; }
+.ln-button--play:hover, .ln-button--play[data-force~="hover"] { filter: brightness(1.06); }
+.ln-button--play:active:not(:disabled), .ln-button--play[data-force~="active"] { background: var(--player-fill-active); }
 
 .ln-button:disabled, .ln-button[aria-disabled="true"] {
-  background: var(--bg-surface); border-color: transparent; color: var(--fg-disabled); box-shadow: none;
+  background: var(--glass-ctl); color: var(--fg-disabled); box-shadow: none; filter: none;
   cursor: default; transform: none;
 }
+.ln-button:disabled::after, .ln-button[aria-disabled="true"]::after { box-shadow: none; }
 .ln-button--ghost:disabled, .ln-button--ghost[aria-disabled="true"] { background: none; }
 
 /* Loading: the label stays (the button keeps its width), a spinner joins it. */
@@ -556,32 +586,25 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-lamp--on { background: var(--lamp); box-shadow: var(--lamp-glow); }
 .ln-lamp--warn { background: var(--warning); box-shadow: var(--warning-glow); }
 
-/* ================================================================ labels
-   A section's title is a label in the section's colour, dark ink on it,
-   sitting on a rule of the same colour that runs across the section, like
-   the label on a cartridge. A note and the section's own button sit on the
-   rule beside it; a count is a darker patch of the label. .ln-label is the
-   label on its own; a .ln-section-head draws it from its h2. */
+/* ================================================================ titles
+   A section's title is plain: Tilt Warp, Ice Grey, no patch and no rule
+   since the rework. A note and the section's own key sit beside it; a
+   count is a small pill. .ln-label is the same title on its own. */
 .ln-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin: 0 0 var(--gap-in); }
-.ln-section-head h2 { margin: 0; font: 800 var(--text-label)/1.2 var(--font-ui); }
+.ln-section-head h2 { margin: 0; font: 400 var(--text-section)/1.15 var(--font-title); color: var(--fg-1); }
 .ln-section-head p { margin: var(--space-1) 0 0; color: var(--fg-2); font-size: var(--fs-13); }
-.ln-section-head:not(.ln-section-head--minor):has(h2) {
-  align-items: flex-end; margin: 0 0 var(--space-4);
-  border-bottom: var(--rule) solid var(--sec);
-}
-/* The title's side takes the room left; a note beside the label is cut
-   short rather than widening a narrow column. */
+.ln-section-head:not(.ln-section-head--minor):has(h2) { align-items: center; margin: 0 0 var(--space-4); }
+/* The title's side takes the room left; a note beside it is cut short
+   rather than widening a narrow column. */
 .ln-section-head:not(.ln-section-head--minor):has(h2) > div:first-child { display: flex; flex: 1 1 0; align-items: baseline; column-gap: var(--space-3); min-width: 0; }
 .ln-section-head:not(.ln-section-head--minor) > div > h2, .ln-section-head:not(.ln-section-head--minor) > h2, .ln-label {
   display: inline-flex; flex: none; align-items: center; gap: var(--space-2); max-width: 100%;
-  margin: 0; padding: var(--label-pad); border-radius: var(--radius-label) var(--radius-label) 0 0;
-  background: var(--sec); color: var(--ink-on-sec); font: 800 var(--text-label)/1.2 var(--font-ui);
+  margin: 0; padding: 0; background: none; color: var(--fg-1); font: 400 var(--text-section)/1.15 var(--font-title);
 }
-.ln-section-head:not(.ln-section-head--minor):has(h2) p { min-width: 0; margin: 0 0 var(--space-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ln-section-head:not(.ln-section-head--minor):has(h2) > :not(:first-child) { margin-bottom: var(--space-1); }
+.ln-section-head:not(.ln-section-head--minor):has(h2) p { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-3); }
 .ln-section-head h2 .ln-count, .ln-label .ln-count {
-  display: inline-grid; place-items: center; min-width: var(--patch); height: var(--patch); padding: 0 var(--space-1);
-  border-radius: var(--radius-tag); background: color-mix(in oklch, var(--ink-on-sec) 16%, transparent); color: var(--ink-on-sec); font: 800 var(--fs-13)/1 var(--font-ui);
+  display: inline-grid; place-items: center; min-width: var(--patch); height: var(--patch); padding: 0 7px;
+  border-radius: var(--radius-round); background: var(--glass-ctl-hover); color: var(--fg-2); font: 750 var(--fs-12)/1 var(--font-ui);
 }
 .ln-section-head--minor { margin-bottom: var(--space-2); }
 .ln-section-head--minor h2 { font: 750 var(--fs-13)/1 var(--font-ui); color: var(--fg-2); }
@@ -606,41 +629,41 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-row:disabled .ln-icon, .ln-row:disabled span span { color: var(--fg-disabled); }
 
 /* ======================================================= segmented control
-   A well with keys in it; the chosen one is a cartridge: raised, with the
-   section's colour along its top. */
+   Pills in a well; the chosen one is lit. */
 .ln-segmented {
-  display: inline-flex; gap: var(--lip); padding: var(--lip);
-  border: 0; border-radius: calc(var(--radius-ctl) + var(--lip));
-  background: var(--bg-well);
+  display: inline-flex; gap: 2px; padding: 3px;
+  border: 0; border-radius: var(--radius-key);
+  background: var(--glass-ctl-active);
 }
 .ln-segmented button {
-  display: inline-flex; align-items: center; gap: 6px;
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
   height: 30px; padding: 0 var(--space-3);
-  border: 0; border-radius: var(--radius-ctl);
+  border: 0; border-radius: var(--radius-key-sm);
   background: none; color: var(--fg-2);
-  font: 650 var(--fs-13)/1 var(--font-ui); cursor: pointer;
+  font: 700 var(--fs-13)/1 var(--font-ui); cursor: pointer;
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
 }
-.ln-segmented button:hover, .ln-segmented button[data-force~="hover"] { color: var(--fg-1); background: var(--bg-surface); }
-.ln-segmented button[aria-checked="true"], .ln-segmented button[aria-pressed="true"] { background: var(--bg-raised); color: var(--fg-1); font-weight: 750; box-shadow: inset 0 2px 0 var(--sec), var(--lip-key); }
+.ln-segmented button .ln-icon { width: var(--icon-xs); height: var(--icon-xs); }
+.ln-segmented button:hover, .ln-segmented button[data-force~="hover"] { color: var(--fg-1); }
+.ln-segmented button[aria-checked="true"], .ln-segmented button[aria-pressed="true"] { background: var(--glass-ctl-on); color: var(--fg-1); box-shadow: var(--key-light); }
 .ln-segmented button:focus-visible, .ln-segmented button[data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 1px; }
 .ln-segmented button:disabled { color: var(--fg-disabled); background: none; cursor: default; }
 .ln-segmented .ln-count { color: var(--fg-3); font-weight: 650; }
 .ln-segmented button[aria-checked="true"] .ln-count, .ln-segmented button[aria-pressed="true"] .ln-count { color: var(--fg-2); }
 
 /* ==================================================================== tabs
-   A row of tabs over the panel they switch (role="tablist"). The current
-   one is a cartridge, as in the top bar: raised, with the section's colour
-   along its top. The arrows move between them. */
-.ln-tabs { display: flex; gap: var(--space-1); min-width: 0; overflow-x: auto; scrollbar-width: none; }
+   A row of tabs over the panel they switch (role="tablist"): pills in a
+   well, the current one lit. The arrows move between them. */
+.ln-tabs { display: inline-flex; gap: 2px; padding: 4px; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none; border-radius: var(--radius-panel); background: var(--glass-ctl-active); }
 .ln-tabs [role="tab"] {
-  flex: none; height: var(--tab-h); padding: 0 var(--space-4);
-  border: 0; border-radius: var(--radius-ctl); background: none; color: var(--fg-2);
-  font: 650 var(--text-body)/1 var(--font-ui); cursor: pointer;
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: calc(var(--tab-h) - 2px); padding: 0 var(--space-4);
+  border: 0; border-radius: var(--radius-key); background: none; color: var(--fg-2);
+  font: 700 var(--text-body)/1 var(--font-ui); cursor: pointer;
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
 }
-.ln-tabs [role="tab"]:hover, .ln-tabs [role="tab"][data-force~="hover"] { background: var(--bg-surface); color: var(--fg-1); }
-.ln-tabs [role="tab"][aria-selected="true"] { background: var(--bg-raised); color: var(--fg-1); font-weight: 750; box-shadow: inset 0 var(--rule) 0 var(--sec), var(--lip-key); }
+.ln-tabs [role="tab"] .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.ln-tabs [role="tab"]:hover, .ln-tabs [role="tab"][data-force~="hover"] { color: var(--fg-1); }
+.ln-tabs [role="tab"][aria-selected="true"] { background: var(--glass-ctl-on); color: var(--fg-1); box-shadow: var(--key-light); }
 .ln-tabs [role="tab"]:focus-visible, .ln-tabs [role="tab"][data-force~="focus"] { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
 
 /* ================================================================= switch */
@@ -648,10 +671,10 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
    power LED. The knob slides as the lamp comes on. */
 .switch { position: relative; flex: none; width: var(--switch-w); height: var(--switch-h); }
 .switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.switch span { position: absolute; inset: 0; border-radius: var(--radius-ctl); background: var(--bg-well); box-shadow: inset 0 0 0 var(--edge-ctl) var(--edge-3); transition: background-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
-.switch span::after { content: ""; position: absolute; top: calc((var(--switch-h) - var(--knob)) / 2); left: calc((var(--switch-h) - var(--knob)) / 2); width: var(--knob); height: var(--knob); border-radius: var(--radius-tag); background: var(--fg-3); transition: transform var(--dur-2) var(--ease-emph), background-color var(--dur-2) var(--ease-out); }
-.switch input:checked + span { background: var(--lamp); box-shadow: inset 0 -2px 0 var(--lamp-lip), var(--lamp-glow); }
-.switch input:checked + span::after { transform: translateX(calc(var(--switch-w) - var(--switch-h))); background: var(--fg-on-light); }
+.switch span { position: absolute; inset: 0; border-radius: var(--radius-round); background: var(--glass-ctl-hover); box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.25); transition: background-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.switch span::after { content: ""; position: absolute; top: calc((var(--switch-h) - var(--knob)) / 2); left: calc((var(--switch-h) - var(--knob)) / 2); width: var(--knob); height: var(--knob); border-radius: var(--radius-round); background: var(--fg-2); box-shadow: 0 1px 2px rgb(0 0 0 / 0.35); transition: transform var(--dur-3) var(--ease-spring), background-color var(--dur-2) var(--ease-out); }
+.switch input:checked + span { background: color-mix(in oklch, var(--lamp) 34%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--lamp) 40%, transparent); }
+.switch input:checked + span::after { transform: translateX(calc(var(--switch-w) - var(--switch-h))); background: var(--lamp); box-shadow: var(--lamp-glow); }
 .switch input:disabled { cursor: default; }
 .switch input:disabled:checked + span { background: var(--fg-disabled); box-shadow: none; }
 .switch input:focus-visible + span { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
@@ -660,9 +683,9 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-toast {
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: var(--space-3);
   width: min(420px, 100%); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  background: var(--bg-raised);
+  background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
   border: 0; border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--shadow-overlay), var(--glass-light);
   animation: ln-toast-in var(--dur-3) var(--ease-emph) both;
 }
 .ln-toast p { margin: 0; font-size: var(--fs-14); line-height: var(--lh-snug); }
@@ -671,7 +694,7 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-toast--success > .ln-icon { color: var(--success); }
 .ln-toast--error > .ln-icon { color: var(--danger); }
 .ln-toast:not(:has(.ln-button)) { grid-template-columns: auto 1fr; padding-right: var(--space-4); }
-@keyframes ln-toast-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes ln-toast-in { from { opacity: 0; transform: translateX(24px) scale(0.98); } }
 
 /* ======================================== empty, loading and error states */
 /* Each says what is going on and what to do, in the interface's voice. */
@@ -689,7 +712,7 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 /* ================================================================= inputs */
 /* Fields sit in a well. */
 .ln-input {
-  height: var(--ctl-md); width: auto; padding: 0 var(--space-3);
+  height: var(--ctl-key); width: auto; padding: 0 var(--space-3);
   border: var(--hairline) solid var(--edge-2); border-radius: var(--radius-ctl);
   background: var(--bg-well); color: var(--fg-1);
   font: 500 var(--fs-14)/1 var(--font-ui);
@@ -730,9 +753,9 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 .scrim.ln-drawer-scrim { place-items: stretch end; grid-template-rows: minmax(0, 100%); padding: 0; background: var(--scrim-drawer); }
 .ln-drawer {
   display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
-  width: min(var(--drawer-w), 100vw); height: 100%; min-height: 0;
-  background: var(--bg-surface);
-  border-left: 0; box-shadow: var(--shadow-overlay);
+  width: min(var(--drawer-w), calc(100vw - var(--space-6))); height: calc(100% - var(--space-6)); min-height: 0; margin: var(--space-3);
+  background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  border-left: 0; border-radius: var(--radius-dialog); box-shadow: var(--shadow-overlay), var(--glass-light); overflow: hidden;
   color: var(--fg-1); font-family: var(--font-ui);
   animation: ln-drawer-in var(--dur-drawer) var(--ease-emph);
 }
@@ -741,14 +764,18 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 @media (max-width: 900px) { .ln-drawer { --drawer-w: 100vw; } }
 .ln-drawer__head { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-6) var(--space-6) var(--space-5); border-bottom: var(--hairline) solid var(--edge-1); }
 .ln-drawer__head > div { flex: 1; min-width: 0; }
-.ln-drawer__head h2 { margin: 0; font: 800 var(--text-section)/var(--lh-tight) var(--font-ui); overflow-wrap: anywhere; }
+.ln-drawer__head h2 { margin: 0; font: 400 var(--text-section)/var(--lh-tight) var(--font-title); overflow-wrap: anywhere; }
 .ln-drawer__head p { margin: var(--space-1) 0 0; font-size: var(--fs-13); color: var(--fg-2); }
 .ln-drawer__body { overflow: auto; padding: var(--space-5) var(--space-6) var(--space-8); }
 .ln-drawer__body > * + * { margin-top: var(--space-6); }
 .ln-drawer__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6); border-top: var(--hairline) solid var(--edge-1); }
-@keyframes ln-drawer-in { from { transform: translateX(100%); } }
+@keyframes ln-drawer-in { from { transform: translateX(calc(100% + var(--space-6))); } }
 
 /* ============================================================ preferences */
+/* Settings, Appearance, Motion: Less keeps the fades, Off stops it all
+   (.motion-less or .motion-off on <html>); reduced motion means Off. */
+:root.motion-less *:not(.ln-spinner), :root.motion-less *::before, :root.motion-less *::after { transition-property: opacity, background-color, color, border-color !important; animation-name: ln-fade-in !important; }
+:root.motion-off *, :root.motion-off *::before, :root.motion-off *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 @media (prefers-reduced-motion: reduce) {
   .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tabs [role="tab"], .ln-tile__cover, .ln-tile__cover::after, .switch span, .switch span::after { transition-duration: 0.01ms; }
   .ln-button:active, .ln-button[data-force~="active"], .ln-chip:active { transform: none; }

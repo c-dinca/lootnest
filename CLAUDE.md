@@ -136,25 +136,29 @@ What makes it different, and the direction to keep pushing:
 
 ## Brand
 
-The look is **Arcade** (1.93, the owner's choice; DESIGN.md): game hardware.
+Since the rework (1.97, `docs/REWORK.md`, DESIGN.md) the look is the
+website's: obsidian, glass over the game's art, premium and quiet.
 
-- A dark indigo shell (`--shell`: the top bar and the sidebar) around a
-  lighter indigo screen, the page (`--bg-ground`).
-- Ice Grey `#DFE5EB` is text.
-- Racing Red `#EF233C` is the logo gem and the Play key (the primary
-  button), with bold near-black text on it (`--fg-on-accent`, 4.7:1).
-  Nothing else is red, and it is never text. Play as someone keeps that
-  profile's colour.
-- Every section has a cartridge colour (`--sec-*`): Home yellow, Library
-  teal (a game's page too), Store blue, Updates orange, Achievements
-  lilac, Saves green, Profiles pink. Section titles are a label in it,
-  dark ink on it, on a 3px rule of it. Switches that are on are lit green.
-- Type: Tilt Warp for page titles, a game's name, the Play key and big
+- Obsidian `#111217` ground, raised `#181a21` / `#1f222b`; Ice Grey
+  `#DFE5EB` text with `#a6aeb9` and `#8c94a0`.
+- Racing Red `#EF233C` is the logo gem, the Updates count and one primary
+  key where there's no Play, with bold near-black text on it. Never text.
+  The Play key is the seated profile's colour.
+- No section colours (`--sec-*` are all one grey now). Colour only for
+  profiles, achievement rarity, lamp green (on), amber and danger.
+- The room: the game in focus fills the window behind everything (`#room`,
+  `renderRoom()` in 20-render.js); glass (`--glass*`) only over art.
+- One floating glass sidebar, no top bar; the sections' light slides.
+- Icons: Phosphor Icons (MIT) via `tools/icons.py` into `js/01-icons.js`,
+  `ph(name, weight)`, 14 to 18px; never Lucide.
+- Keys: a fine top light and rim (`--key-light`), 1px press; Play in the
+  profile's colour with a sheen and a soft glow.
+- Type: Tilt Warp for titles, a game's name, the Play key and big
   numbers; Atkinson Hyperlegible Next for everything else, with Figtree's
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.96.0, beta)
+## Where things stand (1.97.0, beta)
 
 These shipped recently, newest last:
 
@@ -751,6 +755,23 @@ These shipped recently, newest last:
   scan bar, name and colour, Continue; under 600 ms). Achievement rings
   are the section colour, green when finished; tier colours only for
   rarity. site/img regenerated in the new look.
+- **1.97** The rework, R0 (`docs/REWORK.md`): the website's palette in
+  system.css (obsidian, glass tokens, no section colours), the room
+  (`#room`, `renderRoom()`, `applyAppearance()`), one floating glass
+  sidebar replacing the top bar (index.html; ids kept), Phosphor icons
+  (`js/01-icons.js`, `ph()`, `paintIcons()`, `tools/icons.py`; `GI` maps
+  roles to them), keys with a top light, pill tabs and segmented
+  controls, plain section titles, glass drawers and toasts, Settings,
+  Appearance (`Settings.GlassOff`, `RoomOff`, `Motion`; action
+  `set-motion`). Plugin themes accept `rgb()`.
+
+**The rework (owner, 13 Nov 2026):** every screen of the launcher in one
+new look, direction A of three mockups with a sidebar: the game in focus
+fills the window, glass only over art, the website's colours, no section
+colours, no top bar. The plan, the phases (R0 to R9, one release each)
+and the inventory of every surface are in `docs/REWORK.md`; the look is
+`design/rework/reference.html`. Read both before touching the UI, and
+tick the inventory as phases merge. Only one chat works on it at a time.
 
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.

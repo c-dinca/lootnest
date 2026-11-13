@@ -175,7 +175,7 @@
     const head = `<header class="lib-head"><div class="lib-title"><h1>Library</h1>
         <span class="lib-meta">${all.length ? `${all.length === 1 ? "1 game" : all.length + " games"}, ${withProfiles === 1 ? "1 with profiles" : withProfiles ? withProfiles + " with profiles" : "none with profiles yet"}` : "No games yet"}</span></div>
         <div class="lib-actions"><label class="ln-search">${GI.search}<input type="search" id="lib-q" class="ln-input" placeholder="Search your games" value="${esc(S.q)}" autocomplete="off" spellcheck="false" aria-label="Search your games (Ctrl+F)"></label>
-        <button class="ln-button ln-button--ghost lib-views" id="lib-views" data-action="lib-views" aria-haspopup="menu" aria-expanded="false"><span>${esc((viewsSaved().find(viewIs) || {}).name || "Views")}</span>${gsvg('<path d="M6.5 8.25 10 11.75l3.5-3.5"/>')}</button>
+        <button class="ln-button ln-button--ghost lib-views" id="lib-views" data-action="lib-views" aria-haspopup="menu" aria-expanded="false"><span>${esc((viewsSaved().find(viewIs) || {}).name || "Views")}</span>${ph("caret-down")}</button>
         <button class="ln-button ln-button--secondary" data-action="add-game">${GI.plus}Add game</button>
         ${scanKeys}</div></header>`;
     if (!all.length && !scanning) {

@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lootnest rework, the reference</title>
+<style>
+/*@BASE@*/
+/* The reference for the rework (docs/REWORK.md): direction A, with a
+   sidebar. The art of the game in focus is the room; Lootnest floats over
+   it as glass. Glass only over art; flat obsidian where there's none. */
+
+/* the room */
+#bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; transition: filter 0.6s var(--ease), transform 0.8s var(--ease); }
+#bg .layer { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s var(--ease); }
+#bg .layer.on { opacity: 1; }
+#bg img { position: absolute; inset: 0 0 auto; width: 100%; height: 80%; object-fit: cover; object-position: center 30%; transform: scale(1.05); transition: transform 8s linear; }
+#bg .layer.on img { transform: scale(1); }
+#bg::after { content: ""; position: absolute; inset: 0; background:
+  linear-gradient(180deg, rgb(17 18 23 / 0.1) 0%, rgb(17 18 23 / 0.15) 32%, rgb(17 18 23 / 0.78) 62%, var(--obsidian) 80%),
+  linear-gradient(90deg, rgb(17 18 23 / 0.8) 0%, rgb(17 18 23 / 0.2) 45%, transparent 70%); }
+body.dim #bg { filter: blur(30px) brightness(0.42) saturate(1.2); transform: scale(1.08); }
+body.flat #bg { opacity: 0; }
+#mesh { position: fixed; inset: 0; z-index: 0; pointer-events: none; transition: background 0.9s;
+  background: radial-gradient(44vw 40vh at 26% 86%, color-mix(in oklab, var(--c) 22%, transparent), transparent 70%), radial-gradient(30vw 30vh at 4% 0%, rgb(239 35 60 / 0.06), transparent 70%); }
+
+/* the sidebar: one floating glass panel with the sections, then the games */
+.side { position: fixed; z-index: 10; left: 12px; top: 12px; bottom: 12px; width: 252px; border-radius: 20px; display: flex; flex-direction: column; padding: 16px 10px 10px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px 14px; font: 400 19px/1 var(--title); }
+.search { display: flex; align-items: center; gap: 10px; height: 38px; margin: 0 4px 10px; padding: 0 12px; border-radius: 11px; background: rgb(0 0 0 / 0.22); color: var(--fg-3); }
+.search .ln-icon { width: 16px; height: 16px; }
+.search kbd { margin-left: auto; font: 700 10.5px/1.6 var(--ui); padding: 0 6px; border-radius: 4px; background: rgb(255 255 255 / 0.08); color: var(--fg-2); }
+.nav { position: relative; display: grid; gap: 2px; }
+.nav button { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 11px; font-weight: 700; color: var(--fg-2); text-align: left; transition: color 0.2s; }
+.nav button .ln-icon { width: 18px; height: 18px; flex: none; }
+.nav .i1 { display: none; } .nav button.on .i0 { display: none; } .nav button.on .i1 { display: contents; }
+.nav span.i0, .nav span.i1 { line-height: 0; }
+.nav button:hover { color: var(--ice); }
+.nav button.on { color: var(--ice); }
+.nav button .n { margin-left: auto; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--red); color: var(--on-red); }
+.nav i.light { position: absolute; z-index: 0; left: 0; right: 0; height: 40px; border-radius: 11px; background: rgb(255 255 255 / 0.1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1); transition: top 0.45s var(--spring); }
+.games { flex: 1; overflow: auto; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgb(255 255 255 / 0.07); }
+.games h6 { margin: 10px 12px 6px; font-size: 11.5px; color: var(--fg-3); }
+.gi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px 10px; border-radius: 10px; color: var(--fg-2); font-weight: 600; text-align: left; transition: background 0.15s, color 0.15s; }
+.gi:hover { background: rgb(255 255 255 / 0.06); color: var(--ice); }
+.gi.on { background: rgb(255 255 255 / 0.1); color: var(--ice); }
+.gi img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
+.gi b { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--pc); }
+.me { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px; border-radius: 14px; background: rgb(0 0 0 / 0.22); }
+.me .av { width: 34px; height: 34px; background: var(--c); transition: background 0.5s; }
+.me div { display: grid; line-height: 1.25; }
+.me small { color: var(--fg-3); }
+.me .gear .ln-icon { width: 18px; height: 18px; }
+.me .gear { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--fg-2); }
+.me .gear:hover { background: rgb(255 255 255 / 0.08); color: var(--ice); }
+
+main { position: fixed; inset: 0 0 0 276px; z-index: 2; }
+.page { position: absolute; inset: 0; opacity: 0; pointer-events: none; transform: translateY(18px); transition: opacity 0.4s var(--ease), transform 0.6s var(--out); }
+.page.on { opacity: 1; pointer-events: auto; transform: none; }
+
+/* Home */
+.feature { position: absolute; left: 44px; top: 150px; width: 600px; }
+.logo { height: 150px; display: flex; align-items: flex-end; }
+.logo img { max-height: 150px; max-width: 460px; object-fit: contain; filter: drop-shadow(0 8px 30px rgb(0 0 0 / 0.6)); }
+.meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; font-weight: 600; text-shadow: 0 1px 12px rgb(0 0 0 / 0.6); }
+.meta span + span { color: var(--fg-2); }
+.chip { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.dock { margin-top: 22px; display: inline-flex; align-items: center; gap: 10px; padding: 8px; border-radius: 16px; }
+.dock .who { display: flex; margin: 0 4px; }
+.dock .who .av { width: 30px; height: 30px; font-size: 11px; box-shadow: 0 0 0 3px rgb(17 18 23 / 0.6); }
+.dock .who .av + .av { margin-left: -8px; }
+.card { position: absolute; right: 40px; top: 210px; width: 290px; padding: 18px; border-radius: 18px; }
+.card .row { display: flex; align-items: center; gap: 14px; }
+.card .row + .row { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgb(255 255 255 / 0.08); }
+.card b { display: block; font-size: 15px; }
+.card small { color: var(--fg-2); }
+.trophy { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; border: 1.5px solid var(--rare); color: var(--rare); flex: none; }
+.trophy .ln-icon { width: 20px; height: 20px; }
+.pin { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; box-shadow: 0 0 0 4px color-mix(in oklab, var(--c) 25%, transparent); }
+.shelf { position: absolute; left: 44px; right: 0; bottom: 30px; }
+.shelf .label { display: flex; gap: 10px; }
+.covers { display: flex; gap: 16px; padding: 14px 0 16px; }
+.cov { position: relative; flex: none; width: 136px; height: 204px; border-radius: 12px; overflow: hidden; box-shadow: 0 16px 40px -18px rgb(0 0 0 / 0.9); outline: 3px solid transparent; outline-offset: 4px;
+  transition: transform 0.45s var(--spring), box-shadow 0.3s, outline-color 0.2s; }
+.cov img { width: 100%; height: 100%; object-fit: cover; }
+.cov:hover { transform: translateY(-6px); }
+.cov.on { transform: translateY(-10px) scale(1.06); outline-color: var(--ice); box-shadow: 0 30px 60px -20px #000; }
+.cov .dot { position: absolute; left: 10px; bottom: 10px; width: 10px; height: 10px; border-radius: 50%; background: var(--pc); box-shadow: 0 0 0 3px rgb(0 0 0 / 0.5); }
+
+/* the game's page */
+.ghead { position: absolute; left: 44px; top: 70px; }
+.ghead .logo { height: 130px; }
+.ghead .logo img { max-height: 130px; }
+.sheet { position: absolute; left: 24px; right: 24px; top: 330px; bottom: 16px; border-radius: 24px; padding: 18px 22px; display: grid; grid-template-rows: auto 1fr; }
+.sheet-top { display: flex; align-items: center; gap: 10px; }
+.tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgb(0 0 0 / 0.25); margin-left: auto; }
+.tabs button { height: 34px; padding: 0 14px; border-radius: 9px; font-weight: 700; color: var(--fg-2); }
+.tabs button.on { background: rgb(255 255 255 / 0.12); color: var(--ice); }
+.gbody { margin-top: 18px; display: grid; grid-template-columns: 1.3fr 1fr 0.9fr; gap: 26px; min-height: 0; overflow: auto; }
+.list .item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid rgb(255 255 255 / 0.07); }
+.list .item:first-of-type { border-top: 0; }
+.list .item b { display: block; }
+.list .item small { color: var(--fg-2); }
+.list .item .end { margin-left: auto; color: var(--fg-2); font-weight: 700; }
+.key.sm { height: 34px; padding: 0 14px; font-size: 13px; }
+.sw { width: 38px; height: 22px; border-radius: 11px; background: rgb(255 255 255 / 0.14); position: relative; flex: none; margin-left: auto; cursor: pointer; transition: background 0.25s; }
+.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--fg-2); transition: transform 0.3s var(--spring), background 0.2s; }
+.sw.on { background: rgb(123 224 143 / 0.32); }
+.sw.on::after { transform: translateX(16px); background: var(--on); }
+
+/* Library */
+.lib { position: absolute; inset: 0; overflow: auto; padding: 40px 40px 40px 44px; }
+h1 { margin: 0; font: 400 44px/1 var(--title); }
+.filters { display: flex; gap: 6px; margin: 18px 0 24px; }
+.filters button { height: 34px; padding: 0 14px; border-radius: 999px; font-weight: 700; color: var(--fg-2); }
+.filters button.on { color: var(--ice); background: rgb(255 255 255 / 0.12); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, 150px); gap: 26px 20px; }
+.grid .cov { width: 150px; height: 225px; }
+.grid p { margin: 10px 0 0; font-weight: 700; font-size: 13px; }
+.grid small { color: var(--fg-3); font-size: 12px; }
+
+/* pages with no art of their own: flat obsidian, the same type and keys */
+.flatpage { position: absolute; inset: 0; overflow: auto; padding: 40px 40px 40px 44px; }
+.stats { display: flex; gap: 40px; margin: 22px 0 26px; }
+.stats b { display: block; font: 400 40px/1 var(--title); }
+.stats span { color: var(--fg-2); font-size: 13px; }
+.panel { border-radius: 18px; border: 1px solid var(--line); background: var(--raised); padding: 6px 18px; }
+.panel .item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.panel .item:first-child { border-top: 0; }
+.panel .item img { width: 34px; height: 51px; border-radius: 6px; object-fit: cover; }
+.panel .item b { display: block; }
+.panel .item small { color: var(--fg-3); }
+.cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+.sect { margin: 26px 0 10px; font: 400 20px/1 var(--title); }
+.settings { display: grid; grid-template-columns: 220px 1fr; gap: 28px; margin-top: 24px; }
+.cats { display: grid; gap: 2px; align-content: start; }
+.cats button { height: 38px; padding: 0 12px; border-radius: 10px; text-align: left; font-weight: 700; color: var(--fg-2); }
+.cats button.on { background: var(--raised-2); color: var(--ice); }
+.setrow { display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 10px 0; border-top: 1px solid var(--line); }
+.setrow:first-child { border-top: 0; }
+.setrow b { display: block; }
+.setrow small { color: var(--fg-3); }
+.setrow .ctl { margin-left: auto; }
+.seg { display: flex; padding: 3px; border-radius: 10px; background: var(--well); }
+.seg button { height: 30px; padding: 0 12px; border-radius: 8px; font-weight: 700; color: var(--fg-2); }
+.seg button.on { background: var(--raised-2); color: var(--ice); }
+.themes { display: flex; gap: 12px; }
+.theme { width: 120px; border-radius: 12px; overflow: hidden; border: 2px solid var(--line); }
+.theme.on { border-color: var(--ice); }
+.theme i { display: block; height: 64px; }
+.theme span { display: block; padding: 7px 10px; font-weight: 700; font-size: 12px; }
+
+/* Who's playing, and the swap: over a blur of the game's art */
+.over { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity 0.35s var(--ease); }
+.over.on { opacity: 1; pointer-events: auto; }
+.over .blur { position: absolute; inset: -40px; background-size: cover; background-position: center 30%; filter: blur(44px) brightness(0.4) saturate(1.3); }
+.over .in { position: relative; text-align: center; }
+.over h2 { margin: 0 0 34px; font: 400 40px/1 var(--title); }
+.pks { display: flex; gap: 18px; justify-content: center; }
+.pk { width: 170px; padding: 24px 14px 20px; border-radius: 20px; display: grid; justify-items: center; gap: 6px; cursor: pointer; transform: translateY(20px); opacity: 0;
+  transition: transform 0.5s var(--spring), opacity 0.35s, outline-color 0.2s, background 0.2s; outline: 2px solid transparent; outline-offset: 4px; }
+.over.on .pk { transform: none; opacity: 1; }
+.over.on .pk:nth-child(2) { transition-delay: 0.05s; } .over.on .pk:nth-child(3) { transition-delay: 0.1s; } .over.on .pk:nth-child(4) { transition-delay: 0.15s; }
+.pk:hover, .pk:focus-visible { outline-color: var(--ice); background: rgb(255 255 255 / 0.1); }
+.pk .av { width: 84px; height: 84px; font-size: 28px; box-shadow: 0 12px 40px -10px var(--pc); }
+.pk b { margin-top: 10px; font: 400 20px/1 var(--title); }
+.pk small { color: var(--fg-2); }
+.pk.new .av { background: transparent; color: var(--fg-2); box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.25); }
+.hint { margin-top: 28px; color: var(--fg-3); font-size: 13px; }
+.swapbox { width: 420px; padding: 28px; border-radius: 24px; text-align: center; }
+.swapbox .av { width: 72px; height: 72px; margin: 0 auto 16px; font-size: 24px; box-shadow: 0 0 0 6px rgb(17 18 23 / 0.5), 0 0 0 8px var(--pc); }
+.swapbox h3 { margin: 0 0 18px; font: 400 24px/1.1 var(--title); }
+.step { display: flex; align-items: center; gap: 12px; padding: 9px 0; text-align: left; color: var(--fg-3); border-top: 1px solid rgb(255 255 255 / 0.07); transition: color 0.2s; }
+.step i { width: 10px; height: 10px; border-radius: 50%; background: rgb(255 255 255 / 0.18); transition: background 0.2s, box-shadow 0.2s; }
+.step.done { color: var(--ice); }
+.step.done i { background: var(--on); box-shadow: 0 0 10px var(--on); }
+.prog { height: 5px; margin-top: 16px; border-radius: 3px; background: rgb(255 255 255 / 0.1); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--pc); transition: width 1.6s linear; }
+.over.go .prog i { width: 100%; }
+.toast { position: fixed; z-index: 40; right: 20px; top: 20px; width: 320px; display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; transform: translateX(360px); transition: transform 0.55s var(--spring); }
+.toast.on { transform: none; }
+.toast small { display: block; color: var(--fg-3); font-size: 11.5px; font-weight: 700; }
+.toast b { display: block; }
+.toast span { display: block; color: var(--rare); font-size: 12.5px; }
+.note { position: fixed; right: 20px; bottom: 12px; z-index: 50; font-size: 12px; color: var(--fg-3); }
+</style>
+</head>
+<body>
+<div id="bg"></div><div id="mesh"></div>
+<aside class="side glass">
+  <div class="brand">${GEM}Lootnest</div>
+  <div class="search">${SEARCH}Search<kbd>Ctrl K</kbd></div>
+  <nav class="nav" id="nav"><i class="light"></i>
+    <button class="on" data-p="home">${I_HOME}Home</button><button data-p="lib">${I_GRID}Library</button><button>${I_BAG}Store</button>
+    <button>${I_UP}Updates<span class="n">1</span></button><button>${I_TROPHY}Achievements</button><button data-p="saves">${I_SHIELD}Saves</button></nav>
+  <div class="games" id="games"></div>
+  <div class="me"><span class="av" id="me-av">P1</span><div><b id="me-n">Player 1</b><small>At the PC</small></div><button class="gear" data-p="settings" aria-label="Settings">${I_GEAR}</button></div>
+</aside>
+<main>
+  <section class="page on" id="home">
+    <div class="feature"><div class="logo" id="h-logo"></div><div class="meta" id="h-meta"></div>
+      <div class="dock glass"><button class="key play" data-pick>${PLAY}<span class="pl">Play as Player 1</span></button><button class="key ghost" data-pick>${USERS}Someone else</button><div class="who" id="h-who"></div><button class="key ghost icon" data-p="game" aria-label="Open the game's page">${OPEN}</button></div></div>
+    <div class="card glass" id="h-card"></div>
+    <div class="shelf"><div class="label"><span>Continue</span><span class="faint">Arrows choose, Enter opens</span></div><div class="covers" id="h-covers"></div></div>
+  </section>
+  <section class="page" id="game">
+    <div class="ghead"><div class="logo" id="g-logo"></div><div class="meta" id="g-meta"></div></div>
+    <div class="sheet glass"><div class="sheet-top"><button class="key play" data-pick>${PLAY}<span class="pl">Play as Player 1</span></button><button class="key ghost" data-pick>${USERS}Someone else</button><button class="key ghost">${PLUS}New run</button><button class="key ghost icon" aria-label="More">${MORE}</button>
+      <div class="tabs" id="tabs"><button class="on" data-t="saves">Saves</button><button data-t="ach">Achievements</button><button data-t="mods">Mods</button><button>Timeline</button><button>News</button></div></div>
+      <div class="gbody" id="gbody"></div></div>
+  </section>
+  <section class="page" id="lib"><div class="lib"><h1>Library</h1><span class="muted">11 games, 3 with profiles</span>
+    <div class="filters"><button class="on">All</button><button>Installed</button><button>Playing</button><button>Up next</button><button>Favourites</button><button>Not installed</button></div>
+    <div class="grid" id="l-grid"></div></div></section>
+  <section class="page" id="saves"><div class="flatpage"><h1>Saves</h1>
+    <div class="stats"><div><b>11</b><span>Games with copies</span></div><div><b>39</b><span>Save points</span></div><div><b>2 h ago</b><span>Newest copy</span></div><div><b>On</b><span>Cloud saves</span></div></div>
+    <div class="cols"><div><div class="sect">Recent copies</div><div class="panel" id="s-recent"></div></div><div><div class="sect">Needs a look</div><div class="panel"><div class="item"><span class="pin" style="--c:var(--rare)"></span><div><b>Hollow Knight</b><small>Saves gone from its folder. A copy is kept.</small></div><button class="key ghost sm" style="margin-left:auto">${PUTBACK}Put back</button></div></div></div></div></div></section>
+  <section class="page" id="settings"><div class="flatpage"><h1>Settings</h1>
+    <div class="settings"><div class="cats"><button class="on">Appearance</button><button>General</button><button>Games and swaps</button><button>Controllers</button><button>Storage</button><button>Plugins</button><button>Online</button><button>Cloud saves</button><button>About</button></div>
+      <div class="panel" style="padding:6px 22px">
+        <div class="setrow"><div><b>Theme</b><small>For everyone at this PC, unless a profile picks its own</small></div><div class="ctl themes">
+          <div class="theme on"><i style="background:linear-gradient(135deg,#111217 50%,#ef233c 50% 54%,#111217 54%)"></i><span>Lootnest</span></div>
+          <div class="theme"><i style="background:linear-gradient(135deg,#1b1838,#2a2550)"></i><span>Arcade</span></div>
+          <div class="theme"><i style="background:linear-gradient(135deg,#000 50%,#fff 50%)"></i><span>High contrast</span></div></div></div>
+        <div class="setrow"><div><b>Art behind pages</b><small>The game in focus fills the window</small></div><span class="sw on ctl" data-sw></span></div>
+        <div class="setrow"><div><b>See-through panels</b><small>Off makes every panel solid</small></div><span class="sw on ctl" data-sw></span></div>
+        <div class="setrow"><div><b>Motion</b></div><div class="ctl seg"><button class="on">Full</button><button>Less</button><button>Off</button></div></div>
+        <div class="setrow"><div><b>Interface sounds</b></div><span class="sw on ctl" data-sw></span></div>
+      </div></div></div></section>
+</main>
+<div class="over" id="pick"><div class="blur"></div><div class="in"><h2>Who's playing?</h2><div class="pks" id="pks"></div><p class="hint">1 to 4 on the keyboard, A on a controller, Esc to cancel</p></div></div>
+<div class="over" id="swap"><div class="blur"></div><div class="in"><div class="swapbox glass"><span class="av" id="sw-av">P2</span><h3 id="sw-h">Loading Player 2's files</h3>
+  <div class="step"><i></i><span id="sw-0">Player 1's files go back to their slot</span></div><div class="step"><i></i><span>A copy is made and read back</span></div><div class="step"><i></i><span id="sw-2">Player 2's files go in</span></div><div class="prog"><i></i></div></div></div></div>
+<div class="toast glass" id="toast"><span class="trophy" id="toast-i"></span><div><small>Achievement unlocked</small><b>Critical hit</b><span>Rare, 4.1% of players</span></div></div>
+<div class="note">The reference for the rework. Try: a cover, Play, the profile bottom left, Settings (the gear), Saves, the Library, the tabs, T for an unlock toast.</div>
+<script>
+/*@DATA@*/
+(() => {
+  const nv = (n) => `<span class="i0">${ph(n)}</span><span class="i1">${ph(n, "fill")}</span>`;
+  const I = { I_HOME: nv("house"), I_GRID: nv("squares-four"), I_BAG: nv("storefront"), I_UP: nv("arrow-circle-up"), I_TROPHY: nv("trophy"), I_SHIELD: nv("vault"),
+    I_GEAR: ph("gear-six"), PLAY: ph("play", "fill"), SEARCH: ph("magnifying-glass"), MORE: ph("dots-three"), USERS: ph("users"), PLUS: ph("plus"), OPEN: ph("caret-right"), BACK: ph("caret-left"), PUTBACK: ph("arrow-clockwise") };
+  for (const el of [document.querySelector(".side"), document.querySelector("main"), document.querySelector("#swap")]) el.innerHTML = el.innerHTML.replace(/\$\{(\w+)\}/g, (m, k) => ({ GEM, ...I })[k] || "");
+  const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+  let cur = GAMES[0], seat = 0, tab = "saves", page = "home";
+  const P = () => PROFILES[seat];
+  const bg = $("#bg");
+  GAMES.forEach((g) => { const d = document.createElement("div"); d.className = "layer"; d.dataset.g = g.id; d.innerHTML = `<img src="${A(g.id + "-h")}" alt="">`; bg.appendChild(d); });
+  const logo = (g) => A(g.id + "-l") ? `<img src="${A(g.id + "-l")}" alt="${g.name}">` : `<span style="font:400 60px/1 var(--title)">${g.name}</span>`;
+  const meta = (g) => `<span>${g.store}</span><span>${g.h} h</span><span>${g.last}</span>`;
+  const playLabel = () => "Play as " + (P().of ? "hardcore" : P().name);
+  function setGame(g) {
+    cur = g;
+    bg.querySelectorAll(".layer").forEach((l) => l.classList.toggle("on", l.dataset.g === g.id));
+    $("#h-logo").innerHTML = logo(g); $("#h-meta").innerHTML = meta(g) + (g.status ? `<span class="chip glass">${g.status}</span>` : "");
+    $("#g-logo").innerHTML = logo(g); $("#g-meta").innerHTML = meta(g);
+    $("#h-card").innerHTML = `<div class="row"><span class="ring" style="--p:${g.ach[0] / g.ach[1]}" data-t="${Math.round(100 * g.ach[0] / g.ach[1])}%"></span><div><b>${g.ach[0]} of ${g.ach[1]}</b><small>Achievements</small></div></div>
+      <div class="row"><span class="trophy">${ph("trophy", "fill")}</span><div><b>Critical hit</b><small>Rarest, 4.1% of players</small></div></div>
+      <div class="row"><span class="pin"></span><div><b>${g.points} save points</b><small>${g.saves} copies on this PC</small></div></div>`;
+    $$(".cov").forEach((c) => c.classList.toggle("on", c.dataset.g === g.id));
+    $$(".gi").forEach((c) => c.classList.toggle("on", c.dataset.g === g.id));
+    renderGame();
+  }
+  function setSeat(i) {
+    seat = i;
+    document.documentElement.style.setProperty("--c", P().c);
+    $("#me-av").textContent = P().short; $("#me-n").textContent = P().name;
+    $$(".pl").forEach((s) => (s.textContent = playLabel()));
+    renderGame();
+  }
+  $("#games").innerHTML = `<h6>Recent</h6>${GAMES.slice(0, 5).map((g, i) => `<button class="gi" data-g="${g.id}"><img src="${A(g.id + "-c")}" alt="">${g.name}${i < 4 ? `<b style="--pc:${i % 2 ? "#e88ca0" : "#6c9bd2"}"></b>` : ""}</button>`).join("")}
+    <h6>Up next</h6>${GAMES.filter((g) => g.status === "Up next").map((g) => `<button class="gi" data-g="${g.id}"><img src="${A(g.id + "-c")}" alt="">${g.name}</button>`).join("")}
+    <h6>Co-op</h6>${[GAMES[2], GAMES[7], GAMES[8]].map((g) => `<button class="gi" data-g="${g.id}"><img src="${A(g.id + "-c")}" alt="">${g.name}</button>`).join("")}`;
+  $("#h-who").innerHTML = PROFILES.slice(0, 2).map((p) => `<span class="av" style="--pc:${p.c}">${p.short}</span>`).join("");
+  $("#h-covers").innerHTML = GAMES.slice(0, 7).map((g, i) => `<button class="cov" data-g="${g.id}" style="--pc:${i % 3 ? "#e88ca0" : "#6c9bd2"}"><img src="${A(g.id + "-c")}" alt="${g.name}">${i < 4 ? '<span class="dot"></span>' : ""}</button>`).join("");
+  $("#l-grid").innerHTML = GAMES.map((g) => `<div><button class="cov" data-g="${g.id}" data-open><img src="${A(g.id + "-c")}" alt="${g.name}"></button><p>${g.name}</p><small>${g.store}</small></div>`).join("");
+  $("#s-recent").innerHTML = GAMES.slice(0, 5).map((g, i) => `<div class="item"><img src="${A(g.id + "-c")}" alt=""><div><b>${g.name}</b><small>${["2 hours ago", "Yesterday", "2 days ago", "Last week", "Last week"][i]}, before a swap</small></div><button class="key solid sm" style="margin-left:auto">${ph("arrow-clockwise")}Put back</button></div>`).join("");
+  $("#pks").innerHTML = PROFILES.map((p, i) => `<button class="pk glass" data-seat="${i}" style="--pc:${p.c}"><span class="av">${p.short}</span><b>${p.of ? "hardcore" : p.name}</b><small>${p.of ? "Player 1's run" : i ? "Played 3 days ago" : "Played 2 days ago"}</small></button>`).join("")
+    + `<button class="pk glass new"><span class="av">+</span><b>New profile</b><small>Someone new, or a run</small></button>`;
+  function renderGame() {
+    const p = P();
+    const saves = `<div class="list"><div class="label">Save points</div>${POINTS.map(([n, w, l]) => `<div class="item"><span class="pin"></span><div><b>${n}</b><small>${w}, ${l}</small></div><button class="key ghost sm" style="margin-left:auto">${ph("clock-counter-clockwise")}Go back</button></div>`).join("")}</div>
+      <div class="list"><div class="label">Profiles in this game</div>${PROFILES.map((q) => `<div class="item"><span class="av" style="--pc:${q.c}">${q.short}</span><div><b>${q.of ? "hardcore" : q.name}</b><small>${q.of ? "Player 1's run" : "Saved 2 days ago"}</small></div><span class="end">${q.id === "p1" ? 44 : q.id === "p2" ? 88 : 0} h</span></div>`).join("")}</div>
+      <div class="list"><div class="label">Copies on this PC</div><div class="item"><div><b>${cur.saves} copies</b><small>Newest 2 hours ago</small></div></div><div class="item"><div><b>Cloud saves</b><small>OneDrive folder</small></div><span class="sw on" data-sw></span></div></div>`;
+    const ach = `<div class="list" style="grid-column:span 2"><div class="label">${p.name}, ${cur.ach[0]} of ${cur.ach[1]}</div>${ACH.map(([n, r, got]) => `<div class="item" style="opacity:${got ? 1 : 0.45}"><span class="trophy" style="width:36px;height:36px;border-radius:9px">${ph("trophy", "fill")}</span><div><b>${n}</b><small>${r}</small></div><span class="end">${got ? "Unlocked" : "Locked"}</span></div>`).join("")}</div>
+      <div class="list"><div class="label">Progress</div><div class="item"><span class="ring" style="--p:${cur.ach[0] / cur.ach[1]}" data-t="${Math.round(100 * cur.ach[0] / cur.ach[1])}%"></span><div><b>Rarest unlocked</b><small>Critical hit, 4.1%</small></div></div></div>`;
+    const mods = `<div class="list" style="grid-column:span 2"><div class="label">${p.name}'s mods</div>${MODS.map(([n, f, on]) => `<div class="item"><div><b>${n}</b><small>${f}</small></div><span class="sw ${on ? "on" : ""}" data-sw></span></div>`).join("")}</div>
+      <div class="list"><div class="label">The game's own files</div><div class="item"><div><b>Kept, 16 files</b><small>Put back in one click</small></div></div><button class="key ghost" style="margin-top:8px">${ph("arrow-clockwise")}Put the game back</button></div>`;
+    $("#gbody").innerHTML = tab === "ach" ? ach : tab === "mods" ? mods : saves;
+  }
+  // the sidebar's light slides to the section
+  const nav = $("#nav"), light = nav.querySelector(".light");
+  function go(p) {
+    page = p;
+    $$(".page").forEach((s) => s.classList.toggle("on", s.id === p));
+    document.body.classList.toggle("dim", p === "lib");
+    document.body.classList.toggle("flat", p === "saves" || p === "settings");
+    const b = nav.querySelector(`[data-p="${p === "game" ? "home" : p}"]`);
+    $$("#nav button").forEach((x) => x.classList.toggle("on", x === b));
+    light.style.opacity = b ? 1 : 0; if (b) light.style.top = b.offsetTop + "px";
+  }
+  // Play: Who's playing over the game's blurred art, then the swap
+  function pick() { $$(".over .blur").forEach((b) => (b.style.backgroundImage = `url(${A(cur.id + "-h")})`)); $("#pick").classList.add("on"); setTimeout(() => $(".pk").focus(), 60); }
+  function swap(i) {
+    const from = P(), to = PROFILES[i];
+    $("#pick").classList.remove("on");
+    $("#sw-av").textContent = to.short; $("#sw-av").style.setProperty("--pc", to.c); $(".prog i").style.setProperty("--pc", to.c);
+    $("#sw-h").textContent = `Loading ${to.of ? "hardcore" : to.name}'s files`;
+    $("#sw-0").textContent = `${from.of ? "hardcore" : from.name}'s files go back to their slot`; $("#sw-2").textContent = `${to.of ? "hardcore" : to.name}'s files go in`;
+    const sw = $("#swap"); $$(".step").forEach((s) => s.classList.remove("done")); sw.classList.remove("go");
+    sw.classList.add("on"); requestAnimationFrame(() => requestAnimationFrame(() => sw.classList.add("go")));
+    $$(".step").forEach((s, k) => setTimeout(() => s.classList.add("done"), 380 + k * 480));
+    setTimeout(() => { setSeat(i); }, 1100);
+    setTimeout(() => sw.classList.remove("on", "go"), 2000);
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    const c = t.closest(".cov, .gi"); if (c) { const g = GAMES.find((x) => x.id === c.dataset.g); const open = g === cur || c.matches(".gi") || c.hasAttribute("data-open"); setGame(g); if (open) go("game"); return; }
+    const k = t.closest(".pk[data-seat]"); if (k) { swap(+k.dataset.seat); return; }
+    if (t.closest("[data-pick]")) { pick(); return; }
+    const n = t.closest("[data-p]"); if (n) go(n.dataset.p);
+    const tb = t.closest("#tabs button[data-t]"); if (tb) { tab = tb.dataset.t; $$("#tabs button").forEach((x) => x.classList.toggle("on", x === tb)); renderGame(); }
+    if (t.closest("[data-sw]")) t.closest("[data-sw]").classList.toggle("on");
+    if (t.closest(".me .av") || t.closest(".me b")) setSeat((seat + 1) % PROFILES.length);
+    const sg = t.closest(".seg button, .cats button, .theme, .filters button"); if (sg) { sg.parentElement.querySelectorAll(":scope > *").forEach((x) => x.classList.toggle("on", x === sg)); }
+    if (t.closest("#pick") && !t.closest(".pk")) $("#pick").classList.remove("on");
+  });
+  addEventListener("keydown", (e) => {
+    if ($("#pick").classList.contains("on")) { if (/^[1-3]$/.test(e.key)) swap(+e.key - 1); if (e.key === "Escape") $("#pick").classList.remove("on"); return; }
+    const i = GAMES.indexOf(cur);
+    if (page === "home" && e.key === "ArrowRight") setGame(GAMES[Math.min(6, i + 1)]);
+    if (page === "home" && e.key === "ArrowLeft") setGame(GAMES[Math.max(0, i - 1)]);
+    if (page === "home" && e.key === "Enter") go("game");
+    if (e.key === "Escape" || e.key === "Backspace") go("home");
+    if (e.key === "t") { $("#toast").classList.add("on"); setTimeout(() => $("#toast").classList.remove("on"), 3200); }
+  });
+  $("#toast-i").innerHTML = ph("trophy", "fill");
+  setSeat(0); setGame(GAMES[0]); go("home");
+  document.fonts.ready.then(() => go(page));
+})();
+</script>
+</body>
+</html>

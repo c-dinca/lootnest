@@ -1,82 +1,87 @@
-# Lootnest design system: Arcade
+# Lootnest design system
 
-Lootnest looks like a piece of game hardware you like having on the desk. The owner chose this direction, **Arcade**, from seven mocked over the real UI (November 2026), and asked for it to be polished, with worthy animations and proper transitions.
+Lootnest looks like the website: obsidian, Ice Grey, a Racing Red gem, and the game you're looking at filling the window behind glass. The owner chose this in the rework of November 2026 (direction A of three mockups, with a sidebar), asking for it to be premium, see-through, simple and spectacular, with nothing left in the old look. `docs/REWORK.md` has the plan and the phases; `design/rework/reference.html` is the interactive reference.
 
-- **A shell around a screen.** The top bar and the sidebar are one piece of dark indigo plastic (`--shell`). The page is a lighter screen set into it (`--bg-ground`), rounded where they meet.
-- **A cartridge colour for every section.** Home yellow, Library teal, Store blue, Updates orange, Achievements lilac, Saves green, Profiles pink. It is the band of the current tab, and every section title is a label in that colour, dark ink on it, sitting on a 3px rule of it across the section. A game's page is Library teal. A Settings category takes a colour only when it is one of those sections' own (Games and swaps, Online, Updates, Cloud saves); the rest are neutral.
-- **Keys.** Buttons sit on a lip and press down 2px. Switches that are on are lit green, like a power LED.
-- **Racing Red is the gem and the Play key**, nothing else. Play as someone is that profile's colour.
-- **Two faces.** Tilt Warp for page titles, a game's name, the Play key and big numbers; Atkinson Hyperlegible Next for everything else.
+- **The art is the room.** The game in focus (Home's game, a game's page) fills the window behind everything (`#room`), fading to obsidian low and on the left. Pages without a game of their own sit on flat obsidian; the Library keeps the last art, blurred and dark.
+- **Glass only over art.** The sidebar, the play dock, the sheet of a game's page, menus, drawers and toasts are glass: obsidian at 46% or more, blurred, a 1px light edge and a light along the top. Over flat obsidian, surfaces are solid.
+- **The website's colours.** Obsidian ground, Ice Grey text. Racing Red is the gem, the Updates badge and one primary key where there's no Play; never text. Play is the seated profile's colour. No section colours.
+- **One sidebar**, no top bar: the brand, Back and Forward, search, the sections with a light that slides to the current one, the games, and at the foot who's at the PC, Profiles, Big Picture and Settings.
+- **Small icons, premium keys.** Phosphor Icons, 14 to 18px; every key has a fine light along its top and a faint rim, and presses 1px.
+- **Two faces.** Tilt Warp for titles, a game's name, the Play key and big numbers; Atkinson Hyperlegible Next for everything else.
 
-The tokens and components live in [`internal/app/ui/system.css`](internal/app/ui/system.css). Every component in every state is on the kitchen sink:
+The tokens and components live in [`internal/app/ui/system.css`](internal/app/ui/system.css), the shell and pages in `app.css`. Every component in every state is on the kitchen sink:
 
 ```bash
 node design/harness/build.mjs        # writes design/harness/dist/kitchen-sink.html (open it in a browser)
 node design/harness/shoot-ks.mjs     # screenshots into design/system/
 ```
 
-The kitchen sink is dev only. Nothing in `design/` is built into `Lootnest.exe`.
+Nothing in `design/` is built into `Lootnest.exe`.
 
 ## Principles
 
-1. **Colour means a place or a person.** A section's colour marks only that section: its tab, its labels, its progress. A player's colour marks only that player: Play as them, their avatar, their bar on a cover, always with their name beside it. Green that is lit means on or safe. Racing Red is the gem and the Play key.
-2. **Depth comes from the plastic, one step per layer** (shell, well, ground, surface, raised, active). Keys and panels sit on a darker lip (`--lip-key`, `--lip-panel`) with no outline; only floating layers (menus, dialogs, drawers, toasts) cast `--shadow-overlay`. Art shows in the hero and Big Picture only; the surfaces over it are nearly opaque.
-3. **Panels are for objects:** a save point, a copy, an update, a conflict, the Tonight pick, a drawer. Facts, lists, stats and sections sit on the screen as type and rows. No card inside a card, no strip of equal stat cards.
-4. **Every section starts with its label.** One treatment everywhere: the label in the section's colour on its rule. A note and the section's own button sit on the rule beside it. Groups inside a panel take a small title (`.ln-section-head--minor`), not a label.
-5. **One page grid.** Every page starts at `--page-gutter` and grows with the window, splitting on unequal spans (8+4, 9+3). A wider window gets more content, not bigger boxes.
-6. **Space shows grouping.** 4 to 12px inside a component, 12 to 16 between related items, 24 to 32 between groups, 48 to 64 between sections. Empty containers are hidden, not drawn.
-7. **Few sizes, one display face used large.** Tilt Warp only for a page's title, a game's name, the Play key and scoreboard numbers. Everything else, section labels and dialog titles included, is Atkinson. Hierarchy comes from weight and `--fg-1/2/3` before size. Sentence case.
-8. **Missing art is real content:** the game's icon, a blurred crop of its other art, or its name set in type. Never a grey box or a broken image.
-9. **Motion is calm and exact.** Under 400ms all told, never bouncy, only transform and opacity (a label's wipe is a clip), once per arrival, and nothing on a redraw the keyboard caused. Content is all there without it, and under `prefers-reduced-motion` nothing moves.
-10. **One dominant action per view.** Play leads Home and the game page. Everything else is a ghost or secondary key, or lives in Manage.
-11. **The swap is the signature moment** and gets the craft: the profile's colour, the avatar, and an exact copy line. Routine screens stay quiet so it stands out.
-12. **Big Picture is the same system at 10-foot scale:** the shell's colour behind it, its tabs a sliding cartridge in each section's colour, rows under labels, keys for its buttons, type about 1.5x, a 5% safe area, a double focus ring with a shell-coloured gap, a fixed prompt bar, and every screen reachable with the D-pad.
+1. **Content first.** The game's art and the player's things lead; the interface steps back into glass and quiet type. Nothing decorates.
+2. **Colour means a person or a state.** A profile's colour marks only that profile: Play as them, their avatar, their bar on a cover, the room's wash while they're seated, always with their name beside it. Lamp green means on or done; amber needs a look; the danger colour is destructive. Racing Red is the gem, the Updates badge and the one primary key. Achievement rarity has its tiers.
+3. **Glass only over art.** A see-through surface needs something to see through. On flat obsidian, panels are solid `--bg-surface`. Text on glass stays AA: the room under it is scrimmed (`--scrim-room`) and the glass carries enough obsidian.
+4. **Depth by light, not lines.** Layers step up in lightness (well, ground, surface, raised, active); edges are 1px light at 7 to 12%; keys carry a 1px top light (`--key-light`). Only floating layers cast `--shadow-overlay`. No heavy borders.
+5. **Panels are for objects:** a save point, a copy, an update, a conflict, a drawer. Facts, lists and stats sit as type and rows. No card inside a card, no strip of equal stat cards.
+6. **Plain titles.** A section's title is Tilt Warp in Ice Grey (`--text-section`), with a note and its own key beside it; a count is a small pill. No labels, patches or rules.
+7. **One page grid.** Every page starts at `--page-gutter` and grows with the window, splitting on unequal spans (8+4, 9+3).
+8. **Space shows grouping.** 4 to 12px inside a component, 12 to 16 between related items, 24 to 32 between groups, 48 to 64 between sections.
+9. **Few words.** Names, numbers, states and keys; one short line only before something changes files.
+10. **Missing art is real content:** the game's icon, a blurred crop of its other art, or its name set in type. Never a grey box or a broken image.
+11. **Motion answers what you did.** Transform and opacity only. Art crossfades; pages rise and settle; lights slide on a spring; covers lift; nothing loops. Settings, Appearance, Motion: Full, Less (fades only) or Off; reduced motion means Off.
+12. **One dominant action per view.** Play leads Home and a game's page. Everything else is a secondary or ghost key, or lives in Manage.
+13. **The swap is the signature moment:** the profile's colour, the avatar, three steps (back to its slot, a copy read back, in).
+14. **Big Picture is the same system at 10-foot scale:** the room and glass, type about 1.5x, a 5% safe area, a double focus ring, a fixed prompt bar, every screen reachable with the D-pad.
 
 Every UI change is checked in the harness at 1024, 1280, 1440, 1920 and 2560 wide, with `players=6`, `games=0` and `art=missing`, with no sideways scroll.
 
 ## Tokens
 
-The names below are CSS custom properties. Components use only these. Raw colours, sizes and durations appear only in the token block.
+The names below are CSS custom properties. Components use only these; raw colours, sizes and durations appear only in the token block.
 
 ### Colour
 
-Indigo at hue 282 for the plastic, Ice Grey `#DFE5EB` for text. Contrast is WCAG 2.
+Contrast is WCAG 2.
 
-| Token | Value | Role | On ground | On raised |
+| Token | Value | Role | On ground | On active |
 |---|---|---|---|---|
-| `--shell` | `oklch(0.165 0.034 282)` | The top bar and the sidebar | | |
-| `--shell-lip` | `oklch(0.120 0.030 282)` | The dark edge under a key or a panel | | |
-| `--bg-well` | `oklch(0.175 0.036 282)` | Sunk: inputs, wells | | |
-| `--bg-ground` | `oklch(0.205 0.040 282)` | The screen: every page | | |
-| `--bg-surface` | `oklch(0.250 0.044 282)` | Panels | | |
-| `--bg-raised` | `oklch(0.295 0.046 282)` | Keys | | |
-| `--bg-active` | `oklch(0.345 0.048 282)` | A key pointed at, selected | | |
-| `--fg-1` | `#DFE5EB` Ice Grey | Text | 14.2:1 | 11.0:1 |
-| `--fg-2` | `oklch(0.830 0.024 280)` | Secondary text | 10.6:1 | 8.3:1 |
-| `--fg-3` | `oklch(0.730 0.030 280)` | Dates, counts | 7.5:1 | 5.8:1 (4.9:1 on active) |
-| `--fg-disabled` | `oklch(0.520 0.030 280)` | Disabled controls (exempt) | 3.3:1 | 2.5:1 |
-| `--fg-on-light` | `oklch(0.180 0.030 282)` | Dark ink: on Ice Grey, a label, a lit lamp | | |
-| `--accent` | `#EF233C` Racing Red | The gem and the Play key | 4.3:1 | |
-| `--fg-on-accent` | `oklch(0.140 0.020 20)` | Bold text on the red key | 4.7:1 on red, 5.7:1 on hover | |
-| `--lamp` | `oklch(0.82 0.170 148)` | A switch that is on, a game running, done | 11.0:1 | 8.5:1 |
-| `--danger` | `oklch(0.80 0.110 30)` | Destructive | 9.3:1 | 7.2:1 |
-| `--warning` | `oklch(0.85 0.120 78)` amber, apart from Home's yellow | Needs a look | 11.3:1 | 8.8:1 |
-| `--edge-1/2/3` | indigo light at 12 / 20 / 38% | Hairline, control edge, hover edge | | |
+| `--bg-well` | `#0f1015` | Sunk: inputs, wells | | |
+| `--bg-ground` (`--shell`) | `#111217` obsidian | Every page; the ground the sidebar floats over | | |
+| `--bg-surface` | `#181a21` | Solid panels | | |
+| `--bg-raised` | `#1f222b` | Raised panels | | |
+| `--bg-active` | `#282b35` | Pointed at, selected | | |
+| `--fg-1` | `#DFE5EB` Ice Grey | Text | 14.7:1 | 11.1:1 |
+| `--fg-2` | `#a6aeb9` | Secondary text | 8.4:1 | 6.3:1 |
+| `--fg-3` | `#8c94a0` | Dates, counts | 6.1:1 | 4.6:1 |
+| `--fg-disabled` | `#5d636e` | Disabled controls (exempt) | 3.1:1 | |
+| `--fg-on-light` | `#111217` | Dark ink: on Ice Grey, a lit lamp, a profile's colour | | |
+| `--accent` | `#EF233C` Racing Red | The gem, the Updates badge, the primary key | 4.3:1 | |
+| `--fg-on-accent` | `#1a0a0d` | Bold text on the red key | 4.6:1 on red | |
+| `--lamp` | `#7be08f` | On, running, done | | |
+| `--danger` | `#ff8a7a` | Destructive | 8.4:1 | |
+| `--warning` | `#f2c14e` | Needs a look | 10.4:1 | |
+| `--edge-1/2/3` | white at 7 / 12 / 22% | Hairline, control edge, hover edge | | |
 
-**The sections.** Each is a fill with `--ink-on-sec` (the dark ink) on it, never text on the screen. `--sec` is the current one: `render()` sets `data-sec` on the window (and on the top bar, which keeps the tab a game's page came from), and `--sec` is registered with `@property`, so it eases from one section's colour to the next.
+The old section tokens (`--sec-*`, `--sec`) still exist so older rules read something, but they're all the same quiet grey.
 
-| Token | Colour | Section | Ink on it | Ink on a count patch |
-|---|---|---|---|---|
-| `--sec-home` | `oklch(0.86 0.160 92)` yellow | Home | 12.3:1 | 8.9:1 |
-| `--sec-library` | `oklch(0.82 0.120 195)` teal | Library and every game's page | 11.3:1 | 8.2:1 |
-| `--sec-store` | `oklch(0.77 0.130 255)` blue | Store | 9.0:1 | 6.6:1 |
-| `--sec-updates` | `oklch(0.80 0.150 60)` orange | Updates | 9.6:1 | 7.0:1 |
-| `--sec-ach` | `oklch(0.77 0.140 305)` lilac | Achievements | 8.7:1 | 6.4:1 |
-| `--sec-saves` | `oklch(0.82 0.170 148)` green | Saves | 11.5:1 | 8.3:1 |
-| `--sec-profiles` | `oklch(0.80 0.130 355)` pink | Profiles | 9.5:1 | 7.0:1 |
-| `--sec-neutral` | `--fg-2` | Settings' own categories | 11.1:1 | 8.1:1 |
+### Glass and the room
 
-The section's colour marks progress on its pages (achievement bars and rings, loading bars), list markers and links in the reader, and the text selection as a wash (`--sec-wash`).
+| Token | Value | Where |
+|---|---|---|
+| `--glass` | obsidian at 46% | The sidebar, the play dock, the sheet of a game's page |
+| `--glass-strong` | obsidian at 62% | Glass that holds body text; panels on art |
+| `--glass-overlay` | `#181a21` at 94% | Menus, drawers, dialogs, toasts, the search's list |
+| `--glass-edge`, `--glass-light` | white 9%; a 1px top light at 7% | The rim and the light of every glass surface |
+| `--blur-glass` | `blur(22px) saturate(150%)` | Behind every glass surface |
+| `--glass-ctl`, `-hover`, `-active`, `-on` | white 7.5%, 13%; black 25%; white 16% | Secondary keys, wells for search and tabs, the lit pill |
+| `--room-h`, `--room-fade` | 82%, 700ms | How far the art reaches; one art giving way to the next |
+| `--scrim-room` | obsidian gradients | The art fading to obsidian low and on the left |
+| `--room-dim` | `blur(30px) brightness(0.42)` | The room behind the Library |
+| `--mesh-seat`, `--mesh-red` | 22%; red at 6% | The seated profile's wash low on the left; the faint red one top left |
+
+Solid instead: Windows' transparency effects off (`prefers-reduced-transparency`), or Settings, Appearance, See-through panels off (`.glass-off` on the window). Art behind pages off is `.room-off`.
 
 ### Players
 
@@ -85,54 +90,43 @@ Each player's colour is set inline as `style="--player: #d9738e"` on an element 
 | Token | Formula | Role |
 |---|---|---|
 | `--player-fill` | `oklch(from var(--player) 0.72 min(c, 0.12) h)` | Play, avatar, tile bar, tag |
-| `--player-fill-hover` / `-active` | lightness +0.05 / −0.04 | States |
-| `--player-on` | `oklch(from var(--player) 0.20 min(c, 0.03) h)` | Text on the fill: 6.9:1 or better at rest |
-| `--player-lip` | lightness 0.50 | The lip under Play as them |
+| `--player-fill-hover` / `-active` | lightness +0.05 / −0.04 | The sheen's top, pressed |
+| `--player-on` | `oklch(from var(--player) 0.20 min(c, 0.03) h)` | Text on the fill: 6.9:1 or better |
 | `--player-wash` | the fill at 16% | A selected chip |
 
 A player's colour is never the only cue: their name is always beside it.
 
-### Surfaces
+### Icons
 
-| Token | Where |
-|---|---|
-| `--glass-bar` (surface at 94%) | The play bar over the hero |
-| `--glass-panel` (surface at 90%) | Panels on art |
-| `--glass-overlay` (indigo 0.27 at 97%) | Menus, the search's list |
-| `--shadow-overlay` | Floating layers only |
-| `--shadow-lift` | A cover lifted under the pointer |
-| `--lip`, `--press`, `--lip-key`, `--lip-down`, `--lip-panel` | A key's 3px lip, the 2px it goes down, and the lips as shadows |
-| `--rule`, `--slot-band` | A label's 3px rule; the 4px band of the current tab |
-
-With `prefers-reduced-transparency: reduce`, every see-through step becomes solid and the backdrop goes away.
+Phosphor Icons (MIT), copied by `tools/icons.py` into `js/01-icons.js` and drawn with `ph(name, weight)`; static markup asks with `<i data-ph="name">` (`data-two` for both weights). Regular in keys, rows and menus; fill for the current item; duotone only for an empty page's big icon. Sizes: `--icon-xs` 14 (small keys, chips), `--icon-sm` 16 (keys, rows), `--icon-md` 18 (the sidebar), `--icon-lg` 24 (Big Picture), `--icon-empty` 40 (an empty page). An icon goes with a word; icon-only keys carry an aria-label and a tooltip.
 
 ### Type
 
-Three families, all under the **SIL Open Font License 1.1**, embedded as woff2 in `internal/app/ui/fonts` (from @fontsource):
+Three families, all under the **SIL Open Font License 1.1**, embedded as woff2 in `internal/app/ui/fonts`:
 
-- **Tilt Warp** (`--font-title`), one weight, declared as a weight range so the browser never fakes bold. Page titles, a game's name, the Play key, scoreboard numbers (`.ln-meta dd`), the brand.
-- **Atkinson Hyperlegible Next** (`--font-ui`), weight 200 to 800, latin and latin-ext. Everything else, at 450 for body, 700 to 800 for labels and titles under 24px.
-- **Figtree's digits**: a face of `--font-ui` for 0 to 9 only, declared last, because Atkinson's zero is slashed.
+- **Tilt Warp** (`--font-title`): page and section titles, a game's name, the Play key, scoreboard numbers, drawer and dialog titles, the brand.
+- **Atkinson Hyperlegible Next** (`--font-ui`), 200 to 800: everything else, 450 for body, 700 for keys.
+- **Figtree's digits** for 0 to 9, because Atkinson's zero is slashed.
 
 | Role | Size | Use |
 |---|---|---|
 | `--text-hero` | 40 to 64 | A game's name on its page and on Home |
 | `--text-page` | 34 | Page titles |
+| `--text-board` | 40 | A page's own numbers |
 | `--text-score` | 26 | Numbers you read off a scoreboard |
-| `--text-board` | 40 | A page's own numbers on its scoreboard panel (Saves, Achievements) |
-| `--text-section` | 22 | Drawer, dialog and empty-page titles (Atkinson 800) |
+| `--text-section` | 22 | Section, drawer, dialog and empty-page titles (Tilt Warp) |
 | `--text-lead` | 18 | Values that stand out |
-| `--text-label` | 16 | A section's label (Atkinson 800) |
-| `--text-body` | 14 | Body, names, buttons |
+| `--text-play` | 17 | The Play key |
+| `--text-body` | 14 | Body, names |
 | `--text-meta` | 13 | Secondary lines: dates, counts, notes |
 
-Long prose is set to at most 65ch with `text-wrap: pretty`. Numbers in columns use tabular figures (`.ln-num`). No all-caps and no tracked-out eyebrows.
+Long prose is set to at most 65ch. Numbers in columns use tabular figures (`.ln-num`). Sentence case; no all-caps, no tracked-out eyebrows.
 
 ### Space, size, radius
 
 - **Space:** 4px steps, `--space-1` (4) to `--space-16` (64); roles `--gap-in` (12), `--gap-group` (32), `--gap-section` (48).
-- **Controls:** `--ctl-sm` 32, `--ctl-md` 40, `--ctl-lg` 48, `--ctl-play` 56 (Play in the play bar). Icons 16 or 18px with 1.5px strokes.
-- **Radius by role:** `--radius-label` 2 (labels, like a sticker), `--radius-tag` 4 (tags, keyboard keys), `--radius-ctl` 6 (keys, rows, inputs, switches), `--radius-cover` 8 (covers), `--radius-panel` 10 (panels, toasts, menus), `--radius-dialog` 14 (dialogs, the play bar), `--radius-round` (avatars only). The screen's corner is `--screen-r` 14.
+- **Keys:** `--ctl-sm` 32, `--ctl-key` 38, `--ctl-lg` 48 (Play).
+- **Radius by role:** `--radius-tag` 4 (tags, keyboard keys), `--radius-ctl` 8 (rows, inputs), `--radius-key-sm` 8, `--radius-key` 10, `--radius-play` 12, `--radius-cover` 8, `--radius-panel` 14 (panels, toasts, menus), `--radius-dialog` 18 (dialogs, drawers), `--radius-glass` 20 (the sidebar, a game's sheet), `--radius-round` (avatars, pills, switches).
 
 ### Motion
 
@@ -140,22 +134,19 @@ Long prose is set to at most 65ch with `text-wrap: pretty`. Numbers in columns u
 |---|---|---|
 | `--ease-emph` | `cubic-bezier(.16, 1, .3, 1)` | Things arriving: fast out, long settle |
 | `--ease-out` | `cubic-bezier(.2, .8, .2, 1)` | Hover, fades |
-| `--dur-press` / `--dur-release` | 90 / 160ms | A key going down, coming back up |
-| `--dur-1` | 120ms | Hover; the page you leave fading |
-| `--dur-2` | 180ms | A switch, a dialog, a menu |
-| `--dur-wipe` | 220ms | A label wiping in |
+| `--ease-spring` | `cubic-bezier(.34, 1.4, .5, 1)` | Lights that slide, a switch's knob, a cover landing |
+| `--dur-press` / `--dur-release` | 90 / 160ms | A key going down, coming back |
+| `--dur-1`, `--dur-2`, `--dur-3` | 120, 180, 280ms | Hover; a switch, a dialog, a menu; a head settling, a toast |
 | `--dur-drawer` | 260ms | A drawer sliding in |
-| `--dur-3` | 280ms | The cartridge sliding, a page's head settling, a toast rising |
-| `--rise`, `--settle`, `--stagger`, `--lift` | 6px, 1.015, 40ms, 3px | How far a head comes up, the scale it settles from, the gap between labels, how far a cover lifts |
+| `--dur-page` | 600ms | The sidebar's light, a page rising |
+| `--room-fade`, `--dur-backdrop` | 700, 800ms | The room's art giving way; its dimming |
 
-- **A page change** (`swapPage`, `enter` in `40-game-page.js`; the order in app.css, motion): the new page is drawn at once under a still copy of the one you leave (`.page-ghost`, which keeps its colour), and that copy fades out in `--dur-1`, so no frame is empty. Art on the PC is decoded first, for at most `--dur-1`. Then, once per arrival: the page's first part (its hero or head) settles from `--settle` and `--rise` in `--dur-3`; the labels in view wipe in left to right, `--stagger` apart, up to five (`.wipe`, `--i`); the rest of each section fades in after `--dur-1`. It all ends within 380ms. A redraw while it runs carries on from where it was. In the harness, a page change measures no frame below 0.5 opacity.
-- **The top bar:** the current tab is a cartridge (`.bar-ind`) that slides to the new tab in `--dur-3` with `--ease-emph`, while `--sec` eases to the new section's colour, so the band and the labels change together.
-- **Keys** go down `--press` with the lip folding under in `--dur-press`, and come back in `--dur-release`. Chips do the same.
-- **Covers** lift `--lift` with `--shadow-lift` and a light edge (`--edge-hi`) under the pointer, and go back down when clicked.
-- **Switches:** the knob slides and the lamp comes on in `--dur-2`.
-- **Overlays:** drawers slide in from the right in `--dur-drawer` as the scrim fades, dialogs grow from 0.97, toasts rise 12px, menus grow from what opened them.
-- **The seat:** a face pops in (0.9 to 1) when someone sits down.
-- **The swap moment** in "Who's playing?": the avatar whose files were in slides out and fades, the chosen one slides in, both `--dur-3`.
+- **A page change** (`swapPage`, `enter` in `40-game-page.js`): the new page is drawn at once under a still copy of the one you leave (`.page-ghost`), which fades out, so no frame is empty; then the page settles in. The room crossfades to the new game's art, or to flat obsidian.
+- **The sidebar:** the light (`.bar-ind`) slides to the current section on a spring; that section's icon fills.
+- **Keys** go down 1px and to 98% in `--dur-press`, their top light becoming a shade, and come back in `--dur-release`.
+- **Covers** lift with `--shadow-lift` and a light edge under the pointer.
+- **Switches:** the knob springs across and lights green.
+- **Overlays:** drawers slide in as floating glass, dialogs grow from 0.97, toasts slide in from the right, menus grow from what opened them (upward from the sidebar's foot).
 - **Sounds** follow the same rule: one per thing you do, never on hover or a redraw, never while a game runs, none with Sounds off.
 
 ## Components
@@ -164,41 +155,34 @@ All in `system.css`, prefixed `ln-` (the switch is `.switch`). Every interactive
 
 | Component | Class | Variants and states | Rules |
 |---|---|---|---|
-| Key (button) | `.ln-button` | `--primary` (the red key), `--secondary` (a raised key), `--ghost` (a key with no cap), `--danger`, `--play` (with `.ln-player`). Sizes `--sm`, `--lg`, `--icon`. Loading is `aria-busy="true"` plus `.ln-spinner` | One primary or one Play per page. Keys with a cap press down. |
-| Section label | `.ln-section-head` (from its h2), `.ln-label` | A count as a darker patch (`.ln-count`), a note and an action on the rule; `--minor` for a small group title | One per section, in the section's colour, on its rule. |
-| Switch | `.switch` | Off, on (lit), disabled | Off is a dark slot; on is lit green with a soft glow. |
+| Key (button) | `.ln-button` | `--play` (with `.ln-player`: the profile's colour, a sheen, a soft glow, Tilt Warp), `--primary` (Racing Red), `--secondary` (white 7.5%, on glass or obsidian), `--ghost` (no cap until pointed at), `--danger`. Sizes `--sm`, `--lg`, `--icon`. Loading is `aria-busy="true"` plus `.ln-spinner` | One Play or one primary per view. Icon then word. |
+| Section title | `.ln-section-head` (from its h2), `.ln-label` | A count as a pill (`.ln-count`), a note and a key beside it; `--minor` for a small group title | Tilt Warp, Ice Grey; no patch, no rule. |
+| Tabs | `.ln-tabs` | Pills in a well, the current one lit | Arrows, Home and End move between tabs. |
+| Segmented control | `.ln-segmented` | Pills in a well, the chosen one lit | Radio group; arrows move the choice. |
+| Switch | `.switch` | Off, on (lit green), disabled | A pill; the knob springs across. |
 | Avatar | `.ln-avatar` | 20 to 160, an initial or a picture, `.is-run` | Always beside the name. |
-| Chip | `.ln-chip` | `aria-pressed="true"` (this player's files are loaded) | A small key: "or play as… Cristian". |
-| Tag | `.ln-tag`, `--player`, `--strong`, `--sec`, `.ln-mark` | | Short states such as Playing, Steam, Update. |
-| Game tile | `.ln-tile` | Owners bar (tall bar = loaded), badge, no-art cover, stand-in art, skeleton | The cover is the content, a cartridge that lifts. |
-| Metadata | `.ln-meta`, `.ln-facts` | Values first (scoreboard numbers), then what they are; side-column rows | |
-| Scoreboard | `.ln-meta.ln-score` | One front panel of a page's own numbers (`--text-board`), a hairline before each | Under the section's label; never a strip of equal cards. |
-| Rows on a panel | `.ln-rows` | Each row `--row-h` high: the thing on the left, its facts and key on the right | Copies, updates, what needs a look, Top sellers. |
+| Chip | `.ln-chip` | `aria-pressed="true"` | A small key with a face. |
+| Tag | `.ln-tag`, `--player`, `--strong`, `.ln-mark` | | Short states such as Playing, Steam, Update. |
+| Game tile | `.ln-tile` | Owners bar, badge, no-art cover, stand-in art, skeleton | The cover is the content; it lifts. |
+| Metadata | `.ln-meta`, `.ln-facts` | Values first, then what they are | |
+| Rows on a panel | `.ln-rows` | Each row `--row-h` high | Copies, updates, what needs a look. |
 | Lamp | `.ln-lamp`, `--on`, `--warn` | Grey off, lit green on, amber needs a look | Always beside its words. |
 | Action list | `.ln-list`, `.ln-row`, `--danger` | | Hairline-ruled rows grouped by intent. |
-| Tabs | `.ln-tabs` | The current tab is a cartridge: raised, the section's colour along its top | Arrows, Home and End move between tabs. |
-| Segmented control | `.ln-segmented` | A well with keys; the chosen one raised with a band of the section's colour | Radio group; arrows move the choice. |
 | Input | `.ln-input`, `.ln-search` | In a well | |
-| Banner | `.ln-banner` | A panel on its lip; its icon a lit lamp | A notice that needs a decision. |
-| Drawer | `.ln-drawer`, `--wide` | Head, a body that scrolls, an optional foot | Slides in from the right; Escape and the scrim close it. |
-| Toast | `.ln-toast`, `--success`, `--error` | One optional ghost action | Same words as the action that caused it. |
-| Empty / loading / error | `.ln-state`, `.ln-empty`, `.ln-ghosts` | An empty page: its label, one line, one key; the Library adds dashed covers | Says what's going on and what to do. |
-| Backdrop | `.ln-backdrop` | The game's art, blurred | Only behind the hero and Big Picture. |
+| Banner | `.ln-banner` | Its icon a lit lamp | A notice that needs a decision. |
+| Drawer | `.ln-drawer`, `--wide` | Floating glass from the right, inset 12px, rounded | Escape and the scrim close it. |
+| Toast | `.ln-toast`, `--success`, `--error` | Glass; one optional ghost action | Same words as the action that caused it. |
+| Empty / loading / error | `.ln-state`, `.ln-empty`, `.ln-ghosts` | An empty page: its title, one line, one key | Says what's going on and what to do. |
 
 ## Accessibility
 
-- **Contrast:** every text token passes AA on every solid step and the see-through ones over art; dark ink passes on every section colour and on a count patch (tables above); text on any player colour passes.
-- **Focus:** a 2px `--fg-1` ring on everything interactive. Covers ring their cover; rows ring inside their edge.
-- **Keyboard:** everything is a real `<button>` or `<a>`; segmented controls and tabs move with the arrows.
-- **Reduced motion:** nothing moves: pages swap at once, keys don't go down, covers don't lift, toasts and drawers fade.
-- **Reduced transparency:** see-through layers become solid and the backdrop goes away.
+- **Contrast:** every text token passes AA on every solid step and on the glass over the scrimmed room; text on any profile colour passes.
+- **Focus:** a 2px `--fg-1` ring on everything interactive.
+- **Keyboard:** everything is a real `<button>` or `<a>`; segmented controls and tabs move with the arrows; the sidebar's sections are buttons in order.
+- **Reduced motion:** nothing moves; pages swap at once; toasts and drawers fade.
+- **Reduced transparency:** every glass surface becomes solid; Settings has the same switch.
 
 ## Banned defaults used on purpose
 
-- **A colour per section.** It would be decoration elsewhere; here it is navigation, the same colour in the bar, the labels and the progress of that section, and the owner chose it.
-- **An icon next to every action row.** The action lists are scanned more than read.
-- **"or play as…" with an ellipsis.** The direction's own copy: the sentence the faces complete.
-
-## Moving pages over
-
-The Arcade system, the shell (top bar and sidebar), the motion and Home shipped in 1.93; the Library, the game page and Big Picture in 1.94; Settings, Profiles, dialogs and drawers in 1.95; Saves, Updates, Achievements, the Store, the first run and empty pages in 1.96. Next is a copy sweep across every page.
+- **Glass.** It's often decoration; here it's only ever over the game's art, where seeing through it is the point.
+- **Icons beside action rows.** The action lists are scanned more than read.

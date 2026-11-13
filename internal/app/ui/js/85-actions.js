@@ -59,6 +59,12 @@
     "sel-status"(el) { toggleMenu(el, selStatusHTML(), true); },
     "sel-status-set"(el) { libSetStatus(el.dataset.status); },
     "sel-seat"() { meMenu($("#bar-me")); },
+    // Settings, Appearance, Motion: Full, Less or Off.
+    async "set-motion"(el) {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.motion = el.dataset.value || "";
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); } catch (e) { toast(errText(e), "error"); await refresh(); }
+    },
     "sel-fav"() {
       const keys = [...S.libSel];
       if (keyedItems(keys).every((it) => tagsOf(it).includes(FAV))) removeFromTag(keys, FAV); else addToTag(keys, FAV);
@@ -1392,7 +1398,7 @@
     }
   }, true);
   document.addEventListener("focusin", (ev) => { if (ev.target.id === "gq") renderGq(); });
-  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".bar-search")) gqClose(); });
+  document.addEventListener("pointerdown", (ev) => { if (!ev.target.closest(".bar-search, #gq-pop")) gqClose(); });
   document.addEventListener("keydown", (ev) => {
     if (ev.target.id === "lo-app" && ev.key === "Enter") { ev.preventDefault(); actions["lo-app-add"](); return; }
     if (ev.target.id === "view-name" && ev.key === "Enter") { ev.preventDefault(); saveViewName(ev.target); return; }
