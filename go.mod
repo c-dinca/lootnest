@@ -2,7 +2,7 @@ module lootnest
 
 go 1.25.0
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require (
 	github.com/bodgit/sevenzip v1.6.5
