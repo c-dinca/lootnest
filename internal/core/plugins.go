@@ -167,6 +167,8 @@ func readPluginManifest(dir string) (*PluginManifest, error) {
 	switch {
 	case !pluginIDRe.MatchString(m.ID):
 		return nil, errors.New("its id must be 3 to 40 lowercase letters, digits or hyphens")
+	case strings.HasPrefix(m.ID, "ln-"):
+		return nil, errors.New(`ids starting "ln-" are kept for Lootnest's own themes`)
 	case m.Name == "" || len([]rune(m.Name)) > 60:
 		return nil, errors.New("its name must be 1 to 60 characters")
 	case !pluginVersionRe.MatchString(m.Version):

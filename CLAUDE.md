@@ -149,6 +149,8 @@ website's: obsidian, glass over the game's art, premium and quiet.
 - The room: the game in focus fills the window behind everything (`#room`,
   `renderRoom()` in 20-render.js); glass (`--glass*`) only over art.
 - One floating glass sidebar, no top bar; the sections' light slides.
+- Themes per profile: Lootnest (default), Arcade, High contrast, and any
+  a plugin brings (only colour tokens).
 - Icons: Phosphor Icons (MIT) via `tools/icons.py` into `js/01-icons.js`,
   `ph(name, weight)`, 14 to 18px; never Lucide.
 - Keys: a fine top light and rim (`--key-light`), 1px press; Play in the
@@ -158,7 +160,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.105.0, beta)
+## Where things stand (1.106.0, beta)
 
 These shipped recently, newest last:
 
@@ -819,6 +821,14 @@ These shipped recently, newest last:
   Picture (`behindBP`), and the window catches up when it closes. Big
   Picture opened in 10.2 s, now 0.1 s; the Library 815 ms, now 345 ms.
   The cover flying into its game page (FLIP) is still open.
+- **1.106** The rework, R9, so the rework is done: built-in themes on the
+  plugin theme machinery (`BUILTIN_THEMES` in 79-plugins.js, `allThemes()`
+  for the profile editor and `applyTheme`): `ln-arcade` (the 1.93 to
+  1.96 indigo tokens, glass tinted to match) and `ln-contrast` (black,
+  white text, solid glass, no blur). Plugin ids starting "ln-" are
+  refused (`core/plugins.go`). Harness `?theme=ln-arcade|ln-contrast`
+  sets the first profile's theme. README screenshots regenerated; the
+  website's window has the sidebar with the sections (no top bar).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

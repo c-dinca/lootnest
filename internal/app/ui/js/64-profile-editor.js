@@ -40,7 +40,7 @@
     const gameOptions = (sel, none) => `<option value="">${none}</option>${libraryItems().map((it) => `<option value="${esc(recentKey(it))}" ${sel === recentKey(it) ? "selected" : ""}>${esc(it.name)}</option>`).join("")}`;
     let body = "";
     if (tab === "look") {
-      const hasPic = !!(S.d.avatars || {})[p.id], hasBanner = !!(S.d.banners || {})[p.id], themes = Object.entries(S.d.themes || {});
+      const hasPic = !!(S.d.avatars || {})[p.id], hasBanner = !!(S.d.banners || {})[p.id], themes = Object.entries(allThemes());
       const kind = !p.banner ? "auto" : p.banner === "image" ? "image" : p.banner.startsWith("style:") ? "plain" : "game";
       body = `
       <div class="field"><span class="label">Picture</span><div class="pe-row">

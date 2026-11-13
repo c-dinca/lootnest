@@ -50,8 +50,28 @@
   // The seated profile's theme (a run without one wears its person's) on
   // :root, as Go sent it; none is Lootnest's own.
   let themeOn = "";
+  // Lootnest's own themes, beside any a plugin brings; chosen per profile
+  // like those. Their ids start "ln-", which plugins can't use. Arcade is
+  // the indigo look of 1.93 to 1.96; High contrast is black with white
+  // text and solid panels.
+  const BUILTIN_THEMES = {
+    "ln-arcade": { name: "Arcade", tokens: {
+      "--bg-well": "oklch(0.175 0.036 282)", "--bg-ground": "oklch(0.205 0.040 282)", "--bg-surface": "oklch(0.250 0.044 282)",
+      "--bg-raised": "oklch(0.295 0.046 282)", "--bg-active": "oklch(0.345 0.048 282)", "--shell": "oklch(0.165 0.034 282)",
+      "--fg-2": "oklch(0.830 0.024 280)", "--fg-3": "oklch(0.730 0.030 280)",
+      "--edge-1": "oklch(0.80 0.06 282 / 0.12)", "--edge-2": "oklch(0.80 0.06 282 / 0.20)", "--edge-3": "oklch(0.85 0.06 282 / 0.38)",
+      "--glass": "oklch(0.205 0.040 282 / 0.5)", "--glass-strong": "oklch(0.205 0.040 282 / 0.66)", "--glass-overlay": "oklch(0.250 0.044 282 / 0.95)",
+      "--glass-panel-page": "oklch(0.250 0.044 282 / 0.6)" } },
+    "ln-contrast": { name: "High contrast", tokens: {
+      "--bg-well": "#000000", "--bg-ground": "#000000", "--bg-surface": "#0b0b0d", "--bg-raised": "#18181c", "--bg-active": "#2a2a30", "--shell": "#000000",
+      "--fg-1": "#ffffff", "--fg-2": "#e8ebf0", "--fg-3": "#cdd3db",
+      "--edge-1": "rgb(255 255 255 / 0.32)", "--edge-2": "rgb(255 255 255 / 0.5)", "--edge-3": "rgb(255 255 255 / 0.75)",
+      "--glass": "#000000", "--glass-strong": "#000000", "--glass-overlay": "#0b0b0d", "--glass-panel-page": "#0b0b0d", "--glass-edge": "rgb(255 255 255 / 0.4)",
+      "--blur-glass": "none", "--room-dim": "blur(36px) brightness(0.35)", "--room-dim-page": "blur(48px) brightness(0.25)" } },
+  };
+  const allThemes = () => ({ ...BUILTIN_THEMES, ...(S.d.themes || {}) });
   function applyTheme() {
-    const p = seated(), id = p && (p.theme || (parentOf(p) || {}).theme), t = id && (S.d.themes || {})[id];
+    const p = seated(), id = p && (p.theme || (parentOf(p) || {}).theme), t = id && allThemes()[id];
     const next = t ? JSON.stringify(t.tokens) : "";
     if (next === themeOn) return;
     const root = document.documentElement.style;

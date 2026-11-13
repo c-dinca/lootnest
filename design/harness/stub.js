@@ -80,6 +80,8 @@
   const THEMES = PLUGINS ? { "deep-sea": { name: "Deep sea", tokens: { "--bg-well": "#0a1019", "--bg-ground": "#0d1520", "--bg-surface": "#152131", "--bg-raised": "#1b2a3d", "--bg-active": "#22344a",
     "--accent": "oklch(0.70 0.15 220)", "--accent-hover": "oklch(0.76 0.14 220)", "--fg-on-accent": "#0d1520" } } } : {};
   if (PLUGINS && q.get("theme") === "1") PLAYERS[0].theme = "deep-sea";
+  // &theme=ln-arcade or ln-contrast: the first profile chose a built-in theme.
+  if (/^ln-/.test(q.get("theme") || "")) PLAYERS[0].theme = q.get("theme");
   const ids = PLAYERS.map((p) => p.id);
   const some = (n) => ids.slice(0, Math.min(n, ids.length));
 

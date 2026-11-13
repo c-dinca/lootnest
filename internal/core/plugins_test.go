@@ -84,6 +84,7 @@ func TestInstallPluginRefusals(t *testing.T) {
 		want  string
 	}{
 		{"bad id", map[string]string{"plugin.json": manifest("Bad_ID", "1.0.0", "theme"), "theme.json": goodTheme}, "its id"},
+		{"lootnest's id", map[string]string{"plugin.json": manifest("ln-arcade", "1.0.0", "theme"), "theme.json": goodTheme}, `starting "ln-"`},
 		{"exe inside", map[string]string{"plugin.json": manifest("has-exe", "1.0.0", "theme"), "theme.json": goodTheme, "bin/tool.exe": "MZ"}, "isn't data (bin/tool.exe)"},
 		{"script inside", map[string]string{"plugin.json": manifest("has-js", "1.0.0", "theme"), "theme.json": goodTheme, "panel.js": "alert(1)"}, "isn't data"},
 		{"traversal", map[string]string{"plugin.json": manifest("escape", "1.0.0", "theme"), "theme.json": goodTheme, "../evil.json": "{}"}, "outside its own folder"},

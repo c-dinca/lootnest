@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.106.0
+
+The rework is done: every screen of Lootnest is in the new look.
+
+- **Two more looks to choose from, per profile:** Arcade, the indigo look from before the rework, and High contrast, black with white text and solid panels. Choose one in a profile's Edit profile, Look; runs follow their person unless they choose their own.
+- New pictures of Lootnest in the README, and the window on the website now looks like the launcher.
+
 ## 1.105.0
 
 Faster with a big library.
