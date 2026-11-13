@@ -128,6 +128,7 @@ including the small ones (empty states, errors, menus, toasts).
     machinery (Lootnest default, Arcade kept for those who liked it, High
     contrast), per profile; a final pass over every surface against the
     inventory; the website's window in step.
+    Done in 1.106: the rework is complete; only the FLIP from R8 is open.
 
 ## Inventory
 
@@ -141,7 +142,7 @@ Tick when merged. The names are the view functions in `internal/app/ui/js`.
 - Pages: [x] `viewSaves` [x] `viewUpdates` [x] `viewUpdateDrawer` [x] `viewUpdHistory` [x] `viewAchievements` [x] `viewFind` [x] `viewOffer` [x] `viewPlayers` [x] `viewPlayer` [x] `viewProfilesDrawer` [x] `viewProfileEditor` [x] `viewRecap` (and its canvas)
 - Settings: [x] `viewSettings` (every category) [x] `viewControllers` [x] `viewPlugins` [x] `viewStorage` [x] `viewPlaynite` [x] `viewSteamSetup`
 - Big Picture and outside: [x] `25-bigpicture.js` [x] `win/toast.go` [x] tray [x] `cmd/setup/setup.html`
-- Also: [ ] DESIGN.md [ ] CLAUDE.md Brand [ ] the website's window [ ] harness screenshots for the README
+- Also: [x] DESIGN.md [x] CLAUDE.md Brand [x] the website's window [x] harness screenshots for the README
 
 ## Handing the rework to another chat (a note for the owner)
 

@@ -182,6 +182,14 @@ All in `system.css`, prefixed `ln-` (the switch is `.switch`). Every interactive
 - **Reduced motion:** nothing moves; pages swap at once; toasts and drawers fade.
 - **Reduced transparency:** every glass surface becomes solid; Settings has the same switch.
 
+## Themes
+
+A profile can choose another look, set only through colour tokens, never
+raw CSS: Lootnest (this document), Arcade (the indigo grounds of 1.93 to
+1.96, its glass tinted to match), High contrast (black grounds, white
+text, solid panels and no blur), or a plugin's theme, whose pairs are
+checked for AA before it installs (`core/plugintheme.go`).
+
 ## Banned defaults used on purpose
 
 - **Glass.** It's often decoration; here it's only ever over the game's art, where seeing through it is the point.

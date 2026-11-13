@@ -19,7 +19,7 @@ A `.zip` with `plugin.json` at its top:
 }
 ```
 
-- `id`: 3 to 40 lowercase letters, digits or hyphens. A plugin with the same id replaces the one installed, once the new one checks out.
+- `id`: 3 to 40 lowercase letters, digits or hyphens. A plugin with the same id replaces the one installed, once the new one checks out. Ids starting `ln-` are kept for Lootnest's own themes.
 - `version`: three numbers, such as `1.2.0`.
 - `provides`: one or more of `sources`, `saves`, `metadata` and `theme`.
 
