@@ -430,16 +430,60 @@
           <aside class="gpage-aside">${playersBlock(all)}</aside>
         </div></div>`;
     }
-    const first = recent[0];
+    // The game in focus: the one picked on the shelf, else the last played.
+    // It's the room (renderRoom) behind the page.
+    const first = recent.find((it) => pickKey(it) === S.homePick) || recent[0];
+    S.roomPick = first;
     const head = gameView(first, false);
-    return `<div class="gpage home ln-root${head.real ? "" : " no-art"}">${head.top}
-      <div class="gpage-body">${head.bar}${head.note}${banners ? `<div class="home-banners">${banners}</div>` : ""}
+    return `<div class="gpage home ln-root${head.real ? "" : " no-art"}">
+      <div class="home-stage"><div class="home-feature">${head.top}${head.bar}${head.note}</div>${homeCard(first)}</div>
+      ${homeShelf(recent, first, allBtn)}
+      <div class="gpage-body home-below">${banners ? `<div class="home-banners">${banners}</div>` : ""}
         <div class="home-cols">
-          <div class="home-main">${continueShelf(recent.slice(1), allBtn)}${homeNews(recent)}</div>
+          <div class="home-main">${homeNews(recent)}</div>
           <aside class="gpage-aside">${playersBlock(all)}${tonightBlock(all)}${saveCheckBlock()}</aside>
         </div>
       </div></div>`;
   }
+  const pickKey = (it) => it.kind + ":" + it.id;
+  // Beside Play, on glass: the game's achievements, the rarest one
+  // unlocked, the time played and its save points. Only what's known.
+  function homeCard(it) {
+    const X = achFor(it), P = pointsFor(it), rows = [];
+    if (X) {
+      rows.push(`<div class="home-card-row"><span class="home-ring" style="--p:${X.pct}"><b class="ln-num">${X.pct}%</b></span><div><b class="ln-num">${X.A.unlocked} of ${X.A.total}</b><span>Achievements</span></div></div>`);
+      const rare = (X.A.list || []).filter((a) => a.unlocked && a.percent > 0).sort((a, b) => a.percent - b.percent)[0];
+      if (rare) rows.push(`<div class="home-card-row"><span class="home-card-ico is-rare">${ph("trophy", "fill")}</span><div><b>${esc(rare.name)}</b><span>Rarest, ${esc(rare.percent < 10 ? rare.percent.toFixed(1) : Math.round(rare.percent))}% of players</span></div></div>`);
+    }
+    const t = totalPlayed(it);
+    if (t) rows.push(`<div class="home-card-row"><span class="home-card-ico">${ph("clock-counter-clockwise")}</span><div><b class="ln-num">${esc(hours(t))}</b><span>Played on this PC</span></div></div>`);
+    const n = P && P.points ? P.points.length : 0;
+    if (n) rows.push(`<div class="home-card-row"><span class="home-card-ico">${ph("flag-pennant")}</span><div><b class="ln-num">${n === 1 ? "1 save point" : n + " save points"}</b><span>${esc(ago(P.points[0].created))}</span></div></div>`);
+    return rows.length ? `<aside class="home-card" aria-label="${esc(it.name)}">${rows.join("")}</aside>` : "<span></span>";
+  }
+  // The shelf: the games played lately, the one in focus lifted. A click
+  // picks a game (the room follows), a second click or Enter opens it.
+  function homeShelf(list, cur, allBtn) {
+    if (list.length < 2) return "";
+    return `<section class="home-shelf" aria-label="Continue playing"><div class="home-shelf-head"><h2>Continue</h2>${allBtn}</div>
+      <div class="home-covers">${list.slice(0, 12).map((it) => {
+        const a = artFor(it, "cover"), on = it === cur;
+        ensureCover(it);
+        return `<button class="home-cov${on ? " on" : ""}" aria-pressed="${on}" data-action="home-pick" data-pick="${esc(pickKey(it))}" ${itemAttr(it)} title="${esc(it.name)}">${a.url ? artImg(a, "cover") : `<span class="home-cov-none">${esc(it.name)}</span>`}</button>`;
+      }).join("")}</div></section>`;
+  }
+  // The arrows move along the shelf, picking as they go.
+  document.addEventListener("keydown", (ev) => {
+    const b = ev.target.closest && ev.target.closest(".home-cov");
+    if (!b || (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") || ev.altKey || ev.ctrlKey) return;
+    const n = ev.key === "ArrowRight" ? b.nextElementSibling : b.previousElementSibling;
+    if (!n) return;
+    ev.preventDefault();
+    S.homePick = n.dataset.pick;
+    render();
+    const f = document.querySelector(`.home-cov[data-pick="${CSS.escape(n.dataset.pick)}"]`);
+    if (f) { f.focus(); f.scrollIntoView({ block: "nearest", inline: "nearest" }); }
+  });
 
   // Shelves, as in the best launchers: the games played lately, then what's
   // new in them. Both only show what Lootnest actually knows.
@@ -470,11 +514,6 @@
   }
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
-  function continueShelf(list, allBtn) {
-    const head = `<div class="ln-section-head"><div><h2>Continue playing</h2></div>${allBtn}</div>`;
-    if (!list.length) return `<section>${head}<p class="home-hint">The other games you play show up here.</p></section>`;
-    return `<section aria-label="Continue playing">${head}<div class="lib-recent-row">${list.slice(0, 5).map(capHTML).join("")}</div></section>`;
-  }
 
   // What to play tonight: one game for whoever's here, from their Up next,
   // what they're playing and what they never started. The pick holds for

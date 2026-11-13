@@ -59,6 +59,13 @@
     "sel-status"(el) { toggleMenu(el, selStatusHTML(), true); },
     "sel-status-set"(el) { libSetStatus(el.dataset.status); },
     "sel-seat"() { meMenu($("#bar-me")); },
+    // Home's shelf: the first click picks the game, the next opens it.
+    "home-pick"(el, ev) {
+      if (S.homePick === el.dataset.pick || el.classList.contains("on")) { actions["open-sheet"](el, ev); return; }
+      S.homePick = el.dataset.pick;
+      uiSound("tab");
+      render();
+    },
     // Settings, Appearance, Motion: Full, Less or Off.
     async "set-motion"(el) {
       const s = JSON.parse(JSON.stringify(cfg().settings));
