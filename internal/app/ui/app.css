@@ -1831,6 +1831,35 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .lib-cap-art { border-radius: var(--radius-cover); box-shadow: 0 14px 30px -18px rgb(0 0 0 / 0.9); transition: transform var(--dur-3) var(--ease-spring), box-shadow var(--dur-2) var(--ease-out); }
 .lib-cap-open:hover .lib-cap-art { transform: translateY(calc(-1 * var(--lift))); box-shadow: var(--shadow-lift); }
 
+/* A game's page since the rework (R3): the game is the room behind the
+   window; its logo or name, its facts, Back and Manage sit over the art,
+   and everything else is one sheet of glass: the play row, the tabs and
+   each tab's content. The compact head that docks on scroll is glass too. */
+.gpage:not(.home) .gpage-art, .gpage:not(.home) .gpage-plate, .gpage:not(.home) .gpage-hero::after { display: none; }
+.gpage:not(.home) .gpage-hero { height: clamp(260px, 40vh, 460px); overflow: visible; }
+.gpage.no-art:not(.home) .gpage-hero { height: clamp(200px, 28vh, 320px); min-height: 0; padding-top: 0; }
+.gpage:not(.home) .gpage-title { position: relative; z-index: 1; padding-bottom: var(--space-6); }
+.gpage:not(.home):not(.no-art) .gpage-hero::before { content: ""; position: absolute; z-index: 0; inset: -10% 0 0 calc(-1 * var(--page-gutter)); background: var(--scrim-title); pointer-events: none; }
+.gpage:not(.home) .gpage-logo { filter: var(--shadow-logo); }
+.gpage:not(.home) .gpage-title h1 { text-shadow: 0 2px 24px rgb(0 0 0 / 0.55); }
+.gpage:not(.home) .gpage-meta { text-shadow: 0 1px 12px rgb(0 0 0 / 0.6); }
+.gpage-back, .gpage-manage-btn { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); color: var(--fg-1); }
+.gpage-back:hover, .gpage-manage-btn:hover { background: var(--glass-strong); }
+.gpage:not(.home) .gpage-body {
+  margin: 0 var(--space-5) var(--space-5); padding: var(--space-4) var(--space-6) var(--space-10);
+  border-radius: var(--radius-glass); background: var(--glass-strong); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light), 0 30px 80px -30px rgb(0 0 0 / 0.8);
+}
+.gpage:not(.home) .gpage-bar { padding: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+.gp-tabs { margin-top: var(--space-6); padding: 4px; border-radius: var(--radius-panel); background: var(--glass-ctl-active); }
+.gp-head { background: rgb(17 18 23 / 0.8); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 -1px 0 var(--glass-edge); }
+.gp-head-art { border-radius: var(--radius-ctl); }
+.gpage:not(.home) .gpage-main { margin-top: var(--space-6); }
+/* The screenshot lightbox: glass over the game, the picture without a frame. */
+.dialog.shots { background: var(--glass-strong); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light), var(--shadow-overlay); border-radius: var(--radius-dialog); }
+.shots-stage img, .shots-gone { background: none; border-radius: var(--radius-panel); }
+.shots-nav { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
+
 /* ================================================================ updates
    One dense list of games, filtered by state, each with its version against
    the latest and one action; beside it, a narrow column of what needs a look. */
