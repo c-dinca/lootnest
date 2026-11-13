@@ -62,11 +62,13 @@ What makes it different, and the direction to keep pushing:
   `site/img` come from the harness at 2x with `?anon=1&runs=1`: the site
   shows no real names, only "Player 1" and "Player 2" (the owner asked).
   The site is short on purpose (the owner: less text, more alive, no
-  pile of screenshots): two scroll stories on a sticky stage (profiles
-  and runs; then achievements, save points, mods, updates, Big Picture),
-  Also in it, Never, Download. The owner chose this over two other
-  directions (13 Nov 2026); the launcher's look is to follow the site's
-  palette.
+  pile of screenshots): two scroll stories played in a Lootnest window
+  drawn in HTML and CSS (the owner: "make the animations look like the
+  actual launcher"): profiles and runs, then achievements, save points,
+  mods, updates and Big Picture; then Also in it, Never, Download. The
+  owner chose this over two other directions (13 Nov 2026). The window
+  is drawn in the site's palette, which the launcher is to follow; when
+  the launcher's look changes, keep the window in step with it.
   The README is short too; details live in `docs/GUIDE.md` and
   `docs/PRIVACY.md`, its screenshots in `docs/screenshots` come from the
   harness without `anon`. The harness's profiles are made-up names
