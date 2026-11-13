@@ -90,10 +90,15 @@ What makes it different, and the direction to keep pushing:
 - **One feature per branch and PR.** Branch from fresh `origin/main`.
   Squash merges conflict with branches stacked on unmerged ones, so wait for
   the previous PR to merge, then branch again.
-- **Every change is a release.** Bump `VERSION` and add a `## x.y.z`
-  section at the top of `CHANGELOG.md`, in plain user language. A push to
-  main whose VERSION has no tag yet publishes the release, using that
-  changelog section as its notes. Don't push tags by hand.
+- **A release only when the owner asks** (the owner, 13 Nov 2026: too
+  many releases; 1.97 to 1.106 came out in one afternoon). A change that
+  ships in the app adds its lines under `## Unreleased` at the top of
+  `CHANGELOG.md`, in plain user language, and leaves `VERSION` alone.
+  When the owner asks for a release: bump `VERSION`, rename
+  `## Unreleased` to `## x.y.z`, merge. A push to main whose VERSION has
+  no tag yet publishes the release, using that section as its notes.
+  Don't push tags by hand. Old releases were pruned to milestones with
+  `.github/workflows/prune-releases.yml` (run by hand; tags are kept).
 - Before pushing, run:
   - `gofmt -l internal`
   - `go test ./internal/core/`

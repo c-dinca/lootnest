@@ -1,0 +1,50 @@
+name: Prune releases
+
+# Run by hand only (Actions, Prune releases, Run workflow). Deletes every
+# GitHub release whose tag isn't listed in "keep"; the latest release is
+# always kept. The tags stay, so every version's code can still be checked
+# out, and CHANGELOG.md keeps every version's notes. The app's updater reads
+# only the latest release, so nothing it needs goes away.
+# "dry_run" (on by default) only lists what would be deleted.
+on:
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: Tags to keep, separated by spaces (the latest is always kept)
+        required: true
+      dry_run:
+        description: Only list what would be deleted
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the releases not kept
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: ${{ inputs.keep }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 1000 --json tagName -q '.[].tagName' > all.txt
+          gone=0
+          while read -r tag; do
+            case " $KEEP $latest " in
+              *" $tag "*) echo "keep $tag"; continue ;;
+            esac
+            gone=$((gone + 1))
+            if [ "$DRY" = "true" ]; then
+              echo "would delete $tag"
+            else
+              # No --cleanup-tag: the tag and its code stay.
+              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+              echo "deleted $tag"
+            fi
+          done < all.txt
+          echo "$gone release(s) $([ "$DRY" = "true" ] && echo "would be deleted" || echo "deleted")"

@@ -4,6 +4,15 @@ A release is a merge to `main` with a new `VERSION` and a matching `## x.y.z`
 section at the top of `CHANGELOG.md`. GitHub Actions (`.github/workflows/build.yml`)
 builds `Lootnest.exe` and `Lootnest-Setup.exe` and publishes the release.
 
+Releases come out only when the owner asks. Between them, changes collect
+under `## Unreleased` in `CHANGELOG.md`; a release renames that heading to
+the new version and bumps `VERSION` in the same merge.
+
+`.github/workflows/prune-releases.yml` deletes old releases by hand
+(Actions, Prune releases, Run workflow): list the tags to keep, try it with
+"dry run" first. The latest release is always kept, the tags stay, and the
+notes stay in `CHANGELOG.md`.
+
 Two more steps are in the workflow but switched off until they're set up:
 signing both .exe files with SignPath Foundation's certificate, so Windows
 SmartScreen and antivirus programs stop flagging new releases over time, and
