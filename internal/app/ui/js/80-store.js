@@ -48,7 +48,7 @@
     const cmds = items.filter((x) => x.cmd), mine = items.filter((x) => x.mine), store = items.filter((x) => x.hit);
     const cmdHTML = cmds.length ? `<div class="gq-group"><span class="gq-label">Commands</span>${cmds.map((x) => opt(`<span class="gq-name">${esc(x.cmd.name)}</span>${x.cmd.key ? `<kbd class="gq-key">${esc(x.cmd.key)}</kbd>` : ""}`)).join("")}</div>` : "";
     if (!q) { pop.innerHTML = cmdHTML; pop.hidden = false; input.setAttribute("aria-expanded", "true"); return; }
-    const mineHTML = mine.length ? `<div class="gq-group"><span class="gq-label">Your games</span>${mine.map((m) => opt(`<span class="gq-name">${esc(m.mine.name)}</span><span class="gq-meta">${esc(m.mine.kind === "game" ? "Profiles on" : storeNames(m.mine))}</span>`)).join("")}</div>` : "";
+    const mineHTML = mine.length ? `<div class="gq-group"><span class="gq-label">Your games</span>${mine.map((m) => opt(`${gqCover(m.mine)}<span class="gq-name">${esc(m.mine.name)}</span><span class="gq-meta">${esc(m.mine.kind === "game" ? "Profiles on" : storeNames(m.mine))}</span>`)).join("")}</div>` : "";
     const storeHTML = !on ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Turn on the Store to search every game, with prices and whether it runs here.</p></div>`
       : S.gq.hits === null ? `<div class="gq-group"><span class="gq-label">Store</span><p class="gq-note">Looking it up</p></div>`
       : store.length ? `<div class="gq-group"><span class="gq-label">Store</span>${store.map((x) => opt(`${x.hit.image ? `<img src="${esc(x.hit.image)}" alt="">` : ""}<span class="gq-name">${esc(x.hit.name)}</span><span class="gq-meta">${x.hit.price ? esc(cents(x.hit.price)) : ""}</span>`)).join("")}</div>` : "";
@@ -56,6 +56,8 @@
     pop.innerHTML = `${cmdHTML}${mineHTML}${storeHTML}${none}${on ? `<button class="gq-all" data-action="gq-all">See everything for "${esc(q)}" in the Store</button>` : ""}`;
     pop.hidden = false; input.setAttribute("aria-expanded", "true");
   }
+  // A game's own cover beside its name, small; nothing when it has none.
+  const gqCover = (it) => { const a = artFor(it, "cover"); return a.url ? `<img class="gq-cover${a.from === "hero" ? " ln-art-crop" : ""}" src="${esc(a.url)}" alt="">` : ""; };
   function gqClose() { S.gq.sel = -1; const pop = $("#gq-pop"); if (pop) pop.hidden = true; const i = $("#gq"); if (i) i.setAttribute("aria-expanded", "false"); }
   function gqOpen(i) {
     const x = gqItems()[i];

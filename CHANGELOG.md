@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.101.0
+
+The new look reaches everything that opens over a page.
+
+- **Who's playing is a row of glass keys** over the game's art. Each lifts under the pointer and glows in that profile's colour.
+- **Dialogs, menus and drawers are glass**, with the window softly blurred behind a dialog.
+- **Search (Ctrl+K) shows each game's cover** beside its name.
+- **Editing a game keeps its art behind the page**, dimmed, and Save changes floats at the bottom.
+
 ## 1.100.0
 
 The new look reaches a game's page.

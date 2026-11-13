@@ -115,6 +115,7 @@
   --glass-ctl-active: rgb(0 0 0 / 0.25);
   --glass-ctl-on:     rgb(255 255 255 / 0.16);
   --blur-glass:   blur(22px) saturate(150%);
+  --blur-scrim:   blur(6px);          /* behind a dialog */
   --blur-backdrop: blur(100px) saturate(115%);
   --backdrop-opacity: 0.34;
   --blur-art-icon: blur(40px) saturate(130%);  /* a game's icon washed behind it */
@@ -324,10 +325,10 @@
    Settings, Appearance, See-through panels off (.glass-off on <html>). */
 @media (prefers-reduced-transparency: reduce) {
   :root:not(.glass-on) { --glass: var(--bg-surface); --glass-strong: var(--bg-surface); --glass-chrome: var(--bg-surface); --glass-bar: var(--bg-surface);
-    --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --backdrop-opacity: 0; }
+    --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --blur-scrim: none; --backdrop-opacity: 0; }
 }
 :root.glass-off { --glass: var(--bg-surface); --glass-strong: var(--bg-surface); --glass-chrome: var(--bg-surface); --glass-bar: var(--bg-surface);
-  --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --backdrop-opacity: 0; }
+  --glass-panel: var(--bg-surface); --glass-overlay: var(--bg-raised); --blur-glass: none; --blur-scrim: none; --backdrop-opacity: 0; }
 
 /* ============================================================== base bits */
 html { font-synthesis: none; }
