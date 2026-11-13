@@ -752,6 +752,14 @@ These shipped recently, newest last:
   are the section colour, green when finished; tier colours only for
   rarity. site/img regenerated in the new look.
 
+**The rework (owner, 13 Nov 2026):** every screen of the launcher in one
+new look, direction A of three mockups with a sidebar: the game in focus
+fills the window, glass only over art, the website's colours, no section
+colours, no top bar. The plan, the phases (R0 to R9, one release each)
+and the inventory of every surface are in `docs/REWORK.md`; the look is
+`design/rework/reference.html`. Read both before touching the UI, and
+tick the inventory as phases merge. Only one chat works on it at a time.
+
 The website is `site/`; `docs/ROADMAP.md` holds the plan for bigger
 features; docs/RELEASING.md the owner's signing and winget steps.
 
