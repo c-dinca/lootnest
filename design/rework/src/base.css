@@ -22,14 +22,25 @@ img { display: block; }
 :focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; border-radius: 6px; }
 .glass { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi), 0 24px 60px -24px rgb(0 0 0 / 0.7); }
-.key { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-radius: 9px; font-weight: 700; white-space: nowrap;
-  transition: transform 0.12s var(--ease), background 0.3s, box-shadow 0.12s; }
-.key:active { transform: translateY(2px) scale(0.98); }
-.key svg { width: 14px; height: 14px; }
-.key.play { height: 52px; padding: 0 28px; background: var(--c); color: #0b0c10; font: 400 19px/1 var(--title); box-shadow: 0 8px 30px -8px color-mix(in oklab, var(--c) 70%, transparent); }
-.key.play:hover { filter: brightness(1.08); }
-.key.ghost { background: rgb(255 255 255 / 0.08); }
-.key.ghost:hover { background: rgb(255 255 255 / 0.14); }
+.key { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 15px; border-radius: 10px;
+  font-weight: 700; font-size: 13.5px; white-space: nowrap; transition: transform 0.14s var(--ease), background 0.25s, box-shadow 0.2s, filter 0.2s; }
+/* every key: a fine light on its top edge and a faint rim, gone when pressed */
+.key::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.13), inset 0 0 0 1px rgb(255 255 255 / 0.05); transition: box-shadow 0.14s; }
+.key:active { transform: translateY(1px) scale(0.98); }
+.key:active::after { box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.3); }
+.key .ln-icon { width: 16px; height: 16px; flex: none; }
+.key.play { height: 48px; padding: 0 22px 0 18px; border-radius: 12px; gap: 10px; color: #0b0c10; font: 400 17px/1 var(--title);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--c), #fff 14%), var(--c)); box-shadow: 0 12px 30px -12px color-mix(in oklab, var(--c) 80%, transparent), 0 1px 0 rgb(0 0 0 / 0.35); }
+.key.play::after { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(0 0 0 / 0.06); }
+.key.play .ln-icon { width: 14px; height: 14px; }
+.key.play:hover { filter: brightness(1.06); }
+.key.ghost { background: rgb(255 255 255 / 0.075); color: var(--ice); }
+.key.ghost:hover { background: rgb(255 255 255 / 0.13); }
+.key.solid { background: linear-gradient(180deg, #23262f, var(--raised-2)); color: var(--ice); }
+.key.solid:hover { background: linear-gradient(180deg, #282b35, #23262f); }
+.key.red { background: linear-gradient(180deg, #f43b52, var(--red)); color: var(--on-red); }
+.key.icon { width: 38px; padding: 0; }
+.ln-icon.ph { fill: currentColor; }
 .av { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--pc, var(--p1)); color: #0b0c10; font: 400 13px/1 var(--title); }
 .ring { --p: 0.2; width: 46px; height: 46px; border-radius: 50%; background: conic-gradient(var(--ice) calc(var(--p) * 360deg), rgb(255 255 255 / 0.12) 0); display: grid; place-items: center; }
 .ring::before { content: attr(data-t); width: 38px; height: 38px; border-radius: 50%; background: var(--obsidian); display: grid; place-items: center; font-weight: 800; font-size: 11px; }

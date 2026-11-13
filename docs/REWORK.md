@@ -44,9 +44,26 @@ including the small ones (empty states, errors, menus, toasts).
   numbers; game logos where Lootnest has them; Atkinson Hyperlegible
   Next for everything else. Fewer words: names, numbers, states and keys;
   one short line only before something changes files.
-- **Keys.** The Play key (profile colour, Tilt Warp, a soft glow), ghost
-  keys (white 8% on glass, raised on obsidian), the red primary key,
-  icon keys. Pills for tabs and filters. All press (2px, 0.98).
+- **Icons.** Phosphor Icons (MIT), copied by `tools/icons.py` into
+  `js/01-icons.js` and drawn with `ph(name, weight)`: regular in keys,
+  rows and menus; fill for the current item (the sidebar's section, a
+  tab, a favourite, a switch that's on); duotone only for the big icon of
+  an empty page. Small: 16px in keys and rows, 14px in chips and small
+  keys, 18px in the sidebar, 24px only in Big Picture, 40px only on an
+  empty page. An icon goes with a word; icon-only keys (More, Close,
+  Back, Search) carry an aria-label and a tooltip. Not Lucide, the
+  default of generated apps.
+- **Keys that feel premium.** Every key has a fine light on its top edge
+  and a faint rim (an inset 1px highlight and a 1px rim at 5%), presses
+  1px and to 98%, and loses the light while pressed. Sizes: 32px small,
+  38px normal, 48px Play; radius 10px, 12px for Play; icon then word,
+  8px apart. Play: the seated profile's colour with a slight top-down
+  sheen, Tilt Warp 17px, the play icon filled, a soft glow of its colour
+  under it. Ghost on glass: white 7.5%, 13% on hover. Solid on obsidian:
+  a raised gradient. Red: one primary action where there's no Play. Icon
+  keys are square. Tabs and filters are pills; the current one is lit.
+  No heavy borders, no drop shadow except Play's glow and floating
+  layers.
 - **Motion.** Transform and opacity only. Art crossfades 700 ms; pages
   rise 18px over 600 ms (`--out`); the sidebar light and tab lights slide
   on a spring; covers lift on hover and grow when selected; the picker's
@@ -69,7 +86,8 @@ including the small ones (empty states, errors, menus, toasts).
 ## Phases
 
 1. **R0, the system and the shell (1.97.0).** New tokens in system.css
-   (palette, glass, mesh, motion, radius), the room (`#room`: art layers
+   (palette, glass, mesh, motion, radius), the icons (`js/01-icons.js`,
+   every inline icon swapped for `ph()`), the keys, the room (`#room`: art layers
    with crossfade, the dim and flat states), the mesh, the sidebar
    replacing the top bar (sections, search, games, seat, Settings, fold,
    resize), keys and pills restyled everywhere, Appearance in Settings

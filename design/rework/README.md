@@ -7,6 +7,7 @@ sidebar, the tabs, Library, Saves, Settings, T for an unlock toast).
 
 - `art/`: covers, wide art and logos as small WebP, from the harness's
   art cache. They belong to the games' makers; dev only.
+- Icons: Phosphor Icons (MIT), the same set the app uses (`js/01-icons.js`).
 - `src/`: what `reference.html` was built from (`base.css` with fonts,
   `data.js`, the page). The fonts are inlined from `internal/app/ui/fonts`.
 

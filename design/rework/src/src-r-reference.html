@@ -28,10 +28,13 @@ body.flat #bg { opacity: 0; }
 .side { position: fixed; z-index: 10; left: 12px; top: 12px; bottom: 12px; width: 252px; border-radius: 20px; display: flex; flex-direction: column; padding: 16px 10px 10px; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px 14px; font: 400 19px/1 var(--title); }
 .search { display: flex; align-items: center; gap: 10px; height: 38px; margin: 0 4px 10px; padding: 0 12px; border-radius: 11px; background: rgb(0 0 0 / 0.22); color: var(--fg-3); }
+.search .ln-icon { width: 16px; height: 16px; }
 .search kbd { margin-left: auto; font: 700 10.5px/1.6 var(--ui); padding: 0 6px; border-radius: 4px; background: rgb(255 255 255 / 0.08); color: var(--fg-2); }
 .nav { position: relative; display: grid; gap: 2px; }
 .nav button { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 11px; font-weight: 700; color: var(--fg-2); text-align: left; transition: color 0.2s; }
-.nav button svg { width: 18px; height: 18px; flex: none; }
+.nav button .ln-icon { width: 18px; height: 18px; flex: none; }
+.nav .i1 { display: none; } .nav button.on .i0 { display: none; } .nav button.on .i1 { display: contents; }
+.nav span.i0, .nav span.i1 { line-height: 0; }
 .nav button:hover { color: var(--ice); }
 .nav button.on { color: var(--ice); }
 .nav button .n { margin-left: auto; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--red); color: var(--on-red); }
@@ -47,6 +50,7 @@ body.flat #bg { opacity: 0; }
 .me .av { width: 34px; height: 34px; background: var(--c); transition: background 0.5s; }
 .me div { display: grid; line-height: 1.25; }
 .me small { color: var(--fg-3); }
+.me .gear .ln-icon { width: 18px; height: 18px; }
 .me .gear { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--fg-2); }
 .me .gear:hover { background: rgb(255 255 255 / 0.08); color: var(--ice); }
 
@@ -70,7 +74,8 @@ main { position: fixed; inset: 0 0 0 276px; z-index: 2; }
 .card .row + .row { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgb(255 255 255 / 0.08); }
 .card b { display: block; font-size: 15px; }
 .card small { color: var(--fg-2); }
-.trophy { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; border: 1.5px solid var(--rare); color: var(--rare); flex: none; font-size: 18px; }
+.trophy { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; border: 1.5px solid var(--rare); color: var(--rare); flex: none; }
+.trophy .ln-icon { width: 20px; height: 20px; }
 .pin { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; box-shadow: 0 0 0 4px color-mix(in oklab, var(--c) 25%, transparent); }
 .shelf { position: absolute; left: 44px; right: 0; bottom: 30px; }
 .shelf .label { display: flex; gap: 10px; }
@@ -194,13 +199,13 @@ h1 { margin: 0; font: 400 44px/1 var(--title); }
 <main>
   <section class="page on" id="home">
     <div class="feature"><div class="logo" id="h-logo"></div><div class="meta" id="h-meta"></div>
-      <div class="dock glass"><button class="key play" data-pick>${PLAY}<span class="pl">Play as Player 1</span></button><button class="key ghost" data-pick>Someone else</button><div class="who" id="h-who"></div><button class="key ghost" data-p="game">Open</button></div></div>
+      <div class="dock glass"><button class="key play" data-pick>${PLAY}<span class="pl">Play as Player 1</span></button><button class="key ghost" data-pick>${USERS}Someone else</button><div class="who" id="h-who"></div><button class="key ghost icon" data-p="game" aria-label="Open the game's page">${OPEN}</button></div></div>
     <div class="card glass" id="h-card"></div>
     <div class="shelf"><div class="label"><span>Continue</span><span class="faint">Arrows choose, Enter opens</span></div><div class="covers" id="h-covers"></div></div>
   </section>
   <section class="page" id="game">
     <div class="ghead"><div class="logo" id="g-logo"></div><div class="meta" id="g-meta"></div></div>
-    <div class="sheet glass"><div class="sheet-top"><button class="key play" data-pick>${PLAY}<span class="pl">Play as Player 1</span></button><button class="key ghost" data-pick>Someone else</button><button class="key ghost">+ New run</button><button class="key ghost" style="padding:0 14px" aria-label="More">${MORE}</button>
+    <div class="sheet glass"><div class="sheet-top"><button class="key play" data-pick>${PLAY}<span class="pl">Play as Player 1</span></button><button class="key ghost" data-pick>${USERS}Someone else</button><button class="key ghost">${PLUS}New run</button><button class="key ghost icon" aria-label="More">${MORE}</button>
       <div class="tabs" id="tabs"><button class="on" data-t="saves">Saves</button><button data-t="ach">Achievements</button><button data-t="mods">Mods</button><button>Timeline</button><button>News</button></div></div>
       <div class="gbody" id="gbody"></div></div>
   </section>
@@ -209,7 +214,7 @@ h1 { margin: 0; font: 400 44px/1 var(--title); }
     <div class="grid" id="l-grid"></div></div></section>
   <section class="page" id="saves"><div class="flatpage"><h1>Saves</h1>
     <div class="stats"><div><b>11</b><span>Games with copies</span></div><div><b>39</b><span>Save points</span></div><div><b>2 h ago</b><span>Newest copy</span></div><div><b>On</b><span>Cloud saves</span></div></div>
-    <div class="cols"><div><div class="sect">Recent copies</div><div class="panel" id="s-recent"></div></div><div><div class="sect">Needs a look</div><div class="panel"><div class="item"><span class="pin" style="--c:var(--rare)"></span><div><b>Hollow Knight</b><small>Saves gone from its folder. A copy is kept.</small></div><button class="key ghost sm" style="margin-left:auto">Put back</button></div></div></div></div></div></section>
+    <div class="cols"><div><div class="sect">Recent copies</div><div class="panel" id="s-recent"></div></div><div><div class="sect">Needs a look</div><div class="panel"><div class="item"><span class="pin" style="--c:var(--rare)"></span><div><b>Hollow Knight</b><small>Saves gone from its folder. A copy is kept.</small></div><button class="key ghost sm" style="margin-left:auto">${PUTBACK}Put back</button></div></div></div></div></div></section>
   <section class="page" id="settings"><div class="flatpage"><h1>Settings</h1>
     <div class="settings"><div class="cats"><button class="on">Appearance</button><button>General</button><button>Games and swaps</button><button>Controllers</button><button>Storage</button><button>Plugins</button><button>Online</button><button>Cloud saves</button><button>About</button></div>
       <div class="panel" style="padding:6px 22px">
@@ -226,17 +231,15 @@ h1 { margin: 0; font: 400 44px/1 var(--title); }
 <div class="over" id="pick"><div class="blur"></div><div class="in"><h2>Who's playing?</h2><div class="pks" id="pks"></div><p class="hint">1 to 4 on the keyboard, A on a controller, Esc to cancel</p></div></div>
 <div class="over" id="swap"><div class="blur"></div><div class="in"><div class="swapbox glass"><span class="av" id="sw-av">P2</span><h3 id="sw-h">Loading Player 2's files</h3>
   <div class="step"><i></i><span id="sw-0">Player 1's files go back to their slot</span></div><div class="step"><i></i><span>A copy is made and read back</span></div><div class="step"><i></i><span id="sw-2">Player 2's files go in</span></div><div class="prog"><i></i></div></div></div></div>
-<div class="toast glass" id="toast"><span class="trophy">★</span><div><small>Achievement unlocked</small><b>Critical hit</b><span>Rare, 4.1% of players</span></div></div>
+<div class="toast glass" id="toast"><span class="trophy" id="toast-i"></span><div><small>Achievement unlocked</small><b>Critical hit</b><span>Rare, 4.1% of players</span></div></div>
 <div class="note">The reference for the rework. Try: a cover, Play, the profile bottom left, Settings (the gear), Saves, the Library, the tabs, T for an unlock toast.</div>
 <script>
 /*@DATA@*/
 (() => {
-  const ic = (d) => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const I = { I_HOME: ic('<path d="M3.5 9 10 3.5 16.5 9v7.5h-4.5v-4.5h-4v4.5H3.5z"/>'), I_GRID: ic('<rect x="3.5" y="3.5" width="5" height="5" rx="1"/><rect x="11.5" y="3.5" width="5" height="5" rx="1"/><rect x="3.5" y="11.5" width="5" height="5" rx="1"/><rect x="11.5" y="11.5" width="5" height="5" rx="1"/>'),
-    I_BAG: ic('<path d="M4.5 6.5h11l-1 10h-9zM7.5 6.5V5a2.5 2.5 0 0 1 5 0v1.5"/>'), I_UP: ic('<circle cx="10" cy="10" r="6.5"/><path d="M10 13.5v-7M7 9l3-3 3 3"/>'),
-    I_TROPHY: ic('<path d="M6 3.5h8v3.2a4 4 0 0 1-8 0zM6 5H3.5v1a2.5 2.5 0 0 0 2.6 2.5M14 5h2.5v1a2.5 2.5 0 0 1-2.6 2.5M10 10.7v3M7 16.5h6"/>'), I_SHIELD: ic('<path d="M10 3 4.5 5v4.5c0 3.5 2.4 6 5.5 7.5 3.1-1.5 5.5-4 5.5-7.5V5z"/>'),
-    I_GEAR: ic('<circle cx="10" cy="10" r="2.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/>') };
-  for (const el of [document.querySelector(".side"), document.querySelector("main"), document.querySelector("#swap")]) el.innerHTML = el.innerHTML.replace(/\$\{(\w+)\}/g, (m, k) => ({ GEM, PLAY, BACK, MORE, SEARCH, ...I })[k] || "");
+  const nv = (n) => `<span class="i0">${ph(n)}</span><span class="i1">${ph(n, "fill")}</span>`;
+  const I = { I_HOME: nv("house"), I_GRID: nv("squares-four"), I_BAG: nv("storefront"), I_UP: nv("arrow-circle-up"), I_TROPHY: nv("trophy"), I_SHIELD: nv("vault"),
+    I_GEAR: ph("gear-six"), PLAY: ph("play", "fill"), SEARCH: ph("magnifying-glass"), MORE: ph("dots-three"), USERS: ph("users"), PLUS: ph("plus"), OPEN: ph("caret-right"), BACK: ph("caret-left"), PUTBACK: ph("arrow-clockwise") };
+  for (const el of [document.querySelector(".side"), document.querySelector("main"), document.querySelector("#swap")]) el.innerHTML = el.innerHTML.replace(/\$\{(\w+)\}/g, (m, k) => ({ GEM, ...I })[k] || "");
   const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
   let cur = GAMES[0], seat = 0, tab = "saves", page = "home";
   const P = () => PROFILES[seat];
@@ -251,7 +254,7 @@ h1 { margin: 0; font: 400 44px/1 var(--title); }
     $("#h-logo").innerHTML = logo(g); $("#h-meta").innerHTML = meta(g) + (g.status ? `<span class="chip glass">${g.status}</span>` : "");
     $("#g-logo").innerHTML = logo(g); $("#g-meta").innerHTML = meta(g);
     $("#h-card").innerHTML = `<div class="row"><span class="ring" style="--p:${g.ach[0] / g.ach[1]}" data-t="${Math.round(100 * g.ach[0] / g.ach[1])}%"></span><div><b>${g.ach[0]} of ${g.ach[1]}</b><small>Achievements</small></div></div>
-      <div class="row"><span class="trophy">★</span><div><b>Critical hit</b><small>Rarest, 4.1% of players</small></div></div>
+      <div class="row"><span class="trophy">${ph("trophy", "fill")}</span><div><b>Critical hit</b><small>Rarest, 4.1% of players</small></div></div>
       <div class="row"><span class="pin"></span><div><b>${g.points} save points</b><small>${g.saves} copies on this PC</small></div></div>`;
     $$(".cov").forEach((c) => c.classList.toggle("on", c.dataset.g === g.id));
     $$(".gi").forEach((c) => c.classList.toggle("on", c.dataset.g === g.id));
@@ -270,18 +273,18 @@ h1 { margin: 0; font: 400 44px/1 var(--title); }
   $("#h-who").innerHTML = PROFILES.slice(0, 2).map((p) => `<span class="av" style="--pc:${p.c}">${p.short}</span>`).join("");
   $("#h-covers").innerHTML = GAMES.slice(0, 7).map((g, i) => `<button class="cov" data-g="${g.id}" style="--pc:${i % 3 ? "#e88ca0" : "#6c9bd2"}"><img src="${A(g.id + "-c")}" alt="${g.name}">${i < 4 ? '<span class="dot"></span>' : ""}</button>`).join("");
   $("#l-grid").innerHTML = GAMES.map((g) => `<div><button class="cov" data-g="${g.id}" data-open><img src="${A(g.id + "-c")}" alt="${g.name}"></button><p>${g.name}</p><small>${g.store}</small></div>`).join("");
-  $("#s-recent").innerHTML = GAMES.slice(0, 5).map((g, i) => `<div class="item"><img src="${A(g.id + "-c")}" alt=""><div><b>${g.name}</b><small>${["2 hours ago", "Yesterday", "2 days ago", "Last week", "Last week"][i]}, before a swap</small></div><button class="key ghost sm" style="margin-left:auto">Put back</button></div>`).join("");
+  $("#s-recent").innerHTML = GAMES.slice(0, 5).map((g, i) => `<div class="item"><img src="${A(g.id + "-c")}" alt=""><div><b>${g.name}</b><small>${["2 hours ago", "Yesterday", "2 days ago", "Last week", "Last week"][i]}, before a swap</small></div><button class="key solid sm" style="margin-left:auto">${ph("arrow-clockwise")}Put back</button></div>`).join("");
   $("#pks").innerHTML = PROFILES.map((p, i) => `<button class="pk glass" data-seat="${i}" style="--pc:${p.c}"><span class="av">${p.short}</span><b>${p.of ? "hardcore" : p.name}</b><small>${p.of ? "Player 1's run" : i ? "Played 3 days ago" : "Played 2 days ago"}</small></button>`).join("")
     + `<button class="pk glass new"><span class="av">+</span><b>New profile</b><small>Someone new, or a run</small></button>`;
   function renderGame() {
     const p = P();
-    const saves = `<div class="list"><div class="label">Save points</div>${POINTS.map(([n, w, l]) => `<div class="item"><span class="pin"></span><div><b>${n}</b><small>${w}, ${l}</small></div><button class="key ghost sm" style="margin-left:auto">Go back</button></div>`).join("")}</div>
+    const saves = `<div class="list"><div class="label">Save points</div>${POINTS.map(([n, w, l]) => `<div class="item"><span class="pin"></span><div><b>${n}</b><small>${w}, ${l}</small></div><button class="key ghost sm" style="margin-left:auto">${ph("clock-counter-clockwise")}Go back</button></div>`).join("")}</div>
       <div class="list"><div class="label">Profiles in this game</div>${PROFILES.map((q) => `<div class="item"><span class="av" style="--pc:${q.c}">${q.short}</span><div><b>${q.of ? "hardcore" : q.name}</b><small>${q.of ? "Player 1's run" : "Saved 2 days ago"}</small></div><span class="end">${q.id === "p1" ? 44 : q.id === "p2" ? 88 : 0} h</span></div>`).join("")}</div>
       <div class="list"><div class="label">Copies on this PC</div><div class="item"><div><b>${cur.saves} copies</b><small>Newest 2 hours ago</small></div></div><div class="item"><div><b>Cloud saves</b><small>OneDrive folder</small></div><span class="sw on" data-sw></span></div></div>`;
-    const ach = `<div class="list" style="grid-column:span 2"><div class="label">${p.name}, ${cur.ach[0]} of ${cur.ach[1]}</div>${ACH.map(([n, r, got]) => `<div class="item" style="opacity:${got ? 1 : 0.45}"><span class="trophy" style="width:36px;height:36px;border-radius:9px">★</span><div><b>${n}</b><small>${r}</small></div><span class="end">${got ? "Unlocked" : "Locked"}</span></div>`).join("")}</div>
+    const ach = `<div class="list" style="grid-column:span 2"><div class="label">${p.name}, ${cur.ach[0]} of ${cur.ach[1]}</div>${ACH.map(([n, r, got]) => `<div class="item" style="opacity:${got ? 1 : 0.45}"><span class="trophy" style="width:36px;height:36px;border-radius:9px">${ph("trophy", "fill")}</span><div><b>${n}</b><small>${r}</small></div><span class="end">${got ? "Unlocked" : "Locked"}</span></div>`).join("")}</div>
       <div class="list"><div class="label">Progress</div><div class="item"><span class="ring" style="--p:${cur.ach[0] / cur.ach[1]}" data-t="${Math.round(100 * cur.ach[0] / cur.ach[1])}%"></span><div><b>Rarest unlocked</b><small>Critical hit, 4.1%</small></div></div></div>`;
     const mods = `<div class="list" style="grid-column:span 2"><div class="label">${p.name}'s mods</div>${MODS.map(([n, f, on]) => `<div class="item"><div><b>${n}</b><small>${f}</small></div><span class="sw ${on ? "on" : ""}" data-sw></span></div>`).join("")}</div>
-      <div class="list"><div class="label">The game's own files</div><div class="item"><div><b>Kept, 16 files</b><small>Put back in one click</small></div></div><button class="key ghost" style="margin-top:8px">Put the game back</button></div>`;
+      <div class="list"><div class="label">The game's own files</div><div class="item"><div><b>Kept, 16 files</b><small>Put back in one click</small></div></div><button class="key ghost" style="margin-top:8px">${ph("arrow-clockwise")}Put the game back</button></div>`;
     $("#gbody").innerHTML = tab === "ach" ? ach : tab === "mods" ? mods : saves;
   }
   // the sidebar's light slides to the section
@@ -330,6 +333,7 @@ h1 { margin: 0; font: 400 44px/1 var(--title); }
     if (e.key === "Escape" || e.key === "Backspace") go("home");
     if (e.key === "t") { $("#toast").classList.add("on"); setTimeout(() => $("#toast").classList.remove("on"), 3200); }
   });
+  $("#toast-i").innerHTML = ph("trophy", "fill");
   setSeat(0); setGame(GAMES[0]); go("home");
   document.fonts.ready.then(() => go(page));
 })();
