@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.102.0, beta)
+## Where things stand (1.103.0, beta)
 
 These shipped recently, newest last:
 
@@ -796,6 +796,11 @@ These shipped recently, newest last:
   turns `--bg-surface` inside `.view` into `--glass-panel-page`, so
   their panels are glass. A profile's page keeps its own banner; the
   Store keeps its feature art; dialogs and drawers were R4.
+- **1.103** The rework, R6, Settings: `settings` joins `PAGE_ROOM`, so
+  every category's boards are glass over the dim room; `.set-nav` is a
+  glass column, `.set-ic` bare icons (no tiles, no section colour), the
+  current category lit with `--key-light`; Games and swaps uses
+  `arrows-left-right`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

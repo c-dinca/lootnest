@@ -155,13 +155,13 @@
     if (S.view === "library") return S.libFocus || lastWithArt();
     // Editing a game: that game, dark, as behind the Library.
     if (S.view === "edit" && S.edit && !S.edit.isNew) return everyItem().find((x) => x.kind === "game" && x.id === S.edit.game.id) || null;
-    // Saves, Updates, Achievements and Profiles: the last game played, dark,
+    // Saves, Updates, Achievements, Profiles and Settings: the last game played, dark,
     // so no page sits on bare obsidian.
     if (PAGE_ROOM.has(S.view)) return lastWithArt();
     return null;
   }
-  const DIM_ROOM = new Set(["library", "edit", "saves", "updates", "achievements", "players"]);
-  const PAGE_ROOM = new Set(["saves", "updates", "achievements", "players"]);
+  const DIM_ROOM = new Set(["library", "edit", "saves", "updates", "achievements", "players", "settings"]);
+  const PAGE_ROOM = new Set(["saves", "updates", "achievements", "players", "settings"]);
   const lastWithArt = () => recentItems(libraryItems(), false).find((x) => artFor(x, "hero").from === "hero") || null;
   function renderRoom() {
     const room = $("#room"), art = room.querySelector(".room-art");

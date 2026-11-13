@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.103.0
+
+The new look reaches Settings.
+
+- **Settings sits over the game you played last**, like the other pages, with every group of settings on glass.
+- **The list of categories is a column of glass**, with plain icons and a soft light on the one you're in.
+
 ## 1.102.0
 
 The new look reaches Saves, Updates, Achievements and Profiles.
