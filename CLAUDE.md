@@ -61,8 +61,12 @@ What makes it different, and the direction to keep pushing:
   (`site.js`), a game's "Load game" screen with slots. Screenshots in
   `site/img` come from the harness at 2x with `?anon=1&runs=1`: the site
   shows no real names, only "Player 1" and "Player 2" (the owner asked).
-  The site is short on purpose (the owner: less text, more to try): the
-  slot demo, a tour of five screenshots, Works with, Never, Download.
+  The site is short on purpose (the owner: less text, more alive, no
+  pile of screenshots): two scroll stories on a sticky stage (profiles
+  and runs; then achievements, save points, mods, updates, Big Picture),
+  Also in it, Never, Download. The owner chose this over two other
+  directions (13 Nov 2026); the launcher's look is to follow the site's
+  palette.
   The README is short too; details live in `docs/GUIDE.md` and
   `docs/PRIVACY.md`, its screenshots in `docs/screenshots` come from the
   harness without `anon`. The harness's profiles are made-up names
