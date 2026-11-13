@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.104.0
+
+The new look reaches Big Picture and the unlock notice.
+
+- **Big Picture matches the window.** The game you're on fills the screen more brightly, the tabs are pills with a light that slides between them, and the keys are glass.
+- **Row titles in Big Picture lose their underline**, for a calmer screen from the couch.
+- **The unlock notice over a game** uses the same obsidian and greys as the window.
+
 ## 1.103.0
 
 The new look reaches Settings.

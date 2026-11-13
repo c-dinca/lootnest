@@ -2320,3 +2320,28 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
    dialogs' size. */
 .ln-drawer__foot .ln-button--sm { height: var(--ctl-md); padding: 0 var(--space-4); font-size: var(--fs-14); }
 .ln-drawer__foot .ln-button--sm.ln-button--icon { width: var(--ctl-md); padding: 0; }
+
+/* =========================================================== big picture
+   Since the rework (R7): the same room and glass at 10-foot scale. The
+   focused game's art fills the screen; the tabs are pills with a light
+   that slides; row labels are plain Tilt Warp; keys and cards are glass
+   with a top light. */
+.bp { background: var(--bg-ground); }
+.bp-bg-l.on { opacity: .8; }
+.bp-tab { border-radius: var(--radius-round); font: 400 var(--fs-24)/1 var(--font-title); }
+.bp-tab[aria-current="true"] { font-weight: 400; }
+.bp-ind { top: 0; bottom: 0; width: 0; border-radius: var(--radius-round); background: var(--glass-ctl-hover); box-shadow: var(--key-light); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  transition: transform var(--dur-page) var(--ease-spring), width var(--dur-page) var(--ease-spring), opacity var(--dur-2) var(--ease-out); }
+.bp-row h2, .bp-h { border-bottom: 0; }
+.bp .ln-label { padding: 0; background: none; color: var(--fg-1); font: 400 var(--text-section)/1.1 var(--font-title); }
+.bp .ln-label::before, .bp .ln-label::after { display: none; }
+.bp-exit, .bp-sound { border-radius: var(--radius-key); background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); }
+.bp-exit:hover, .bp-sound:hover { background: var(--glass-strong); }
+.bp-exit:active, .bp-sound:active { transform: translateY(1px); box-shadow: var(--key-down); }
+.bp-tile-art { border-radius: var(--radius-cover); }
+.bp-btn { --bp-lip: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); border-radius: var(--radius-play); background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
+.bp-btn--primary { --bp-lip: var(--key-light-strong); background: var(--accent); }
+.bp-btn--play { --bp-lip: var(--key-light-strong), 0 12px 40px -12px color-mix(in oklab, var(--player-fill) 70%, transparent); background: var(--player-fill); }
+.bp-btn:active, .bp-btn--primary:active, .bp-btn--play:active { --bp-lip: var(--key-down); transform: translateY(1px); }
+.bp-achcard, .bp-person { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light); border-radius: var(--radius-glass); }
+.bp-choose h1 { font-weight: 400; }
