@@ -155,6 +155,7 @@
   }
   function renderRoom() {
     const room = $("#room"), art = room.querySelector(".room-art");
+    veil();
     const keep = S.view === "library";
     const it = keep ? null : roomItem();
     const a = it && artFor(it, "hero"), url = a && a.from === "hero" ? a.url : "";
@@ -171,6 +172,18 @@
     };
     img.decode ? img.decode().then(show, show) : show();
   }
+  // Scrolling a page down veils the room: fully once the first screen has
+  // scrolled away, so text further down never sits on bright art.
+  let veilQueued = false;
+  function veil() {
+    const v = $("#view"), f = Math.min(1, v.scrollTop / Math.max(1, v.clientHeight * 0.6));
+    $("#room").style.setProperty("--room-veil", (f * 0.9).toFixed(3));
+  }
+  $("#view").addEventListener("scroll", () => {
+    if (veilQueued) return;
+    veilQueued = true;
+    requestAnimationFrame(() => { veilQueued = false; veil(); });
+  }, { passive: true });
   // Settings, Appearance: see-through panels, the art behind pages, motion.
   function applyAppearance() {
     const s = cfg().settings || {}, c = document.documentElement.classList;

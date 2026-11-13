@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.97.0, beta)
+## Where things stand (1.98.0, beta)
 
 These shipped recently, newest last:
 
@@ -764,6 +764,12 @@ These shipped recently, newest last:
   controls, plain section titles, glass drawers and toasts, Settings,
   Appearance (`Settings.GlassOff`, `RoomOff`, `Motion`; action
   `set-motion`). Plugin themes accept `rgb()`.
+- **1.98** The rework, R1, Home: the game in focus (`S.homePick`, else
+  the last played) is the room (`S.roomPick`); `.home-stage` holds its
+  title and a glass play dock (`gameView`'s bar) beside `homeCard()`
+  (achievements, rarest, time, save points); `homeShelf()` covers, action
+  `home-pick` (first click picks, second opens), arrows move; the room
+  veils as the page scrolls (`veil()`, `.room-veil`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

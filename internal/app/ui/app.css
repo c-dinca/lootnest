@@ -483,8 +483,8 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
   background: var(--glass-bar); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
   border: 0; border-radius: var(--radius-dialog); box-shadow: var(--lip-panel), inset 0 0 0 var(--hairline) var(--edge-1);
 }
-.gpage-bar .ln-button--lg { min-width: var(--play-w); height: var(--ctl-play); border-radius: var(--radius-panel); font: 400 var(--fs-18)/1 var(--font-title); }
-.gpage-bar .ln-button--lg .ln-icon { width: var(--icon-md); height: var(--icon-md); }
+.gpage-bar .ln-button--lg { min-width: var(--play-w); height: var(--ctl-lg); border-radius: var(--radius-play); font: 400 var(--text-play)/1 var(--font-title); }
+.gpage-bar .ln-button--lg .ln-icon { width: var(--icon-xs); height: var(--icon-xs); }
 .gpage-state { display: grid; gap: 2px; padding-left: var(--space-2); }
 .gpage-state b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-15); font-weight: 750; }
 .gpage-state span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
@@ -552,6 +552,49 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 }
 
 /* ------------------------------------------------------------------ home */
+/* Home since the rework (R1): the game in focus is the room behind the
+   page. Its name or logo and Play float over the art, a glass card of what
+   Lootnest knows about it sits beside them, and a shelf of covers picks
+   the next game. The rest of Home follows under it. */
+.gpage.home .gpage-art, .gpage.home .gpage-plate, .gpage.home .gpage-hero::after { display: none; }
+.gpage.home .gpage-hero { display: block; height: auto; min-height: 0; padding: 0; overflow: visible; }
+.home-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); align-items: end; gap: var(--space-8); min-height: clamp(360px, 56vh, 640px); padding: var(--space-10) var(--page-gutter) 0; }
+.home-feature { min-width: 0; }
+.home-feature .gpage-title { padding: 0; }
+.home-feature .gpage-logo { max-height: clamp(96px, 16vh, 168px); filter: var(--shadow-logo); }
+.home-feature h1 { text-shadow: 0 2px 24px rgb(0 0 0 / 0.55); }
+.home-feature .gpage-meta { text-shadow: 0 1px 12px rgb(0 0 0 / 0.6); }
+.home-feature .gpage-bar { display: inline-flex; max-width: 100%; margin-top: var(--space-6); padding: var(--space-2); gap: var(--space-3); border-radius: var(--radius-dialog); background: var(--glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light), 0 24px 60px -24px rgb(0 0 0 / 0.7); }
+.home-feature .gpage-bar > .gpage-state { flex: 0 1 auto; padding-right: var(--space-2); }
+.home-feature .gpage-others { flex-wrap: nowrap; }
+.home-feature .gpage-note { margin-top: var(--space-3); }
+.home-card { align-self: end; padding: var(--space-1) var(--space-4); border-radius: var(--radius-dialog); background: var(--glass-strong); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light), 0 24px 60px -24px rgb(0 0 0 / 0.7); }
+.home-card-row { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3) 0; }
+.home-card-row + .home-card-row { border-top: var(--hairline) solid var(--edge-1); }
+.home-card-row > div { display: grid; gap: 1px; min-width: 0; }
+.home-card-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-15); font-weight: 750; }
+.home-card-row span:not([class]) { font-size: var(--fs-13); color: var(--fg-2); }
+.home-ring { --p: 0; flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-round); background: conic-gradient(var(--fg-1) calc(var(--p) * 1%), var(--glass-ctl-hover) 0); }
+.home-ring b { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius-round); background: var(--bg-ground); font-size: 11px; font-weight: 800; }
+.home-card-ico { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-panel); background: var(--glass-ctl); color: var(--fg-2); }
+.home-card-ico .ln-icon { width: var(--icon-md); height: var(--icon-md); }
+.home-card-ico.is-rare { background: none; box-shadow: inset 0 0 0 1.5px var(--tier-ultra); color: var(--tier-ultra); }
+.home-shelf { padding: var(--space-8) var(--page-gutter) 0; }
+.home-shelf-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.home-shelf-head h2 { margin: 0; font: 750 var(--fs-13)/1 var(--font-ui); color: var(--fg-2); }
+.home-covers { display: flex; gap: var(--space-4); margin: 0 calc(-1 * var(--space-2)); padding: var(--space-6) var(--space-2) var(--space-6); overflow-x: auto; scrollbar-width: none; }
+.home-covers::-webkit-scrollbar { display: none; }
+.home-cov { position: relative; flex: none; width: clamp(112px, 8.6vw, 148px); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: var(--radius-panel); overflow: hidden; background: var(--bg-surface); cursor: pointer;
+  box-shadow: 0 16px 40px -18px rgb(0 0 0 / 0.9); outline: 3px solid transparent; outline-offset: 4px;
+  transition: transform var(--dur-3) var(--ease-spring), box-shadow var(--dur-2) var(--ease-out), outline-color var(--dur-2) var(--ease-out); }
+.home-cov img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.home-cov:hover { transform: translateY(-5px); }
+.home-cov.on { transform: translateY(-8px) scale(1.05); outline-color: var(--fg-1); box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.95); }
+.home-cov:focus-visible { outline-color: var(--focus-ring); }
+.home-cov-none { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: var(--space-3); background: linear-gradient(160deg, var(--bg-active), var(--bg-surface)); color: var(--fg-1); font: 400 var(--fs-15)/1.1 var(--font-title); text-align: left; }
+.gpage-body.home-below { margin-top: var(--space-6); }
+@media (max-width: 1100px) { .home-stage { grid-template-columns: minmax(0, 1fr); } .home-card { display: none; } }
+
 .home-empty .home-cols { margin-top: var(--space-8); }
 .home-empty > .ln-banner { margin-bottom: var(--space-6); }
 .lib > .ln-empty { margin-top: var(--space-8); }
@@ -1504,6 +1547,8 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .room-art::after { content: ""; position: absolute; inset: 0; background: var(--scrim-room); }
 .room.is-dim .room-art { filter: var(--room-dim); transform: scale(1.08); }
 .room.is-flat .room-art { opacity: 0; }
+/* Scrolling a page down veils the art, so what's under it reads. */
+.room-veil { position: absolute; inset: 0; background: var(--bg-ground); opacity: var(--room-veil, 0); }
 .room-mesh { position: absolute; inset: 0; transition: background var(--dur-backdrop) var(--ease-out);
   background: radial-gradient(44vw 40vh at 26% 88%, color-mix(in oklab, var(--seat-c, transparent) var(--mesh-seat), transparent), transparent 70%),
     radial-gradient(30vw 30vh at 4% 0%, var(--mesh-red), transparent 70%); }

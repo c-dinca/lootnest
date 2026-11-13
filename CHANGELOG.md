@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.98.0
+
+The new look reaches Home.
+
+- **The game fills Home.** The game you're on fills the whole window behind Home: its logo or name, how long ago you played and who has profiles sit over its art, with Play and Someone else on a bar of glass.
+- **A card beside Play** shows what Lootnest knows about that game: achievements and how far along you are, the rarest one you've unlocked, the time played on this PC and your save points.
+- **Continue is a shelf of covers.** Click a cover and Home switches to that game, art and all; click it again, or press Enter, to open its page. The arrow keys move along the shelf.
+- Scrolling down Home darkens the art, so news, Who's playing, Tonight and Your saves read clearly.
+
 ## 1.97.0
 
 The first part of a new look for the whole of Lootnest. The rest of the pages follow in the next versions.
