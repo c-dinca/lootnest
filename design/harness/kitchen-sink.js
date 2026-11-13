@@ -5,8 +5,8 @@
   const ART = window.__ART || {};
   const art = (id, kind) => ART[`${id}-${kind}`] || "";
   const P = {
-    mihai: { name: "Mihai", color: "#D9738E" },
-    cristian: { name: "Cristian", color: "#6C9BD2" },
+    sam: { name: "Sam", color: "#D9738E" },
+    alex: { name: "Alex", color: "#6C9BD2" },
     ana: { name: "Ana", color: "#5FB49C" },
     dan: { name: "Dan", color: "#C9A35F" },
   };
@@ -30,8 +30,8 @@
     ["Secondary", "ln-button--secondary", "Load someone's files", ""],
     ["Ghost", "ln-button--ghost", "Library", "back"],
     ["Destructive", "ln-button--danger", "Turn off profiles", "power"],
-    ["Play as a player", "ln-button--play ln-button--lg", "Play as Mihai", "play", P.mihai],
-    ["", "ln-button--play ln-button--lg", "Play as Cristian", "play", P.cristian],
+    ["Play as a player", "ln-button--play ln-button--lg", "Play as Sam", "play", P.sam],
+    ["", "ln-button--play ln-button--lg", "Play as Alex", "play", P.alex],
     ["Small", "ln-button--secondary ln-button--sm", "Switch", "switch"],
   ];
 
@@ -113,28 +113,28 @@
 
   ${sec("Players", "Avatars, the chips you pick someone with, and tags.", `
     <div class="ks-flow">
-      ${av(P.mihai, "20")}${av(P.mihai)}${av(P.cristian, "32")}${av(P.ana, "48")}
+      ${av(P.sam, "20")}${av(P.sam)}${av(P.alex, "32")}${av(P.ana, "48")}
       <span class="ln-avatar ln-avatar--72 ln-player" style="--player:${P.dan.color}" aria-hidden="true">D</span>
     </div>
     <div class="ks-grid" style="--cols:6">
       <span></span>${["Default", "Hover", "Active", "Focus", "Loaded", "Disabled"].map((s) => `<span class="ks-col">${s}</span>`).join("")}
       <span class="ks-row-label">Chip</span>
-      ${["", "hover", "active", "focus", "pressed", "disabled"].map((s) => `<div><button class="ln-chip ln-player" type="button" style="--player:${P.cristian.color}"${s === "pressed" ? ' aria-pressed="true"' : ""}${s === "disabled" ? " disabled" : ""}${["hover", "active", "focus"].includes(s) ? ` data-force="${s}"` : ""}>${av(P.cristian)}Cristian</button></div>`).join("")}
+      ${["", "hover", "active", "focus", "pressed", "disabled"].map((s) => `<div><button class="ln-chip ln-player" type="button" style="--player:${P.alex.color}"${s === "pressed" ? ' aria-pressed="true"' : ""}${s === "disabled" ? " disabled" : ""}${["hover", "active", "focus"].includes(s) ? ` data-force="${s}"` : ""}>${av(P.alex)}Alex</button></div>`).join("")}
     </div>
     <div class="ks-flow">
       <span class="ln-tag">Seated</span>
-      <span class="ln-tag ln-tag--player ln-player" style="--player:${P.mihai.color}">Playing</span>
+      <span class="ln-tag ln-tag--player ln-player" style="--player:${P.sam.color}">Playing</span>
       <span class="ln-tag">Steam</span>
       <span class="ln-tag">Profiles on</span>
-      <span class="ks-inline"><span class="ln-mark ln-player" style="--player:${P.mihai.color}"></span>Mihai's files</span>
+      <span class="ks-inline"><span class="ln-mark ln-player" style="--player:${P.sam.color}"></span>Sam's files</span>
     </div>`)}
 
   ${sec("Game tiles", "The cover is the content. A colour code along the bottom shows who has a profile; the tall bar is whose files are loaded.", `
     <div class="ks-tiles">
-      <div>${tile({ id: 730, title: "Counter-Strike 2", store: "Steam", owners: [P.cristian, P.mihai], loaded: P.mihai })}<span class="ks-cap">Profiles on, Mihai loaded</span></div>
-      <div>${tile({ id: 1086940, title: "Baldur's Gate 3", store: "Steam", owners: [P.mihai, P.cristian, P.ana], loaded: P.ana, state: "hover" })}<span class="ks-cap">Hover</span></div>
-      <div>${tile({ id: 1426210, title: "It Takes Two", store: "Steam", owners: [P.cristian, P.mihai], loaded: P.cristian, state: "focus" })}<span class="ks-cap">Focus</span></div>
-      <div>${tile({ id: 1091500, title: "Cyberpunk 2077", store: "Steam", owners: [P.mihai], loaded: P.mihai, badge: `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${P.mihai.color}">Playing</span>` })}<span class="ks-cap">Playing</span></div>
+      <div>${tile({ id: 730, title: "Counter-Strike 2", store: "Steam", owners: [P.alex, P.sam], loaded: P.sam })}<span class="ks-cap">Profiles on, Sam loaded</span></div>
+      <div>${tile({ id: 1086940, title: "Baldur's Gate 3", store: "Steam", owners: [P.sam, P.alex, P.ana], loaded: P.ana, state: "hover" })}<span class="ks-cap">Hover</span></div>
+      <div>${tile({ id: 1426210, title: "It Takes Two", store: "Steam", owners: [P.alex, P.sam], loaded: P.alex, state: "focus" })}<span class="ks-cap">Focus</span></div>
+      <div>${tile({ id: 1091500, title: "Cyberpunk 2077", store: "Steam", owners: [P.sam], loaded: P.sam, badge: `<span class="ln-tile__badge ln-tag ln-tag--player ln-player" style="--player:${P.sam.color}">Playing</span>` })}<span class="ks-cap">Playing</span></div>
       <div>${tile({ id: 250900, title: "The Binding of Isaac: Rebirth", store: "Steam" })}<span class="ks-cap">Long title, profiles off</span></div>
       <div>${tile({ title: "Phantom Blade Zero", store: "Game folder", none: true })}<span class="ks-cap">No art</span></div>
       <div>${tileLoading}<span class="ks-cap">Loading</span></div>
@@ -142,17 +142,17 @@
 
   ${sec("Metadata", "Facts you scan: the value first, then what it is.", `
     <dl class="ln-meta">
-      <div class="ln-meta__item"><dd class="ln-num">44<small>h</small></dd><dt><span class="ln-mark ln-player" style="--player:${P.mihai.color}"></span>Mihai</dt></div>
-      <div class="ln-meta__item"><dd class="ln-num">22<small>h</small></dd><dt><span class="ln-mark ln-player" style="--player:${P.cristian.color}"></span>Cristian</dt></div>
+      <div class="ln-meta__item"><dd class="ln-num">44<small>h</small></dd><dt><span class="ln-mark ln-player" style="--player:${P.sam.color}"></span>Sam</dt></div>
+      <div class="ln-meta__item"><dd class="ln-num">22<small>h</small></dd><dt><span class="ln-mark ln-player" style="--player:${P.alex.color}"></span>Alex</dt></div>
       <div class="ln-meta__item"><dd class="ln-num">412<small>h</small></dd><dt>Steam account</dt></div>
-      <div class="ln-meta__item"><dd class="ln-meta__text">5 hours ago</dd><dt>Cristian played last</dt></div>
+      <div class="ln-meta__item"><dd class="ln-meta__text">5 hours ago</dd><dt>Alex played last</dt></div>
       <div class="ln-meta__item"><dd class="ln-meta__text">Steam</dd><dt>Store</dt></div>
     </dl>
     <div class="ks-two">
       <div><div class="ln-section-head ln-section-head--minor"><h2>Last played</h2></div>
         <dl class="ln-facts">
-          <div><dt>${av(P.mihai, "20")}Mihai</dt><dd>Yesterday</dd></div>
-          <div><dt>${av(P.cristian, "20")}Cristian</dt><dd>5 hours ago</dd></div>
+          <div><dt>${av(P.sam, "20")}Sam</dt><dd>Yesterday</dd></div>
+          <div><dt>${av(P.alex, "20")}Alex</dt><dd>5 hours ago</dd></div>
         </dl></div>
       <div><div class="ln-section-head ln-section-head--minor"><h2>Loading</h2></div>
         <dl class="ln-meta" aria-busy="true">
@@ -214,7 +214,7 @@
 
   ${sec("Toasts", "Short, specific, and the same words as the action that caused them.", `
     <div class="ks-toasts">
-      <div class="ln-toast ln-player" style="--player:${P.mihai.color}">${av(P.mihai)}<p>Mihai's files are loaded<span>Counter-Strike 2. A copy of Cristian's was made first.</span></p>${button("ln-button--ghost ln-button--sm", "Open backups", "", "default")}</div>
+      <div class="ln-toast ln-player" style="--player:${P.sam.color}">${av(P.sam)}<p>Sam's files are loaded<span>Counter-Strike 2. A copy of Alex's was made first.</span></p>${button("ln-button--ghost ln-button--sm", "Open backups", "", "default")}</div>
       <div class="ln-toast ln-toast--success">${i("ok")}<p>Saved to the cloud<span>Hollow Knight, 2 files</span></p></div>
       <div class="ln-toast">${i("info")}<p>Lootnest 1.16.0 is out. Update from the sidebar.</p></div>
       <div class="ln-toast ln-toast--error">${i("alert")}<p>Couldn't move Cyberpunk 2077<span>D: has 12 GB free and the game needs 64 GB.</span></p>${button("ln-button--ghost ln-button--sm", "Choose another drive", "", "default")}</div>

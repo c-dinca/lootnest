@@ -61,6 +61,12 @@ What makes it different, and the direction to keep pushing:
   (`site.js`), a game's "Load game" screen with slots. Screenshots in
   `site/img` come from the harness at 2x with `?anon=1&runs=1`: the site
   shows no real names, only "Player 1" and "Player 2" (the owner asked).
+  The site is short on purpose (the owner: less text, more to try): the
+  slot demo, a tour of five screenshots, Works with, Never, Download.
+  The README is short too; details live in `docs/GUIDE.md` and
+  `docs/PRIVACY.md`, its screenshots in `docs/screenshots` come from the
+  harness without `anon`. The harness's profiles are made-up names
+  (Alex, Sam...): never the owner's or anyone real.
   A change only to `site/` or docs ships no app, so it needs no VERSION
   bump or release.
 - `design/harness`: a dev-only fixture harness that renders the real UI in
