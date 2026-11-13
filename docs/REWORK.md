@@ -123,6 +123,7 @@ including the small ones (empty states, errors, menus, toasts).
    tasks, dropped frames) for page changes, the game page's first 600 ms,
    ?games=400, drawers, the picker, Big Picture; fix redraws; a cover
    flies into its game page (FLIP); numbers before and after in the PR.
+   Done in 1.105 except the FLIP.
 10. **R9, themes and the sweep.** Built-in themes on the plugin theme
     machinery (Lootnest default, Arcade kept for those who liked it, High
     contrast), per profile; a final pass over every surface against the

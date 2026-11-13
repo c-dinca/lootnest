@@ -58,9 +58,9 @@
     filter: "all",     // library: "all", "profiles" or "owned" (not installed)
     store: "all",      // library: a store or launcher, or "all"
     who: "",           // library: only the games this player has a profile in or played last
-    covers: {},        // cover key -> data: URL, or "" when there is none (yet)
-    icons: {},         // cover key -> the game exe's icon as a data: URL, or "" (shown when there's no cover)
-    art: {},           // "hero:<appid>" / "logo:<appid>" -> Steam's wide art and logo, or ""
+    covers: artStore(), // cover key -> a blob: URL, or "" when there is none (yet)
+    icons: artStore(),  // cover key -> the game exe's icon, or "" (shown when there's no cover)
+    art: artStore(),    // "hero:<appid>" / "logo:<appid>" -> Steam's wide art and logo, or ""
     custom: {},        // "<Library key>:<file>" -> art the user chose (Manage, Cover and art), or ""
     news: {},          // cover key -> {items, newer, none, error} from Steam's news feed, or {loading: true}
     details: {},       // Library key -> {details, edited, fetching, error} from ps_gameDetails, or {loading: true}
@@ -94,6 +94,16 @@
   let seq = 0;
 
   const $ = (sel, root = document) => root.querySelector(sel);
+  // Pictures come from Go as data: URLs, many of them 50 KB of text or more.
+  // Kept as blob: URLs instead, the HTML that shows them stays short, so a
+  // Library of hundreds of games draws without parsing megabytes of text.
+  function artStore() {
+    return new Proxy({}, { set(t, k, v) { t[k] = typeof v === "string" && v.length > 4096 && /^data:[^,]*;base64,/.test(v.slice(0, 64)) ? safeBlob(v) : v; return true; } });
+  }
+  function safeBlob(d) { try { return blobURL(d); } catch (e) { return d; } }
+  // Names in the reader's order, case and accents aside. One collator for
+  // every sort: localeCompare with options builds one per comparison.
+  const byName = new Intl.Collator(undefined, { sensitivity: "base", numeric: true }).compare;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const errText = (e) => (typeof e === "string" ? e : (e && e.message) || "Something went wrong.");
   const cfg = () => S.d.config;

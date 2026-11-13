@@ -34,7 +34,7 @@
       grp.classList.toggle("closed");
       el.setAttribute("aria-expanded", !grp.classList.contains("closed"));
       if (!grp.classList.contains("closed")) { const r = grp.querySelector(".sg-rows"); r.classList.add("opening"); r.addEventListener("animationend", () => r.classList.remove("opening"), { once: true }); watchSideThumbs(); }
-      $("#side-games").dataset.html = "";
+      sideDrawn = "";
     },
     "tag-new"() { startNewTag([]); },
     "tag-new-for"() { startNewTag(S.tagPick); },
@@ -683,7 +683,7 @@
     async "covers-on"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.downloadCovers = true;
-      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = {}; S.icons = {}; S.art = {}; artWanted.clear(); pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); S.covers = artStore(); S.icons = artStore(); S.art = artStore(); artWanted.clear(); pendingCovers.clear(); await refresh(); } catch (e) { toast(errText(e), "error"); }
     },
     "covers-later"() { S.hideCoverHint = true; render(); },
     "restart-normal"() { api.restart(false).catch((e) => toast(errText(e), "error")); },

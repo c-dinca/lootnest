@@ -284,7 +284,7 @@
   const UNSORTED_SHOWN = 50;
   function viewUnsorted() {
     const U = S.unsorted, when = (c) => new Date(c.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-    const opts = `<option value="">Choose a game</option><option value="none">Not a game</option>${everyItem().sort((a, b) => a.name.localeCompare(b.name)).map((it) => `<option value="${esc(recentKey(it))}">${esc(it.name)}</option>`).join("")}`;
+    const opts = `<option value="">Choose a game</option><option value="none">Not a game</option>${everyItem().sort((a, b) => byName(a.name, b.name)).map((it) => `<option value="${esc(recentKey(it))}">${esc(it.name)}</option>`).join("")}`;
     const body = !U ? lnInline("", "Reading the captures") : !U.items.length ? "<p>Every capture is matched to a game.</p>"
       : `<ul class="cap-list">${U.items.slice(0, UNSORTED_SHOWN).map((c) => `<li class="cap-row">${capThumb(null, c)}<div class="cap-main"><b>${esc(capWhat(c))}</b><span>${esc(when(c))}</span><span class="cap-file" title="${esc(c.path)}">${esc(c.path.split(/[\\/]/).pop())}</span></div>
           <select class="ln-input" data-assign="${esc(c.path)}" aria-label="${esc("The game of " + capLabel(c))}">${opts}</select></li>`).join("")}</ul>`;

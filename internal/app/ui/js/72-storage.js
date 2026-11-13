@@ -41,7 +41,7 @@
     }).join("");
     const rows = everyItem().map((it) => ({ it, z: sizeOf(it) }));
     const k = S.stSort;
-    rows.sort((a, b) => k === "name" ? a.it.name.localeCompare(b.it.name) : ((b.z || {})[k] || 0) - ((a.z || {})[k] || 0) || a.it.name.localeCompare(b.it.name));
+    rows.sort((a, b) => k === "name" ? byName(a.it.name, b.it.name) : ((b.z || {})[k] || 0) - ((a.z || {})[k] || 0) || byName(a.it.name, b.it.name));
     const cell = (z, f) => `<td class="ln-num">${z ? (z[f] ? fmtBytes(z[f]) : "None") : "Not counted yet"}</td>`;
     const head = ST_COLS.map(([f, l]) => `<th scope="col"${f === k ? ` aria-sort="${f === "name" ? "ascending" : "descending"}"` : ""}><button class="st-sort" data-action="st-sort" data-col="${f}">${l}</button></th>`).join("");
     const table = rows.length ? `<div class="st-wrap"><table class="st-table"><thead><tr>${head}<th scope="col" aria-label="Actions"></th></tr></thead><tbody>${rows.map(({ it, z }) => `

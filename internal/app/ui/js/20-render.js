@@ -51,8 +51,14 @@
     if (view !== "library") S.libSel.clear();
   }
 
+  let behindBP = false;
   function render() {
     if (!S.d) return;
+    // Under Big Picture the window isn't seen: only what sits above it
+    // (dialogs, the picker) and Big Picture itself are drawn; the window
+    // catches up once Big Picture closes.
+    if (BP.on) { behindBP = true; renderOverlay(); bpSoon(); return; }
+    behindBP = false;
     document.documentElement.style.setProperty("--p1", (cfg().players[0] || {}).color || "#6C9BD2");
     document.documentElement.style.setProperty("--p2", (cfg().players[1] || {}).color || "#D9738E");
     const n = libraryItems().length;

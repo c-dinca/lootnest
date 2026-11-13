@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.104.0, beta)
+## Where things stand (1.105.0, beta)
 
 These shipped recently, newest last:
 
@@ -809,6 +809,16 @@ These shipped recently, newest last:
   block sits at the end of app.css so it wins over the 1.49 rules.
   `win/toast.go` colours follow the tokens (`toastBadge`). The boot
   splash and setup.html already used the system.
+- **1.105** The rework, R8, speed (measured in the harness with
+  `?games=400`): covers, wide art and icons are kept as blob: URLs
+  (`artStore()` in 10-state.js wraps `S.covers`, `S.icons`, `S.art`;
+  a data: URL over 4 KB goes through `blobURL`), so page HTML no longer
+  carries megabytes of base64; one `Intl.Collator` (`byName`) for every
+  sort by name; the sidebar keeps what it drew in `sideDrawn`, not a DOM
+  attribute; `render()` under Big Picture draws only the overlay and Big
+  Picture (`behindBP`), and the window catches up when it closes. Big
+  Picture opened in 10.2 s, now 0.1 s; the Library 815 ms, now 345 ms.
+  The cover flying into its game page (FLIP) is still open.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

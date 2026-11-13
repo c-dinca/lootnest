@@ -64,7 +64,7 @@
     cfg().games.forEach((g) => { if (!by.has("game:" + g.id)) by.set("game:" + g.id, { key: "game:" + g.id, points: 0, size: 0 }); });
     const rows = [...by.values()].map((r) => ({ r, it: itemByKey(r.key), n: r.key.startsWith("game:") ? ((S.d.profiles || {})[r.key.slice(5)] || []).length : 0 })).filter((x) => x.it);
     const k = S.svSort || "last", val = (x) => (k === "profiles" ? x.n : k === "last" ? new Date(x.r.last || 0).getTime() : x.r[k] || 0);
-    rows.sort((a, b) => (k === "name" ? 0 : val(b) - val(a)) || a.it.name.localeCompare(b.it.name));
+    rows.sort((a, b) => (k === "name" ? 0 : val(b) - val(a)) || byName(a.it.name, b.it.name));
     const none = '<span class="sv-none">None</span>';
     const head = SV_COLS.map(([f, l]) => `<th scope="col"${f === k ? ` aria-sort="${f === "name" ? "ascending" : "descending"}"` : ""}><button class="st-sort" data-action="sv-sort" data-col="${f}">${l}</button></th>`).join("");
     return `<div class="st-wrap"><table class="st-table sv-table"><thead><tr>${head}</tr></thead><tbody>${rows.map(({ r, it, n }) => `

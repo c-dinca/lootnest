@@ -167,7 +167,7 @@
       ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return lookRow(`${esc(g.name)} closed right after starting`, `First start since the update from ${esc(u.source)}.`, u.noUndo ? "" : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`); }).join("")}
       </ul>`, "upd-look");
     const list = games.filter((g) => F === "all" || stOf(g).k === F || (F === "new" && g.newer))
-      .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || a.name.localeCompare(b.name));
+      .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || byName(a.name, b.name));
     const cards = list.length ? `<ol class="ln-rows upd-cards">${list.map((r, i) => (r.from ? storeUpdCard(r, i === 0 && !!r.newer) : updCard(r, U, i === 0 && !!r.newer))).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
     return `<div class="upd-page ln-root">${head("")}<div class="upd-cols">
       <div class="upd-main-col">${found}${news}${labelSec("Your games", 0, filter + cards)}</div>
