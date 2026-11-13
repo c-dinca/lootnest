@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.103.0, beta)
+## Where things stand (1.104.0, beta)
 
 These shipped recently, newest last:
 
@@ -801,6 +801,14 @@ These shipped recently, newest last:
   glass column, `.set-ic` bare icons (no tiles, no section colour), the
   current category lit with `--key-light`; Games and swaps uses
   `arrows-left-right`.
+- **1.104** The rework, R7, Big Picture and outside the window: `.bp` on
+  the ground with its art at 0.8; `slideInd` now moves and stretches
+  (translateX plus width, no scaleX) so `.bp-ind` is a glass pill; row
+  labels plain Tilt Warp without the rule; `.bp-btn`, `.bp-exit`,
+  `.bp-sound`, `.bp-achcard`, `.bp-person` glass with `--key-light`. Its
+  block sits at the end of app.css so it wins over the 1.49 rules.
+  `win/toast.go` colours follow the tokens (`toastBadge`). The boot
+  splash and setup.html already used the system.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

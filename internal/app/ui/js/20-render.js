@@ -131,12 +131,13 @@
     ind.style.opacity = "1";
     if (jump) { void ind.offsetWidth; ind.style.transition = ""; }
   }
-  // A cartridge under the current tab: it slides to the next one, and
-  // jumps when it first shows or the bar is resized.
+  // A light under the current tab: it slides and stretches to the next
+  // one, and jumps when it first shows or the bar is resized.
   function slideInd(ind, el, still) {
     const jump = still || ind.style.opacity !== "1";
     if (jump) ind.style.transition = "none";
-    ind.style.transform = `translateX(${el.offsetLeft}px) scaleX(${el.offsetWidth})`;
+    ind.style.transform = `translateX(${el.offsetLeft}px)`;
+    ind.style.width = el.offsetWidth + "px";
     ind.style.opacity = "1";
     if (jump) { void ind.offsetWidth; ind.style.transition = ""; }
   }

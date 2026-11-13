@@ -311,11 +311,12 @@ func colorRef(rgb uint32) uint32 { return (rgb&0xFF)<<16 | (rgb & 0xFF00) | (rgb
 // The brand's ground and text (DESIGN.md): a raised obsidian, Ice Grey, and
 // a muted grey that keeps WCAG AA on that ground.
 const (
-	toastGround = 0x1A1C23
-	toastEdge   = 0x2C2F39
-	toastText   = 0xDFE5EB
-	toastMuted  = 0xA3ACB7
-	toastRed    = 0xEF233C
+	toastGround = 0x181A21 // --bg-surface
+	toastEdge   = 0x2B2E38 // a hairline, as --glass-edge over the ground
+	toastText   = 0xDFE5EB // --fg-1, Ice Grey
+	toastMuted  = 0xA6AEB9 // --fg-2
+	toastRed    = 0xEF233C // Racing Red
+	toastBadge  = 0x1F222B // --bg-raised, inside the trophy's ring
 )
 
 func paintToast(hwnd uintptr) {
@@ -372,7 +373,7 @@ func paintToast(hwnd uintptr) {
 // x is its left edge, cy its middle, rad its radius.
 func drawTrophy(hdc uintptr, x, cy, rad int32, rgb uint32, px func(int) int32) {
 	ring, _, _ := procCreatePen.Call(0 /*PS_SOLID*/, uintptr(px(2)), uintptr(colorRef(rgb)))
-	face, _, _ := procCreateSolidBrush.Call(uintptr(colorRef(0x23252D)))
+	face, _, _ := procCreateSolidBrush.Call(uintptr(colorRef(toastBadge)))
 	oldPen, _, _ := procSelectObject.Call(hdc, ring)
 	oldBrush, _, _ := procSelectObject.Call(hdc, face)
 	procEllipse.Call(hdc, uintptr(x), uintptr(cy-rad), uintptr(x+2*rad), uintptr(cy+rad))
