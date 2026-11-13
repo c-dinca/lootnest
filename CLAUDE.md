@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.106.0, beta)
+## Where things stand (2.0.0, beta)
 
 These shipped recently, newest last:
 
@@ -834,6 +834,9 @@ These shipped recently, newest last:
   refused (`core/plugins.go`). Harness `?theme=ln-arcade|ln-contrast`
   sets the first profile's theme. README screenshots regenerated; the
   website's window has the sidebar with the sections (no top bar).
+- **2.0.0** The owner's release of the whole rework (1.97 to 1.106) as
+  one version, with a summary in CHANGELOG.md; no code change. From here
+  on, releases only when the owner asks (see How changes are made).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

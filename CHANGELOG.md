@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.0
+
+Lootnest has a new look, on every screen. This release gathers 1.97 to 1.106.
+
+- **The game you're on fills the window.** Its art sits behind Home, its page and the Library, and pages such as Saves, Updates, Achievements and Settings sit over the game you played last, blurred and dark.
+- **Glass over the art.** One floating sidebar replaces the top bar: search, the sections with a light that slides to the one you're in, your games, and who's at the PC. Panels, dialogs, menus and drawers are see-through glass.
+- **The website's colours**: obsidian, ice grey, and Racing Red only for the gem and a few keys. Play is the colour of whoever is at the PC.
+- **Home** shows the game you're on with Play, your achievements, the rarest one you've unlocked, your time and your save points; click a cover in Continue to switch games.
+- **A game's page** is one sheet of glass over its art, with its logo on top and a slim bar that stays as you scroll.
+- **Who's playing** is a row of glass keys that glow in each profile's colour.
+- **Big Picture** matches the window, with pill tabs and glass keys at couch size.
+- **New icons**, small and sharp (Phosphor Icons), and keys with a fine top light.
+- **Faster with a big library.** With hundreds of games Big Picture opens at once instead of in seconds, and pages draw about twice as fast.
+- **Three looks to choose per profile**: Lootnest, Arcade (the indigo look from before) and High contrast.
+- **Settings, Appearance** turns off the see-through panels or the art behind pages, and sets motion to Full, Less or Off.
+
 ## 1.106.0
 
 The rework is done: every screen of Lootnest is in the new look.
