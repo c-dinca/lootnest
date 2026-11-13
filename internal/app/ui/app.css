@@ -1860,6 +1860,47 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .shots-stage img, .shots-gone { background: none; border-radius: var(--radius-panel); }
 .shots-nav { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
 
+/* ============================================================== overlays
+   Since the rework (R4): dialogs, the context menu and Ctrl+K are glass
+   over the room, with titles in Tilt Warp; Who's playing is a row of
+   glass keys over the game's blurred art, each lit in its profile's
+   colour. */
+.scrim { -webkit-backdrop-filter: var(--blur-scrim); backdrop-filter: var(--blur-scrim); }
+.dialog { background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), var(--glass-light); }
+.dialog h2 { font: 400 var(--text-section)/var(--lh-tight) var(--font-title); }
+.dialog-foot { border-top: 0; padding-top: var(--space-2); }
+.ctx { -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), var(--glass-light); }
+.ctx button { border-radius: var(--radius-key-sm); }
+.ctx button:hover, .ctx button:focus-visible { background: var(--glass-ctl-hover); }
+.ctx button svg { color: var(--fg-2); }
+.ctx hr { margin: var(--space-1) var(--space-2); border-top-color: var(--glass-edge); }
+.gq-item { border-radius: var(--radius-key-sm); }
+.gq-item:hover, .gq-item.is-sel { background: var(--glass-ctl-hover); }
+.gq-item img.gq-cover { width: 26px; aspect-ratio: 2 / 3; border-radius: var(--radius-tag); }
+.gq-all { border-radius: var(--radius-key-sm); border-top: 0; background: var(--glass-ctl); }
+.gq-all:hover { background: var(--glass-ctl-hover); text-decoration: none; }
+
+/* Who's playing */
+.picker { background: var(--glass); }
+.picker .picker-head h1 { font: 400 var(--text-page)/var(--lh-tight) var(--font-title); letter-spacing: 0; }
+.picker-head .ln-button { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); }
+.slot { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); border-radius: var(--radius-glass);
+  transition: transform var(--dur-2) var(--ease-spring), background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out); }
+.slot:hover, .slot:focus-visible { transform: translateY(calc(-1 * var(--lift))); background: var(--glass-strong);
+  box-shadow: inset 0 0 0 var(--focus-width) var(--player-fill), var(--key-light), 0 18px 50px -18px color-mix(in oklab, var(--player-fill) 60%, transparent); }
+.slot:focus-visible { box-shadow: inset 0 0 0 var(--focus-width) var(--player-fill), var(--key-light), 0 0 0 var(--focus-width) var(--focus-ring); }
+.slot.in { box-shadow: inset 0 0 0 var(--focus-width) var(--player-fill), var(--key-light), 0 18px 50px -24px color-mix(in oklab, var(--player-fill) 50%, transparent); }
+.slot:not(.editing):active, .slot.picked { box-shadow: var(--key-down), 0 0 60px -10px color-mix(in oklab, var(--player-fill) 70%, transparent); }
+.slot .name { font: 400 var(--text-score)/var(--lh-tight) var(--font-title); }
+.slot-kbd { background: var(--glass-ctl-active); }
+.slot-new { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge); }
+.slot-new:hover, .slot-new:focus-visible { background: var(--glass); box-shadow: inset 0 0 0 var(--hairline) var(--edge-3); }
+.slot-new.editing { background: var(--glass-strong); }
+.slot-new-plus { border-color: var(--edge-2); }
+/* The editor's foot: glass, floating at the bottom. */
+.form-foot { bottom: var(--space-3); margin: var(--space-8) 0 0; padding: var(--space-3) var(--space-4); border-top: 0; border-radius: var(--radius-panel); background: var(--glass-overlay); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: var(--shadow-overlay), var(--glass-light); }
+.swap .ln-avatar { box-shadow: var(--key-light), 0 20px 60px -20px color-mix(in oklab, var(--player-fill) 70%, transparent); }
+
 /* ================================================================ updates
    One dense list of games, filtered by state, each with its version against
    the latest and one action; beside it, a narrow column of what needs a look. */

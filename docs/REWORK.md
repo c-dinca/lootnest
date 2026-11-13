@@ -132,11 +132,11 @@ including the small ones (empty states, errors, menus, toasts).
 
 Tick when merged. The names are the view functions in `internal/app/ui/js`.
 
-- Shell: [x] sidebar (`30-side-games.js`, sections, seat, Settings) [x] room and mesh [x] the top bar removed (`renderBar` drives the sidebar's sections) [ ] boot splash (`index.html` #boot) [ ] Back/Forward [x] Ctrl+K (`renderGq`) [ ] context menu (#ctx) [x] toasts (#toasts) [ ] safe-mode banner
+- Shell: [x] sidebar (`30-side-games.js`, sections, seat, Settings) [x] room and mesh [x] the top bar removed (`renderBar` drives the sidebar's sections) [ ] boot splash (`index.html` #boot) [x] Back/Forward [x] Ctrl+K (`renderGq`) [x] context menu (#ctx) [x] toasts (#toasts) [ ] safe-mode banner
 - Home: [x] `viewHome` [x] Tonight [x] save check [x] news [ ] `viewWelcome` (first run)
-- Library: [x] `viewLibrary` [x] shelves [x] list view [x] Not installed (`42-owned.js`) [x] selection bar [x] Views [ ] `viewSources` [ ] `viewAddDialog`
-- Game page: [x] `viewGame` [x] tabs and blocks (`62-game-blocks.js`) [x] `viewShots` [ ] `viewDetailsEdit` [ ] `viewEdit` [ ] `viewGameSettings` [ ] `viewManage` [ ] `viewLaunch` [x] the Mods tab (`67-mods.js`) [ ] `viewModPlan` [ ] `viewModConflicts` [ ] `viewCopies` [ ] `viewRestore` [ ] `viewMove` [ ] `viewMoveFolder` [ ] `viewRemovePC` [ ] `viewTrySave` [ ] `viewAchDoctor` [ ] `viewBlocked` [ ] `viewUnsorted` [ ] `viewItchInstall` [ ] `viewGogInstall`
-- Overlays: [ ] `viewPicker` and the swap [ ] `viewNaming` [ ] confirm dialogs [ ] `viewBackupPassword` [ ] `viewExport` [ ] `viewReader`
+- Library: [x] `viewLibrary` [x] shelves [x] list view [x] Not installed (`42-owned.js`) [x] selection bar [x] Views [x] `viewSources` [x] `viewAddDialog`
+- Game page: [x] `viewGame` [x] tabs and blocks (`62-game-blocks.js`) [x] `viewShots` [x] `viewDetailsEdit` [x] `viewEdit` [x] `viewGameSettings` [x] `viewManage` [x] `viewLaunch` [x] the Mods tab (`67-mods.js`) [x] `viewModPlan` [x] `viewModConflicts` [x] `viewCopies` [x] `viewRestore` [x] `viewMove` [x] `viewMoveFolder` [x] `viewRemovePC` [x] `viewTrySave` [x] `viewAchDoctor` [x] `viewBlocked` [x] `viewUnsorted` [x] `viewItchInstall` [x] `viewGogInstall`
+- Overlays: [x] `viewPicker` and the swap [x] `viewNaming` [x] confirm dialogs [x] `viewBackupPassword` [x] `viewExport` [x] `viewReader`
 - Pages: [ ] `viewSaves` [ ] `viewUpdates` [ ] `viewUpdateDrawer` [ ] `viewUpdHistory` [ ] `viewAchievements` [ ] `viewFind` [ ] `viewOffer` [ ] `viewPlayers` [ ] `viewPlayer` [ ] `viewProfilesDrawer` [ ] `viewProfileEditor` [ ] `viewRecap` (and its canvas)
 - Settings: [ ] `viewSettings` (every category) [ ] `viewControllers` [ ] `viewPlugins` [ ] `viewStorage` [ ] `viewPlaynite` [ ] `viewSteamSetup`
 - Big Picture and outside: [ ] `25-bigpicture.js` [ ] `win/toast.go` [ ] tray [ ] `cmd/setup/setup.html`

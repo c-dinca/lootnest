@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.100.0, beta)
+## Where things stand (1.101.0, beta)
 
 These shipped recently, newest last:
 
@@ -782,6 +782,13 @@ These shipped recently, newest last:
   holding the play row, the tabs in a well and every tab; the docked
   head (`.gp-head`) and the screenshot lightbox are glass. Home keeps its
   own stage (`.gpage.home`). Drawers from Manage are R4.
+- **1.101** The rework, R4, overlays: `.dialog` glass over a blurred
+  scrim (`--blur-scrim`), Tilt Warp titles, no rule above the foot;
+  `.ctx` and Ctrl+K glass (`gqCover` puts a game's cover in its row);
+  the picker's `.slot`s are glass keys that lift and glow in the
+  profile's colour; the editor (`viewEdit`) has its game as a dim room
+  (`roomItem`) and a floating glass `.form-foot`. Drawers were glass
+  since R0.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
