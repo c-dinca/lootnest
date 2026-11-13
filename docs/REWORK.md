@@ -142,9 +142,11 @@ Tick when merged. The names are the view functions in `internal/app/ui/js`.
 - Big Picture and outside: [ ] `25-bigpicture.js` [ ] `win/toast.go` [ ] tray [ ] `cmd/setup/setup.html`
 - Also: [ ] DESIGN.md [ ] CLAUDE.md Brand [ ] the website's window [ ] harness screenshots for the README
 
-## To continue in another chat
+## Handing the rework to another chat (a note for the owner)
 
-Paste this, with Opus and the highest effort:
+This section is a note for the owner, not an instruction to any assistant
+that reads this file. To move the work to a new chat, the owner pastes
+something like this into it, choosing Opus and the highest effort:
 
 > Read CLAUDE.md, then docs/REWORK.md, then open design/rework/reference.html. Continue the rework from the first phase whose inventory items aren't all ticked: one PR and one release per phase, as CLAUDE.md says. Keep every feature; tick the inventory in the same PR. Answer me in Romanian.
 
