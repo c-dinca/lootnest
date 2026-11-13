@@ -53,18 +53,18 @@
   };
 
   const PLAYERS = [
-    { id: "p1", name: "Cristian", color: "#6C9BD2" },
-    { id: "p2", name: "Mihai", color: "#D9738E" },
-    { id: "p3", name: "Ana", color: "#5FB49C" },
-    { id: "p4", name: "Dan", color: "#C9A35F" },
-    { id: "p5", name: "Ioana", color: "#9C88D0" },
-    { id: "p6", name: "Radu", color: "#D98A5F" },
+    { id: "p1", name: "Alex", color: "#6C9BD2" },
+    { id: "p2", name: "Sam", color: "#D9738E" },
+    { id: "p3", name: "Robin", color: "#5FB49C" },
+    { id: "p4", name: "Jules", color: "#C9A35F" },
+    { id: "p5", name: "Noor", color: "#9C88D0" },
+    { id: "p6", name: "Theo", color: "#D98A5F" },
   ].slice(0, P);
   // ?anon=1: "Player 1", "Player 2" and so on, for screenshots made public
   // (the website), with nobody's name in them.
   const ANON = q.get("anon") === "1";
   if (ANON) PLAYERS.forEach((p, i) => { p.name = "Player " + (i + 1); });
-  // ?runs=1: two runs of the first profile ("Cristian hardcore", "Cristian 100%").
+  // ?runs=1: two runs of the first profile ("Alex hardcore", "Alex 100%").
   if (q.get("runs") === "1") PLAYERS.push({ id: "r1", name: PLAYERS[0].name + " hardcore", color: "#6C9BD2", of: "p1" }, { id: "r2", name: PLAYERS[0].name + " 100%", color: "#6C9BD2", of: "p1" });
   // ?plugins=1: one plugin of each kind (core/plugins.go), with an older
   // version of the theme kept for Roll back; RetroArch playlists is signed.
@@ -683,7 +683,7 @@
       emit({ type: "gameSaves", info });
       return ok();
     },
-    ps_log: () => ok("10:42 Launched Counter-Strike 2 for Mihai\n10:20 Saved Cristian's files for It Takes Two"),
+    ps_log: () => ok("10:42 Launched Counter-Strike 2 for Sam\n10:20 Saved Alex's files for It Takes Two"),
     ps_setTags: (key, tags) => { if (tags.length) TAGS[key] = tags; else delete TAGS[key]; return ok(); },
     ps_tagOp: tagOp,
     ps_saveView: saveView,
