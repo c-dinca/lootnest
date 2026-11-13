@@ -158,7 +158,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (1.98.0, beta)
+## Where things stand (1.99.0, beta)
 
 These shipped recently, newest last:
 
@@ -770,6 +770,11 @@ These shipped recently, newest last:
   (achievements, rarest, time, save points); `homeShelf()` covers, action
   `home-pick` (first click picks, second opens), arrows move; the room
   veils as the page scrolls (`veil()`, `.room-veil`).
+- **1.99** The rework, R2, the Library: the room shows the game the
+  pointer rests on (`S.libFocus`, a 220 ms pointerover in 20-render.js),
+  else the latest with art, dimmed (`--room-dim`; the veil stops at 35%
+  there); covers at `--radius-cover` 10 lift 5px on `--ease-spring`; the
+  tools bar is glass, its menus pills; the selection bar is glass.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

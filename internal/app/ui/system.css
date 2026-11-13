@@ -136,7 +136,7 @@
   --scrim-room:            /* the art fades to obsidian low and on the left, so pages read */
     linear-gradient(180deg, rgb(17 18 23 / 0.12) 0%, rgb(17 18 23 / 0.18) 34%, rgb(17 18 23 / 0.8) 64%, var(--bg-ground) 82%),
     linear-gradient(90deg, rgb(17 18 23 / 0.82) 0%, rgb(17 18 23 / 0.25) 46%, transparent 72%);
-  --room-dim: blur(30px) brightness(0.42) saturate(1.2);  /* behind the Library */
+  --room-dim: blur(36px) brightness(0.62) saturate(1.35);  /* behind the Library */
   /* The mesh: a wash of the seated profile's colour low on the left, a
      faint red one top left, as on the website. */
   --mesh-seat: 22%;
@@ -245,7 +245,7 @@
   --radius-key-sm: 8px;   /* small keys */
   --radius-play: 12px;    /* the Play key */
   --radius-glass: 20px;   /* the sidebar and the sheets of glass */
-  --radius-cover: 8px;    /* covers */
+  --radius-cover: 10px;    /* covers */
   --radius-panel: 14px;   /* panels, toasts, menus */
   --radius-dialog: 18px;  /* dialogs, the play bar */
   --radius-round: 999px;  /* avatars only */
@@ -270,7 +270,7 @@
   --rise: 6px;          /* how far a page's head comes up as it arrives */
   --settle: 1.015;      /* and the scale it settles from */
   --stagger: 40ms;      /* between the labels of a page as they arrive */
-  --lift: 3px;          /* how far a cover lifts under the pointer */
+  --lift: 5px;          /* how far a cover lifts under the pointer */
 
   /* Achievement tiers, by the share of players who have one (Steam's
      numbers): gold for ultra rare (under 2%), blue for rare (under 10%),
@@ -493,7 +493,8 @@ html { font-synthesis: none; }
   position: relative; overflow: hidden;
   aspect-ratio: 2 / 3; border-radius: var(--radius-cover);
   background: var(--bg-surface);
-  transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+  box-shadow: 0 14px 30px -18px rgb(0 0 0 / 0.9);
+  transition: transform var(--dur-3) var(--ease-spring), box-shadow var(--dur-2) var(--ease-out);
 }
 .ln-tile__cover::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit;

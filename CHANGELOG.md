@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.99.0
+
+The new look reaches the Library.
+
+- **The Library takes the art of the game you point at.** Rest on a cover and its art fills the window behind the Library, blurred and dark, so the covers stand out on it.
+- **Covers are rounder and lift a little more** under the pointer, and settle with a small spring.
+- **The Library's tools are glass.** The bar with the filters stays at the top as you scroll, over the covers, and its menus are pills.
+- **The bar of selected games floats as glass** at the bottom.
+
 ## 1.98.0
 
 The new look reaches Home.
