@@ -21,7 +21,7 @@
       source: g.launch.type === "steam" ? "steam" : (S.d.sources || {})[g.id] || "other", exe: g.launch.type !== "steam" ? g.launch.exe || "" : "", g,
     }));
     (S.found.games || []).forEach((f) => items.push({ kind: "found", id: f.key, name: f.name, appId: f.appId || 0, source: f.source, exe: f.appId ? "" : f.exe || "", f }));
-    return items.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    return items.sort((a, b) => byName(a.name, b.name));
   }
   // The Library as shown: a game from more than one store once, as its
   // primary copy, with every copy in copies. Each copy keeps its own key.
@@ -406,7 +406,7 @@
     if (!names.length) return "";
     // The first three of four games or more, in the sidebar's order; the rest are in the Library's collections menu.
     return `<div class="lib-shelves"${S.q ? " hidden" : ""}>${names.slice(0, 3).map((t) => {
-      const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
+      const list = by[t].slice().sort((a, b) => playedAt(b) - playedAt(a) || byName(a.name, b.name));
       return `<section class="lib-shelf" aria-label="${esc(t)}"><div class="ln-section-head"><div><h2>${esc(t)}<span class="ln-count ln-num">${list.length}</span></h2></div>
           <button class="ln-button ln-button--ghost ln-button--sm" data-action="shelf-all" data-tag="${esc(t)}">See all</button></div>
         <div class="lib-shelf-row">${list.slice(0, 16).map((it) => cardHTML(it)).join("")}</div></section>`;

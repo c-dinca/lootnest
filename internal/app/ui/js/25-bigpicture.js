@@ -25,6 +25,7 @@
     if (el) { el.removeAttribute("id"); el.classList.add("out"); setTimeout(() => el.remove(), 320); }
     api.bigPicture(false).catch(() => {});
     sfx("close");
+    if (behindBP) render();
   }
   function bpSoon() { if (BP.timer) return; BP.timer = requestAnimationFrame(() => { BP.timer = 0; if (BP.on) renderBP(false); }); }
   // The buttons, named by what they do here as on an Xbox pad, the way each

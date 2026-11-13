@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.105.0
+
+Faster with a big library.
+
+- **Big Picture opens at once.** With hundreds of games it used to take seconds.
+- **Pages draw about twice as fast** with hundreds of games: the Library, Home, a game's page, Saves and Who's playing.
+- **Games sort by name more quickly**, numbers in names in their natural order ("Game 2" before "Game 10").
+
 ## 1.104.0
 
 The new look reaches Big Picture and the unlock notice.

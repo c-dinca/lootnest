@@ -5,8 +5,8 @@
   const SIDE_SORTS = { name: "Sorted by name", recent: "Sorted by last played", played: "Sorted by time played" };
   function sideSorted(list) {
     const out = list.slice();
-    if (S.sideSort === "recent") out.sort((a, b) => playedAt(b) - playedAt(a) || a.name.localeCompare(b.name));
-    else if (S.sideSort === "played") out.sort((a, b) => timeOf(b) - timeOf(a) || a.name.localeCompare(b.name));
+    if (S.sideSort === "recent") out.sort((a, b) => playedAt(b) - playedAt(a) || byName(a.name, b.name));
+    else if (S.sideSort === "played") out.sort((a, b) => timeOf(b) - timeOf(a) || byName(a.name, b.name));
     return out;
   }
   function sideRow(it, cur) {
@@ -29,7 +29,7 @@
     const list = v === "installed" ? lib.slice() : v === "owned" ? owned
       : v === "fav" ? lib.concat(owned).filter((it) => tagsOf(it).includes(FAV))
       : v.startsWith("p:") ? lib.filter((it) => playedOrOwned(it, v.slice(2))) : lib.concat(owned);
-    return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    return list.sort((a, b) => byName(a.name, b.name));
   }
   function sideShowMenu() {
     const sel = $("#side-show");
@@ -41,6 +41,7 @@
     if (sel.dataset.opts !== opts) { sel.innerHTML = opts; sel.dataset.opts = opts; }
     sel.value = S.sideShow;
   }
+  let sideDrawn = "";
   function renderSideGames() {
     const box = $("#side-games");
     if (!box) return;
@@ -91,10 +92,10 @@
         + group("loose", "Not in a collection", sideSorted(all.filter((it) => !tagsOf(it).length)))
         + group("all", "All", sideSorted(all));
     }
-    if (box.dataset.html === html) return; // nothing changed: keep it as it is
+    if (sideDrawn === html && box.firstChild) return; // nothing changed: keep it as it is
     const top = box.scrollTop;
     box.innerHTML = html;
-    box.dataset.html = html;
+    sideDrawn = html;
     box.scrollTop = top;
     const sb = $("#side-sort");
     if (sb) { sb.title = SIDE_SORTS[S.sideSort]; sb.setAttribute("aria-label", SIDE_SORTS[S.sideSort] + ". Change it"); }
@@ -343,7 +344,7 @@
       if (img.complete) img.classList.add("ready"); else img.onload = () => img.classList.add("ready");
     });
     const box = $("#side-games");
-    if (box) box.dataset.html = ""; // the next render redraws with the picture
+    sideDrawn = ""; // the next render redraws with the picture
   }
   // Folding the sidebar to a rail, and dragging its edge.
   function applyFold(animate) {
