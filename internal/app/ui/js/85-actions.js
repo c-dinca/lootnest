@@ -710,6 +710,24 @@
     "restart-normal"() { api.restart(false).catch((e) => toast(errText(e), "error")); },
     "restart-safe"() { api.restart(true).catch((e) => toast(errText(e), "error")); },
     "sv-more"() { S.svMore = !S.svMore; render(); },
+    // A copy's files, read when its row opens.
+    "sv-files"(el) {
+      const k = el.dataset.k;
+      S.svOpenRow = S.svOpenRow === k ? "" : k;
+      if (S.svOpenRow && !(S.svFiles[k] && S.svFiles[k].files)) {
+        const [key, kind, id] = k.split("|");
+        S.svFiles[k] = { loading: true };
+        api.copyFiles(key, kind, id).then((r) => { S.svFiles[k] = r; render(); }).catch((e) => { S.svFiles[k] = { error: errText(e) }; render(); });
+      }
+      render();
+    },
+    "sv-name"(el) { S.svNaming = el.dataset.k; render(); setTimeout(() => { const i = $("#sv-name-in"); if (i) { i.focus(); i.select(); } }, 30); },
+    async "sv-name-save"(el) {
+      const k = el.dataset.k, i = $("#sv-name-in"), [key, kind, id] = k.split("|");
+      try { await api.nameCopy(key, kind, id, i ? i.value : ""); S.svNaming = ""; await api.savesOverview(); if (kind === "point") api.savePoints(key).catch(() => {}); }
+      catch (e) { toast(errText(e), "error"); }
+      render();
+    },
     "sv-sort"(el) { S.svSort = el.dataset.col; render(); },
     "set-open"(el) { if (S.view === "settings") actions["set-tab"](el); else { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); actions.nav({ dataset: { view: "settings" } }); } },
     async "updates-yes"() {
@@ -1396,6 +1414,8 @@
     }
     if (ev.key === "Escape" && ev.target.id === "side-q" && ev.target.value) { ev.preventDefault(); ev.target.value = ""; S.sideQ = ""; renderSideGames(); return; }
     if (ev.key === "Enter" && ev.target.id === "newrun-name") { ev.preventDefault(); actions["new-run-go"](); return; }
+    if (ev.target.id === "sv-name-in" && ev.key === "Enter") { ev.preventDefault(); actions["sv-name-save"](ev.target); return; }
+    if (ev.target.id === "sv-name-in" && ev.key === "Escape") { ev.preventDefault(); S.svNaming = ""; render(); return; }
     // Enter in a save point's name: make it, or save the new name.
     if (ev.key === "Enter" && (ev.target.id === "pt-new" || ev.target.id === "pt-rename")) {
       ev.preventDefault();

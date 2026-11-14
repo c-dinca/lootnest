@@ -39,6 +39,9 @@
     gsaves: {},       // Library key -> cloud saves of a game outside Steam
     svo: null,        // Saves: {recent, games} from ps_savesOverview
     svMore: false,    // Saves lists every recent copy, not the first few
+    svOpenRow: "",    // the copy on Saves whose files are open, "key|kind|id"
+    svFiles: {},      // each opened copy's files: { files, count } or { loading } or { error }
+    svNaming: "",     // the copy being named
     svSort: "last",   // Saves: the Per game column sorted by
     svCloud: false,   // Saves opened for its Cloud saves section
     svBusy: "",       // Saves: the copy being put back from Recent copies

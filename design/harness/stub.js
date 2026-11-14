@@ -276,6 +276,7 @@
   const LAUNCH = { "dir:d:\\games\\phantom blade zero": { workDir: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64", closeApps: [{ name: "Discord.exe", force: true }, { name: "chrome.exe" }],
     startBefore: [{ path: "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe", args: "--startreplaybuffer --minimize-to-tray" }], reopenClosed: true } };
   const DETEDITS = {};
+  const COPYNAMES = {};
   const detailsEv = (key) => {
     const appId = key === "game:bg3" ? 1086940 : key === "game:cs2" ? 730 : key === "game:ittakestwo" ? 1426210 : ((found.find((f) => f.key === key) || {}).appId || 0);
     const e = DETEDITS[key];
@@ -745,8 +746,11 @@
       return ok();
     },
     // Saves: every copy kept, newest first, and their sums per game.
+    ps_copyFiles: (key, kind, id) => ok(kind === "net" ? { count: 2, files: [{ path: "loc0/SaveGames/Slot1.sav", size: 2.1e6, mod: iso(3 * h) }, { path: "loc0/SaveGames/Settings.ini", size: 2048, mod: iso(2 * d) }] }
+      : { count: 14, files: Array.from({ length: 6 }, (_, i) => ({ path: `Public/Savegames/Story/${["Quicksave_12", "Autosave_8", "Act3_LowerCity", "Act2_Moonrise", "Act1_Camp", "profile8"][i]}.lsv`, size: [41e6, 39e6, 38e6, 35e6, 30e6, 4096][i], mod: iso((i + 1) * 3 * h) })) }),
+    ps_nameCopy: (key, kind, id, name) => { COPYNAMES[`${key}|${kind}|${id}`] = name; return ok(); },
     ps_savesOverview: () => {
-      const c = (key, kind, id, ago, size, more) => ({ key, kind, id, at: iso(ago), size, ...more });
+      const c = (key, kind, id, ago, size, more) => ({ key, kind, id, at: iso(ago), size, ...more, name: COPYNAMES[`${key}|${kind}|${id}`] || (more || {}).name });
       const pbz = "dir:d:\\games\\phantom blade zero", tale = "dir:d:\\games\\hydra\\hollow tale";
       const recent = N === "0" ? [] : [
         c("game:bg3", "point", "20261107-214500", 10 * 60e3, 9e7, { name: "Before the update", owner: "p1" }),
