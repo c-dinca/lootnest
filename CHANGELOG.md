@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Motion with more care.** A game's cover opens into its page as you click it; the lit choice in tabs and switches glides to the one you pick, with a little give at the end; a game's tabs come in from the side you went to; the Updates count pops when it goes up. Motion set to Less or Off in Settings, Appearance (or reduced motion in Windows) keeps all of it still.
 - **Community on a game's page.** Scroll down Overview to see what players say on Steam: the share of positive reviews, and the most helpful reviews of the past year, with how long each person had played. Show only recommending or only negative ones, open a long review in full, or read more on Steam. It's part of Game details, so it stays off until you turn that on.
 - **Updating a game walks you through it**: get the update, choose it, check what it changes and apply it, with the saves and every replaced file copied first. For a game from Hydra, Open Hydra starts Hydra with the game's name copied, ready to paste in its search, and an update Hydra downloads shows up by itself, from Downloads or the folder you set in Hydra.
 - **Saves is easier to read.** Each kind of copy is explained at the top (save points, copies before a swap, safety net copies), click a copy's icon to see the files in it with their size and date, and name any copy, such as "Before the boss", with the pencil.

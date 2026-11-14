@@ -149,6 +149,48 @@
   }
   new ResizeObserver(() => placeInd(true)).observe($("#bar-tabs"));
 
+  // The lit pill of a segmented control or a tab row glides to the one you
+  // pick, with a little give at the end, instead of jumping there. The page
+  // is drawn again in between, so the pill's last place is noted as the
+  // press lands (capture phase) and a stand-in moves from there once the
+  // new row is in. Only with Motion on Full.
+  const LIT = '[aria-pressed="true"], [aria-checked="true"], [aria-selected="true"]';
+  const groupId = (g) => [g.closest("#overlay") ? "o" : "v", g.className.replace(/\bis-gliding\b/, "").trim(), g.getAttribute("aria-label") || ""].join("|");
+  function noteGlide(ev) {
+    const g = ev.target.closest && ev.target.closest(".ln-segmented, .ln-tabs");
+    if (!g || g.closest(".page-ghost") || !moving()) return;
+    const on = g.querySelector(LIT);
+    if (!on) return;
+    const was = { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight, id: groupId(g), lit: on };
+    requestAnimationFrame(() => requestAnimationFrame(() => glide(was)));
+  }
+  function glide(was) {
+    const g = [...document.querySelectorAll(".ln-segmented, .ln-tabs")].find((x) => !x.closest(".page-ghost") && groupId(x) === was.id);
+    const on = g && g.querySelector(LIT);
+    if (!on || on.offsetWidth === 0) return;
+    const now = { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight };
+    if (Math.abs(now.x - was.x) < 2 && Math.abs(now.y - was.y) < 2) return;
+    const pill = document.createElement("span");
+    pill.className = "glide";
+    pill.setAttribute("aria-hidden", "true");
+    pill.style.borderRadius = getComputedStyle(on).borderRadius;
+    g.classList.add("is-gliding");
+    g.append(pill);
+    const box = (b) => ({ left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
+    const a = pill.animate([box(was), box(now)], { duration: ms("--dur-3"), easing: "cubic-bezier(.3, 1.3, .45, 1)", fill: "both" });
+    const end = () => { pill.remove(); if (!g.querySelector(".glide")) g.classList.remove("is-gliding"); };
+    a.finished.then(end, end);
+  }
+  document.addEventListener("click", noteGlide, true);
+  document.addEventListener("keydown", (ev) => { if (/^Arrow|^Home$|^End$/.test(ev.key)) noteGlide(ev); }, true);
+
+  // A count that goes up pops once, so the change is seen.
+  function bump(el, n) {
+    const before = parseInt(el.textContent, 10) || 0;
+    el.textContent = n ? String(n) : "";
+    if (n > before && moving()) el.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)", offset: 0.35 }, { transform: "scale(1)" }], { duration: ms("--dur-4"), easing: "cubic-bezier(.3, 1.3, .45, 1)" });
+  }
+
   // ------------------------------------------------------------- the room --
   // The art of the game in focus fills the window behind everything (Home's
   // game, a game's page; the Library keeps the last one, blurred and dark);

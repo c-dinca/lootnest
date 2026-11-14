@@ -6,7 +6,7 @@
   function updateNavCount() {
     const keys = new Set([...(S.updates ? S.updates.games : []), ...(S.dl || []), ...storeUpdRows()].filter((g) => g.newer).map((g) => g.key));
     const n = keys.size + (S.copies ? S.copies.length : 0);
-    const el = $("#upd-count"); if (el) el.textContent = n ? String(n) : "";
+    const el = $("#upd-count"); if (el) bump(el, n);
   }
   // "Is this a new copy?": a game reinstalled as a whole new version.
   function copyCard(o, compact) {

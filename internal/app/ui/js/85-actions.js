@@ -245,7 +245,7 @@
     "open-sheet"(el) {
       const kind = el.dataset.game ? "game" : isOwnedKey(el.dataset.key) ? "owned" : "found", id = el.dataset.game || el.dataset.key;
       if (el.dataset.tab) S.gameTab[kind + ":" + id] = el.dataset.tab; // such as a game's Saves, from Saves
-      openSheet(kind, id, el.closest(".card"));
+      openSheet(kind, id, el);
     },
     "back-library": () => pageBack(),
     "open-player"(el) { S.playerPage = el.dataset.player; S.view = "player"; S.animateView = true; render(); $("#view").scrollTop = 0; },
