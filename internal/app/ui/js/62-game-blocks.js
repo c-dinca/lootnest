@@ -510,6 +510,60 @@
         ${gameCtlLine(d)}${thumbs}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>
         ${facts.length ? `<dl class="ln-facts gp-det-facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>` : ""}</div></section>`;
   }
+  // Community, at the end of Overview: what players say on Steam, the most
+  // helpful reviews of the past year. Read only once the block scrolls into
+  // view (watchCommunity), and only with Game details on.
+  const REV_KINDS = [["all", "Most helpful"], ["positive", "Recommended"], ["negative", "Not recommended"]];
+  function communityBlock(it) {
+    const key = recentKey(it), steam = cfg().settings.gameDetails;
+    if (!it.appId && !(S.details[key] && S.details[key].details && S.details[key].details.storeUrl)) return "";
+    const head = (extra) => `<div class="ln-section-head gp-com-head"><div><h2>Community</h2></div>${extra || ""}</div>`;
+    if (!steam) return `<section class="gpage-block gp-com">${head()}<p class="gp-det-off"><button class="gpage-link" data-action="details-on">Show what players say on Steam</button></p></section>`;
+    const kind = S.revKind[key] || "all", R = S.reviews[key + "|" + kind];
+    const d = (S.details[key] && S.details[key].details) || {};
+    const pct = d.reviewCount ? d.reviewPercent : null;
+    const score = pct == null ? "" : `<div class="gp-com-score"><span class="gp-com-pct ln-num" style="--p:${pct}">${pct}<small>%</small></span>
+      <span><b>${esc(d.reviewScore || "")}</b><span class="gp-com-n">${d.reviewCount.toLocaleString("en-US")} reviews on Steam</span></span>
+      <span class="gp-com-bar" aria-hidden="true"><span style="width:${pct}%"></span></span></div>`;
+    const seg = `<div class="ln-segmented gp-com-seg" role="group" aria-label="Show">${REV_KINDS.map(([k, l]) => `<button data-action="rev-kind" data-k="${esc(key)}" data-kind="${k}" aria-pressed="${k === kind}">${l}</button>`).join("")}</div>`;
+    const store = R && R.appId ? R.appId : it.appId;
+    const write = store ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="open-link" data-url="https://store.steampowered.com/app/${store}/#app_reviews_hash">${ph("steam-logo")}Read more on Steam</button>` : "";
+    let body;
+    if (!R || R.loading) body = `<div class="gp-com-list" data-want="${esc(key)}" data-kind="${kind}">${[0, 1, 2, 3].map(() => '<div class="ln-skeleton gp-com-skel"></div>').join("")}</div>`;
+    else if (R.error) body = `${lnInline("error", esc(R.error))}<button class="gpage-link" data-action="rev-again" data-k="${esc(key)}" data-kind="${kind}">Try again</button>`;
+    else if (R.none) return "";
+    else if (!(R.items || []).length) body = `<p class="gpage-hint">No ${kind === "positive" ? "recommending " : kind === "negative" ? "negative " : ""}reviews with text from the past year.</p>`;
+    else body = `<ol class="gp-com-list">${R.items.map(reviewCard).join("")}</ol>`;
+    return `<section class="gpage-block gp-com" id="gp-community">${head(seg)}${score}${body}<div class="gp-com-foot">${write}</div></section>`;
+  }
+  function reviewCard(r) {
+    const open = S.revOpen.has(r.id), long = r.cut || r.text.length > 420 || (r.text.match(/\n/g) || []).length > 5;
+    const h = (n) => (n >= 100 ? Math.round(n).toLocaleString("en-US") : String(n)) + " h";
+    const facts = [`${h(r.hours)} when written`, r.total > r.hours ? `${h(r.total)} now` : "", r.early ? "Early Access" : "", r.free ? "Got it free" : ""].filter(Boolean);
+    return `<li class="gp-rev gp-rev--${r.up ? "up" : "down"}${open ? " open" : ""}">
+      <div class="gp-rev-head"><span class="gp-rev-thumb" aria-hidden="true">${ph(r.up ? "thumbs-up" : "thumbs-down")}</span>
+        <div><b>${r.up ? "Recommended" : "Not recommended"}</b><span class="gp-rev-facts">${facts.map(esc).join(", ")}</span></div>
+        <time datetime="${esc(r.at)}">${esc(day(r.at))}</time></div>
+      <p class="gp-rev-text" id="rev-${esc(r.id)}">${esc(r.text)}</p>
+      <div class="gp-rev-foot">${long ? `<button class="gpage-link" data-action="rev-more" data-id="${esc(r.id)}" aria-expanded="${open}" aria-controls="rev-${esc(r.id)}">${open ? "Show less" : "Read all of it"}</button>` : ""}
+        <span class="grow"></span>${r.helpful ? `<span class="gp-rev-help">${ph("thumbs-up")}<span class="ln-num">${r.helpful.toLocaleString("en-US")}</span> found it helpful</span>` : ""}</div></li>`;
+  }
+  // Asks for the reviews once the Community block comes into view.
+  let comSeen = null;
+  function watchCommunity() {
+    if (comSeen) { comSeen.disconnect(); comSeen = null; }
+    const el = $("[data-want]");
+    if (!el) return;
+    const ask = () => {
+      const key = el.dataset.want, kind = el.dataset.kind, k = key + "|" + kind;
+      if (S.reviews[k]) return;
+      S.reviews[k] = { loading: true };
+      api.gameReviews(key, kind).catch(() => { S.reviews[k] = { key, kind, error: "Couldn't read the reviews." }; render(); });
+    };
+    if (!("IntersectionObserver" in window)) { ask(); return; }
+    comSeen = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { comSeen.disconnect(); comSeen = null; ask(); } }, { rootMargin: "0px 0px 200px 0px" });
+    comSeen.observe(el);
+  }
   // Show more only when the three lines don't hold the whole summary.
   function fitDetails() {
     const p = $("#det-sum"), b = $('[data-action="details-more"]');

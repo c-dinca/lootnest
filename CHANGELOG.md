@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Community on a game's page.** Scroll down Overview to see what players say on Steam: the share of positive reviews, and the most helpful reviews of the past year, with how long each person had played. Show only recommending or only negative ones, open a long review in full, or read more on Steam. It's part of Game details, so it stays off until you turn that on.
 - **Updating a game walks you through it**: get the update, choose it, check what it changes and apply it, with the saves and every replaced file copied first. For a game from Hydra, Open Hydra starts Hydra with the game's name copied, ready to paste in its search, and an update Hydra downloads shows up by itself, from Downloads or the folder you set in Hydra.
 - **Saves is easier to read.** Each kind of copy is explained at the top (save points, copies before a swap, safety net copies), click a copy's icon to see the files in it with their size and date, and name any copy, such as "Before the boss", with the pencil.
 - **An achievement as a card.** Click one, on a game's page or on Achievements, and it comes up as a card in the middle of the screen: it tilts toward the pointer, turns when you drag it, and flips to show the game, when you unlocked it and how rare it is. From the Achievements page it opens on the game's Achievements tab; a game's card there goes to that tab too.

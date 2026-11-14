@@ -45,6 +45,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_savesOverview", a.apiSavesOverview))
 	must(a.w.Bind("ps_copyFiles", a.apiCopyFiles))
 	must(a.w.Bind("ps_openHydra", a.apiOpenHydra))
+	must(a.w.Bind("ps_gameReviews", a.apiGameReviews))
 	must(a.w.Bind("ps_nameCopy", a.apiNameCopy))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
