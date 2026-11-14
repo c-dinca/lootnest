@@ -24,6 +24,8 @@ flask floppy-disk folder folder-open funnel game-controller gear-six globe-simpl
 list lock magnifying-glass palette pencil-simple play plus power puzzle-piece question rocket-launch shield shield-check
 sidebar-simple sliders-horizontal sort-ascending squares-four star storefront television-simple trash trophy user
 users users-three vault video-camera warning x
+speaker-high speaker-slash thumbs-up thumbs-down chat-circle gauge cpu graphics-card memory monitor sparkle file files
+arrow-square-out steam-logo github-logo cube lightning seal-check calendar-blank
 """.split()
 # Weights besides regular: fill for whatever can be current or on, duotone
 # for the big icon of an empty page.

@@ -63,6 +63,12 @@
     Promise.allSettled(runs.map((a) => a.finished)).then(() => page.classList.remove("enter"));
   }
 
+  // Profiles for this game, as a pill that switches: on swaps files per
+  // profile; off asks first (turning off moves the profiles aside).
+  function profPill(on, attrs) {
+    const label = solo() ? "Runs" : "Profiles";
+    return `<button class="prof-pill" role="switch" aria-checked="${on}" ${attrs} ${S.adding ? "disabled" : ""} title="${on ? `${label} are on for this game` : `Turn on ${label.toLowerCase()} for this game`}">${GI.profiles}<span>${label}</span><i aria-hidden="true"></i></button>`;
+  }
   function openSheet(kind, id, fromEl) {
     if (S.view === "edit" && !confirmLeaveEdit()) return;
     if (S.dialog && S.dialog.kind !== "welcome") S.dialog = null;
@@ -187,6 +193,12 @@
     if (!N || N.loading || N.none) return "";
     if (N.error) return `<section class="news">${head}${lnInline("error", esc(N.error))}</section>`;
     const items = (N.items || []).slice(0, 6).map((n, i) => ({ it, n, i }));
+    // From Updates' Patch notes: open that post once the news is here.
+    if (S.newsOpen && S.newsOpen.key === key) {
+      const at = Math.max(0, (N.items || []).findIndex((n) => n.title === S.newsOpen.title));
+      S.newsOpen = null;
+      if ((N.items || []).length) setTimeout(() => actions["read-news"]({ dataset: { key, i: String(at) } }), 260);
+    }
     const uk = updKey(it);
     const offer = it.kind === "found" && (S.copies || []).find((o) => o.new.key === it.id);
     const newer = N.newer ? banner("A newer version is out", `${esc(N.newer.title)}, ${esc(day(N.newer.date))}`,
@@ -297,7 +309,7 @@
       const f = it.f;
       meta.push("Profiles off");
       const stats = [st ? gpStat(hoursValue(st), "Steam account") : ""].join("");
-      const turnOn = (kind) => `<button class="ln-button ln-button--${kind}" data-action="found-add" data-key="${esc(f.key)}" ${S.adding ? "disabled" : ""}>${GI.profiles}${solo() ? "Keep runs" : "Turn on profiles"}</button>`;
+      const turnOn = () => profPill(false, `data-action="found-add" data-key="${esc(f.key)}"`);
       const t = totalPlayed(it) || st;
       // A game from more than one store: which copy starts, and the others.
       const grp = page && groupOf(it);
@@ -307,11 +319,11 @@
       if (!page) bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
         <div class="gpage-state"><b>${rec ? esc(lastPlayed(it)) : "Not played yet"}</b>${t ? `<span>${esc(hours(t))} played</span>` : ""}</div>
-        <div class="gpage-others">${turnOn("ghost")}</div></section>`;
+        <div class="gpage-others">${turnOn()}</div></section>`;
       else bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
         <div class="gpage-state"><b>${solo() ? "One set of saves" : "Profiles off"}</b>${rec ? `<span>${esc(lastPlayed(it))}</span>` : t ? `<span>${esc(hours(t))} played</span>` : ""}</div>
-        <div class="gpage-others">${startWith}${turnOn("secondary")}</div>
+        <div class="gpage-others">${startWith}${turnOn()}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
       note = page ? also + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) : "";
@@ -340,7 +352,8 @@
       const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--secondary" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog">${solo() ? "Choose a run" : "Someone else"}</button>` : "";
       // A run of whoever's playing: its own saves, from the start or a copy.
       const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
-      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun ? `<div class="gpage-others">${other}${newRun}</div>` : ""}${details}</section>`;
+      const pill = page && !s ? profPill(true, `data-action="remove-game" data-game="${esc(g.id)}"`) : "";
+      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun || pill ? `<div class="gpage-others">${other}${newRun}${pill}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
       head = { play: other + (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${possessive(pname(loaded))} files are loaded` : "Nobody's files yet" };
       note = page ? conflictBanner(g) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";
