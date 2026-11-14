@@ -78,6 +78,15 @@ func (a *App) emitDetails(key string, fetched *core.GameDetails, extra map[strin
 	if fetched != nil || !e.Empty() {
 		out["details"], out["edited"] = core.MergeDetails(fetched, e), !e.Empty()
 	}
+	// Will it run: this PC against the requirements. The game is already
+	// here, so free space isn't part of it.
+	if fetched != nil && (len(fetched.Minimum) > 0 || len(fetched.Recommended) > 0) {
+		pc := a.pcSpecs()
+		pc.Free, pc.FreeOn = 0, ""
+		v := core.WillItRun(pc, fetched.Minimum, fetched.Recommended)
+		out["run"] = map[string]any{"verdict": v, "plan": core.PlanRun(v), "pc": pc,
+			"minimum": fetched.Minimum, "recommended": fetched.Recommended}
+	}
 	a.emit("details", out)
 }
 

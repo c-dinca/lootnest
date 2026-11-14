@@ -2367,3 +2367,56 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .side-foot .bar-me { font-size: var(--fs-12); }
 .side-foot .bar-me .ln-avatar { --size: 28px; }
 .side-foot .bar-nobody { width: 28px; height: 28px; }
+
+/* Will it run, on a game's page: a dial with the score, the settings to
+   start with, then each part of this PC against the minimum and the
+   recommended. The tone follows the score: lamp green, amber, danger. */
+.wr { --wr: var(--lamp); }
+.wr--mid { --wr: var(--warning); }
+.wr--low { --wr: var(--danger); }
+.wr-top { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-5); }
+.wr-gauge { position: relative; display: grid; place-items: center; width: 132px; height: 116px; }
+.wr-dial { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wr-dial path { fill: none; stroke-width: 10; stroke-linecap: round; }
+.wr-track { stroke: var(--glass-ctl-hover); }
+.wr-fill { stroke: var(--wr); stroke-dasharray: var(--fill) var(--len); filter: drop-shadow(0 0 8px color-mix(in oklab, var(--wr) 55%, transparent)); animation: wr-sweep 900ms var(--ease-emph) both; }
+@keyframes wr-sweep { from { stroke-dasharray: 0 var(--len); } }
+.wr-tick { stroke: var(--edge-2); stroke-width: 2; stroke-linecap: round; }
+.wr-score { position: relative; margin-top: -6px; font: 400 40px/1 var(--font-title); color: var(--fg-1); }
+.wr-of { position: absolute; bottom: 8px; font-size: var(--fs-12); color: var(--fg-3); }
+.wr-say { display: grid; gap: var(--space-1); min-width: 0; }
+.wr-preset { font: 400 var(--text-section)/1.1 var(--font-title); color: var(--wr); }
+.wr-sub { font-size: var(--text-meta); color: var(--fg-2); }
+.wr-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.wr-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--space-3); border-radius: var(--radius-round); background: var(--glass-ctl); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge); font: 700 var(--fs-13)/1 var(--font-ui); color: var(--fg-1); }
+.wr-chip .ln-icon { width: var(--icon-sm); height: var(--icon-sm); color: var(--fg-2); }
+.wr-chip--tip { color: var(--fg-2); font-weight: 600; }
+.wr-limit { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-4) 0 0; font-size: var(--text-meta); color: var(--warning); }
+.wr-limit .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.wr-lanes { display: grid; gap: var(--space-4); margin: var(--space-5) 0 0; padding: 0; list-style: none; }
+.wr-lane { display: grid; gap: var(--space-2); --tone: var(--lamp); }
+.wr-lane--mid { --tone: var(--warning); }
+.wr-lane--low { --tone: var(--danger); }
+.wr-part { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-13); }
+.wr-part .ln-icon { width: var(--icon-sm); height: var(--icon-sm); color: var(--fg-3); }
+.wr-part em { margin-left: auto; font-style: normal; font-size: var(--fs-12); color: var(--tone); font-weight: 700; }
+.wr-bar { position: relative; height: 6px; border-radius: var(--radius-round); background: var(--glass-ctl-active); }
+.wr-bar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--have); border-radius: inherit; background: linear-gradient(90deg, color-mix(in oklab, var(--tone) 35%, transparent), var(--tone)); transform-origin: left; animation: wr-grow 800ms var(--ease-emph) both; }
+@keyframes wr-grow { from { transform: scaleX(0); } }
+.wr-mark { position: absolute; top: -3px; width: 2px; height: 12px; border-radius: 1px; background: var(--fg-3); }
+.wr-mark--min { left: var(--min); }
+.wr-mark--rec { left: var(--rec); background: var(--fg-1); }
+.wr-bar .wr-you { position: absolute; top: 50%; left: var(--have); width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: var(--radius-round); background: var(--tone); box-shadow: 0 0 0 3px var(--bg-surface), 0 0 12px var(--tone); animation: wr-slide 800ms var(--ease-emph) both; }
+@keyframes wr-slide { from { left: 0; } }
+.wr-names { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--fs-12); color: var(--fg-3); }
+.wr-names span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wr-names span + span { text-align: right; }
+.wr-legend { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; font-size: var(--fs-12); color: var(--fg-3); }
+.wr-legend .wr-mark { position: static; display: inline-block; height: 10px; margin-left: var(--space-2); }
+.wr-legend .wr-mark:first-child { margin-left: 0; }
+.wr-legend .wr-you { display: inline-block; width: 8px; height: 8px; margin-left: var(--space-2); border-radius: var(--radius-round); background: var(--fg-1); }
+.wr-off { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-3); color: var(--fg-2); font-size: var(--text-meta); }
+.wr-off .ln-icon { width: 32px; height: 32px; flex: none; color: var(--fg-3); }
+.wr-skel { height: 116px; }
+@media (prefers-reduced-motion: reduce) { .wr-fill, .wr-bar::before, .wr-bar .wr-you { animation: none; } }
+:root.motion-off .wr-fill, :root.motion-off .wr-bar::before, :root.motion-off .wr-bar .wr-you { animation: none; }

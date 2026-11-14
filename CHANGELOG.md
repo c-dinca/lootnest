@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Will it run, on a game's page**, in place of Status: a score out of 100 on a dial, the settings to start with (quality, resolution, frame rate, and upscaling when it helps), and your graphics card, processor and memory against the game's minimum and recommended. It uses the requirements Steam lists, read with Game details.
+- The game page's Status, rating and note are gone; Collections stays.
 - **Profiles on a game is a switch.** A pill on the game's page turns profiles on or off for that game; off still asks first.
 - **Patch notes on the Updates page open them**: the game's News tab, with that post open.
 - **Updates shows only what needs you.** Games that are up to date are out of the list; their own filter still lists them.

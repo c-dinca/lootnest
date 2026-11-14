@@ -298,7 +298,23 @@
       if (e.controller) det.controller = e.controller;
       if (e.controller === "none") delete det.pads;
     }
-    return { type: "details", key, details: det, edited: !!e };
+    // Will it run: the PC below against each game's requirements.
+    const PCX = { cpu: "AMD Ryzen 7 5800X 8-Core Processor", gpu: "NVIDIA GeForce RTX 3070", vram: 8 * 2 ** 30, ram: 16 * 2 ** 30, windows: "Windows 11" };
+    const rq = (g, c, m) => [{ label: "Processor", value: c }, { label: "Memory", value: m }, { label: "Graphics", value: g }];
+    const RUN = {
+      1086940: { plan: { score: 78, preset: "High", resolution: "1080p", fps: "60" }, runs: "recommended", g: [13500, 5200, 11800], c: [29.1, 11, 24], mem: "recommended",
+        minimum: rq("NVIDIA GeForce GTX 970", "Intel i5-4690", "8 GB RAM"), recommended: rq("NVIDIA GeForce RTX 2060 Super", "Intel i7-8700K", "16 GB RAM") },
+      730: { plan: { score: 100, preset: "Ultra", resolution: "1440p", fps: "60+" }, runs: "high", g: [13500, 2600, 4800], c: [29.1, 6, 9], mem: "recommended",
+        minimum: rq("DirectX 11 card, 1 GB VRAM", "4 hardware CPU threads", "8 GB RAM"), recommended: [] },
+      1426210: { plan: { score: 52, preset: "Medium", resolution: "1080p", fps: "45 to 60" }, runs: "minimum", g: [13500, 9000, 18000], c: [29.1, 12, 20], mem: "minimum",
+        minimum: rq("NVIDIA GeForce GTX 980", "Intel Core i5-3570K", "16 GB RAM"), recommended: rq("NVIDIA GeForce RTX 4070", "Intel Core i7-12700", "32 GB RAM") },
+    }[appId];
+    const run = RUN && { plan: RUN.plan, pc: PCX, minimum: RUN.minimum, recommended: RUN.recommended, verdict: { runs: RUN.runs, limit: RUN.runs === "minimum" ? "Graphics" : "", parts: [
+      { part: "Graphics", have: RUN.g[0], min: RUN.g[1], rec: RUN.g[2], runs: RUN.runs, known: true },
+      { part: "Processor", have: RUN.c[0], min: RUN.c[1], rec: RUN.c[2], runs: "high", known: true },
+      { part: "Memory", have: 16 * 2 ** 30, min: 8 * 2 ** 30, rec: 16 * 2 ** 30, runs: RUN.mem, known: true },
+      { part: "Storage", have: 0, min: 0, rec: 0, runs: "", known: false }] } };
+    return { type: "details", key, details: det, edited: !!e, run };
   };
   const POINTS = {};
   // Captures from other apps (ps_gameCaptures): Baldur's Gate 3 from Steam,

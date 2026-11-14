@@ -23,7 +23,7 @@ import (
 // ---------------------------------------------------------------------------
 
 const (
-	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic,categories,controller_support"
+	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic,categories,controller_support,pc_requirements"
 	reviewsURL = "https://store.steampowered.com/appreviews/%d?json=1&language=all&purchase_type=all&num_per_page=0"
 )
 
@@ -65,6 +65,11 @@ type GameDetails struct {
 	// Unknown: the Steam store doesn't have the game, kept so it isn't
 	// asked again on every visit.
 	Unknown bool `json:"unknown,omitempty"`
+	// The game's PC requirements, for Will it run on its page. ReqsRead
+	// says they were asked for (details kept from before weren't).
+	Minimum     []ReqLine `json:"minimum,omitempty"`
+	Recommended []ReqLine `json:"recommended,omitempty"`
+	ReqsRead    bool      `json:"reqsRead,omitempty"`
 }
 
 // DetailsEdit holds only the fields the user changed; nil is Steam's.
@@ -126,6 +131,8 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 			Categories []struct {
 				Description string `json:"description"`
 			} `json:"categories"`
+			// An object, or [] when the store has none.
+			Req json.RawMessage `json:"pc_requirements"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(b, &res); err != nil {
@@ -148,6 +155,14 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 		cats = append(cats, c.Description)
 	}
 	g.Controller, g.Pads = controllerSupport(d.Controller, cats)
+	g.ReqsRead = true
+	var req struct {
+		Minimum     string `json:"minimum"`
+		Recommended string `json:"recommended"`
+	}
+	if len(d.Req) > 0 && d.Req[0] == '{' && json.Unmarshal(d.Req, &req) == nil {
+		g.Minimum, g.Recommended = ParseRequirements(req.Minimum), ParseRequirements(req.Recommended)
+	}
 	for _, s := range d.Screenshots {
 		if len(g.Screenshots) == maxItems {
 			break
@@ -235,7 +250,8 @@ func LoadDetails(dir string, appID int) (*GameDetails, bool) {
 	if json.Unmarshal(b, &d) != nil {
 		return nil, true
 	}
-	return &d, time.Since(d.Fetched) > DetailsKeep
+	// Details kept before requirements were read are asked again once.
+	return &d, time.Since(d.Fetched) > DetailsKeep || (!d.ReqsRead && !d.Unknown)
 }
 
 func SaveDetails(dir string, appID int, d *GameDetails) error {

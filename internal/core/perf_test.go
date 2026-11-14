@@ -93,3 +93,29 @@ func TestWillItRun(t *testing.T) {
 		t.Fatalf("no requirements: %+v", v)
 	}
 }
+
+func TestPlanRun(t *testing.T) {
+	part := func(name string, have, min, rec float64, runs string) PartVerdict {
+		return PartVerdict{Part: name, Have: have, Min: min, Rec: rec, Runs: runs, Known: runs != RunsUnknown}
+	}
+	cases := []struct {
+		name   string
+		v      RunVerdict
+		score  int
+		preset string
+	}{
+		{"nothing known", RunVerdict{}, 0, ""},
+		{"at the recommended", RunVerdict{Parts: []PartVerdict{part("Graphics", 100, 50, 100, RunsRecommended), part("Processor", 100, 50, 100, RunsRecommended)}}, 70, "High"},
+		{"well above", RunVerdict{Parts: []PartVerdict{part("Graphics", 200, 50, 100, RunsHigh), part("Processor", 150, 50, 100, RunsHigh)}}, 100, "Ultra"},
+		{"the weaker part decides", RunVerdict{Parts: []PartVerdict{part("Graphics", 200, 50, 100, RunsHigh), part("Processor", 60, 50, 100, RunsMinimum)}}, 42, "Low"},
+		{"only a minimum", RunVerdict{Parts: []PartVerdict{part("Graphics", 50, 50, 0, RunsMinimum)}}, 40, "Low"},
+		{"memory short caps it", RunVerdict{Parts: []PartVerdict{part("Graphics", 200, 50, 100, RunsHigh), part("Memory", 8, 8, 16, RunsMinimum)}}, 55, "Medium"},
+		{"well under", RunVerdict{Parts: []PartVerdict{part("Graphics", 10, 50, 100, RunsBelow)}}, 7, ""},
+	}
+	for _, c := range cases {
+		p := PlanRun(c.v)
+		if p.Score != c.score || p.Preset != c.preset {
+			t.Errorf("%s: %+v, want score %d preset %q", c.name, p, c.score, c.preset)
+		}
+	}
+}
