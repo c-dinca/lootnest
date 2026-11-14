@@ -296,7 +296,19 @@
   // Every Play is theirs; "or play as…" and the picker are for anyone else.
   const seated = () => (S.seat && player(S.seat)) || null;
   let seatShown = null; // who the seat showed last: a new face pops in
+  // The sidebar's speaker shows whether Lootnest makes sounds.
+  function renderSound() {
+    const b = $("#bar-sound");
+    if (!b || !S.d) return;
+    const off = !!cfg().settings.soundsOff;
+    if (b.dataset.off === String(off)) return;
+    b.dataset.off = String(off);
+    b.setAttribute("aria-pressed", String(!off));
+    b.title = off ? "Sounds off. Click to turn them on" : "Sounds on. Click to mute";
+    b.innerHTML = ph(off ? "speaker-slash" : "speaker-high");
+  }
   function renderSeat() {
+    renderSound();
     // Just you: someone is always seated, so Play is yours.
     if (solo() && !seated() && people()[0]) { S.seat = people()[0].id; api.setSeat(S.seat).catch(() => {}); }
     const seat = seated(), b = $("#bar-me"), sat = seat && seatShown !== null && seat.id !== seatShown;

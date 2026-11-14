@@ -156,7 +156,7 @@
     const F = S.updFilter || "all";
     const seg = (k, n, label) => `<button data-action="upd-filter" data-f="${k}" aria-pressed="${F === k}"><span class="ln-count ln-num">${n}</span>${label}</button>`;
     const filter = `<div class="ln-segmented upd-filter" role="group" aria-label="Show">
-      ${seg("all", games.length, "All")}${seg("new", nNew, "Newer version out")}
+      ${seg("all", games.filter((g) => stOf(g).k !== "ok").length, "To look at")}${seg("new", nNew, "Newer version out")}
       ${seg("ok", games.filter((g) => stOf(g).k === "ok").length, "Up to date")}${seg("dim", games.filter((g) => stOf(g).k === "dim").length, "Can't tell")}</div>`;
     const news = U.newsOn ? "" : `<ul class="ln-rows">${lookRow("Find out when a newer version is out", "Reads each game's news on Steam. Only its Steam id or name is sent.", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="news-on">Turn it on</button>`, "")}</ul>`;
     const dl = S.dl || [];
@@ -166,9 +166,10 @@
       ${storeNew.map((r) => lookRow(r.newer.version ? `${esc(r.name)} ${esc(r.newer.version)} is out` : `A newer download of ${esc(r.name)} is out`, `From ${r.from.label}, ${esc(fmtBytes(r.newer.size || 0))}.`, storeUpdBtn(r, "ln-button--secondary"))).join("")}
       ${broke.map((g) => { const u = (g.applied || []).find((x) => x.state === "applied"); return lookRow(`${esc(g.name)} closed right after starting`, `First start since the update from ${esc(u.source)}.`, u.noUndo ? "" : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="upd-undo" data-key="${esc(g.key)}" data-id="${esc(u.id)}" data-name="${esc(g.name)}">Undo the update</button>`); }).join("")}
       </ul>`, "upd-look");
-    const list = games.filter((g) => F === "all" || stOf(g).k === F || (F === "new" && g.newer))
+    // Up to date games stay out of All: there's nothing to do with them.
+    const list = games.filter((g) => (F === "all" ? stOf(g).k !== "ok" : stOf(g).k === F || (F === "new" && g.newer)))
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || byName(a.name, b.name));
-    const cards = list.length ? `<ol class="ln-rows upd-cards">${list.map((r, i) => (r.from ? storeUpdCard(r, i === 0 && !!r.newer) : updCard(r, U, i === 0 && !!r.newer))).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : "is in this group"}.</p>`;
+    const cards = list.length ? `<ol class="ln-rows upd-cards">${list.map((r, i) => (r.from ? storeUpdCard(r, i === 0 && !!r.newer) : updCard(r, U, i === 0 && !!r.newer))).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : F === "all" ? "needs an update" : "is in this group"}.</p>`;
     return `<div class="upd-page ln-root">${head("")}<div class="upd-cols">
       <div class="upd-main-col">${found}${news}${labelSec("Your games", 0, filter + cards)}</div>
       <aside class="upd-aside">${look}<div class="upd-check">${refresh}<span>Checked ${esc(ago(U.at))}</span></div></aside></div></div>`;

@@ -26,6 +26,13 @@
     },
     "side-toggle"() { setFold(!S.folded); },
     "bp-open"() { bpOpen(); },
+    // The sidebar's speaker: every Lootnest sound on or off, at once.
+    async "sound-toggle"() {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.soundsOff = !s.soundsOff;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); await refresh(); toast(s.soundsOff ? "Sounds off" : "Sounds on"); }
+      catch (e) { toast(errText(e), "error"); }
+    },
     "side-group"(el) {
       const g = el.dataset.g;
       if (S.sideClosed.has(g)) S.sideClosed.delete(g); else S.sideClosed.add(g);
@@ -452,7 +459,11 @@
     "upd-notes"(el) {
       const r = S.updates && S.updates.games.find((g) => g.key === el.dataset.key);
       const it = r && updItem(r.key);
-      if (it) openSheet(it.kind, it.id, null); // the game's page has its news, with the patch notes on top
+      if (!it) return;
+      // The game's News tab, with that post open (once the news has arrived).
+      S.gameTab[it.kind + ":" + it.id] = "news";
+      S.newsOpen = { key: coverKey(it), title: (r.newer && r.newer.title) || "" };
+      openSheet(it.kind, it.id, null);
     },
     "sc-games"(el) {
       const kind = el.dataset.kind, list = (S.saveCheck && S.saveCheck[kind]) || [];
