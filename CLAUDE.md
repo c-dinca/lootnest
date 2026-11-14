@@ -217,7 +217,9 @@ These shipped recently, newest last:
   (`%APPDATA%\hydralauncher\hydra-db`, `!games!<shop>:<id>`, via
   `syndtr/goleveldb`). `FoundGame.SteamID` carries the Steam id Hydra
   knows, for save locations and achievements. Only games already on the
-  PC; Lootnest never offers Hydra's downloads or sources.
+  PC; Lootnest never offers Hydra's downloads or sources. The owner, 14
+  Nov 2026: an update for a game from Hydra may open Hydra itself (the
+  app, never a source or a page of it) for the user to get it there.
 - **1.34** Find games (`core/findgames.go`, `app/findgames.go`, view
   `find`, drawer `offer`): Steam storesearch and appdetails (prices in the
   Windows country's currency, requirements), CheapShark for other official
@@ -853,6 +855,12 @@ These shipped recently, newest last:
   (`ps_copyFiles`, `core.CopyFiles` on a folder or .zip, at most 200);
   the pencil names any copy (`ps_nameCopy`: save points through
   `RenameSavePoint`, others in `copynames.json`, `core.SetCopyName`).
+  Updates: the drawer's first screen is a guide (`updGuide` in
+  75-updates.js: get it, choose it here, check and apply); for a Hydra
+  game `ps_openHydra` copies the name and opens `hydralauncher://` (Hydra
+  has no link to a game's page, only `run`), and `downloadsLook` also
+  reads Hydra's own download folder (`core.HydraDownloadsPath`, the root
+  key `userPreferences`, `downloadsPath`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
@@ -1000,7 +1008,9 @@ games (no sources, official-looking or hidden), never bypasses DRM, and
 never generates, ships or "repairs" anything that makes a game start. It
 downloads only games the user owns, from the store they bought them from,
 through its official API once the user connects it (itch.io now, GOG
-next): never from anywhere else, and never a catalogue.
+next): never from anywhere else, and never a catalogue. Opening Hydra for an
+update of a game that came from it is the owner's one other exception (14
+Nov 2026): Lootnest opens the app and copies the game's name, nothing more.
 
 ## Ideas not started
 

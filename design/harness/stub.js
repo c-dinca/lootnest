@@ -746,6 +746,7 @@
       return ok();
     },
     // Saves: every copy kept, newest first, and their sums per game.
+    ps_openHydra: () => ok(null),
     ps_copyFiles: (key, kind, id) => ok(kind === "net" ? { count: 2, files: [{ path: "loc0/SaveGames/Slot1.sav", size: 2.1e6, mod: iso(3 * h) }, { path: "loc0/SaveGames/Settings.ini", size: 2048, mod: iso(2 * d) }] }
       : { count: 14, files: Array.from({ length: 6 }, (_, i) => ({ path: `Public/Savegames/Story/${["Quicksave_12", "Autosave_8", "Act3_LowerCity", "Act2_Moonrise", "Act1_Camp", "profile8"][i]}.lsv`, size: [41e6, 39e6, 38e6, 35e6, 30e6, 4096][i], mod: iso((i + 1) * 3 * h) })) }),
     ps_nameCopy: (key, kind, id, name) => { COPYNAMES[`${key}|${kind}|${id}`] = name; return ok(); },

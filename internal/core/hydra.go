@@ -76,6 +76,39 @@ func HydraGames(dbDir, tmp string, containers []string) ([]FoundGame, error) {
 	return out, nil
 }
 
+// HydraDownloadsPath is the folder Hydra downloads into when the user chose
+// one in its settings ("userPreferences" in its database, downloadsPath),
+// or "" when it uses Windows' Downloads, which Lootnest already looks in.
+func HydraDownloadsPath(dbDir, tmp string) (string, error) {
+	if !isDir(dbDir) {
+		return "", nil
+	}
+	defer os.RemoveAll(tmp)
+	if err := copyLevelDB(dbDir, tmp); err != nil {
+		return "", err
+	}
+	db, err := leveldb.OpenFile(tmp, &opt.Options{ErrorIfMissing: true})
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+	b, err := db.Get([]byte("userPreferences"), nil)
+	if err != nil {
+		return "", nil // never set
+	}
+	var p struct {
+		DownloadsPath *string `json:"downloadsPath"`
+	}
+	if json.Unmarshal(b, &p) != nil || p.DownloadsPath == nil {
+		return "", nil
+	}
+	dir := filepath.Clean(strings.TrimSpace(*p.DownloadsPath))
+	if !filepath.IsAbs(dir) || !isDir(dir) {
+		return "", nil
+	}
+	return dir, nil
+}
+
 // copyLevelDB copies a LevelDB folder's files, except its lock, so the copy
 // can be opened while the program that owns it is running. A file the
 // program holds open for itself (its newest log, on Windows) is left out:

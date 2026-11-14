@@ -2504,3 +2504,17 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .sv-file .ln-icon { flex: none; width: 14px; height: 14px; color: var(--fg-3); }
 .sv-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .sv-list .sv-row { grid-template-columns: auto minmax(0, 1fr) auto; } .sv-who, .sv-size { display: none; } }
+
+/* The update guide: three steps from getting an update to applying it. */
+.ug-ver { margin-bottom: var(--gap-group); }
+.ug-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: none; }
+.ug-step { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: var(--space-3); padding-bottom: var(--gap-group); }
+.ug-step:not(:last-child)::before { content: ""; position: absolute; left: 15px; top: 34px; bottom: 4px; width: 2px; border-radius: 1px; background: var(--edge-2); }
+.ug-n { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-key); background: var(--bg-raised); box-shadow: inset 0 1px 0 var(--key-light); font-family: var(--font-display); font-size: var(--fs-14); color: var(--fg-1); }
+.ug-step--done .ug-n { background: var(--lamp); color: var(--fg-on-light); }
+.ug-step--done .ug-n .ln-icon { width: 16px; height: 16px; }
+.ug-main { display: grid; gap: var(--space-1); padding-top: 5px; min-width: 0; }
+.ug-main > b { font-size: var(--fs-15); color: var(--fg-1); }
+.ug-main > p { margin: 0; color: var(--fg-2); font-size: var(--fs-13); line-height: 1.5; }
+.ug-act { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.ug-act .gpage-actions { margin: 0; }

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Updating a game walks you through it**: get the update, choose it, check what it changes and apply it, with the saves and every replaced file copied first. For a game from Hydra, Open Hydra starts Hydra with the game's name copied, ready to paste in its search, and an update Hydra downloads shows up by itself, from Downloads or the folder you set in Hydra.
 - **Saves is easier to read.** Each kind of copy is explained at the top (save points, copies before a swap, safety net copies), click a copy's icon to see the files in it with their size and date, and name any copy, such as "Before the boss", with the pencil.
 - **An achievement as a card.** Click one, on a game's page or on Achievements, and it comes up as a card in the middle of the screen: it tilts toward the pointer, turns when you drag it, and flips to show the game, when you unlocked it and how rare it is. From the Achievements page it opens on the game's Achievements tab; a game's card there goes to that tab too.
 - **Will it run, on a game's page**, in place of Status: a score out of 100 on a dial, the settings to start with (quality, resolution, frame rate, and upscaling when it helps), and your graphics card, processor and memory against the game's minimum and recommended. It uses the requirements Steam lists, read with Game details.
