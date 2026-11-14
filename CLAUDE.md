@@ -849,6 +849,10 @@ These shipped recently, newest last:
   `achRow` registers each in `ACH_SEEN` and opens dialog `achcard`
   (`viewAchCard`, pointer tilt, drag to turn, click/Enter to flip, arrows;
   `data-go` from the Achievements page opens the game's tab first).
+  Saves: `SV_KINDS` explains each kind; a row's icon opens its files
+  (`ps_copyFiles`, `core.CopyFiles` on a folder or .zip, at most 200);
+  the pencil names any copy (`ps_nameCopy`: save points through
+  `RenameSavePoint`, others in `copynames.json`, `core.SetCopyName`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

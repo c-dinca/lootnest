@@ -4,7 +4,15 @@
   // before swaps) from ps_savesOverview, each game, and Cloud saves. Every
   // button here is one the game's page or Cloud saves already has.
   const SV_SHOWN = 8;
-  const SV_KIND = { net: "Copy of its saves", point: "Save point", swap: "Copy before a swap" };
+  const SV_KIND = { net: "Safety net copy", point: "Save point", swap: "Copy before a swap" };
+  // What each kind of copy is, in one line, with its icon.
+  const SV_KINDS = [
+    ["point", "flag-pennant", "Save point", "One you made, by name or with Ctrl+Shift+F5 while playing."],
+    ["swap", "arrows-left-right", "Copy before a swap", "Made by itself each time Lootnest swaps one profile's files for another's."],
+    ["net", "vault", "Safety net copy", "Made by itself when the saves of a game from outside the stores change."],
+  ];
+  const svIcon = (kind) => ph((SV_KINDS.find((k) => k[0] === kind) || [])[1] || "file");
+  const svKey = (c) => `${c.key}|${c.kind}|${c.id}`;
   const SV_COLS = [["name", "Game"], ["profiles", "Profiles"], ["last", "Newest copy"], ["points", "Save points"], ["size", "Size"]];
   // Arriving for Cloud saves: the section stays at the top while the rows
   // above it come in, until the page is scrolled by hand.
@@ -50,10 +58,21 @@
       const [attrs, label] = c.kind === "net" ? [`data-action="gs-restore" data-local="1" data-key="${esc(c.key)}" data-id="${esc(c.id)}" data-when="${esc(c.at)}"`, "Restore"]
         : c.kind === "point" ? [`data-action="pt-restore" ${itemAttr(it)} data-id="${esc(c.id)}" data-name="${esc(c.name)}"`, "Go back to it"]
         : p ? [`data-action="copy-put-back" data-game="${esc(it.id)}" data-id="${esc(c.id)}" data-owner="${esc(c.owner)}" data-when="${esc(when)}"`, "Put back"] : [];
-      return `<li class="sv-row"><div class="sv-what">${svOpen(it, esc(it.name))}<span>${c.kind === "point" ? `${SV_KIND.point}: ${esc(c.name)}` : SV_KIND[c.kind]}</span></div>
+      const k = svKey(c), open = S.svOpenRow === k, F = S.svFiles[k];
+      const naming = S.svNaming === k;
+      const title = naming ? `<input class="ln-input sv-name-in" id="sv-name-in" type="text" maxlength="60" value="${esc(c.name || "")}" placeholder="Name this copy, such as Before the boss" data-k="${esc(k)}" aria-label="A name for this copy">`
+        : `<b class="sv-name">${c.name ? esc(c.name) : SV_KIND[c.kind]}</b>`;
+      const files = !open ? "" : !F || F.loading ? `<div class="sv-files">${lnInline("", "Reading the files")}</div>`
+        : F.error ? `<div class="sv-files">${lnInline("error", esc(F.error))}</div>`
+        : `<div class="sv-files"><p class="sv-files-head">${F.count === 1 ? "1 file" : `${F.count} files`}${F.count > F.files.length ? `, the ${F.files.length} newest shown` : ""}</p>
+            <ul>${F.files.map((f) => `<li><span class="sv-file">${ph("file")}<span title="${esc(f.path)}">${esc(f.path)}</span></span><span class="ln-num">${esc(fmtBytes(f.size))}</span><span title="${esc(svWhen(f.mod))}">${esc(ago(f.mod))}</span></li>`).join("")}</ul></div>`;
+      return `<li class="sv-row sv-row--${c.kind}${open ? " is-open" : ""}">
+        <button class="sv-tog" data-action="sv-files" data-k="${esc(k)}" aria-expanded="${open}" aria-label="${open ? "Hide" : "Show"} the files in this copy" title="${open ? "Hide the files" : "Show the files"}">${svIcon(c.kind)}</button>
+        <div class="sv-what">${title}<span>${svOpen(it, esc(it.name))}${c.name ? `<em>${SV_KIND[c.kind]}</em>` : ""}</span></div>
         <span class="sv-who">${p ? `<span class="ln-mark ln-player" style="--player:${esc(p.color)}"></span>${esc(p.name)}` : ""}</span>
         <span class="sv-when" title="${esc(when)}">${esc(ago(c.at))}</span><span class="sv-size ln-num">${esc(fmtBytes(c.size || 0))}</span>
-        <span class="sv-act">${attrs ? `<button class="ln-button ln-button--secondary ln-button--sm" ${attrs}${busy ? " disabled" : ""}>${label}</button>` : ""}</span></li>`;
+        <span class="sv-act">${naming ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="sv-name-save" data-k="${esc(k)}">Save</button>` : `<button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="sv-name" data-k="${esc(k)}" aria-label="Name this copy" title="Name this copy">${ph("pencil-simple")}</button>`}${attrs ? `<button class="ln-button ln-button--secondary ln-button--sm" ${attrs}${busy ? " disabled" : ""}>${label}</button>` : ""}</span>
+        ${files}</li>`;
     }).join("");
     const more = list.length > SV_SHOWN ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="sv-more">${S.svMore ? "Show fewer" : `Show ${list.length - SV_SHOWN} more`}</button>` : "";
     return `<ol class="ln-rows sv-list">${rows}</ol>${more}`;
@@ -83,5 +102,7 @@
       : empty ? emptyState("No copies yet", "Copies of your saves show up here.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)
       : sec("Recent copies", 0, recent.length ? svRecent(recent) : `<p class="upd-empty">None yet</p>`);
     const perGame = O && !empty ? sec("Per game", 0, svGames(games)) : "";
-    return `<div class="saves-page ln-root"><header class="upd-head"><h1>Saves</h1></header>${stats}${look.length ? sec("Needs a look", look.length, `<ul class="ln-rows">${look.join("")}</ul>`) : ""}${body}${perGame}${cloudSection()}</div>`;
+    const kinds = O && !empty ? `<ul class="sv-kinds">${SV_KINDS.map(([k, ic, t, line]) => `<li class="sv-kind sv-kind--${k}">${ph(ic)}<div><b>${t}</b><span>${line}</span></div></li>`).join("")}</ul>
+      <p class="sv-tip">Click a copy's icon to see its files, or the pencil to name it. Restore, Put back and Go back to it keep a copy of what's there first.</p>` : "";
+    return `<div class="saves-page ln-root"><header class="upd-head"><h1>Saves</h1></header>${stats}${look.length ? sec("Needs a look", look.length, `<ul class="ln-rows">${look.join("")}</ul>`) : ""}${kinds}${body}${perGame}${cloudSection()}</div>`;
   }
