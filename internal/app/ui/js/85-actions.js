@@ -591,6 +591,14 @@
     },
     // Game details: the quiet link opens Settings, Online, where the switch is.
     "details-on"() { S.setTab = "online"; setPref("setTab", S.setTab); actions.nav({ dataset: { view: "settings" } }); },
+    "rev-kind"(el) { S.revKind[el.dataset.k] = el.dataset.kind; render(); },
+    "rev-again"(el) { delete S.reviews[el.dataset.k + "|" + el.dataset.kind]; render(); },
+    "rev-more"(el) {
+      const id = el.dataset.id, open = !S.revOpen.has(id), li = el.closest(".gp-rev");
+      if (open) S.revOpen.add(id); else S.revOpen.delete(id);
+      if (li) li.classList.toggle("open", open);
+      el.textContent = open ? "Show less" : "Read all of it"; el.setAttribute("aria-expanded", open);
+    },
     "details-more"(el) {
       const k = el.dataset.k, open = !S.detOpen.has(k), p = $("#det-sum");
       if (open) S.detOpen.add(k); else S.detOpen.delete(k);

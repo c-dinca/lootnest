@@ -2518,3 +2518,36 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .ug-main > p { margin: 0; color: var(--fg-2); font-size: var(--fs-13); line-height: 1.5; }
 .ug-act { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .ug-act .gpage-actions { margin: 0; }
+
+/* Community: Steam's word on the game and its most helpful reviews. */
+.gp-com-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.gp-com-seg { flex-wrap: wrap; }
+.gp-com-score { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: var(--space-4); row-gap: var(--space-2); margin-bottom: var(--gap-group); }
+.gp-com-pct { font-family: var(--font-display); font-size: var(--text-board); line-height: 1; color: var(--fg-1); }
+.gp-com-pct small { font-size: 0.45em; margin-left: 2px; color: var(--fg-2); }
+.gp-com-score > span:nth-child(2) { display: grid; gap: 2px; }
+.gp-com-score b { font-size: var(--fs-15); color: var(--fg-1); }
+.gp-com-n { font-size: var(--fs-13); color: var(--fg-2); }
+.gp-com-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--danger) 55%, transparent); overflow: hidden; }
+.gp-com-bar > span { display: block; height: 100%; background: var(--lamp); border-radius: inherit; transform-origin: left; }
+.arrive .gp-com-bar > span { animation: gp-com-fill 900ms var(--ease-emph) both; }
+@keyframes gp-com-fill { from { transform: scaleX(0); } }
+.gp-com-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--space-3); align-items: start; }
+.gp-com-skel { height: 168px; border-radius: var(--radius-panel); }
+.gp-rev { display: grid; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: inset 0 1px 0 var(--key-light); border: var(--hairline) solid var(--edge-1); }
+.gp-rev-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); }
+.gp-rev-head b { display: block; font-size: var(--fs-14); color: var(--fg-1); }
+.gp-rev-facts { display: block; font-size: var(--fs-12); color: var(--fg-2); }
+.gp-rev-head time { font-size: var(--fs-12); color: var(--fg-3); align-self: start; }
+.gp-rev-thumb { width: 34px; height: 34px; display: grid; place-items: center; border-radius: var(--radius-ctl); }
+.gp-rev-thumb .ln-icon { width: 18px; height: 18px; }
+.gp-rev--up .gp-rev-thumb { background: color-mix(in srgb, var(--lamp) 16%, transparent); color: var(--lamp); }
+.gp-rev--down .gp-rev-thumb { background: var(--danger-wash); color: var(--danger); }
+.gp-rev-text { margin: 0; white-space: pre-line; font-size: var(--fs-14); line-height: 1.55; color: var(--fg-1); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.gp-rev.open .gp-rev-text { display: block; -webkit-line-clamp: unset; }
+.gp-rev-foot { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
+.gp-rev-help { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--fs-12); color: var(--fg-2); }
+.gp-rev-help .ln-icon { width: 13px; height: 13px; }
+.gp-com-foot { display: flex; justify-content: flex-end; margin-top: var(--space-3); }
+.gp-com-foot:empty { display: none; }

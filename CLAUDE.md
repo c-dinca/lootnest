@@ -861,6 +861,14 @@ These shipped recently, newest last:
   has no link to a game's page, only `run`), and `downloadsLook` also
   reads Hydra's own download folder (`core.HydraDownloadsPath`, the root
   key `userPreferences`, `downloadsPath`).
+  Community at the end of Overview (`communityBlock`, `reviewCard` in
+  62-game-blocks.js): `core.FetchReviews` (appreviews, filter=all, the
+  past year, BBCode to text by `ReviewText`), `ps_gameReviews` with a
+  six-hour memory cache, asked only when the block scrolls into view
+  (`watchCommunity`), only with Game details on. Giscus comments wait on
+  the owner: Discussions on, the giscus app installed, then its repo and
+  category ids; the page's CSP (`frame-src 'none'`) and
+  `core.AllowedPageRequest` would need giscus.app.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

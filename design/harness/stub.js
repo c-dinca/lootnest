@@ -613,6 +613,19 @@
     ps_gameNews: (key) => { if (STATE === "offline") emit({ type: "news", key, error: "Couldn't reach Steam's news feed.", items: [] }); else if (STATE !== "loading") emit({ type: "news", key, items: NEWS, newer: /phantom/i.test(key) ? { title: "Phantom Blade Zero - Patch Notes (Version 1.0302256)", date: iso(3 * d), update: true } : undefined }); return ok(); },
     // Game details: Baldur's Gate 3 has everything, other Steam games a
     // summary and facts, games without a Steam id none (or the user's edits).
+    // Steam reviews for Community; ?reviews=error|none for those states.
+    ps_gameReviews: (key, kind) => { setTimeout(() => {
+      const rq = q.get("reviews");
+      if (rq === "error") return emit({ type: "reviews", key, kind, error: "Couldn't reach the Steam store." });
+      const all = [
+        { id: "1001", up: true, hours: 86.4, total: 212.5, helpful: 1843, funny: 12, at: iso(40 * d), text: "The best RPG I've played in ten years.\n\nEvery choice matters, the companions feel like people, and the third act still surprised me on my second run. Play it with a friend if you can: co-op is where it shines." },
+        { id: "1002", up: true, hours: 12, total: 31.2, helpful: 402, funny: 88, at: iso(12 * d), text: "Spent two hours making my character. Worth it." },
+        { id: "1003", up: false, hours: 54.1, total: 54.1, helpful: 233, funny: 4, at: iso(70 * d), early: true, text: "Act three runs badly on my PC and a few quests broke for me. The first two acts are great, but I'd wait for another patch before starting a fresh run. ".repeat(4).trim(), cut: true },
+        { id: "1004", up: true, hours: 140.9, total: 301, helpful: 97, funny: 1, at: iso(5 * d), free: true, text: "Honour mode is brutal and fair. Save often (or don't, that's the point)." },
+      ];
+      const items = rq === "none" ? [] : all.filter((r) => kind === "all" || (kind === "positive") === r.up);
+      emit({ type: "reviews", key, kind, items, appId: 1086940 });
+    }, 300); return ok(); },
     ps_gameDetails: (key) => {
       if (STATE === "offline") emit({ type: "details", key, error: "Couldn't reach the Steam store. Lootnest tries again next time you open this page." });
       else if (STATE !== "loading") emit(detailsEv(key));

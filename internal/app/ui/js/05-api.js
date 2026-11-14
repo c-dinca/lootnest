@@ -131,6 +131,7 @@
     setGameSaves: (key, paths) => call("ps_setGameSaves", key, paths),
     gameNews: (key, appId, name, exe) => call("ps_gameNews", key, appId || 0, name, exe || ""),
     gameDetails: (key) => call("ps_gameDetails", key),
+    gameReviews: (key, kind) => call("ps_gameReviews", key, kind || "all"),
     plugins: () => call("ps_plugins"),
     installPlugin: (path) => call("ps_installPlugin", path),
     installPluginNewKey: (path, key) => call("ps_installPluginNewKey", path, key),

@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -163,4 +164,55 @@ func (a *App) apiSaveDetailsEdit(key string, e core.DetailsEdit) error {
 	}
 	a.emitDetails(key, kept, nil)
 	return nil
+}
+
+// Reviews read this run, by app id and kind, kept for six hours.
+var reviewsKept = struct {
+	sync.Mutex
+	m map[string]reviewsEntry
+}{m: map[string]reviewsEntry{}}
+
+type reviewsEntry struct {
+	at    time.Time
+	items []core.Review
+}
+
+// apiGameReviews answers with a "reviews" event: the most helpful Steam
+// reviews of the past year for the game at key (kind "all", "positive" or
+// "negative"). Only with Game details on; nothing is kept on disk.
+func (a *App) apiGameReviews(key, kind string) {
+	if !a.detailsOn() {
+		return
+	}
+	if kind != "positive" && kind != "negative" {
+		kind = "all"
+	}
+	go func() {
+		out := map[string]any{"key": key, "kind": kind}
+		id := a.detailsAppID(key)
+		if id <= 0 {
+			out["none"] = true
+			a.emit("reviews", out)
+			return
+		}
+		ck := strconv.Itoa(id) + "/" + kind
+		reviewsKept.Lock()
+		e, ok := reviewsKept.m[ck]
+		reviewsKept.Unlock()
+		if !ok || time.Since(e.at) > 6*time.Hour {
+			items, err := core.FetchReviews(fetchURL, id, "english", kind)
+			if err != nil {
+				a.logf("Reviews for app %d: %v", id, err)
+				out["error"] = "Couldn't reach the Steam store."
+				a.emit("reviews", out)
+				return
+			}
+			e = reviewsEntry{time.Now(), items}
+			reviewsKept.Lock()
+			reviewsKept.m[ck] = e
+			reviewsKept.Unlock()
+		}
+		out["items"], out["appId"] = e.items, id
+		a.emit("reviews", out)
+	}()
 }

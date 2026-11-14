@@ -393,7 +393,7 @@
     const ach = achievementsBlock(it), tl = timelineBlock(it), points = savePointsBlock(it), saves = gameSavesBlock(it), other = otherSavesBlock(it), mods = modsBlock(it);
     const newsOn = cfg().settings.gameNews;
     const panes = {
-      overview: cols(activityLine(it, !!tl) + detailsBlock(it) + achievementsBlock(it, true) + latestPoint(it) + latestCopy(it) + (newsOn ? "" : news), side),
+      overview: cols(activityLine(it, !!tl) + detailsBlock(it) + achievementsBlock(it, true) + latestPoint(it) + latestCopy(it) + (newsOn ? "" : news) + communityBlock(it), side),
       achievements: ach && wide(ach),
       saves: points ? cols(points, saves + other) : (saves || other) && wide(saves + other),
       mods: mods && wide(mods),
