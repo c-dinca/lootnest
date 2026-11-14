@@ -247,7 +247,7 @@
     const all = rows.reduce((n, r) => n + r.g.total, 0), allPct = all ? Math.round((total / all) * 100) : 0;
     // The rarest they've unlocked anywhere, on show.
     const rarest = rows.flatMap((r) => r.rarest.map((a) => ({ a, r }))).sort((x, y) => x.a.percent - y.a.percent).slice(0, 4);
-    const show = rarest.length ? labelSec("Rarest unlocked", 0, `<ul class="ach-list">${rarest.map(({ a, r }) => achRow(a, r.g.key, esc(r.g.name))).join("")}</ul>`) : "";
+    const show = rarest.length ? labelSec("Rarest unlocked", 0, `<ul class="ach-list">${rarest.map(({ a, r }) => achRow(a, r.g.key, esc(r.g.name), true)).join("")}</ul>`) : "";
     const full = rows.filter((r) => r.unlocked >= r.g.total).length;
     const score = labelSec("Score", 0, `<dl class="ln-meta ln-score">
       <div class="ln-meta__item"><dd class="ln-num"><span data-countup="${total}">${total}</span><small>of ${all}</small></dd><dt>Unlocked</dt></div>
@@ -255,7 +255,7 @@
     return `<div class="ach-page ln-root">${head}
       <div class="ach-cols">
         <div class="ach-main">${chips}${score}
-          ${labelSec("Games", rows.length, `<ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = r.unlocked >= r.g.total ? 100 : Math.min(99, Math.round((r.unlocked / r.g.total) * 100)); return `<li><button class="ach-gcard" data-action="open-sheet" ${itemAttr(r.it)}>
+          ${labelSec("Games", rows.length, `<ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = r.unlocked >= r.g.total ? 100 : Math.min(99, Math.round((r.unlocked / r.g.total) * 100)); return `<li><button class="ach-gcard" data-action="open-sheet" data-tab="achievements" ${itemAttr(r.it)}>
             <span class="ach-gcover cover">${coverHTML(r.it)}</span>
             <span class="ach-gbody"><b class="ach-game-name">${esc(r.g.name)}</b>
               <span class="ach-game-num"><b class="ln-num">${r.unlocked}</b> of <span class="ln-num">${r.g.total}</span>, ${r.shared ? (r.g.source === "steam" ? "Steam account" : "shared") : `${esc(possessive(pname(who)))} own`}</span></span>
@@ -263,7 +263,7 @@
           ${msHTML}
         </div>
         <div class="ach-side">${show}
-          ${labelSec("Latest unlocked", 0, latest.length ? `<ul class="ach-list">${latest.map(({ a, r }) => achRow(a, r.g.key, `${esc(r.g.name)}${a.at && new Date(a.at).getFullYear() > 2000 ? ", " + esc(ago(a.at)) : ""}`)).join("")}</ul>` : `<p class="home-hint">Nothing unlocked yet.</p>`, "ach-latest")}
+          ${labelSec("Latest unlocked", 0, latest.length ? `<ul class="ach-list">${latest.map(({ a, r }) => achRow(a, r.g.key, `${esc(r.g.name)}${a.at && new Date(a.at).getFullYear() > 2000 ? ", " + esc(ago(a.at)) : ""}`, true)).join("")}</ul>` : `<p class="home-hint">Nothing unlocked yet.</p>`, "ach-latest")}
         </div>
       </div></div>`;
   }

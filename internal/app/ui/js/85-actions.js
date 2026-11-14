@@ -372,6 +372,16 @@
     async "upd-keep"(el) { try { await api.keepSavesNow(el.dataset.key); toast("Copying its saves"); } catch (e) { toast(errText(e), "error"); } },
     async "report-problem"() { try { await api.reportProblem(); toast("Copied. Paste it into the new issue."); } catch (e) { toast(errText(e), "error"); } },
     "ach-reveal"(el) { S.revealed.add(el.dataset.k); render(); },
+    // An achievement as a card to turn over and look at. From the
+    // Achievements page it opens on the game's Achievements tab.
+    "ach-card"(el) {
+      const rk = el.dataset.k, x = ACH_SEEN.get(rk);
+      if (!x) return;
+      const show = () => { S.dialog = { kind: "achcard", rk }; renderOverlay(); focusOverlay(); uiSound("open"); };
+      const it = el.dataset.go && itemByKey(x.key);
+      if (it) { S.gameTab[it.kind + ":" + it.id] = "achievements"; openSheet(it.kind, it.id, null); setTimeout(show, 380); return; }
+      show();
+    },
     "test-toast"() {
       const demo = [{ name: "This is how an unlock looks", percent: 4.2 }];
       achPop(demo, "", (seated() || {}).id); unlockSound(demo);

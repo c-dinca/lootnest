@@ -845,7 +845,10 @@ These shipped recently, newest last:
   (`GameDetails.Minimum/Recommended/ReqsRead`; old cached details are
   read again once) and `core.PlanRun` (score, preset, resolution, fps,
   upscaling); the page's Status, rating and note were removed (Library
-  filters and the selection bar still set status).
+  filters and the selection bar still set status). Achievement cards:
+  `achRow` registers each in `ACH_SEEN` and opens dialog `achcard`
+  (`viewAchCard`, pointer tilt, drag to turn, click/Enter to flip, arrows;
+  `data-go` from the Achievements page opens the game's tab first).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
