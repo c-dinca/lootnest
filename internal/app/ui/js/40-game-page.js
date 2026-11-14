@@ -327,7 +327,7 @@
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
       note = page ? also + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) : "";
-      side = page ? playersPanel(it) + collectionsBlock(it) : "";
+      side = page ? playersPanel(it) + willRunBlock(it) + collectionsBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
@@ -362,7 +362,7 @@
         elsewhere: "Syncs other files of this game, not the ones profiles swap.",
         overlap: `Syncs ${P.cloud.count === 1 ? "1 of the files" : P.cloud.count + " of the files"} profiles swap. Checked at every start.`,
       }[P.cloud.state];
-      side = page ? playersPanel(it) + collectionsBlock(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
+      side = page ? playersPanel(it) + willRunBlock(it) + collectionsBlock(it) + (cloud ? `<section class="gpage-block">${gpHead("Steam Cloud")}<p>${esc(cloud)}</p></section>` : "") : "";
       news = page ? newsHTML(it) : "";
     }
     const back = page ? `<button class="ln-button ln-button--ghost ln-button--sm gpage-back" data-action="back-library">${GI.back}${esc(backLabel())}</button>` : "";

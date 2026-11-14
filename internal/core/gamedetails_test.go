@@ -16,6 +16,7 @@ const hadesDetails = `{"1145350":{"success":true,"data":{"name":"Hades II",
 "short_description":"Battle beyond the Underworld &amp; <b>defy</b> the Titan of Time<br>\r\n in this   sequel.",
 "genres":[{"id":"1","description":"Action"},{"id":"25","description":"Adventure"},{"id":"1","description":"Action"}],
 "developers":["Supergiant Games"],"publishers":["Supergiant Games"],
+"pc_requirements":{"minimum":"<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>Processor:</strong> Dual Core 2.4 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GTX 1060 or RX 580</li></ul>","recommended":""},
 "release_date":{"coming_soon":false,"date":"25 Sep, 2025"},
 "screenshots":[{"id":0,"path_thumbnail":"https://shared.akamai.steamstatic.com/a/ss_1.600x338.jpg","path_full":"https://shared.akamai.steamstatic.com/a/ss_1.1920x1080.jpg"},
 {"id":1,"path_thumbnail":"https://evil.example/ss.jpg","path_full":"https://evil.example/ss.jpg"}],
@@ -72,6 +73,9 @@ func TestFetchGameDetails(t *testing.T) {
 	if d.ReviewScore != "Overwhelmingly Positive" || d.ReviewPercent != 98 || d.ReviewCount != 12345 {
 		t.Fatalf("reviews %+v", d)
 	}
+	if !d.ReqsRead || len(d.Minimum) == 0 || len(d.Recommended) != 0 {
+		t.Fatalf("requirements %+v %+v", d.Minimum, d.Recommended)
+	}
 	if d.StoreURL != "https://store.steampowered.com/app/1145350/" || d.Fetched.IsZero() {
 		t.Fatalf("%+v", d)
 	}
@@ -118,13 +122,17 @@ func TestDetailsCache(t *testing.T) {
 	if d, stale := LoadDetails(dir, 5); d != nil || !stale {
 		t.Fatal("nothing kept yet")
 	}
-	if err := SaveDetails(dir, 5, &GameDetails{Summary: "Fresh", Fetched: time.Now()}); err != nil {
+	_ = SaveDetails(dir, 5, &GameDetails{Summary: "Before requirements", Fetched: time.Now()})
+	if d, stale := LoadDetails(dir, 5); d == nil || !stale {
+		t.Fatalf("a copy kept before requirements were read is read again: %+v %v", d, stale)
+	}
+	if err := SaveDetails(dir, 5, &GameDetails{Summary: "Fresh", Fetched: time.Now(), ReqsRead: true}); err != nil {
 		t.Fatal(err)
 	}
 	if d, stale := LoadDetails(dir, 5); d == nil || d.Summary != "Fresh" || stale {
 		t.Fatalf("fresh copy: %+v %v", d, stale)
 	}
-	_ = SaveDetails(dir, 5, &GameDetails{Summary: "Old", Fetched: time.Now().Add(-31 * 24 * time.Hour)})
+	_ = SaveDetails(dir, 5, &GameDetails{Summary: "Old", Fetched: time.Now().Add(-31 * 24 * time.Hour), ReqsRead: true})
 	if d, stale := LoadDetails(dir, 5); d == nil || d.Summary != "Old" || !stale {
 		t.Fatalf("a month-old copy is shown and read again: %+v %v", d, stale)
 	}
@@ -217,8 +225,10 @@ func TestControllerOldCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	d, stale := LoadDetails(dir, 9)
-	if d == nil || stale || d.Summary != "Kept before 1.85" || d.Controller != "" || d.Pads != nil {
-		t.Fatalf("an old copy stays valid, with nothing known about controllers: %+v %v", d, stale)
+	// Still shown, with nothing known about controllers; read again once,
+	// since it has no requirements for Will it run.
+	if d == nil || !stale || d.Summary != "Kept before 1.85" || d.Controller != "" || d.Pads != nil {
+		t.Fatalf("an old copy is shown and read again once: %+v %v", d, stale)
 	}
 }
 

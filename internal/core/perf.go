@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -337,4 +338,67 @@ func WillItRun(pc PCSpecs, minimum, recommended []ReqLine) RunVerdict {
 		v.Limit = ""
 	}
 	return v
+}
+
+// RunPlan is what a game's page shows under Will it run: a score out of 100
+// and the settings Lootnest would start with. An estimate from the score
+// tables, never a measurement.
+type RunPlan struct {
+	Score      int    `json:"score"`      // 0 to 100; 0 when Lootnest can't tell
+	Preset     string `json:"preset"`     // "Ultra", "High", "Medium", "Low", "Lowest", or ""
+	Resolution string `json:"resolution"` // such as "1080p"
+	FPS        string `json:"fps"`        // such as "60"
+	Upscaling  bool   `json:"upscaling"`  // DLSS, FSR or XeSS helps
+}
+
+// PlanRun turns a verdict into a score and starting settings. The score is
+// the weaker of graphics and processor against the recommended (70 at it,
+// 100 at half again), else against the minimum (40 at it); memory short of
+// the recommended caps it.
+func PlanRun(v RunVerdict) RunPlan {
+	score := -1.0
+	for _, p := range v.Parts {
+		if !p.Known || (p.Part != "Graphics" && p.Part != "Processor") {
+			continue
+		}
+		var s float64
+		switch {
+		case p.Rec > 0:
+			s = 70 * p.Have / p.Rec
+		case p.Min > 0:
+			s = 40 * p.Have / p.Min
+		default:
+			continue
+		}
+		if score < 0 || s < score {
+			score = s
+		}
+	}
+	if score < 0 {
+		return RunPlan{}
+	}
+	for _, p := range v.Parts {
+		if p.Part == "Memory" && p.Known {
+			switch p.Runs {
+			case RunsMinimum:
+				score = math.Min(score, 55)
+			case RunsStruggles, RunsBelow:
+				score = math.Min(score, 30)
+			}
+		}
+	}
+	n := int(math.Round(math.Max(1, math.Min(100, score))))
+	switch {
+	case n >= 90:
+		return RunPlan{n, "Ultra", "1440p", "60+", false}
+	case n >= 70:
+		return RunPlan{n, "High", "1080p", "60", false}
+	case n >= 50:
+		return RunPlan{n, "Medium", "1080p", "45 to 60", false}
+	case n >= 35:
+		return RunPlan{n, "Low", "1080p", "30 to 45", true}
+	case n >= 20:
+		return RunPlan{n, "Lowest", "720p", "30", true}
+	}
+	return RunPlan{Score: n}
 }

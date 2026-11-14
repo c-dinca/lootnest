@@ -2,24 +2,72 @@
   // the cloud folder (Steam games have Steam Cloud; games with profiles sync
   // each player's saves).
   const gsAsked = new Set();
-  // Status and collections: where the game is for one profile (playing,
-  // finished, 100%), and which of the user's collections it's in.
+  // Collections the game is in, with a way to add it to one.
   function collectionsBlock(it) {
-    const key = recentKey(it), ps = grouped();
-    if (!ps.length) return "";
-    const seat = seated(), owner = it.g && S.d.active[it.g.id];
-    const who = (ps.find((p) => p.id === S.statusWho[key]) || (seat && ps.find((p) => p.id === seat.id)) || ps.find((p) => p.id === owner) || ps[0]).id;
-    const st = statusOf(it, who), mine = shelfOf(it, who), r = mine.rating || 0, tags = tagsOf(it), others = allTags().filter((t) => !tags.includes(t));
-    const chips = ps.length > 1 ? `<div class="ach-who" role="group" aria-label="Whose status">${ps.map((p) => `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="status-who" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-pressed="${p.id === who}">${lnAvatar(p, "20")}${esc(parentOf(p) ? runLabel(p) : p.name)}${statusOf(it, p.id) ? `<span class="ln-num">${esc(statusName(statusOf(it, p.id)))}</span>` : ""}</button>`).join("")}</div>` : "";
-    return `<section class="gpage-block gp-coll"><div class="ln-section-head"><div><h2>Status</h2></div></div>${chips}
-      <div class="ln-segmented gp-status" role="group" aria-label="${esc(possessive(pname(who)))} status">${STATUSES.map(([k, l]) => `<button data-action="set-status" data-key="${esc(key)}" data-player="${esc(who)}" data-status="${k}" aria-pressed="${st === k}">${l}</button>`).join("")}</div>
-      <div class="gp-rate" role="radiogroup" aria-label="${esc(possessive(pname(who)))} rating">${[1, 2, 3, 4, 5].map((i) => `<button role="radio" aria-checked="${r === i}" tabindex="${(r || 1) === i ? 0 : -1}"${i <= r ? ' class="on"' : ""} data-action="rate" data-key="${esc(key)}" data-player="${esc(who)}" data-stars="${i}" aria-label="${i} ${i === 1 ? "star" : "stars"}" title="${r === i ? "Clear the rating" : i + (i === 1 ? " star" : " stars")}">${GI.star}</button>`).join("")}</div>
-      <input id="gp-note" class="ln-input gp-note" type="text" maxlength="280" autocomplete="off" placeholder="A note, just for you" aria-label="${esc(possessive(pname(who)))} note" value="${esc(mine.note || "")}" data-key="${esc(key)}" data-player="${esc(who)}">
-      <div class="ln-section-head ln-section-head--minor"><h2>Collections</h2></div>
+    const key = recentKey(it), tags = tagsOf(it), others = allTags().filter((t) => !tags.includes(t));
+    return `<section class="gpage-block gp-coll"><div class="ln-section-head"><div><h2>Collections</h2></div></div>
       <div class="gp-tags">${tags.map((t) => `<span class="ln-tag gp-tag">${esc(t)}<button data-action="tag-remove" data-key="${esc(key)}" data-tag="${esc(t)}" aria-label="Take it out of ${esc(t)}">${GI.x}</button></span>`).join("") || `<span class="gpage-hint">None</span>`}</div>
       ${tags.length < 8 ? `<div class="gp-tag-add"><input id="tag-new" class="ln-input" type="text" maxlength="40" list="tag-list" autocomplete="off" placeholder="Add to a collection, such as Co-op" data-key="${esc(key)}">
         <datalist id="tag-list">${others.map((t) => `<option value="${esc(t)}"></option>`).join("")}</datalist>
         <button class="ln-button ln-button--secondary ln-button--sm" data-action="tag-add" data-key="${esc(key)}">Add</button></div>` : ""}</section>`;
+  }
+
+  // Will it run here: this PC against the game's requirements on Steam (read
+  // with Game details), as a score on a dial, the settings to start with,
+  // and each part against the minimum and the recommended.
+  const RUN_TONE = (n) => (n >= 70 ? "ok" : n >= 35 ? "mid" : "low");
+  function willRunBlock(it) {
+    if (!it.appId) return "";
+    const head = `<div class="ln-section-head"><div><h2>Will it run</h2></div></div>`;
+    if (!cfg().settings.gameDetails) {
+      return `<section class="gpage-block wr wr--off">${head}<p class="wr-off">${ph("gauge", "duotone")}<span>Lootnest can compare this PC with the game's requirements on Steam.</span></p>
+        <button class="ln-button ln-button--secondary ln-button--sm" data-action="details-on">Turn on Game details</button></section>`;
+    }
+    const R = S.details[recentKey(it)];
+    if (!R || R.loading) return `<section class="gpage-block wr">${head}<div class="ln-skeleton wr-skel"></div></section>`;
+    const run = R.run;
+    if (!run || !run.plan || !run.plan.score) {
+      const why = !run ? "Steam lists no requirements for this game." : "Lootnest doesn't know this PC's parts or the game's well enough.";
+      return `<section class="gpage-block wr">${head}<p class="gpage-hint">${why}</p></section>`;
+    }
+    const P = run.plan, V = run.verdict, pc = run.pc || {}, tone = RUN_TONE(P.score);
+    // The dial: 240 degrees of arc, filled to the score.
+    const r = 52, len = 2 * Math.PI * r * (240 / 360), fill = (len * P.score) / 100;
+    const dial = `<svg class="wr-dial" viewBox="0 0 132 116" role="img" aria-label="Score ${P.score} out of 100">
+      <path class="wr-track" d="${arc(66, 66, r, -120, 120)}" pathLength="${len.toFixed(1)}" stroke-dasharray="${len.toFixed(1)}"/>
+      <path class="wr-fill" d="${arc(66, 66, r, -120, 120)}" style="--len:${len.toFixed(1)};--fill:${fill.toFixed(1)}"/>
+      ${[0, 35, 70, 90].map((t) => { const a = ((-120 + (240 * t) / 100) * Math.PI) / 180; return `<line class="wr-tick" x1="${(66 + 60 * Math.sin(a)).toFixed(1)}" y1="${(66 - 60 * Math.cos(a)).toFixed(1)}" x2="${(66 + 64 * Math.sin(a)).toFixed(1)}" y2="${(66 - 64 * Math.cos(a)).toFixed(1)}"/>`; }).join("")}
+    </svg>`;
+    const say = P.preset ? `<b class="wr-preset">${esc(P.preset)}</b><span class="wr-sub">settings to start with</span>` : `<b class="wr-preset">Under the minimum</b><span class="wr-sub">it may not start or keep up</span>`;
+    const chips = P.preset ? `<div class="wr-chips">
+        <span class="wr-chip">${ph("monitor")}${esc(P.resolution)}</span>
+        <span class="wr-chip">${ph("lightning")}${esc(P.fps)} fps</span>
+        ${P.upscaling ? `<span class="wr-chip wr-chip--tip">${ph("sparkle")}Turn on DLSS, FSR or XeSS</span>` : ""}</div>` : "";
+    const val = (list, label) => ((list || []).find((l) => l.label === label) || {}).value || "";
+    const icon = { Graphics: "graphics-card", Processor: "cpu", Memory: "memory" };
+    const mine = { Graphics: pc.gpu, Processor: pc.cpu, Memory: pc.ram ? gb(pc.ram) : "" };
+    const lanes = (V.parts || []).filter((p) => p.known && icon[p.part]).map((p) => {
+      const top = Math.max(p.have, (p.rec || p.min) * 1.5, p.min) || 1, pct = (x) => Math.max(0, Math.min(100, (x / top) * 100)).toFixed(1);
+      const need = val(run.recommended, p.part) || val(run.minimum, p.part);
+      return `<li class="wr-lane wr-lane--${runsTone(p.runs)}" style="--have:${pct(p.have)}%;--min:${pct(p.min)}%;--rec:${pct(p.rec)}%">
+        <span class="wr-part">${ph(icon[p.part])}<b>${esc(p.part)}</b><em>${esc(RUNS[p.runs] ? RUNS[p.runs][2] : "")}</em></span>
+        <span class="wr-bar" aria-hidden="true">${p.min ? '<i class="wr-mark wr-mark--min"></i>' : ""}${p.rec ? '<i class="wr-mark wr-mark--rec"></i>' : ""}<i class="wr-you"></i></span>
+        <span class="wr-names"><span title="This PC">${esc(mine[p.part] || "This PC")}</span>${need ? `<span title="${val(run.recommended, p.part) ? "Recommended" : "Minimum"}">${esc(need)}</span>` : ""}</span></li>`;
+    }).join("");
+    const limit = V.limit && P.score < 70 ? `<p class="wr-limit">${ph("warning")}The ${esc(PART[V.limit] || V.limit.toLowerCase())} holds it back</p>` : "";
+    return `<section class="gpage-block wr wr--${tone}" style="--score:${P.score}">${head}
+      <div class="wr-top">
+        <div class="wr-gauge">${dial}<span class="wr-score ln-num" data-countup="${P.score}">${P.score}</span><span class="wr-of">of 100</span></div>
+        <div class="wr-say">${say}${chips}</div>
+      </div>
+      ${limit}
+      ${lanes ? `<ul class="wr-lanes">${lanes}</ul><p class="wr-legend"><i class="wr-mark wr-mark--min"></i>Minimum<i class="wr-mark wr-mark--rec"></i>Recommended<i class="wr-you"></i>This PC</p>` : ""}
+      <p class="gpage-hint">An estimate from Steam's requirements, not a benchmark.</p></section>`;
+  }
+  // An SVG arc around (cx, cy), from angle a to b in degrees (0 is up).
+  function arc(cx, cy, r, a, b) {
+    const pt = (d) => { const t = (d * Math.PI) / 180; return `${(cx + r * Math.sin(t)).toFixed(2)} ${(cy - r * Math.cos(t)).toFixed(2)}`; };
+    return `M ${pt(a)} A ${r} ${r} 0 ${b - a > 180 ? 1 : 0} 1 ${pt(b)}`;
   }
 
   // Achievements: read from this PC (Steam's library cache, or the file a

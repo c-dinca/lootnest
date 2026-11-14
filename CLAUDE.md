@@ -837,6 +837,15 @@ These shipped recently, newest last:
 - **2.0.0** The owner's release of the whole rework (1.97 to 1.106) as
   one version, with a summary in CHANGELOG.md; no code change. From here
   on, releases only when the owner asks (see How changes are made).
+- **Unreleased, the owner's list of 14 Nov**: the profiles pill
+  (`profPill`), Patch notes to News (`S.newsOpen`), Updates' All without
+  up-to-date games, the sidebar's speaker (`sound-toggle`,
+  `renderSound`); Will it run on a game's page (`willRunBlock` in
+  62-game-blocks.js) from Game details' `pc_requirements`
+  (`GameDetails.Minimum/Recommended/ReqsRead`; old cached details are
+  read again once) and `core.PlanRun` (score, preset, resolution, fps,
+  upscaling); the page's Status, rating and note were removed (Library
+  filters and the selection bar still set status).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
