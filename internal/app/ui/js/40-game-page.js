@@ -1,5 +1,7 @@
   // ------------------------------------------------------------ game page --
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Movement (not only fades) is on: no reduced motion, and Motion is Full.
+  const moving = () => !reduced() && !document.documentElement.classList.contains("motion-less") && !document.documentElement.classList.contains("motion-off");
   const ms = (token) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(token)) || 0;
   // A page change: the new page is drawn at once, under a still copy of
   // the one you leave (the same nodes, where they were scrolled), and comes
@@ -73,6 +75,8 @@
     if (S.view === "edit" && !confirmLeaveEdit()) return;
     if (S.dialog && S.dialog.kind !== "welcome") S.dialog = null;
     const P = { kind, id, cloud: null };
+    const from = fromEl && coverFrom(fromEl);
+    if (from) requestAnimationFrame(() => openCover(from));
     swapPage(() => {
       if (S.view !== "game") S.from = S.view === "home" ? "home" : "library";
       enterView("game", P); // the timeline is read again: a session may have ended since
@@ -81,6 +85,35 @@
       $("#view").focus({ preventScroll: true });
     });
     askCloud(P);
+  }
+
+  // The cover you click opens into the game: a copy of it grows from where
+  // it was to fill the window, over the game's own art, and fades as the
+  // page settles. Only with Motion on Full, and only for a cover on screen.
+  function coverFrom(el) {
+    if (!moving()) return null;
+    // The biggest picture showing in what was clicked: the art, not a logo over it.
+    const area = (i) => { const b = i.getBoundingClientRect(); return b.width * b.height; };
+    const img = [...el.querySelectorAll("img")].filter((i) => i.complete && i.naturalWidth).sort((a, b) => area(b) - area(a))[0];
+    const r = img && img.getBoundingClientRect();
+    if (!r || r.width < 40 || r.bottom < 0 || r.top > innerHeight) return null;
+    return { src: img.currentSrc || img.src, r, radius: getComputedStyle(img).borderRadius };
+  }
+  function openCover(f) {
+    const c = document.createElement("img");
+    c.className = "cover-fly";
+    c.alt = "";
+    c.src = f.src;
+    Object.assign(c.style, { left: f.r.left + "px", top: f.r.top + "px", width: f.r.width + "px", height: f.r.height + "px", borderRadius: f.radius });
+    document.body.append(c);
+    const sx = innerWidth / f.r.width, sy = innerHeight / f.r.height, s = Math.max(sx, sy);
+    const dx = innerWidth / 2 - (f.r.left + f.r.width / 2), dy = innerHeight / 2 - (f.r.top + f.r.height / 2);
+    const a = c.animate([
+      { transform: "translate(0, 0) scale(1)", opacity: 1, filter: "blur(0) brightness(1)" },
+      { transform: `translate(${dx * 0.55}px, ${dy * 0.55}px) scale(${1 + (s - 1) * 0.35})`, opacity: 0.85, filter: "blur(0) brightness(0.9)", offset: 0.4 },
+      { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0, filter: "blur(18px) brightness(0.6)" },
+    ], { duration: ms("--dur-4") * 1.25, easing: "cubic-bezier(.3, .7, .2, 1)" });
+    a.finished.then(() => c.remove(), () => c.remove());
   }
 
   function askCloud(P) {
@@ -409,9 +442,13 @@
   // the view: then it starts just under the compact head.
   function setGameTab(tab) {
     if (!S.page) return;
-    if ((S.gameTab[pageKey(S.page)] || "overview") !== tab) uiSound("tab");
+    const was = S.gameTab[pageKey(S.page)] || "overview";
+    if (was !== tab) uiSound("tab");
     S.gameTab[pageKey(S.page)] = tab;
     render();
+    // The panel comes in from the side of the tab you picked.
+    const order = TABS.map((t) => t[0]), step = Math.sign(order.indexOf(tab) - order.indexOf(was)), pane = $("#gp-panel");
+    if (step && pane && moving()) pane.animate([{ opacity: 0, transform: `translateX(${step * 18}px)` }, { opacity: 1, transform: "none" }], { duration: ms("--dur-3"), easing: "cubic-bezier(.16, 1, .3, 1)" });
     const v = $("#view"), panel = $("#gp-panel"), head = $(".gp-head"), row = $(".gp-tabs");
     if (!panel || !head || !row) return;
     const top = v.getBoundingClientRect().top + head.offsetHeight, over = panel.getBoundingClientRect().top - top;

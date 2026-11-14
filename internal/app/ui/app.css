@@ -2551,3 +2551,10 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .gp-rev-help .ln-icon { width: 13px; height: 13px; }
 .gp-com-foot { display: flex; justify-content: flex-end; margin-top: var(--space-3); }
 .gp-com-foot:empty { display: none; }
+
+/* Motion: a cover opening into its game, and the lit pill gliding. */
+.cover-fly { position: fixed; z-index: 30; object-fit: cover; pointer-events: none; transform-origin: center; will-change: transform, opacity, filter; }
+.ln-segmented, .ln-tabs { position: relative; }
+.ln-segmented > button, .ln-tabs > [role="tab"] { position: relative; z-index: 1; }
+.glide { position: absolute; z-index: 0; pointer-events: none; background: var(--glass-ctl-on); box-shadow: var(--key-light); }
+.is-gliding > [aria-pressed="true"], .is-gliding > [aria-checked="true"], .is-gliding > [aria-selected="true"] { background: none; box-shadow: none; }

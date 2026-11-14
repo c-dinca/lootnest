@@ -869,6 +869,13 @@ These shipped recently, newest last:
   the owner: Discussions on, the giscus app installed, then its repo and
   category ids; the page's CSP (`frame-src 'none'`) and
   `core.AllowedPageRequest` would need giscus.app.
+  Motion: `moving()` (40-game-page.js) is false with reduced motion or
+  Motion Less/Off; `coverFrom`/`openCover` grow a copy of the clicked
+  cover (`.cover-fly`) into the page; `noteGlide`/`glide` (20-render.js)
+  move a stand-in `.glide` pill from the old lit choice of any
+  `.ln-segmented` or `.ln-tabs` to the new one after the redraw; the game
+  page's panel slides from the tab's side (`setGameTab`); `bump(el, n)`
+  pops a count that rises.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
