@@ -2420,3 +2420,53 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .wr-skel { height: 116px; }
 @media (prefers-reduced-motion: reduce) { .wr-fill, .wr-bar::before, .wr-bar .wr-you { animation: none; } }
 :root.motion-off .wr-fill, :root.motion-off .wr-bar::before, :root.motion-off .wr-bar .wr-you { animation: none; }
+
+/* An achievement as a card, held up in the middle of the screen. It tilts
+   toward the pointer (--rx, --ry), a light follows the pointer (--mx,
+   --my), and its rarity's colour lights the rim. */
+.achc-scrim { -webkit-backdrop-filter: blur(14px) saturate(120%); backdrop-filter: blur(14px) saturate(120%); }
+.achc { position: relative; display: grid; justify-items: center; gap: var(--space-5); animation: achc-in 520ms var(--ease-emph) both; }
+@keyframes achc-in { from { opacity: 0; transform: translateY(24px) scale(0.92) rotateX(18deg); } }
+.achc-stage { perspective: 1100px; }
+.achc-card { --tier: var(--fg-2); --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 30%; position: relative; width: 300px; height: 420px; border-radius: 22px; transform-style: preserve-3d; transform: rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 380ms var(--ease-spring); cursor: grab; outline: none; }
+.achc-card.is-dragging { transition: none; cursor: grabbing; }
+.achc-card:focus-visible { box-shadow: 0 0 0 var(--focus-width) var(--focus-ring); }
+.achc-card.tier-ultra { --tier: var(--tier-ultra); }
+.achc-card.tier-rare { --tier: var(--tier-rare); }
+.achc-card.tier-uncommon { --tier: var(--tier-uncommon); }
+.achc-card.tier-common { --tier: var(--tier-common); }
+.achc-face { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-6) var(--space-5); overflow: hidden; border-radius: inherit; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--tier) 22%, transparent), transparent 60%), linear-gradient(160deg, var(--bg-raised), var(--bg-well));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tier) 55%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.12), 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 60px -20px color-mix(in oklab, var(--tier) 60%, transparent); }
+.achc-back { transform: rotateY(180deg); justify-content: center; gap: var(--space-5); }
+.achc-glow { position: absolute; top: 18%; left: 50%; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: radial-gradient(circle, color-mix(in oklab, var(--tier) 40%, transparent), transparent 70%); filter: blur(10px); animation: achc-breathe 4s ease-in-out infinite; }
+@keyframes achc-breathe { 50% { opacity: 0.6; transform: scale(0.92); } }
+.achc-top { position: relative; display: flex; justify-content: space-between; width: 100%; font: 700 var(--fs-12)/1 var(--font-ui); color: var(--tier); }
+.achc-pct { color: var(--fg-1); }
+.achc-ico { position: relative; display: grid; place-items: center; width: 128px; height: 128px; margin: var(--space-8) 0 var(--space-6); border-radius: 26px; background: var(--bg-well); box-shadow: 0 0 0 2px color-mix(in oklab, var(--tier) 70%, transparent), 0 18px 40px -12px rgb(0 0 0 / 0.8); transform: translateZ(40px); }
+.achc-ico img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.achc-ico > .ln-icon { width: 64px; height: 64px; color: var(--tier); }
+.is-locked .achc-ico img { filter: grayscale(1) brightness(0.6); }
+.achc-lock { position: absolute; right: -8px; bottom: -8px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--bg-raised); box-shadow: 0 0 0 2px var(--bg-well); color: var(--fg-2); }
+.achc-lock .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.achc-name { position: relative; font: 400 var(--text-section)/1.15 var(--font-title); text-align: center; color: var(--fg-1); transform: translateZ(28px); text-wrap: balance; }
+.achc-desc { position: relative; margin: var(--space-2) 0 0; font-size: var(--text-meta); line-height: 1.45; text-align: center; color: var(--fg-2); transform: translateZ(18px); text-wrap: pretty; }
+.achc-foot { position: relative; margin-top: auto; font-size: var(--fs-12); color: var(--fg-3); }
+.achc-shine { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; mix-blend-mode: soft-light;
+  background: radial-gradient(60% 50% at var(--mx) var(--my), rgb(255 255 255 / 0.55), transparent 70%), linear-gradient(115deg, transparent 30%, color-mix(in oklab, var(--tier) 30%, transparent) 48%, transparent 66%); }
+.achc-brand { display: flex; align-items: center; gap: var(--space-2); font: 400 var(--fs-18)/1 var(--font-title); color: var(--fg-2); }
+.achc-brand .ln-icon { width: 22px; height: 22px; color: var(--tier); }
+.achc-facts { display: grid; gap: var(--space-4); width: 100%; margin: 0; }
+.achc-facts div { display: grid; gap: 2px; text-align: center; }
+.achc-facts dt { font-size: var(--fs-12); color: var(--fg-3); }
+.achc-facts dd { margin: 0; font-weight: 700; color: var(--fg-1); }
+.achc-rar { position: relative; width: 100%; height: 6px; border-radius: var(--radius-round); background: var(--glass-ctl-active); overflow: hidden; }
+.achc-rar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--tier); }
+.achc-rar-note { font-size: var(--fs-12); color: var(--fg-2); }
+.achc-hint { margin: 0; font-size: var(--fs-12); color: var(--fg-2); }
+.achc-close { position: absolute; top: -8px; right: -56px; }
+.ach[data-action="ach-card"] { cursor: pointer; border-radius: var(--radius-key); transition: background-color var(--dur-1) var(--ease-out); }
+.ach[data-action="ach-card"]:hover { background: var(--glass-ctl); }
+.ach[data-action="ach-card"]:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .achc, .achc-glow { animation: none; } .achc-card { transition: none; } }
+:root.motion-off .achc, :root.motion-off .achc-glow { animation: none; }

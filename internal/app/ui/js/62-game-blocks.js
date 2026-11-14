@@ -106,15 +106,106 @@
   const tierOf = (p) => (!p ? "" : p < 2 ? "ultra" : p < 10 ? "rare" : p < 30 ? "uncommon" : "common");
   const pctText = (p) => (p < 10 ? p.toFixed(1) : Math.round(p)) + "%";
   const achIcon = (a) => `<span class="ach-ico">${a.icon ? `<img src="${esc(a.icon)}" alt="" loading="lazy">` : GI.trophy}${a.unlocked ? "" : `<span class="ach-lock">${GI.lock || ""}</span>`}</span>`;
-  function achRow(a, key, sub) {
+  // Every achievement drawn, by its row key, for the card that shows one.
+  const ACH_SEEN = new Map();
+  // go: the row is on the Achievements page, so a click goes to the game's
+  // Achievements tab first.
+  function achRow(a, key, sub, go) {
     const t = a.unlocked || !a.hidden ? tierOf(a.percent) : "";
     const rk = key + "|" + a.id;
     const hid = a.hidden && !a.unlocked && !S.revealed.has(rk);
+    ACH_SEEN.set(rk, { a, key });
     const line = sub || (a.unlocked ? (a.at && new Date(a.at).getFullYear() > 2000 ? "Unlocked " + esc(ago(a.at)) : "Unlocked") : hid ? "Click to show" : esc(a.description || "Not unlocked yet"));
-    return `<li class="ach${a.unlocked ? " is-on" : " locked"}${t ? " tier-" + t : ""}${hid ? " is-hidden" : ""}"${hid ? ` data-action="ach-reveal" data-k="${esc(rk)}" role="button" tabindex="0" aria-label="Show this hidden achievement"` : ""}>${achIcon(a)}
+    const open = hid ? ` data-action="ach-reveal" data-k="${esc(rk)}" role="button" tabindex="0" aria-label="Show this hidden achievement"`
+      : ` data-action="ach-card" data-k="${esc(rk)}"${go ? ' data-go="1"' : ""} role="button" tabindex="0" aria-haspopup="dialog" aria-label="${esc(a.name)}: look at it"`;
+    return `<li class="ach${a.unlocked ? " is-on" : " locked"}${t ? " tier-" + t : ""}${hid ? " is-hidden" : ""}"${open}>${achIcon(a)}
       <div><b>${hid ? "Hidden achievement" : esc(a.name)}</b><span>${line}</span>${a.percent && !hid ? `<span class="ach-rar" aria-hidden="true"><i style="width:${Math.max(3, Math.min(100, a.percent))}%"></i></span>` : ""}</div>
       ${a.percent && !hid ? `<span class="ach-tier" title="${esc(pctText(a.percent))} of players have it"><em>${TIERS[tierOf(a.percent)]}</em><b class="ln-num">${pctText(a.percent)}</b></span>` : ""}</li>`;
   }
+  // One achievement as a card in the middle of the screen: it tilts toward
+  // the pointer with a light that follows it, turns when dragged, and flips
+  // to its back (the game, when, and how rare) on a click, Enter or Space.
+  // Arrow keys turn it too. Nothing moves with reduced motion.
+  function viewAchCard() {
+    const x = ACH_SEEN.get(S.dialog.rk);
+    if (!x) return "";
+    const a = x.a, t = tierOf(a.percent) || "none", it = itemByKey(x.key);
+    const dated = a.unlocked && a.at && new Date(a.at).getFullYear() > 2000;
+    const when = dated ? new Date(a.at).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : a.unlocked ? "Unlocked" : "Not unlocked yet";
+    const icon = a.icon ? `<img src="${esc(a.icon)}" alt="">` : ph("trophy", "fill");
+    const pct = a.percent ? pctText(a.percent) : "";
+    return `<div class="scrim achc-scrim" data-action="scrim"><div class="achc" role="dialog" aria-modal="true" aria-label="${esc(a.name)}">
+      <div class="achc-stage"><div class="achc-card tier-${t}${a.unlocked ? " is-on" : " is-locked"}" tabindex="0" role="button" aria-label="Flip the card" aria-pressed="false">
+        <div class="achc-face achc-front">
+          <span class="achc-glow" aria-hidden="true"></span>
+          <span class="achc-top"><span class="achc-tier">${t !== "none" ? TIERS[t] : "Achievement"}</span>${pct ? `<span class="achc-pct ln-num">${pct}</span>` : ""}</span>
+          <span class="achc-ico">${icon}${a.unlocked ? "" : `<span class="achc-lock">${ph("lock")}</span>`}</span>
+          <b class="achc-name">${esc(a.name)}</b>
+          <p class="achc-desc">${esc(a.description || (a.hidden ? "A hidden achievement" : ""))}</p>
+          <span class="achc-foot">${esc(it ? it.name : "")}</span>
+          <span class="achc-shine" aria-hidden="true"></span>
+        </div>
+        <div class="achc-face achc-back">
+          <span class="achc-brand">${ph("trophy", "fill")}<span>Lootnest</span></span>
+          <dl class="achc-facts">
+            <div><dt>Game</dt><dd>${esc(it ? it.name : "")}</dd></div>
+            <div><dt>${dated ? "Unlocked" : "Status"}</dt><dd>${esc(when)}</dd></div>
+            ${pct ? `<div><dt>Players who have it</dt><dd class="ln-num">${pct}</dd></div>` : ""}
+          </dl>
+          ${a.percent ? `<span class="achc-rar" aria-hidden="true"><i style="width:${Math.max(3, Math.min(100, a.percent))}%"></i></span><span class="achc-rar-note">${t !== "none" ? TIERS[t] : ""}: ${pct} of Steam players</span>` : ""}
+          <span class="achc-shine" aria-hidden="true"></span>
+        </div>
+      </div></div>
+      <p class="achc-hint">Move the pointer to tilt it, drag to turn it, click to flip it</p>
+      <button class="ln-button ln-button--ghost ln-button--icon achc-close" data-action="dialog-cancel" aria-label="Close">${GI.x}</button>
+    </div></div>`;
+  }
+  // The card's tilt, turn and flip, set as CSS variables on it.
+  (function achCardMotion() {
+    let drag = null, spin = 0, flip = false;
+    const card = () => $(".achc-card");
+    const put = (c, rx, ry) => {
+      c.style.setProperty("--rx", rx.toFixed(2) + "deg");
+      c.style.setProperty("--ry", (ry + spin + (flip ? 180 : 0)).toFixed(2) + "deg");
+    };
+    const still = () => reduced();
+    document.addEventListener("pointermove", (ev) => {
+      const c = card();
+      if (!c || still()) return;
+      const r = c.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+      c.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
+      c.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+      if (drag) { spin = drag.spin + (ev.clientX - drag.x) * 0.6; drag.moved = drag.moved || Math.abs(ev.clientX - drag.x) > 4; c.classList.add("is-dragging"); }
+      const near = x > -0.4 && x < 1.4 && y > -0.4 && y < 1.4;
+      put(c, near ? (0.5 - y) * 22 : 0, near && !drag ? (x - 0.5) * 26 : 0);
+    });
+    document.addEventListener("pointerdown", (ev) => {
+      const c = ev.target.closest && ev.target.closest(".achc-card");
+      if (!c) { if (!card()) { spin = 0; flip = false; } return; }
+      drag = { x: ev.clientX, spin, moved: false };
+      c.setPointerCapture && c.setPointerCapture(ev.pointerId);
+    });
+    document.addEventListener("pointerup", () => {
+      const c = card();
+      if (!drag || !c) { drag = null; return; }
+      c.classList.remove("is-dragging");
+      if (!drag.moved) { flip = !flip; c.setAttribute("aria-pressed", String(flip)); uiSound("tab"); }
+      // It settles on the nearest face.
+      spin = Math.round(spin / 180) * 180;
+      if (Math.round(spin / 180) % 2) { flip = !flip; spin = 0; }
+      drag = null;
+      put(c, 0, 0);
+    });
+    document.addEventListener("keydown", (ev) => {
+      const c = card();
+      if (!c || !S.dialog || S.dialog.kind !== "achcard") return;
+      if ((ev.key === "Enter" || ev.key === " ") && ev.target === c) { ev.preventDefault(); flip = !flip; c.setAttribute("aria-pressed", String(flip)); put(c, 0, 0); }
+      else if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") { ev.preventDefault(); spin += ev.key === "ArrowLeft" ? -20 : 20; put(c, 0, 0); }
+      else if (ev.key === "ArrowUp" || ev.key === "ArrowDown") { ev.preventDefault(); put(c, ev.key === "ArrowUp" ? 14 : -14, 0); }
+    });
+    // A new card starts face up.
+    new MutationObserver(() => { if (!card()) { spin = 0; flip = false; drag = null; } }).observe(document.getElementById("overlay"), { childList: true });
+  })();
   // A ring of how much of a game is done.
   const ring = (pct, size = 44) => `<svg class="ach-ring${pct === 100 ? " is-full" : ""}" viewBox="0 0 36 36" width="${size}" height="${size}" aria-hidden="true"><circle class="bg" cx="18" cy="18" r="15.5" pathLength="100"/><circle class="fg" cx="18" cy="18" r="15.5" pathLength="100" style="--p:${pct}"/></svg><span class="ach-ring-n ln-num">${pct}<small>%</small></span>`;
   // Numbers that count up as a page comes in.
