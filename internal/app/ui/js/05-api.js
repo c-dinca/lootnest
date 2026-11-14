@@ -115,6 +115,7 @@
     saveCheck: (fresh) => call("ps_saveCheck", !!fresh),
     savesOverview: () => call("ps_savesOverview"),
     copyFiles: (key, kind, id) => call("ps_copyFiles", key, kind, id),
+    openHydra: (name) => call("ps_openHydra", name || ""),
     nameCopy: (key, kind, id, name) => call("ps_nameCopy", key, kind, id, name),
     reportProblem: () => call("ps_reportProblem"),
     bigPicture: (on) => call("ps_bigPicture", !!on),

@@ -4,6 +4,9 @@ package app
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,7 +20,9 @@ import (
 // two minutes, and when the window gains focus, Lootnest matches the names
 // there to the games the Updates page covers, and tells about a newer
 // version once. Applying one is the update drawer's job, on the user's
-// click. Lootnest looks nowhere else and fetches nothing.
+// click. The folder Hydra downloads into is looked in too when the user
+// chose one in Hydra (the owner, 14 Nov 2026). Lootnest looks nowhere
+// else and fetches nothing.
 // ---------------------------------------------------------------------------
 
 var (
@@ -45,14 +50,16 @@ func (a *App) downloadsLook() {
 	a.mu.Unlock()
 	byKey := map[string]updTarget{}
 	var found []core.DownloadMatch
-	if dir := win.Downloads(); !off && dir != "" {
+	if dirs := downloadDirs(); !off && len(dirs) > 0 {
 		ts := a.updTargets()
 		targets := make([]core.UpdateTarget, len(ts))
 		for i, t := range ts {
 			targets[i] = core.UpdateTarget{Key: t.Key, Name: t.Name, Dir: t.Dir, Version: core.CopyVersion(t.Dir, core.GameUpdates(a.updatesDir(t)))}
 			byKey[t.Key] = t
 		}
-		found = core.MatchDownloads(dir, targets, time.Now().AddDate(0, 0, -30))
+		for _, dir := range dirs {
+			found = append(found, core.MatchDownloads(dir, targets, time.Now().AddDate(0, 0, -30))...)
+		}
 	}
 	out := []core.DownloadMatch{}
 	var tell []core.DownloadMatch
@@ -125,4 +132,68 @@ func (a *App) apiRecycleDownload(path string) error {
 	a.logf("Moved %s to the Recycle Bin", m.Path)
 	go a.downloadsCheck()
 	return nil
+}
+
+// downloadDirs are Windows' Downloads folder and, when the user set one in
+// Hydra, Hydra's download folder.
+func downloadDirs() []string {
+	var out []string
+	if d := win.Downloads(); d != "" {
+		out = append(out, d)
+	}
+	if h := hydraDownloads(); h != "" && (len(out) == 0 || !strings.EqualFold(filepath.Clean(h), filepath.Clean(out[0]))) {
+		out = append(out, h)
+	}
+	return out
+}
+
+// hydraDownloads reads Hydra's download folder at most every ten minutes.
+var hydraDL struct {
+	sync.Mutex
+	dir string
+	at  time.Time
+}
+
+func hydraDownloads() string {
+	hydraDL.Lock()
+	defer hydraDL.Unlock()
+	if time.Since(hydraDL.at) < 10*time.Minute {
+		return hydraDL.dir
+	}
+	hydraDL.at = time.Now()
+	ad := os.Getenv("APPDATA")
+	if ad == "" {
+		return ""
+	}
+	dir, err := core.HydraDownloadsPath(filepath.Join(ad, "hydralauncher", "hydra-db"), filepath.Join(DataDir(), "hydra-prefs-tmp"))
+	if err != nil {
+		dir = ""
+	}
+	hydraDL.dir = dir
+	return dir
+}
+
+// apiOpenHydra opens Hydra for a game that came from it, with the game's
+// name on the clipboard to paste into Hydra's search: Hydra has no link to
+// a game's page (only to run one), so this is as close as it gets.
+func (a *App) apiOpenHydra(name string) error {
+	ad := os.Getenv("APPDATA")
+	if ad == "" || !isDirPath(filepath.Join(ad, "hydralauncher")) {
+		return errors.New("Hydra isn't on this PC.")
+	}
+	if n := strings.TrimSpace(name); n != "" {
+		if err := win.SetClipboardText(a.hwnd, n); err != nil {
+			a.logf("Couldn't copy %q for Hydra: %v", n, err)
+		}
+	}
+	if err := win.ShellOpen("hydralauncher://"); err != nil {
+		a.logf("Couldn't open Hydra: %v", err)
+		return errors.New("Couldn't open Hydra. Open it from the Start menu.")
+	}
+	return nil
+}
+
+func isDirPath(p string) bool {
+	st, err := os.Stat(p)
+	return err == nil && st.IsDir()
 }

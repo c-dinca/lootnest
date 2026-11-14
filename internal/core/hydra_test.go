@@ -54,3 +54,30 @@ func TestHydraGames(t *testing.T) {
 		t.Fatal("a hydra-db Lootnest can't open should say why")
 	}
 }
+
+func TestHydraDownloadsPath(t *testing.T) {
+	root := t.TempDir()
+	if p, err := HydraDownloadsPath(filepath.Join(root, "none"), filepath.Join(root, "tmp")); p != "" || err != nil {
+		t.Fatalf("no Hydra: %q %v", p, err)
+	}
+	src := filepath.Join(root, "hydra-db")
+	db, err := leveldb.OpenFile(src, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p, _ := HydraDownloadsPath(src, filepath.Join(root, "tmp")); p != "" {
+		t.Fatalf("never set: %q", p)
+	}
+	dl := filepath.Join(root, "HydraDownloads")
+	if err := os.MkdirAll(dl, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := json.Marshal(map[string]any{"downloadsPath": dl, "language": "en"})
+	if err := db.Put([]byte("userPreferences"), b, nil); err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if p, err := HydraDownloadsPath(src, filepath.Join(root, "tmp")); p != dl || err != nil {
+		t.Fatalf("set: %q %v", p, err)
+	}
+}

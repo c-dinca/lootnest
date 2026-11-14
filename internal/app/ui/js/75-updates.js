@@ -188,6 +188,27 @@
     return drawer({ label: `${esc(r.name)} update history`, title: "Update history", sub: `${esc(r.name)}${r.version ? ", version " + esc(vtxt(r.version)) : ""}`,
       body: list.length ? `<ol class="pt-list pt-list--all">${rows}</ol>` : `<p>No updates applied yet</p>` });
   }
+  // The update drawer's first screen: three steps, from getting the update
+  // to applying it. A Hydra game gets a key that opens Hydra with the game's
+  // name copied, since Hydra has no link to a game's own page.
+  function updGuide(D, choose) {
+    const it = updItem(D.key), hydra = !!it && it.source === "hydra";
+    const r = S.updates && S.updates.games.find((g) => g.key === D.key);
+    const m = (S.dl || []).find((x) => x.key === D.key && x.newer);
+    const latest = r && r.newer ? vtxt(verIn(r.newer.title)) : "";
+    const have = r && r.version ? vtxt(r.version) : "";
+    const step = (n, title, body, act, state = "") => `<li class="ug-step${state ? " ug-step--" + state : ""}"><span class="ug-n ln-num" aria-hidden="true">${state === "done" ? ph("check") : n}</span>
+      <div class="ug-main"><b>${title}</b>${body ? `<p>${body}</p>` : ""}${act ? `<div class="ug-act">${act}</div>` : ""}</div></li>`;
+    const ver = have || latest ? `<div class="ug-ver">${updVer(have, latest ? ["Latest", latest] : null)}</div>` : "";
+    const get = m ? step(1, "The update is here", `In your Downloads: <span class="selectable">${esc(m.name)}</span>, ${dlVer(m)}.`, `<button class="ln-button ln-button--primary ln-button--sm" data-action="dl-review" ${dlIds(m)}>Use this one</button>`, "done")
+      : hydra ? step(1, "Get it in Hydra", `Lootnest opens Hydra and copies the name. Paste it in Hydra's search, open ${esc(D.name)} and download the update there.`,
+        `<button class="ln-button ln-button--primary ln-button--sm" data-action="upd-hydra" data-name="${esc(D.name)}">${ph("arrow-square-out")}Open Hydra</button>${r && r.newer ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="upd-notes" data-key="${esc(D.key)}">Patch notes</button>` : ""}`)
+      : step(1, "Get the update", `Download it from where you got ${esc(D.name)}. Lootnest notices it in your Downloads.`,
+        r && r.newer ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="upd-notes" data-key="${esc(D.key)}">Patch notes</button>` : "");
+    const pick = step(2, "Choose it here", hydra ? "When Hydra has finished, it shows up here by itself. Or choose the file or folder." : "A .zip, .7z or .rar, a folder, or an installer. For an update in parts, choose the first (.part1.rar).", m ? "" : choose);
+    const apply = step(3, "Check and apply", "You see what it replaces before anything changes. The saves and every replaced file are copied first, so Undo puts it back.");
+    return `${ver}<ol class="ug-steps">${get}${pick}${apply}</ol>`;
+  }
   function viewUpdateDrawer() {
     const D = S.dialog;
     const btn = (attrs, label, cls = "ln-button--secondary") => `<button class="ln-button ${cls} ln-button--sm" ${attrs} ${D.busy ? "disabled" : ""}>${label}</button>`;
@@ -201,7 +222,7 @@
           : `${u.noUndo ? "" : btn(`data-action="upd-undo" data-key="${esc(D.key)}" data-id="${esc(u.id)}" data-name="${esc(D.name)}"`, "Undo", "ln-button--ghost")}${btn('data-action="upd-another"', "Apply another update", "ln-button--ghost")}${dlm ? dlRecycle(dlm) : ""}<span class="grow"></span>${btn('data-action="dialog-cancel"', "Done", "ln-button--primary")}`);
     }
     const intro = `<p class="gpage-hint">For an update in parts, choose the first (.part1.rar).</p>`;
-    if (!D.path) return shell(`${intro}${choose}`);
+    if (!D.path) return shell(updGuide(D, choose));
     if (D.busy && !D.plan) return shell(lnInline("", D.opening ? "Opening the archive" : "Reading the update"));
     if (D.error && !D.plan) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     const P = D.plan;

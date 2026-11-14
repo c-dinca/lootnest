@@ -407,6 +407,10 @@
       S.dl = (S.dl || []).filter((m) => m.path !== el.dataset.path); updateNavCount(); render();
       try { await api.ignoreDownload(el.dataset.path); } catch (e) { toast(errText(e), "error"); }
     },
+    async "upd-hydra"(el) {
+      try { await api.openHydra(el.dataset.name); toast(`Opened Hydra. "${el.dataset.name}" is copied: paste it in its search.`); }
+      catch (e) { toast(errText(e), "error"); }
+    },
     "upd-start"(el) { S.dialog = { kind: "update", key: el.dataset.key, name: el.dataset.name }; renderOverlay(); focusOverlay(); },
     async "upd-pick"(el) {
       const D = S.dialog;
@@ -470,6 +474,7 @@
       const r = S.updates && S.updates.games.find((g) => g.key === el.dataset.key);
       const it = r && updItem(r.key);
       if (!it) return;
+      if (S.dialog && S.dialog.kind === "update") closeDialog(false);
       // The game's News tab, with that post open (once the news has arrived).
       S.gameTab[it.kind + ":" + it.id] = "news";
       S.newsOpen = { key: coverKey(it), title: (r.newer && r.newer.title) || "" };
