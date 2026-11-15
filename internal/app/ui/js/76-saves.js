@@ -48,6 +48,43 @@
     return rows;
   }
 
+  // Search and filters over every copy: a game's or a copy's name, the
+  // kind, whose it is, when, and the order. Typing redraws only the list,
+  // so the search box keeps its place.
+  const SV_WHEN = [["", "Any time"], ["day", "Today"], ["week", "This week"], ["month", "This month"]];
+  const SV_ORDER = [["new", "Newest first"], ["old", "Oldest first"], ["size", "Largest first"]];
+  const svF = () => S.svF || (S.svF = { q: "", kind: "", who: "", when: "", sort: "new" });
+  const svFiltered = (list) => !svF().q.trim() && !svF().kind && !svF().who && !svF().when && svF().sort === "new" ? null : list;
+  function svFilter(list) {
+    const F = svF(), test = F.q.trim() ? nameMatcher(F.q) : null;
+    const since = F.when ? Date.now() - { day: 864e5, week: 7 * 864e5, month: 30 * 864e5 }[F.when] : 0;
+    const out = list.filter((c) => {
+      const it = itemByKey(c.key);
+      if (!it || (F.kind && c.kind !== F.kind) || (F.who && c.owner !== F.who) || (since && new Date(c.at).getTime() < since)) return false;
+      return !test || test(it.name) || (c.name && test(c.name));
+    });
+    if (F.sort === "old") out.reverse();
+    else if (F.sort === "size") out.sort((a, b) => (b.size || 0) - (a.size || 0));
+    return out;
+  }
+  function svBar(list) {
+    const F = svF(), n = (k) => list.filter((c) => c.kind === k).length;
+    const owners = [...new Set(list.map((c) => c.owner).filter(Boolean))].map(player).filter(Boolean);
+    const seg = (k, l, count) => `<button data-action="sv-f" data-f="kind" data-v="${k}" aria-pressed="${F.kind === k}">${count != null ? `<span class="ln-count ln-num">${count}</span>` : ""}${l}</button>`;
+    const sel = (f, label, opts) => `<label class="sv-sel"><span class="ln-sr">${label}</span><select class="ln-input" data-svf="${f}" aria-label="${label}">${opts.map(([v, l]) => `<option value="${esc(v)}"${F[f] === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`;
+    const active = F.q.trim() || F.kind || F.who || F.when;
+    return `<div class="sv-bar">
+      <label class="sv-search">${ph("magnifying-glass")}<input class="ln-input" id="sv-q" type="search" placeholder="Search a game or a copy's name" value="${esc(F.q)}" autocomplete="off" spellcheck="false" aria-label="Search the copies"></label>
+      <div class="ln-segmented sv-kind-seg" role="group" aria-label="Kind">${seg("", "All", list.length)}${SV_KINDS.map(([k, , t]) => seg(k, t.replace("Copy before a swap", "Before a swap").replace("Safety net copy", "Safety net").replace("Save point", "Save points"), n(k))).join("")}</div>
+      <div class="sv-sels">${owners.length ? sel("who", "Profile", [["", "Every profile"], ...owners.map((p) => [p.id, p.name])]) : ""}${sel("when", "When", SV_WHEN)}${sel("sort", "Order", SV_ORDER)}
+        ${active ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="sv-clear">${ph("x-circle")}Clear</button>` : ""}</div></div>`;
+  }
+  function svResults(list) {
+    const shown = svFilter(list), F = svF();
+    if (!shown.length) return `<p class="upd-empty">${F.q.trim() ? `No copy of a game or with a name like "${esc(F.q.trim())}"` : "No copies like that"}.</p>`;
+    const filtered = svFiltered(list) !== null;
+    return `${filtered ? `<p class="sv-count">${shown.length === list.length ? `All ${list.length} copies` : `${shown.length} of ${list.length} copies`}</p>` : ""}${svRecent(shown)}`;
+  }
   function svRecent(list) {
     const shown = S.svMore ? list : list.slice(0, SV_SHOWN);
     const rows = shown.map((c) => {
@@ -81,7 +118,8 @@
   function svGames(games) {
     const by = new Map(games.map((g) => [g.key, g]));
     cfg().games.forEach((g) => { if (!by.has("game:" + g.id)) by.set("game:" + g.id, { key: "game:" + g.id, points: 0, size: 0 }); });
-    const rows = [...by.values()].map((r) => ({ r, it: itemByKey(r.key), n: r.key.startsWith("game:") ? ((S.d.profiles || {})[r.key.slice(5)] || []).length : 0 })).filter((x) => x.it);
+    const q = svF().q.trim(), test = q ? nameMatcher(q) : null;
+    const rows = [...by.values()].map((r) => ({ r, it: itemByKey(r.key), n: r.key.startsWith("game:") ? ((S.d.profiles || {})[r.key.slice(5)] || []).length : 0 })).filter((x) => x.it && (!test || test(x.it.name)));
     const k = S.svSort || "last", val = (x) => (k === "profiles" ? x.n : k === "last" ? new Date(x.r.last || 0).getTime() : x.r[k] || 0);
     rows.sort((a, b) => (k === "name" ? 0 : val(b) - val(a)) || byName(a.it.name, b.it.name));
     const none = '<span class="sv-none">None</span>';
@@ -100,9 +138,9 @@
       <div class="ln-meta__item"><dd class="ln-meta__text">${recent.length ? esc(ago(recent[0].at)) : "None yet"}</dd><dt>Newest copy</dt></div></dl>`) : "";
     const body = !O ? `<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div>`
       : empty ? emptyState("No copies yet", "Copies of your saves show up here.", `<button class="ln-button ln-button--secondary" data-action="nav" data-view="library">Open the Library</button>`)
-      : sec("Recent copies", 0, recent.length ? svRecent(recent) : `<p class="upd-empty">None yet</p>`);
+      : sec("Copies", recent.length, recent.length ? `${svBar(recent)}<div id="sv-results">${svResults(recent)}</div>` : `<p class="upd-empty">None yet</p>`);
     const perGame = O && !empty ? sec("Per game", 0, svGames(games)) : "";
     const kinds = O && !empty ? `<ul class="sv-kinds">${SV_KINDS.map(([k, ic, t, line]) => `<li class="sv-kind sv-kind--${k}">${ph(ic)}<div><b>${t}</b><span>${line}</span></div></li>`).join("")}</ul>
       <p class="sv-tip">Click a copy's icon to see its files, or the pencil to name it. Restore, Put back and Go back to it keep a copy of what's there first.</p>` : "";
-    return `<div class="saves-page ln-root"><header class="upd-head"><h1>Saves</h1></header>${stats}${look.length ? sec("Needs a look", look.length, `<ul class="ln-rows">${look.join("")}</ul>`) : ""}${kinds}${body}${perGame}${cloudSection()}</div>`;
+    return `<div class="saves-page ln-root"><header class="upd-head"><h1>Saves</h1></header>${stats}${body}${look.length ? sec("Needs a look", look.length, `<ul class="ln-rows">${look.join("")}</ul>`) : ""}${kinds}${perGame}${cloudSection()}</div>`;
   }

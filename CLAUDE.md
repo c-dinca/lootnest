@@ -917,6 +917,10 @@ These shipped recently, newest last:
   writer's hardware (`perfSnippet`). `ps_gamePeers`, 12 h memory cache,
   `peersBlock` under the lanes. `win.TotalRAM` reads
   GetPhysicallyInstalledSystemMemory first (16 GB, not 15.x).
+  Saves: `apiSavesOverview` sends every copy (`hubRecent` 2000); `svBar`
+  (search `#sv-q`, kind, profile, when, order in `S.svF`) and
+  `svResults` filter them; typing redraws only `#sv-results` and the Per
+  game table so the box keeps focus.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

@@ -11,8 +11,9 @@ import (
 	"lootnest/internal/core"
 )
 
-// hubRecent is how many copies the Saves page lists under Recent copies.
-const hubRecent = 30
+// hubRecent is how many copies the Saves page gets, newest first: all of
+// them in practice, so its search and filters go through every copy.
+const hubRecent = 2000
 
 // apiSavesOverview sends what Lootnest keeps of every game's saves as a
 // "savesOverview" event: the copies before swaps, the safety net's copies
