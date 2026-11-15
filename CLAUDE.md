@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.1, beta)
+## Where things stand (2.2.2, beta)
 
 These shipped recently, newest last:
 
@@ -1007,7 +1007,7 @@ These shipped recently, newest last:
   nothing (Windows Firewall drops replies from another address than the
   one asked), so `FindLGTVs` probes the private /24s for port 3000
   (`probeLGPort`).
-- **Unreleased** Add an LG TV, second try on the owner's TV: the install
+- **2.2.2** Add an LG TV, second try on the owner's TV: the install
   printed nothing and nothing was installed. `luna-send-pub -i` reads
   commands from stdin and, with none (the SSH session's stdin is closed),
   ends before it calls the service. `InstallTVApp` now checks the copy's

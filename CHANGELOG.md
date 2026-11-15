@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.2
+
+Add an LG TV, after the second try on a real TV.
 
 - **Add an LG TV asks the TV to install the app the way it listens.** The request was sent in a form some TVs close at once without doing anything, so the app never arrived. Lootnest now sends one request, checks the app reached the TV whole, and waits up to three minutes for it to be installed.
 
