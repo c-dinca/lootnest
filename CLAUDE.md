@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.0, beta)
+## Where things stand (2.2.1, beta)
 
 These shipped recently, newest last:
 
@@ -999,6 +999,14 @@ These shipped recently, newest last:
   (`TV.LocalIP`), then `/api/pin` every 2 s for 75 s, `AllowTV`.
   `keepDevModes` hourly, extends each TV every 12 h. SSH via
   golang.org/x/crypto/ssh (the only new dependency).
+- **2.2.1** Add an LG TV on the owner's TV: the install service ended its
+  answers without an outcome and the deferred `rm -f` removed the package
+  under the TV's background install. `QuietInstallError` now waits up to
+  2 min for `HasTVApp` (the app's folder, or getAppInfo) before the
+  package goes; a failure carries what the TV printed (`2>&1`). SSDP found
+  nothing (Windows Firewall drops replies from another address than the
+  one asked), so `FindLGTVs` probes the private /24s for port 3000
+  (`probeLGPort`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
