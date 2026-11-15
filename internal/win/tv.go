@@ -160,3 +160,54 @@ func ShowTaskbar(show bool) {
 func AllowAnyForeground() {
 	procAllowSetForegroundWindow.Call(^uintptr(0)) // ASFW_ANY
 }
+
+// StartTracked starts a program as StartDetached does and returns its
+// process id, for an app followed by its own process.
+func StartTracked(exe, args, dir string) (uint32, error) {
+	cmd := exec.Command(exe)
+	cmd.Dir = dir
+	line := syscall.EscapeArg(exe)
+	if strings.TrimSpace(args) != "" {
+		line += " " + args
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: line}
+	if err := cmd.Start(); err != nil {
+		return 0, err
+	}
+	pid := uint32(cmd.Process.Pid)
+	_ = cmd.Process.Release()
+	return pid, nil
+}
+
+// ProcessAlive says whether the process with this id still runs.
+func ProcessAlive(pid uint32) bool {
+	h, err := windows.OpenProcess(windows.SYNCHRONIZE, false, pid)
+	if err != nil {
+		return false
+	}
+	defer windows.CloseHandle(h)
+	ev, _ := windows.WaitForSingleObject(h, 0)
+	return ev == uint32(windows.WAIT_TIMEOUT)
+}
+
+// WindowOfPID is the largest visible window of the process with this id.
+func WindowOfPID(pid uint32) uintptr {
+	findMu.Lock()
+	defer findMu.Unlock()
+	findPIDs, findBest, findArea = map[uint32]bool{pid: true}, 0, 0
+	procEnumWindows.Call(findCB, 0)
+	findPIDs = nil
+	return findBest
+}
+
+// CloseWindowsOfPID asks every window of the process with this id to
+// close, as closing them by hand would; it returns how many it asked.
+func CloseWindowsOfPID(pid uint32) int {
+	closeMu.Lock()
+	defer closeMu.Unlock()
+	closePIDs, closeN = map[uint32]bool{pid: true}, 0
+	procEnumWindows.Call(closeCB, 0)
+	n := closeN
+	closePIDs = nil
+	return n
+}

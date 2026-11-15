@@ -741,3 +741,13 @@ On the LG TV, with section 27 done on the PC.
 4. Close the game: the label asks to press again; then the game quits
    and Lootnest is back.
 5. With no game running, Home opens TV mode's menu.
+
+## 31. Apps in TV mode (2.5.0)
+
+1. With Spotify, Stremio and Edge on the PC, TV mode's Home has Apps
+   with all three.
+2. Spotify: opens over Lootnest; Home opens the menu; Close the game
+   closes its window and Lootnest is back (Spotify may stay in the tray).
+3. YouTube: its TV layout in a window of its own, driven by the
+   controller; your own Edge windows are untouched when it closes.
+4. Stremio: as Spotify.
