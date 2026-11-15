@@ -48,8 +48,15 @@ type TVAppRelease struct {
 // TVAppPinned is the package Lootnest installs on LG TVs. A new release of
 // c-dinca/lootnest-tv-webos is tested with Lootnest first, then its address
 // and SHA-256 change here.
-// tvCloseWait lets the TV finish closing the app before it opens again.
-var tvCloseWait = time.Second
+// How long Lootnest waits for the TV app to close and to open, and how
+// often it looks. tvCloseWait is a pause after it's gone, before it opens
+// again.
+var (
+	tvCloseLimit = 10 * time.Second
+	tvOpenLimit  = 8 * time.Second
+	tvPoll       = 500 * time.Millisecond
+	tvCloseWait  = time.Second
+)
 
 var TVAppPinned = TVAppRelease{
 	Version: "1.1.0",
@@ -514,23 +521,121 @@ func tvErrorText(line string) string {
 	return line
 }
 
-// LaunchTVApp opens Lootnest for TV with its launch parameters.
-func (t *TV) LaunchTVApp(params map[string]string) error {
+// LaunchTVApp opens Lootnest for TV with its launch parameters. The
+// trace says what the TV answered at each step, for the log.
+func (t *TV) LaunchTVApp(params map[string]string) (trace string, err error) {
+	var tr []string
+	note := func(f string, a ...any) { tr = append(tr, fmt.Sprintf(f, a...)) }
+	defer func() { trace = strings.Join(tr, "; ") }()
 	// An app that's already open never reads new launch parameters, so it
-	// is closed first; closing one that isn't open only fails, unseen.
+	// is closed first, and Lootnest waits until it's gone: a launch while
+	// it closes is lost. Closing one that isn't open only fails.
 	closing, _ := json.Marshal(map[string]any{"id": TVAppID})
-	if _, err := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/closeByAppId' "+shQuote(string(closing)), nil); err == nil {
-		time.Sleep(tvCloseWait)
+	out, _ := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/closeByAppId' "+shQuote(string(closing))+" 2>&1", nil)
+	note("close: %s", short(out))
+	for end := time.Now().Add(tvCloseLimit); ; time.Sleep(tvPoll) {
+		running, known := t.AppRunning()
+		if !known || !running {
+			note("running before: %s", yesNo(running, known))
+			break
+		}
+		if time.Now().After(end) {
+			note("still running after %s", tvCloseLimit)
+			break
+		}
 	}
+	time.Sleep(tvCloseWait)
 	payload, _ := json.Marshal(map[string]any{"id": TVAppID, "params": params})
-	out, err := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' "+shQuote(string(payload)), nil)
+	launch := func() error {
+		out, err := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' "+shQuote(string(payload))+" 2>&1", nil)
+		note("launch: %s", short(out))
+		if err != nil {
+			return fmt.Errorf("the TV didn't open the app (%w)", err)
+		}
+		if refused(out) {
+			return fmt.Errorf("the TV didn't open the app: %s", tvErrorText(strings.TrimSpace(out)))
+		}
+		return nil
+	}
+	if err := launch(); err != nil {
+		return "", err
+	}
+	// Once more if it didn't open.
+	for end := time.Now().Add(tvOpenLimit); time.Now().Before(end); time.Sleep(tvPoll) {
+		if running, known := t.AppRunning(); !known || running {
+			note("running after: %s", yesNo(running, known))
+			return "", nil
+		}
+	}
+	note("not running after %s, launching again", tvOpenLimit)
+	return "", launch()
+}
+
+// refused is a luna answer with returnValue false, however it's spaced.
+func refused(out string) bool {
+	for _, line := range strings.Split(out, "\n") {
+		var m map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(line)), &m) == nil {
+			if v, ok := m["returnValue"].(bool); ok && !v {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func short(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if len(s) > 160 {
+		s = s[:160] + "..."
+	}
+	if s == "" {
+		return "nothing"
+	}
+	return s
+}
+
+func yesNo(v, known bool) string {
+	switch {
+	case !known:
+		return "unknown"
+	case v:
+		return "yes"
+	}
+	return "no"
+}
+
+// AppRunning says whether Lootnest for TV is running; known is false when
+// the TV doesn't let the developer session list processes.
+func (t *TV) AppRunning() (running, known bool) {
+	out, err := t.run("if ps >/dev/null 2>&1; then ps w 2>/dev/null | grep -c '[/]"+TVAppID+"/bin/'; else echo x; fi", nil)
+	// grep -c exits 1 on no match, so the count is what tells.
+	_ = err
+	n, perr := strconv.Atoi(strings.TrimSpace(out))
+	if perr != nil {
+		return false, false
+	}
+	return n > 0, true
+}
+
+// ReachesPC asks the TV whether it reaches the streaming engine at the PC
+// address pc: "yes", "no", or "" when the TV can't tell.
+func (t *TV) ReachesPC(pc string) string {
+	ip, err := plainIP(pc)
 	if err != nil {
-		return fmt.Errorf("the TV didn't open the app (%w)", err)
+		return ""
 	}
-	if strings.Contains(out, `"returnValue":false`) {
-		return fmt.Errorf("the TV didn't open the app: %s", tvErrorText(strings.TrimSpace(out)))
+	url := shQuote("http://" + ip + ":47989/serverinfo")
+	out, err := t.run("if command -v wget >/dev/null 2>&1; then wget -q -T 5 -O - "+url+" 2>/dev/null | grep -c -i '<root'; elif command -v curl >/dev/null 2>&1; then curl -s -m 5 "+url+" 2>/dev/null | grep -c -i '<root'; else echo x; fi", nil)
+	_ = err // grep -c exits 1 on no match
+	n, perr := strconv.Atoi(strings.TrimSpace(out))
+	switch {
+	case perr != nil:
+		return ""
+	case n > 0:
+		return "yes"
 	}
-	return nil
+	return "no"
 }
 
 // DevModeToken reads the developer-mode session token the TV keeps, which

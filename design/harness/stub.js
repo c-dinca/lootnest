@@ -773,8 +773,12 @@
     ps_linkPower: () => ok(),
     ps_linkLogs: () => ok(),
     ps_linkFindTVs: () => { setTimeout(() => emit({ type: "linkTVs", tvs: [{ name: "[LG] webOS TV OLED55C3", ip: "192.168.1.41" }] }), 400); return ok(); },
-    ps_linkInstallTV: () => { setTimeout(() => emit({ type: "linkStep", step: "tvinstall", done: 0, total: 0 }), 100); return ok(); },
+    ps_linkInstallTV: () => {
+      if (q.get("lg") === "public") { setTimeout(() => emit({ type: "linkTVDone", public: true, error: "Windows treats this network as public, so the TV can't reach this PC. Make it private, then install again." }), 300); return ok(); }
+      setTimeout(() => emit({ type: "linkStep", step: "tvinstall", done: 0, total: 0 }), 100); return ok();
+    },
     ps_linkForgetLG: () => ok(),
+    ps_linkMakePrivate: () => { setTimeout(() => emit({ type: "linkPrivate", ok: true }), 400); return ok(); },
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: CALM ? [] : [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],

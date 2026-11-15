@@ -8,11 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // Add a TV, for LG TVs (Lootnest Link M3, core/webos.go): Lootnest finds
@@ -93,7 +96,12 @@ func (a *App) apiLinkInstallTV(ip, name, passphrase string) {
 		setLinkStep("")
 		if err != nil {
 			a.logf("TV streaming: Lootnest for TV wasn't installed on %s: %v", ip, err)
-			a.emit("linkTVDone", map[string]any{"error": sentence(err)})
+			out := map[string]any{"error": sentence(err)}
+			var pub *core.PublicNetworkError
+			if errors.As(err, &pub) {
+				out["public"] = true
+			}
+			a.emit("linkTVDone", out)
 		} else {
 			a.logf("TV streaming: Lootnest for TV installed on %q (%s) and paired", name, ip)
 			a.emit("linkTVDone", map[string]any{"ok": true, "name": name})
@@ -109,6 +117,15 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		return err
 	}
 	a.linkProgress("key", 0, 0)
+	// On a network Windows calls Public, the engine's firewall rules keep
+	// the TV out: say so before anything is installed.
+	if pc := pcAddressFor(ip); pc != "" {
+		cat := networkCategory(pc)
+		a.logf("TV streaming: Add an LG TV on %s: this PC is %s on a network Windows calls %q", ip, pc, cat)
+		if cat == "Public" {
+			return &core.PublicNetworkError{PC: pc}
+		}
+	}
 	a.logf("TV streaming: Add an LG TV on %s: unlocking the key", ip)
 	keyPEM, err := core.FetchTVKey(ctx, ip, passphrase)
 	if err != nil {
@@ -173,7 +190,9 @@ func (a *App) installTV(ip, name, passphrase string) error {
 	if err != nil {
 		return err
 	}
-	if err := tv.LaunchTVApp(map[string]string{"host": pc, "pairPin": pin}); err != nil {
+	trace, err := tv.LaunchTVApp(map[string]string{"host": pc, "pairPin": pin})
+	a.logf("TV streaming: Add an LG TV on %s: opening the app with this PC's address %s: %s", ip, pc, trace)
+	if err != nil {
 		return err
 	}
 	// The TV starts pairing a moment after it opens: the engine accepts
@@ -196,7 +215,21 @@ func (a *App) installTV(ip, name, passphrase string) error {
 				return nil
 			}
 		}
-		return errors.New("the app is on the TV, but it didn't pair. Open Lootnest on the TV, then use Add a TV with the PIN it shows")
+		// Why not: whether the app is open on the TV, and whether the TV
+		// reaches the engine on this PC.
+		running, known := tv.AppRunning()
+		reach := tv.ReachesPC(pc)
+		cat := networkCategory(pc)
+		a.logf("TV streaming: Add an LG TV on %s: not paired; the app is open on the TV: %s; the TV reaches the engine at %s: %q; Windows calls the network %q", ip, map[bool]string{true: "yes", false: "no"}[running]+map[bool]string{true: "", false: " (unknown)"}[known], pc, reach, cat)
+		switch {
+		case cat == "Public":
+			return &core.PublicNetworkError{PC: pc}
+		case known && !running:
+			return errors.New("the app is on the TV, but the TV didn't open it. Open Lootnest from the TV's home screen, then install again")
+		case reach == "no":
+			return errors.New("the TV can't reach the streaming engine on this PC. Check that they're on the same network and that no firewall on this PC blocks Apollo")
+		}
+		return errors.New("the app is on the TV, but it didn't pair with this PC. Check that the TV and this PC are on the same network, then install again")
 	}
 	after, err := ap.Clients(ctx)
 	if err != nil {
@@ -307,4 +340,62 @@ func (a *App) extendDevModes() {
 		_ = saveLink(r)
 		a.emitLink()
 	}
+}
+
+// pcAddressFor is this PC's address on the network that reaches the TV at
+// ip, or "" when there's no route. Nothing is sent: a UDP socket only
+// picks the route.
+func pcAddressFor(ip string) string {
+	c, err := net.Dial("udp", net.JoinHostPort(ip, "9"))
+	if err != nil {
+		return ""
+	}
+	defer c.Close()
+	if u, ok := c.LocalAddr().(*net.UDPAddr); ok {
+		return u.IP.String()
+	}
+	return ""
+}
+
+func powershell() string {
+	return filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+}
+
+// networkCategory is the Windows category of the network with this PC's
+// address pc ("Public", "Private", "DomainAuthenticated"), or "" when
+// Windows didn't say.
+func networkCategory(pc string) string {
+	script, err := core.NetworkCategoryScript(pc)
+	if err != nil {
+		return ""
+	}
+	out, err := win.RunHiddenOutput(powershell(), "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "+core.EncodePowerShell(script), 20*time.Second)
+	if err != nil {
+		return ""
+	}
+	return core.NetworkCategory(out)
+}
+
+// apiLinkMakePrivate makes the network that reaches the TV at ip Private,
+// after Windows' prompt, and answers with a "linkPrivate" event.
+func (a *App) apiLinkMakePrivate(ip string) {
+	go func() {
+		pc := pcAddressFor(strings.TrimSpace(ip))
+		script, err := core.MakePrivateScript(pc)
+		if err != nil {
+			a.emit("linkPrivate", map[string]any{"error": "Lootnest couldn't tell which network reaches the TV."})
+			return
+		}
+		code, err := win.RunElevatedAndWait(a.hwnd, powershell(), "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(script))
+		switch {
+		case errors.Is(err, win.ErrCancelledByUser):
+			a.emit("linkPrivate", map[string]any{"error": "Nothing changed: Windows' prompt was cancelled."})
+		case err != nil || code != 0:
+			a.logf("TV streaming: the network with %s wasn't made private (code %d, %v)", pc, code, err)
+			a.emit("linkPrivate", map[string]any{"error": "Windows didn't change the network. In Windows Settings, Network and internet, open this network and choose Private."})
+		default:
+			a.logf("TV streaming: the network with %s is private now", pc)
+			a.emit("linkPrivate", map[string]any{"ok": true})
+		}
+	}()
 }

@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.4, beta)
+## Where things stand (2.2.5, beta)
 
 These shipped recently, newest last:
 
@@ -1040,6 +1040,17 @@ These shipped recently, newest last:
   app first (`closeByAppId`, `tvCloseWait`), since an open app never
   reads new launch parameters. The fork's desktop CI fails only on
   `test-gamestream-crypt-sign`, as upstream does.
+
+- **2.2.5** On the owner's TV, 1.1.0 installed but nothing appeared and
+  the engine's log showed no contact from the TV; the network was also
+  Public. `LaunchTVApp` waits until the app's process is gone
+  (`AppRunning`, `ps` on the TV), launches, checks it runs, launches once
+  more if not, and returns a trace that's logged. A failed pairing logs
+  and names why (`AppRunning`, `ReachesPC`: wget or curl to
+  `:47989/serverinfo` from the TV, the network category). Public
+  networks: `core/netprofile.go` (`NetworkCategoryScript`,
+  `MakePrivateScript`), `win.RunHiddenOutput`, `PublicNetworkError`
+  before the key step, **Make this network private** (`ps_linkMakePrivate`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

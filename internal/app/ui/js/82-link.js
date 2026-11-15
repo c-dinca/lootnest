@@ -18,8 +18,18 @@
     else if (ev.type === "linkTVDone") {
       L.step = null;
       const D = S.dialog;
-      if (D && D.kind === "lgtv") { D.busy = false; D.error = ev.error || ""; D.done = !!ev.ok; renderOverlay(); }
+      if (D && D.kind === "lgtv") { D.busy = false; D.error = ev.error || ""; D.public = !!ev.public; D.note = ""; D.done = !!ev.ok; renderOverlay(); }
       if (ev.ok) toast(`Lootnest is on ${ev.name}. Pick it up from the TV's home screen.`, "success");
+    }
+    else if (ev.type === "linkPrivate") {
+      const D = S.dialog;
+      if (D && D.kind === "lgtv") {
+        D.privating = false;
+        if (ev.ok) { D.public = false; D.error = ""; D.note = "This network is private now. Install again."; }
+        else D.error = ev.error || "";
+        renderOverlay();
+      }
+      return;
     }
     else if (ev.type === "linkPaired") {
       L.pairing = false; L.pairError = ev.error || "";
@@ -60,7 +70,9 @@
         <input id="lg-name" class="ln-input" maxlength="40" autocomplete="off" placeholder="Living room TV" aria-label="The TV's name" value="${esc(D.name)}"></section>
       <section class="lg-sec"><h3>Passphrase</h3><p>Developer Mode shows it under Key Server.</p>
         <input id="lg-pass" class="ln-input lg-pass" maxlength="12" autocomplete="off" spellcheck="false" placeholder="A1B2C3" aria-label="Passphrase"></section>
-      ${D.error ? `<p class="error-text" role="alert">${esc(D.error)}</p>` : ""}`,
+      ${D.error ? `<p class="error-text" role="alert">${esc(D.error)}</p>` : ""}
+      ${D.public ? `<div><button class="ln-button ln-button--sm" data-action="lg-private"${D.privating ? " disabled" : ""}>${D.privating ? "Waiting for Windows" : "Make this network private"}</button></div>` : ""}
+      ${D.note ? `<p>${esc(D.note)}</p>` : ""}`,
       `<button class="ln-button ln-button--primary ln-button--sm" data-action="lg-install">Install</button>${close}`);
   }
   function linkBusyRow(L) {
