@@ -1007,6 +1007,14 @@ These shipped recently, newest last:
   nothing (Windows Firewall drops replies from another address than the
   one asked), so `FindLGTVs` probes the private /24s for port 3000
   (`probeLGPort`).
+- **Unreleased** Add an LG TV, second try on the owner's TV: the install
+  printed nothing and nothing was installed. `luna-send-pub -i` reads
+  commands from stdin and, with none (the SSH session's stdin is closed),
+  ends before it calls the service. `InstallTVApp` now checks the copy's
+  size (`wc -c`), sends one `luna-send-pub -n 1` request with
+  `subscribe: false`, and polls `HasTVApp` for 3 min; a refusal
+  (`returnValue: false`) says the TV's `errorText`. The subscription
+  reader (`InstallOutcome`) is gone.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
