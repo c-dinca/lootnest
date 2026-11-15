@@ -156,6 +156,8 @@ type App struct {
 	tv           bool   // TV mode: Big Picture on the primary display for a streaming host (tv.go)
 	tvHolder     uint32 // the "--tv" process holding the stream
 	tvWasHidden  bool   // the window was in the tray before TV mode
+	tvMenuOn     bool   // TV mode's Home menu is over the game
+	tvPSDown     bool   // a PlayStation pad's PS button is held
 	openTV       bool   // TV mode was asked for before the page was ready
 	safe         bool   // safe mode: started with every optional background piece off
 	restartArgs  string // start Lootnest again with these once this one quits
@@ -476,6 +478,17 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 			}
 			a.handleCommand(cmd)
 			return 1, true
+		}
+	case msg == win.WM_INPUT:
+		// A PlayStation pad's PS button, in TV mode (tvHome).
+		if down, ok := win.RawPSButton(lp); ok {
+			a.mu.Lock()
+			pressed := down && !a.tvPSDown
+			a.tvPSDown = down
+			a.mu.Unlock()
+			if pressed {
+				a.tvHome()
+			}
 		}
 	case msg == win.WM_DISPLAYCHANGE:
 		// A streaming host adds or removes its display: TV mode follows

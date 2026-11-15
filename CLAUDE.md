@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.3.0, beta)
+## Where things stand (2.4.0, beta)
 
 These shipped recently, newest last:
 
@@ -1124,6 +1124,21 @@ These shipped recently, newest last:
   Still to do from that list: the Home button overlay, Spotify, YouTube
   and Stremio as apps, and the TV's sound (the engine sends it; the TV
   app's audio backend is the suspect).
+
+- **2.4.0** The owner's TV list, part 2: the Home button. `win/guide.go`:
+  `XInputGuideDown` (xinput1_4 ordinal 100, `XInputGetStateEx`, Guide
+  0x0400; the TV's controller arrives as a ViGEm Xbox pad) polled every
+  60 ms by `watchGuide` in TV mode; PlayStation pads by raw input
+  (`WatchPadRawInput`, RIDEV_INPUTSINK on gamepad and joystick usages;
+  `WM_INPUT` in `hook`, `RawPSButton`, `PSButtonIn` by report: DualSense
+  USB byte 10, Bluetooth 0x31 byte 11, DS4 USB and simple reports byte
+  7, DS4 Bluetooth 0x11 byte 10; nothing is opened). `tvHome`: over a
+  game (`hidFor`) toggles the menu (`tvMenuOn`, `tvBack`, event `tvMenu`)
+  or resumes (`tvResume` -> `tvGameUp`); with none, event `tvHome` opens
+  `bpMenu`. `ps_tvResume`, `ps_tvStay`, `ps_tvCloseGame`
+  (`CloseProcessWindows(procOf)`). UI `tvMenu`/`drawTVMenu`/`tvMenuGo`,
+  `#tv-menu`; the Gamepad API's button 16 is left to Go in TV mode;
+  `BP.playing` makes Play resume the running game.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

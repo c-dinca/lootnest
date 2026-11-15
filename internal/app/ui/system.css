@@ -309,7 +309,9 @@
   --launch-veil: linear-gradient(180deg, rgb(17 18 23 / 0.1) 0%, rgb(17 18 23 / 0.35) 55%, rgb(17 18 23 / 0.92) 100%);
   --launch-zoom: 7s;
   --launch-bar-w: 240px;
-  --launch-run: 1.4s;  /* the prompt bar, its prompts above the safe area */
+  --launch-run: 1.4s;
+  --tv-menu-w: min(560px, 42vw);
+  --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.75), transparent 70%);  /* the prompt bar, its prompts above the safe area */
   --bp-tile-w: clamp(160px, 11vw, 240px);
   --bp-tile-wide-w: clamp(320px, 24vw, 520px);
   /* TV mode (Lootnest Link), read from about 3 m: no text under 24px at

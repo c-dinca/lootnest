@@ -436,6 +436,9 @@ func (a *App) tick() {
 			a.mu.Unlock()
 			switch {
 			case tv:
+				a.mu.Lock()
+				a.tvMenuOn = false
+				a.mu.Unlock()
 				a.tvBack()
 				a.emit("bpReturn", nil)
 			case bp && !win.IsVisible(a.hwnd):

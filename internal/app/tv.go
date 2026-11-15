@@ -3,6 +3,7 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -127,6 +128,10 @@ func (a *App) enterTV(holder uint32) {
 	win.FullscreenPrimary(a.hwnd)
 	win.ForceForeground(a.hwnd)
 	tvTaskbar(false)
+	win.WatchPadRawInput(a.hwnd, true)
+	if !was {
+		go a.watchGuide()
+	}
 	if ready {
 		a.emit("tv", map[string]any{"on": true})
 	}
@@ -155,9 +160,10 @@ func (a *App) leaveTV() {
 	}
 	hidden, playing := a.tvWasHidden, a.hidFor != ""
 	a.tv, a.tvHolder, a.openTV, a.bigPicture = false, 0, false, false
-	a.hidFor = ""
+	a.hidFor, a.tvMenuOn = "", false
 	a.mu.Unlock()
 	tvTaskbar(true)
+	win.WatchPadRawInput(a.hwnd, false)
 	win.SetFullscreen(a.hwnd, false)
 	if hidden || playing {
 		win.ShowWindow(a.hwnd, win.SW_HIDE)
@@ -270,4 +276,89 @@ func (a *App) procOf(key string) string {
 		return r.proc
 	}
 	return ""
+}
+
+// watchGuide follows XInput pads' Guide button while TV mode is on: the
+// TV's controller reaches the PC as one, through the streaming host.
+func (a *App) watchGuide() {
+	was := false
+	for {
+		time.Sleep(60 * time.Millisecond)
+		a.mu.Lock()
+		tv := a.tv
+		a.mu.Unlock()
+		if !tv {
+			return
+		}
+		down := win.XInputGuideDown()
+		if down && !was {
+			a.ui(a.tvHome)
+		}
+		was = down
+	}
+}
+
+// tvHome is the controller's Home button in TV mode. Over a game it opens
+// TV mode's menu, as a console's does, and closes it again; with no game it
+// opens Big Picture's own menu. Call it on the window's thread.
+func (a *App) tvHome() {
+	a.mu.Lock()
+	tv, playing, on := a.tv, a.hidFor, a.tvMenuOn
+	a.mu.Unlock()
+	if !tv {
+		return
+	}
+	switch {
+	case playing == "":
+		a.emit("tvHome", map[string]any{})
+	case on:
+		a.tvResume()
+	default:
+		a.mu.Lock()
+		a.tvMenuOn = true
+		a.mu.Unlock()
+		a.tvBack()
+		a.emit("tvMenu", map[string]any{"on": true, "key": playing})
+	}
+}
+
+// tvResume closes TV mode's menu and brings the game back to the front.
+func (a *App) tvResume() {
+	a.mu.Lock()
+	playing := a.hidFor
+	a.tvMenuOn = false
+	a.mu.Unlock()
+	a.emit("tvMenu", map[string]any{"on": false})
+	if playing != "" {
+		a.tvGameUp(playing)
+	}
+}
+
+// apiTVResume is Resume in TV mode's menu, and Play on the game running.
+func (a *App) apiTVResume() { a.ui(a.tvResume) }
+
+// apiTVStay is Lootnest in TV mode's menu: the menu closes, Lootnest stays
+// in front, and the game keeps running behind it.
+func (a *App) apiTVStay() {
+	a.mu.Lock()
+	a.tvMenuOn = false
+	a.mu.Unlock()
+}
+
+// apiTVCloseGame asks the game TV mode started to quit, as closing its
+// window would; Lootnest comes back when it's gone (tick).
+func (a *App) apiTVCloseGame() error {
+	a.mu.Lock()
+	playing := a.hidFor
+	a.tvMenuOn = false
+	a.mu.Unlock()
+	if playing == "" {
+		return nil
+	}
+	proc := a.procOf(playing)
+	if proc == "" || win.CloseProcessWindows(proc) == 0 {
+		return errors.New("Lootnest couldn't close the game. Quit it from its own menu")
+	}
+	a.logf("Asked %s to close from TV mode's menu", proc)
+	return nil
 }
