@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.0
+
+Apps in TV mode.
+
+- **Spotify, YouTube and Stremio on the TV.** Big Picture's Home has an Apps row with the ones on this PC: Spotify and Stremio as installed, and YouTube in its TV layout, which the controller drives, in a window of its own. They open in front of Lootnest like a game: Home opens the menu over them, and closing them brings you back.
+- **Lootnest for TV 1.3.1 notes how it plays sound**, so Save a report shows why a TV stays silent. Install it with Add an LG TV, Install again.
+
 ## 2.4.0
 
 The Home button in TV mode.

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"lootnest/internal/core"
 	"lootnest/internal/win"
 )
 
@@ -240,16 +241,22 @@ func (a *App) tvGameStarting(key, name string) {
 // runs, as its window may open behind Lootnest. Call it on the window's
 // thread.
 func (a *App) tvGameUp(key string) {
-	proc := a.procOf(key)
+	proc, pid := a.procOf(key), a.pidOf(key)
 	a.emit("tvGame", map[string]any{"phase": "playing", "key": key})
 	win.SendToBack(a.hwnd)
-	if proc == "" {
+	if proc == "" && pid == 0 {
 		return
 	}
 	go func() {
 		// Its window can take a while after its process.
 		for i := 0; i < 20; i++ {
-			if gw := win.GameWindow(proc); gw != 0 {
+			gw := uintptr(0)
+			if pid != 0 {
+				gw = win.WindowOfPID(pid)
+			} else {
+				gw = win.GameWindow(proc)
+			}
+			if gw != 0 {
 				a.ui(func() { win.ForceForeground(gw) })
 				return
 			}
@@ -355,10 +362,78 @@ func (a *App) apiTVCloseGame() error {
 	if playing == "" {
 		return nil
 	}
-	proc := a.procOf(playing)
-	if proc == "" || win.CloseProcessWindows(proc) == 0 {
+	proc, pid := a.procOf(playing), a.pidOf(playing)
+	closed := 0
+	if pid != 0 {
+		closed = win.CloseWindowsOfPID(pid)
+	} else if proc != "" {
+		closed = win.CloseProcessWindows(proc)
+	}
+	if closed == 0 {
 		return errors.New("Lootnest couldn't close the game. Quit it from its own menu")
 	}
 	a.logf("Asked %s to close from TV mode's menu", proc)
+	return nil
+}
+
+// pidOf is the process an app is followed by, or 0.
+func (a *App) pidOf(key string) uint32 {
+	foundRunsMu.Lock()
+	defer foundRunsMu.Unlock()
+	if r := foundRuns[key]; r != nil {
+		return r.pid
+	}
+	return 0
+}
+
+func (a *App) mediaApps() []core.MediaApp {
+	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
+	return core.FindMediaApps(core.MediaPaths{
+		AppData: os.Getenv("APPDATA"), LocalAppData: os.Getenv("LOCALAPPDATA"),
+		ProgramFiles: os.Getenv("ProgramFiles"), ProgramFilesX86: os.Getenv("ProgramFiles(x86)"),
+		DataDir: DataDir(),
+	}, exists)
+}
+
+// apiMediaApps lists the apps on this PC that TV mode can start.
+func (a *App) apiMediaApps() []core.MediaApp { return a.mediaApps() }
+
+// apiLaunchApp starts one of TV mode's apps, or brings it back to the
+// front when it already runs, and follows it as a game: Lootnest stays
+// behind it, Home opens the menu over it, and closing it comes back.
+func (a *App) apiLaunchApp(id string) error {
+	var app *core.MediaApp
+	for _, m := range a.mediaApps() {
+		if m.ID == id {
+			app = &m
+			break
+		}
+	}
+	if app == nil {
+		return errors.New("That app isn't on this PC")
+	}
+	key := core.MediaAppKey(app.ID)
+	r := &foundRun{proc: app.Proc, until: time.Now().Add(2 * time.Minute)}
+	win.AllowAnyForeground()
+	if app.ByPID {
+		if old := a.pidOf(key); old != 0 && win.ProcessAlive(old) {
+			r.pid = old
+		} else {
+			pid, err := win.StartTracked(app.Exe, app.Args, filepath.Dir(app.Exe))
+			if err != nil {
+				return err
+			}
+			r.pid = pid
+		}
+	} else if procs, err := win.ProcessNames(); err != nil || !procs[app.Proc] {
+		if err := win.StartDetached(app.Exe, app.Args, filepath.Dir(app.Exe)); err != nil {
+			return err
+		}
+	}
+	foundRunsMu.Lock()
+	foundRuns[key] = r
+	foundRunsMu.Unlock()
+	a.logf("Starting %s from TV mode", app.Name)
+	a.tvGameStarting(key, app.Name)
 	return nil
 }

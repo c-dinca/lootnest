@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
+	"lootnest/internal/win"
 )
 
 // ---------------------------------------------------------------------------
@@ -21,6 +22,7 @@ import (
 // foundRun is a Library game Lootnest started, followed until it closes.
 type foundRun struct {
 	proc, build string
+	pid         uint32    // followed by this process instead of its name (an app in a browser)
 	since       time.Time // when its process was first seen
 	until       time.Time // given up on if it hasn't shown by then
 	missed      int
@@ -53,8 +55,17 @@ func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 	foundRunsMu.Lock()
 	defer foundRunsMu.Unlock()
 	for key, r := range foundRuns {
+		running := procs[r.proc]
 		switch {
-		case procs[r.proc]:
+		case r.pid != 0:
+			running = win.ProcessAlive(r.pid) && win.WindowOfPID(r.pid) != 0
+		case running && strings.HasPrefix(key, "app:"):
+			// An app that hides to the tray when closed (Spotify) is done
+			// once it has no window.
+			running = win.GameWindow(r.proc) != 0
+		}
+		switch {
+		case running:
 			if r.since.IsZero() {
 				r.since = now
 				up = append(up, key)
@@ -71,6 +82,9 @@ func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 			}
 			delete(foundRuns, key)
 			down = append(down, key)
+			if strings.HasPrefix(key, "app:") { // TV mode's apps have no sessions
+				continue
+			}
 			go func(key string, rec core.SessionRecord) {
 				a.stepsAfter(key, true)
 				a.logSession(rec)

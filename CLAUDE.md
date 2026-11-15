@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.4.0, beta)
+## Where things stand (2.5.0, beta)
 
 These shipped recently, newest last:
 
@@ -1139,6 +1139,21 @@ These shipped recently, newest last:
   (`CloseProcessWindows(procOf)`). UI `tvMenu`/`drawTVMenu`/`tvMenuGo`,
   `#tv-menu`; the Gamepad API's button 16 is left to Go in TV mode;
   `BP.playing` makes Play resume the running game.
+
+- **2.5.0** The owner's TV list, part 3: apps. `core/mediaapps.go`
+  `FindMediaApps` (Spotify in %APPDATA% or the Store's WindowsApps alias,
+  Stremio 4/5 paths, YouTube at youtube.com/tv in Edge or Chrome
+  `--app` with a TV user agent and its own `--user-data-dir` under
+  DataDir); `apiMediaApps`, `apiLaunchApp` register a `foundRun` keyed
+  `app:<id>` (by process name, or by the started pid for the browser:
+  `win.StartTracked`, `ProcessAlive`, `WindowOfPID`, `CloseWindowsOfPID`)
+  and call `tvGameStarting`, so the 2.3.0/2.4.0 machinery (behind, Home
+  menu, back on close) covers them; an app is done when it has no
+  visible window (Spotify hides to the tray); apps log no sessions. UI
+  `bpAppsRow`, `bpApp`, `.bp-app` (`--app-*` colours), Phosphor
+  `spotify-logo`, `youtube-logo`, `popcorn`. Lootnest for TV 1.3.1
+  (c-dinca/lootnest-tv-webos#7) notes its picture and sound backends and
+  whether a stream's sound opened, for the owner's silent TV.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

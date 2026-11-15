@@ -134,6 +134,8 @@
     tvResume: () => call("ps_tvResume"),
     tvStay: () => call("ps_tvStay"),
     tvCloseGame: () => call("ps_tvCloseGame"),
+    mediaApps: () => call("ps_mediaApps"),
+    launchApp: (id) => call("ps_launchApp", id),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),

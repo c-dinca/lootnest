@@ -2814,3 +2814,16 @@ html.is-tv {
 .tv-menu-foot span { width: var(--space-4); }
 @media (prefers-reduced-motion: reduce) { .tv-menu, .tv-menu-panel { animation: none; } }
 body:has(> #tv-menu) .bp-launch-body { opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
+
+/* TV mode's apps (bpAppsRow) */
+.bp-app { flex: none; display: grid; gap: var(--space-2); width: var(--bp-app-w); padding: 0; border: 0; background: none; color: var(--fg-2); text-align: left; cursor: pointer; outline: none; transition: transform var(--dur-2) var(--ease-emph); }
+.bp-app-icon { display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: var(--radius-cover); background: var(--bg-raised); box-shadow: var(--shadow-lift); color: var(--fg-1); transition: box-shadow var(--dur-2) var(--ease-emph); }
+.bp-app-icon svg { width: 34%; height: 34%; }
+.bp-app--spotify { color: var(--app-spotify); }
+.bp-app--youtube { color: var(--app-youtube); }
+.bp-app--stremio { color: var(--app-stremio); }
+.bp-app:focus, .bp-app:hover { transform: scale(1.05); color: var(--fg-1); z-index: 2; }
+.bp-app:focus .bp-app-icon, .bp-app:hover .bp-app-icon { box-shadow: var(--focus-ring-bp), var(--shadow-overlay); }
+@media (prefers-reduced-motion: reduce) { .bp-app:focus, .bp-app:hover { transform: none; } }
+.bp-app .bp-tile-name { position: static; opacity: 1; transform: none; font: 700 var(--fs-18)/1.2 var(--font-ui); }
+.bp-app-icon svg { width: auto; height: 42%; }

@@ -253,9 +253,26 @@
     const big = names.filter((t) => tags[t].length >= 5).slice(0, 3);
     const small = names.filter((t) => !big.includes(t));
     return `<div class="bp-home">${bpRow("recent", "Continue playing", recent.length ? recent : all.slice(0, 12), true)}
+      ${bpAppsRow()}
       ${big.map((t) => bpRow("tag:" + t, t, tags[t], false)).join("")}
       ${small.length ? `<section class="bp-row"><h2><span class="ln-label">Collections</span></h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
       ${bpRow("all", "Your games", all.slice(0, 40), false)}</div>`;
+  }
+  // TV mode's apps: Spotify, YouTube's TV interface and Stremio, when the
+  // PC has them (app/tv.go apiMediaApps).
+  const APP_ICONS = { spotify: "spotify-logo", youtube: "youtube-logo", stremio: "popcorn" };
+  function bpAppsRow() {
+    if (!BP.apps) { BP.apps = []; api.mediaApps().then((l) => { BP.apps = l || []; if (BP.apps.length && BP.on && BP.tab === "home") renderBP(false); }).catch(() => {}); }
+    if (!BP.apps.length) return "";
+    return `<section class="bp-row"><h2><span class="ln-label">Apps</span></h2><div class="bp-row-track" data-row="apps">${BP.apps.map((a) =>
+      `<button class="bp-app" data-bp data-bpid="app:${esc(a.id)}" data-go="app" data-app="${esc(a.id)}" data-name="${esc(a.name)}"><span class="bp-app-icon bp-app--${esc(a.id)}">${ph(APP_ICONS[a.id] || "television-simple", "fill")}</span><span class="bp-tile-name">${esc(a.name)}</span></button>`).join("")}</div></section>`;
+  }
+  function bpApp(id, name) {
+    const key = "app:" + id;
+    sfx("go");
+    if (BP.tv && BP.playing === key) { api.tvResume().catch(() => {}); return; }
+    if (BP.tv) { BP.launch = { key, name, art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch(); }
+    api.launchApp(id).catch((e) => { tvReturn(); toast(errText(e), "error"); });
   }
   let bpSeat = "", bpFootX = false, bpFam = "";
   function renderBP(first) {
@@ -414,6 +431,7 @@
     const go = el.dataset.go;
     if (go === "open") { BP.detail = el.dataset.k; BP.from = el.dataset.bpid; BP.focus = "play"; BP.keep = true; sfx("go"); renderBP(true); }
     else if (go === "play") bpPlay(bpItem(el.dataset.k));
+    else if (go === "app") bpApp(el.dataset.app, el.dataset.name);
     else if (go === "tag") { BP.tab = "library"; BP.tag = el.dataset.tag; BP.focus = ""; BP.keep = true; sfx("go"); renderBP(true); }
     else if (go === "choose") { BP.choose = el.dataset.k; BP.focus = ""; sfx("go"); renderBP(true); }
     else if (go === "close-game") bpCloseGame(el.dataset.k);

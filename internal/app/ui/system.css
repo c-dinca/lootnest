@@ -311,6 +311,9 @@
   --launch-bar-w: 240px;
   --launch-run: 1.4s;
   --tv-menu-w: min(560px, 42vw);
+  --bp-app-w: calc(var(--bp-tile-w) * 1.4);
+  /* the apps' own colours, only on their tile in TV mode */
+  --app-spotify: #1ed760; --app-youtube: #ff3b30; --app-stremio: #8a5aab;
   --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.75), transparent 70%);  /* the prompt bar, its prompts above the safe area */
   --bp-tile-w: clamp(160px, 11vw, 240px);
   --bp-tile-wide-w: clamp(320px, 24vw, 520px);
