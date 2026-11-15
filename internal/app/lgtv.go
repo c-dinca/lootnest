@@ -190,7 +190,9 @@ func (a *App) installTV(ip, name, passphrase string) error {
 	if err != nil {
 		return err
 	}
-	if err := tv.LaunchTVApp(map[string]string{"host": pc, "pairPin": pin}); err != nil {
+	trace, err := tv.LaunchTVApp(map[string]string{"host": pc, "pairPin": pin})
+	a.logf("TV streaming: Add an LG TV on %s: opening the app with this PC's address %s: %s", ip, pc, trace)
+	if err != nil {
 		return err
 	}
 	// The TV starts pairing a moment after it opens: the engine accepts
@@ -213,8 +215,19 @@ func (a *App) installTV(ip, name, passphrase string) error {
 				return nil
 			}
 		}
-		if networkCategory(pc) == "Public" {
+		// Why not: whether the app is open on the TV, and whether the TV
+		// reaches the engine on this PC.
+		running, known := tv.AppRunning()
+		reach := tv.ReachesPC(pc)
+		cat := networkCategory(pc)
+		a.logf("TV streaming: Add an LG TV on %s: not paired; the app is open on the TV: %s; the TV reaches the engine at %s: %q; Windows calls the network %q", ip, map[bool]string{true: "yes", false: "no"}[running]+map[bool]string{true: "", false: " (unknown)"}[known], pc, reach, cat)
+		switch {
+		case cat == "Public":
 			return &core.PublicNetworkError{PC: pc}
+		case known && !running:
+			return errors.New("the app is on the TV, but the TV didn't open it. Open Lootnest from the TV's home screen, then install again")
+		case reach == "no":
+			return errors.New("the TV can't reach the streaming engine on this PC. Check that they're on the same network and that no firewall on this PC blocks Apollo")
 		}
 		return errors.New("the app is on the TV, but it didn't pair with this PC. Check that the TV and this PC are on the same network, then install again")
 	}

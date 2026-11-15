@@ -90,6 +90,9 @@ type fakeTV struct {
 	quiet    bool // it ends without an outcome
 	silent   bool // set when its input closed before it could start
 	checks   int  // test -d answers yes from this check on
+	launches int  // launch requests seen
+	opensAt  int  // the app runs from this launch on (0: the first)
+	reach    bool // wget reaches the PC
 }
 
 func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
@@ -167,7 +170,24 @@ func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 								_, _ = io.WriteString(ch, "yes\n")
 							}
 						case strings.Contains(cmd, "applicationManager/launch"):
+							f.mu.Lock()
+							f.launches++
+							f.mu.Unlock()
 							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
+						case strings.Contains(cmd, "ps w"):
+							f.mu.Lock()
+							n := 0
+							if f.launches > f.opensAt {
+								n = 1
+							}
+							f.mu.Unlock()
+							_, _ = io.WriteString(ch, strconv.Itoa(n)+"\n")
+						case strings.Contains(cmd, "/serverinfo"):
+							n := 0
+							if f.reach {
+								n = 1
+							}
+							_, _ = io.WriteString(ch, strconv.Itoa(n)+"\n")
 						case strings.Contains(cmd, "devmode_enabled"):
 							_, _ = io.WriteString(ch, "TOKEN1234abcd\n")
 						}
@@ -214,7 +234,7 @@ func TestTVInstallAndLaunch(t *testing.T) {
 	if string(f.files["ipk"]) != "ipk bytes" {
 		t.Fatalf("copied %q", f.files["ipk"])
 	}
-	if err := tv.LaunchTVApp(map[string]string{"host": "192.168.1.20", "pairPin": "4821"}); err != nil {
+	if _, err := tv.LaunchTVApp(map[string]string{"host": "192.168.1.20", "pairPin": "4821"}); err != nil {
 		t.Fatal(err)
 	}
 	tok, err := tv.DevModeToken()
@@ -376,5 +396,50 @@ func TestTVInstallKeepsInputOpen(t *testing.T) {
 	defer f.mu.Unlock()
 	if f.silent {
 		t.Fatal("luna-send-pub's input was closed before it could start")
+	}
+}
+
+func TestTVLaunchAgainAndReach(t *testing.T) {
+	defer func(w, o, p time.Duration) { tvCloseWait, tvOpenLimit, tvPoll = w, o, p }(tvCloseWait, tvOpenLimit, tvPoll)
+	tvCloseWait, tvOpenLimit, tvPoll = 10*time.Millisecond, 300*time.Millisecond, 20*time.Millisecond
+	k, _ := rsa.GenerateKey(rand.Reader, 2048)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)})
+	pub, _ := ssh.NewPublicKey(&k.PublicKey)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	// The first launch is lost, as when it lands while the app closes.
+	f := &fakeTV{files: map[string][]byte{}, opensAt: 1}
+	go f.serve(t, ln, pub)
+	tv, _, err := connectTVAt(context.Background(), "127.0.0.1", ln.Addr().String(), keyPEM, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tv.Close()
+	if _, err := tv.LaunchTVApp(map[string]string{"host": "192.168.1.20", "pairPin": "4821"}); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	launches := f.launches
+	f.mu.Unlock()
+	if launches != 2 {
+		t.Fatalf("%d launches, want 2", launches)
+	}
+	if running, known := tv.AppRunning(); !running || !known {
+		t.Fatalf("running %v known %v", running, known)
+	}
+	if got := tv.ReachesPC("192.168.1.20"); got != "no" {
+		t.Fatalf("reach %q", got)
+	}
+	f.mu.Lock()
+	f.reach = true
+	f.mu.Unlock()
+	if got := tv.ReachesPC("192.168.1.20"); got != "yes" {
+		t.Fatalf("reach %q", got)
+	}
+	if got := tv.ReachesPC("1.2.3.4; reboot"); got != "" {
+		t.Fatalf("took a bad address: %q", got)
 	}
 }
