@@ -56,6 +56,7 @@ var (
 	tvOpenLimit  = 8 * time.Second
 	tvPoll       = 500 * time.Millisecond
 	tvCloseWait  = time.Second
+	tvLunaLimit  = 20 * time.Second
 )
 
 var TVAppPinned = TVAppRelease{
@@ -371,6 +372,60 @@ func (t *TV) runFor(cmd string, stdin io.Reader, limit time.Duration) (string, e
 	return out.String(), nil
 }
 
+// luna calls a webOS service with luna-send-pub and returns its first
+// answer. luna-send-pub ends without calling anything when its input closes
+// first, as an SSH command's does when it's given none, so the input is
+// held open until the answer has come, or limit has passed.
+func (t *TV) luna(uri, payload string, limit time.Duration) (string, error) {
+	s, err := t.client.NewSession()
+	if err != nil {
+		return "", err
+	}
+	defer s.Close()
+	hold, err := s.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+	defer hold.Close()
+	pipe, err := s.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+	// -i, as the install that works: it calls once and waits on its input.
+	if err := s.Start("luna-send-pub -i " + shQuote(uri) + " " + shQuote(payload) + " 2>&1"); err != nil {
+		return "", err
+	}
+	lines, quit := make(chan string), make(chan struct{})
+	defer close(quit)
+	go func() {
+		defer close(lines)
+		sc := bufio.NewScanner(pipe)
+		for sc.Scan() {
+			select {
+			case lines <- sc.Text():
+			case <-quit:
+				return
+			}
+		}
+	}()
+	var out strings.Builder
+	deadline := time.After(limit)
+	for {
+		select {
+		case line, ok := <-lines:
+			if !ok {
+				return out.String(), nil
+			}
+			out.WriteString(line + "\n")
+			if strings.Contains(line, "returnValue") {
+				return out.String(), nil
+			}
+		case <-deadline:
+			return out.String(), fmt.Errorf("the TV didn't answer %s in %s", uri, limit)
+		}
+	}
+}
+
 // shQuote is a POSIX shell single-quoted string.
 func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
 
@@ -502,7 +557,7 @@ func (t *TV) HasTVApp() bool {
 		return true
 	}
 	payload, _ := json.Marshal(map[string]any{"id": TVAppID})
-	out, _ = t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/getAppInfo' "+shQuote(string(payload))+" 2>&1", nil)
+	out, _ = t.luna("luna://com.webos.applicationManager/getAppInfo", string(payload), tvLunaLimit)
 	return strings.Contains(out, `"returnValue":true`) || strings.Contains(out, `"returnValue": true`)
 }
 
@@ -531,7 +586,7 @@ func (t *TV) LaunchTVApp(params map[string]string) (trace string, err error) {
 	// is closed first, and Lootnest waits until it's gone: a launch while
 	// it closes is lost. Closing one that isn't open only fails.
 	closing, _ := json.Marshal(map[string]any{"id": TVAppID})
-	out, _ := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/closeByAppId' "+shQuote(string(closing))+" 2>&1", nil)
+	out, _ := t.luna("luna://com.webos.applicationManager/closeByAppId", string(closing), tvLunaLimit)
 	note("close: %s", short(out))
 	for end := time.Now().Add(tvCloseLimit); ; time.Sleep(tvPoll) {
 		running, known := t.AppRunning()
@@ -547,7 +602,7 @@ func (t *TV) LaunchTVApp(params map[string]string) (trace string, err error) {
 	time.Sleep(tvCloseWait)
 	payload, _ := json.Marshal(map[string]any{"id": TVAppID, "params": params})
 	launch := func() error {
-		out, err := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' "+shQuote(string(payload))+" 2>&1", nil)
+		out, err := t.luna("luna://com.webos.applicationManager/launch", string(payload), tvLunaLimit)
 		note("launch: %s", short(out))
 		if err != nil {
 			return fmt.Errorf("the TV didn't open the app (%w)", err)

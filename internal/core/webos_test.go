@@ -95,6 +95,18 @@ type fakeTV struct {
 	reach    bool // wget reaches the PC
 }
 
+// inputClosed says whether a command's input ends within 200 ms.
+func inputClosed(ch ssh.Channel) bool {
+	eof := make(chan struct{})
+	go func() { _, _ = io.Copy(io.Discard, ch); close(eof) }()
+	select {
+	case <-eof:
+		return true
+	case <-time.After(200 * time.Millisecond):
+		return false
+	}
+}
+
 func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 	hostKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	signer, _ := ssh.NewSignerFromKey(hostKey)
@@ -169,10 +181,15 @@ func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 							if yes {
 								_, _ = io.WriteString(ch, "yes\n")
 							}
+						case strings.Contains(cmd, "applicationManager/") && inputClosed(ch):
+							// As on the TV: luna-send-pub calls nothing and
+							// says nothing when its input closes first.
 						case strings.Contains(cmd, "applicationManager/launch"):
 							f.mu.Lock()
 							f.launches++
 							f.mu.Unlock()
+							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
+						case strings.Contains(cmd, "applicationManager/"):
 							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
 						case strings.Contains(cmd, "ps w"):
 							f.mu.Lock()
