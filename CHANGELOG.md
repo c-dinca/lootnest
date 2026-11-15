@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Saves has search and filters.** Search every copy by its game or its name, show only save points, copies before a swap or safety net copies, one profile's, today's, this week's or this month's, newest, oldest or largest first. Copies are now right under the totals, and Per game follows the search too.
 - **Will it run asks players with your PC.** Steam reviews can carry their writer's hardware; turn on "Reviews from players with your card" and Will it run shows how many players with your graphics card or a close one recommend the game, the frame rate they name most, how many talk about how it runs, and a few of their words with their hardware. Only the cards' names go to Steam.
 - **Memory is your installed memory** (16 GB on a 16 GB PC, not the 15.x GB Windows can use), so games no longer say the memory holds them back when it doesn't.
 - **Trailers and screenshots on a game's page.** The trailer plays muted on a large stage with the others and every screenshot in a strip beside it; pick one to put it on the stage, and screenshots move on by themselves every few seconds (not while the pointer is on them). Click a screenshot on the stage to see it full size. The details sit under it, so the page has no empty space. Trailers stream from Steam, with Game details on.

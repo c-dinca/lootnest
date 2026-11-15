@@ -731,6 +731,8 @@
     "restart-normal"() { api.restart(false).catch((e) => toast(errText(e), "error")); },
     "restart-safe"() { api.restart(true).catch((e) => toast(errText(e), "error")); },
     "sv-more"() { S.svMore = !S.svMore; render(); },
+    "sv-f"(el) { svF()[el.dataset.f] = el.dataset.v; S.svMore = false; render(); },
+    "sv-clear"() { S.svF = null; S.svMore = false; render(); const q = $("#sv-q"); if (q) q.focus(); },
     // A copy's files, read when its row opens.
     "sv-files"(el) {
       const k = el.dataset.k;
@@ -1317,6 +1319,14 @@
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (el.id === "side-q") { S.sideQ = el.value; renderSideGames(); return; }
+    if (el.id === "sv-q") {
+      svF().q = el.value; S.svMore = false;
+      const r = $("#sv-results"), O = S.svo;
+      if (r && O) r.innerHTML = svResults(O.recent || []);
+      const t = $(".sv-table tbody"), g = O && $(".sv-table");
+      if (g) g.closest(".st-wrap").outerHTML = svGames(O.games || []);
+      return;
+    }
     if (el.dataset.lo && S.dialog && S.dialog.kind === "launch") {
       const D = S.dialog, O = D.o, l = el.dataset.lo;
       if (l === "gameArgs") D.args = el.value;
@@ -1396,6 +1406,7 @@
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
+    if (el.dataset.svf) { svF()[el.dataset.svf] = el.value; S.svMore = false; render(); return; }
     if (el.dataset.pluginOn) {
       const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.pluginOn), on = el.checked;
       api.setPluginOn(el.dataset.pluginOn, on).then(() => pluginsDone(p && !on && (p.provides || []).includes("sources") ? `${p.name} is off. Its games left the Library; games with profiles stay as they are.` : ""),
