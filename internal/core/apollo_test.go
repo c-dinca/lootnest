@@ -261,3 +261,9 @@ func TestDownloadApolloNeedsPin(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestApolloPinned(t *testing.T) {
+	if len(ApolloPinned.SHA256) != 64 || !strings.HasPrefix(ApolloPinned.URL, "https://github.com/ClassicOldSong/Apollo/releases/download/v"+ApolloPinned.Version+"/") {
+		t.Fatalf("%+v", ApolloPinned)
+	}
+}

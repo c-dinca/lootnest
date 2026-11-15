@@ -517,8 +517,8 @@ type ApolloRelease struct {
 // Lootnest first, then its address and SHA-256 change here.
 var ApolloPinned = ApolloRelease{
 	Version: "0.4.6",
-	URL:     "https://github.com/ClassicOldSong/Apollo/releases/download/v0.4.6/Apollo.exe",
-	SHA256:  "",
+	URL:     "https://github.com/ClassicOldSong/Apollo/releases/download/v0.4.6/Apollo-0.4.6.exe",
+	SHA256:  "42b2aefaacb3474511517a56b96ee9f0517f30ac38b5dd2fda9fd5b478f5021a",
 }
 
 // ErrApolloNotPinned stops a download Lootnest has no checksum for.
