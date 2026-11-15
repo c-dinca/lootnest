@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.1.0, beta)
+## Where things stand (2.2.0, beta)
 
 These shipped recently, newest last:
 
@@ -876,7 +876,7 @@ These shipped recently, newest last:
   `.ln-segmented` or `.ln-tabs` to the new one after the redraw; the game
   page's panel slides from the tab's side (`setGameTab`); `bump(el, n)`
   pops a count that rises.
-- **Unreleased, the owner's fixes of 15 Nov**: Steam's `appreviews`
+- **2.2.0, the owner's fixes of 15 Nov**: Steam's `appreviews`
   redirects to the store front since 22 Oct 2026, so reviews and the
   review score use `IUserReviewsService/GetAppReviews/v1` on
   api.steampowered.com (`reviewsQuery`, `input_json`, no key, the answer
@@ -929,7 +929,7 @@ These shipped recently, newest last:
   share.go`): "copy" via `win.SetClipboardImage` (CF_DIB plus the
   registered "PNG" format), "save" into Pictures\Lootnest\Achievements
   (`core.ShareFileName`).
-- **Unreleased, Lootnest Link M1, TV mode** (`docs/lootnest-link-spec.md`,
+- **2.2.0, Lootnest Link M1, TV mode** (`docs/lootnest-link-spec.md`,
   the owner's plan for playing on a TV: M1 TV mode, M2 a bundled Apollo,
   M3 to M4 TV apps; one milestone at a time, each checked on the owner's
   LG TV). `lootnest.exe --tv` is only a holder (`app/tv.go` `TVHolder`):
@@ -953,7 +953,7 @@ These shipped recently, newest last:
   controller as a mouse over store launchers (the owner, 15 Nov: make it
   work with the controller, as in games, rather than a "may need mouse"
   badge).
-- **Unreleased, Lootnest Link M2, TV streaming set-up** (Settings, TV,
+- **2.2.0, Lootnest Link M2, TV streaming set-up** (Settings, TV,
   `82-link.js`; `app/link.go`; `core/apollo.go`). Apollo 0.4.6's API (the
   newest release; 0.4.8 is only a tag, same API), read in its source (`src/confighttp.cpp`): a session cookie from
   `/api/login` (not Basic auth, no CSRF), `/api/password` without
@@ -978,7 +978,7 @@ These shipped recently, newest last:
   engine call is a goroutine with `link*` events. Harness
   `?link=none|busy|set|off|unpinned`. Not done: uninstalling Apollo with
   Lootnest (needs elevation).
-- **Unreleased, Lootnest Link M3, Add an LG TV** (`core/webos.go`,
+- **2.2.0, Lootnest Link M3, Add an LG TV** (`core/webos.go`,
   `app/lgtv.go`, `viewLGTV` in 82-link.js). The TV app is
   c-dinca/lootnest-tv-webos (a fork of Moonlight TV, GPL v3; its own
   changes in `src/app/lootnest.c`: launch params `host` + `pairPin`,
