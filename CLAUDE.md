@@ -992,8 +992,9 @@ These shipped recently, newest last:
   (applicationManager/launch with params), `DevModeToken`
   (/var/luna/preferences/devmode_enabled) and `ExtendDevMode`
   (developer.lge.com ResetDevModeSession). `installTV`: key, download
-  the pinned IPK (`TVAppPinned`, empty until the TV app's first
-  release), install, save the TV (key DPAPI in link.json `tvs`), launch
+  the pinned IPK (`TVAppPinned`: Lootnest for TV 1.0.0, its
+  release's asset digest; a TV app release is made by bumping VERSION on
+  its main), install, save the TV (key DPAPI in link.json `tvs`), launch
   with a random PIN and this PC's address on the TV's network
   (`TV.LocalIP`), then `/api/pin` every 2 s for 75 s, `AllowTV`.
   `keepDevModes` hourly, extends each TV every 12 h. SSH via

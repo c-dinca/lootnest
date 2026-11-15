@@ -43,9 +43,14 @@ type TVAppRelease struct {
 	SHA256  string
 }
 
-// TVAppPinned is the package Lootnest installs on LG TVs. Empty until the
-// first release of c-dinca/lootnest-tv-webos is tested.
-var TVAppPinned = TVAppRelease{}
+// TVAppPinned is the package Lootnest installs on LG TVs. A new release of
+// c-dinca/lootnest-tv-webos is tested with Lootnest first, then its address
+// and SHA-256 change here.
+var TVAppPinned = TVAppRelease{
+	Version: "1.0.0",
+	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.0.0/com.lootnest.tv_1.0.0_arm.ipk",
+	SHA256:  "0b84951f7c1240005c9ee2215fc601be4eddaac6c66dfbf0d414760af7effdb9",
+}
 
 // ErrTVAppNotPinned stops an install Lootnest has no checksum for.
 var ErrTVAppNotPinned = errors.New("this version of Lootnest doesn't have the TV app's checksum yet, so it won't install it")

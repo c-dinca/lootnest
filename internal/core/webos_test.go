@@ -243,3 +243,10 @@ func TestDownloadTVAppNeedsPin(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTVAppPinned(t *testing.T) {
+	r := TVAppPinned
+	if len(r.SHA256) != 64 || r.URL != "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v"+r.Version+"/com.lootnest.tv_"+r.Version+"_arm.ipk" {
+		t.Fatalf("%+v", r)
+	}
+}
