@@ -1,6 +1,6 @@
 module lootnest
 
-go 1.25.0
+go 1.26.0
 
 toolchain go1.27.4
 
@@ -9,7 +9,8 @@ require (
 	github.com/jchv/go-webview2 v0.0.0-00010101000000-000000000000
 	github.com/nwaples/rardecode/v2 v2.4.6
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d
-	golang.org/x/sys v0.40.0
+	golang.org/x/crypto v0.59.0
+	golang.org/x/sys v0.50.0
 )
 
 require (
@@ -25,7 +26,7 @@ require (
 	github.com/stangelandcl/ppmd v0.1.1 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 )
 
 replace (

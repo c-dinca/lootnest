@@ -112,6 +112,8 @@
       o.innerHTML = viewUpdateDrawer();
     } else if (D.kind === "itch") {
       o.innerHTML = viewItchInstall();
+    } else if (D.kind === "lgtv") {
+      o.innerHTML = viewLGTV();
     } else if (D.kind === "gog") {
       o.innerHTML = viewGogInstall();
     } else if (D.kind === "profiles") {

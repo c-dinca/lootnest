@@ -34,6 +34,7 @@ type linkRecord struct {
 	Version   string    `json:"version,omitempty"`
 	Installed time.Time `json:"installed,omitzero"`
 	Off       bool      `json:"off,omitempty"` // turned off: the service is stopped
+	TVs       []savedTV `json:"tvs,omitempty"` // LG TVs Lootnest installed its app on (lgtv.go)
 }
 
 var (
@@ -114,6 +115,8 @@ type LinkStatus struct {
 	Busy      string              `json:"busy,omitempty"`
 	Info      *core.ApolloInfo    `json:"info,omitempty"`
 	TVs       []core.ApolloClient `json:"tvs"`
+	LG        []LGStatus          `json:"lg"`    // LG TVs with Lootnest for TV
+	TVApp     bool                `json:"tvApp"` // this Lootnest can install the TV app
 	Problem   string              `json:"problem,omitempty"`
 }
 
@@ -134,6 +137,7 @@ func (a *App) emitLink() {
 	r := loadLink()
 	st.Set = r != nil
 	st.Off = r != nil && r.Off
+	st.LG, st.TVApp = lgStatuses(r), len(core.TVAppPinned.SHA256) == 64
 	if r != nil && st.Running && st.Busy == "" {
 		if ap, _, err := engine(); err != nil {
 			st.Problem = sentence(err)
@@ -230,7 +234,11 @@ func (a *App) linkSetup() error {
 	if err != nil {
 		return err
 	}
-	r = &linkRecord{User: "lootnest", Pass: enc, Version: core.ApolloPinned.Version, Installed: time.Now()}
+	var tvs []savedTV
+	if r != nil {
+		tvs = r.TVs // the LG TVs stay
+	}
+	r = &linkRecord{User: "lootnest", Pass: enc, Version: core.ApolloPinned.Version, Installed: time.Now(), TVs: tvs}
 	if err := saveLink(r); err != nil {
 		return err
 	}
@@ -324,6 +332,7 @@ func (a *App) registerApp(ctx context.Context, ap *core.Apollo) error {
 // linkAtStart keeps TV mode's app pointing at this Lootnest.exe after an
 // update or a move, once the engine answers.
 func (a *App) linkAtStart() {
+	go a.keepDevModes()
 	r := loadLink()
 	if r == nil || r.Off || !apolloInstalled() {
 		return

@@ -106,6 +106,8 @@
       case "linkStep":
       case "linkDone":
       case "linkPaired":
+      case "linkTVs":
+      case "linkTVDone":
         linkEvent(ev);
         break;
       case "itch":

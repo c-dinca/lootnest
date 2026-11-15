@@ -761,7 +761,8 @@
       const m = q.get("link") || "none", set = m !== "none";
       setTimeout(() => emit({ type: "link", status: { pinned: q.get("link") !== "unpinned", version: "0.4.6", installed: set, set, off: m === "off", running: m !== "off", busy: m === "busy" ? "download" : "",
         info: set && m !== "off" ? { version: "0.4.6", name: "Lootnest on DESKTOP-7", virtualDisplay: true, encoder: "", runningApp: "", lootnestApp: "a1" } : null,
-        tvs: set ? [{ name: "Living room TV", uuid: "tv-1", perm: 117448448, connected: false }] : [] } }), 60);
+        tvs: set ? [{ name: "Living room TV", uuid: "tv-1", perm: 117448448, connected: false }] : [],
+        lg: set && q.get("lg") === "1" ? [{ name: "Living room TV", ip: "192.168.1.41", version: "1.0.0", installed: "2026-11-15T18:00:00Z", extended: "2026-11-15T19:00:00Z" }] : [], tvApp: q.get("tvapp") !== "0" } }), 60);
       if (m === "busy") setTimeout(() => emit({ type: "linkStep", step: "download", done: 31457280, total: 73400320 }), 80);
       return ok();
     },
@@ -771,6 +772,9 @@
     ps_linkEnd: () => ok(),
     ps_linkPower: () => ok(),
     ps_linkLogs: () => ok(),
+    ps_linkFindTVs: () => { setTimeout(() => emit({ type: "linkTVs", tvs: [{ name: "[LG] webOS TV OLED55C3", ip: "192.168.1.41" }] }), 400); return ok(); },
+    ps_linkInstallTV: () => { setTimeout(() => emit({ type: "linkStep", step: "install", done: 0, total: 0 }), 100); return ok(); },
+    ps_linkForgetLG: () => ok(),
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: CALM ? [] : [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],
