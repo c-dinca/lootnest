@@ -233,6 +233,7 @@
     backupsToKeep: 10, startTimeoutSeconds: 180, steamAccountId: "", autoSteamHooks: true, downloadCovers: true, checkUpdates: true,
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     gameDetails: q.get("details") !== "0", // ?details=0: Game details off
+    hardwareReviews: q.has("peers"),
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
     itchUser: ITCH && !ITCH_OUT ? "player1" : "",
     gogUser: GOG && !GOG_OUT ? "player1" : "",
@@ -764,6 +765,11 @@
     // Saves: every copy kept, newest first, and their sums per game.
     ps_openHydra: () => ok(null),
     ps_vendor: () => ok(""),
+    // Will it run, players with a PC like this one (?peers=1 turns the setting on).
+    ps_gamePeers: (key) => { setTimeout(() => emit({ type: "peers", key, report: { gpus: ["NVIDIA GeForce RTX 3070", "AMD Radeon RX 6750 XT", "NVIDIA GeForce RTX 5060"], count: 290, positive: 231, hours: 93.9, perf: 23, perfBad: 6, read: 195, fps: 100, fpsCount: 4,
+      quotes: [{ up: true, text: "Amazing game with insane graphics and great optimisation (100+ fps all high with raytracing)", gpu: "NVIDIA GeForce RTX 3070", cpu: "AMD Ryzen 5 5600X 6-Core Processor", ram: 32, hours: 101.9 },
+        { up: false, text: "Also tons of game crashes after the latest update.", gpu: "AMD Radeon RX 6750 XT", cpu: "Intel(R) Core(TM) i9-14900K", ram: 32, hours: 290.1 },
+        { up: true, text: "Good, 80 frames on max graphics.", gpu: "NVIDIA GeForce RTX 3070", cpu: "AMD Ryzen 5 5600X 6-Core Processor", ram: 16, hours: 92.3 }] } }), 400); return ok(); },
     // Profiles off: the game leaves the config and is a scanned game again.
     ps_deleteGame: (id) => { const g = games.find((x) => x.id === id); games = games.filter((x) => x.id !== id);
       if (g && g.launch.type === "steam") found.push({ key: "steam:" + g.launch.appId, name: g.name, source: "steam", appId: g.launch.appId, ready: true }); return ok(); },

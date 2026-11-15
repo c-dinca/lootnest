@@ -46,6 +46,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_copyFiles", a.apiCopyFiles))
 	must(a.w.Bind("ps_openHydra", a.apiOpenHydra))
 	must(a.w.Bind("ps_gameReviews", a.apiGameReviews))
+	must(a.w.Bind("ps_gamePeers", a.apiGamePeers))
 	must(a.w.Bind("ps_vendor", func(name string) (string, error) {
 		if name != "hls" {
 			return "", errors.New("unknown script")

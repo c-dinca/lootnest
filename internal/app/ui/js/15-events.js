@@ -245,6 +245,10 @@
         S.details[ev.key] = ev;
         if (S.view === "game") render();
         break;
+      case "peers":
+        S.peers[ev.key] = ev;
+        if (S.view === "game") render();
+        break;
       case "reviews":
         S.reviews[ev.key + "|" + ev.kind] = ev;
         if (S.view === "game") render();

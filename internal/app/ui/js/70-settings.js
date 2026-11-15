@@ -91,6 +91,7 @@
           ${sw("saveDb", "Find save locations online", "Downloads a list of save locations from GitHub weekly.", s.saveDb)}
           ${sw("gameNews", "Game updates and news", "Sends a game's Steam id or name to Steam.", s.gameNews)}
           ${sw("gameDetails", "Game details", "Sends a game's Steam id to Steam when you open its page.", s.gameDetails)}
+          ${sw("hardwareReviews", "Reviews from players with your card", "Sends your graphics card's name and a close card's to Steam, for Will it run.", s.hardwareReviews)}
           ${sw("achRarity", "How rare achievements are", "Sends a game's Steam id to Steam.", s.achRarity)}
           ${sw("downloadCovers", "Download covers and artwork", "Sends a game's name or Steam id to Steam and SteamGridDB.", s.downloadCovers)}`)
         + sub("itch.io", "", itchRows())

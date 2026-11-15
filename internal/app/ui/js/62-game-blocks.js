@@ -65,8 +65,43 @@
       </div>
       ${limit}
       ${lanes ? `<ul class="wr-lanes">${lanes}</ul><p class="wr-legend"><i class="wr-mark wr-mark--min"></i>Minimum<i class="wr-mark wr-mark--rec"></i>Recommended<i class="wr-you"></i>This PC</p>` : ""}
-      <p class="gpage-hint">An estimate from Steam's requirements, not a benchmark.</p></section>`;
+      <p class="gpage-hint">An estimate from Steam's requirements, not a benchmark.</p>${peersBlock(it, pc)}</section>`;
   }
+  // Players with a PC like this one: Steam's reviews by the writer's
+  // graphics card (this PC's and the two closest), only once the user has
+  // asked for it, since the cards' names go to Steam.
+  function peersBlock(it, pc) {
+    if (!pc.gpu) return "";
+    const key = recentKey(it), head = `<h3 class="wr-peers-head">${ph("users-three")}Players with a PC like yours</h3>`;
+    if (!cfg().settings.hardwareReviews) {
+      return `<div class="wr-peers">${head}<p class="gpage-hint">See what Steam reviews say from players with your ${esc(shortGPU(pc.gpu))} or a close card. Its name is sent to Steam.</p>
+        <button class="ln-button ln-button--secondary ln-button--sm" data-action="peers-on" data-k="${esc(key)}">${ph("magnifying-glass")}Look at their reviews</button></div>`;
+    }
+    if (!(key in S.peers)) { S.peers[key] = { loading: true }; api.gamePeers(key).catch(() => {}); }
+    const P = S.peers[key];
+    if (P.loading) return `<div class="wr-peers">${head}<div class="ln-skeleton wr-peers-skel"></div></div>`;
+    if (P.none) return "";
+    if (P.error) return `<div class="wr-peers">${head}${lnInline("error", esc(P.error))}</div>`;
+    const R = P.report;
+    if (!R || !R.count) return `<div class="wr-peers">${head}<p class="gpage-hint">No reviews yet from players with your card or a close one.</p></div>`;
+    const pct = Math.round((R.positive * 100) / R.count), cards = R.gpus.map(shortGPU);
+    const open = S.peersOpen.has(key), quotes = R.quotes.slice(0, open ? 6 : 2);
+    const say = [
+      R.fps ? `<li>${ph("lightning")}<span><b class="ln-num">${R.fps} fps</b> is what they name most (${R.fpsCount} said a number)</span></li>` : "",
+      R.perf ? `<li>${ph("chat-circle")}<span><b class="ln-num">${R.perf}</b> of ${R.read} talk about how it runs${R.perfBad ? `, <b class="ln-num">${R.perfBad}</b> of them unhappy` : ""}</span></li>` : "",
+      R.hours ? `<li>${ph("clock-counter-clockwise")}<span>Half had played <b class="ln-num">${R.hours} h</b> or more when they wrote</span></li>` : "",
+    ].join("");
+    return `<div class="wr-peers">${head}
+      <div class="wr-peers-top"><span class="wr-peers-pct ln-num">${pct}<small>%</small></span><span><b>recommend it</b><span class="gpage-hint">${R.count.toLocaleString("en-US")} reviews from players with ${esc(cards.slice(0, -1).join(", "))}${cards.length > 1 ? " or " : ""}${esc(cards[cards.length - 1])}</span></span></div>
+      <span class="wr-peers-bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
+      ${say ? `<ul class="wr-peers-say">${say}</ul>` : ""}
+      ${quotes.length ? `<ul class="wr-quotes">${quotes.map((q) => `<li class="wr-quote${q.up ? "" : " is-down"}"><span class="wr-quote-ic" aria-hidden="true">${ph(q.up ? "thumbs-up" : "thumbs-down")}</span>
+        <div><p>“${esc(q.text)}”</p><span>${esc([shortGPU(q.gpu), shortCPU(q.cpu), q.ram ? q.ram + " GB" : "", q.hours ? q.hours + " h played" : ""].filter(Boolean).join(", "))}</span></div></li>`).join("")}</ul>` : ""}
+      ${R.quotes.length > 2 ? `<button class="gpage-link" data-action="peers-more" data-k="${esc(key)}">${open ? "Fewer" : `${R.quotes.length - 2} more`}</button>` : ""}
+      <p class="gpage-hint">From Steam reviews whose writers shared their hardware. What people wrote, not a measurement.</p></div>`;
+  }
+  const shortGPU = (g) => (g || "").replace(/\b(NVIDIA|AMD|Intel\(R\)|GeForce|Radeon)\s*/gi, "").trim() || g;
+  const shortCPU = (c) => (c || "").replace(/\(R\)|\(TM\)|CPU|Processor|\d+-Core|@.*$/gi, "").replace(/\s+/g, " ").trim();
   // An SVG arc around (cx, cy), from angle a to b in degrees (0 is up).
   function arc(cx, cy, r, a, b) {
     const pt = (d) => { const t = (d * Math.PI) / 180; return `${(cx + r * Math.sin(t)).toFixed(2)} ${(cy - r * Math.cos(t)).toFixed(2)}`; };

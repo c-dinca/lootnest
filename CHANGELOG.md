@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Will it run asks players with your PC.** Steam reviews can carry their writer's hardware; turn on "Reviews from players with your card" and Will it run shows how many players with your graphics card or a close one recommend the game, the frame rate they name most, how many talk about how it runs, and a few of their words with their hardware. Only the cards' names go to Steam.
+- **Memory is your installed memory** (16 GB on a 16 GB PC, not the 15.x GB Windows can use), so games no longer say the memory holds them back when it doesn't.
 - **Trailers and screenshots on a game's page.** The trailer plays muted on a large stage with the others and every screenshot in a strip beside it; pick one to put it on the stage, and screenshots move on by themselves every few seconds (not while the pointer is on them). Click a screenshot on the stage to see it full size. The details sit under it, so the page has no empty space. Trailers stream from Steam, with Game details on.
 - **The first cover on Home isn't cut off any more** when it's the one picked.
 - **Motion on real springs.** Keys give under the click and spring back, covers lean toward the pointer with a light that follows it, dialogs, menus, toasts and switches land with a little give, and a page's cards and rows come up one after another, from soft focus into sharp. The springs are computed the way animation libraries such as Motion do it, so everything moves alike. Motion set to Less or Off still keeps it all still.

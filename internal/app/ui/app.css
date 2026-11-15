@@ -2673,3 +2673,29 @@ button.gp-stage:focus-visible { outline: var(--focus-width) solid var(--focus-ri
   .gp-strip { flex-direction: row; overflow: auto hidden; contain: none; }
   .gp-thumb { width: 120px; }
 }
+
+/* Will it run: what players with a PC like this one wrote. */
+.wr-peers { display: grid; gap: var(--space-3); margin-top: var(--space-6); padding-top: var(--space-5); border-top: var(--hairline) solid var(--edge-1); }
+.wr-peers-head { display: flex; align-items: center; gap: var(--space-2); margin: 0; font: 700 var(--fs-14)/1.2 var(--font-ui); color: var(--fg-1); }
+.wr-peers-head .ln-icon { width: var(--icon-sm); height: var(--icon-sm); color: var(--fg-3); }
+.wr-peers .ln-button { justify-self: start; }
+.wr-peers-skel { height: 120px; border-radius: var(--radius-panel); }
+.wr-peers-top { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-3); }
+.wr-peers-top b { display: block; font-size: var(--fs-14); color: var(--fg-1); }
+.wr-peers-top .gpage-hint { display: block; margin: 0; }
+.wr-peers-pct { font: 400 32px/1 var(--font-title); color: var(--fg-1); }
+.wr-peers-pct small { font-size: 0.5em; color: var(--fg-2); }
+.wr-peers-bar { height: 4px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--danger) 50%, transparent); }
+.wr-peers-bar > i { display: block; height: 100%; background: var(--lamp); }
+.wr-peers-say { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--fs-13); color: var(--fg-2); }
+.wr-peers-say li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2); align-items: start; }
+.wr-peers-say .ln-icon { width: var(--icon-sm); height: var(--icon-sm); margin-top: 1px; color: var(--fg-3); }
+.wr-peers-say b { color: var(--fg-1); }
+.wr-quotes { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.wr-quote { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-ctl); background: var(--bg-surface); box-shadow: inset 0 1px 0 var(--key-light); }
+.wr-quote p { margin: 0 0 var(--space-1); font-size: var(--fs-13); line-height: 1.45; color: var(--fg-1); overflow-wrap: anywhere; }
+.wr-quote span { font-size: var(--fs-12); color: var(--fg-3); }
+.wr-quote-ic { display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--radius-tag); background: color-mix(in srgb, var(--lamp) 16%, transparent); color: var(--lamp); }
+.wr-quote-ic .ln-icon { width: 14px; height: 14px; }
+.wr-quote.is-down .wr-quote-ic { background: var(--danger-wash); color: var(--danger); }
+.wr-peers > .gpage-link { justify-self: start; }
