@@ -50,19 +50,37 @@
   // in) carries on from where it was (at, when the entrance of the page it
   // replaces started); while a change waits for its art, the page waits too.
   let arrival = 0;
-  const ENTRANCE = ["page-in", "head-in", "label-in", "part-in"];
+  const ENTRANCE = ["page-in", "head-in", "label-in", "rise-in"];
+  // The blocks that come up one after another as a page arrives: cards,
+  // rows and panels in view, in reading order, up to RISE_MAX. A block
+  // inside one already chosen moves with it.
+  const RISERS = ".gpage-block, .home-card, .lib-card, .lib-cap, .ln-rows > li, .set-row, .find-card, .find-daily, .find-top-list > li, .ach-game, .ln-score, .tn-card, .gp-rev, .upd-row, .sv-row, .ln-empty, .pf-card, .bp-card";
+  const RISE_MAX = 12;
   function enter(page, at) {
     if (reduced() || swapping && $("#view").classList.contains("is-arriving")) return;
     const vr = $("#view").getBoundingClientRect();
+    const seen = (r) => r.height && r.bottom > vr.top && r.top < vr.bottom;
     let i = 0;
     page.querySelectorAll(".ln-section-head:not(.ln-section-head--minor)").forEach((h) => {
-      const r = h.getBoundingClientRect();
-      if (i < 5 && r.height && r.bottom > vr.top && r.top < vr.bottom) { h.classList.add("wipe"); h.style.setProperty("--i", i++); }
+      if (i < 5 && seen(h.getBoundingClientRect())) { h.classList.add("wipe"); h.style.setProperty("--i", i++); }
     });
+    if (moving()) {
+      const picked = [];
+      page.querySelectorAll(RISERS).forEach((el) => {
+        if (picked.length >= RISE_MAX * 2 || picked.some((p) => p.el.contains(el))) return;
+        const r = el.getBoundingClientRect();
+        if (seen(r)) picked.push({ el, r });
+      });
+      picked.sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left).slice(0, RISE_MAX)
+        .forEach((p, n) => { p.el.classList.add("rise"); p.el.style.setProperty("--i", n); });
+    }
     page.classList.add("enter");
     const runs = page.getAnimations({ subtree: true }).filter((a) => ENTRANCE.includes(a.animationName));
     if (at != null) { runs.forEach((a) => (a.startTime = at)); if (swapping) swapping.sync(at); }
-    Promise.allSettled(runs.map((a) => a.finished)).then(() => page.classList.remove("enter"));
+    Promise.allSettled(runs.map((a) => a.finished)).then(() => {
+      page.classList.remove("enter");
+      page.querySelectorAll(".rise").forEach((el) => el.classList.remove("rise"));
+    });
   }
 
   // Profiles for this game, as a pill that switches: on swaps files per
@@ -112,7 +130,7 @@
       { transform: "translate(0, 0) scale(1)", opacity: 1, filter: "blur(0) brightness(1)" },
       { transform: `translate(${dx * 0.55}px, ${dy * 0.55}px) scale(${1 + (s - 1) * 0.35})`, opacity: 0.85, filter: "blur(0) brightness(0.9)", offset: 0.4 },
       { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0, filter: "blur(18px) brightness(0.6)" },
-    ], { duration: ms("--dur-4") * 1.25, easing: "cubic-bezier(.3, .7, .2, 1)" });
+    ], { duration: SPRINGS.soft.ms * 0.8, easing: "cubic-bezier(.3, .7, .2, 1)" });
     a.finished.then(() => c.remove(), () => c.remove());
   }
 
@@ -448,7 +466,10 @@
     render();
     // The panel comes in from the side of the tab you picked.
     const order = TABS.map((t) => t[0]), step = Math.sign(order.indexOf(tab) - order.indexOf(was)), pane = $("#gp-panel");
-    if (step && pane && moving()) pane.animate([{ opacity: 0, transform: `translateX(${step * 18}px)` }, { opacity: 1, transform: "none" }], { duration: ms("--dur-3"), easing: "cubic-bezier(.16, 1, .3, 1)" });
+    if (step && pane && moving()) {
+      pane.animate([{ transform: `translateX(${step * 28}px)` }, { transform: "none" }], { duration: SPRINGS.snappy.ms, easing: SPRINGS.snappy.ease });
+      pane.animate([{ opacity: 0, filter: "blur(4px)" }, { opacity: 1, filter: "none" }], { duration: 220, easing: "ease-out" });
+    }
     const v = $("#view"), panel = $("#gp-panel"), head = $(".gp-head"), row = $(".gp-tabs");
     if (!panel || !head || !row) return;
     const top = v.getBoundingClientRect().top + head.offsetHeight, over = panel.getBoundingClientRect().top - top;

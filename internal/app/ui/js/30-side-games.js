@@ -381,10 +381,16 @@
   })();
   // Numbers count up and rings and bars fill each time a page arrives,
   // once: or as soon as they're there, when they come in after the page.
-  let arrivedAt = -1;
+  // Achievements come in after their page, and a game's tab changes the
+  // page without a new arrival, so what counts as "once" is the page, its
+  // tab and the arrival together, the first time it has something to fill.
+  let arrivedAt = "";
   function arriveOnce(root) {
-    if (reduced() || arrivedAt === arrival || !root.querySelector("[data-countup], .ach-ring, .ach-bar")) return;
-    arrivedAt = arrival;
+    if (reduced() || !root.querySelector("[data-countup], .ach-ring, .ach-bar")) return;
+    const pk = S.view === "game" && S.page ? S.page.kind + ":" + S.page.id : "";
+    const sig = [arrival, S.view, pk, pk ? S.gameTab[pk] || "overview" : "", S.achPage || ""].join("|");
+    if (sig === arrivedAt) return;
+    arrivedAt = sig;
     countUp(root);
     const page = root.firstElementChild;
     if (page) { page.classList.add("arrive"); setTimeout(() => page.classList.remove("arrive"), 1400); }

@@ -93,8 +93,8 @@
     if (S.animateView && first) {
       // "kids": the page is already here, its numbers have just arrived.
       if (S.animateView !== "kids") { arrival++; enter(first); }
-      arriveOnce(v);
     } else if (first && run) enter(first, runAt);
+    if (first) arriveOnce(v);
     S.animateView = false;
     hist.at = here();
     v.scrollTop = keepScroll;
@@ -177,7 +177,7 @@
     g.classList.add("is-gliding");
     g.append(pill);
     const box = (b) => ({ left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
-    const a = pill.animate([box(was), box(now)], { duration: ms("--dur-3"), easing: "cubic-bezier(.3, 1.3, .45, 1)", fill: "both" });
+    const a = pill.animate([box(was), box(now)], { duration: SPRINGS.bouncy.ms, easing: SPRINGS.bouncy.ease, fill: "both" });
     const end = () => { pill.remove(); if (!g.querySelector(".glide")) g.classList.remove("is-gliding"); };
     a.finished.then(end, end);
   }
@@ -188,7 +188,7 @@
   function bump(el, n) {
     const before = parseInt(el.textContent, 10) || 0;
     el.textContent = n ? String(n) : "";
-    if (n > before && moving()) el.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)", offset: 0.35 }, { transform: "scale(1)" }], { duration: ms("--dur-4"), easing: "cubic-bezier(.3, 1.3, .45, 1)" });
+    if (n > before && moving()) el.animate([{ transform: "scale(1.45)" }, { transform: "scale(1)" }], { duration: SPRINGS.bouncy.ms, easing: SPRINGS.bouncy.ease });
   }
 
   // ------------------------------------------------------------- the room --

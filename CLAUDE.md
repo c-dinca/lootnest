@@ -888,6 +888,17 @@ These shipped recently, newest last:
   is known (`orWords`), older cards in `gpuScores`, i3/i5 first
   generation, and `rate` gives high at 3x and recommended at 1.8x a lone
   minimum.
+  Motion on springs (`js/03-motion.js`): `spring(bounce, visual)` samples
+  a damped spring (Motion's mapping: stiffness (2π/visual)², damping
+  2(1-bounce)√stiffness) into `linear()`; `SPRINGS` press, snappy,
+  bouncy, soft set `--spring-*` and `--spring-*-dur` (fallbacks in
+  system.css). The "springs" block at the end of app.css moves keys,
+  covers (`coverTilt` sets `--tx/--ty/--lx/--ly`), dialogs, toasts,
+  menus, drawers, switches; `enter()` marks up to `RISE_MAX` blocks in
+  view (`RISERS`) as `.rise` with `--i`; `revealIn` does the same for
+  content replacing a skeleton (`storeSkeleton`, `.ln-skeleton::after`
+  shimmer). `arriveOnce` keys on arrival, view, page and tab, so rings
+  and bars fill when achievements arrive after their page.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

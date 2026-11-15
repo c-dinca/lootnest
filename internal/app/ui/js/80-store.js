@@ -111,10 +111,19 @@
       ${it.image ? `<img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy">` : noImg(it.name)}
       <span class="find-card-body"><b>${esc(it.name)}</b><span class="find-card-meta">${storePrice(it)}${it.score ? `<span class="find-score" title="Metacritic">${it.score}</span>` : ""}${it.owned ? `<span class="ln-tag">On this PC</span>` : ""}</span></span></button></li>`;
   }
+  // The store's shape while it loads: the deal, Top sellers and a row of
+  // capsules, with a light passing over them one after another.
+  function storeSkeleton() {
+    const sk = (cls, i) => `<div class="ln-skeleton ${cls}" style="--i:${i}"></div>`;
+    return `<div class="sk-store" role="status" aria-label="Opening the store">
+      <div class="sk-store-top"><div>${sk("sk-label", 0)}${sk("sk-feature", 1)}</div>
+        <div class="sk-list">${sk("sk-label", 0)}${[2, 3, 4, 5, 6].map((i) => sk("sk-line", i)).join("")}</div></div>
+      <div>${sk("sk-label", 2)}<div class="sk-grid">${[3, 4, 5, 6, 7, 8].map((i) => sk("sk-card", i)).join("")}</div></div></div>`;
+  }
   function storeFront() {
     const F = S.front;
-    if (!F) { api.storeFront().catch((e) => { S.front = { error: errText(e) }; const r = $("#find-results"); if (r) r.innerHTML = findResults(); }); S.front = { loading: true }; return lnInline("", "Opening the store"); }
-    if (F.loading) return lnInline("", "Opening the store");
+    if (!F) { api.storeFront().catch((e) => { S.front = { error: errText(e) }; const r = $("#find-results"); if (r) r.innerHTML = findResults(); }); S.front = { loading: true }; return storeSkeleton(); }
+    if (F.loading) return storeSkeleton();
     if (F.error) return `${lnInline("error", esc(F.error))}<div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="store-retry">Try again</button></div>`;
     const row = (title, sub, list) => (list && list.length ? `<section class="find-row"><div class="ln-section-head"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div></div><ul class="find-grid find-grid--wide">${list.map(storeCard).join("")}</ul></section>` : "");
     const d = F.daily;
@@ -130,7 +139,7 @@
     const F = S.find;
     if (!F.q.trim()) return storeFront();
     if (F.error) return lnInline("error", esc(F.error));
-    if (!F.hits) return lnInline("", "Looking it up");
+    if (!F.hits) return `<div class="sk-grid" role="status" aria-label="Looking it up">${[0, 1, 2, 3, 4, 5].map((i) => `<div class="ln-skeleton sk-card" style="--i:${i}"></div>`).join("")}</div>`;
     if (!F.hits.length) return `<p class="find-hint">The Steam store has nothing called "${esc(F.q)}".</p>`;
     return `<ul class="find-grid">${F.hits.map((h) => `<li><button class="find-card" data-action="find-open" data-app="${h.appId}" data-name="${esc(h.name)}">
       ${h.image ? `<img src="${esc(h.image)}" alt="${esc(h.name)}" loading="lazy">` : noImg(h.name)}
