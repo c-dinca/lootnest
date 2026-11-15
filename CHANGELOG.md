@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.0
+
+Play your PC's games on the TV, through Lootnest, with a controller: TV mode, the streaming engine set up for you, and Lootnest's own app for LG TVs. Plus reviews that load again, trailers, achievements you can share, and motion on springs.
 
 - **Add an LG TV.** With the TV in developer mode, Settings, TV installs Lootnest for TV on it and pairs it: no PIN, nothing to type on the TV but the passphrase once. Lootnest keeps the TV's developer mode from running out while the PC is on. On the TV, Lootnest opens straight into Lootnest's TV mode, wakes the PC when it sleeps, and Start and Select held for two seconds end the stream.
 
