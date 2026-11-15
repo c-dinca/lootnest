@@ -2559,3 +2559,88 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .ln-segmented > button, .ln-tabs > [role="tab"] { position: relative; z-index: 1; }
 .glide { position: absolute; z-index: 0; pointer-events: none; background: var(--glass-ctl-on); box-shadow: var(--key-light); }
 .is-gliding > [aria-pressed="true"], .is-gliding > [aria-checked="true"], .is-gliding > [aria-selected="true"] { background: none; box-shadow: none; }
+
+/* =============================================================== springs
+   Movement runs on springs (js/03-motion.js samples real ones into
+   linear(): press, snappy, bouncy, soft); fades stay on --ease-out. A key
+   gives under the finger at once and springs back; a cover leans toward
+   the pointer with a light that follows it; things that land (dialogs,
+   toasts, menus, switches) overshoot a touch and settle; a page's blocks
+   come up one after another, from a little soft focus into sharp. */
+.ln-button {
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), filter var(--dur-1) var(--ease-out),
+    transform var(--spring-bouncy-dur) var(--spring-bouncy), box-shadow var(--dur-release) var(--ease-out);
+}
+.ln-button:hover:not(:disabled) { transform: translateY(-1px); }
+.ln-button:active:not(:disabled), .ln-button[data-force~="active"] { transform: translateY(1px) scale(0.96); transition: transform var(--spring-press-dur) var(--spring-press), box-shadow var(--dur-press) var(--ease-out); }
+.ln-segmented button:active, .ln-tabs [role="tab"]:active, .bar-tab:active, .prof-pill:active { transform: scale(0.95); transition: transform var(--spring-press-dur) var(--spring-press); }
+.ln-segmented button, .ln-tabs [role="tab"], .bar-tab, .prof-pill { transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--spring-bouncy-dur) var(--spring-bouncy); }
+
+/* Covers: lift, lean toward the pointer (--tx, --ty from js), a light
+   that follows it (--lx, --ly), and back on a spring. */
+.ln-tile__cover { transform-style: preserve-3d; transition: transform var(--spring-snappy-dur) var(--spring-snappy), box-shadow var(--spring-snappy-dur) var(--ease-out); }
+.ln-tile:hover .ln-tile__cover, .ln-tile[data-force~="hover"] .ln-tile__cover {
+  transform: perspective(700px) translateY(calc(-1 * var(--lift))) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg)) scale(1.02);
+}
+.ln-tile__cover::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at var(--lx, 50%) var(--ly, 0%), rgb(255 255 255 / 0.22), transparent 55%);
+  mix-blend-mode: soft-light; transition: opacity var(--dur-2) var(--ease-out);
+}
+.ln-tile:hover .ln-tile__cover::before { opacity: 1; }
+.ln-tile:active .ln-tile__cover, .ln-tile[data-force~="active"] .ln-tile__cover { transform: perspective(700px) scale(0.97); transition: transform var(--spring-press-dur) var(--spring-press); }
+.lib-cap-art { transition: transform var(--spring-snappy-dur) var(--spring-snappy), box-shadow var(--spring-snappy-dur) var(--ease-out); }
+
+/* Things that land. */
+@keyframes land-in { from { transform: translateY(12px) scale(0.94); } }
+@keyframes fade-in-soft { from { opacity: 0; } }
+.dialog { animation: land-in var(--spring-bouncy-dur) var(--spring-bouncy), fade-in-soft var(--dur-2) var(--ease-out); }
+.ln-toast { animation: toast-land var(--spring-bouncy-dur) var(--spring-bouncy) both, fade-in-soft var(--dur-2) var(--ease-out) both; }
+@keyframes toast-land { from { transform: translateY(18px) scale(0.95); } }
+.ctx:not([hidden]) { transform-origin: var(--from, 50% 0); animation: menu-land var(--spring-bouncy-dur) var(--spring-bouncy), fade-in-soft var(--dur-1) var(--ease-out); }
+@keyframes menu-land { from { transform: scale(0.9) translateY(-4px); } }
+.ln-drawer { animation: ln-drawer-in var(--spring-soft-dur) var(--spring-soft); }
+.switch span::after, .prof-pill i::after { transition: transform var(--spring-bouncy-dur) var(--spring-bouncy), background-color var(--dur-2) var(--ease-out); }
+.bar-ind { transition: transform var(--spring-bouncy-dur) var(--spring-bouncy), height var(--spring-snappy-dur) var(--spring-snappy), opacity var(--dur-2) var(--ease-out); }
+.achc { animation: achc-in var(--spring-bouncy-dur) var(--spring-bouncy) both, fade-in-soft var(--dur-2) var(--ease-out) both; }
+
+/* A page arriving: its head settles, then its blocks come up in order. */
+@keyframes rise-in { from { opacity: 0; transform: translateY(var(--rise-in)) scale(0.985); filter: blur(5px); } }
+.enter > :first-child { animation: head-in var(--spring-soft-dur) var(--spring-soft) both; }
+.enter .rise { animation: rise-in var(--spring-soft-dur) var(--spring-soft) calc(var(--i, 0) * var(--stagger-in)) both; }
+.enter .ln-section-head:not(.ln-section-head--minor) ~ * { animation: none; }
+
+/* Bars and rings fill on a soft spring. */
+.arrive .ach-bar span, .arrive .ach-ring .fg, .wr-bar::before, .wr-fill, .arrive .gp-com-bar > span { animation-timing-function: var(--spring-soft); animation-duration: calc(var(--spring-soft-dur) * 1.4); }
+.arrive .ach-rar i { transform-origin: left; animation: bar-in calc(var(--spring-soft-dur) * 1.4) var(--spring-soft) both; }
+
+/* Loading: the page's own shape in glass, with a light passing over it. */
+.ln-skeleton {
+  position: relative; overflow: hidden; animation: none;
+  background: var(--glass-ctl-hover);
+}
+.ln-skeleton::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.07) 45%, rgb(255 255 255 / 0.12) 50%, rgb(255 255 255 / 0.07) 55%, transparent 80%);
+  animation: shimmer 1.6s var(--ease-in-out) infinite; animation-delay: calc(var(--i, 0) * 90ms);
+}
+@keyframes shimmer { to { transform: translateX(100%); } }
+.sk-store { display: grid; gap: var(--space-10); }
+.sk-store-top { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--space-6); }
+.sk-feature { aspect-ratio: 460 / 215; border-radius: var(--radius-panel); }
+.sk-list { display: grid; gap: var(--space-2); align-content: start; }
+.sk-line { height: 52px; border-radius: var(--radius-ctl); }
+.sk-label { width: 180px; height: 22px; margin-bottom: var(--space-4); border-radius: var(--radius-tag); }
+.sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); }
+.sk-card { aspect-ratio: 460 / 215; border-radius: var(--radius-ctl); }
+@media (max-width: 900px) { .sk-store-top { grid-template-columns: minmax(0, 1fr); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ln-tile:hover .ln-tile__cover { transform: none; }
+  .ln-skeleton::after { animation: none; }
+  .enter .rise, .dialog, .ln-toast, .ctx:not([hidden]), .achc { animation: fade-in-soft var(--dur-2) var(--ease-out); }
+}
+:root.motion-off .ln-skeleton::after { animation: none; }
+.lib-cap-open:hover .lib-cap-art { transform: perspective(900px) translateY(calc(-1 * var(--lift))) rotateX(calc(var(--ty, 0deg) * 0.6)) rotateY(calc(var(--tx, 0deg) * 0.6)); }
+.reveal { animation: rise-in var(--spring-soft-dur) var(--spring-soft) calc(var(--i, 0) * var(--stagger-in)) both; }
+@media (prefers-reduced-motion: reduce) { .reveal { animation: fade-in-soft var(--dur-2) var(--ease-out); } }

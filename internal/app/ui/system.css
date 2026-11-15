@@ -275,6 +275,16 @@
   --settle: 1.015;      /* and the scale it settles from */
   --stagger: 40ms;      /* between the labels of a page as they arrive */
   --lift: 5px;          /* how far a cover lifts under the pointer */
+  /* Springs (js/03-motion.js samples real ones into linear() at start and
+     sets these again): press, snappy, bouncy, soft, each with its time.
+     These are the fallbacks until then. */
+  --spring-press: var(--ease-out);   --spring-press-dur: 180ms;
+  --spring-snappy: var(--ease-emph); --spring-snappy-dur: 380ms;
+  --spring-bouncy: var(--ease-spring); --spring-bouncy-dur: 560ms;
+  --spring-soft: var(--ease-emph);   --spring-soft-dur: 720ms;
+  --rise-in: 16px;      /* how far a block comes up as its page arrives */
+  --stagger-in: 32ms;   /* between blocks as a page arrives */
+  --tilt: 7deg;         /* how far a cover leans toward the pointer */
 
   /* Achievement tiers, by the share of players who have one (Steam's
      numbers): gold for ultra rare (under 2%), blue for rare (under 10%),

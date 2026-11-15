@@ -275,7 +275,7 @@
         if (ev.q === S.gq.q) { S.gq.hits = ev.hits || []; renderGq(); }
         if (ev.q !== S.find.q) break; // an older search
         S.find.hits = ev.hits || null; S.find.error = ev.error || "";
-        const r = $("#find-results"); if (r) r.innerHTML = findResults();
+        const r = $("#find-results"); if (r) { r.innerHTML = findResults(); revealIn(r, ".find-card"); }
         break;
       }
       case "updates": {
@@ -367,7 +367,7 @@
       }
       case "storeFront": {
         S.front = ev.front || { error: ev.error || "Couldn't reach the store." };
-        if (S.view === "find" && !S.find.q.trim()) { const r = $("#find-results"); if (r) r.innerHTML = findResults(); }
+        if (S.view === "find" && !S.find.q.trim()) { const r = $("#find-results"); if (r) { r.innerHTML = findResults(); revealIn(r, ".find-daily, .find-top-list > li, .find-card"); } }
         break;
       }
       case "gameOffer": {
