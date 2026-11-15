@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -12,12 +12,17 @@ import (
 
 // ---------------------------------------------------------------------------
 // Steam reviews for a game's Community section: the most helpful of the
-// past year, read from the store's public appreviews endpoint (no key, no
-// account). Only with Settings.GameDetails on, and only for the game whose
-// page is open. Nothing is posted: the reviews link to Steam to write one.
+// past year, from Steam's public IUserReviewsService (no key, no account;
+// the store's appreviews endpoint was switched off on 22 Oct 2026). Only
+// with Settings.GameDetails on, and only for the game whose page is open.
+// Nothing is posted: the reviews link to Steam to write one.
 // ---------------------------------------------------------------------------
 
-const reviewListURL = "https://store.steampowered.com/appreviews/%d?json=1&filter=all&language=%s&review_type=%s&purchase_type=all&num_per_page=%d&day_range=365"
+// reviewsQuery is the GetAppReviews address for these inputs.
+func reviewsQuery(in map[string]any) string {
+	b, _ := json.Marshal(in)
+	return reviewsAPI + url.QueryEscape(string(b))
+}
 
 // ReviewsMax is how many reviews a page asks for at a time.
 const ReviewsMax = 10
@@ -68,8 +73,23 @@ func ReviewText(s string) (string, bool) {
 // FetchReviews reads the most helpful reviews of the past year; kind is
 // "all", "positive" or "negative". Reviews with no text are left out.
 func FetchReviews(fetch Fetch, appID int, lang, kind string) ([]Review, error) {
+	page, err := FetchReviewPage(fetch, appID, lang, kind)
+	return page.Items, err
+}
+
+// ReviewPage is one page of reviews and, for kind "all", Steam's words
+// and share of positive reviews for the game.
+type ReviewPage struct {
+	Items   []Review `json:"items"`
+	Score   string   `json:"score,omitempty"`   // such as "Very Positive"
+	Percent int      `json:"percent,omitempty"` // positive, 0 to 100
+	Count   int      `json:"count,omitempty"`   // every review counted
+}
+
+// FetchReviewPage is FetchReviews with the summary Steam sends beside them.
+func FetchReviewPage(fetch Fetch, appID int, lang, kind string) (ReviewPage, error) {
 	if appID <= 0 {
-		return nil, errors.New("unknown game")
+		return ReviewPage{}, errors.New("unknown game")
 	}
 	if !steamLang.MatchString(lang) {
 		lang = "english"
@@ -77,51 +97,65 @@ func FetchReviews(fetch Fetch, appID int, lang, kind string) ([]Review, error) {
 	if kind != "positive" && kind != "negative" {
 		kind = "all"
 	}
-	b, err := fetch(fmt.Sprintf(reviewListURL, appID, lang, kind, ReviewsMax))
+	types := map[string]int{"all": 0, "positive": 1, "negative": 2}
+	b, err := fetch(reviewsQuery(map[string]any{"appid": appID, "filter": 0, "languages": []string{lang}, "review_type": types[kind],
+		"purchase_type": 1, "num_per_page": ReviewsMax, "day_range": 365}))
 	if err != nil {
-		return nil, err
+		return ReviewPage{}, err
 	}
 	return parseReviews(b)
 }
 
-func parseReviews(b []byte) ([]Review, error) {
+func parseReviews(b []byte) (ReviewPage, error) {
 	var res struct {
-		Success int `json:"success"`
-		Reviews []struct {
-			ID     string `json:"recommendationid"`
-			Author struct {
-				Forever  float64 `json:"playtime_forever"`
-				AtReview float64 `json:"playtime_at_review"`
-			} `json:"author"`
-			Review  string `json:"review"`
-			Created int64  `json:"timestamp_created"`
-			Up      bool   `json:"voted_up"`
-			Helpful int    `json:"votes_up"`
-			Funny   int    `json:"votes_funny"`
-			Free    bool   `json:"received_for_free"`
-			Early   bool   `json:"written_during_early_access"`
-		} `json:"reviews"`
+		Response *struct {
+			Summary struct {
+				Desc     string `json:"review_score_desc"`
+				Positive int    `json:"total_positive"`
+				Total    int    `json:"total_reviews"`
+			} `json:"query_summary"`
+			Reviews []struct {
+				ID     json.RawMessage `json:"recommendationid"` // a string, or a number
+				Author struct {
+					Forever  float64 `json:"playtime_forever"`
+					AtReview float64 `json:"playtime_at_review"`
+				} `json:"author"`
+				Review  string `json:"review"`
+				Created int64  `json:"timestamp_created"`
+				Up      bool   `json:"voted_up"`
+				Helpful int    `json:"votes_up"`
+				Funny   int    `json:"votes_funny"`
+				Free    bool   `json:"received_for_free"`
+				Early   bool   `json:"written_during_early_access"`
+			} `json:"reviews"`
+		} `json:"response"`
 	}
 	if err := json.Unmarshal(b, &res); err != nil {
-		return nil, err
+		return ReviewPage{}, err
 	}
-	if res.Success != 1 {
-		return nil, errors.New("the store didn't answer")
+	if res.Response == nil {
+		return ReviewPage{}, errors.New("Steam didn't answer")
 	}
 	out := []Review{}
-	for _, r := range res.Reviews {
+	for _, r := range res.Response.Reviews {
 		text, cut := ReviewText(r.Review)
-		if text == "" || !reviewID.MatchString(r.ID) {
+		id := strings.Trim(string(r.ID), `"`)
+		if text == "" || !reviewID.MatchString(id) {
 			continue
 		}
 		at := r.Author.AtReview
 		if at <= 0 {
 			at = r.Author.Forever
 		}
-		out = append(out, Review{ID: r.ID, Up: r.Up, Text: text, Cut: cut, Hours: hours(at), Total: hours(r.Author.Forever),
+		out = append(out, Review{ID: id, Up: r.Up, Text: text, Cut: cut, Hours: hours(at), Total: hours(r.Author.Forever),
 			Helpful: r.Helpful, Funny: r.Funny, At: time.Unix(r.Created, 0).UTC(), Free: r.Free, Early: r.Early})
 	}
-	return out, nil
+	page := ReviewPage{Items: out}
+	if sum := res.Response.Summary; sum.Total > 0 {
+		page.Score, page.Count = HTMLText(sum.Desc), sum.Total
+		page.Percent = (sum.Positive*100 + sum.Total/2) / sum.Total
+	}
+	return page, nil
 }
 
 // hours rounds minutes to tenths of an hour.

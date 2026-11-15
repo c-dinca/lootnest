@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Steam reviews show again.** Steam switched off the old address for reviews on 22 October; Community and the review score in Details now use Steam's new one (still no key and no account).
+- **Turning profiles off keeps you on the game's page** instead of sending you to the Library.
+- **No more wrong anti-cheat notes.** A game whose folder has dots in its name (such as Game.Name.v1.0) was checked in the folder above it, so another game's FACEIT or Easy Anti-Cheat showed on its page.
+- **Will it run reads more games.** Requirements that name no card ("1 GB, DirectX 11", "Dual core 2.4 GHz", "4 CPU threads") and older cards and processors are read now, and a PC far above a game's minimum gets a high score instead of a middling one. The bars and names stay inside the panel.
+
 ## 2.1.0
 
 A clearer game page, updates that walk you through, Saves you can read, achievements as cards, what players say on Steam, and more care in the motion.

@@ -46,6 +46,13 @@ var gpuScores = map[string]int{
 	"arc a310": 3000, "arc a380": 4300, "arc a580": 10000, "arc a750": 12500, "arc a770": 13500, "arc b570": 12500, "arc b580": 14500,
 	"hd graphics 4000": 300, "hd graphics 520": 550, "hd graphics 530": 600, "hd graphics 620": 650, "hd graphics 630": 650,
 	"uhd graphics 620": 650, "uhd graphics 630": 700, "uhd graphics 730": 700, "uhd graphics 770": 900, "iris xe": 1600, "arc graphics": 3500,
+	// Older cards that old games still name
+	"8800 gt": 400, "8800 gts": 380, "9600 gt": 300, "9800 gt": 420, "gts 250": 450, "gtx 260": 550, "gtx 275": 650, "gtx 285": 700,
+	"gt 240": 220, "gt 430": 250, "gt 440": 300, "gt 630": 350, "gt 640": 600, "gtx 460": 900, "gtx 470": 1000, "gtx 480": 1150,
+	"gtx 550 ti": 800, "gtx 560": 1050, "gtx 560 ti": 1250, "gtx 570": 1400, "gtx 580": 1600,
+	"hd 4650": 150, "hd 4850": 350, "hd 4870": 400, "hd 5670": 300, "hd 5750": 500, "hd 5770": 600, "hd 5850": 900, "hd 5870": 1050,
+	"hd 6670": 450, "hd 6770": 600, "hd 6850": 900, "hd 6870": 1050, "hd 6950": 1300, "hd 6970": 1450,
+	"hd graphics 3000": 150, "hd graphics 2500": 200, "hd graphics 4600": 450, "hd graphics 5500": 500,
 	// Graphics built into AMD processors
 	"vega 8": 1100, "vega 11": 1300, "radeon 680m": 2400, "radeon 760m": 2400, "radeon 780m": 2900, "radeon 880m": 3200, "radeon 890m": 3600, "radeon graphics": 1500,
 }
@@ -136,8 +143,8 @@ func GPUScore(name string) int {
 // thousands of CPU mark points, for the desktop chip of that tier.
 var (
 	intelCore = map[string]map[int]float64{
-		"i3": {2: 2.2, 3: 2.4, 4: 3.2, 5: 3.4, 6: 4.1, 7: 4.4, 8: 6.1, 9: 6.6, 10: 8.7, 11: 9.5, 12: 14, 13: 14.5, 14: 15},
-		"i5": {2: 4.1, 3: 4.6, 4: 5.3, 5: 5.5, 6: 5.6, 7: 6.2, 8: 9.2, 9: 9.5, 10: 12, 11: 17, 12: 19.5, 13: 25, 14: 25.5},
+		"i3": {1: 1.6, 2: 2.2, 3: 2.4, 4: 3.2, 5: 3.4, 6: 4.1, 7: 4.4, 8: 6.1, 9: 6.6, 10: 8.7, 11: 9.5, 12: 14, 13: 14.5, 14: 15},
+		"i5": {1: 2.6, 2: 4.1, 3: 4.6, 4: 5.3, 5: 5.5, 6: 5.6, 7: 6.2, 8: 9.2, 9: 9.5, 10: 12, 11: 17, 12: 19.5, 13: 25, 14: 25.5},
 		"i7": {1: 3.5, 2: 5.3, 3: 6.3, 4: 7, 5: 7.5, 6: 8.1, 7: 9.6, 8: 13.5, 9: 14.5, 10: 18.5, 11: 24, 12: 34, 13: 46, 14: 53},
 		"i9": {9: 18, 10: 23.5, 11: 25, 12: 41, 13: 59, 14: 60},
 	}
@@ -256,6 +263,12 @@ func rate(have, min, rec float64) string {
 		return RunsHigh
 	case rec > 0 && have >= rec*0.95:
 		return RunsRecommended
+	// Only a minimum listed: well above it counts as the recommended, far
+	// above it as high (an old game on a new PC).
+	case rec <= 0 && have >= min*3:
+		return RunsHigh
+	case rec <= 0 && have >= min*1.8:
+		return RunsRecommended
 	case min > 0 && have >= min*0.95:
 		return RunsMinimum
 	case min <= 0 && rec > 0 && have >= rec*0.6:
@@ -264,6 +277,14 @@ func rate(have, min, rec float64) string {
 		return RunsStruggles
 	}
 	return RunsBelow
+}
+
+// orWords is a known model's score, else what the words say.
+func orWords(known float64, req string, words func(string) float64) float64 {
+	if known > 0 || req == "" {
+		return known
+	}
+	return words(req)
 }
 
 // alternativesScore is the weakest of the parts a requirement names ("GTX
@@ -281,6 +302,71 @@ func alternativesScore(req string, score func(string) float64) float64 {
 	}
 	sort.Float64s(known)
 	return known[0]
+}
+
+// When a requirement names no card or chip Lootnest knows, it's read for
+// what it does say: video memory and the DirectX version for graphics
+// ("1 GB, DirectX 11"), cores, threads and clock for the processor ("Dual
+// core 2.4 GHz", "4 hardware CPU threads"). Rough on purpose: enough to
+// tell a game from 2012 on a 2024 PC.
+var (
+	dxRe      = regexp.MustCompile(`(?i)direct\s*x\s*(\d{1,2})`)
+	vramMBRe  = regexp.MustCompile(`(?i)(\d+(?:[.,]\d+)?)\s*(gb|mb)\b`)
+	ghzRe     = regexp.MustCompile(`(?i)(\d(?:[.,]\d+)?)\s*ghz`)
+	coresRe   = regexp.MustCompile(`(?i)(\d{1,2})\s*(?:hardware\s*)?(?:cpu\s*)?(cores?|threads?)\b`)
+	coreWords = map[string]float64{"single": 1, "dual": 2, "two": 2, "triple": 3, "quad": 4, "four": 4, "hexa": 6, "six": 6, "octa": 8, "eight": 8}
+	coreWord  = regexp.MustCompile(`(?i)\b(single|dual|two|triple|quad|four|hexa|six|octa|eight)[\s-]*core`)
+)
+
+// gpuFromWords scores a graphics requirement by its video memory and
+// DirectX version, the higher of the two; 0 when it says neither.
+func gpuFromWords(req string) float64 {
+	var s float64
+	if m := vramMBRe.FindStringSubmatch(req); m != nil {
+		n, _ := strconv.ParseFloat(strings.ReplaceAll(m[1], ",", "."), 64)
+		gb := n
+		if strings.EqualFold(m[2], "mb") {
+			gb = n / 1024
+		}
+		for _, t := range []struct{ gb, s float64 }{{0.25, 200}, {0.5, 300}, {1, 800}, {2, 1500}, {3, 2500}, {4, 3500}, {6, 5000}, {8, 7500}, {12, 11000}} {
+			if gb >= t.gb {
+				s = t.s
+			}
+		}
+	}
+	if m := dxRe.FindStringSubmatch(req); m != nil {
+		dx := map[string]float64{"9": 300, "10": 500, "11": 1000, "12": 2500}[m[1]]
+		s = math.Max(s, dx)
+	}
+	return s
+}
+
+// cpuFromWords scores a processor requirement by its cores (or threads)
+// and clock; 0 when it says neither.
+func cpuFromWords(req string) float64 {
+	cores, ghz := 0.0, 0.0
+	if m := coreWord.FindStringSubmatch(req); m != nil {
+		cores = coreWords[strings.ToLower(m[1])]
+	} else if m := coresRe.FindStringSubmatch(req); m != nil {
+		n, _ := strconv.ParseFloat(m[1], 64)
+		if strings.HasPrefix(strings.ToLower(m[2]), "thread") {
+			n *= 0.75 // threads count for less than cores
+		}
+		cores = n
+	}
+	if m := ghzRe.FindStringSubmatch(req); m != nil {
+		ghz, _ = strconv.ParseFloat(strings.ReplaceAll(m[1], ",", "."), 64)
+	}
+	if cores == 0 && ghz == 0 {
+		return 0
+	}
+	if cores == 0 {
+		cores = 2
+	}
+	if ghz == 0 {
+		ghz = 2.5
+	}
+	return math.Round(cores*ghz*0.3*10) / 10
 }
 
 // WillItRun compares this PC with a game's requirements.
@@ -303,8 +389,8 @@ func WillItRun(pc PCSpecs, minimum, recommended []ReqLine) RunVerdict {
 	}
 	size := func(s string) float64 { return float64(ReqBytes(s)) }
 	v := RunVerdict{Parts: []PartVerdict{
-		part("Graphics", gpu(pc.GPU), func(s string) float64 { return alternativesScore(s, gpu) }),
-		part("Processor", CPUScore(pc.CPU), func(s string) float64 { return alternativesScore(s, CPUScore) }),
+		part("Graphics", gpu(pc.GPU), func(s string) float64 { return orWords(alternativesScore(s, gpu), s, gpuFromWords) }),
+		part("Processor", CPUScore(pc.CPU), func(s string) float64 { return orWords(alternativesScore(s, CPUScore), s, cpuFromWords) }),
 		part("Memory", float64(pc.RAM), size),
 		part("Storage", float64(pc.Free), size),
 	}}

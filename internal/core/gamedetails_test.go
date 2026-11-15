@@ -22,7 +22,7 @@ const hadesDetails = `{"1145350":{"success":true,"data":{"name":"Hades II",
 {"id":1,"path_thumbnail":"https://evil.example/ss.jpg","path_full":"https://evil.example/ss.jpg"}],
 "metacritic":{"score":95,"url":"https://www.metacritic.com/game/hades-ii"}}}}`
 
-const hadesReviews = `{"success":1,"query_summary":{"num_reviews":0,"review_score":9,"review_score_desc":"Overwhelmingly Positive","total_positive":12100,"total_negative":245,"total_reviews":12345}}`
+const hadesReviews = `{"response":{"query_summary":{"num_reviews":1,"review_score":9,"review_score_desc":"Overwhelmingly Positive","total_positive":12100,"total_negative":245,"total_reviews":12345},"reviews":[]}}`
 
 // steamServer stands in for the Steam store, and fetch sends to it what
 // would go to store.steampowered.com.
@@ -32,7 +32,7 @@ func steamServer(t *testing.T, details, reviews string, asked *[]string) Fetch {
 		switch {
 		case r.URL.Path == "/api/appdetails":
 			_, _ = io.WriteString(w, details)
-		case strings.HasPrefix(r.URL.Path, "/appreviews/") && reviews != "":
+		case r.URL.Path == "/IUserReviewsService/GetAppReviews/v1/" && reviews != "":
 			_, _ = io.WriteString(w, reviews)
 		default:
 			http.Error(w, "no", http.StatusInternalServerError)
@@ -40,7 +40,7 @@ func steamServer(t *testing.T, details, reviews string, asked *[]string) Fetch {
 	}))
 	t.Cleanup(srv.Close)
 	return func(u string) ([]byte, error) {
-		resp, err := http.Get(strings.Replace(u, "https://store.steampowered.com", srv.URL, 1))
+		resp, err := http.Get(strings.NewReplacer("https://store.steampowered.com", srv.URL, "https://api.steampowered.com", srv.URL).Replace(u))
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func TestFetchGameDetails(t *testing.T) {
 	if err != nil || d == nil {
 		t.Fatal(d, err)
 	}
-	if len(asked) != 2 || !strings.Contains(asked[0], "appids=1145350") || !strings.Contains(asked[0], "screenshots") || !strings.Contains(asked[1], "num_per_page=0") {
+	if len(asked) != 2 || !strings.Contains(asked[0], "appids=1145350") || !strings.Contains(asked[0], "screenshots") || !strings.Contains(asked[1], "GetAppReviews") || !strings.Contains(asked[1], "%22appid%22%3A1145350") {
 		t.Fatalf("asked %v", asked)
 	}
 	if d.Summary != "Battle beyond the Underworld & defy the Titan of Time in this sequel." {

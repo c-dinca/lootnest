@@ -119,3 +119,38 @@ func TestPlanRun(t *testing.T) {
 		}
 	}
 }
+
+// Requirements that name no card Lootnest knows are read for what they say.
+func TestWillItRunFromWords(t *testing.T) {
+	pc := PCSpecs{GPU: "AMD Radeon RX 6700 XT", CPU: "AMD Ryzen 5 7600X 6-Core Processor", RAM: 16 << 30}
+	cs2 := []ReqLine{
+		{Label: "Processor", Value: "4 hardware CPU threads - Intel® Core™ i5 750 or higher"},
+		{Label: "Memory", Value: "8 GB RAM"},
+		{Label: "Graphics", Value: "Video card must be 1 GB or more and should be a DirectX 11-compatible with support for Shader Model 5.0"},
+	}
+	v := WillItRun(pc, cs2, nil)
+	if !v.Parts[0].Known || !v.Parts[1].Known {
+		t.Fatalf("graphics and processor should be read from the words: %+v", v.Parts)
+	}
+	if p := PlanRun(v); p.Score < 90 || p.Preset != "Ultra" {
+		t.Fatalf("a 2022 PC against a 2012 minimum: %+v", p)
+	}
+	if s := gpuFromWords("DirectX 9.0c compatible card with 256 MB"); s != 300 {
+		t.Fatalf("dx9 256 MB: %v", s)
+	}
+	if s := gpuFromWords("Shader Model 5.0"); s != 0 {
+		t.Fatalf("nothing to read: %v", s)
+	}
+	if s := cpuFromWords("Dual Core 2.4 GHz"); s != 1.4 {
+		t.Fatalf("dual 2.4: %v", s)
+	}
+	if s := cpuFromWords("Quad-core Intel or AMD, 3.0 GHz"); s != 3.6 {
+		t.Fatalf("quad 3.0: %v", s)
+	}
+	if s := cpuFromWords("64-bit processor and operating system"); s != 0 {
+		t.Fatalf("nothing to read: %v", s)
+	}
+	if s := GPUScore("ATI Radeon HD 4650"); s != 150 {
+		t.Fatalf("hd 4650: %v", s)
+	}
+}

@@ -306,7 +306,7 @@
       1086940: { plan: { score: 78, preset: "High", resolution: "1080p", fps: "60" }, runs: "recommended", g: [13500, 5200, 11800], c: [29.1, 11, 24], mem: "recommended",
         minimum: rq("NVIDIA GeForce GTX 970", "Intel i5-4690", "8 GB RAM"), recommended: rq("NVIDIA GeForce RTX 2060 Super", "Intel i7-8700K", "16 GB RAM") },
       730: { plan: { score: 100, preset: "Ultra", resolution: "1440p", fps: "60+" }, runs: "high", g: [13500, 2600, 4800], c: [29.1, 6, 9], mem: "recommended",
-        minimum: rq("DirectX 11 card, 1 GB VRAM", "4 hardware CPU threads", "8 GB RAM"), recommended: [] },
+        minimum: rq("Intel HD Graphics 4000 and higher, ATI Radeon HD-Series 4650 and higher, or a DirectX 11 card with 1 GB of video memory", "4 hardware CPU threads - Intel Core i5 750 or higher", "8 GB RAM"), recommended: [] },
       1426210: { plan: { score: 52, preset: "Medium", resolution: "1080p", fps: "45 to 60" }, runs: "minimum", g: [13500, 9000, 18000], c: [29.1, 12, 20], mem: "minimum",
         minimum: rq("NVIDIA GeForce GTX 980", "Intel Core i5-3570K", "16 GB RAM"), recommended: rq("NVIDIA GeForce RTX 4070", "Intel Core i7-12700", "32 GB RAM") },
     }[appId];
@@ -760,6 +760,9 @@
     },
     // Saves: every copy kept, newest first, and their sums per game.
     ps_openHydra: () => ok(null),
+    // Profiles off: the game leaves the config and is a scanned game again.
+    ps_deleteGame: (id) => { const g = games.find((x) => x.id === id); games = games.filter((x) => x.id !== id);
+      if (g && g.launch.type === "steam") found.push({ key: "steam:" + g.launch.appId, name: g.name, source: "steam", appId: g.launch.appId, ready: true }); return ok(); },
     ps_copyFiles: (key, kind, id) => ok(kind === "net" ? { count: 2, files: [{ path: "loc0/SaveGames/Slot1.sav", size: 2.1e6, mod: iso(3 * h) }, { path: "loc0/SaveGames/Settings.ini", size: 2048, mod: iso(2 * d) }] }
       : { count: 14, files: Array.from({ length: 6 }, (_, i) => ({ path: `Public/Savegames/Story/${["Quicksave_12", "Autosave_8", "Act3_LowerCity", "Act2_Moonrise", "Act1_Camp", "profile8"][i]}.lsv`, size: [41e6, 39e6, 38e6, 35e6, 30e6, 4096][i], mod: iso((i + 1) * 3 * h) })) }),
     ps_nameCopy: (key, kind, id, name) => { COPYNAMES[`${key}|${kind}|${id}`] = name; return ok(); },
