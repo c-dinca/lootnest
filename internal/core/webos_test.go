@@ -490,3 +490,16 @@ func TestTVLaunchAgainAndReach(t *testing.T) {
 		t.Fatal("the pairing request stayed on the TV")
 	}
 }
+
+func TestTVAppStarted(t *testing.T) {
+	log := "[0] Launched with parameters (112 characters), with a pairing\n[0] Screen: pairing\n[2] Reaching the PC: answered\n[2] Screen: connecting\n[2] Screen: starting\n"
+	if !TVAppStarted(log) {
+		t.Fatal("a TV app that went on to start reads as not started")
+	}
+	if TVAppStarted("[0] Launched with parameters\n[0] Screen: pairing\n") {
+		t.Fatal("a TV app still pairing reads as started")
+	}
+	if TVAppStarted("[0] Launched without parameters\n[3] Screen: ready\n[0] Launched with parameters\n[0] Screen: pairing\n") {
+		t.Fatal("an earlier run's start counted")
+	}
+}

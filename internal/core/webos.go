@@ -702,6 +702,23 @@ func (t *TV) ClearPairing() {
 	_, _ = t.run("rm -f "+shQuote(tvTempDir+"/lootnest-pair.json"), nil)
 }
 
+// TVAppStarted says whether the TV app's log shows it went on to start
+// Lootnest (so it was paired) after its last launch.
+func TVAppStarted(log string) bool {
+	last := strings.LastIndex(log, "Launched ")
+	if last < 0 {
+		last = 0
+	}
+	rest := log[last:]
+	return strings.Contains(rest, "Screen: starting") || strings.Contains(rest, "Screen: ready")
+}
+
+// WebOSVersion is the TV's webOS release, from /etc/starfish-release, or "".
+func (t *TV) WebOSVersion() string {
+	out, _ := t.run("cat /etc/starfish-release 2>/dev/null | head -n 1", nil)
+	return strings.TrimSpace(out)
+}
+
 // TVAppLog is the end of the TV app's own log of its steps, or "".
 func (t *TV) TVAppLog() string {
 	out, _ := t.run("tail -n 30 "+shQuote(tvTempDir+"/lootnest-tv.log")+" 2>/dev/null", nil)
