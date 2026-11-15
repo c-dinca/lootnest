@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.8
+
+Add an LG TV pairs: the TV app found the PC and then lost it.
+
+- **Lootnest for TV 1.2.1 pairs with the PC it was sent to.** The TV app reached the PC, then showed "This TV isn't paired with a PC yet": a PC added by its address had no name inside the app, so it couldn't find it again. Add an LG TV installs this version.
+
 ## 2.2.7
 
 Add an LG TV pairs with the TV app even when it is already open.
