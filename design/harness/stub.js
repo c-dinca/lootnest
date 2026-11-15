@@ -778,6 +778,9 @@
       setTimeout(() => emit({ type: "linkStep", step: "tvinstall", done: 0, total: 0 }), 100); return ok();
     },
     ps_linkForgetLG: () => ok(),
+    ps_tvResume: () => ok(),
+    ps_tvStay: () => ok(),
+    ps_tvCloseGame: () => ok(),
     ps_linkMakePrivate: () => { setTimeout(() => emit({ type: "linkPrivate", ok: true }), 400); return ok(); },
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {

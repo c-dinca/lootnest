@@ -196,3 +196,32 @@ func TestWaitProcessAndAsk(t *testing.T) {
 	}
 	_ = InJob() // only that it answers
 }
+
+func TestPSButtonIn(t *testing.T) {
+	usbDS := make([]byte, 64)
+	usbDS[0], usbDS[10] = 0x01, 0x01
+	if !PSButtonIn(0x0ce6, usbDS) {
+		t.Fatal("DualSense over USB: PS not read")
+	}
+	usbDS[10] = 0
+	if PSButtonIn(0x0ce6, usbDS) {
+		t.Fatal("DualSense over USB: PS read when up")
+	}
+	bt := make([]byte, 78)
+	bt[0], bt[11] = 0x31, 0x01
+	if !PSButtonIn(0x0ce6, bt) {
+		t.Fatal("DualSense over Bluetooth: PS not read")
+	}
+	simple := []byte{0x01, 128, 128, 128, 128, 0x08, 0, 0x01, 0, 0}
+	if !PSButtonIn(0x0ce6, simple) || !PSButtonIn(0x09cc, simple) {
+		t.Fatal("simple report: PS not read")
+	}
+	ds4 := make([]byte, 64)
+	ds4[0], ds4[7] = 0x01, 0x01
+	if !PSButtonIn(0x09cc, ds4) {
+		t.Fatal("DualShock 4 over USB: PS not read")
+	}
+	if PSButtonIn(0x0ce6, nil) {
+		t.Fatal("an empty report read as PS")
+	}
+}

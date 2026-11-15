@@ -2795,3 +2795,22 @@ html.is-tv {
 @media (prefers-reduced-motion: reduce) {
   .bp-launch, .bp-launch-art, .bp-launch-body, .bp-launch-bar::after { animation: none; }
 }
+
+/* TV mode's menu over a game (25-bigpicture.js tvMenu): the Home or PS
+   button, as on a console. */
+.tv-menu { position: fixed; inset: 0; z-index: 47; display: flex; align-items: center; padding: var(--bp-safe-y) var(--bp-safe-x);
+  background: var(--tv-menu-scrim); animation: bp-launch-in var(--dur-3) var(--ease-emph) both; }
+.tv-menu.out { animation: bp-launch-out var(--dur-3) var(--ease-in-out) both; }
+.tv-menu-panel { width: var(--tv-menu-w); display: grid; gap: var(--space-3); padding: var(--space-8); border-radius: var(--radius-glass);
+  background: var(--glass-strong); box-shadow: var(--key-light); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  animation: bp-screen-in var(--dur-4) var(--ease-emph) both; }
+.tv-menu-name { font: 400 var(--fs-40)/1.1 var(--font-title); color: var(--fg-1); margin-bottom: var(--space-4); text-wrap: balance; }
+.tv-menu-item { display: block; width: 100%; text-align: left; padding: var(--space-4) var(--space-6); border: 0; border-radius: var(--radius-round);
+  background: transparent; color: var(--fg-2); font: 700 var(--fs-24)/1 var(--font-ui); cursor: pointer;
+  transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+.tv-menu-item.on, .tv-menu-item:hover { background: var(--glass-ctl-hover); color: var(--fg-1); box-shadow: var(--key-light); }
+.tv-menu-item[data-tvm="close"].on { color: var(--danger, var(--fg-1)); }
+.tv-menu-foot { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); color: var(--fg-3); font: 600 var(--fs-18)/1 var(--font-ui); }
+.tv-menu-foot span { width: var(--space-4); }
+@media (prefers-reduced-motion: reduce) { .tv-menu, .tv-menu-panel { animation: none; } }
+body:has(> #tv-menu) .bp-launch-body { opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }

@@ -730,3 +730,14 @@ On the LG TV, with section 27 done on the PC.
 5. Move the PC's mouse to every edge of your monitors: it doesn't go onto
    the TV's display.
 6. Exit TV mode: the taskbar is back on your monitor.
+
+## 30. The Home button in TV mode (2.4.0)
+
+1. In TV mode, start a game, then press Home on the controller (or PS on
+   a DualSense connected to the PC): the menu opens over the game.
+2. Resume game, or Home again, or B: back in the game, controls working.
+3. Lootnest: the menu closes and Lootnest stays; Play on the same game
+   goes back to it, still running.
+4. Close the game: the label asks to press again; then the game quits
+   and Lootnest is back.
+5. With no game running, Home opens TV mode's menu.

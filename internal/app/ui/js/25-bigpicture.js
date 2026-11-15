@@ -48,7 +48,7 @@
   }
   function tvClose() {
     if (!BP.tv) return;
-    BP.tv = false; BP.menu = false; BP.who = false; BP.launch = null; drawLaunch();
+    BP.tv = false; BP.menu = false; BP.who = false; BP.launch = null; drawLaunch(); BP.tvMenu = null; drawTVMenu(); BP.playing = "";
     document.documentElement.classList.remove("is-tv");
     bpShut();
   }
@@ -85,6 +85,7 @@
       else { BP.launch = { key: ev.key, name: ev.name || "", art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch(); }
     }
     BP.launch.phase = ev.phase || BP.launch.phase;
+    if (ev.phase === "playing") BP.playing = ev.key;
     drawLaunch();
   }
   function drawLaunch() {
@@ -102,6 +103,39 @@
     el.querySelector(".bp-launch-name").textContent = L.name;
     el.querySelector(".bp-launch-word").textContent = L.phase === "playing" ? "Playing" : "Starting";
   }
+  const sameGame = (it, key) => !!it && !!key && (bpKey(it) === key || it.id === key || (!!it.g && (it.g.id === key || "game:" + it.g.id === key)));
+  // TV mode's menu over a game, on the controller's Home or PS button.
+  const TV_MENU = [["resume", "Resume game"], ["home", "Lootnest"], ["close", "Close the game"]];
+  function tvMenu(ev) {
+    if (!ev.on) { BP.tvMenu = null; drawTVMenu(); return; }
+    const it = everyItem().find((x) => sameGame(x, ev.key));
+    BP.tvMenu = { key: ev.key, name: it ? it.name : (BP.launch && BP.launch.name) || "", at: 0, sure: false };
+    sfx("open");
+    drawTVMenu();
+  }
+  function drawTVMenu() {
+    const M = BP.tvMenu;
+    let el = $("#tv-menu");
+    if (!M) { if (el) { el.classList.add("out"); el.removeAttribute("id"); setTimeout(() => el.remove(), 320); } return; }
+    if (!el) { el = document.createElement("div"); el.id = "tv-menu"; el.className = "tv-menu ln-root"; el.setAttribute("role", "menu"); document.body.appendChild(el); }
+    el.innerHTML = `<div class="tv-menu-panel"><div class="tv-menu-name">${esc(M.name)}</div>
+      ${TV_MENU.map(([k, l], i) => `<button class="tv-menu-item${i === M.at ? " on" : ""}" role="menuitem" data-tvm="${k}" tabindex="-1">${k === "close" && M.sure ? "Press again to close it" : esc(l)}</button>`).join("")}
+      <div class="tv-menu-foot">${glyph("A")}Select<span></span>${glyph("B")}Resume</div></div>`;
+    const on = el.querySelector(".tv-menu-item.on");
+    if (on) on.focus({ preventScroll: true });
+  }
+  function tvMenuGo(k) {
+    const M = BP.tvMenu;
+    if (!M) return;
+    if (k === "resume") { sfx("back"); BP.tvMenu = null; drawTVMenu(); api.tvResume().catch(() => {}); return; }
+    if (k === "home") { sfx("go"); BP.tvMenu = null; drawTVMenu(); tvReturn(); api.tvStay().catch(() => {}); if (BP.on) renderBP(false); return; }
+    if (k === "close") {
+      if (!M.sure) { M.sure = true; sfx("toggle"); drawTVMenu(); return; }
+      sfx("go"); BP.tvMenu = null; drawTVMenu();
+      api.tvCloseGame().catch((e) => toast(errText(e), "error"));
+    }
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("#tv-menu [data-tvm]"); if (b) tvMenuGo(b.dataset.tvm); });
   // The game closed: Big Picture comes back from behind its art.
   function tvReturn() {
     if (!BP.launch) return false;
@@ -354,6 +388,8 @@
   function bpPlay(it, pid) {
     if (!it) return;
     sfx("go");
+    // The game TV mode is playing: Play goes back to it.
+    if (BP.tv && BP.playing && sameGame(it, BP.playing)) { api.tvResume().catch(() => {}); return; }
     if (it.kind === "found") { tvLaunch(it); actions["play-found"]({ dataset: { key: it.id } }); return; }
     const p = pid || (seated() || {}).id;
     if (!p) { BP.choose = bpKey(it); BP.focus = ""; BP.keep = true; renderBP(true); return; }
@@ -457,7 +493,8 @@
   const realPad = (g) => padFamily(g.id) !== "xbox";
   // The standard mapping's buttons; 16 is the PS or Home button, 17 the touchpad.
   const PAD_ROLES = { 0: "A", 1: "B", 2: "X", 3: "Y", 4: "LB", 5: "RB", 8: "View", 9: "Start", 16: "Start", 17: "View" };
-  const padRole = (fam, i) => (fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
+  // In TV mode the Home or PS button is Lootnest's own (app/tv.go tvHome).
+  const padRole = (fam, i) => (BP.tv && i === 16 ? "" : fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
   const padDir = (g) => {
     const b = (i) => !!(g.buttons[i] && g.buttons[i].pressed), ax = g.axes[0] || 0, ay = g.axes[1] || 0;
     return b(12) || ay < -0.5 ? "up" : b(13) || ay > 0.5 ? "down" : b(14) || ax < -0.5 ? "left" : b(15) || ax > 0.5 ? "right" : "";
@@ -482,7 +519,12 @@
       now.forEach((p, i) => { if (p && !was[i]) { if (f !== "xbox" || !real.length) fam = f; const r = padRole(f, i); if (r) roles.add(r); } });
       dir = dir || padDir(g);
     }
-    if (document.hasFocus() && BP.launch) {
+    if (document.hasFocus() && BP.tvMenu) {
+      const M = BP.tvMenu;
+      if (roles.has("B")) tvMenuGo("resume");
+      else if (roles.has("A")) tvMenuGo(TV_MENU[M.at][0]);
+      else if ((dir === "up" || dir === "down") && dir !== pad.held) { M.at = (M.at + (dir === "down" ? 1 : TV_MENU.length - 1)) % TV_MENU.length; M.sure = false; sfx("move"); drawTVMenu(); }
+    } else if (document.hasFocus() && BP.launch) {
       // While a game starts, B comes back to Big Picture; nothing else acts.
       if (roles.has("B") && BP.launch.phase === "starting") { sfx("back"); tvReturn(); }
     } else if (document.hasFocus()) {

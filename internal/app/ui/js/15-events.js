@@ -79,7 +79,14 @@
         if (ev.on) tvOpen(); else tvClose();
         break;
       case "bpReturn": // the game started from Big Picture closed: back where it was
+        BP.playing = ""; BP.tvMenu = null; drawTVMenu();
         if (BP.on) { tvReturn(); renderBP(false); sfx("open"); }
+        break;
+      case "tvMenu": // the Home or PS button over a game in TV mode (app/tv.go tvHome)
+        tvMenu(ev);
+        break;
+      case "tvHome": // the Home or PS button with no game: Big Picture's menu
+        if (BP.on && BP.tv && !S.picker && !S.dialog) bpMenu(!BP.menu);
         break;
       case "tvGame": // TV mode: a game is starting or up (app/tv.go)
         tvGame(ev);

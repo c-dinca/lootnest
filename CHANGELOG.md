@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.4.0
+
+The Home button in TV mode.
+
+- **The controller's Home or PS button opens a menu over the game**, as on a console: Resume game, Lootnest (the game keeps running behind it) and Close the game (press twice). Press Home again or B to go back to the game, and Play on the game that's running goes back to it too. It works with the controller on the TV, an Xbox controller, and a DualSense or DualShock 4 connected to the PC.
+- **Home with no game running opens TV mode's menu.**
+
 ## 2.3.0
 
 TV mode works like a console.
