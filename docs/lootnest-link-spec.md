@@ -442,20 +442,3 @@ couch.
 | M4a | Android TV / Google TV / Fire TV client | 2 to 3 weeks | Installed from a store build, pairs through the Allow prompt, passes the same loop as M1 |
 | M4b | Samsung Tizen client | 2 to 4 weeks | Same loop on a Samsung TV, installed by Lootnest |
 | M4c | Browser client | 2 to 3 weeks | Compatibility check runs on at least 3 TV brands; same loop works on every TV that passes |
-
-### Working on it with Claude Code
-
-1. This file is the spec: `docs/lootnest-link-spec.md`.
-2. One session per milestone. Each fork (`lootnest-tv-webos`, `-android`,
-   `-tizen`) is its own repo with its own sessions.
-3. Start each session with a prompt like this:
-
-   > Read docs/lootnest-link-spec.md. Implement milestone M1 only. First
-   > explore the existing frontend and launch pipeline, then propose a plan
-   > that lists the files you will change. Wait for my approval before
-   > writing code. Add tests where the code allows it. Stop when M1's "Done
-   > when" criterion is met, and list anything in the spec that turned out
-   > wrong or unclear.
-
-4. Turn each open question into a GitHub issue, and answer it before the
-   milestone that depends on it.
