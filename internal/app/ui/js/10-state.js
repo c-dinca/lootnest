@@ -71,6 +71,7 @@
     reviews: {},       // "key|kind" -> {loading} or the "reviews" event from ps_gameReviews
     revKind: {},       // Library key -> "all", "positive" or "negative"
     revOpen: new Set(), // review ids shown in full
+    media: {},         // Library key -> { i, hold, list } for the trailers and screenshots on its page
     page: null,        // the game page: {kind: "game"|"found"|"owned", id, cloud}
     sort: pref("sort", "name"),       // Library order: name | recent | played | rating | size
     density: pref("density", "m"),    // cover size: s | m | l

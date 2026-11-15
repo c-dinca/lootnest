@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -23,7 +24,7 @@ import (
 // ---------------------------------------------------------------------------
 
 const (
-	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic,categories,controller_support,pc_requirements"
+	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic,categories,controller_support,pc_requirements,movies"
 	// Steam's review summary: the store's old appreviews endpoint went away
 	// on 22 Oct 2026; IUserReviewsService answers without a key.
 	reviewsAPI = "https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/?input_json="
@@ -72,6 +73,25 @@ type GameDetails struct {
 	Minimum     []ReqLine `json:"minimum,omitempty"`
 	Recommended []ReqLine `json:"recommended,omitempty"`
 	ReqsRead    bool      `json:"reqsRead,omitempty"`
+	// Trailers, played on the game's page from Steam's video server.
+	// MediaRead says they were asked for (details kept from before weren't).
+	Movies    []Movie `json:"movies,omitempty"`
+	MediaRead bool    `json:"mediaRead,omitempty"`
+}
+
+// Movie is one of a game's trailers on Steam: a picture to show first and
+// an HLS stream (Steam's store has no plain video files any more).
+type Movie struct {
+	Name      string `json:"name,omitempty"`
+	Thumb     string `json:"thumb"`
+	HLS       string `json:"hls"`
+	Highlight bool   `json:"highlight,omitempty"`
+}
+
+// SafeVideo accepts only streams on Steam's video server.
+func SafeVideo(u string) bool {
+	p, err := url.Parse(u)
+	return err == nil && p.Scheme == "https" && strings.EqualFold(p.Hostname(), "video.akamai.steamstatic.com") && strings.HasSuffix(strings.ToLower(p.Path), ".m3u8")
 }
 
 // DetailsEdit holds only the fields the user changed; nil is Steam's.
@@ -122,6 +142,12 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 			Release    struct {
 				Date string `json:"date"`
 			} `json:"release_date"`
+			Movies []struct {
+				Name      string `json:"name"`
+				Thumb     string `json:"thumbnail"`
+				HLS       string `json:"hls_h264"`
+				Highlight bool   `json:"highlight"`
+			} `json:"movies"`
 			Screenshots []struct {
 				Thumb string `json:"path_thumbnail"`
 				Full  string `json:"path_full"`
@@ -157,7 +183,15 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 		cats = append(cats, c.Description)
 	}
 	g.Controller, g.Pads = controllerSupport(d.Controller, cats)
-	g.ReqsRead = true
+	g.ReqsRead, g.MediaRead = true, true
+	for _, m := range d.Movies {
+		if len(g.Movies) == 6 {
+			break
+		}
+		if SafeNewsImage(m.Thumb) && SafeVideo(m.HLS) {
+			g.Movies = append(g.Movies, Movie{Name: HTMLText(m.Name), Thumb: m.Thumb, HLS: m.HLS, Highlight: m.Highlight})
+		}
+	}
 	var req struct {
 		Minimum     string `json:"minimum"`
 		Recommended string `json:"recommended"`
@@ -255,8 +289,8 @@ func LoadDetails(dir string, appID int) (*GameDetails, bool) {
 	if json.Unmarshal(b, &d) != nil {
 		return nil, true
 	}
-	// Details kept before requirements were read are asked again once.
-	return &d, time.Since(d.Fetched) > DetailsKeep || (!d.ReqsRead && !d.Unknown)
+	// Details kept before requirements or trailers were read are asked again once.
+	return &d, time.Since(d.Fetched) > DetailsKeep || ((!d.ReqsRead || !d.MediaRead) && !d.Unknown)
 }
 
 func SaveDetails(dir string, appID int, d *GameDetails) error {

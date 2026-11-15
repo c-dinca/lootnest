@@ -46,6 +46,13 @@ var uiSystemCSS string
 //go:embed ui/app.css
 var uiCSS string
 
+// hls.js 1.7.4 (Apache 2.0, assets/THIRD_PARTY_NOTICES.txt) plays Steam's
+// trailers, which the store serves only as HLS. It isn't part of the page:
+// the page asks for it (ps_vendor) the first time a game has a trailer.
+//
+//go:embed ui/vendor/hls.min.js
+var uiHLS string
+
 // The script is ui/js/*.js joined in name order: one closure in ordered parts.
 //
 //go:embed ui/js/*.js

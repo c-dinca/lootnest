@@ -285,6 +285,9 @@
       summary: "Gather your party and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power. Mysterious abilities are awakening inside you, drawn from a mind flayer parasite planted in your brain. Resist, and turn darkness against itself. Or embrace corruption, and become ultimate evil.",
       genres: ["Adventure", "RPG", "Strategy"], developers: ["Larian Studios"], publishers: ["Larian Studios"], released: "3 Aug, 2023",
       screenshots: [1086940, 1091500, 1145350, 1426210, 1551360, 367520, 413150, 271590].map((id) => ({ thumb: art(id, "hero"), full: art(id, "hero") })),
+      // The harness has no network: trailers show their picture only.
+      movies: [{ name: "Launch Trailer", thumb: art(1086940, "hero"), hls: "https://video.akamai.steamstatic.com/store_trailers/1/hls_264_master.m3u8", highlight: true },
+        { name: "Patch 7 Trailer", thumb: art(1091500, "hero"), hls: "https://video.akamai.steamstatic.com/store_trailers/2/hls_264_master.m3u8" }],
       reviewScore: "Overwhelmingly Positive", reviewPercent: 96, reviewCount: 612345, metacritic: 96, storeUrl: "https://store.steampowered.com/app/1086940/", fetched: iso(4 * d), controller: "full", pads: ["playstation"],
     };
     else if (appId) det = { summary: "A short summary of the game from the Steam store.", genres: ["Action"], developers: ["A studio"], publishers: ["A publisher"], released: "1 Jan, 2020",
@@ -760,6 +763,7 @@
     },
     // Saves: every copy kept, newest first, and their sums per game.
     ps_openHydra: () => ok(null),
+    ps_vendor: () => ok(""),
     // Profiles off: the game leaves the config and is a scanned game again.
     ps_deleteGame: (id) => { const g = games.find((x) => x.id === id); games = games.filter((x) => x.id !== id);
       if (g && g.launch.type === "steam") found.push({ key: "steam:" + g.launch.appId, name: g.name, source: "steam", appId: g.launch.appId, ready: true }); return ok(); },

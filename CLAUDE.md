@@ -899,6 +899,15 @@ These shipped recently, newest last:
   content replacing a skeleton (`storeSkeleton`, `.ln-skeleton::after`
   shimmer). `arriveOnce` keys on arrival, view, page and tab, so rings
   and bars fill when achievements arrive after their page.
+  Trailers: `GameDetails.Movies` (appdetails `movies`, only `hls_h264`:
+  Steam serves no mp4 any more; `SafeVideo` pins video.akamai.steamstatic.com
+  and .m3u8; `MediaRead` makes old copies stale once). hls.js 1.7.4
+  (Apache 2.0, `ui/vendor/hls.min.js`, embedded as `uiHLS`) is fetched by
+  `ps_vendor("hls")` and run as a script with the page's nonce the first
+  time a trailer shows (`loadHls`). CSP: `media-src blob:` and the video
+  host, `connect-src` the video host; `AllowedPageRequest` allows `blob:`.
+  `mediaBlock`/`mountMedia`/`mediaGo` in 62-game-blocks.js keep the
+  video element in `vids` across redraws (moved, never recreated).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

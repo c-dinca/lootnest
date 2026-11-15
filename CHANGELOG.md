@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Trailers and screenshots on a game's page.** The trailer plays muted on a large stage with the others and every screenshot in a strip beside it; pick one to put it on the stage, and screenshots move on by themselves every few seconds (not while the pointer is on them). Click a screenshot on the stage to see it full size. The details sit under it, so the page has no empty space. Trailers stream from Steam, with Game details on.
+- **The first cover on Home isn't cut off any more** when it's the one picked.
 - **Motion on real springs.** Keys give under the click and spring back, covers lean toward the pointer with a light that follows it, dialogs, menus, toasts and switches land with a little give, and a page's cards and rows come up one after another, from soft focus into sharp. The springs are computed the way animation libraries such as Motion do it, so everything moves alike. Motion set to Less or Off still keeps it all still.
 - **Achievement rings and bars fill again** when a game's achievements arrive after its page, and when you open its Achievements tab.
 - **The Store loads in its own shape**: the deal, Top sellers and the capsules as glass blocks with a light passing over them, then the real ones come up in order. Searches do the same.
