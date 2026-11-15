@@ -345,10 +345,27 @@ func (a *App) linkAtStart() {
 	if reachSoon(ctx, ap, 2*time.Minute) != nil {
 		return
 	}
-	apps, _, err := ap.Apps(ctx)
+	apps, current, err := ap.Apps(ctx)
 	if err != nil {
 		a.logf("TV streaming: the engine didn't list its apps: %v", err)
 		return
+	}
+	// Settings a newer Lootnest adds (the TV's display as the main one)
+	// reach an engine set up before, once no stream runs.
+	if cfg, err := ap.Config(ctx); err == nil && current == "" {
+		if want := core.ApolloSettings(os.Getenv("COMPUTERNAME")); core.ApolloSettingsDiffer(cfg, want) {
+			if err := ap.SetConfig(ctx, want); err != nil {
+				a.logf("TV streaming: the engine's settings couldn't be brought up to date: %v", err)
+			} else if err := ap.Restart(ctx); err != nil {
+				a.logf("TV streaming: the engine didn't restart with its new settings: %v", err)
+			} else {
+				a.logf("TV streaming: the engine's settings are up to date; the TV's display is the main one while it streams")
+				time.Sleep(3 * time.Second)
+				if reachSoon(ctx, ap, 60*time.Second) != nil {
+					return
+				}
+			}
+		}
 	}
 	app := core.LootnestAppIn(apps)
 	if want := core.LootnestApp(a.exePath, "", ""); app == nil || app["cmd"] != want["cmd"] {

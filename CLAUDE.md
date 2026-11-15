@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.8, beta)
+## Where things stand (2.2.9, beta)
 
 These shipped recently, newest last:
 
@@ -1078,6 +1078,16 @@ These shipped recently, newest last:
   host added by address, so the callback got an empty id. Lootnest for
   TV 1.2.1 (c-dinca/lootnest-tv-webos#5) sets it from the host's answer.
   The owner (15 Nov): fix and publish without asking for these TV fixes.
+
+- **2.2.9** The owner's TV paired and streamed with 2.2.8, but showed
+  only the virtual display's desktop: TV mode went full screen on the
+  PC's primary monitor. `ApolloSettings` adds `dd_configuration_option =
+  ensure_primary` (Apollo 0.4.6 `config.cpp`; `process.cpp` sets
+  `output_name` to the new virtual display before `configure_display`),
+  so the virtual display is primary while a stream runs and
+  `FullscreenPrimary` and games land there. `linkAtStart` brings an older
+  engine's settings up to date (`ApolloSettingsDiffer`, SetConfig,
+  Restart) when no app is running (`current_app` empty).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

@@ -694,7 +694,10 @@ On the LG TV, with section 27 done on the PC.
 2. Settings, TV, **Add an LG TV**. The TV is listed (or type its
    address). Type the passphrase, **Install**. The steps go by: key,
    download, connecting, installing, pairing.
-3. On the TV, Lootnest opens by itself on its own screen (the gem,
+3. (2.2.9) While it streams, the TV's display is Windows' main one:
+   Lootnest's TV mode and any game it starts open on the TV, and the PC's
+   monitors stay on as extra displays.
+3a. On the TV, Lootnest opens by itself on its own screen (the gem,
    "Lootnest", "Pairing with your PC", then "Starting Lootnest"; never
    Moonlight's list of computers), pairs without a PIN and goes straight
    into Lootnest's TV mode. Settings, TV lists the TV as Paired.
