@@ -130,6 +130,7 @@
     linkFindTVs: () => call("ps_linkFindTVs"),
     linkInstallTV: (ip, name, pass) => call("ps_linkInstallTV", ip, name, pass),
     linkForgetLG: (ip) => call("ps_linkForgetLG", ip),
+    linkMakePrivate: (ip) => call("ps_linkMakePrivate", ip),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),

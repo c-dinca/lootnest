@@ -108,6 +108,7 @@
       case "linkPaired":
       case "linkTVs":
       case "linkTVDone":
+      case "linkPrivate":
         linkEvent(ev);
         break;
       case "itch":

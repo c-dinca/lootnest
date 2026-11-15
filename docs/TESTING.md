@@ -712,3 +712,7 @@ On the LG TV, with section 27 done on the PC.
 8. Leave the PC and TV on for a day: the TV's row says developer mode was
    extended in the last 12 hours; the log says "developer mode ... extended".
 9. **Install again** updates the app; **Forget** removes the pairing.
+10. In Windows Settings, set this network to Public, then **Install**: it
+    stops before the key with "Windows treats this network as public".
+    **Make this network private**, accept Windows' prompt: "This network
+    is private now". **Install** works again.

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Add an LG TV checks the network first.** When Windows treats it as Public, the TV can't reach the PC, so the TV app installed but never paired. Lootnest now says so before it installs anything, with a key that makes the network private after Windows' prompt.
+- **A TV that didn't pair says what to check**, instead of asking for a PIN the TV app no longer shows.
+
 ## 2.2.4
 
 Lootnest for TV that looks and works like Lootnest.

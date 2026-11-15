@@ -664,6 +664,12 @@
       if (el.dataset.uuid) api.linkUnpair(el.dataset.uuid).catch(() => {});
     },
     "lg-find"() { const D = S.dialog; D.ip = ($("#lg-ip") || {}).value || ""; D.finding = true; D.tvs = null; renderOverlay(); api.linkFindTVs().catch(() => {}); },
+    "lg-private"() {
+      const D = S.dialog;
+      D.ip = (($("#lg-ip") || {}).value || D.ip || "").trim();
+      D.privating = true; D.error = ""; renderOverlay();
+      api.linkMakePrivate(D.ip).catch((e) => { D.privating = false; D.error = errText(e); renderOverlay(); });
+    },
     "lg-install"() {
       const D = S.dialog, pick = $('input[name="lg-pick"]:checked');
       D.ip = (($("#lg-ip") || {}).value || "").trim(); D.name = (($("#lg-name") || {}).value || "").trim();
@@ -671,7 +677,7 @@
       if (!D.ip && pick) { D.ip = pick.dataset.ip; D.name = D.name || pick.dataset.name; }
       if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(D.ip)) { D.error = "Type the TV's address, such as 192.168.1.20."; renderOverlay(); return; }
       if (!pass) { D.error = "Type the passphrase Developer Mode shows."; renderOverlay(); return; }
-      D.error = ""; D.busy = true; D.started = Date.now(); S.link = S.link || {}; S.link.step = { step: "key" };
+      D.error = ""; D.public = false; D.note = ""; D.busy = true; D.started = Date.now(); S.link = S.link || {}; S.link.step = { step: "key" };
       renderOverlay();
       // The seconds go up while it works, so a slow step reads as working.
       const tick = setInterval(() => { if (S.dialog !== D || !D.busy) { clearInterval(tick); return; } renderOverlay(); }, 1000);

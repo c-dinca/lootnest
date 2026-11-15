@@ -67,6 +67,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_linkFindTVs", a.apiLinkFindTVs))
 	must(a.w.Bind("ps_linkInstallTV", a.apiLinkInstallTV))
 	must(a.w.Bind("ps_linkForgetLG", a.apiLinkForgetLG))
+	must(a.w.Bind("ps_linkMakePrivate", a.apiLinkMakePrivate))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
 	must(a.w.Bind("ps_restoreBackup", a.apiRestoreBackup))
 	must(a.w.Bind("ps_dismissConflict", a.apiDismissConflict))
