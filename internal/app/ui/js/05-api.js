@@ -134,6 +134,7 @@
     gameReviews: (key, kind) => call("ps_gameReviews", key, kind || "all"),
     vendor: (name) => call("ps_vendor", name),
     gamePeers: (key) => call("ps_gamePeers", key),
+    shareImage: (how, title, url) => call("ps_shareImage", how, title, url),
     plugins: () => call("ps_plugins"),
     installPlugin: (path) => call("ps_installPlugin", path),
     installPluginNewKey: (path, key) => call("ps_installPluginNewKey", path, key),

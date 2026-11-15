@@ -43,6 +43,9 @@
       const cv = $("#recap-canvas"), p = player(D.player);
       if (cv && old && D.drawnFor === key) cv.replaceWith(old);
       else if (cv && p) { D.drawnFor = key; D.drawn = drawRecap(cv, p, D.year).catch(() => {}); }
+    } else if (D.kind === "achshare") {
+      o.innerHTML = viewAchShare(D);
+      drawShareSoon();
     } else if (D.kind === "movefolder") {
       o.innerHTML = viewMoveFolder(D);
     } else if (D.kind === "removepc") {

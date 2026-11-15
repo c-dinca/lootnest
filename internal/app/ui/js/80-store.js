@@ -252,23 +252,36 @@
     const msHTML = ms.length ? `<details class="ach-ms"${S.achMs ? " open" : ""}><summary class="ln-section-head"><span class="ln-label">Lootnest milestones<span class="ln-count ln-num">${msDone} of ${ms.length}</span></span>${ph("caret-down")}</summary>
       <ul class="ach-ms-grid">${ms.map((x) => `<li class="${x.done ? "done" : ""}"><span class="ach-ms-icon">${GI.trophy}</span><div><b>${esc(x.name)}</b><span>${x.done ? esc(x.desc) : esc(x.desc) + ". " + esc(fmtGoal(x))}</span>${x.done ? "" : `<span class="ach-bar" aria-hidden="true"><span style="width:${Math.round((x.cur / x.goal) * 100)}%"></span></span>`}</div></li>`).join("")}</ul></details>` : "";
     const latest = rows.flatMap((r) => (r.recent || []).map((a) => ({ a, r }))).sort((x, y) => new Date(y.a.at || 0) - new Date(x.a.at || 0)).slice(0, 10);
-    const games = rows.slice().sort((x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || byName(x.g.name, y.g.name));
+    const sortBy = S.achSort || "done", lastAt = (r) => Math.max(0, ...(r.recent || []).map((a) => new Date(a.at || 0).getTime()));
+    const games = rows.slice().sort(sortBy === "name" ? (x, y) => byName(x.g.name, y.g.name)
+      : sortBy === "recent" ? (x, y) => lastAt(y) - lastAt(x) || byName(x.g.name, y.g.name)
+      : sortBy === "left" ? (x, y) => (x.g.total - x.unlocked || 1e9) - (y.g.total - y.unlocked || 1e9) || byName(x.g.name, y.g.name)
+      : (x, y) => y.unlocked / y.g.total - x.unlocked / x.g.total || y.unlocked - x.unlocked || byName(x.g.name, y.g.name));
+    const sortSeg = `<div class="ln-segmented ach-sort" role="group" aria-label="Order">${[["done", "Most complete"], ["recent", "Latest unlocked"], ["left", "Closest to 100%"], ["name", "Name"]].map(([k, l]) => `<button data-action="ach-sort" data-v="${k}" aria-pressed="${sortBy === k}">${l}</button>`).join("")}</div>`;
     const all = rows.reduce((n, r) => n + r.g.total, 0), allPct = all ? Math.round((total / all) * 100) : 0;
     // The rarest they've unlocked anywhere, on show.
     const rarest = rows.flatMap((r) => r.rarest.map((a) => ({ a, r }))).sort((x, y) => x.a.percent - y.a.percent).slice(0, 4);
     const show = rarest.length ? labelSec("Rarest unlocked", 0, `<ul class="ach-list">${rarest.map(({ a, r }) => achRow(a, r.g.key, esc(r.g.name), true)).join("")}</ul>`) : "";
     const full = rows.filter((r) => r.unlocked >= r.g.total).length;
-    const score = labelSec("Score", 0, `<dl class="ln-meta ln-score">
-      <div class="ln-meta__item"><dd class="ln-num"><span data-countup="${total}">${total}</span><small>of ${all}</small></dd><dt>Unlocked</dt></div>
-      ${gpStat(`${allPct}<small>%</small>`, "Complete")}${gpStat(rows.length, rows.length === 1 ? "Game" : "Games")}${gpStat(full, "Finished 100%")}</dl>`);
+    // The headline: the whole collection as one ring, the numbers, the three
+    // rarest as medals, and Share.
+    const me = player(who), medals = rarest.slice(0, 3);
+    const score = `<section class="ach-hero" style="--me:${esc((me && me.color) || "var(--fg-1)")}">
+      <div class="ach-hero-ring">${ring(allPct, 132)}</div>
+      <div class="ach-hero-text">${me ? `<span class="ach-hero-who">${lnAvatar(me, "22")}${esc(me.name)}</span>` : ""}
+        <b class="ach-hero-n ln-num"><span data-countup="${total}">${total}</span><small> of ${all} unlocked</small></b>
+        <span class="ach-hero-sub">${rows.length} ${rows.length === 1 ? "game" : "games"}, ${full} at 100%</span></div>
+      ${medals.length ? `<ul class="ach-medals" aria-label="Rarest unlocked">${medals.map(({ a, r }) => `<li class="tier-${tierOf(a.percent)}" title="${esc(a.name)}, ${esc(r.g.name)}">${achIcon(a)}<b class="ln-num">${pctText(a.percent)}</b></li>`).join("")}</ul>` : ""}
+      <button class="ln-button ln-button--secondary ach-hero-share" data-action="ach-share" data-who="${esc(who || "")}" data-scope="all">${ph("share-network")}Share</button></section>`;
     return `<div class="ach-page ln-root">${head}
       <div class="ach-cols">
         <div class="ach-main">${chips}${score}
-          ${labelSec("Games", rows.length, `<ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = r.unlocked >= r.g.total ? 100 : Math.min(99, Math.round((r.unlocked / r.g.total) * 100)); return `<li><button class="ach-gcard" data-action="open-sheet" data-tab="achievements" ${itemAttr(r.it)}>
+          ${labelSec("Games", rows.length, `${sortSeg}<ul class="ach-games">${games.map((r) => { ensureCover(r.it); const pct = r.unlocked >= r.g.total ? 100 : Math.min(99, Math.round((r.unlocked / r.g.total) * 100)); return `<li><button class="ach-gcard" data-action="open-sheet" data-tab="achievements" ${itemAttr(r.it)}>
             <span class="ach-gcover cover">${coverHTML(r.it)}</span>
             <span class="ach-gbody"><b class="ach-game-name">${esc(r.g.name)}</b>
               <span class="ach-game-num"><b class="ln-num">${r.unlocked}</b> of <span class="ln-num">${r.g.total}</span>, ${r.shared ? (r.g.source === "steam" ? "Steam account" : "shared") : `${esc(possessive(pname(who)))} own`}</span></span>
-            <span class="ach-gring">${ring(pct, 48)}</span></button></li>`; }).join("")}</ul>`)}
+            <span class="ach-gring">${ring(pct, 48)}</span></button>
+            <button class="ln-button ln-button--ghost ln-button--icon ln-button--sm ach-gshare" data-action="ach-share" data-who="${esc(who || "")}" data-scope="${esc(r.g.key)}" aria-label="Share ${esc(r.g.name)}'s achievements" title="Share">${ph("share-network")}</button></li>`; }).join("")}</ul>`)}
           ${msHTML}
         </div>
         <div class="ach-side">${show}

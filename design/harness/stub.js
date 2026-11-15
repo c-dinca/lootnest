@@ -765,6 +765,7 @@
     // Saves: every copy kept, newest first, and their sums per game.
     ps_openHydra: () => ok(null),
     ps_vendor: () => ok(""),
+    ps_shareImage: (how, title) => ok(how === "save" ? `C:\\Users\\you\\Pictures\\Lootnest\\Achievements\\${title} 2026-11-15.png` : ""),
     // Will it run, players with a PC like this one (?peers=1 turns the setting on).
     ps_gamePeers: (key) => { setTimeout(() => emit({ type: "peers", key, report: { gpus: ["NVIDIA GeForce RTX 3070", "AMD Radeon RX 6750 XT", "NVIDIA GeForce RTX 5060"], count: 290, positive: 231, hours: 93.9, perf: 23, perfBad: 6, read: 195, fps: 100, fpsCount: 4,
       quotes: [{ up: true, text: "Amazing game with insane graphics and great optimisation (100+ fps all high with raytracing)", gpu: "NVIDIA GeForce RTX 3070", cpu: "AMD Ryzen 5 5600X 6-Core Processor", ram: 32, hours: 101.9 },

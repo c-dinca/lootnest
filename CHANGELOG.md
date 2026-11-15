@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Achievements looks better and can be shared.** The top is one panel: your whole collection as a ring in your colour, how many you've unlocked, the three rarest as medals, and Share. Games can be ordered by most complete, latest unlocked, closest to 100% or name.
+- **Share your achievements as a picture**, all of them or one game's (from its card on Achievements, or Share on its Achievements tab): square for Discord and chats, or tall for a phone. Copy image puts it on the clipboard to paste with Ctrl+V; Save keeps it in Pictures\Lootnest\Achievements. Nothing is sent anywhere.
 - **Saves has search and filters.** Search every copy by its game or its name, show only save points, copies before a swap or safety net copies, one profile's, today's, this week's or this month's, newest, oldest or largest first. Copies are now right under the totals, and Per game follows the search too.
 - **Will it run asks players with your PC.** Steam reviews can carry their writer's hardware; turn on "Reviews from players with your card" and Will it run shows how many players with your graphics card or a close one recommend the game, the frame rate they name most, how many talk about how it runs, and a few of their words with their hardware. Only the cards' names go to Steam.
 - **Memory is your installed memory** (16 GB on a 16 GB PC, not the 15.x GB Windows can use), so games no longer say the memory holds them back when it doesn't.

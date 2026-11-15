@@ -164,6 +164,7 @@
       case "allAchievements":
         S.allAch = { games: ev.games || [] };
         if (S.view === "achievements") { S.animateView = "kids"; render(); }
+        if (S.dialog && S.dialog.kind === "achshare") { S.dialog.drawnFor = ""; S.dialog.canvas = null; renderOverlay(); }
         break;
       case "profileInfo":
         S.pinfo[ev.gameId] = ev.info || {};
