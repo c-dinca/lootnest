@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.0.0, beta)
+## Where things stand (2.1.0, beta)
 
 These shipped recently, newest last:
 
@@ -839,7 +839,7 @@ These shipped recently, newest last:
 - **2.0.0** The owner's release of the whole rework (1.97 to 1.106) as
   one version, with a summary in CHANGELOG.md; no code change. From here
   on, releases only when the owner asks (see How changes are made).
-- **Unreleased, the owner's list of 14 Nov**: the profiles pill
+- **2.1.0** The owner's list of 14 Nov: the profiles pill
   (`profPill`), Patch notes to News (`S.newsOpen`), Updates' All without
   up-to-date games, the sidebar's speaker (`sound-toggle`,
   `renderSound`); Will it run on a game's page (`willRunBlock` in
