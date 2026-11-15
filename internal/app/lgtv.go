@@ -190,6 +190,13 @@ func (a *App) installTV(ip, name, passphrase string) error {
 	if err != nil {
 		return err
 	}
+	// The request also goes in a file the TV app reads, for an app that's
+	// already open (it gets no new launch parameters) or a TV that drops
+	// them; removed once pairing is over either way.
+	if err := tv.LeavePairing(fmt.Sprintf("%d", time.Now().UnixNano()), pc, pin); err != nil {
+		a.logf("TV streaming: Add an LG TV on %s: the pairing request couldn't be left on the TV: %v", ip, err)
+	}
+	defer tv.ClearPairing()
 	trace, err := tv.LaunchTVApp(map[string]string{"host": pc, "pairPin": pin})
 	a.logf("TV streaming: Add an LG TV on %s: opening the app with this PC's address %s: %s", ip, pc, trace)
 	if err != nil {
@@ -220,7 +227,10 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		running, known := tv.AppRunning()
 		reach := tv.ReachesPC(pc)
 		cat := networkCategory(pc)
-		a.logf("TV streaming: Add an LG TV on %s: not paired; the app is open on the TV: %s; the TV reaches the engine at %s: %q; Windows calls the network %q", ip, map[bool]string{true: "yes", false: "no"}[running]+map[bool]string{true: "", false: " (unknown)"}[known], pc, reach, cat)
+		a.logf("TV streaming: Add an LG TV on %s: not paired; the app is on the TV's screen: %s; the TV reaches the engine at %s: %q; Windows calls the network %q", ip, map[bool]string{true: "yes", false: "no"}[running]+map[bool]string{true: "", false: " (unknown)"}[known], pc, reach, cat)
+		if l := tv.TVAppLog(); l != "" {
+			a.logf("TV streaming: the TV app's own log:\n%s", l)
+		}
 		switch {
 		case cat == "Public":
 			return &core.PublicNetworkError{PC: pc}

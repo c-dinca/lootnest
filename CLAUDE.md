@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.6, beta)
+## Where things stand (2.2.7, beta)
 
 These shipped recently, newest last:
 
@@ -1058,6 +1058,19 @@ These shipped recently, newest last:
   until the first `returnValue` line, `tvLunaLimit`), as the install has
   since 2.2.3: an SSH command given no input has it closed at once and
   luna-send-pub then calls nothing. The fake TV ignores such calls.
+
+- **2.2.7** With 2.2.6 the TV app opened but showed "This TV isn't
+  paired with a PC yet": it was already open, the owner's TV has no
+  `closeByAppId` ("Unknown method"), and an open app gets no new launch
+  parameters. `TV.LeavePairing` writes
+  `/media/developer/temp/lootnest-pair.json` (`id`, `host`, `pairPin`)
+  before the launch, `ClearPairing` after; Lootnest for TV 1.2.0
+  (c-dinca/lootnest-tv-webos#4, `lootnest_check_pair_file`) reads it at
+  start and every 3 s while its screen waits, once per id, and notes its
+  steps in `lootnest-tv.log` beside it (`TV.TVAppLog`, logged when
+  pairing doesn't finish). `AppRunning` reads `getForegroundAppInfo`: a
+  developer session's `ps` doesn't list developer apps. closeByAppId is
+  tried on `com.webos.service.applicationManager` first.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
