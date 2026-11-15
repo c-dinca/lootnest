@@ -143,6 +143,17 @@ func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 						f.commands = append(f.commands, cmd)
 						f.mu.Unlock()
 						switch {
+						case strings.Contains(cmd, "cat > ") && strings.Contains(cmd, "lootnest-pair.json"):
+							b, _ := io.ReadAll(ch)
+							f.mu.Lock()
+							f.files["pair"] = b
+							f.mu.Unlock()
+						case strings.Contains(cmd, "rm -f") && strings.Contains(cmd, "lootnest-pair.json"):
+							f.mu.Lock()
+							delete(f.files, "pair")
+							f.mu.Unlock()
+						case strings.Contains(cmd, "tail -n 30"):
+							_, _ = io.WriteString(ch, "[0] Screen: no PC\n[3] Pairing request r1 from lootnest-pair.json\n")
 						case strings.Contains(cmd, "cat > "):
 							b, _ := io.ReadAll(ch)
 							f.mu.Lock()
@@ -189,16 +200,16 @@ func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 							f.launches++
 							f.mu.Unlock()
 							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
-						case strings.Contains(cmd, "applicationManager/"):
-							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
-						case strings.Contains(cmd, "ps w"):
+						case strings.Contains(cmd, "getForegroundAppInfo"):
 							f.mu.Lock()
-							n := 0
+							app := "com.webos.app.home"
 							if f.launches > f.opensAt {
-								n = 1
+								app = "com.lootnest.tv"
 							}
 							f.mu.Unlock()
-							_, _ = io.WriteString(ch, strconv.Itoa(n)+"\n")
+							_, _ = io.WriteString(ch, "{\"returnValue\":true,\"appId\":\""+app+"\"}\n")
+						case strings.Contains(cmd, "applicationManager/"):
+							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
 						case strings.Contains(cmd, "/serverinfo"):
 							n := 0
 							if f.reach {
@@ -458,5 +469,24 @@ func TestTVLaunchAgainAndReach(t *testing.T) {
 	}
 	if got := tv.ReachesPC("1.2.3.4; reboot"); got != "" {
 		t.Fatalf("took a bad address: %q", got)
+	}
+	if err := tv.LeavePairing("r1", "192.168.1.20", "4821"); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	pair := string(f.files["pair"])
+	f.mu.Unlock()
+	if pair != `{"host":"192.168.1.20","id":"r1","pairPin":"4821"}` {
+		t.Fatalf("pairing request %s", pair)
+	}
+	if log := tv.TVAppLog(); !strings.Contains(log, "Pairing request r1") {
+		t.Fatalf("log %q", log)
+	}
+	tv.ClearPairing()
+	f.mu.Lock()
+	_, left := f.files["pair"]
+	f.mu.Unlock()
+	if left {
+		t.Fatal("the pairing request stayed on the TV")
 	}
 }

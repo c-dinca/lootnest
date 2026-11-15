@@ -60,9 +60,9 @@ var (
 )
 
 var TVAppPinned = TVAppRelease{
-	Version: "1.1.0",
-	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.1.0/com.lootnest.tv_1.1.0_arm.ipk",
-	SHA256:  "de857ea3a5565e3a82a4ee30e876add30f67262f33e1c36fb801fa1e4216e0b0",
+	Version: "1.2.0",
+	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.2.0/com.lootnest.tv_1.2.0_arm.ipk",
+	SHA256:  "817d8b8cd448db7b7c6d455fa7ae51cce4c8f5ec072716f8d4bf740794c581ee",
 }
 
 // ErrTVAppNotPinned stops an install Lootnest has no checksum for.
@@ -586,9 +586,18 @@ func (t *TV) LaunchTVApp(params map[string]string) (trace string, err error) {
 	// is closed first, and Lootnest waits until it's gone: a launch while
 	// it closes is lost. Closing one that isn't open only fails.
 	closing, _ := json.Marshal(map[string]any{"id": TVAppID})
-	out, _ := t.luna("luna://com.webos.applicationManager/closeByAppId", string(closing), tvLunaLimit)
-	note("close: %s", short(out))
-	for end := time.Now().Add(tvCloseLimit); ; time.Sleep(tvPoll) {
+	closed := false
+	for _, uri := range []string{"luna://com.webos.service.applicationManager/closeByAppId", "luna://com.webos.applicationManager/closeByAppId"} {
+		out, _ := t.luna(uri, string(closing), tvLunaLimit)
+		note("close: %s", short(out))
+		if !refused(out) && strings.Contains(out, "returnValue") {
+			closed = true
+			break
+		}
+	}
+	// A TV that can't close it: the app open on it takes the pairing from
+	// the request LeavePairing wrote instead.
+	for end := time.Now().Add(tvCloseLimit); closed; time.Sleep(tvPoll) {
 		running, known := t.AppRunning()
 		if !known || !running {
 			note("running before: %s", yesNo(running, known))
@@ -660,17 +669,43 @@ func yesNo(v, known bool) string {
 	return "no"
 }
 
-// AppRunning says whether Lootnest for TV is running; known is false when
-// the TV doesn't let the developer session list processes.
+// AppRunning says whether Lootnest for TV is the app on the TV's screen;
+// known is false when the TV doesn't say. (A developer session's ps
+// doesn't list developer apps.)
 func (t *TV) AppRunning() (running, known bool) {
-	out, err := t.run("if ps >/dev/null 2>&1; then ps w 2>/dev/null | grep -c '[/]"+TVAppID+"/bin/'; else echo x; fi", nil)
-	// grep -c exits 1 on no match, so the count is what tells.
-	_ = err
-	n, perr := strconv.Atoi(strings.TrimSpace(out))
-	if perr != nil {
+	out, err := t.luna("luna://com.webos.applicationManager/getForegroundAppInfo", "{}", tvLunaLimit)
+	if err != nil || refused(out) {
 		return false, false
 	}
-	return n > 0, true
+	for _, line := range strings.Split(out, "\n") {
+		var m map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(line)), &m) == nil {
+			if id, ok := m["appId"].(string); ok {
+				return id == TVAppID, true
+			}
+		}
+	}
+	return false, false
+}
+
+// LeavePairing writes lootnest-pair.json, the pairing request the TV app
+// reads at start and while it waits (it gets no new launch parameters
+// when it's already open).
+func (t *TV) LeavePairing(id, host, pin string) error {
+	b, _ := json.Marshal(map[string]string{"id": id, "host": host, "pairPin": pin})
+	_, err := t.run("mkdir -p "+tvTempDir+" && cat > "+shQuote(tvTempDir+"/lootnest-pair.json"), bytes.NewReader(b))
+	return err
+}
+
+// ClearPairing removes the pairing request.
+func (t *TV) ClearPairing() {
+	_, _ = t.run("rm -f "+shQuote(tvTempDir+"/lootnest-pair.json"), nil)
+}
+
+// TVAppLog is the end of the TV app's own log of its steps, or "".
+func (t *TV) TVAppLog() string {
+	out, _ := t.run("tail -n 30 "+shQuote(tvTempDir+"/lootnest-tv.log")+" 2>/dev/null", nil)
+	return strings.TrimSpace(out)
 }
 
 // ReachesPC asks the TV whether it reaches the streaming engine at the PC
