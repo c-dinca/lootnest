@@ -409,3 +409,22 @@ func (a *App) apiLinkMakePrivate(ip string) {
 		}
 	}()
 }
+
+// tvAppLog reads a saved TV's app log over SSH, or says why it couldn't.
+func tvAppLog(t savedTV) string {
+	key := revealSecret(t.Key)
+	if key == "" {
+		return "Lootnest has no key for this TV."
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	tv, _, err := core.ConnectTV(ctx, t.IP, []byte(key), t.HostKey)
+	if err != nil {
+		return "Couldn't reach the TV: " + err.Error()
+	}
+	defer tv.Close()
+	if l := tv.TVAppLog(); l != "" {
+		return l
+	}
+	return "The TV app hasn't written a log yet."
+}

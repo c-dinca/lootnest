@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.10
+
+Controllers plugged into the TV.
+
+- **Lootnest for TV 1.3.0 uses controllers the TV doesn't know.** A controller in the TV's USB port showed "HID device connected" but moved nothing: the TV app had no button map for it. It now uses the usual button order for it (Sony's for a PlayStation controller), and its screen names the controller it sees, or says it isn't recognised. Install it with Add an LG TV, Install again.
+- **Save a report includes each LG TV's own log**, with the controller's details, so a controller that still doesn't work can be fixed.
+
 ## 2.2.9
 
 The first stream to an LG TV: Lootnest on the TV, not on the PC's monitor.

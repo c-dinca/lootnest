@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.9, beta)
+## Where things stand (2.2.10, beta)
 
 These shipped recently, newest last:
 
@@ -1088,6 +1088,16 @@ These shipped recently, newest last:
   `FullscreenPrimary` and games land there. `linkAtStart` brings an older
   engine's settings up to date (`ApolloSettingsDiffer`, SetConfig,
   Restart) when no app is running (`current_app` empty).
+
+- **2.2.10** A controller in the owner's TV's USB port showed "HID
+  device connected" but did nothing: the TV's SDL had no mapping, so the
+  fork ignored it. Lootnest for TV 1.3.0 (c-dinca/lootnest-tv-webos#6,
+  `lootnest_guess_mapping`): Sony HID order for vendor 054c, else the
+  Linux xpad order; ids, GUID and counts in `lootnest-tv.log`; the home
+  screen's controller line (`lootnest_controller_line`). Save a report
+  (`apiLinkLogs`) adds each saved TV's `lootnest-tv.log` (`tvAppLog`).
+  Open with the owner: using the PC while the TV streams (one Windows
+  session; the TV's display is primary during a stream since 2.2.9).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

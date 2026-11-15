@@ -504,6 +504,12 @@ func (a *App) apiLinkLogs() {
 		if err != nil {
 			b.WriteString("== Streaming engine (Apollo) ==\r\nCouldn't read its log: " + err.Error() + "\r\n")
 		}
+		// Each LG TV's own log of the TV app's steps (controllers too).
+		if lr := loadLink(); lr != nil {
+			for _, t := range lr.TVs {
+				b.WriteString("== Lootnest for TV on " + t.Name + " (" + t.IP + ") ==\r\n" + tvAppLog(t) + "\r\n\r\n")
+			}
+		}
 		if lb, err := os.ReadFile(filepath.Join(DataDir(), "lootnest.log")); err == nil {
 			b.WriteString("\r\n== Lootnest ==\r\n" + string(lb))
 		}
