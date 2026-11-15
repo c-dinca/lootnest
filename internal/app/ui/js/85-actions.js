@@ -27,6 +27,13 @@
     "side-toggle"() { setFold(!S.folded); },
     "bp-open"() { bpOpen(); },
     // The sidebar's speaker: every Lootnest sound on or off, at once.
+    async "peers-on"(el) {
+      const s = JSON.parse(JSON.stringify(cfg().settings));
+      s.hardwareReviews = true;
+      try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); delete S.peers[el.dataset.k]; await refresh(); }
+      catch (e) { toast(errText(e), "error"); }
+    },
+    "peers-more"(el) { const k = el.dataset.k; if (S.peersOpen.has(k)) S.peersOpen.delete(k); else S.peersOpen.add(k); render(); },
     async "sound-toggle"() {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.soundsOff = !s.soundsOff;

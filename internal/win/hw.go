@@ -17,6 +17,7 @@ import (
 
 var (
 	procGlobalMemoryStatusEx     = kernel32.NewProc("GlobalMemoryStatusEx")
+	procInstalledMemory          = kernel32.NewProc("GetPhysicallyInstalledSystemMemory")
 	procGetUserDefaultGeoName    = kernel32.NewProc("GetUserDefaultGeoName")
 	procGetUserDefaultLocaleName = kernel32.NewProc("GetUserDefaultLocaleName")
 )
@@ -89,8 +90,14 @@ type memoryStatusEx struct {
 	AvailExtendedVirtual uint64
 }
 
-// TotalRAM is the PC's memory in bytes, or 0.
+// TotalRAM is the memory installed in the PC in bytes (16 GB on a 16 GB
+// PC; what Windows can use is a little less, as the firmware and graphics
+// keep some), else what Windows reports, else 0.
 func TotalRAM() int64 {
+	var kb uint64
+	if r, _, _ := procInstalledMemory.Call(uintptr(unsafe.Pointer(&kb))); r != 0 && kb > 0 {
+		return int64(kb) * 1024
+	}
 	var m memoryStatusEx
 	m.Length = uint32(unsafe.Sizeof(m))
 	if r, _, _ := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&m))); r == 0 {

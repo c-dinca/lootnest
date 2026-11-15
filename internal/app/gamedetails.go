@@ -219,3 +219,55 @@ func (a *App) apiGameReviews(key, kind string) {
 		a.emit("reviews", out)
 	}()
 }
+
+// Reports from players with a PC like this one, by app id, kept for 12 hours.
+var peersKept = struct {
+	sync.Mutex
+	m map[int]peersEntry
+}{m: map[int]peersEntry{}}
+
+type peersEntry struct {
+	at  time.Time
+	rep core.PeerReport
+}
+
+// apiGamePeers answers with a "peers" event: what Steam's reviews from
+// players with this PC's graphics card, or the two closest, say about the
+// game at key. Only with Settings.HardwareReviews on, which the user turns
+// on from Will it run; only the cards' names go to Steam.
+func (a *App) apiGamePeers(key string) {
+	a.mu.Lock()
+	on := a.cfg.Settings.HardwareReviews
+	a.mu.Unlock()
+	if !on {
+		return
+	}
+	go func() {
+		out := map[string]any{"key": key}
+		id := a.detailsAppID(key)
+		gpus := core.SimilarGPUs(a.pcSpecs().GPU, 2)
+		if id <= 0 || len(gpus) == 0 {
+			out["none"] = true
+			a.emit("peers", out)
+			return
+		}
+		peersKept.Lock()
+		e, ok := peersKept.m[id]
+		peersKept.Unlock()
+		if !ok || time.Since(e.at) > 12*time.Hour {
+			rep, err := core.FetchPeers(fetchURL, id, gpus)
+			if err != nil {
+				a.logf("Reviews by hardware for app %d: %v", id, err)
+				out["error"] = "Couldn't reach Steam's reviews."
+				a.emit("peers", out)
+				return
+			}
+			e = peersEntry{time.Now(), rep}
+			peersKept.Lock()
+			peersKept.m[id] = e
+			peersKept.Unlock()
+		}
+		out["report"] = e.rep
+		a.emit("peers", out)
+	}()
+}

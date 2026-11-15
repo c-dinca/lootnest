@@ -127,6 +127,9 @@ type Settings struct {
 	// and review score from the Steam store on its page (gamedetails.go).
 	// Off by default; only the game's Steam id is sent, when its page opens.
 	GameDetails bool `json:"gameDetails,omitempty"`
+	// HardwareReviews: Will it run also reads Steam's reviews from players
+	// with this PC's graphics card or a close one (their names are sent).
+	HardwareReviews bool `json:"hardwareReviews,omitempty"`
 	// AutoInstallUpdates installs a newer Lootnest found by the automatic
 	// check by itself, while the window is closed to the tray and no game
 	// is running. UpdatesAsked: the user answered "Keep Lootnest up to date?".

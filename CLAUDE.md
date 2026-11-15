@@ -908,6 +908,15 @@ These shipped recently, newest last:
   host, `connect-src` the video host; `AllowedPageRequest` allows `blob:`.
   `mediaBlock`/`mountMedia`/`mediaGo` in 62-game-blocks.js keep the
   video element in `vids` across redraws (moved, never recreated).
+  Will it run from players (`core/peers.go`, `Settings.HardwareReviews`,
+  off by default): `SimilarGPUs` is this PC's card plus the two closest in
+  `gpuScores` within 15%, in Steam's spelling (`gpuSteamName`);
+  `FetchPeers` asks GetAppReviews with `hardware_gpu` (exact names) per
+  card and sums recommend share, performance mentions (`perfMention`),
+  named frame rates (median at 3 or more) and up to six quotes with the
+  writer's hardware (`perfSnippet`). `ps_gamePeers`, 12 h memory cache,
+  `peersBlock` under the lanes. `win.TotalRAM` reads
+  GetPhysicallyInstalledSystemMemory first (16 GB, not 15.x).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
