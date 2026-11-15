@@ -45,8 +45,10 @@ func (a *App) followFound(key string, f core.FoundGame) {
 	} // Play again while it runs is the same session
 }
 
-// foundTick logs the session of each followed game that closed.
-func (a *App) foundTick(procs map[string]bool) {
+// foundTick logs the session of each followed game that closed. It returns
+// the games seen running for the first time (up) and those that closed
+// (down), for TV mode.
+func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 	now := time.Now()
 	foundRunsMu.Lock()
 	defer foundRunsMu.Unlock()
@@ -55,6 +57,7 @@ func (a *App) foundTick(procs map[string]bool) {
 		case procs[r.proc]:
 			if r.since.IsZero() {
 				r.since = now
+				up = append(up, key)
 			}
 			r.missed = 0
 		case r.since.IsZero():
@@ -67,6 +70,7 @@ func (a *App) foundTick(procs map[string]bool) {
 				continue
 			}
 			delete(foundRuns, key)
+			down = append(down, key)
 			go func(key string, rec core.SessionRecord) {
 				a.stepsAfter(key, true)
 				a.logSession(rec)
@@ -74,6 +78,7 @@ func (a *App) foundTick(procs map[string]bool) {
 			}(key, core.SessionRecord{Game: key, Start: r.since, End: now, Source: "library", Build: r.build})
 		}
 	}
+	return up, down
 }
 
 func (a *App) logSession(r core.SessionRecord) {

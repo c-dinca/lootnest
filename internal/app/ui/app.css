@@ -2741,3 +2741,14 @@ button.gp-stage:focus-visible { outline: var(--focus-width) solid var(--focus-ri
 .share-stage { display: grid; place-items: center; padding: var(--space-4); border-radius: var(--radius-panel); background: var(--bg-ground); }
 .share-stage canvas { display: block; max-width: 100%; height: auto; max-height: 58vh; border-radius: var(--radius-ctl); box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.95); }
 .share-dialog .btn .ln-icon { width: var(--icon-sm); height: var(--icon-sm); margin-right: var(--space-1); vertical-align: -3px; }
+
+/* TV mode (Lootnest Link, tv.go): Big Picture on a TV for a streaming host.
+   Every small size reads at the TV's minimum; the menu is a column of keys. */
+html.is-tv {
+  --fs-12: var(--tv-text-min); --fs-13: var(--tv-text-min); --fs-14: var(--tv-text-min);
+  --fs-15: var(--tv-text-min); --fs-18: var(--tv-text-min); --fs-24: var(--tv-text-mid);
+  --text-meta: var(--tv-text-min); --text-body: var(--tv-text-min); --text-label: var(--tv-text-min);
+  --text-lead: var(--tv-text-min); --text-section: var(--tv-text-mid);
+}
+.bp-menu-keys { display: grid; gap: var(--space-4); width: min(100%, var(--bp-tile-wide-w)); margin-top: var(--space-6); }
+.bp-menu-keys .bp-btn { justify-content: flex-start; }

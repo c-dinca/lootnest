@@ -56,6 +56,7 @@ func (a *App) bind() {
 	}))
 	must(a.w.Bind("ps_nameCopy", a.apiNameCopy))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
+	must(a.w.Bind("ps_tvExit", a.apiTVExit))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
 	must(a.w.Bind("ps_restoreBackup", a.apiRestoreBackup))
 	must(a.w.Bind("ps_dismissConflict", a.apiDismissConflict))
@@ -217,12 +218,12 @@ func (a *App) apiReady() map[string]any {
 	defer a.mu.Unlock()
 	first := !a.ready
 	a.ready = true
-	p, r, bp := a.pending, a.pendReq, a.openBP
-	a.pending, a.pendReq, a.openBP = "", "", false
+	p, r, bp, tv := a.pending, a.pendReq, a.openBP, a.openTV
+	a.pending, a.pendReq, a.openBP, a.openTV = "", "", false, false
 	if first {
 		go a.logf("Interface loaded")
 	}
-	return map[string]any{"launch": p, "reqId": r, "bigPicture": bp}
+	return map[string]any{"launch": p, "reqId": r, "bigPicture": bp, "tv": tv}
 }
 
 type SteamStatus struct {

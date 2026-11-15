@@ -317,8 +317,17 @@ func (a *App) globalPercent(appID int, online bool) map[string]float64 {
 // back.
 func (a *App) apiBigPicture(on bool) {
 	a.mu.Lock()
-	a.bigPicture = on
+	tv := a.tv
+	if !tv {
+		a.bigPicture = on
+	}
 	a.mu.Unlock()
+	if tv { // TV mode keeps Big Picture until it ends (leaveTV)
+		if on {
+			a.ui(func() { win.FullscreenPrimary(a.hwnd) })
+		}
+		return
+	}
 	a.ui(func() {
 		if on {
 			win.Present(a.hwnd)

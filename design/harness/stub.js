@@ -446,7 +446,7 @@
 
   const api = {
     // ?bp=1: "Open in Big Picture when Lootnest starts" is on.
-    ps_ready: () => ok(q.get("bp") === "1" ? { bigPicture: true } : {}),
+    ps_ready: () => ok(q.get("tv") === "1" ? { tv: true } : q.get("bp") === "1" ? { bigPicture: true } : {}),
     ps_restart: () => ok(null),
     ps_closeGame: () => ok(),
     ps_plugins: () => ok({ plugins: PLUGIN_LIST }),
@@ -755,6 +755,7 @@
     ps_dismissConflict: () => ok(),
     ps_gameFacts: (dir) => ok({ antiCheat: /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "" }),
     ps_bigPicture: () => ok(),
+    ps_tvExit: () => ok(),
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },
     ps_saveCheck: () => {
       setTimeout(() => emit({ type: "saveCheck", check: { profiles: 4, net: 3, points: 1, cloud: false, gone: CALM ? [] : [{ key: "dir:d:\\games\\hydra\\hollow tale", name: "Hollow Tale" }],

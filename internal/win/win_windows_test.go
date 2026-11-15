@@ -166,3 +166,33 @@ func TestFirewallRules(t *testing.T) {
 	// Windows' own settings) succeeds too.
 	run(core.FirewallScript(tag, "Lootnest Test Game", nil, false))
 }
+
+// TV mode's holder waits on Lootnest's process, and Lootnest on the
+// holder's: WaitProcess returns once the process ended, and at once for
+// one that's gone. AskCommand answers 0 from no window.
+func TestWaitProcessAndAsk(t *testing.T) {
+	cmd := exec.Command("cmd", "/c", "ping -n 2 127.0.0.1 >nul")
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	pid := uint32(cmd.Process.Pid)
+	done := make(chan struct{})
+	go func() { WaitProcess(pid); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(20 * time.Second):
+		t.Fatal("WaitProcess didn't return after the process ended")
+	}
+	_ = cmd.Wait()
+	gone := make(chan struct{})
+	go func() { WaitProcess(pid); close(gone) }()
+	select {
+	case <-gone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("WaitProcess waited on a process that's gone")
+	}
+	if r := AskCommand(0, "tv?:1"); r != 0 {
+		t.Fatalf("AskCommand to no window answered %d", r)
+	}
+	_ = InJob() // only that it answers
+}

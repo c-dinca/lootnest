@@ -48,6 +48,14 @@ Lootnest works alongside [Playnite](https://playnite.link); it doesn't replace i
 
 Games are matched by their store and id (Steam, Epic, GOG), then by install folder, then by name. Playnite's games that aren't on this PC aren't added. Statuses, ratings, notes and time played go to the profile you choose. A status, rating or note only comes in for a game that has none; time played is added to what Lootnest counts, and importing again adds only what's new. Lootnest copies its own records to `backups\import` first, and **Undo** puts them back.
 
+## Playing on a TV
+
+Lootnest has a TV mode for streaming the PC to a TV: Big Picture on the whole screen, made to read from the sofa and to work with a controller alone. Who's playing comes first when more than one person uses the PC, then your games; Play loads that profile's files and starts the game, and Lootnest comes back when the game closes. Start (Menu on an Xbox pad) opens a menu with Who's playing and **Exit TV mode**.
+
+Lootnest doesn't stream by itself yet. With a streaming host such as Apollo or Sunshine on the PC and Moonlight on the TV, add an app in the host's settings whose command is Lootnest with `--tv`, for example `"%LOCALAPPDATA%\Programs\Lootnest\Lootnest.exe" --tv` (use the folder you installed Lootnest in). Start that app from Moonlight: Lootnest opens on the TV in TV mode, starting first if it wasn't running. Exit TV mode ends the stream; ending the stream from Moonlight leaves TV mode, and a game that's running keeps running, with its saves kept as always.
+
+The app the host starts is a second, small Lootnest that only keeps the stream open. The one that loads profiles and starts games runs on its own, so the host ending the stream never stops it in the middle of loading a profile's files.
+
 ## Installing without a window
 
 For scripts and package managers, run `start /wait Lootnest-Setup.exe --silent` in Command Prompt, or `Start-Process Lootnest-Setup.exe --silent -Wait` in PowerShell (`/S` and `/silent` work too). It installs for your Windows account with a Start menu shortcut; on an upgrade the desktop shortcut and Start with Windows stay as they are, and a first install adds neither. It doesn't open Lootnest afterwards. It exits with 0 when Lootnest is installed and 1 when it couldn't be, and then writes the reason to `Lootnest-Setup.log` in your `%TEMP%` folder.

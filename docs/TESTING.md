@@ -629,3 +629,31 @@ make a theme plugin folder from docs/PLUGINS.md and
    game opens (or the Store search, when it's on), never a command. With a game
    running, **Make a save point** shows Ctrl+Shift+F5 and makes one.
    Esc closes the list.
+
+## 26. TV mode (Lootnest Link, M1)
+
+Needs Apollo (or Sunshine) on the PC and Moonlight TV on the LG TV, paired.
+
+1. In Apollo's web settings, Applications, add an app named Lootnest with
+   the command `"<Lootnest's folder>\Lootnest.exe" --tv`. Keep its own
+   options as they are.
+2. With Lootnest closed, start Lootnest from Moonlight TV. Lootnest opens
+   on the TV, not on the PC's own screen, filling it, on Who's playing (or
+   Home with one person). The log says "TV mode on".
+3. Only with the controller: pick a profile, move to a game with profiles,
+   A, A on Play. The swap screen shows, then the game. Lootnest is gone
+   from the TV while the game runs.
+4. Quit the game from its own menu. Lootnest is back on the TV within a few
+   seconds and the controller moves it at once (no click needed). Say if
+   it needed a key or a click.
+5. Do 3 and 4 again with a Library game without profiles (a Steam game).
+6. Start: the menu. Exit TV mode: the stream ends on the TV, and on the PC
+   Lootnest is back as it was (in the tray if it was there). The log says
+   "left from its menu".
+7. Start the app again, then end the stream from Moonlight (hold Start +
+   Select, or quit from Moonlight's menu). Lootnest leaves TV mode on the
+   PC and keeps running; the log says "the stream ended".
+8. Repeat 7 while a game runs: the game keeps running and its saves are
+   kept when it closes, as without TV mode.
+9. If the log says "Lootnest runs inside another program's job", Apollo
+   doesn't let Lootnest start on its own: say so, with the log.

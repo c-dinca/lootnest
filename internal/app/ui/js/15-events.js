@@ -75,6 +75,9 @@
       case "bigPicture":
         if (ev.on) bpOpen(); else bpClose();
         break;
+      case "tv": // TV mode for a streaming host (app/tv.go); off when the stream ended
+        if (ev.on) tvOpen(); else tvClose();
+        break;
       case "bpReturn": // the game started from Big Picture closed: back where it was
         if (BP.on) { renderBP(false); sfx("open"); }
         break;

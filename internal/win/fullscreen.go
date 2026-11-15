@@ -9,6 +9,7 @@ var (
 	procSetWindowLongPtrW  = user32.NewProc("SetWindowLongPtrW")
 	procGetWindowPlacement = user32.NewProc("GetWindowPlacement")
 	procSetWindowPlacement = user32.NewProc("SetWindowPlacement")
+	procMonitorFromPoint   = user32.NewProc("MonitorFromPoint")
 )
 
 type windowPlacement struct {
@@ -30,33 +31,55 @@ var (
 // (as a console's screen), or puts it back as it was. Call it on the
 // window's thread.
 func SetFullscreen(hwnd uintptr, on bool) {
+	if on == fsOn {
+		return
+	}
+	if on {
+		mon, _, _ := procMonitorFromWindow.Call(hwnd, 2) // MONITOR_DEFAULTTONEAREST
+		fillMonitor(hwnd, mon)
+		return
+	}
 	const (
-		gwlStyle             = ^uintptr(15) // GWL_STYLE (-16)
-		wsOverlappedWindow   = 0x00CF0000
 		swpNoZOrder          = 0x0004
 		swpNoOwnerZOrder     = 0x0200
 		swpFrameChanged      = 0x0020
 		swpNoMove, swpNoSize = 0x0002, 0x0001
 	)
-	if on == fsOn {
-		return
-	}
-	if on {
+	procSetWindowLongPtrW.Call(hwnd, gwlStyle, fsStyle)
+	procSetWindowPlacement.Call(hwnd, uintptr(unsafe.Pointer(&fsPlacement)))
+	procSetWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
+	fsOn = false
+}
+
+// FullscreenPrimary fills the primary display with the window, without a
+// frame, wherever it was: TV mode, as a streaming host makes its virtual
+// display the primary one. Called again (the displays changed), it fits
+// the window to the primary display as it is now. SetFullscreen(false)
+// puts it back.
+func FullscreenPrimary(hwnd uintptr) {
+	mon, _, _ := procMonitorFromPoint.Call(0, 1) // (0,0), MONITOR_DEFAULTTOPRIMARY
+	fillMonitor(hwnd, mon)
+}
+
+const gwlStyle = ^uintptr(15) // GWL_STYLE (-16)
+
+func fillMonitor(hwnd, mon uintptr) {
+	const (
+		wsOverlappedWindow = 0x00CF0000
+		swpNoOwnerZOrder   = 0x0200
+		swpFrameChanged    = 0x0020
+	)
+	if !fsOn {
 		fsStyle, _, _ = procGetWindowLongPtrW.Call(hwnd, gwlStyle)
 		fsPlacement = windowPlacement{}
 		fsPlacement.length = uint32(unsafe.Sizeof(fsPlacement))
 		procGetWindowPlacement.Call(hwnd, uintptr(unsafe.Pointer(&fsPlacement)))
-		mon, _, _ := procMonitorFromWindow.Call(hwnd, 2)
-		mi := monitorInfo{}
-		mi.cbSize = uint32(unsafe.Sizeof(mi))
-		procGetMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&mi)))
-		procSetWindowLongPtrW.Call(hwnd, gwlStyle, fsStyle&^wsOverlappedWindow)
-		r := mi.rcMonitor
-		procSetWindowPos.Call(hwnd, 0, uintptr(r.left), uintptr(r.top), uintptr(r.right-r.left), uintptr(r.bottom-r.top), swpNoOwnerZOrder|swpFrameChanged)
-	} else {
-		procSetWindowLongPtrW.Call(hwnd, gwlStyle, fsStyle)
-		procSetWindowPlacement.Call(hwnd, uintptr(unsafe.Pointer(&fsPlacement)))
-		procSetWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
 	}
-	fsOn = on
+	mi := monitorInfo{}
+	mi.cbSize = uint32(unsafe.Sizeof(mi))
+	procGetMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&mi)))
+	procSetWindowLongPtrW.Call(hwnd, gwlStyle, fsStyle&^wsOverlappedWindow)
+	r := mi.rcMonitor
+	procSetWindowPos.Call(hwnd, 0, uintptr(r.left), uintptr(r.top), uintptr(r.right-r.left), uintptr(r.bottom-r.top), swpNoOwnerZOrder|swpFrameChanged)
+	fsOn = true
 }
