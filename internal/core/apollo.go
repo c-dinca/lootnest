@@ -501,7 +501,22 @@ func ApolloSettings(pcName string) map[string]string {
 	return map[string]string{
 		"sunshine_name":         name,
 		"origin_web_ui_allowed": "pc",
+		// The TV's virtual display is Windows' main display while a stream
+		// runs, so TV mode and the games it starts open on it, not on the
+		// PC's monitor; the monitors stay on beside it.
+		"dd_configuration_option": "ensure_primary",
 	}
+}
+
+// ApolloSettingsDiffer says whether the engine's settings cur lack any of
+// want, as an engine set up by an older Lootnest does.
+func ApolloSettingsDiffer(cur map[string]any, want map[string]string) bool {
+	for k, v := range want {
+		if fmt.Sprint(cur[k]) != v {
+			return true
+		}
+	}
+	return false
 }
 
 // ApolloRelease is the one Apollo release Lootnest installs: tested with

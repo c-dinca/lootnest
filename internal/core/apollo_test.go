@@ -267,3 +267,22 @@ func TestApolloPinned(t *testing.T) {
 		t.Fatalf("%+v", ApolloPinned)
 	}
 }
+
+func TestApolloSettingsDiffer(t *testing.T) {
+	want := ApolloSettings("DESKTOP-7")
+	if want["dd_configuration_option"] != "ensure_primary" {
+		t.Fatalf("settings %v", want)
+	}
+	old := map[string]any{"sunshine_name": "Lootnest on DESKTOP-7", "origin_web_ui_allowed": "pc"}
+	if !ApolloSettingsDiffer(old, want) {
+		t.Fatal("an engine without the display setting reads as set up")
+	}
+	cur := map[string]any{}
+	for k, v := range want {
+		cur[k] = v
+	}
+	cur["other"] = "1"
+	if ApolloSettingsDiffer(cur, want) {
+		t.Fatal("an engine set up reads as different")
+	}
+}

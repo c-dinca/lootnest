@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.9
+
+The first stream to an LG TV: Lootnest on the TV, not on the PC's monitor.
+
+- **TV mode and its games open on the TV.** The streaming engine shows the TV a display of its own, and Lootnest opened on the PC's main monitor, so the TV showed only the desktop. While a stream runs, the TV's display is now Windows' main one, so Lootnest and the games it starts open there; the PC's monitors stay on beside it. Lootnest updates an engine it set up before the next time it starts with no stream running.
+
 ## 2.2.8
 
 Add an LG TV pairs: the TV app found the PC and then lost it.
