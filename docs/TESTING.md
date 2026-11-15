@@ -694,14 +694,21 @@ On the LG TV, with section 27 done on the PC.
 2. Settings, TV, **Add an LG TV**. The TV is listed (or type its
    address). Type the passphrase, **Install**. The steps go by: key,
    download, connecting, installing, pairing.
-3. On the TV, Lootnest opens by itself, pairs without a PIN and goes
-   straight into Lootnest's TV mode. Settings, TV lists the TV as Paired.
-4. Quit it and open Lootnest from the TV's home screen: straight into TV
-   mode again.
+3. On the TV, Lootnest opens by itself on its own screen (the gem,
+   "Lootnest", "Pairing with your PC", then "Starting Lootnest"; never
+   Moonlight's list of computers), pairs without a PIN and goes straight
+   into Lootnest's TV mode. Settings, TV lists the TV as Paired.
+4. Quit it and open Lootnest from the TV's home screen: "Connecting to
+   <PC>", then straight into TV mode again.
 5. Put the PC to sleep (with Wake-on-LAN on in its network card), open
-   Lootnest on the TV: "Waking your PC", then TV mode.
-6. In a game, hold Start and Select for two seconds: the stream ends and
-   the PC leaves TV mode.
-7. Leave the PC and TV on for a day: the TV's row says developer mode was
+   Lootnest on the TV: "Waking <PC>", then TV mode. With the PC off for
+   good: after 90 s, "<PC> isn't answering" with Try again, Wake the PC,
+   Settings and Quit.
+6. In a game, hold Start and Select for two seconds: the stream ends, the
+   PC leaves TV mode, and the TV shows Lootnest's screen with Play,
+   Settings and Quit. Play goes back in.
+7. With the TV app open, **Install again** from the PC: the app closes,
+   opens again and pairs.
+8. Leave the PC and TV on for a day: the TV's row says developer mode was
    extended in the last 12 hours; the log says "developer mode ... extended".
-8. **Install again** updates the app; **Forget** removes the pairing.
+9. **Install again** updates the app; **Forget** removes the pairing.

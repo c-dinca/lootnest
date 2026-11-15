@@ -48,10 +48,13 @@ type TVAppRelease struct {
 // TVAppPinned is the package Lootnest installs on LG TVs. A new release of
 // c-dinca/lootnest-tv-webos is tested with Lootnest first, then its address
 // and SHA-256 change here.
+// tvCloseWait lets the TV finish closing the app before it opens again.
+var tvCloseWait = time.Second
+
 var TVAppPinned = TVAppRelease{
-	Version: "1.0.0",
-	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.0.0/com.lootnest.tv_1.0.0_arm.ipk",
-	SHA256:  "0b84951f7c1240005c9ee2215fc601be4eddaac6c66dfbf0d414760af7effdb9",
+	Version: "1.1.0",
+	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.1.0/com.lootnest.tv_1.1.0_arm.ipk",
+	SHA256:  "de857ea3a5565e3a82a4ee30e876add30f67262f33e1c36fb801fa1e4216e0b0",
 }
 
 // ErrTVAppNotPinned stops an install Lootnest has no checksum for.
@@ -513,6 +516,12 @@ func tvErrorText(line string) string {
 
 // LaunchTVApp opens Lootnest for TV with its launch parameters.
 func (t *TV) LaunchTVApp(params map[string]string) error {
+	// An app that's already open never reads new launch parameters, so it
+	// is closed first; closing one that isn't open only fails, unseen.
+	closing, _ := json.Marshal(map[string]any{"id": TVAppID})
+	if _, err := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/closeByAppId' "+shQuote(string(closing)), nil); err == nil {
+		time.Sleep(tvCloseWait)
+	}
 	payload, _ := json.Marshal(map[string]any{"id": TVAppID, "params": params})
 	out, err := t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' "+shQuote(string(payload)), nil)
 	if err != nil {

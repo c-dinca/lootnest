@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.3, beta)
+## Where things stand (2.2.4, beta)
 
 These shipped recently, newest last:
 
@@ -1027,6 +1027,19 @@ These shipped recently, newest last:
   names (`tvdownload`, `tvinstall`, `tvpair`) so they don't borrow the
   engine's "Allow it in Windows' prompt"; the drawer counts seconds
   (`D.started`, `.lg-secs`).
+
+- **2.2.4** The TV app installed on the owner's TV but showed Moonlight
+  TV's launcher. Lootnest for TV 1.1.0 (c-dinca/lootnest-tv-webos#3)
+  has its own home screen (`src/app/ui/lootnest/home.controller.c`, the
+  root fragment instead of the launcher; state kept module-level since
+  some TVs close and reopen the UI around a stream): pairs from the
+  launch parameters, connects to a saved PC (saved PCs read as unpaired
+  until queried, so `known` ones count), wakes it for 90 s, opens the
+  app named Lootnest; Play, Settings, Quit after a stream; the gem, Tilt
+  Warp and Atkinson Hyperlegible Next embedded. `LaunchTVApp` closes the
+  app first (`closeByAppId`, `tvCloseWait`), since an open app never
+  reads new launch parameters. The fork's desktop CI fails only on
+  `test-gamestream-crypt-sign`, as upstream does.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

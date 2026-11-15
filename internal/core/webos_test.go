@@ -224,10 +224,17 @@ func TestTVInstallAndLaunch(t *testing.T) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	var launch string
+	closed := false
 	for _, c := range f.commands {
+		if strings.Contains(c, "applicationManager/closeByAppId") && strings.Contains(c, `"id":"com.lootnest.tv"`) {
+			closed = launch == ""
+		}
 		if strings.Contains(c, "applicationManager/launch") {
 			launch = c
 		}
+	}
+	if !closed {
+		t.Fatalf("the app wasn't closed before it opened: %q", f.commands)
 	}
 	if !strings.Contains(launch, `"id":"com.lootnest.tv"`) || !strings.Contains(launch, `"pairPin":"4821"`) {
 		t.Fatalf("launch: %s", launch)
