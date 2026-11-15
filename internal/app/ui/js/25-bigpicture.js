@@ -48,9 +48,66 @@
   }
   function tvClose() {
     if (!BP.tv) return;
-    BP.tv = false; BP.menu = false; BP.who = false;
+    BP.tv = false; BP.menu = false; BP.who = false; BP.launch = null; drawLaunch();
     document.documentElement.classList.remove("is-tv");
     bpShut();
+  }
+  // A game starting from TV mode: its art fills the screen while it loads
+  // (Lootnest stays behind it, app/tv.go), and fades back when it closes.
+  function tvLaunch(it) {
+    if (!BP.tv || !it) return;
+    BP.launch = { key: bpKey(it), name: it.name, art: launchArt(it), phase: "starting", at: Date.now() };
+    drawLaunch();
+    launchWatch();
+    // Art still loading: in once it's there.
+    if (!BP.launch.art) setTimeout(() => {
+      const L = BP.launch, el = $("#bp-launch");
+      if (!L || L.key !== bpKey(it) || !el) return;
+      const a = launchArt(it);
+      if (a) { L.art = a; el.querySelector(".bp-launch-art").innerHTML = artImg(a, "hero"); }
+    }, 700);
+  }
+  const launchArt = (it) => { const w = bpArt(it, true); if (w.url) return w; const c = bpArt(it, false); return c.url ? c : null; };
+  // A game Lootnest can't follow (no process name) never says it closed:
+  // Big Picture comes back when it has the focus again a while after.
+  let launchWatching = false;
+  function launchWatch() {
+    if (launchWatching) return;
+    launchWatching = true;
+    window.addEventListener("focus", () => { if (BP.launch && Date.now() - BP.launch.at > 15000) { tvReturn(); if (BP.on) renderBP(false); } });
+    setInterval(() => { if (BP.launch && BP.launch.phase === "starting" && document.hasFocus() && Date.now() - BP.launch.at > 120000) tvReturn(); }, 5000);
+  }
+  function tvGame(ev) {
+    if (!BP.tv) return;
+    if (!BP.launch || (ev.key && BP.launch.key && !BP.launch.key.endsWith(ev.key) && !ev.key.endsWith(BP.launch.key))) {
+      const it = everyItem().find((x) => bpKey(x) === ev.key || (x.g && "game:" + x.g.id === ev.key) || (x.g && x.g.id === ev.key) || x.id === ev.key);
+      if (it) { tvLaunch(it); }
+      else { BP.launch = { key: ev.key, name: ev.name || "", art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch(); }
+    }
+    BP.launch.phase = ev.phase || BP.launch.phase;
+    drawLaunch();
+  }
+  function drawLaunch() {
+    const L = BP.launch;
+    let el = $("#bp-launch");
+    if (!L) { if (el) { el.classList.add("out"); setTimeout(() => el.remove(), 420); el.removeAttribute("id"); } return; }
+    if (!el) {
+      el = document.createElement("div"); el.id = "bp-launch"; el.className = "bp-launch ln-root";
+      el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite");
+      el.innerHTML = `<div class="bp-launch-art">${L.art ? artImg(L.art, "hero") : ""}</div><div class="bp-launch-veil"></div>
+        <div class="bp-launch-body"><div class="bp-launch-name"></div><div class="bp-launch-state"><span class="bp-launch-bar"></span><span class="bp-launch-word"></span></div></div>`;
+      document.body.appendChild(el);
+    }
+    el.dataset.phase = L.phase;
+    el.querySelector(".bp-launch-name").textContent = L.name;
+    el.querySelector(".bp-launch-word").textContent = L.phase === "playing" ? "Playing" : "Starting";
+  }
+  // The game closed: Big Picture comes back from behind its art.
+  function tvReturn() {
+    if (!BP.launch) return false;
+    BP.launch = null;
+    drawLaunch();
+    return true;
   }
   function bpMenu(on) {
     if (on && (S.picker || S.dialog)) return;
@@ -297,11 +354,12 @@
   function bpPlay(it, pid) {
     if (!it) return;
     sfx("go");
-    if (it.kind === "found") { actions["play-found"]({ dataset: { key: it.id } }); return; }
+    if (it.kind === "found") { tvLaunch(it); actions["play-found"]({ dataset: { key: it.id } }); return; }
     const p = pid || (seated() || {}).id;
     if (!p) { BP.choose = bpKey(it); BP.focus = ""; BP.keep = true; renderBP(true); return; }
     BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; BP.keep = true;
     renderBP(false);
+    tvLaunch(it);
     actions["play-as"]({ dataset: { game: it.id, player: p } });
   }
   const bpRunning = (it) => { const s = it && it.g && session(it.g.id); return !!s && s.phase === "playing"; };
@@ -424,7 +482,10 @@
       now.forEach((p, i) => { if (p && !was[i]) { if (f !== "xbox" || !real.length) fam = f; const r = padRole(f, i); if (r) roles.add(r); } });
       dir = dir || padDir(g);
     }
-    if (document.hasFocus()) {
+    if (document.hasFocus() && BP.launch) {
+      // While a game starts, B comes back to Big Picture; nothing else acts.
+      if (roles.has("B") && BP.launch.phase === "starting") { sfx("back"); tvReturn(); }
+    } else if (document.hasFocus()) {
       if (fam !== pad.fam) { pad.fam = fam; if (BP.on) renderBP(false); }
       if (roles.has("Start") && !(BP.tv && (S.picker || S.dialog))) { if (BP.on) bpClose(); else bpOpen(); }
       if (BP.on && !S.picker && !S.dialog) {

@@ -505,6 +505,9 @@ func ApolloSettings(pcName string) map[string]string {
 		// runs, so TV mode and the games it starts open on it, not on the
 		// PC's monitor; the monitors stay on beside it.
 		"dd_configuration_option": "ensure_primary",
+		// The TV's display sits only at a corner of the PC's monitors, so
+		// the PC's mouse doesn't wander onto it.
+		"isolated_virtual_display_option": "enabled",
 	}
 }
 

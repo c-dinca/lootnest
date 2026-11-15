@@ -126,3 +126,37 @@ func altTap() {
 	in := [2]keyInput{{typ: 1, vk: vkMenu}, {typ: 1, vk: vkMenu, flags: keyUp}}
 	procSendInput.Call(2, uintptr(unsafe.Pointer(&in[0])), unsafe.Sizeof(in[0]))
 }
+
+// SendToBack puts the window under every other window without hiding it or
+// taking focus: TV mode stays behind a game, covering the desktop, instead
+// of vanishing.
+func SendToBack(hwnd uintptr) {
+	const (
+		hwndBottom  = 1
+		swpNoSize   = 0x0001
+		swpNoMove   = 0x0002
+		swpNoActive = 0x0010
+		swpNoOwnerZ = 0x0200
+	)
+	procSetWindowPos.Call(hwnd, hwndBottom, 0, 0, 0, 0, swpNoSize|swpNoMove|swpNoActive|swpNoOwnerZ)
+}
+
+// ShowTaskbar shows or hides the main taskbar (the primary display's,
+// which is the TV's while a stream runs). Other displays' taskbars stay.
+func ShowTaskbar(show bool) {
+	h := FindWindow("Shell_TrayWnd")
+	if h == 0 {
+		return
+	}
+	if show {
+		procShowWindow.Call(h, 8) // SW_SHOWNA
+	} else {
+		procShowWindow.Call(h, SW_HIDE)
+	}
+}
+
+// AllowAnyForeground lets the next program started (a game, through its
+// launcher) come to the front over this one.
+func AllowAnyForeground() {
+	procAllowSetForegroundWindow.Call(^uintptr(0)) // ASFW_ANY
+}
