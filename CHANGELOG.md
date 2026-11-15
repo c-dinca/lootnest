@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.5
+
+Add an LG TV, after the first try of Lootnest for TV 1.1.0 on a real TV.
 
 - **Add an LG TV checks the network first.** When Windows treats it as Public, the TV can't reach the PC, so the TV app installed but never paired. Lootnest now says so before it installs anything, with a key that makes the network private after Windows' prompt.
 - **Add an LG TV makes sure the TV app opens.** It closed the app and opened it again a second later, and a TV still closing it dropped the second step, so nothing appeared on the TV. Lootnest now waits until the app is closed, opens it, checks it's running, and opens it once more if not.
