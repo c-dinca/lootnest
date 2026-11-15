@@ -173,8 +173,8 @@ var reviewsKept = struct {
 }{m: map[string]reviewsEntry{}}
 
 type reviewsEntry struct {
-	at    time.Time
-	items []core.Review
+	at   time.Time
+	page core.ReviewPage
 }
 
 // apiGameReviews answers with a "reviews" event: the most helpful Steam
@@ -200,19 +200,22 @@ func (a *App) apiGameReviews(key, kind string) {
 		e, ok := reviewsKept.m[ck]
 		reviewsKept.Unlock()
 		if !ok || time.Since(e.at) > 6*time.Hour {
-			items, err := core.FetchReviews(fetchURL, id, "english", kind)
+			page, err := core.FetchReviewPage(fetchURL, id, "english", kind)
 			if err != nil {
 				a.logf("Reviews for app %d: %v", id, err)
 				out["error"] = "Couldn't reach the Steam store."
 				a.emit("reviews", out)
 				return
 			}
-			e = reviewsEntry{time.Now(), items}
+			e = reviewsEntry{time.Now(), page}
 			reviewsKept.Lock()
 			reviewsKept.m[ck] = e
 			reviewsKept.Unlock()
 		}
-		out["items"], out["appId"] = e.items, id
+		out["items"], out["appId"] = e.page.Items, id
+		if e.page.Count > 0 {
+			out["summary"] = map[string]any{"score": e.page.Score, "percent": e.page.Percent, "count": e.page.Count}
+		}
 		a.emit("reviews", out)
 	}()
 }

@@ -2393,8 +2393,9 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .wr-chip--tip { color: var(--fg-2); font-weight: 600; }
 .wr-limit { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-4) 0 0; font-size: var(--text-meta); color: var(--warning); }
 .wr-limit .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
-.wr-lanes { display: grid; gap: var(--space-4); margin: var(--space-5) 0 0; padding: 0; list-style: none; }
-.wr-lane { display: grid; gap: var(--space-2); --tone: var(--lamp); }
+.wr-lanes { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); margin: var(--space-5) 0 0; padding: 0; list-style: none; }
+.wr-lane { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); min-width: 0; --tone: var(--lamp); }
+.wr { min-width: 0; }
 .wr-lane--mid { --tone: var(--warning); }
 .wr-lane--low { --tone: var(--danger); }
 .wr-part { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-13); }
@@ -2408,7 +2409,7 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .wr-mark--rec { left: var(--rec); background: var(--fg-1); }
 .wr-bar .wr-you { position: absolute; top: 50%; left: var(--have); width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: var(--radius-round); background: var(--tone); box-shadow: 0 0 0 3px var(--bg-surface), 0 0 12px var(--tone); animation: wr-slide 800ms var(--ease-emph) both; }
 @keyframes wr-slide { from { left: 0; } }
-.wr-names { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--fs-12); color: var(--fg-3); }
+.wr-names { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); justify-content: space-between; gap: var(--space-3); font-size: var(--fs-12); color: var(--fg-3); }
 .wr-names span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wr-names span + span { text-align: right; }
 .wr-legend { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; font-size: var(--fs-12); color: var(--fg-3); }

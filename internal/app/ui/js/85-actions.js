@@ -773,7 +773,21 @@
       const g = game(el.dataset.game);
       const ok = await confirmDialog({ title: `Turn off profiles for ${g.name}?`, body: "The game stays in your library. Everyone's profiles are moved to the “removed” folder in Lootnest's data, and the game keeps the files of whoever played last.", ok: "Turn off profiles" });
       if (!ok) return;
-      try { await api.deleteGame(g.id); toast(`Profiles are off for ${g.name}`); await refresh(); loadFound(); } catch (e) { toast(errText(e), "error"); }
+      const onPage = S.view === "game" && S.page && S.page.kind === "game" && S.page.id === g.id;
+      const exe = (g.launch.exe || "").toLowerCase(), appId = g.launch.type === "steam" ? g.launch.appId : 0;
+      try {
+        await api.deleteGame(g.id); toast(`Profiles are off for ${g.name}`);
+        if (!onPage) { await refresh(); loadFound(); return; }
+        // Stay on the game's page: it's the same game, now without profiles.
+        // The state and the found games are read before anything is drawn,
+        // so the page never falls back to the Library in between.
+        S.d = await api.state();
+        try { S.found = await api.found(); } catch (e) { /* not ready */ }
+        const f = (S.found.games || []).find((x) => (appId && x.appId === appId) || (exe && (x.exe || "").toLowerCase() === exe))
+          || (S.found.games || []).find((x) => x.name === g.name);
+        if (f) { S.page = { kind: "found", id: f.key, cloud: null }; hist.at = here(); }
+        render();
+      } catch (e) { toast(errText(e), "error"); }
     },
     "np-open"() { S.picker.creating = true; S.picker.newError = ""; renderOverlay(); setTimeout(() => { const i = $("#np-name"); if (i) i.focus(); }, 20); },
     "np-cancel"() { S.picker.creating = false; S.picker.newName = ""; S.picker.newError = ""; renderOverlay(); },

@@ -106,11 +106,14 @@ func (a *App) apiDismissConflict(gameID string) error {
 // apiGameFacts says what Lootnest can tell about a game from its folder: the
 // anti-cheat it ships with, if any.
 func (a *App) apiGameFacts(dir string) map[string]string {
-	if filepath.Ext(dir) != "" {
-		dir = filepath.Dir(dir)
-	}
+	// The game's own folder: an exe's folder, or the folder itself. A folder
+	// can have dots in its name (Game.Name.v1.0), so it's never taken for a
+	// file: that read its parent, and found other games' anti-cheat there.
 	if d, err := a.env.ResolveExe(dir); err == nil && d != "" {
 		dir = d
+	}
+	if st, err := os.Stat(dir); err != nil || !st.IsDir() {
+		dir = filepath.Dir(dir)
 	}
 	return map[string]string{"antiCheat": core.AntiCheat(dir)}
 }

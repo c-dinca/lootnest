@@ -24,7 +24,9 @@ import (
 
 const (
 	detailsURL = "https://store.steampowered.com/api/appdetails?appids=%d&l=%s&filters=basic,genres,developers,publishers,release_date,screenshots,metacritic,categories,controller_support,pc_requirements"
-	reviewsURL = "https://store.steampowered.com/appreviews/%d?json=1&language=all&purchase_type=all&num_per_page=0"
+	// Steam's review summary: the store's old appreviews endpoint went away
+	// on 22 Oct 2026; IUserReviewsService answers without a key.
+	reviewsAPI = "https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/?input_json="
 )
 
 // DetailsKeep is how long fetched details are used before they're read again.
@@ -171,18 +173,21 @@ func FetchGameDetails(fetch Fetch, appID int, lang string) (*GameDetails, error)
 			g.Screenshots = append(g.Screenshots, Screenshot{s.Thumb, s.Full})
 		}
 	}
-	if b, err := fetch(fmt.Sprintf(reviewsURL, appID)); err == nil {
+	if b, err := fetch(reviewsQuery(map[string]any{"appid": appID, "num_per_page": 1, "languages": []string{"all"}, "purchase_type": 1})); err == nil {
 		var rv struct {
-			Summary struct {
-				Desc     string `json:"review_score_desc"`
-				Positive int    `json:"total_positive"`
-				Total    int    `json:"total_reviews"`
-			} `json:"query_summary"`
+			Response struct {
+				Summary struct {
+					Desc     string `json:"review_score_desc"`
+					Positive int    `json:"total_positive"`
+					Total    int    `json:"total_reviews"`
+				} `json:"query_summary"`
+			} `json:"response"`
 		}
-		if json.Unmarshal(b, &rv) == nil && rv.Summary.Total > 0 {
-			g.ReviewScore = HTMLText(rv.Summary.Desc)
-			g.ReviewCount = rv.Summary.Total
-			g.ReviewPercent = (rv.Summary.Positive*100 + rv.Summary.Total/2) / rv.Summary.Total
+		if json.Unmarshal(b, &rv) == nil && rv.Response.Summary.Total > 0 {
+			sum := rv.Response.Summary
+			g.ReviewScore = HTMLText(sum.Desc)
+			g.ReviewCount = sum.Total
+			g.ReviewPercent = (sum.Positive*100 + sum.Total/2) / sum.Total
 		}
 	}
 	return g, nil

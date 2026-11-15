@@ -876,6 +876,18 @@ These shipped recently, newest last:
   `.ln-segmented` or `.ln-tabs` to the new one after the redraw; the game
   page's panel slides from the tab's side (`setGameTab`); `bump(el, n)`
   pops a count that rises.
+- **Unreleased, the owner's fixes of 15 Nov**: Steam's `appreviews`
+  redirects to the store front since 22 Oct 2026, so reviews and the
+  review score use `IUserReviewsService/GetAppReviews/v1` on
+  api.steampowered.com (`reviewsQuery`, `input_json`, no key, the answer
+  under `response`). Profiles off stays on the page (`remove-game` finds
+  the scanned game by app id, exe or name before drawing).
+  `apiGameFacts` stats the path instead of trusting `filepath.Ext`
+  (dotted folder names read the parent). Will it run: `gpuFromWords`
+  (VRAM, DirectX) and `cpuFromWords` (cores, threads, GHz) when no model
+  is known (`orWords`), older cards in `gpuScores`, i3/i5 first
+  generation, and `rate` gives high at 3x and recommended at 1.8x a lone
+  minimum.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

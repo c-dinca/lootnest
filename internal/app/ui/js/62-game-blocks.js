@@ -48,11 +48,14 @@
     const mine = { Graphics: pc.gpu, Processor: pc.cpu, Memory: pc.ram ? gb(pc.ram) : "" };
     const lanes = (V.parts || []).filter((p) => p.known && icon[p.part]).map((p) => {
       const top = Math.max(p.have, (p.rec || p.min) * 1.5, p.min) || 1, pct = (x) => Math.max(0, Math.min(100, (x / top) * 100)).toFixed(1);
-      const need = val(run.recommended, p.part) || val(run.minimum, p.part);
-      return `<li class="wr-lane wr-lane--${runsTone(p.runs)}" style="--have:${pct(p.have)}%;--min:${pct(p.min)}%;--rec:${pct(p.rec)}%">
+      // The first card or chip a requirement names ("GTX 1060 or RX 580"),
+      // in full in its tooltip.
+      const needAll = val(run.recommended, p.part) || val(run.minimum, p.part);
+      const need = needAll.split(/\s+or\s+|\s*,\s*|\s+and higher|\s*\/\s*|\s+-\s+/i)[0].replace(/\s*\(.*$/, "");
+      return `<li class="wr-lane wr-lane--${runsTone(p.runs)}" style="--have:${Math.min(97, pct(p.have))}%;--min:${pct(p.min)}%;--rec:${pct(p.rec)}%">
         <span class="wr-part">${ph(icon[p.part])}<b>${esc(p.part)}</b><em>${esc(RUNS[p.runs] ? RUNS[p.runs][2] : "")}</em></span>
         <span class="wr-bar" aria-hidden="true">${p.min ? '<i class="wr-mark wr-mark--min"></i>' : ""}${p.rec ? '<i class="wr-mark wr-mark--rec"></i>' : ""}<i class="wr-you"></i></span>
-        <span class="wr-names"><span title="This PC">${esc(mine[p.part] || "This PC")}</span>${need ? `<span title="${val(run.recommended, p.part) ? "Recommended" : "Minimum"}">${esc(need)}</span>` : ""}</span></li>`;
+        <span class="wr-names"><span title="This PC">${esc(mine[p.part] || "This PC")}</span>${need ? `<span title="${val(run.recommended, p.part) ? "Recommended" : "Minimum"}: ${esc(needAll)}">${esc(need)}</span>` : ""}</span></li>`;
     }).join("");
     const limit = V.limit && P.score < 70 ? `<p class="wr-limit">${ph("warning")}The ${esc(PART[V.limit] || V.limit.toLowerCase())} holds it back</p>` : "";
     return `<section class="gpage-block wr wr--${tone}" style="--score:${P.score}">${head}
@@ -521,9 +524,11 @@
     if (!steam) return `<section class="gpage-block gp-com">${head()}<p class="gp-det-off"><button class="gpage-link" data-action="details-on">Show what players say on Steam</button></p></section>`;
     const kind = S.revKind[key] || "all", R = S.reviews[key + "|" + kind];
     const d = (S.details[key] && S.details[key].details) || {};
-    const pct = d.reviewCount ? d.reviewPercent : null;
+    // Steam's words and share: from the details, else from the reviews themselves.
+    const sum = d.reviewCount ? { score: d.reviewScore, percent: d.reviewPercent, count: d.reviewCount } : (S.reviews[key + "|all"] || {}).summary;
+    const pct = sum ? sum.percent : null;
     const score = pct == null ? "" : `<div class="gp-com-score"><span class="gp-com-pct ln-num" style="--p:${pct}">${pct}<small>%</small></span>
-      <span><b>${esc(d.reviewScore || "")}</b><span class="gp-com-n">${d.reviewCount.toLocaleString("en-US")} reviews on Steam</span></span>
+      <span><b>${esc(sum.score || "")}</b><span class="gp-com-n">${sum.count.toLocaleString("en-US")} reviews on Steam</span></span>
       <span class="gp-com-bar" aria-hidden="true"><span style="width:${pct}%"></span></span></div>`;
     const seg = `<div class="ln-segmented gp-com-seg" role="group" aria-label="Show">${REV_KINDS.map(([k, l]) => `<button data-action="rev-kind" data-k="${esc(key)}" data-kind="${k}" aria-pressed="${k === kind}">${l}</button>`).join("")}</div>`;
     const store = R && R.appId ? R.appId : it.appId;
