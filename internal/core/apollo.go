@@ -585,7 +585,11 @@ func ApolloInstallScript(installer, dir, credsFile string) string {
 	lines := []string{`$ErrorActionPreference = 'Stop'`}
 	if installer != "" { // "" when it's installed already: only the sign-in
 		lines = append(lines,
-			`$p = Start-Process -FilePath `+q(installer)+` -ArgumentList '/S', `+q("/D="+dir)+` -Wait -PassThru`,
+			// Only the installer itself is waited for: Start-Process -Wait
+			// also waits for what it starts, and its virtual controller
+			// driver's setup can sit on a "restart now?" question.
+			`$p = Start-Process -FilePath `+q(installer)+` -ArgumentList '/S', `+q("/D="+dir)+` -PassThru`,
+			`$p.WaitForExit()`,
 			`if ($p.ExitCode -ne 0) { exit 10 }`)
 	}
 	return strings.Join(append(lines,
@@ -595,7 +599,8 @@ func ApolloInstallScript(installer, dir, credsFile string) string {
 		`  $c = Get-Content -LiteralPath `+q(credsFile)+` -Raw | ConvertFrom-Json`,
 		`} finally { Remove-Item -LiteralPath `+q(credsFile)+` -Force -ErrorAction SilentlyContinue }`,
 		`Stop-Service -Name `+q(ApolloService)+` -ErrorAction SilentlyContinue`,
-		`$cp = Start-Process -FilePath $exe -ArgumentList '--creds', $c.user, $c.pass -WorkingDirectory `+q(dir)+` -WindowStyle Hidden -Wait -PassThru`,
+		`$cp = Start-Process -FilePath $exe -ArgumentList '--creds', $c.user, $c.pass -WorkingDirectory `+q(dir)+` -WindowStyle Hidden -PassThru`,
+		`$cp.WaitForExit()`,
 		`if ($cp.ExitCode -ne 0) { exit 12 }`,
 		`Get-NetFirewallRule -DisplayName 'Apollo' -ErrorAction SilentlyContinue | Set-NetFirewallRule -Profile Private`,
 		`Start-Service -Name `+q(ApolloService),

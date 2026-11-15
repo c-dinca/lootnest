@@ -250,6 +250,9 @@ func TestApolloScripts(t *testing.T) {
 			t.Errorf("install script lacks %s", want)
 		}
 	}
+	if strings.Contains(s, "-Wait") || strings.Count(s, ".WaitForExit()") != 2 {
+		t.Error("the script waits for more than the installer and --creds")
+	}
 	if strings.Contains(ApolloServiceScript(false), "Start-Service") || !strings.Contains(ApolloServiceScript(true), "Automatic") {
 		t.Error("service scripts")
 	}

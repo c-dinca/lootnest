@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Setting up TV streaming no longer stops at "Installing".** It waited for everything the streaming engine's installer started, including its controller driver's question about restarting the PC, which could sit behind other windows. Now it waits only for the installer.
+
 ## 2.2.1
 
 Add an LG TV, after the first try on a real TV.
