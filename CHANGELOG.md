@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.7
+
+Add an LG TV pairs with the TV app even when it is already open.
 
 - **Add an LG TV pairs even when the TV app is already open.** An open app never gets new launch parameters, and some TVs can't close it, so the app showed "This TV isn't paired with a PC yet". Lootnest now also leaves the pairing request in a file on the TV, which Lootnest for TV 1.2.0 reads at start and while it waits.
 - **Lootnest knows whether the TV app is on screen.** It asked a way the TV doesn't answer and said the app hadn't opened when it had.
