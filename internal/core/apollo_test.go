@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// fakeApollo answers the calls Lootnest makes as Apollo 0.4.8 does: a
+// fakeApollo answers the calls Lootnest makes as Apollo 0.4.6 does: a
 // session cookie from /api/login, JSON everywhere, 401 without the cookie.
 type fakeApollo struct {
 	mu      sync.Mutex
@@ -86,7 +86,7 @@ func (f *fakeApollo) handler(t *testing.T) http.Handler {
 			write(w, map[string]any{"status": true})
 			return
 		}
-		out := map[string]any{"status": true, "platform": "windows", "version": "0.4.8", "vdisplayStatus": 0}
+		out := map[string]any{"status": true, "platform": "windows", "version": "0.4.6", "vdisplayStatus": 0}
 		for k, v := range f.config {
 			out[k] = v
 		}
@@ -168,7 +168,7 @@ func TestApolloFirstRunPairAndPin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.LootnestApp != "new-uuid" || info.Version != "0.4.8" || !info.VirtualOK {
+	if info.LootnestApp != "new-uuid" || info.Version != "0.4.6" || !info.VirtualOK {
 		t.Fatalf("info: %+v", info)
 	}
 	app := LootnestAppIn(f.apps)

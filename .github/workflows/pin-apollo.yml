@@ -15,8 +15,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release list -R ClassicOldSong/Apollo --limit 6
-          gh release view v0.4.8 -R ClassicOldSong/Apollo --json tagName,publishedAt,isPrerelease,assets --jq '.tagName, .publishedAt, .isPrerelease, (.assets[] | [.name, .size, .digest] | @tsv)'
+          gh release view v0.4.6 -R ClassicOldSong/Apollo --json tagName,publishedAt,isPrerelease,assets --jq '.tagName, .publishedAt, .isPrerelease, (.assets[] | [.name, .size, .digest] | @tsv)'
           mkdir dl
-          gh release download v0.4.8 -R ClassicOldSong/Apollo -p '*.exe' -D dl
+          gh release download v0.4.6 -R ClassicOldSong/Apollo -p '*.exe' -D dl
           ls -l dl
           sha256sum dl/*

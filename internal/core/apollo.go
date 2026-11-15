@@ -516,8 +516,8 @@ type ApolloRelease struct {
 // ApolloPinned is the release Lootnest installs. A new one is tested with
 // Lootnest first, then its address and SHA-256 change here.
 var ApolloPinned = ApolloRelease{
-	Version: "0.4.8",
-	URL:     "https://github.com/ClassicOldSong/Apollo/releases/download/v0.4.8/Apollo.exe",
+	Version: "0.4.6",
+	URL:     "https://github.com/ClassicOldSong/Apollo/releases/download/v0.4.6/Apollo.exe",
 	SHA256:  "",
 }
 
