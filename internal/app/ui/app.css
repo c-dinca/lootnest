@@ -2769,3 +2769,4 @@ html.is-tv {
 .lg-row { display: flex; gap: var(--space-2); }
 .lg-row .ln-input { flex: 1; min-width: 0; }
 .lg-pass { text-transform: uppercase; letter-spacing: .15em; }
+.lg-secs { margin-left: var(--space-2); color: var(--fg-3); }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.3
+
+Add an LG TV, after the third try on a real TV.
+
+- **Add an LG TV installs the app the way LG's own tools do**, keeping the install request open until the TV says the app is in. The last two versions closed it too soon, so the TV never started installing.
+- **It never waits forever.** Every step on the TV has a time limit, the drawer counts the seconds, and each step is written to the activity log, so a stop shows where it was.
+- **The drawer says the right step**: it said "Allow it in Windows' prompt" while installing on the TV, a step that has no prompt.
+- **Install while another TV or the streaming engine is busy** now says so, instead of seeming to start and never moving.
+
 ## 2.2.2
 
 Add an LG TV, after the second try on a real TV.

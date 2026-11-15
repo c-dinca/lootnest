@@ -87,6 +87,8 @@ type fakeTV struct {
 	files    map[string][]byte
 	commands []string
 	refuse   bool // the install service says no
+	quiet    bool // it ends without an outcome
+	silent   bool // set when its input closed before it could start
 	checks   int  // test -d answers yes from this check on
 }
 
@@ -132,10 +134,24 @@ func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 							f.files["ipk"] = b
 							f.mu.Unlock()
 						case strings.Contains(cmd, "appInstallService"):
-							if f.refuse {
-								_, _ = io.WriteString(ch, "{\"returnValue\":false,\"errorText\":\"Developer mode is off\"}\n")
-							} else {
-								_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
+							// As on the TV: luna-send-pub -i quits, saying
+							// nothing, when its input ends before it starts.
+							eof := make(chan struct{})
+							go func() { _, _ = io.Copy(io.Discard, ch); close(eof) }()
+							select {
+							case <-eof:
+								f.mu.Lock()
+								f.silent = true
+								f.mu.Unlock()
+							case <-time.After(200 * time.Millisecond):
+								switch {
+								case f.refuse:
+									_, _ = io.WriteString(ch, "{\"returnValue\":false,\"errorText\":\"Developer mode is off\"}\n")
+								case f.quiet:
+									_, _ = io.WriteString(ch, "{\"returnValue\":true,\"subscribed\":true}\n")
+								default:
+									_, _ = io.WriteString(ch, "{\"returnValue\":true,\"subscribed\":true}\n{\"details\":{\"state\":\"installing\",\"progress\":40},\"returnValue\":true}\n{\"details\":{\"state\":\"installed\"},\"returnValue\":true}\n")
+								}
 							}
 						case strings.HasPrefix(cmd, "wc -c"):
 							f.mu.Lock()
@@ -261,9 +277,9 @@ func TestTVInstallQuiet(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer ln.Close()
-	// The service accepts the request; the app is there at the second
-	// check.
-	f := &fakeTV{files: map[string][]byte{}, checks: 2}
+	// The service ends its answers without an outcome; the app is there
+	// at the second check.
+	f := &fakeTV{files: map[string][]byte{}, quiet: true, checks: 2}
 	go f.serve(t, ln, pub)
 	tv, _, err := connectTVAt(context.Background(), "127.0.0.1", ln.Addr().String(), keyPEM, "")
 	if err != nil {
@@ -324,5 +340,34 @@ func TestTVInstallRefused(t *testing.T) {
 	_ = os.WriteFile(ipk, []byte("ipk"), 0o644)
 	if err := tv.InstallTVApp(context.Background(), ipk); err == nil || !strings.Contains(err.Error(), "Developer mode is off") {
 		t.Fatalf("%v", err)
+	}
+}
+
+func TestTVInstallKeepsInputOpen(t *testing.T) {
+	k, _ := rsa.GenerateKey(rand.Reader, 2048)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)})
+	pub, _ := ssh.NewPublicKey(&k.PublicKey)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	f := &fakeTV{files: map[string][]byte{}, checks: 1000}
+	go f.serve(t, ln, pub)
+	tv, _, err := connectTVAt(context.Background(), "127.0.0.1", ln.Addr().String(), keyPEM, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tv.Close()
+	ipk := filepath.Join(t.TempDir(), "app.ipk")
+	_ = os.WriteFile(ipk, []byte("ipk"), 0o644)
+	// The install answers "installed" only while its input stays open.
+	if err := tv.InstallTVApp(context.Background(), ipk); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.silent {
+		t.Fatal("luna-send-pub's input was closed before it could start")
 	}
 }
