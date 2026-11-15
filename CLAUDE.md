@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.5, beta)
+## Where things stand (2.2.6, beta)
 
 These shipped recently, newest last:
 
@@ -1051,6 +1051,13 @@ These shipped recently, newest last:
   networks: `core/netprofile.go` (`NetworkCategoryScript`,
   `MakePrivateScript`), `win.RunHiddenOutput`, `PublicNetworkError`
   before the key step, **Make this network private** (`ps_linkMakePrivate`).
+
+- **2.2.6** The 2.2.5 log: close and launch answered nothing, the app
+  never ran, the TV reached the engine. Every `applicationManager` call
+  goes through `TV.luna` (`luna-send-pub -i` with its input held open
+  until the first `returnValue` line, `tvLunaLimit`), as the install has
+  since 2.2.3: an SSH command given no input has it closed at once and
+  luna-send-pub then calls nothing. The fake TV ignores such calls.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

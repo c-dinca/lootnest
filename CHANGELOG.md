@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.6
+
+Add an LG TV opens the TV app.
 
 - **Add an LG TV opens the TV app.** The TV ignored the request to open it, as it did with the install before 2.2.3: the request ended before the TV read it. Every request to the TV now waits for its answer, so the app opens on the TV and pairs.
 
