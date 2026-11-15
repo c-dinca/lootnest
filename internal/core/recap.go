@@ -45,3 +45,16 @@ func RecapFileName(profile string, year int) string {
 	}
 	return n + " in " + strconv.Itoa(year) + ".png"
 }
+
+// ShareFileName names a picture made to share, such as "Alex achievements
+// 2026-11-15.png" or "Hades II achievements 2026-11-15.png".
+func ShareFileName(title, day string) string {
+	n := "Lootnest"
+	if strings.TrimSpace(title) != "" {
+		n = strings.TrimSpace(safeFileName(title))
+	}
+	if r := []rune(n); len(r) > 60 {
+		n = strings.TrimSpace(string(r[:60]))
+	}
+	return n + " " + day + ".png"
+}

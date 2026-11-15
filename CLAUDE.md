@@ -921,6 +921,14 @@ These shipped recently, newest last:
   (search `#sv-q`, kind, profile, when, order in `S.svF`) and
   `svResults` filter them; typing redraws only `#sv-results` and the Per
   game table so the box keeps focus.
+  Achievements: `.ach-hero` (ring in the profile's colour, the count,
+  three rarest as medals, Share), `S.achSort`. Sharing (`81-achshare.js`):
+  dialog `achshare` (`achRowsFor`, `drawAchShare` on a 1080x1080 or
+  1080x1920 canvas; remote icons load with crossOrigin and are left out
+  without CORS so the canvas stays exportable), `ps_shareImage` (`app/
+  share.go`): "copy" via `win.SetClipboardImage` (CF_DIB plus the
+  registered "PNG" format), "save" into Pictures\Lootnest\Achievements
+  (`core.ShareFileName`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

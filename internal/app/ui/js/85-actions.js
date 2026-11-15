@@ -1089,6 +1089,25 @@
       S.dialog = { kind: "recap", player: p.id, year: ys.includes(now) || !ys.length ? now : ys[0] };
       renderOverlay(); focusOverlay();
     },
+    "ach-sort"(el) { S.achSort = el.dataset.v; render(); },
+    "ach-share"(el) { openAchShare(el.dataset.who, el.dataset.scope || "all"); },
+    "share-fmt"(el) { const D = S.dialog; if (D && D.kind === "achshare") { D.fmt = el.dataset.v; D.copied = false; renderOverlay(); } },
+    async "share-go"(el) {
+      const D = S.dialog, how = el.dataset.how;
+      if (!D || D.kind !== "achshare" || D.busy) return;
+      D.busy = true; renderOverlay();
+      try {
+        let d;
+        do { d = D.drawn; await d; } while (d !== D.drawn);
+        const cv = D.canvas, p = player(D.who), r = D.scope !== "all" && achRowsFor(D.who).find((x) => x.g.key === D.scope);
+        const title = r ? `${r.g.name} achievements` : `${p ? p.name : "My"} achievements`;
+        const path = await api.shareImage(how, title, cv.toDataURL("image/png"));
+        if (how === "copy") { D.copied = true; toast("Copied. Paste it in Discord or a chat with Ctrl+V."); }
+        else toast(`Saved in ${path}`);
+      } catch (e) { toast(errText(e), "error"); }
+      D.busy = false;
+      if (S.dialog === D) renderOverlay();
+    },
     async "recap-save"() {
       const D = S.dialog, p = D && player(D.player);
       if (!D || D.kind !== "recap" || D.busy || !p) return;

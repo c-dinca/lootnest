@@ -36,3 +36,12 @@ func TestRecapFileName(t *testing.T) {
 		t.Fatal(RecapFileName("  ", 2026))
 	}
 }
+
+func TestShareFileName(t *testing.T) {
+	if got := ShareFileName("Hades II: achievements", "2026-11-15"); strings.ContainsAny(got, `:\/`) || !strings.HasSuffix(got, " 2026-11-15.png") || !strings.HasPrefix(got, "Hades II") {
+		t.Fatalf("got %q", got)
+	}
+	if got := ShareFileName("  ", "2026-11-15"); got != "Lootnest 2026-11-15.png" {
+		t.Fatalf("got %q", got)
+	}
+}

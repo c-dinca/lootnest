@@ -291,7 +291,8 @@
     const { key, who, A, pct } = X;
     const list = few ? A.list.filter((a) => a.unlocked).slice(0, 3) : A.list;
     const acts = few ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="game-tab" data-tab="achievements">Show all ${A.total}</button>`
-      : (docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : "") + X.toggle;
+      : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-share" data-who="${esc(who || "")}" data-scope="${esc(key)}" aria-haspopup="dialog">${ph("share-network")}Share</button>`
+        + (docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : "") + X.toggle;
     return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(possessive(pname(who))) + " achievements" : "Achievements"}</h2></div>
         <span class="ach-count"><b class="ln-num">${A.unlocked}</b> of <span class="ln-num">${A.total}</span>, ${pct}%</span></div>
       ${X.whoRow}${X.bar}

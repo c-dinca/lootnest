@@ -2709,3 +2709,35 @@ button.gp-stage:focus-visible { outline: var(--focus-width) solid var(--focus-ri
 .sv-sel .ln-input { height: var(--ctl-sm); padding-right: var(--space-8); }
 .sv-count { margin: 0 0 var(--space-2); font-size: var(--text-meta); color: var(--fg-2); }
 .ln-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Achievements: the headline, and sharing a picture of them. */
+.ach-hero { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-8); margin-bottom: var(--gap-section); padding: var(--space-6) var(--space-8); overflow: hidden; border-radius: var(--radius-glass); background: var(--bg-surface); box-shadow: inset 0 1px 0 var(--key-light), 0 30px 60px -40px rgb(0 0 0 / 0.9); }
+.ach-hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--me) 22%, transparent), transparent 60%); }
+.ach-hero > * { position: relative; }
+.ach-hero-ring { position: relative; display: grid; place-items: center; width: 132px; height: 132px; }
+.ach-hero-ring .ach-ring { position: absolute; inset: 0; }
+.ach-hero-ring .ach-ring .fg { stroke: var(--me); stroke-width: 3.4; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--me) 55%, transparent)); }
+.ach-hero-ring .ach-ring.is-full .fg { stroke: var(--lamp); }
+.ach-hero-ring .ach-ring-n { position: relative; font: 400 34px/1 var(--font-title); color: var(--fg-1); }
+.ach-hero-ring .ach-ring-n small { font-size: 0.5em; color: var(--fg-2); }
+.ach-hero-text { display: grid; gap: var(--space-2); min-width: 0; }
+.ach-hero-who { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 700; font-size: var(--fs-14); color: var(--fg-1); }
+.ach-hero-n { font: 400 var(--text-board)/1 var(--font-title); color: var(--fg-1); }
+.ach-hero-n small { font: 600 var(--fs-15)/1 var(--font-ui); color: var(--fg-2); }
+.ach-hero-sub { font-size: var(--text-meta); color: var(--fg-2); }
+.ach-medals { display: flex; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.ach-medals li { display: grid; justify-items: center; gap: var(--space-2); }
+.ach-medals .ach-ico { width: 56px; height: 56px; border-radius: var(--radius-panel); box-shadow: 0 0 0 2px var(--tier, var(--edge-2)), 0 0 18px -4px var(--tier, transparent); }
+.ach-medals li.tier-ultra { --tier: var(--tier-ultra); } .ach-medals li.tier-rare { --tier: var(--tier-rare); }
+.ach-medals li.tier-uncommon { --tier: var(--tier-uncommon); } .ach-medals li.tier-common { --tier: var(--tier-common); }
+.ach-medals b { font-size: var(--fs-12); color: var(--tier, var(--fg-2)); }
+.ach-sort { margin-bottom: var(--space-4); flex-wrap: wrap; }
+.ach-games > li { position: relative; }
+.ach-gshare { position: absolute; top: var(--space-2); right: var(--space-2); opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
+.ach-games > li:hover .ach-gshare, .ach-gshare:focus-visible { opacity: 1; }
+@media (max-width: 1100px) { .ach-hero { grid-template-columns: auto minmax(0, 1fr); } .ach-medals, .ach-hero-share { grid-column: 1 / -1; } .ach-hero-share { justify-self: start; } }
+.share-dialog { width: min(760px, 100%); }
+.share-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.share-stage { display: grid; place-items: center; padding: var(--space-4); border-radius: var(--radius-panel); background: var(--bg-ground); }
+.share-stage canvas { display: block; max-width: 100%; height: auto; max-height: 58vh; border-radius: var(--radius-ctl); box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.95); }
+.share-dialog .btn .ln-icon { width: var(--icon-sm); height: var(--icon-sm); margin-right: var(--space-1); vertical-align: -3px; }
