@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -104,6 +105,8 @@ type fakeTV struct {
 	mu       sync.Mutex
 	files    map[string][]byte
 	commands []string
+	quiet    bool // the install service ends without an outcome
+	checks   int  // test -d answers yes from this check on (quiet only)
 }
 
 func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
@@ -148,7 +151,19 @@ func (f *fakeTV) serve(t *testing.T, ln net.Listener, user ssh.PublicKey) {
 							f.files["ipk"] = b
 							f.mu.Unlock()
 						case strings.Contains(cmd, "appInstallService"):
-							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n{\"details\":{\"state\":\"installed\"},\"returnValue\":true}\n")
+							if f.quiet {
+								_, _ = io.WriteString(ch, "{\"returnValue\":true,\"subscribed\":true}\n")
+							} else {
+								_, _ = io.WriteString(ch, "{\"returnValue\":true}\n{\"details\":{\"state\":\"installed\"},\"returnValue\":true}\n")
+							}
+						case strings.HasPrefix(cmd, "test -d"):
+							f.mu.Lock()
+							f.checks--
+							yes := f.checks <= 0
+							f.mu.Unlock()
+							if yes {
+								_, _ = io.WriteString(ch, "yes\n")
+							}
 						case strings.Contains(cmd, "applicationManager/launch"):
 							_, _ = io.WriteString(ch, "{\"returnValue\":true}\n")
 						case strings.Contains(cmd, "devmode_enabled"):
@@ -248,5 +263,65 @@ func TestTVAppPinned(t *testing.T) {
 	r := TVAppPinned
 	if len(r.SHA256) != 64 || r.URL != "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v"+r.Version+"/com.lootnest.tv_"+r.Version+"_arm.ipk" {
 		t.Fatalf("%+v", r)
+	}
+}
+
+func TestTVInstallQuiet(t *testing.T) {
+	k, _ := rsa.GenerateKey(rand.Reader, 2048)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)})
+	pub, _ := ssh.NewPublicKey(&k.PublicKey)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	// The service says only that it subscribed; the app is there at the
+	// second check.
+	f := &fakeTV{files: map[string][]byte{}, quiet: true, checks: 2}
+	go f.serve(t, ln, pub)
+	tv, _, err := connectTVAt(context.Background(), "127.0.0.1", ln.Addr().String(), keyPEM, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tv.Close()
+	ipk := filepath.Join(t.TempDir(), "app.ipk")
+	_ = os.WriteFile(ipk, []byte("ipk"), 0o644)
+	if err := tv.InstallTVApp(context.Background(), ipk); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	lastCheck, rm := -1, -1
+	for i, c := range f.commands {
+		if strings.HasPrefix(c, "test -d") {
+			lastCheck = i
+		}
+		if strings.HasPrefix(c, "rm -f") {
+			rm = i
+		}
+	}
+	if lastCheck < 0 || rm < lastCheck {
+		t.Fatalf("the package was removed before the app was there: %q", f.commands)
+	}
+}
+
+func TestInstallOutcomeSaysWhat(t *testing.T) {
+	err := InstallOutcome(strings.NewReader("{\"returnValue\":true,\"subscribed\":true}\nluna-send-pub: permission denied\n"))
+	var q *QuietInstallError
+	if !errors.As(err, &q) || !strings.Contains(q.Said, "permission denied") {
+		t.Fatalf("%v", err)
+	}
+}
+
+func TestProbeLGPort(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	port := ln.Addr().(*net.TCPAddr).Port
+	got := probeLGPort(context.Background(), []net.IP{net.IPv4(127, 0, 0, 0).To4()}, port, 200*time.Millisecond)
+	if len(got) != 1 || got[0] != "127.0.0.1" {
+		t.Fatalf("%v", got)
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -113,7 +114,66 @@ func FindLGTVs(ctx context.Context, wait time.Duration) ([]LGTV, error) {
 	for ip, loc := range seen {
 		out = append(out, LGTV{Name: lgName(ctx, loc, ip), IP: ip})
 	}
+	if len(out) == 0 {
+		// Windows Firewall often drops the TVs' answers (they come from
+		// another address than the one asked). Every webOS TV listens on
+		// port 3000 for LG's second-screen apps: try each address of this
+		// PC's home networks for it.
+		for _, ip := range probeLGPort(ctx, localSubnets(), 3000, 600*time.Millisecond) {
+			out = append(out, LGTV{Name: "LG TV (" + ip + ")", IP: ip})
+		}
+	}
 	return out, nil
+}
+
+// localSubnets are the /24 networks of this PC's private IPv4 addresses.
+func localSubnets() []net.IP {
+	var out []net.IP
+	addrs, _ := net.InterfaceAddrs()
+	for _, a := range addrs {
+		n, ok := a.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		ip := n.IP.To4()
+		if ip == nil || !ip.IsPrivate() {
+			continue
+		}
+		out = append(out, net.IPv4(ip[0], ip[1], ip[2], 0).To4())
+	}
+	return out
+}
+
+// probeLGPort returns the addresses in these /24 networks that accept a
+// connection on port.
+func probeLGPort(ctx context.Context, nets []net.IP, port int, wait time.Duration) []string {
+	var (
+		mu  sync.Mutex
+		out []string
+		wg  sync.WaitGroup
+	)
+	sem := make(chan struct{}, 64)
+	for _, base := range nets {
+		for host := 1; host < 255; host++ {
+			ip := net.IPv4(base[0], base[1], base[2], byte(host)).String()
+			wg.Add(1)
+			sem <- struct{}{}
+			go func() {
+				defer func() { <-sem; wg.Done() }()
+				d := net.Dialer{Timeout: wait}
+				c, err := d.DialContext(ctx, "tcp", net.JoinHostPort(ip, fmt.Sprint(port)))
+				if err != nil {
+					return
+				}
+				c.Close()
+				mu.Lock()
+				out = append(out, ip)
+				mu.Unlock()
+			}()
+		}
+	}
+	wg.Wait()
+	return out
 }
 
 func ssdpHeaders(b []byte) (location, server string) {
@@ -314,19 +374,54 @@ func (t *TV) InstallTVApp(ctx context.Context, ipk string) error {
 	if err != nil {
 		return err
 	}
-	if err := s.Start("luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' " + shQuote(string(payload))); err != nil {
+	// Its errors too (2>&1), to say what the TV answered.
+	if err := s.Start("luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' " + shQuote(string(payload)) + " 2>&1"); err != nil {
 		return err
 	}
 	done := make(chan error, 1)
 	go func() { done <- InstallOutcome(out) }()
 	select {
-	case err := <-done:
-		return err
+	case err = <-done:
 	case <-time.After(3 * time.Minute):
-		return errors.New("the TV took too long to install the app")
+		err = &QuietInstallError{Said: "nothing for three minutes"}
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+	var quiet *QuietInstallError
+	if !errors.As(err, &quiet) {
+		return err
+	}
+	// The service ended its answers without saying how the install went
+	// (some TVs' luna-send-pub returns at once): the install goes on in the
+	// background, so wait for the app to be there before the package (which
+	// it reads) is removed.
+	for end := time.Now().Add(2 * time.Minute); ; time.Sleep(3 * time.Second) {
+		if t.HasTVApp() {
+			return nil
+		}
+		if time.Now().After(end) || ctx.Err() != nil {
+			return fmt.Errorf("the TV didn't install the app. It said: %s", quiet.Said)
+		}
+	}
+}
+
+// HasTVApp says whether Lootnest for TV is installed on the TV.
+func (t *TV) HasTVApp() bool {
+	out, _ := t.run("test -d "+shQuote("/media/developer/apps/usr/palm/applications/"+TVAppID)+" && echo yes", nil)
+	if strings.TrimSpace(out) == "yes" {
+		return true
+	}
+	payload, _ := json.Marshal(map[string]any{"id": TVAppID})
+	out, _ = t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/getAppInfo' "+shQuote(string(payload))+" 2>&1", nil)
+	return strings.Contains(out, `"returnValue":true`) || strings.Contains(out, `"returnValue": true`)
+}
+
+// QuietInstallError is the install service ending without an outcome;
+// Said is the last of what it printed.
+type QuietInstallError struct{ Said string }
+
+func (e *QuietInstallError) Error() string {
+	return "the TV stopped answering while it installed the app"
 }
 
 var installState = regexp.MustCompile(`"state"\s*:\s*"([^"]+)"`)
@@ -335,8 +430,14 @@ var installState = regexp.MustCompile(`"state"\s*:\s*"([^"]+)"`)
 func InstallOutcome(r io.Reader) error {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 64<<10), 1<<20)
+	var last []string
 	for sc.Scan() {
 		line := sc.Text()
+		if t := strings.TrimSpace(line); t != "" {
+			if last = append(last, t); len(last) > 3 {
+				last = last[1:]
+			}
+		}
 		if strings.Contains(line, `"returnValue":false`) || strings.Contains(line, `"returnValue": false`) {
 			return fmt.Errorf("the TV refused the app: %s", tvErrorText(line))
 		}
@@ -351,7 +452,14 @@ func InstallOutcome(r io.Reader) error {
 			return fmt.Errorf("the TV couldn't install the app: %s", tvErrorText(line))
 		}
 	}
-	return errors.New("the TV stopped answering while it installed the app")
+	said := strings.Join(last, " ")
+	if said == "" {
+		said = "nothing"
+	}
+	if len(said) > 300 {
+		said = said[:300]
+	}
+	return &QuietInstallError{Said: said}
 }
 
 func tvErrorText(line string) string {
