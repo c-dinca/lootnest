@@ -240,6 +240,7 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 		return
 	}
 	a.logf("Launched %s for %s", g.Name, who)
+	a.tvGameStarting("game:"+g.ID, g.Name)
 	a.mu.Lock()
 	if s := a.sessions[g.ID]; s != nil {
 		s.Phase = "launching"
@@ -412,10 +413,17 @@ func (a *App) tick() {
 	if hide != "" {
 		a.ui(func() {
 			a.mu.Lock()
-			if a.bigPicture && win.IsVisible(a.hwnd) {
+			tv := a.tv
+			if a.bigPicture && (tv || win.IsVisible(a.hwnd)) {
 				a.hidFor = hide
 			}
 			a.mu.Unlock()
+			if tv {
+				// TV mode stays behind the game, covering the desktop, and
+				// the game comes to the front.
+				a.tvGameUp(hide)
+				return
+			}
 			win.ShowWindow(a.hwnd, win.SW_HIDE)
 		})
 	}
@@ -426,12 +434,12 @@ func (a *App) tick() {
 			a.mu.Lock()
 			bp, tv := a.bigPicture, a.tv
 			a.mu.Unlock()
-			if bp && !win.IsVisible(a.hwnd) {
-				if tv {
-					a.tvBack()
-				} else {
-					a.show()
-				}
+			switch {
+			case tv:
+				a.tvBack()
+				a.emit("bpReturn", nil)
+			case bp && !win.IsVisible(a.hwnd):
+				a.show()
 				a.emit("bpReturn", nil)
 			}
 		})

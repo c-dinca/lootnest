@@ -719,3 +719,14 @@ On the LG TV, with section 27 done on the PC.
     stops before the key with "Windows treats this network as public".
     **Make this network private**, accept Windows' prompt: "This network
     is private now". **Install** works again.
+
+## 29. TV mode as a console (2.3.0)
+
+1. In TV mode, start a game: its art fills the TV with "Starting", then
+   the game shows. The desktop and taskbar never appear on the TV.
+2. Quit the game: Lootnest is back at once, where you started it.
+3. Start another game: the same, with no desktop in between.
+4. While a game starts, B comes back to Big Picture.
+5. Move the PC's mouse to every edge of your monitors: it doesn't go onto
+   the TV's display.
+6. Exit TV mode: the taskbar is back on your monitor.

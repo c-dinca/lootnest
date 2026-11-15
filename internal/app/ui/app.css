@@ -2770,3 +2770,28 @@ html.is-tv {
 .lg-row .ln-input { flex: 1; min-width: 0; }
 .lg-pass { text-transform: uppercase; letter-spacing: .15em; }
 .lg-secs { margin-left: var(--space-2); color: var(--fg-3); }
+
+/* TV mode: a game starting (25-bigpicture.js tvLaunch). Its art fills the
+   screen and slowly settles while it loads; Lootnest stays behind the game
+   once it's up, and this fades when the game closes. */
+.bp-launch { position: fixed; inset: 0; z-index: 46; background: var(--bg-ground); overflow: hidden; pointer-events: none;
+  animation: bp-launch-in var(--dur-4) var(--ease-emph) both; }
+.bp-launch.out { animation: bp-launch-out var(--dur-4) var(--ease-in-out) both; }
+.bp-launch-art { position: absolute; inset: 0; animation: bp-launch-zoom var(--launch-zoom) var(--ease-out) both; }
+.bp-launch-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bp-launch-veil { position: absolute; inset: 0; background: var(--launch-veil); }
+.bp-launch-body { position: absolute; left: var(--bp-safe-x); right: var(--bp-safe-x); bottom: calc(var(--bp-safe-y) + var(--space-8));
+  display: grid; gap: var(--space-4); animation: bp-screen-in var(--dur-4) var(--ease-emph) both; animation-delay: var(--dur-2); }
+.bp-launch-name { font: 400 var(--text-hero)/1.05 var(--font-title); color: var(--fg-1); text-wrap: balance; }
+.bp-launch-state { display: flex; align-items: center; gap: var(--space-4); color: var(--fg-2); font: 700 var(--fs-24)/1 var(--font-ui); }
+.bp-launch-bar { position: relative; width: var(--launch-bar-w); height: var(--space-1); border-radius: var(--radius-round); background: var(--glass-ctl); overflow: hidden; }
+.bp-launch-bar::after { content: ""; position: absolute; inset: 0; width: 40%; border-radius: inherit; background: var(--fg-1);
+  animation: bp-launch-run var(--launch-run) var(--ease-in-out) infinite; }
+.bp-launch[data-phase="playing"] .bp-launch-bar::after { width: 100%; animation: none; }
+@keyframes bp-launch-in { from { opacity: 0; } }
+@keyframes bp-launch-out { to { opacity: 0; transform: scale(1.03); } }
+@keyframes bp-launch-zoom { from { transform: scale(1.12); filter: brightness(.6); } }
+@keyframes bp-launch-run { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) {
+  .bp-launch, .bp-launch-art, .bp-launch-body, .bp-launch-bar::after { animation: none; }
+}

@@ -381,6 +381,12 @@ func Run(opt Options) error {
 	}
 	go a.watch()
 	go func() {
+		a.mu.Lock()
+		tv := a.tv
+		a.mu.Unlock()
+		if !tv {
+			tvTaskbarAtStart() // a TV mode that didn't end left it hidden
+		}
 		time.Sleep(2 * time.Second)
 		a.startScan()
 		if a.safe {

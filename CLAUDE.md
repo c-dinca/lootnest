@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.11, beta)
+## Where things stand (2.3.0, beta)
 
 These shipped recently, newest last:
 
@@ -1107,6 +1107,23 @@ These shipped recently, newest last:
   paired TV no longer fails: the pairing loop reads the TV app's log
   (`core.TVAppStarted`: "Screen: starting" or "ready" after the last
   launch). Save a report adds `TV.WebOSVersion` (/etc/starfish-release).
+
+- **2.3.0** The owner's TV list of 16 Nov, part 1 (console mode). In TV
+  mode the window no longer hides for a game: `tvGameStarting` (after
+  every launch: `startFound`, `runSwap`) emits `tvGame` "starting" and
+  sends the window to the bottom of the z-order (`win.SendToBack`) after
+  1.5 s; `tick`'s hide calls `tvGameUp` (`procOf`, `win.GameWindow`,
+  `ForceForeground`, "playing"); back always runs `tvBack` in TV mode.
+  `win.AllowAnyForeground` before launches. The taskbar (`Shell_TrayWnd`,
+  the TV's while it streams) is hidden in TV mode (`tvTaskbar`, a
+  `taskbar-hidden` mark shown again at the next start). Apollo gets
+  `isolated_virtual_display_option`. The holder ends only on an explicit
+  "off" or 20 s without answers (`tvPatience`). UI: `tvLaunch`,
+  `drawLaunch`, `tvReturn`, `#bp-launch` (`--launch-*` tokens); B while
+  starting comes back; a game Lootnest can't follow returns on focus.
+  Still to do from that list: the Home button overlay, Spotify, YouTube
+  and Stremio as apps, and the TV's sound (the engine sends it; the TV
+  app's audio backend is the suspect).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

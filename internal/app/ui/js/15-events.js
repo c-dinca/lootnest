@@ -79,7 +79,10 @@
         if (ev.on) tvOpen(); else tvClose();
         break;
       case "bpReturn": // the game started from Big Picture closed: back where it was
-        if (BP.on) { renderBP(false); sfx("open"); }
+        if (BP.on) { tvReturn(); renderBP(false); sfx("open"); }
+        break;
+      case "tvGame": // TV mode: a game is starting or up (app/tv.go)
+        tvGame(ev);
         break;
       case "saveCheck":
         S.saveCheck = ev.check || null;

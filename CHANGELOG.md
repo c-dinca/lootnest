@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.3.0
+
+TV mode works like a console.
+
+- **Lootnest stays on the TV while you play.** It no longer hides when a game starts, so the TV never shows the desktop: the game opens in front of Lootnest, and closing it brings you straight back. Starting another game works the same way.
+- **A game starting fills the TV with its art**, its name and a progress line, until it's up. B comes back while it's still starting.
+- **No Windows taskbar on the TV** while TV mode is on; it comes back when TV mode ends.
+- **The PC's mouse doesn't wander onto the TV.** The TV's display sits only at a corner of your monitors while it streams. Lootnest updates the streaming engine the next time it starts with no stream running.
+- **The stream no longer ends when Lootnest is busy for a few seconds**, such as while it saves a profile's files after a game.
+
 ## 2.2.11
 
 - **Install again on a TV that's already paired** no longer says it didn't pair: the TV app needs no PIN then and goes straight on to start Lootnest, which Lootnest now reads from the TV app's log.

@@ -189,18 +189,22 @@ func (a *App) startFound(key string, f core.FoundGame) error {
 			return errors.New("Steam wasn't found on this PC")
 		}
 		a.logf("Starting %s through Steam", name)
+		win.AllowAnyForeground()
 		if err := win.StartDetached(a.env.SteamPath+`\steam.exe`, strings.TrimSpace(fmt.Sprintf("-applaunch %d %s", appID, args)), a.env.SteamPath); err != nil {
 			return err
 		}
 		a.followFound(key, f)
+		a.tvGameStarting(key, name)
 		return nil
 	}
 	if f.URI != "" && core.SafeLaunchURI(f.URI) {
 		a.logf("Starting %s through its launcher", name)
+		win.AllowAnyForeground()
 		if err := win.ShellOpen(f.URI); err != nil {
 			return err
 		}
 		a.followFound(key, f)
+		a.tvGameStarting(key, name)
 		return nil
 	}
 	path, err := a.env.ResolveExe(exe)
@@ -208,11 +212,13 @@ func (a *App) startFound(key string, f core.FoundGame) error {
 		return err
 	}
 	a.logf("Starting %s", name)
+	win.AllowAnyForeground()
 	if err := a.startExe(key, path, args); err != nil {
 		return err
 	}
 	a.watchFirstStart("found:" + key)
 	a.followFound(key, f)
+	a.tvGameStarting(key, name)
 	return nil
 }
 

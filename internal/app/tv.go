@@ -28,6 +28,7 @@ import (
 const (
 	tvAnswerOn  = 2 // "tv?" while TV mode is on for that holder
 	tvAnswerOff = 1
+	tvPatience  = 20 // seconds without an answer before the holder gives up
 )
 
 // TVHolder is the whole of "lootnest.exe --tv". It returns the exit code.
@@ -51,12 +52,26 @@ func TVHolder() int {
 		return 1
 	}
 	ask := "tv?:" + strconv.FormatUint(uint64(pid), 10)
-	for {
+	// TV mode ended (Lootnest says so), or Lootnest is gone: the stream
+	// ends here. A Lootnest busy for a few seconds (saving a profile's
+	// files after a game) doesn't answer at once; that isn't an end.
+	for unsure := 0; unsure < tvPatience; {
 		time.Sleep(time.Second)
-		if h = win.FindWindow(WindowClass); h == 0 || win.AskCommand(h, ask) != tvAnswerOn {
-			return 0 // TV mode ended, or Lootnest quit: the stream ends here
+		h = win.FindWindow(WindowClass)
+		if h == 0 {
+			unsure++
+			continue
+		}
+		switch win.AskCommand(h, ask) {
+		case tvAnswerOn:
+			unsure = 0
+		case tvAnswerOff:
+			return 0
+		default:
+			unsure++
 		}
 	}
+	return 0
 }
 
 func findLootnest(wait time.Duration) uintptr {
@@ -111,6 +126,7 @@ func (a *App) enterTV(holder uint32) {
 	a.show()
 	win.FullscreenPrimary(a.hwnd)
 	win.ForceForeground(a.hwnd)
+	tvTaskbar(false)
 	if ready {
 		a.emit("tv", map[string]any{"on": true})
 	}
@@ -139,7 +155,9 @@ func (a *App) leaveTV() {
 	}
 	hidden, playing := a.tvWasHidden, a.hidFor != ""
 	a.tv, a.tvHolder, a.openTV, a.bigPicture = false, 0, false, false
+	a.hidFor = ""
 	a.mu.Unlock()
+	tvTaskbar(true)
 	win.SetFullscreen(a.hwnd, false)
 	if hidden || playing {
 		win.ShowWindow(a.hwnd, win.SW_HIDE)
@@ -161,4 +179,95 @@ func (a *App) tvBack() {
 	a.show()
 	win.FullscreenPrimary(a.hwnd)
 	win.ForceForeground(a.hwnd)
+}
+
+// tvTaskbarMark is kept while TV mode has the taskbar hidden, so a
+// Lootnest that ended without leaving TV mode shows it again at its next
+// start (tvTaskbarAtStart).
+func tvTaskbarMark() string { return filepath.Join(DataDir(), "taskbar-hidden") }
+
+// tvTaskbar hides Windows' main taskbar for TV mode (it's on the TV's
+// display while a stream runs) and shows it again after.
+func tvTaskbar(show bool) {
+	if show {
+		win.ShowTaskbar(true)
+		_ = os.Remove(tvTaskbarMark())
+		return
+	}
+	_ = os.WriteFile(tvTaskbarMark(), nil, 0o600)
+	win.ShowTaskbar(false)
+}
+
+// tvTaskbarAtStart shows the taskbar a TV mode that didn't end left hidden.
+func tvTaskbarAtStart() {
+	if _, err := os.Stat(tvTaskbarMark()); err == nil {
+		tvTaskbar(true)
+	}
+}
+
+// tvGameStarting runs right after a game was asked to start. In TV mode,
+// Big Picture shows the game starting, and Lootnest lets the game come to
+// the front over it and steps behind every other window a moment later,
+// still covering the desktop, rather than hiding.
+func (a *App) tvGameStarting(key, name string) {
+	a.mu.Lock()
+	tv := a.tv
+	a.mu.Unlock()
+	if !tv {
+		return
+	}
+	a.emit("tvGame", map[string]any{"phase": "starting", "key": key, "name": name})
+	go func() {
+		time.Sleep(1500 * time.Millisecond)
+		a.ui(func() {
+			a.mu.Lock()
+			tv := a.tv
+			a.mu.Unlock()
+			if tv {
+				win.SendToBack(a.hwnd)
+			}
+		})
+	}()
+}
+
+// tvGameUp brings the game TV mode started to the front once its process
+// runs, as its window may open behind Lootnest. Call it on the window's
+// thread.
+func (a *App) tvGameUp(key string) {
+	proc := a.procOf(key)
+	a.emit("tvGame", map[string]any{"phase": "playing", "key": key})
+	win.SendToBack(a.hwnd)
+	if proc == "" {
+		return
+	}
+	go func() {
+		// Its window can take a while after its process.
+		for i := 0; i < 20; i++ {
+			if gw := win.GameWindow(proc); gw != 0 {
+				a.ui(func() { win.ForceForeground(gw) })
+				return
+			}
+			time.Sleep(time.Second)
+		}
+	}()
+}
+
+// procOf is the process name of a game by its profile game id or Library
+// key, or "" when Lootnest doesn't know it.
+func (a *App) procOf(key string) string {
+	a.mu.Lock()
+	if a.cfg != nil {
+		if g := a.cfg.Game(key); g != nil {
+			p := procName(g)
+			a.mu.Unlock()
+			return p
+		}
+	}
+	a.mu.Unlock()
+	foundRunsMu.Lock()
+	defer foundRunsMu.Unlock()
+	if r := foundRuns[key]; r != nil {
+		return r.proc
+	}
+	return ""
 }
