@@ -311,6 +311,7 @@
      1080p, growing with the screen past it. */
   --tv-text-min: max(24px, 2.2vh);
   --tv-text-mid: max(28px, 2.6vh);
+  --link-pin-w: 6.5em;  /* the 4-digit PIN box in Settings, TV */
   --focus-ring-bp: 0 0 0 3px var(--shell), 0 0 0 7px var(--focus-ring);
   --mask-bp: linear-gradient(180deg, transparent, #000 var(--space-4), #000 calc(100% - var(--bp-foot-h) - var(--space-8)), transparent calc(100% - var(--bp-foot-h)));  /* rows fade out before the prompt bar */
   --scrim-bp:  /* the focused game's art behind Big Picture */

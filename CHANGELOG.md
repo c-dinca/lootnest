@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Set up TV streaming from Settings.** Settings, TV installs Apollo, a free, open-source streaming engine, with one Windows prompt and sets it up for you: its sign-in, its pages kept to this PC, its firewall rules kept to your home network, and Lootnest's TV mode as what it streams. Pair a TV by typing the PIN Moonlight shows. You never open Apollo itself. Forget a TV, end a stuck stream, turn the engine off and on, or save a report, all from the same page.
+
 - **TV mode, for playing on a TV.** Start Lootnest with `--tv` from a streaming host such as Apollo or Sunshine, and Moonlight on the TV shows Lootnest's Big Picture made for the sofa: larger text, Who's playing first, then your games, with only a controller. The game you start loads your profile's files as always, and Lootnest comes back to the front when the game closes. Start opens a menu with Who's playing and Exit TV mode, which ends the stream. How to set it up is in the guide, under Playing on a TV.
 - **The controller works in Who's playing and its questions over Big Picture**: move between the choices, A to choose, B to go back.
 

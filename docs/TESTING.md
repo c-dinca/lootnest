@@ -657,3 +657,29 @@ Needs Apollo (or Sunshine) on the PC and Moonlight TV on the LG TV, paired.
    kept when it closes, as without TV mode.
 9. If the log says "Lootnest runs inside another program's job", Apollo
    doesn't let Lootnest start on its own: say so, with the log.
+
+## 27. TV streaming set-up (Lootnest Link, M2)
+
+On a PC without Apollo, with the LG TV and Moonlight on it.
+
+1. Settings, TV, **Set up**. The download shows its progress, then
+   Windows asks once. Allow it. The page ends on Streaming engine with
+   Apollo 0.4.6 and On. Apollo's own pages never open.
+2. `https://localhost:47990` from another PC on the network doesn't
+   answer (pages kept to this PC). Windows Defender Firewall, the Apollo
+   rules are for Private only.
+3. On the TV, Moonlight finds "Lootnest on <PC>". Choose it; type its PIN
+   in **Add a TV** with a name, **Pair**. The TV is listed as Paired.
+4. Moonlight lists Lootnest. Do section 26 from its step 2.
+5. Pair a second device (a phone with Moonlight). It can start Lootnest
+   and use a controller too.
+6. **Turn off**: Windows asks; the TV can't find the PC. **Turn on**: it can.
+7. **Forget** the TV: Moonlight on it has to pair again.
+8. Update Lootnest, or move its folder, then start it: within two minutes
+   the log says nothing about the engine, or "TV mode's app now starts".
+   Section 26 still works.
+9. **Save a report**: Explorer shows `tv-diagnostics.txt`; search it for
+   the word "password". It only appears as "[password]".
+10. With Apollo installed by hand before (its own user): **Use it** asks
+    Windows once and takes over its sign-in; its apps and paired devices
+    stay.

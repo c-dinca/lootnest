@@ -52,7 +52,13 @@ Games are matched by their store and id (Steam, Epic, GOG), then by install fold
 
 Lootnest has a TV mode for streaming the PC to a TV: Big Picture on the whole screen, made to read from the sofa and to work with a controller alone. Who's playing comes first when more than one person uses the PC, then your games; Play loads that profile's files and starts the game, and Lootnest comes back when the game closes. Start (Menu on an Xbox pad) opens a menu with Who's playing and **Exit TV mode**.
 
-Lootnest doesn't stream by itself yet. With a streaming host such as Apollo or Sunshine on the PC and Moonlight on the TV, add an app in the host's settings whose command is Lootnest with `--tv`, for example `"%LOCALAPPDATA%\Programs\Lootnest\Lootnest.exe" --tv` (use the folder you installed Lootnest in). Start that app from Moonlight: Lootnest opens on the TV in TV mode, starting first if it wasn't running. Exit TV mode ends the stream; ending the stream from Moonlight leaves TV mode, and a game that's running keeps running, with its saves kept as always.
+To set it up, open **Settings, TV** and choose **Set up**. Lootnest downloads Apollo, a free, open-source streaming engine, from its own releases on GitHub, checks it, and installs it; Windows asks once. Lootnest then signs it in with a password of its own, keeps its settings pages to this PC and its firewall rules to your home network, and adds TV mode as the one thing it streams. You never need to open Apollo.
+
+On the TV, install Moonlight, open it and choose this PC (it shows as "Lootnest on" and the PC's name). The TV shows a PIN: type it in **Add a TV** in Settings, TV, with a name for the TV, and choose **Pair**. Then choose Lootnest on the TV: Lootnest opens there in TV mode, starting first if it wasn't running. Exit TV mode ends the stream; ending the stream from Moonlight leaves TV mode, and a game that's running keeps running, with its saves kept as always.
+
+Settings, TV also forgets a TV, ends a stream that's stuck, turns the engine off and on again (Windows asks), and saves a report of the engine's log and Lootnest's to attach to a GitHub issue. To remove Apollo, use Windows Settings, Apps.
+
+With a streaming host you set up yourself (Apollo or Sunshine), add an app whose command is Lootnest with `--tv`, for example `"%LOCALAPPDATA%\Programs\Lootnest\Lootnest.exe" --tv`, and turn off its "wait for all processes" option.
 
 The app the host starts is a second, small Lootnest that only keeps the stream open. The one that loads profiles and starts games runs on its own, so the host ending the stream never stops it in the middle of loading a profile's files.
 

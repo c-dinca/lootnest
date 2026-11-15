@@ -953,6 +953,31 @@ These shipped recently, newest last:
   controller as a mouse over store launchers (the owner, 15 Nov: make it
   work with the controller, as in games, rather than a "may need mouse"
   badge).
+- **Unreleased, Lootnest Link M2, TV streaming set-up** (Settings, TV,
+  `82-link.js`; `app/link.go`; `core/apollo.go`). Apollo 0.4.6's API (the
+  newest release; 0.4.8 is only a tag, same API), read in its source (`src/confighttp.cpp`): a session cookie from
+  `/api/login` (not Basic auth, no CSRF), `/api/password` without
+  sign-in only while no user exists, `/api/config` GET gives every key as
+  text plus status/platform/version/vdisplayStatus and POST rewrites the
+  whole file (`MergeApolloConfig`), `/api/apps` saves by uuid,
+  `/api/pin`, `/api/clients/list|update|unpair` (perm bits in
+  `crypto.h`; a new client gets only list and view, so `AllowTV` sets
+  `ApolloTVPerm`), `/api/otp` (host-made PIN for Artemis, for M3).
+  `core.Apollo` pins the certificate's SHA-256 on first contact
+  (`VerifyConnection`), talks only to localhost, never through a proxy.
+  `ApolloPinned` (version, URL, SHA-256; `DownloadApollo` refuses without
+  the hash; `downloader.get` takes a 64-digit sum as SHA-256). One
+  elevated PowerShell (`ApolloInstallScript`): NSIS `/S /D=`, then
+  `sunshine.exe --creds` from a temp file the script deletes, the
+  "Apollo" firewall rules to Private, the ApolloService started.
+  `link.json` (user, DPAPI password, cert pin, Off) is never sent to the
+  page. `configureEngine`: `ApolloSettings` (name "Lootnest on <PC>",
+  `origin_web_ui_allowed=pc`), `LootnestApp` (`--tv`, virtual display,
+  wait-all off, auto-detach off), restart. `linkAtStart` points the app
+  at the current exe. Bound calls run on the window's thread, so every
+  engine call is a goroutine with `link*` events. Harness
+  `?link=none|busy|set|off|unpinned`. Not done: uninstalling Apollo with
+  Lootnest (needs elevation).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

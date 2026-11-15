@@ -2752,3 +2752,10 @@ html.is-tv {
 }
 .bp-menu-keys { display: grid; gap: var(--space-4); width: min(100%, var(--bp-tile-wide-w)); margin-top: var(--space-6); }
 .bp-menu-keys .bp-btn { justify-content: flex-start; }
+
+/* Settings, TV (Lootnest Link, 82-link.js). */
+.link-acts { display: flex; flex: none; align-items: center; gap: var(--space-4); }
+.link-pair { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-3); }
+.link-pair #link-pin { width: var(--link-pin-w); text-align: center; letter-spacing: .2em; }
+.link-pair #link-name { flex: 1; min-width: 0; }
+.link-pct { font-weight: 650; color: var(--fg-2); }
