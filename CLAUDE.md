@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.10, beta)
+## Where things stand (2.2.11, beta)
 
 These shipped recently, newest last:
 
@@ -1098,6 +1098,15 @@ These shipped recently, newest last:
   (`apiLinkLogs`) adds each saved TV's `lootnest-tv.log` (`tvAppLog`).
   Open with the owner: using the PC while the TV streams (one Windows
   session; the TV's display is primary during a stream since 2.2.9).
+
+- **2.2.11** The owner's DualSense on the TV's USB still did nothing:
+  the TV app's log had no controller at all, and the engine's log no
+  gamepad. Older LG TVs pass only LG's listed USB controllers to apps
+  (moonlight-tv wiki, Gamepad Setup); DualSense needs an adapter, webOS 5+
+  Bluetooth, or pairing with the PC (docs/GUIDE.md). Install again on a
+  paired TV no longer fails: the pairing loop reads the TV app's log
+  (`core.TVAppStarted`: "Screen: starting" or "ready" after the last
+  launch). Save a report adds `TV.WebOSVersion` (/etc/starfish-release).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

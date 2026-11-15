@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.11
+
+- **Install again on a TV that's already paired** no longer says it didn't pair: the TV app needs no PIN then and goes straight on to start Lootnest, which Lootnest now reads from the TV app's log.
+- **Save a report names the TV's webOS version**, beside the TV app's log.
+- **The guide says which controllers work on an LG TV**: older LG TVs take only the controllers LG lists over USB; a DualSense needs an adapter, Bluetooth on webOS 5 and later, or pairing with the PC.
+
 ## 2.2.10
 
 Controllers plugged into the TV.

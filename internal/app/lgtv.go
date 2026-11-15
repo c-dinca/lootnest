@@ -205,7 +205,10 @@ func (a *App) installTV(ip, name, passphrase string) error {
 	// The TV starts pairing a moment after it opens: the engine accepts
 	// the PIN only then.
 	paired := false
-	for end := time.Now().Add(75 * time.Second); time.Now().Before(end); time.Sleep(2 * time.Second) {
+	for i, end := 0, time.Now().Add(75*time.Second); time.Now().Before(end); i++ {
+		if i > 0 {
+			time.Sleep(2 * time.Second)
+		}
 		ok, err := ap.Pair(ctx, pin, name)
 		if err != nil {
 			return err
@@ -213,6 +216,12 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		if ok {
 			paired = true
 			break
+		}
+		// A TV paired before needs no PIN: its app goes straight on to
+		// start Lootnest, as its own log says.
+		if i%3 == 2 && core.TVAppStarted(tv.TVAppLog()) {
+			a.logf("TV streaming: Add an LG TV on %s: the TV was already paired with this PC", ip)
+			return nil
 		}
 	}
 	if !paired {
@@ -423,8 +432,12 @@ func tvAppLog(t savedTV) string {
 		return "Couldn't reach the TV: " + err.Error()
 	}
 	defer tv.Close()
-	if l := tv.TVAppLog(); l != "" {
-		return l
+	head := ""
+	if v := tv.WebOSVersion(); v != "" {
+		head = "webOS: " + v + "\r\n"
 	}
-	return "The TV app hasn't written a log yet."
+	if l := tv.TVAppLog(); l != "" {
+		return head + l
+	}
+	return head + "The TV app hasn't written a log yet."
 }
