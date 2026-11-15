@@ -978,6 +978,26 @@ These shipped recently, newest last:
   engine call is a goroutine with `link*` events. Harness
   `?link=none|busy|set|off|unpinned`. Not done: uninstalling Apollo with
   Lootnest (needs elevation).
+- **Unreleased, Lootnest Link M3, Add an LG TV** (`core/webos.go`,
+  `app/lgtv.go`, `viewLGTV` in 82-link.js). The TV app is
+  c-dinca/lootnest-tv-webos (a fork of Moonlight TV, GPL v3; its own
+  changes in `src/app/lootnest.c`: launch params `host` + `pairPin`,
+  auto-launch of the app named Lootnest, first paired PC, one WoL,
+  Start+Select 2 s quits). `FindLGTVs` (SSDP: LG second-screen and DIAL
+  targets, `LooksLikeLG`, friendlyName from the description),
+  `FetchTVKey` (Key Server `http://<ip>:9991/webos_rsa`, `UnlockTVKey`
+  with the passphrase), `ConnectTV` (SSH prisoner@9922, host key pinned),
+  `InstallTVApp` (cat into /media/developer/temp, `luna-send-pub -i`
+  appInstallService/dev/install, `InstallOutcome`), `LaunchTVApp`
+  (applicationManager/launch with params), `DevModeToken`
+  (/var/luna/preferences/devmode_enabled) and `ExtendDevMode`
+  (developer.lge.com ResetDevModeSession). `installTV`: key, download
+  the pinned IPK (`TVAppPinned`, empty until the TV app's first
+  release), install, save the TV (key DPAPI in link.json `tvs`), launch
+  with a random PIN and this PC's address on the TV's network
+  (`TV.LocalIP`), then `/api/pin` every 2 s for 75 s, `AllowTV`.
+  `keepDevModes` hourly, extends each TV every 12 h. SSH via
+  golang.org/x/crypto/ssh (the only new dependency).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

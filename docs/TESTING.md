@@ -683,3 +683,25 @@ On a PC without Apollo, with the LG TV and Moonlight on it.
 10. With Apollo installed by hand before (its own user): **Use it** asks
     Windows once and takes over its sign-in; its apps and paired devices
     stay.
+
+## 28. Add an LG TV (Lootnest Link, M3)
+
+On the LG TV, with section 27 done on the PC.
+
+1. On the TV: LG Content Store, Developer Mode; sign in with an LG
+   developer account; Dev Mode Status on (the TV restarts); Key Server
+   on, left open.
+2. Settings, TV, **Add an LG TV**. The TV is listed (or type its
+   address). Type the passphrase, **Install**. The steps go by: key,
+   download, connecting, installing, pairing.
+3. On the TV, Lootnest opens by itself, pairs without a PIN and goes
+   straight into Lootnest's TV mode. Settings, TV lists the TV as Paired.
+4. Quit it and open Lootnest from the TV's home screen: straight into TV
+   mode again.
+5. Put the PC to sleep (with Wake-on-LAN on in its network card), open
+   Lootnest on the TV: "Waking your PC", then TV mode.
+6. In a game, hold Start and Select for two seconds: the stream ends and
+   the PC leaves TV mode.
+7. Leave the PC and TV on for a day: the TV's row says developer mode was
+   extended in the last 12 hours; the log says "developer mode ... extended".
+8. **Install again** updates the app; **Forget** removes the pairing.

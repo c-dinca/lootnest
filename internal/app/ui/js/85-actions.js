@@ -656,6 +656,25 @@
       api.linkPower(el.dataset.on === "1").catch(() => { L.step = null; render(); });
     },
     "link-logs"() { api.linkLogs().catch(() => {}); },
+    "lg-add"() { openLGTV(); },
+    "lg-again"(el) { openLGTV(el.dataset.ip, el.dataset.name); },
+    async "lg-forget"(el) {
+      if (!(await confirmDialog({ title: `Forget ${el.dataset.name}?`, body: "It has to pair again to play here, and Lootnest stops keeping its developer mode on. The app stays on the TV until developer mode runs out.", ok: "Forget" }))) return;
+      api.linkForgetLG(el.dataset.ip).catch(() => {});
+      if (el.dataset.uuid) api.linkUnpair(el.dataset.uuid).catch(() => {});
+    },
+    "lg-find"() { const D = S.dialog; D.ip = ($("#lg-ip") || {}).value || ""; D.finding = true; D.tvs = null; renderOverlay(); api.linkFindTVs().catch(() => {}); },
+    "lg-install"() {
+      const D = S.dialog, pick = $('input[name="lg-pick"]:checked');
+      D.ip = (($("#lg-ip") || {}).value || "").trim(); D.name = (($("#lg-name") || {}).value || "").trim();
+      const pass = (($("#lg-pass") || {}).value || "").trim();
+      if (!D.ip && pick) { D.ip = pick.dataset.ip; D.name = D.name || pick.dataset.name; }
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(D.ip)) { D.error = "Type the TV's address, such as 192.168.1.20."; renderOverlay(); return; }
+      if (!pass) { D.error = "Type the passphrase Developer Mode shows."; renderOverlay(); return; }
+      D.error = ""; D.busy = true; S.link = S.link || {}; S.link.step = { step: "key" };
+      renderOverlay();
+      api.linkInstallTV(D.ip, D.name, pass).catch((e) => { D.busy = false; D.error = errText(e); renderOverlay(); });
+    },
     async "itch-connect"() {
       const I = S.itch, k = ($("#s-itchkey") || {}).value || "";
       Object.assign(I, { busy: true, error: "" }); render();
@@ -1483,6 +1502,7 @@
       return;
     }
     if (el.id === "gog-in" && S.dialog && S.dialog.kind === "gog") { S.dialog.pick = el.value; renderOverlay(); const n = $("#gog-in"); if (n) n.focus(); return; }
+    if (el.name === "lg-pick" && S.dialog && S.dialog.kind === "lgtv") { const ip = $("#lg-ip"), nm = $("#lg-name"); if (ip) ip.value = el.dataset.ip; if (nm) nm.value = el.dataset.name; return; }
     if (el.id === "itch-up" && S.dialog && S.dialog.kind === "itch") { S.dialog.pick = +el.value; renderOverlay(); const n = $("#itch-up"); if (n) n.focus(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }
     if ((el.id === "try-from" || el.id === "try-loc") && S.dialog && S.dialog.kind === "trysave") { tryKeep(S.dialog); renderOverlay(); const n = $("#" + el.id); if (n) n.focus(); return; }
