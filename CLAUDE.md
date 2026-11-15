@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.7, beta)
+## Where things stand (2.2.8, beta)
 
 These shipped recently, newest last:
 
@@ -1071,6 +1071,13 @@ These shipped recently, newest last:
   pairing doesn't finish). `AppRunning` reads `getForegroundAppInfo`: a
   developer session's `ps` doesn't list developer apps. closeByAppId is
   tried on `com.webos.service.applicationManager` first.
+
+- **2.2.8** The TV app's own log (2.2.7 reads it) showed the launch
+  parameters arrive and the PC answer, then "no PC": in the fork,
+  `pcmanager_update_by_host` never set the worker context's uuid for a
+  host added by address, so the callback got an empty id. Lootnest for
+  TV 1.2.1 (c-dinca/lootnest-tv-webos#5) sets it from the host's answer.
+  The owner (15 Nov): fix and publish without asking for these TV fixes.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
