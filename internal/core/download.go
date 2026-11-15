@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -38,7 +39,8 @@ type downloader struct {
 }
 
 // get saves the file at u to dst, through dst+".part": only over https,
-// checked against size and md5 when they're known. A .part an earlier try
+// checked against size and checksum when they're known (sum is an md5, or
+// a SHA-256 when it's 64 hex digits long). A .part an earlier try
 // left goes on from where it stopped when the server answers the Range
 // request with 206; otherwise the download starts over. A download that
 // fails its checks leaves nothing behind, and one cut short (a refusal, a
@@ -91,6 +93,9 @@ func (d downloader) get(ctx context.Context, u, dst string, size int64, sum stri
 		return err
 	}
 	h := md5.New()
+	if len(sum) == 64 {
+		h = sha256.New()
+	}
 	flags := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
 	if have > 0 && resp.StatusCode == http.StatusPartialContent && strings.HasPrefix(resp.Header.Get("Content-Range"), "bytes "+strconv.FormatInt(have, 10)+"-") {
 		pf, err := os.Open(part)

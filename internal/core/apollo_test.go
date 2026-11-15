@@ -235,3 +235,29 @@ func TestApolloTVPerm(t *testing.T) {
 		t.Fatal("a TV may use the clipboard, files or commands")
 	}
 }
+
+func TestApolloScripts(t *testing.T) {
+	s := ApolloInstallScript(`C:\Users\O'Neil\AppData\Local\Lootnest\downloads\apollo\Apollo.exe`, `C:\Program Files\Apollo`, `C:\Users\O'Neil\AppData\Local\Temp\ln-apollo.json`)
+	for _, want := range []string{
+		`'C:\Users\O''Neil\AppData\Local\Lootnest\downloads\apollo\Apollo.exe'`,
+		`-ArgumentList '/S', '/D=C:\Program Files\Apollo'`, // NSIS: /D last and unquoted
+		`'--creds', $c.user, $c.pass`,
+		`Remove-Item -LiteralPath 'C:\Users\O''Neil\AppData\Local\Temp\ln-apollo.json'`,
+		`Set-NetFirewallRule -Profile Private`,
+		`Start-Service -Name 'ApolloService'`,
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("install script lacks %s", want)
+		}
+	}
+	if strings.Contains(ApolloServiceScript(false), "Start-Service") || !strings.Contains(ApolloServiceScript(true), "Automatic") {
+		t.Error("service scripts")
+	}
+}
+
+func TestDownloadApolloNeedsPin(t *testing.T) {
+	err := DownloadApollo(context.Background(), ApolloRelease{URL: "https://example.com/a.exe"}, t.TempDir()+"/a.exe", nil)
+	if !errors.Is(err, ErrApolloNotPinned) {
+		t.Fatal(err)
+	}
+}

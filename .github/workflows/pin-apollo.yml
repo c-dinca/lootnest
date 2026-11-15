@@ -1,0 +1,22 @@
+# Temporary (Lootnest Link M2): prints the SHA-256 of Apollo's Windows
+# installer so Lootnest can pin it. Removed before the PR merges.
+name: Pin Apollo
+on:
+  pull_request:
+    paths: [".github/workflows/pin-apollo.yml"]
+permissions:
+  contents: read
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release and installer hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list -R ClassicOldSong/Apollo --limit 6
+          gh release view v0.4.8 -R ClassicOldSong/Apollo --json tagName,publishedAt,isPrerelease,assets --jq '.tagName, .publishedAt, .isPrerelease, (.assets[] | [.name, .size, .digest] | @tsv)'
+          mkdir dl
+          gh release download v0.4.8 -R ClassicOldSong/Apollo -p '*.exe' -D dl
+          ls -l dl
+          sha256sum dl/*

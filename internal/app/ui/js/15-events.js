@@ -102,6 +102,12 @@
         if (S.view === "game") render();
         if (S.unsorted || unsortedAsked) api.unsortedCaptures().catch(() => {});
         break;
+      case "link":
+      case "linkStep":
+      case "linkDone":
+      case "linkPaired":
+        linkEvent(ev);
+        break;
       case "itch":
       case "itchUploads":
       case "itchProgress":

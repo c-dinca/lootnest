@@ -631,6 +631,31 @@
     "capture-open"(el) { api.openCapture(el.dataset.path).catch((e) => toast(errText(e), "error")); },
     "playnite-open": () => openPlaynite(),
     "itch-keys": () => api.open("store", ITCH_KEYS).catch((e) => toast(errText(e), "error")),
+    "link-setup"() {
+      const L = S.link = S.link || {};
+      L.error = ""; L.step = { step: "download", done: 0, total: 0 };
+      render();
+      api.linkSetup().catch((e) => { L.step = null; L.error = errText(e); render(); });
+    },
+    "link-pair"() {
+      const L = S.link = S.link || {}, pin = ($("#link-pin") || {}).value || "", name = ($("#link-name") || {}).value || "";
+      L.pin = pin.trim(); L.tvName = name.trim();
+      if (!/^[0-9]{4}$/.test(L.pin)) { L.pairError = "The PIN is the 4 digits your TV shows."; render(); return; }
+      L.pairing = true; L.pairError = "";
+      render();
+      api.linkPair(L.pin, L.tvName).catch((e) => { L.pairing = false; L.pairError = errText(e); render(); });
+    },
+    async "link-unpair"(el) {
+      if (!(await confirmDialog({ title: `Forget ${el.dataset.name}?`, body: "It has to pair again to play here.", ok: "Forget" }))) return;
+      api.linkUnpair(el.dataset.uuid).catch(() => {});
+    },
+    "link-end"() { api.linkEnd().catch(() => {}); },
+    "link-power"(el) {
+      const L = S.link = S.link || {};
+      L.step = { step: "power" }; render();
+      api.linkPower(el.dataset.on === "1").catch(() => { L.step = null; render(); });
+    },
+    "link-logs"() { api.linkLogs().catch(() => {}); },
     async "itch-connect"() {
       const I = S.itch, k = ($("#s-itchkey") || {}).value || "";
       Object.assign(I, { busy: true, error: "" }); render();
@@ -1076,7 +1101,7 @@
     "add-player"() { const used = new Set(S.players.map((p) => p.color)); S.players.push({ id: "", name: "", color: S.d.colors.find((c) => !used.has(c)) || S.d.colors[0] }); render(); const ins = document.querySelectorAll('[data-field="pname"]'); ins[ins.length - 1].focus(); },
     "remove-player"(el) { S.players.splice(+el.dataset.i, 1); render(); },
     "shelf-all"(el) { S.tag = el.dataset.tag; render(); const t = $(".lib-tools"); if (t) t.scrollIntoView({ block: "start" }); },
-    "set-tab"(el) { S.setTab = el.dataset.tab; S.pluginError = ""; setPref("setTab", S.setTab); ctlAsked = false; render(); const v = $("#view"); if (v) v.scrollTop = 0; },
+    "set-tab"(el) { S.setTab = el.dataset.tab; S.pluginError = ""; setPref("setTab", S.setTab); ctlAsked = false; linkAsked = false; render(); const v = $("#view"); if (v) v.scrollTop = 0; },
     "reset-players"() { S.players = null; render(); },
     "edit-profiles"() { S.dialog = { kind: "profiles" }; renderOverlay(); focusOverlay(); },
     "new-profile"() { S.dialog = { kind: "profiles" }; if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players)); actions["add-player"](); },

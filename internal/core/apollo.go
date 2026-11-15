@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -501,4 +502,113 @@ func ApolloSettings(pcName string) map[string]string {
 		"sunshine_name":         name,
 		"origin_web_ui_allowed": "pc",
 	}
+}
+
+// ApolloRelease is the one Apollo release Lootnest installs: tested with
+// Lootnest, downloaded from Apollo's own releases on GitHub and checked
+// against the SHA-256 kept here before anything runs it.
+type ApolloRelease struct {
+	Version string
+	URL     string
+	SHA256  string
+}
+
+// ApolloPinned is the release Lootnest installs. A new one is tested with
+// Lootnest first, then its address and SHA-256 change here.
+var ApolloPinned = ApolloRelease{
+	Version: "0.4.8",
+	URL:     "https://github.com/ClassicOldSong/Apollo/releases/download/v0.4.8/Apollo.exe",
+	SHA256:  "",
+}
+
+// ErrApolloNotPinned stops a download Lootnest has no checksum for.
+var ErrApolloNotPinned = errors.New("this version of Lootnest doesn't have the streaming engine's checksum yet, so it won't download it")
+
+// DownloadApollo saves the pinned installer to dst, checked against its
+// SHA-256; a file that doesn't match is deleted.
+func DownloadApollo(ctx context.Context, rel ApolloRelease, dst string, progress func(done, total int64)) error {
+	if len(rel.SHA256) != 64 {
+		return ErrApolloNotPinned
+	}
+	if ok, _ := fileSHA256Is(dst, rel.SHA256); ok {
+		return nil // downloaded before
+	}
+	d := downloader{
+		client: &http.Client{
+			Timeout: 30 * time.Minute,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if req.URL.Scheme != "https" || len(via) > 5 {
+					return errors.New("Lootnest only downloads over https")
+				}
+				return nil
+			},
+		},
+		store: "GitHub",
+		status: func(code int, status string) error {
+			if code == http.StatusOK || code == http.StatusPartialContent {
+				return nil
+			}
+			return fmt.Errorf("GitHub answered %s", status)
+		},
+		keep: true,
+	}
+	return d.get(ctx, rel.URL, dst, 0, rel.SHA256, progress)
+}
+
+func fileSHA256Is(path, want string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return false, err
+	}
+	return strings.EqualFold(hex.EncodeToString(h.Sum(nil)), want), nil
+}
+
+// ApolloService is the Windows service Apollo runs as.
+const ApolloService = "ApolloService"
+
+// ApolloInstallScript is the PowerShell Lootnest runs as administrator,
+// once, to install the engine: Apollo's installer without its windows
+// (with its virtual display and virtual controller drivers), Lootnest's
+// user and password for its API, its firewall rules narrowed to private
+// networks (Apollo's own allow every network), and the service started.
+// The password comes in through a file in this Windows user's temp folder,
+// which the script deletes, not through the script; Apollo's own --creds
+// step takes it on its command line for the moment it runs. Exit codes: 0 done, 10 the installer failed, 11 Apollo
+// isn't where it should be after it, 12 the sign-in couldn't be set.
+func ApolloInstallScript(installer, dir, credsFile string) string {
+	q := psQuote
+	lines := []string{`$ErrorActionPreference = 'Stop'`}
+	if installer != "" { // "" when it's installed already: only the sign-in
+		lines = append(lines,
+			`$p = Start-Process -FilePath `+q(installer)+` -ArgumentList '/S', `+q("/D="+dir)+` -Wait -PassThru`,
+			`if ($p.ExitCode -ne 0) { exit 10 }`)
+	}
+	return strings.Join(append(lines,
+		`$exe = Join-Path `+q(dir)+` 'sunshine.exe'`,
+		`if (-not (Test-Path -LiteralPath $exe)) { exit 11 }`,
+		`try {`,
+		`  $c = Get-Content -LiteralPath `+q(credsFile)+` -Raw | ConvertFrom-Json`,
+		`} finally { Remove-Item -LiteralPath `+q(credsFile)+` -Force -ErrorAction SilentlyContinue }`,
+		`Stop-Service -Name `+q(ApolloService)+` -ErrorAction SilentlyContinue`,
+		`$cp = Start-Process -FilePath $exe -ArgumentList '--creds', $c.user, $c.pass -WorkingDirectory `+q(dir)+` -WindowStyle Hidden -Wait -PassThru`,
+		`if ($cp.ExitCode -ne 0) { exit 12 }`,
+		`Get-NetFirewallRule -DisplayName 'Apollo' -ErrorAction SilentlyContinue | Set-NetFirewallRule -Profile Private`,
+		`Start-Service -Name `+q(ApolloService),
+		`exit 0`,
+	), "\r\n")
+}
+
+// ApolloServiceScript turns the engine's service on (started, and with
+// Windows) or off (stopped, started only by hand).
+func ApolloServiceScript(on bool) string {
+	q := psQuote(ApolloService)
+	if on {
+		return "$ErrorActionPreference = 'Stop'\r\nSet-Service -Name " + q + " -StartupType Automatic\r\nStart-Service -Name " + q + "\r\nexit 0"
+	}
+	return "$ErrorActionPreference = 'Stop'\r\nStop-Service -Name " + q + " -ErrorAction SilentlyContinue\r\nSet-Service -Name " + q + " -StartupType Manual\r\nexit 0"
 }

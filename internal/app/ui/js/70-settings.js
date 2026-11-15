@@ -40,7 +40,7 @@
   // A group of rows under its label, with an optional short line.
   const setSub = (title, note, body) => `<section class="set-sub">${title ? `<div class="ln-section-head"><div><h2>${title}</h2></div></div>` : ""}${note ? `<p class="set-note">${note}</p>` : ""}${body}</section>`;
   // The categories, by key, as the list on the left names them.
-  const SET_CATS = { general: "General", appearance: "Appearance", games: "Games and swaps", controllers: "Controllers", storage: "Storage", plugins: "Plugins", online: "Online", updates: "Updates", cloud: "Cloud saves", data: "Data and activity", about: "About" };
+  const SET_CATS = { general: "General", appearance: "Appearance", games: "Games and swaps", controllers: "Controllers", tv: "TV", storage: "Storage", plugins: "Plugins", online: "Online", updates: "Updates", cloud: "Cloud saves", data: "Data and activity", about: "About" };
   function viewSettings() {
     const s = cfg().settings, st = S.d.steam, hidden = Object.entries((S.found && S.found.hidden) || {});
     const b = (kind, attrs, label) => `<button class="ln-button ln-button--${kind} ln-button--sm" ${attrs}>${label}</button>`;
@@ -84,6 +84,7 @@
             ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`, "s-steam") : setRow("Steam isn't on this PC", "")}`)
         + (hidden.length ? sub("Hidden games", "", hidden.map(([k, name]) => setRow(esc(name), "", b("secondary", `data-action="found-unhide" data-key="${esc(k)}"`, "Show again"))).join("")) : "")],
       ["controllers", SET_CATS.controllers, GI.pad, viewControllers],
+      ["tv", SET_CATS.tv, ph("television-simple"), viewLink],
       ["storage", SET_CATS.storage, GI.drive, viewStorage],
       ["plugins", SET_CATS.plugins, GI.puzzle, viewPlugins],
       ["online", SET_CATS.online, GI.globe, () => sub("What Lootnest looks up", "", `

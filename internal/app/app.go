@@ -387,6 +387,7 @@ func Run(opt Options) error {
 			return
 		}
 		a.autoHooks()
+		go a.linkAtStart()
 		go a.watchUpdates()
 		go a.cleanupLegacy()
 		go a.watchGameSaves()
