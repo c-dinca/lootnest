@@ -482,7 +482,6 @@
 
   // Game details from the Steam store (ps_gameDetails, opt-in): the copy
   // kept on this PC, with the user's own edits over it.
-  const SHOTS_SHOWN = 4;
   function detailsBlock(it) {
     const key = recentKey(it);
     const steam = cfg().settings.gameDetails;
@@ -503,14 +502,11 @@
       ["Steam reviews", d.reviewScore ? `${esc(d.reviewScore)}<span class="gp-det-n">${d.reviewPercent}% of ${d.reviewCount.toLocaleString("en-US")} reviews</span>` : ""],
       ["Metacritic", d.metacritic ? String(d.metacritic) : ""],
     ].filter((f) => f[1]);
-    const shots = d.screenshots || [], more = shots.length - SHOTS_SHOWN;
-    const thumbs = shots.length ? `<div class="gp-shots">${shots.slice(0, SHOTS_SHOWN).map((s, i) => `<button class="gp-shot" data-action="shot-open" ${itemAttr(it)} data-i="${i}" aria-label="Screenshot ${i + 1} of ${shots.length}" aria-haspopup="dialog">
-        <img src="${esc(s.thumb)}" alt="" loading="lazy">${i === SHOTS_SHOWN - 1 && more > 0 ? `<span class="gp-shot-more ln-num" aria-hidden="true">+${more}</span>` : ""}</button>`).join("")}</div>` : "";
     const also = d.from ? `, and ${esc(d.from)}` : "", edits = R.edited ? ", with your edits" : "";
     const from = d.storeUrl ? `From the Steam store${also}${edits}. <button class="gpage-link" data-action="open-link" data-url="${esc(d.storeUrl)}">Open on Steam</button>` : d.from ? `From ${esc(d.from)}${edits}.` : "Your own details.";
-    return `<section class="gpage-block gp-det">${head}<div class="gp-det-cols"><div class="gp-det-main">
+    return `<section class="gpage-block gp-det">${mediaBlock(it, d)}${head}<div class="gp-det-cols"><div class="gp-det-main">
         ${sum ? `<p class="gp-det-sum${open ? " open" : ""}" id="det-sum">${esc(sum)}</p><button class="gpage-link" data-action="details-more" data-k="${esc(key)}" aria-expanded="${open}" aria-controls="det-sum"${open ? "" : " hidden"}>${open ? "Show less" : "Show more"}</button>` : ""}
-        ${gameCtlLine(d)}${thumbs}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>
+        ${gameCtlLine(d)}<p class="gpage-hint">${from}${R.fetching ? " Checking for newer details." : ""}</p></div>
         ${facts.length ? `<dl class="ln-facts gp-det-facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>` : ""}</div></section>`;
   }
   // Community, at the end of Overview: what players say on Steam, the most
@@ -568,6 +564,109 @@
     if (!("IntersectionObserver" in window)) { ask(); return; }
     comSeen = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { comSeen.disconnect(); comSeen = null; ask(); } }, { rootMargin: "0px 0px 200px 0px" });
     comSeen.observe(el);
+  }
+  // Trailers and screenshots: the one in focus large on a stage, the rest in
+  // a strip beside it. Trailers play muted (Steam serves them only as HLS,
+  // so hls.js plays them; it's loaded the first time it's needed);
+  // screenshots move on by themselves every few seconds unless the pointer
+  // rests on them or one was just picked; a screenshot on the stage opens
+  // large. The video element is kept between redraws, so a redraw never
+  // restarts a trailer.
+  const NONCE = (document.currentScript && document.currentScript.nonce) || "";
+  const MEDIA_EVERY = 6000, MEDIA_HOLD = 15000;
+  let hlsReady = null, mediaTimer = 0;
+  const vids = new Map(); // "key|n" -> { el, hls }
+  function loadHls() {
+    if (window.Hls) return Promise.resolve(window.Hls);
+    if (!hlsReady) hlsReady = api.vendor("hls").then((src) => {
+      const sc = document.createElement("script");
+      sc.nonce = NONCE; sc.textContent = src; document.head.append(sc);
+      return window.Hls;
+    });
+    return hlsReady;
+  }
+  function mediaList(d) {
+    return [...(d.movies || []).map((m) => ({ kind: "movie", thumb: m.thumb, src: m.hls, name: m.name })),
+      ...(d.screenshots || []).map((x, i) => ({ kind: "shot", thumb: x.thumb, full: x.full, i }))];
+  }
+  function mediaBlock(it, d) {
+    const list = mediaList(d);
+    if (!list.length) return "";
+    const key = recentKey(it), M = S.media[key] || (S.media[key] = { i: 0, hold: 0 });
+    Object.assign(M, { it, d, list });
+    M.i = Math.min(M.i, list.length - 1);
+    const cur = list[M.i];
+    const stage = cur.kind === "movie"
+      ? `<div class="gp-stage is-movie" id="gp-stage" data-k="${esc(key)}"><img src="${esc(cur.thumb)}" alt=""></div>`
+      : `<button class="gp-stage" id="gp-stage" data-k="${esc(key)}" data-action="shot-open" ${itemAttr(it)} data-i="${cur.i}" aria-label="Screenshot ${cur.i + 1}, open it large" aria-haspopup="dialog"><img src="${esc(cur.full)}" alt=""><span class="gp-stage-zoom" aria-hidden="true">${ph("arrows-out")}</span></button>`;
+    const strip = list.map((m, n) => `<button class="gp-thumb${n === M.i ? " on" : ""}" data-action="media-pick" data-k="${esc(key)}" data-n="${n}" aria-pressed="${n === M.i}" aria-label="${m.kind === "movie" ? esc(m.name || "Trailer") : `Screenshot ${m.i + 1}`}">
+        <img src="${esc(m.thumb)}" alt="" loading="lazy">${m.kind === "movie" ? `<span class="gp-thumb-play" aria-hidden="true">${ph("play", "fill")}</span>` : ""}</button>`).join("");
+    return `<div class="gp-media">${stage}<div class="gp-strip" role="group" aria-label="Trailers and screenshots">${strip}</div></div>`;
+  }
+  function dropVideos(keep) {
+    vids.forEach((v, k) => { if (k === keep) return; try { if (v.hls) v.hls.destroy(); v.el.pause(); v.el.removeAttribute("src"); v.el.load(); } catch (e) { /* gone */ } vids.delete(k); });
+  }
+  // After every redraw of a game's page: the trailer back on its stage, or
+  // the next screenshot on its timer.
+  function mountMedia() {
+    clearTimeout(mediaTimer);
+    const st = $("#gp-stage");
+    if (!st) { dropVideos(""); return; }
+    const key = st.dataset.k, M = S.media[key];
+    if (!M) return;
+    const cur = M.list[M.i];
+    if (cur.kind !== "movie") {
+      dropVideos("");
+      if (!reduced() && M.list.length > 1) mediaTimer = setTimeout(() => mediaAuto(key), MEDIA_EVERY);
+      return;
+    }
+    const id = key + "|" + M.i;
+    dropVideos(id);
+    let v = vids.get(id);
+    if (!v) {
+      const el = document.createElement("video");
+      el.className = "gp-video"; el.muted = true; el.playsInline = true; el.controls = true; el.poster = cur.thumb; el.preload = "auto";
+      el.addEventListener("ended", () => { if (M.list.length > 1) mediaGo(key, (M.i + 1) % M.list.length); });
+      v = { el };
+      vids.set(id, v);
+      loadHls().then((Hls) => {
+        if (vids.get(id) !== v) return;
+        if (Hls && Hls.isSupported()) {
+          const h = new Hls({ enableWorker: false, capLevelToPlayerSize: true });
+          h.on(Hls.Events.ERROR, (_, e) => { if (e.fatal) { h.destroy(); el.closest(".gp-stage")?.classList.add("is-broken"); } });
+          h.loadSource(cur.src); h.attachMedia(el); v.hls = h;
+        } else if (el.canPlayType("application/vnd.apple.mpegurl")) el.src = cur.src;
+        if (!reduced()) el.play().catch(() => {});
+      }).catch(() => st.classList.add("is-broken"));
+    }
+    st.replaceChildren(v.el);
+    if (v.hls && !reduced() && !v.el.ended) v.el.play().catch(() => {});
+  }
+  // Screenshots move on by themselves, but not under the pointer, not right
+  // after one was picked, and not off screen.
+  function mediaAuto(key) {
+    const M = S.media[key], box = $(".gp-media");
+    if (!M || !box) return;
+    const r = box.getBoundingClientRect();
+    if (box.matches(":hover") || Date.now() < M.hold || document.hidden || r.bottom < 0 || r.top > innerHeight) { mediaTimer = setTimeout(() => mediaAuto(key), MEDIA_EVERY); return; }
+    // Trailers are only played when picked or first; the timer goes round the screenshots.
+    let n = (M.i + 1) % M.list.length;
+    while (M.list[n].kind === "movie" && n !== M.i) n = (n + 1) % M.list.length;
+    mediaGo(key, n);
+  }
+  // Puts item n on the stage without drawing the whole page again.
+  function mediaGo(key, n) {
+    const M = S.media[key], box = $(".gp-media");
+    if (!M || !box || n === M.i) return;
+    const back = n < M.i;
+    M.i = n;
+    box.outerHTML = mediaBlock(M.it, M.d);
+    mountMedia();
+    const st = $("#gp-stage"), on = $(".gp-thumb.on");
+    if (st && moving()) {
+      st.animate([{ opacity: 0, transform: `translateX(${back ? -24 : 24}px) scale(0.985)`, filter: "blur(6px)" }, { opacity: 1, transform: "none", filter: "none" }], { duration: SPRINGS.soft.ms * 0.8, easing: SPRINGS.soft.ease });
+    }
+    if (on) on.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduced() ? "auto" : "smooth" });
   }
   // Show more only when the three lines don't hold the whole summary.
   function fitDetails() {

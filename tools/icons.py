@@ -26,6 +26,7 @@ sidebar-simple sliders-horizontal sort-ascending squares-four star storefront te
 users users-three vault video-camera warning x
 speaker-high speaker-slash thumbs-up thumbs-down chat-circle gauge cpu graphics-card memory monitor sparkle file files
 arrow-square-out steam-logo github-logo cube lightning seal-check calendar-blank
+arrows-out share-network export clipboard-text image-square x-circle
 """.split()
 # Weights besides regular: fill for whatever can be current or on, duotone
 # for the big icon of an empty page.

@@ -619,6 +619,7 @@
       if (!it) return;
       try { await api.saveDetailsEdit(recentKey(it), {}); closeDialog(false); toast("Back to Steam's details"); } catch (e) { toast(errText(e), "error"); }
     },
+    "media-pick"(el) { const M = S.media[el.dataset.k]; if (M) M.hold = Date.now() + MEDIA_HOLD; mediaGo(el.dataset.k, +el.dataset.n); },
     "shot-open"(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "shots", ik: it.kind, iid: it.id, i: +el.dataset.i }; renderOverlay(); focusOverlay(); } },
     "capture-open"(el) { api.openCapture(el.dataset.path).catch((e) => toast(errText(e), "error")); },
     "playnite-open": () => openPlaynite(),

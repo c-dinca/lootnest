@@ -100,6 +100,7 @@
     v.scrollTop = keepScroll;
     if (S.view === "saves" && S.svCloud) svToCloud();
     if (S.view === "game") { fitDetails(); watchCommunity(); }
+    mountMedia();
     stickHead();
     if (typing) { const q = $("#" + typing.id); if (q) { q.focus(); q.value = typing.value; if (typing.at != null) q.setSelectionRange(typing.at, typing.at); } }
     renderOverlay();

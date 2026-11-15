@@ -272,11 +272,14 @@ func newsImage(bb string) string {
 }
 
 // AllowedPageRequest says what Lootnest's own window may load: its page
-// (about: and data: URLs) and pictures on Steam's image servers (news). It
-// can't navigate anywhere, fetch anything or load scripts from elsewhere.
+// (about:, data: and blob: URLs, the last for pictures it already has and
+// the trailer player's buffers), pictures on Steam's image servers, and
+// trailers from Steam's video server. The page's Content-Security-Policy
+// narrows it further: it can't navigate anywhere or load scripts from
+// elsewhere, and it fetches only from the video server.
 func AllowedPageRequest(uri string) bool {
 	l := strings.ToLower(uri)
-	if strings.HasPrefix(l, "about:") || strings.HasPrefix(l, "data:") {
+	if strings.HasPrefix(l, "about:") || strings.HasPrefix(l, "data:") || strings.HasPrefix(l, "blob:") {
 		return true
 	}
 	return SafeNewsImage(uri)

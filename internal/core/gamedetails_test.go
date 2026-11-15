@@ -20,6 +20,8 @@ const hadesDetails = `{"1145350":{"success":true,"data":{"name":"Hades II",
 "release_date":{"coming_soon":false,"date":"25 Sep, 2025"},
 "screenshots":[{"id":0,"path_thumbnail":"https://shared.akamai.steamstatic.com/a/ss_1.600x338.jpg","path_full":"https://shared.akamai.steamstatic.com/a/ss_1.1920x1080.jpg"},
 {"id":1,"path_thumbnail":"https://evil.example/ss.jpg","path_full":"https://evil.example/ss.jpg"}],
+"movies":[{"id":1,"name":"Launch &amp; Trailer","thumbnail":"https://shared.akamai.steamstatic.com/a/movie_600x337.jpg","hls_h264":"https://video.akamai.steamstatic.com/store_trailers/1/2/hls_264_master.m3u8?t=1","highlight":true},
+{"id":2,"name":"Elsewhere","thumbnail":"https://shared.akamai.steamstatic.com/a/m.jpg","hls_h264":"https://evil.example/x.m3u8"}],
 "metacritic":{"score":95,"url":"https://www.metacritic.com/game/hades-ii"}}}}`
 
 const hadesReviews = `{"response":{"query_summary":{"num_reviews":1,"review_score":9,"review_score_desc":"Overwhelmingly Positive","total_positive":12100,"total_negative":245,"total_reviews":12345},"reviews":[]}}`
@@ -58,7 +60,7 @@ func TestFetchGameDetails(t *testing.T) {
 	if err != nil || d == nil {
 		t.Fatal(d, err)
 	}
-	if len(asked) != 2 || !strings.Contains(asked[0], "appids=1145350") || !strings.Contains(asked[0], "screenshots") || !strings.Contains(asked[1], "GetAppReviews") || !strings.Contains(asked[1], "%22appid%22%3A1145350") {
+	if len(asked) != 2 || !strings.Contains(asked[0], "appids=1145350") || !strings.Contains(asked[0], "screenshots") || !strings.Contains(asked[0], "movies") || !strings.Contains(asked[1], "GetAppReviews") || !strings.Contains(asked[1], "%22appid%22%3A1145350") {
 		t.Fatalf("asked %v", asked)
 	}
 	if d.Summary != "Battle beyond the Underworld & defy the Titan of Time in this sequel." {
@@ -66,6 +68,12 @@ func TestFetchGameDetails(t *testing.T) {
 	}
 	if strings.Join(d.Genres, ",") != "Action,Adventure" || d.Developers[0] != "Supergiant Games" || d.Released != "25 Sep, 2025" || d.Metacritic != 95 {
 		t.Fatalf("details %+v", d)
+	}
+	if len(d.Movies) != 1 || d.Movies[0].Name != "Launch & Trailer" || !d.Movies[0].Highlight || !d.MediaRead {
+		t.Fatalf("movies %+v", d.Movies)
+	}
+	if SafeVideo("http://video.akamai.steamstatic.com/a.m3u8") || SafeVideo("https://video.akamai.steamstatic.com/a.mp4") || !SafeVideo("https://video.akamai.steamstatic.com/a/b.m3u8?t=2") {
+		t.Fatal("SafeVideo")
 	}
 	if len(d.Screenshots) != 1 || !strings.HasSuffix(d.Screenshots[0].Full, "1920x1080.jpg") {
 		t.Fatalf("pictures come from Steam only: %+v", d.Screenshots)
@@ -126,13 +134,13 @@ func TestDetailsCache(t *testing.T) {
 	if d, stale := LoadDetails(dir, 5); d == nil || !stale {
 		t.Fatalf("a copy kept before requirements were read is read again: %+v %v", d, stale)
 	}
-	if err := SaveDetails(dir, 5, &GameDetails{Summary: "Fresh", Fetched: time.Now(), ReqsRead: true}); err != nil {
+	if err := SaveDetails(dir, 5, &GameDetails{Summary: "Fresh", Fetched: time.Now(), ReqsRead: true, MediaRead: true}); err != nil {
 		t.Fatal(err)
 	}
 	if d, stale := LoadDetails(dir, 5); d == nil || d.Summary != "Fresh" || stale {
 		t.Fatalf("fresh copy: %+v %v", d, stale)
 	}
-	_ = SaveDetails(dir, 5, &GameDetails{Summary: "Old", Fetched: time.Now().Add(-31 * 24 * time.Hour), ReqsRead: true})
+	_ = SaveDetails(dir, 5, &GameDetails{Summary: "Old", Fetched: time.Now().Add(-31 * 24 * time.Hour), ReqsRead: true, MediaRead: true})
 	if d, stale := LoadDetails(dir, 5); d == nil || d.Summary != "Old" || !stale {
 		t.Fatalf("a month-old copy is shown and read again: %+v %v", d, stale)
 	}
