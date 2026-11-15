@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.1
+
+Add an LG TV, after the first try on a real TV.
 
 - **Add an LG TV finishes on more TVs.** When a TV doesn't confirm the install, Lootnest waits for the app to appear on it before tidying up, instead of stopping (and removing the package while the TV still read it). If the install really fails, the message says what the TV answered.
 - **Add an LG TV finds the TV** when Windows Firewall drops the TVs' network answers: it also looks for LG TVs on your home network directly.
