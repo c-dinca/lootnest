@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -16,7 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -364,43 +363,41 @@ func (t *TV) InstallTVApp(ctx context.Context, ipk string) error {
 		return fmt.Errorf("couldn't copy the app to the TV (%w)", err)
 	}
 	defer t.run("rm -f "+shQuote(remote), nil) //nolint:errcheck
-	payload, _ := json.Marshal(map[string]any{"id": "com.ares.defaultName", "ipkUrl": remote, "subscribe": true})
-	s, err := t.client.NewSession()
-	if err != nil {
-		return err
+	// The copy arrived whole?
+	if st, err := f.Stat(); err == nil {
+		got, _ := t.run("wc -c < "+shQuote(remote), nil)
+		if n, perr := strconv.ParseInt(strings.TrimSpace(got), 10, 64); perr != nil || n != st.Size() {
+			return fmt.Errorf("the app didn't arrive whole on the TV (%s of %d bytes)", strings.TrimSpace(got), st.Size())
+		}
 	}
-	defer s.Close()
-	out, err := s.StdoutPipe()
-	if err != nil {
-		return err
+	// One request, no subscription: luna-send-pub -i reads commands from
+	// its input and, given none, ends before it asks anything (as on the
+	// owner's TV). The install runs in the background; the app's folder
+	// says when it's done.
+	payload, _ := json.Marshal(map[string]any{"id": "com.ares.defaultName", "ipkUrl": remote, "subscribe": false})
+	out, err := t.run("luna-send-pub -n 1 'luna://com.webos.appInstallService/dev/install' "+shQuote(string(payload))+" 2>&1", nil)
+	said := strings.TrimSpace(out)
+	if said == "" && err != nil {
+		said = err.Error()
 	}
-	// Its errors too (2>&1), to say what the TV answered.
-	if err := s.Start("luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' " + shQuote(string(payload)) + " 2>&1"); err != nil {
-		return err
+	if strings.Contains(said, `"returnValue":false`) || strings.Contains(said, `"returnValue": false`) {
+		return fmt.Errorf("the TV refused the app: %s", tvErrorText(said))
 	}
-	done := make(chan error, 1)
-	go func() { done <- InstallOutcome(out) }()
-	select {
-	case err = <-done:
-	case <-time.After(3 * time.Minute):
-		err = &QuietInstallError{Said: "nothing for three minutes"}
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-	var quiet *QuietInstallError
-	if !errors.As(err, &quiet) {
-		return err
-	}
-	// The service ended its answers without saying how the install went
-	// (some TVs' luna-send-pub returns at once): the install goes on in the
-	// background, so wait for the app to be there before the package (which
-	// it reads) is removed.
-	for end := time.Now().Add(2 * time.Minute); ; time.Sleep(3 * time.Second) {
+	for end := time.Now().Add(3 * time.Minute); ; time.Sleep(3 * time.Second) {
 		if t.HasTVApp() {
 			return nil
 		}
-		if time.Now().After(end) || ctx.Err() != nil {
-			return fmt.Errorf("the TV didn't install the app. It said: %s", quiet.Said)
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if time.Now().After(end) {
+			if said == "" {
+				said = "nothing"
+			}
+			if len(said) > 300 {
+				said = said[:300]
+			}
+			return fmt.Errorf("the TV didn't install the app. It said: %s", said)
 		}
 	}
 }
@@ -414,52 +411,6 @@ func (t *TV) HasTVApp() bool {
 	payload, _ := json.Marshal(map[string]any{"id": TVAppID})
 	out, _ = t.run("luna-send-pub -n 1 'luna://com.webos.applicationManager/getAppInfo' "+shQuote(string(payload))+" 2>&1", nil)
 	return strings.Contains(out, `"returnValue":true`) || strings.Contains(out, `"returnValue": true`)
-}
-
-// QuietInstallError is the install service ending without an outcome;
-// Said is the last of what it printed.
-type QuietInstallError struct{ Said string }
-
-func (e *QuietInstallError) Error() string {
-	return "the TV stopped answering while it installed the app"
-}
-
-var installState = regexp.MustCompile(`"state"\s*:\s*"([^"]+)"`)
-
-// InstallOutcome reads appInstallService's answers until the install ends.
-func InstallOutcome(r io.Reader) error {
-	sc := bufio.NewScanner(r)
-	sc.Buffer(make([]byte, 64<<10), 1<<20)
-	var last []string
-	for sc.Scan() {
-		line := sc.Text()
-		if t := strings.TrimSpace(line); t != "" {
-			if last = append(last, t); len(last) > 3 {
-				last = last[1:]
-			}
-		}
-		if strings.Contains(line, `"returnValue":false`) || strings.Contains(line, `"returnValue": false`) {
-			return fmt.Errorf("the TV refused the app: %s", tvErrorText(line))
-		}
-		m := installState.FindStringSubmatch(line)
-		if m == nil {
-			continue
-		}
-		switch st := strings.ToLower(m[1]); {
-		case st == "installed":
-			return nil
-		case strings.Contains(st, "fail") || strings.Contains(st, "error"):
-			return fmt.Errorf("the TV couldn't install the app: %s", tvErrorText(line))
-		}
-	}
-	said := strings.Join(last, " ")
-	if said == "" {
-		said = "nothing"
-	}
-	if len(said) > 300 {
-		said = said[:300]
-	}
-	return &QuietInstallError{Said: said}
 }
 
 func tvErrorText(line string) string {
