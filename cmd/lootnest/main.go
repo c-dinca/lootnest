@@ -6,6 +6,7 @@
 //	Lootnest.exe --tray          start in the tray (used by "Start with Windows")
 //	Lootnest.exe --launch <id>   ask who's playing, then start that game
 //	Lootnest.exe --safe-mode     start with background work off (or hold Shift while it opens)
+//	Lootnest.exe --tv            TV mode, for a streaming host: runs until TV mode ends
 //	Lootnest.exe --uninstall     remove Lootnest
 package main
 
@@ -25,7 +26,7 @@ func init() {
 }
 
 func main() {
-	var tray, uninstall, quiet, safe, restarted bool
+	var tray, uninstall, quiet, safe, restarted, tv bool
 	var launch string
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
@@ -38,6 +39,8 @@ func main() {
 			quiet = true
 		case "--safe-mode", "/safe-mode":
 			safe = true
+		case "--tv", "/tv":
+			tv = true
 		case "--restarted": // the old Lootnest is still closing
 			restarted = true
 		case "--launch", "/launch":
@@ -56,6 +59,12 @@ func main() {
 	if uninstall {
 		app.Uninstall(quiet)
 		return
+	}
+
+	// A streaming host's app: this process only holds the stream, while
+	// the Lootnest that swaps files runs on its own (app/tv.go).
+	if tv {
+		os.Exit(app.TVHolder())
 	}
 
 	got := win.AcquireSingleInstance(app.MutexName)

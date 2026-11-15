@@ -153,6 +153,10 @@ type App struct {
 	bigPicture   bool   // the window is in Big Picture
 	hidFor       string // the game Big Picture's window hid itself for
 	openBP       bool   // open in Big Picture once the page is ready
+	tv           bool   // TV mode: Big Picture on the primary display for a streaming host (tv.go)
+	tvHolder     uint32 // the "--tv" process holding the stream
+	tvWasHidden  bool   // the window was in the tray before TV mode
+	openTV       bool   // TV mode was asked for before the page was ready
 	safe         bool   // safe mode: started with every optional background piece off
 	restartArgs  string // start Lootnest again with these once this one quits
 
@@ -460,8 +464,20 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 		return 0, true
 	case msg == win.WM_COPYDATA:
 		if cmd, ok := win.ReadCommand(lp); ok {
+			if strings.HasPrefix(cmd, "tv:") || strings.HasPrefix(cmd, "tv?:") {
+				return a.tvCommand(cmd), true
+			}
 			a.handleCommand(cmd)
 			return 1, true
+		}
+	case msg == win.WM_DISPLAYCHANGE:
+		// A streaming host adds or removes its display: TV mode follows
+		// the primary one.
+		a.mu.Lock()
+		tv := a.tv
+		a.mu.Unlock()
+		if tv && win.IsVisible(hwnd) {
+			win.FullscreenPrimary(hwnd)
 		}
 	case msg == win.WM_TRAY:
 		switch lp & 0xFFFF {

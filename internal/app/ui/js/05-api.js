@@ -119,6 +119,7 @@
     nameCopy: (key, kind, id, name) => call("ps_nameCopy", key, kind, id, name),
     reportProblem: () => call("ps_reportProblem"),
     bigPicture: (on) => call("ps_bigPicture", !!on),
+    tvExit: () => call("ps_tvExit"),
     newCopies: () => call("ps_newCopies"),
     carryOver: (oldKey, newKey) => call("ps_carryOver", oldKey, newKey),
     dismissCopy: (oldKey, newKey) => call("ps_dismissCopy", oldKey, newKey),

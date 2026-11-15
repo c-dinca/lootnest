@@ -4,7 +4,7 @@
   // to move through with the stick or the D-pad, A to choose, B to go back,
   // Y to play as someone else, Start to leave. The keyboard works the same:
   // arrows, Enter, Escape, Q and E.
-  const BP = { on: false, tab: "home", tag: "", detail: null, choose: null, focus: "", from: "", keep: false, timer: 0, sounds: pref("bpSounds", "1") === "1" };
+  const BP = { on: false, tab: "home", tag: "", detail: null, choose: null, focus: "", from: "", keep: false, timer: 0, sounds: pref("bpSounds", "1") === "1", tv: false, menu: false, menuFrom: "", who: false };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
   const BP_SEC = { home: "home", library: "library", achievements: "ach", profiles: "profiles" };
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
@@ -20,12 +20,44 @@
   }
   function bpClose() {
     if (!BP.on) return;
+    if (BP.tv) { bpMenu(!BP.menu); return; } // TV mode stays until Exit TV mode
+    bpShut();
+  }
+  function bpShut() {
+    if (!BP.on) return;
     BP.on = false;
     const el = $("#bp");
     if (el) { el.removeAttribute("id"); el.classList.add("out"); setTimeout(() => el.remove(), 320); }
     api.bigPicture(false).catch(() => {});
     sfx("close");
     if (behindBP) render();
+  }
+  // TV mode (Lootnest Link): Big Picture on a TV for a streaming host,
+  // which ends the stream when TV mode ends. Who's playing comes first when
+  // more than one person uses the PC; Start opens a menu instead of leaving.
+  // What Start does, unless its glyph already says it (an Xbox pad's Menu button).
+  const startWord = () => (!BP.tv ? "Leave" : PADS[pad.fam || "xbox"].Start === "Menu" ? "" : "Menu");
+  function tvOpen() {
+    const was = BP.tv;
+    BP.tv = true; BP.menu = false;
+    document.documentElement.classList.add("is-tv");
+    if (BP.on) { if (!was) { const el = $("#bp"); if (el) el.innerHTML = ""; } }
+    else bpOpen();
+    if (!was && !solo() && cfg().players.length > 1) { BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.choose = null; BP.focus = ""; }
+    renderBP(true);
+  }
+  function tvClose() {
+    if (!BP.tv) return;
+    BP.tv = false; BP.menu = false; BP.who = false;
+    document.documentElement.classList.remove("is-tv");
+    bpShut();
+  }
+  function bpMenu(on) {
+    if (on && (S.picker || S.dialog)) return;
+    if (on) { const a = document.activeElement; BP.menuFrom = (a && a.dataset && a.dataset.bpid) || BP.focus; }
+    BP.menu = on; BP.focus = on ? "menu:back" : BP.menuFrom || ""; BP.keep = true;
+    sfx(on ? "open" : "back");
+    renderBP(true);
   }
   function bpSoon() { if (BP.timer) return; BP.timer = requestAnimationFrame(() => { BP.timer = 0; if (BP.on) renderBP(false); }); }
   // The buttons, named by what they do here as on an Xbox pad, the way each
@@ -72,6 +104,14 @@
   const bpRow = (id, title, list, wide) => (list.length ? `<section class="bp-row"><h2><span class="ln-label">${esc(title)}</span></h2><div class="bp-row-track" data-row="${esc(id)}">${list.map((it) => bpTile(it, wide)).join("")}</div></section>` : "");
   function bpScreen() {
     const all = libraryItems();
+    if (BP.menu) {
+      const seat = seated();
+      return `<div class="bp-choose bp-menu"><h1>Menu</h1>
+        <div class="bp-menu-keys">
+          <button class="bp-btn" data-bp data-bpid="menu:back" data-go="menu-close">${GI.back}Back to games</button>
+          ${cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="menu:who" data-go="menu-who">${seat ? lnAvatar(seat, "32") : GI.profiles}${solo() ? "Switch profile" : "Who's playing"}</button>` : ""}
+          <button class="bp-btn" data-bp data-bpid="menu:exit" data-go="tv-exit">${GI.power}Exit TV mode</button></div></div>`;
+    }
     if (BP.choose) {
       const it = bpItem(BP.choose);
       const ps = cfg().players;
@@ -104,7 +144,7 @@
     }
     if (BP.tab === "profiles") {
       const ps = cfg().players, seat = seated(), alone = solo();
-      return `<div class="bp-choose"><h1>${alone ? "Playing as" : "Who's here?"}</h1>
+      return `<div class="bp-choose"><h1>${BP.who ? "Who's playing?" : alone ? "Playing as" : "Who's here?"}</h1>
         <div class="bp-people">${ps.map((p) => `<button class="bp-person ln-player${seat && seat.id === p.id ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="seat:${esc(p.id)}" data-go="seat" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${seat && seat.id === p.id ? (alone ? "Playing" : "Sitting here") : alone ? "Play as this" : "Sit down"}</span></button>`).join("")}</div></div>`;
     }
     if (BP.tab === "achievements") {
@@ -141,7 +181,7 @@
     const seat = seated();
     const seatHTML = seat ? `<span class="bp-seat ln-player" style="--player:${esc(seat.color)}">${lnAvatar(seat, "32")}${esc(seat.name)}</span>` : "";
     const now = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-    const sub = BP.detail || BP.choose;
+    const sub = BP.detail || BP.choose || BP.menu;
     const sound = BP.sounds ? "Sounds on" : "Sounds off";
     const fresh = !main, fam = bpFam !== pad.fam;
     bpFam = pad.fam;
@@ -150,7 +190,7 @@
       <header class="bp-top"><div class="bp-brand">${BRAND_MARK}<span class="bp-brand-name">Lootnest</span></div>
         <nav class="bp-tabs"><span class="bp-ind" aria-hidden="true"></span>${glyph("LB")}${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-go="tab" data-t="${k}" tabindex="-1">${l}</button>`).join("")}${glyph("RB")}</nav>
         <div class="bp-right">${seatHTML}<time class="bp-clock ln-num"></time>
-          <button class="bp-exit" data-go="exit" tabindex="-1" title="Leave Big Picture">${glyph("Start")}Leave</button></div></header>
+          <button class="bp-exit" data-go="exit" tabindex="-1" title="${BP.tv ? "Menu" : "Leave Big Picture"}">${glyph("Start")}${startWord()}</button></div></header>
       <main class="bp-main"></main>
       <footer class="bp-foot"></footer>`;
       main = el.querySelector(".bp-main");
@@ -162,12 +202,12 @@
       if (fam) {
         const [lb, rb] = el.querySelectorAll(".bp-tabs > .bp-g");
         lb.outerHTML = glyph("LB"); rb.outerHTML = glyph("RB");
-        el.querySelector(".bp-exit > .bp-g").outerHTML = glyph("Start");
+        el.querySelector(".bp-exit").innerHTML = glyph("Start") + startWord();
       }
     }
     bpSeat = seatHTML;
     const closeHint = !!BP.detail && bpRunning(bpItem(BP.detail));
-    if (fresh || fam || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}Leave<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
+    if (fresh || fam || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}${startWord()}<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
     bpFootX = closeHint;
     el.querySelector(".bp-tabs").classList.toggle("is-dim", !!sub);
     el.querySelectorAll(".bp-tab").forEach((t) => t.setAttribute("aria-current", String(BP.tab === t.dataset.t)));
@@ -206,6 +246,29 @@
     if (!els.length) return;
     const cur = document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-bp]");
     if (!cur) { ((BP.focus && document.querySelector(`#bp [data-bpid="${CSS.escape(BP.focus)}"]`)) || els[0]).focus(); return; }
+    const best = nearest(els, cur, dir);
+    if (!best) { sfx("edge"); return; }
+    best.focus({ preventScroll: true });
+    best.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced() ? "auto" : "smooth" });
+    BP.focus = best.dataset.bpid;
+    bpArtFor(best);
+    sfx("move");
+  }
+  // The same over the picker or a dialog above Big Picture: its keys, the
+  // main choices first.
+  function overlayMove(dir) {
+    const o = $("#overlay"), a = document.activeElement;
+    const els = [...o.querySelectorAll("button:not([disabled]), input, select")].filter((e) => e.getClientRects().length);
+    if (!els.length) return;
+    const cur = a && a !== o && o.contains(a) && els.includes(a) ? a : null;
+    const best = cur ? nearest(els, cur, dir) : o.querySelector(".slot:not([disabled]), .choice, .ln-button--primary") || els[0];
+    if (!best) { sfx("edge"); return; }
+    best.focus({ preventScroll: true });
+    best.scrollIntoView({ block: "nearest", inline: "nearest" });
+    sfx("move");
+  }
+  // The nearest element in a direction, as on a console: in the same row first.
+  function nearest(els, cur, dir) {
     const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const horiz = dir === "left" || dir === "right";
     let best = null, bs = Infinity;
@@ -221,15 +284,10 @@
       const score = main + cross * (horiz ? 4 : 1.1) - (sameLine && horiz ? 1000 : 0);
       if (score < bs) { bs = score; best = el; }
     }
-    if (!best) { sfx("edge"); return; }
-    best.focus({ preventScroll: true });
-    best.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced() ? "auto" : "smooth" });
-    BP.focus = best.dataset.bpid;
-    bpArtFor(best);
-    sfx("move");
+    return best;
   }
   function bpTab(step) {
-    if (BP.detail || BP.choose) return;
+    if (BP.detail || BP.choose || BP.menu) return;
     const i = BP_TABS.findIndex((t) => t[0] === BP.tab);
     BP.tab = BP_TABS[(i + step + BP_TABS.length) % BP_TABS.length][0];
     BP.tag = ""; BP.focus = ""; BP.keep = true;
@@ -267,12 +325,19 @@
     else if (go === "close-game") bpCloseGame(el.dataset.k);
     else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
     else if (go === "back") bpBack();
-    else if (go === "seat") { actions.seat({ dataset: { player: el.dataset.p } }); sfx("go"); renderBP(false); }
+    else if (go === "seat") {
+      actions.seat({ dataset: { player: el.dataset.p } }); sfx("go");
+      if (BP.who) { BP.who = false; BP.tab = "home"; BP.focus = ""; renderBP(true); } else renderBP(false);
+    }
+    else if (go === "menu-close") bpMenu(false);
+    else if (go === "menu-who") { BP.menu = false; BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("go"); renderBP(true); }
+    else if (go === "tv-exit") { api.tvExit().catch(() => {}); tvClose(); }
     else if (go === "tab") { BP.tab = el.dataset.t; BP.tag = ""; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("tab"); renderBP(true); }
     else if (go === "exit") bpClose();
     else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); sfx("toggle"); renderBP(false); }
   }
   function bpBack() {
+    if (BP.menu) { bpMenu(false); return; }
     if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
     else if (BP.tag) { BP.focus = "c:" + BP.tag; BP.tab = "home"; BP.tag = ""; }
@@ -337,7 +402,7 @@
   const padRole = (fam, i) => (fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
   const padDir = (g) => {
     const b = (i) => !!(g.buttons[i] && g.buttons[i].pressed), ax = g.axes[0] || 0, ay = g.axes[1] || 0;
-    return b(12) || ay < -0.55 ? "up" : b(13) || ay > 0.55 ? "down" : b(14) || ax < -0.55 ? "left" : b(15) || ax > 0.55 ? "right" : "";
+    return b(12) || ay < -0.5 ? "up" : b(13) || ay > 0.5 ? "down" : b(14) || ax < -0.5 ? "left" : b(15) || ax > 0.5 ? "right" : "";
   };
   const padsNow = () => (navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : []);
   function padLoop(t) {
@@ -361,7 +426,7 @@
     }
     if (document.hasFocus()) {
       if (fam !== pad.fam) { pad.fam = fam; if (BP.on) renderBP(false); }
-      if (roles.has("Start")) { if (BP.on) bpClose(); else bpOpen(); }
+      if (roles.has("Start") && !(BP.tv && (S.picker || S.dialog))) { if (BP.on) bpClose(); else bpOpen(); }
       if (BP.on && !S.picker && !S.dialog) {
         if (roles.has("A")) bpSelect(document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-go]"));
         if (roles.has("B")) bpBack();
@@ -370,14 +435,15 @@
         if (roles.has("LB")) bpTab(-1);
         if (roles.has("RB")) bpTab(1);
         if (roles.has("View")) bpSelect({ dataset: { go: "sound" } });
-        if (dir && (dir !== pad.held || t >= pad.next)) { bpMove(dir); pad.next = t + (dir !== pad.held ? 380 : 120); }
-      } else if (BP.on && S.dialog && !S.picker) {
+        if (dir && (dir !== pad.held || t >= pad.next)) { bpMove(dir); pad.next = t + (dir !== pad.held ? 400 : 120); }
+      } else if (BP.on) { // the picker (Who's playing, its questions, the swap) or a dialog above Big Picture
         const o = $("#overlay"), a = document.activeElement;
         if (roles.has("A") && a !== o && o.contains(a)) a.click();
-        if (roles.has("B") && S.dialog.kind !== "welcome") closeDialog(false);
-        const step = !dir || dir === pad.held ? 0 : dir === "up" || dir === "left" ? -1 : 1;
-        const bs = step ? [...o.querySelectorAll("button:not([disabled])")] : [];
-        if (bs.length) bs[(Math.max(bs.indexOf(a), step < 0 ? 0 : -1) + step + bs.length) % bs.length].focus();
+        if (roles.has("B")) {
+          if (S.picker) { if (!S.picker.working) { const back = o.querySelector('[data-action="picker-back"]'); if (back) back.click(); else closePicker(); } }
+          else if (S.dialog.kind !== "welcome") closeDialog(false);
+        }
+        if (dir && (dir !== pad.held || t >= pad.next)) { overlayMove(dir); pad.next = t + (dir !== pad.held ? 400 : 120); }
       }
       pad.held = dir;
     }

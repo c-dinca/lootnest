@@ -50,6 +50,8 @@ const shots = [
   ["store", "", [nav("find")]],
   ["bp", "", [click('[data-action="bp-open"]')]],
   ["bp-400", "games=400", [click('[data-action="bp-open"]')]],
+  ["tv-who", "tv=1", []],
+  ["tv-solo", "tv=1&players=1", []],
   ["players-edit", "", [nav("players"), click('[data-action="edit-profiles"]')]],
   ["saves", "", [nav("saves")]],
   ["saves-calm", "saves=calm", [nav("saves")]],

@@ -34,6 +34,7 @@
     try {
       const r = await api.ready();
       if (r && r.launch) openPicker(r.launch, r.reqId ? "steam" : "play", r.reqId);
+      else if (r && r.tv) tvOpen();
       else if (r && r.bigPicture) bpOpen();
     } catch (e) { /* ignore */ }
   }

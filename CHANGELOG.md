@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **TV mode, for playing on a TV.** Start Lootnest with `--tv` from a streaming host such as Apollo or Sunshine, and Moonlight on the TV shows Lootnest's Big Picture made for the sofa: larger text, Who's playing first, then your games, with only a controller. The game you start loads your profile's files as always, and Lootnest comes back to the front when the game closes. Start opens a menu with Who's playing and Exit TV mode, which ends the stream. How to set it up is in the guide, under Playing on a TV.
+- **The controller works in Who's playing and its questions over Big Picture**: move between the choices, A to choose, B to go back.
+
 - **Achievements looks better and can be shared.** The top is one panel: your whole collection as a ring in your colour, how many you've unlocked, the three rarest as medals, and Share. Games can be ordered by most complete, latest unlocked, closest to 100% or name.
 - **Share your achievements as a picture**, all of them or one game's (from its card on Achievements, or Share on its Achievements tab): square for Discord and chats, or tall for a phone. Copy image puts it on the clipboard to paste with Ctrl+V; Save keeps it in Pictures\Lootnest\Achievements. Nothing is sent anywhere.
 - **Saves has search and filters.** Search every copy by its game or its name, show only save points, copies before a swap or safety net copies, one profile's, today's, this week's or this month's, newest, oldest or largest first. Copies are now right under the totals, and Per game follows the search too.

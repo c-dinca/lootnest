@@ -81,7 +81,7 @@ What makes it different, and the direction to keep pushing:
   - `node design/harness/shoot.mjs <outdir> <filter>` screenshots into
     `design/<outdir>` (the filter is a substring). Delete the output
     afterwards.
-  - Query options: `?players=6`, `?games=400`, `?state=loading|offline|error`,
+  - Query options: `?players=6`, `?games=400`, `?state=loading|offline|error`, `?tv=1`,
     `?runs=1`, `?first=1`.
   - Stubs live in `stub.js`; add one for each new `ps_*` call.
 
@@ -929,6 +929,30 @@ These shipped recently, newest last:
   share.go`): "copy" via `win.SetClipboardImage` (CF_DIB plus the
   registered "PNG" format), "save" into Pictures\Lootnest\Achievements
   (`core.ShareFileName`).
+- **Unreleased, Lootnest Link M1, TV mode** (`docs/lootnest-link-spec.md`,
+  the owner's plan for playing on a TV: M1 TV mode, M2 a bundled Apollo,
+  M3 to M4 TV apps; one milestone at a time, each checked on the owner's
+  LG TV). `lootnest.exe --tv` is only a holder (`app/tv.go` `TVHolder`):
+  a streaming host ends its app's whole job when the stream stops, so the
+  Lootnest that swaps files is never the host's app. The holder starts
+  Lootnest with `--tray` outside the job when it can
+  (`win.StartOutsideJob`, CREATE_BREAKAWAY_FROM_JOB; `win.InJob` logs a
+  warning otherwise), sends `tv:<pid>`, and asks `tv?:<pid>` every second
+  (`win.AskCommand` returns the WM_COPYDATA answer, `tvAnswerOn`) until
+  TV mode ends. `enterTV` (Big Picture on the primary display,
+  `win.FullscreenPrimary`, again on WM_DISPLAYCHANGE; `win.ForceForeground`
+  with AttachThreadInput, then a lone Alt), `leaveTV` when the holder
+  dies (`win.WaitProcess`) or from the menu (`ps_tvExit`), back to the
+  tray if it was there. In TV mode the window hides for every game,
+  Library games too (`foundTick` returns up/down), and comes back with
+  focus (`tvBack`). UI: `BP.tv`, `tvOpen`/`tvClose`/`bpShut`, `BP.who`
+  (Who's playing first unless solo), `BP.menu` on Start (`bpMenu`,
+  `startWord`), `html.is-tv` raises small sizes to `--tv-text-min` (24px
+  at 1080p); the pad drives the picker and dialogs over Big Picture
+  (`overlayMove`, shared `nearest`). Harness `?tv=1`. Next in M1: the
+  controller as a mouse over store launchers (the owner, 15 Nov: make it
+  work with the controller, as in games, rather than a "may need mouse"
+  badge).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

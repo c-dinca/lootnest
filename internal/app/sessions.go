@@ -309,7 +309,7 @@ func (a *App) tick() {
 	if err != nil {
 		return
 	}
-	a.foundTick(procs)
+	upFound, downFound := a.foundTick(procs)
 	state := a.store.LoadState()
 	changed := false
 	type finish struct {
@@ -324,6 +324,16 @@ func (a *App) tick() {
 
 	a.mu.Lock()
 	cfg := a.cfg
+	if a.tv { // in TV mode, Library games started from it hide it too
+		if len(upFound) > 0 {
+			hide = upFound[0]
+		}
+		for _, k := range downFound {
+			if k == a.hidFor {
+				a.hidFor, back = "", true
+			}
+		}
+	}
 	for i := range cfg.Games {
 		g := &cfg.Games[i]
 		running := procs[procName(g)]
@@ -356,7 +366,7 @@ func (a *App) tick() {
 				changed = true
 				// Hidden only now, once the game is running, so the window
 				// doesn't vanish to the desktop while the game is loading.
-				if cfg.Settings.HideWhilePlaying {
+				if cfg.Settings.HideWhilePlaying || a.tv {
 					hide = g.ID
 				}
 				c := cfg.Clone()
@@ -381,7 +391,7 @@ func (a *App) tick() {
 				continue
 			}
 			if g.ID == a.hidFor {
-				a.hidFor, back = "", s.front
+				a.hidFor, back = "", s.front || a.tv
 			}
 			go func(g core.Game, player string, since time.Time) {
 				now, key := time.Now(), "game:"+g.ID
@@ -414,10 +424,14 @@ func (a *App) tick() {
 		// was opened or Big Picture left while it ran.
 		a.ui(func() {
 			a.mu.Lock()
-			bp := a.bigPicture
+			bp, tv := a.bigPicture, a.tv
 			a.mu.Unlock()
 			if bp && !win.IsVisible(a.hwnd) {
-				a.show()
+				if tv {
+					a.tvBack()
+				} else {
+					a.show()
+				}
 				a.emit("bpReturn", nil)
 			}
 		})

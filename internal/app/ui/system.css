@@ -307,6 +307,10 @@
   --bp-foot-h: calc(var(--bp-safe-y) + var(--space-16));  /* the prompt bar, its prompts above the safe area */
   --bp-tile-w: clamp(160px, 11vw, 240px);
   --bp-tile-wide-w: clamp(320px, 24vw, 520px);
+  /* TV mode (Lootnest Link), read from about 3 m: no text under 24px at
+     1080p, growing with the screen past it. */
+  --tv-text-min: max(24px, 2.2vh);
+  --tv-text-mid: max(28px, 2.6vh);
   --focus-ring-bp: 0 0 0 3px var(--shell), 0 0 0 7px var(--focus-ring);
   --mask-bp: linear-gradient(180deg, transparent, #000 var(--space-4), #000 calc(100% - var(--bp-foot-h) - var(--space-8)), transparent calc(100% - var(--bp-foot-h)));  /* rows fade out before the prompt bar */
   --scrim-bp:  /* the focused game's art behind Big Picture */
