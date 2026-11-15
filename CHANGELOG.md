@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.2.4
+
+Lootnest for TV that looks and works like Lootnest.
 
 - **Lootnest for TV 1.1.0 looks like Lootnest and does everything by itself.** The TV app had Moonlight's screens: a list of computers and their apps. It now opens on Lootnest's own screen, with the gem and Lootnest's fonts, and goes straight into Lootnest on your PC: it pairs, wakes the PC when it's asleep, and says what it's doing. When the stream ends you get Play, Settings and Quit, and if something stops it, the screen says what and offers Try again. Add an LG TV installs this version.
 - **The TV app opened with an earlier PC paired went to Moonlight's list** instead of Lootnest: a saved PC wasn't recognised until it answered. It's used at once now.

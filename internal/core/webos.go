@@ -52,9 +52,9 @@ type TVAppRelease struct {
 var tvCloseWait = time.Second
 
 var TVAppPinned = TVAppRelease{
-	Version: "1.0.0",
-	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.0.0/com.lootnest.tv_1.0.0_arm.ipk",
-	SHA256:  "0b84951f7c1240005c9ee2215fc601be4eddaac6c66dfbf0d414760af7effdb9",
+	Version: "1.1.0",
+	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.1.0/com.lootnest.tv_1.1.0_arm.ipk",
+	SHA256:  "de857ea3a5565e3a82a4ee30e876add30f67262f33e1c36fb801fa1e4216e0b0",
 }
 
 // ErrTVAppNotPinned stops an install Lootnest has no checksum for.
