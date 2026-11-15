@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.2.2, beta)
+## Where things stand (2.2.3, beta)
 
 These shipped recently, newest last:
 
@@ -1015,6 +1015,18 @@ These shipped recently, newest last:
   `subscribe: false`, and polls `HasTVApp` for 3 min; a refusal
   (`returnValue: false`) says the TV's `errorText`. The subscription
   reader (`InstallOutcome`) is gone.
+- **2.2.3** Third try: it still printed nothing. As ares-install and
+  ares-cli-rs do, `InstallTVApp` runs `luna-send-pub -i` subscribed with
+  its stdin held open (`StdinPipe`, closed after), reads
+  `InstallOutcome` again, then polls `HasTVApp` 90 s; the error names
+  `command -v luna-send-pub`. Every SSH command has a limit
+  (`runFor`, a minute by default). The fake TV quits silently when its
+  input closes first (`TestTVInstallKeepsInputOpen`). App: a busy engine
+  answers `linkTVDone` with the step instead of ignoring Install; each
+  step is logged ("Add an LG TV on <ip>: ..."); TV steps have their own
+  names (`tvdownload`, `tvinstall`, `tvpair`) so they don't borrow the
+  engine's "Allow it in Windows' prompt"; the drawer counts seconds
+  (`D.started`, `.lg-secs`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

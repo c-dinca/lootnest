@@ -3,7 +3,7 @@
   // streaming engine (Apollo), sets it up and pairs TVs, so the engine's own
   // pages never open. Everything slow comes back as an event.
   let linkAsked = false;
-  const LINK_STEPS = { key: "Unlocking the TV's key", copy: "Connecting to the TV", install: "Installing Lootnest on the TV", download: "Downloading", install: "Installing. Allow it in Windows' prompt", start: "Starting the streaming engine", configure: "Setting it up", pair: "Pairing the TV", power: "Waiting for Windows' prompt" };
+  const LINK_STEPS = { key: "Unlocking the TV's key", tvdownload: "Downloading the TV app", copy: "Connecting to the TV", tvinstall: "Installing Lootnest on the TV", tvpair: "Pairing the TV", download: "Downloading the streaming engine", install: "Installing. Allow it in Windows' prompt", start: "Starting the streaming engine", configure: "Setting it up", pair: "Pairing the TV", power: "Waiting for Windows' prompt" };
   function askLink() {
     if (linkAsked) return;
     linkAsked = true;
@@ -42,7 +42,8 @@
       <p>Lootnest keeps the TV's developer mode from running out while this PC is on.</p>`, close);
     if (D.busy) {
       const st = L.step || {}, pct = st.total > 0 ? Math.round((st.done / st.total) * 100) : -1;
-      return shell(lnInline("", `${esc(LINK_STEPS[st.step] || "Working")}${pct >= 0 ? ` <span class="ln-num">${pct}%</span>` : ""}`), close);
+      const secs = D.started ? Math.round((Date.now() - D.started) / 1000) : 0;
+      return shell(lnInline("", `${esc(LINK_STEPS[st.step] || "Working")}${pct >= 0 ? ` <span class="ln-num">${pct}%</span>` : ""} <span class="ln-num lg-secs">${secs} s</span>`), close);
     }
     const tvs = D.tvs || [];
     const found = D.finding ? lnInline("", "Looking for LG TVs on this network")

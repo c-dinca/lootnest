@@ -84,9 +84,11 @@ func (a *App) apiLinkInstallTV(ip, name, passphrase string) {
 		name = "LG TV"
 	}
 	if !claimLink("key") {
+		a.emit("linkTVDone", map[string]any{"error": "Lootnest is still busy with the streaming engine or another TV (" + linkStep() + "). Try again when it's done."})
 		return
 	}
 	go func() {
+		a.logf("TV streaming: Add an LG TV on %s started", ip)
 		err := a.installTV(ip, name, passphrase)
 		setLinkStep("")
 		if err != nil {
@@ -107,18 +109,21 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		return err
 	}
 	a.linkProgress("key", 0, 0)
+	a.logf("TV streaming: Add an LG TV on %s: unlocking the key", ip)
 	keyPEM, err := core.FetchTVKey(ctx, ip, passphrase)
 	if err != nil {
 		return err
 	}
 
-	setLinkStep("download")
+	setLinkStep("tvdownload")
+	a.logf("TV streaming: Add an LG TV on %s: the app package", ip)
 	ipk := filepath.Join(DataDir(), "downloads", "tv", "lootnest-tv-"+core.TVAppPinned.Version+".ipk")
-	if err := core.DownloadTVApp(ctx, core.TVAppPinned, ipk, func(done, total int64) { a.linkProgress("download", done, total) }); err != nil {
+	if err := core.DownloadTVApp(ctx, core.TVAppPinned, ipk, func(done, total int64) { a.linkProgress("tvdownload", done, total) }); err != nil {
 		return err
 	}
 
 	setLinkStep("copy")
+	a.logf("TV streaming: Add an LG TV on %s: connecting", ip)
 	a.linkProgress("copy", 0, 0)
 	old := r.tv(ip)
 	pinned := ""
@@ -135,8 +140,9 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		return err
 	}
 	defer tv.Close()
-	setLinkStep("install")
-	a.linkProgress("install", 0, 0)
+	setLinkStep("tvinstall")
+	a.logf("TV streaming: Add an LG TV on %s: installing", ip)
+	a.linkProgress("tvinstall", 0, 0)
 	if err := tv.InstallTVApp(ctx, ipk); err != nil {
 		return err
 	}
@@ -152,8 +158,9 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		return err
 	}
 
-	setLinkStep("pair")
-	a.linkProgress("pair", 0, 0)
+	setLinkStep("tvpair")
+	a.logf("TV streaming: Add an LG TV on %s: pairing", ip)
+	a.linkProgress("tvpair", 0, 0)
 	pin, err := randomPIN()
 	if err != nil {
 		return err
