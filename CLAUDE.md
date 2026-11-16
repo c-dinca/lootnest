@@ -1302,6 +1302,32 @@ These shipped recently, newest last:
   the real youtube.com/tv in Chromium with a stubbed pad; not seen on a
   PC: docs/TESTING.md 35. The old Edge profile `youtube-tv` is left.
 
+- **Unreleased, Big Picture design details** (the owner, 16 Nov: the
+  Home menu jumped between its buttons; a nicer overlay with
+  achievements; achievements "as on PS" with the game's on the right;
+  animations when choosing). `padLoop` has one pace for every screen
+  (`step`: first press, 400 ms, then every 120 ms, never twice in
+  100 ms; `pad.held` used to be kept only outside the Home menu, so a
+  held direction moved every frame) and `padDir(g, was)` has hysteresis
+  (on at 0.6, off at 0.35). The Home screen over a game (`#tv-menu`,
+  `tvMenuItems`, `tvMenuInfo`, `tvMenuLight`, `tvMenuMove`, `tvMenuGo`,
+  `tvMenuPoint`): choices by key (`M.at`), drawn once per change of
+  content (`put`), the light (`.tv-menu-ind`) slides; Make a save point
+  (`api.makeSavePoint`, answered by `savePointMade`), Achievements
+  (`BP.detail` with `BP.want = "ach:0"`); `BP.since` is when and what
+  started. Its keyboard is handled first in 26's keydown; `renderBP`
+  doesn't take the focus while it's up. Achievements in Big Picture is
+  two lists (`.bp-achs`): games (`data-agame`, `BP.achKey`, set on
+  focus) and `bpAchPanel` (`bpAchRow`, `bpAchRing`, `bpTierLine`, shared
+  with the Home screen); a zone marked `data-vtrack` slides inside its
+  `.bp-clip` frame (`bpPlace`), and Up from a column's top goes to the
+  bar. Choosing: `bpPick` (`.is-picked`, `.is-picking`, `BP.picking`
+  holds input for 460 ms), `bpPush` (the art comes closer),
+  `data-leave` on the screen that goes, a sheen on the cover in focus
+  (`--bp-sheen`), the seat popping in the bar. Harness shots
+  `tv-achievements-in`, `tv-achievements-loading`. Not seen on a TV:
+  docs/TESTING.md 36.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

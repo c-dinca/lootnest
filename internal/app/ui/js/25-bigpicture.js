@@ -90,7 +90,7 @@
       else { BP.launch = { key: ev.key, name: ev.name || "", art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch(); }
     }
     BP.launch.phase = ev.phase || BP.launch.phase;
-    if (ev.phase === "playing") BP.playing = ev.key;
+    if (ev.phase === "playing") { BP.playing = ev.key; if (!BP.since || BP.since.key !== ev.key) BP.since = { key: ev.key, at: Date.now(), name: BP.launch.name || "" }; }
     drawLaunch();
   }
   function drawLaunch() {
@@ -109,42 +109,131 @@
     el.querySelector(".bp-launch-word").textContent = L.phase === "playing" ? "Playing" : "Starting";
   }
   const sameGame = (it, key) => !!it && !!key && (bpKey(it) === key || it.id === key || (!!it.g && (it.g.id === key || "game:" + it.g.id === key)));
-  // The menu over a game in Big Picture and TV mode, on the controller's Home or PS button.
-  const TV_MENU = [["resume", "Resume game"], ["home", "Lootnest"], ["close", "Close the game"]];
+  // The Home screen over a game, in Big Picture and TV mode, on the
+  // controller's Home or PS button: the game's picture dimmed behind, what
+  // to do on the left (go back to it, make a save point, its achievements,
+  // Lootnest, close it) and its achievements on the right. Moving only
+  // slides the light between the choices; nothing is drawn again, so it
+  // never blinks.
   function tvMenu(ev) {
     if (!ev.on) { BP.tvMenu = null; drawTVMenu(); return; }
-    const it = everyItem().find((x) => sameGame(x, ev.key));
-    BP.tvMenu = { key: ev.key, name: it ? it.name : (BP.launch && BP.launch.name) || "", at: 0, sure: false, shot: ev.shot || "" };
+    const it = everyItem().find((x) => sameGame(x, ev.key)) || null;
+    BP.tvMenu = { key: ev.key, it, name: it ? it.name : (BP.launch && BP.launch.name) || (BP.since && BP.since.key === ev.key && BP.since.name) || ev.name || "", at: "resume", sure: false, shot: ev.shot || "", point: "" };
     sfx("open");
     drawTVMenu();
   }
+  function tvMenuItems(M) {
+    const app = !M.it, X = M.it && achFor(M.it);
+    const list = [{ k: "resume", icon: "play", label: app && M.name ? `Back to ${M.name}` : "Resume game" }];
+    if (M.it) list.push({ k: "point", icon: M.point === "done" ? "check-circle" : "floppy-disk", label: M.point === "busy" ? "Making a save point" : M.point === "done" ? "Save point made" : "Make a save point" });
+    if (X) list.push({ k: "ach", icon: "trophy", label: "Achievements" });
+    list.push({ k: "home", icon: "house", label: "Go to Lootnest" });
+    list.push({ k: "close", icon: "x-circle", label: M.sure ? "Press again to close it" : app && M.name ? `Close ${M.name}` : "Close the game" });
+    return list;
+  }
+  // The game's achievements beside the menu: how far along, the latest
+  // unlocked, and the ones most players have that are still locked.
+  function tvMenuInfo(M) {
+    const X = M.it && achFor(M.it);
+    if (!X) return "";
+    const A = X.A, list = A.list || [], got = list.filter((a) => a.unlocked);
+    const latest = [...got].sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0) || (a.percent || 100) - (b.percent || 100)).slice(0, 3);
+    const next = list.filter((a) => !a.unlocked && !a.hidden).sort((a, b) => (b.percent || 0) - (a.percent || 0)).slice(0, 2);
+    const part = (title, rows) => (rows.length ? `<h3>${title}</h3><div class="tv-ach-rows">${rows.map((a) => bpAchRow(a, "")).join("")}</div>` : "");
+    return `<section class="tv-ach"><div class="tv-ach-head">${bpAchRing(X.pct)}
+        <div><h2>Achievements</h2><p><b class="ln-num">${A.unlocked}</b> of ${A.total} unlocked</p>${bpTierLine(list)}</div></div>
+      ${part("Latest", latest)}${part(A.unlocked === A.total ? "" : "Next up", A.unlocked === A.total ? [] : next)}</section>`;
+  }
+  const tvMenuClock = () => new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   function drawTVMenu() {
     const M = BP.tvMenu;
     let el = $("#tv-menu");
     if (!M) { if (el) { el.classList.add("out"); el.removeAttribute("id"); setTimeout(() => el.remove(), 320); } return; }
     if (!el) {
-      // The game's picture as it was when Home was pressed lies behind the
-      // menu, so the menu reads as lying over the game.
-      el = document.createElement("div"); el.id = "tv-menu"; el.className = "tv-menu ln-root"; el.setAttribute("role", "menu");
-      el.innerHTML = `${M.shot ? `<img class="tv-menu-shot" src="${M.shot}" alt="">` : ""}<div class="tv-menu-veil"></div><div class="tv-menu-panel"></div>`;
+      // The game's picture as it was when Home was pressed lies behind.
+      el = document.createElement("div"); el.id = "tv-menu"; el.className = "tv-menu ln-root"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Home");
+      el.innerHTML = `${M.shot ? `<img class="tv-menu-shot" src="${M.shot}" alt="">` : ""}<div class="tv-menu-veil"></div>
+        <header class="tv-menu-top"><span class="bp-mark">${BRAND_MARK}</span><span class="tv-menu-seat"></span><time class="bp-clock ln-num"></time></header>
+        <div class="tv-menu-body"><div class="tv-menu-side"><div class="tv-menu-head"></div><div class="tv-menu-list" role="menu"></div></div><div class="tv-menu-info"></div></div>
+        <footer class="tv-menu-foot"></footer>`;
       document.body.appendChild(el);
     }
-    el.querySelector(".tv-menu-panel").innerHTML = `<div class="tv-menu-name">${esc(M.name)}</div>
-      ${TV_MENU.map(([k, l], i) => `<button class="tv-menu-item${i === M.at ? " on" : ""}" role="menuitem" data-tvm="${k}" tabindex="-1">${k === "close" && M.sure ? "Press again to close it" : esc(l)}</button>`).join("")}
-      <div class="tv-menu-foot">${glyph("A")}Select<span></span>${glyph("B")}Resume</div>`;
-    const on = el.querySelector(".tv-menu-item.on");
-    if (on) on.focus({ preventScroll: true });
+    const put = (sel, html) => { const n = el.querySelector(sel); if (n.lnHTML !== html) { n.lnHTML = html; n.innerHTML = html; return true; } return false; };
+    const it = M.it, seat = seated(), owner = it && it.g && player(S.d.active[it.g.id]);
+    const since = BP.since && BP.since.key === M.key ? Date.now() - BP.since.at : 0, t = it ? totalPlayed(it) || steamTime(it) : 0;
+    const logo = it ? artFor(it, "logo").url : "";
+    const facts = [since >= 60000 ? `<b>${esc(hours(since))}</b> this time` : "", t ? `<b>${esc(hours(t))}</b> played` : ""].filter(Boolean);
+    put(".tv-menu-seat", seat ? `<span class="ln-player" style="--player:${esc(seat.color)}">${lnAvatar(seat, "32")}</span>${esc(seat.name)}` : "");
+    el.querySelector(".bp-clock").textContent = tvMenuClock();
+    put(".tv-menu-head", `<p class="bp-kick"><span class="ln-lamp ln-lamp--on"></span>${owner ? `Playing as ${esc(owner.name)}` : it ? "Playing" : "Running"}</p>
+      ${logo ? `<img class="bp-logo" src="${logo}" alt="${esc(M.name)}">` : `<h1 class="tv-menu-name">${esc(M.name)}</h1>`}
+      ${facts.length ? `<p class="bp-facts">${facts.map((x) => `<span>${x}</span>`).join("")}</p>` : ""}`);
+    const items = tvMenuItems(M);
+    if (!items.some((x) => x.k === M.at)) M.at = "resume";
+    put(".tv-menu-list", `<span class="tv-menu-ind" aria-hidden="true"></span>${items.map((x) => `<button class="tv-menu-item" role="menuitem" data-tvm="${x.k}" tabindex="-1"${x.k === "point" && M.point === "busy" ? ' aria-busy="true"' : ""}>${ph(x.icon)}<span>${esc(x.label)}</span></button>`).join("")}`);
+    if (put(".tv-menu-info", tvMenuInfo(M))) el.classList.toggle("has-info", !!el.querySelector(".tv-menu-info").firstChild);
+    put(".tv-menu-foot", `<span>${glyph("A")}Select</span><span>${glyph("B")}${it ? "Resume" : "Back"}</span>`);
+    tvMenuLight(el, M);
+  }
+  // The light behind the choice in focus slides to it; the choices
+  // themselves only change colour.
+  function tvMenuLight(el, M) {
+    const list = el.querySelector(".tv-menu-list"), ind = list.querySelector(".tv-menu-ind");
+    let on = null;
+    list.querySelectorAll(".tv-menu-item").forEach((b) => { const is = b.dataset.tvm === M.at; b.classList.toggle("on", is); if (is) on = b; });
+    if (!on) return;
+    const first = !ind.style.transform;
+    if (first) ind.style.transition = "none";
+    ind.style.height = on.offsetHeight + "px";
+    ind.style.transform = `translate3d(0, ${on.offsetTop}px, 0)`;
+    if (first) { void ind.offsetWidth; ind.style.transition = ""; }
+    if (document.activeElement !== on) on.focus({ preventScroll: true });
+  }
+  function tvMenuMove(dir) {
+    const M = BP.tvMenu, el = $("#tv-menu");
+    if (!M || !el) return;
+    const ks = tvMenuItems(M).map((x) => x.k), i = ks.indexOf(M.at) + (dir === "down" ? 1 : -1);
+    if (i < 0 || i >= ks.length) { sfx("edge"); return; }
+    M.at = ks[i];
+    if (M.sure) { M.sure = false; drawTVMenu(); } else tvMenuLight(el, M);
+    sfx("move");
   }
   function tvMenuGo(k) {
     const M = BP.tvMenu;
     if (!M) return;
+    const el = $("#tv-menu"), b = el && el.querySelector(`[data-tvm="${k}"]`);
+    if (b && M.at !== k) { M.at = k; tvMenuLight(el, M); } // a click
+    if (b && moving()) b.animate({ scale: ["1", "0.96", "1"] }, { duration: 180, easing: "ease-out" });
     if (k === "resume") { sfx("back"); BP.tvMenu = null; drawTVMenu(); api.tvResume().catch(() => {}); return; }
-    if (k === "home") { sfx("go"); BP.tvMenu = null; drawTVMenu(); tvReturn(); api.tvStay().catch(() => {}); if (BP.on) renderBP(false); return; }
+    if (k === "home" || k === "ach") {
+      sfx("go"); BP.tvMenu = null; drawTVMenu(); tvReturn(); api.tvStay().catch(() => {});
+      // Its achievements: the game's page in Big Picture, at their row.
+      if (k === "ach" && M.it && BP.on) { BP.settings = false; BP.choose = null; BP.points = false; BP.menu = false; BP.detail = bpKey(M.it); BP.from = ""; BP.focus = "play"; BP.want = "ach:0"; }
+      if (BP.on) renderBP(false);
+      return;
+    }
+    if (k === "point") {
+      if (M.point === "busy" || !M.it) return;
+      const key = recentKey(M.it);
+      M.point = "busy"; sfx("go"); drawTVMenu();
+      api.makeSavePoint(key, "").catch((e) => { if (BP.tvMenu === M) { M.point = ""; drawTVMenu(); } toast(errText(e), "error"); });
+      return;
+    }
     if (k === "close") {
       if (!M.sure) { M.sure = true; sfx("toggle"); drawTVMenu(); return; }
       sfx("go"); BP.tvMenu = null; drawTVMenu();
       api.tvCloseGame().catch((e) => toast(errText(e), "error"));
     }
+  }
+  // A save point asked for from the Home screen was made, or couldn't be.
+  function tvMenuPoint(ev) {
+    const M = BP.tvMenu;
+    if (!M || !M.it || M.point !== "busy" || recentKey(M.it) !== ev.key) return false;
+    M.point = ev.error ? "" : "done";
+    drawTVMenu();
+    if (!M.point) return false;
+    if (M.point) setTimeout(() => { if (BP.tvMenu === M && M.point === "done") { M.point = ""; drawTVMenu(); } }, 2600);
+    return true;
   }
   document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("#tv-menu [data-tvm]"); if (b) tvMenuGo(b.dataset.tvm); });
   // The game closed: Big Picture comes back from behind its art.
@@ -180,7 +269,7 @@
     square: '<rect x="5.25" y="5.25" width="9.5" height="9.5" rx=".5"/>', triangle: '<path d="M10 4.75 15.5 14.5h-11z"/>',
     ...Object.fromEntries(["top", "right", "bottom", "left"].map((k) => [k, dot(10, 4.5, k === "top") + dot(15.5, 10, k === "right") + dot(10, 15.5, k === "bottom") + dot(4.5, 10, k === "left")])),
   };
-  const pad = { prev: [], held: "", next: 0, raf: 0, fam: "", hello: 0, joined: [] };
+  const pad = { prev: [], held: "", next: 0, at: -1e9, raf: 0, fam: "", hello: 0, joined: [] };
   const glyph = (b) => {
     const f = BP.signs || pad.fam || "xbox", v = PADS[f][b], face = b.length === 1; // the signs chosen in Big Picture's Settings, else the pad's own
     const cls = f === "xbox" || !face ? " bp-g--" + b.toLowerCase() : "";
@@ -244,9 +333,12 @@
   const PAD_ROLES = { 0: "A", 1: "B", 2: "X", 3: "Y", 4: "LB", 5: "RB", 8: "View", 9: "Start", 16: "Start", 17: "View" };
   // In Big Picture and TV mode the Home or PS button is Lootnest's own (app/console.go tvHome).
   const padRole = (fam, i) => (BP.on && i === 16 ? "" : fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
-  const padDir = (g) => {
+  // The stick counts as a direction past 0.6 and stops counting under 0.35,
+  // so one resting near the edge doesn't press again and again.
+  const padDir = (g, was) => {
     const b = (i) => !!(g.buttons[i] && g.buttons[i].pressed), ax = g.axes[0] || 0, ay = g.axes[1] || 0;
-    return b(12) || ay < -0.5 ? "up" : b(13) || ay > 0.5 ? "down" : b(14) || ax < -0.5 ? "left" : b(15) || ax > 0.5 ? "right" : "";
+    const th = (d) => (was === d ? 0.35 : 0.6);
+    return b(12) || ay < -th("up") ? "up" : b(13) || ay > th("down") ? "down" : b(14) || ax < -th("left") ? "left" : b(15) || ax > th("right") ? "right" : "";
   };
   const padsNow = () => (navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : []);
   function padLoop(t) {
@@ -266,17 +358,22 @@
       pad.prev[g.index] = now;
       if (f === "xbox" && echo) continue;
       now.forEach((p, i) => { if (p && !was[i]) { if (f !== "xbox" || !real.length) fam = f; const r = padRole(f, i); if (r) roles.add(r); } });
-      dir = dir || padDir(g);
+      dir = dir || padDir(g, pad.held);
     }
-    if (document.hasFocus() && BP.tvMenu) {
-      const M = BP.tvMenu;
+    // A direction acts when it's first pressed, again after 400 ms held and
+    // every 120 ms after that, the same on every screen; never twice within
+    // 100 ms, whatever the stick does.
+    const step = !!dir && (dir !== pad.held ? t - pad.at >= 100 : t >= pad.next);
+    if (step) { pad.next = t + (dir !== pad.held ? 400 : 120); pad.at = t; }
+    const focused = document.hasFocus();
+    if (focused && BP.tvMenu) {
       if (roles.has("B")) tvMenuGo("resume");
-      else if (roles.has("A")) tvMenuGo(TV_MENU[M.at][0]);
-      else if ((dir === "up" || dir === "down") && dir !== pad.held) { M.at = (M.at + (dir === "down" ? 1 : TV_MENU.length - 1)) % TV_MENU.length; M.sure = false; sfx("move"); drawTVMenu(); }
-    } else if (document.hasFocus() && BP.launch) {
+      else if (roles.has("A")) tvMenuGo(BP.tvMenu.at);
+      else if (step && (dir === "up" || dir === "down")) tvMenuMove(dir);
+    } else if (focused && BP.launch) {
       // While a game starts, B comes back to Big Picture; nothing else acts.
       if (roles.has("B") && BP.launch.phase === "starting") { sfx("back"); tvReturn(); }
-    } else if (document.hasFocus()) {
+    } else if (focused) {
       if (fam !== pad.fam) { pad.fam = fam; if (BP.on) renderBP(false); }
       if (roles.has("Start") && !(BP.tv && (S.picker || S.dialog))) { if (BP.on) bpClose(); else bpOpen(); }
       if (BP.on && !S.picker && !S.dialog) {
@@ -287,7 +384,7 @@
         if (roles.has("LB")) bpTab(-1);
         if (roles.has("RB")) bpTab(1);
         if (roles.has("View")) bpSelect({ dataset: { go: "sound" } });
-        if (dir && (dir !== pad.held || t >= pad.next)) { bpMove(dir); pad.next = t + (dir !== pad.held ? 400 : 120); }
+        if (step) bpMove(dir);
       } else if (BP.on) { // the picker (Who's playing, its questions, the swap) or a dialog above Big Picture
         const o = $("#overlay"), a = document.activeElement;
         if (roles.has("A") && a !== o && o.contains(a)) a.click();
@@ -295,10 +392,10 @@
           if (S.picker) { if (!S.picker.working) { const back = o.querySelector('[data-action="picker-back"]'); if (back) back.click(); else closePicker(); } }
           else if (S.dialog.kind !== "welcome") closeDialog(false);
         }
-        if (dir && (dir !== pad.held || t >= pad.next)) { overlayMove(dir); pad.next = t + (dir !== pad.held ? 400 : 120); }
+        if (step) overlayMove(dir);
       }
-      pad.held = dir;
     }
+    if (step || !dir) pad.held = dir; // a press held back by the pace counts on a later frame
     pad.raf = requestAnimationFrame(padLoop);
   }
   window.addEventListener("gamepadconnected", (ev) => {

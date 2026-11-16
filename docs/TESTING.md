@@ -830,3 +830,22 @@ On the LG TV, with section 27 done on the PC.
    opens on that monitor.
 6. Task Manager: a second Lootnest.exe while YouTube is open, gone after
    it closes. No Edge window is opened.
+
+## 36. The Home screen over a game, and Achievements in Big Picture
+
+1. A game running from Big Picture, the Home (Guide or PS) button: the
+   game's picture dimmed, the choices on the left, its achievements on
+   the right. One press of the D-pad moves one choice; holding it moves
+   on after a moment and then steadily; the stick does the same and never
+   skips. The light slides, nothing blinks.
+2. Make a save point: the choice says so, then Save point made, and the
+   point is in the game's Save points afterwards.
+3. Achievements: Lootnest comes up on the game's page with the focus on
+   its achievements; the game still runs (Go back to the game).
+4. Close the game asks for a second press. For Spotify or YouTube the
+   choices name the app and there are no achievements.
+5. Big Picture, Achievements: Up and Down change the game and the right
+   side follows; OK goes into the list, which slides by itself; B comes
+   back to the games; Up from the first game reaches the bar.
+6. Who's playing: the chosen profile grows, its ring spreads, the others
+   fade, then Home. With Motion at Less or Off it happens at once.
