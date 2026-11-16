@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.7.0
 
 Lootnest stays on the screen while you play from Big Picture or TV mode, as a console's home does.
 

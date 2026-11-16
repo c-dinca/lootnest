@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.6.0, beta)
+## Where things stand (2.7.0, beta)
 
 These shipped recently, newest last:
 
@@ -1240,7 +1240,7 @@ These shipped recently, newest last:
   the owner finds on the real TV. The owner asked for 2.6.0 as its
   release (16 Nov), and for the older releases to be pruned: kept are
   the 1.x milestones, 2.0.0, 2.2.11, 2.5.2 and the latest.
-- **Unreleased: Lootnest as a console's screen** (the owner, 16 Nov: "I
+- **2.7.0, Lootnest as a console's screen** (the owner, 16 Nov: "I
   want Lootnest there all the time, as on a PlayStation", in TV mode and
   Big Picture; the Home button as an overlay; go back to the game or
   close it without leaving Lootnest). `app/console.go`: `console()` is
@@ -1262,7 +1262,7 @@ These shipped recently, newest last:
   (`.tv-menu-shot`), `bpBehind`, Playing on the tile, Go back to the
   game. `win/console.go`: `TopWindows`, `ScreenOf`, `PlaceBehind`,
   `IsWindow`, `Foreground`. Not seen on a PC: docs/TESTING.md 33.
-- **Unreleased: a PlayStation controller as an Xbox one** (the owner,
+- **2.7.0, a PlayStation controller as an Xbox one** (the owner,
   16 Nov 2026: "do the DualSense to Xbox translation with ViGEmBus",
   reversing the roadmap's "Lootnest does not translate controllers";
   ROADMAP Controllers phase 6). `Settings.PadAsXbox`, off by default.
