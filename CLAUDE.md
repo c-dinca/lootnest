@@ -1285,6 +1285,23 @@ These shipped recently, newest last:
   a PC: docs/TESTING.md 34. Not done: rumble, the lightbar, hiding the
   real pad.
 
+- **Unreleased, YouTube as Lootnest's own window** (the owner, 16 Nov:
+  "pagina de youtube inca arata asa", the desktop site in Edge's kiosk).
+  Edge didn't take `--user-agent` on the owner's PC, and its kiosk window
+  is InPrivate, so a sign-in wouldn't have lasted. `lootnest.exe --app
+  youtube --on <hwnd>` (`app/webapp.go` `RunWebApp`, before the single
+  instance check in main.go) is a program of its own: a WebView2 window
+  full screen on Lootnest's monitor (`win.FullscreenLike`), data in
+  `apps\youtube`, the PS4 Leanback name set through
+  `WebViewOptions.UserAgent` (a patch to third_party/go-webview2:
+  `PutUserAgent`). `core.WebApp`, `WebAppByID`; `MediaApp.Own`,
+  `MediaPaths.Self`. Leanback reads keys, never the Gamepad API: `padKeys`
+  (added to every page) reads every pad as one and asks `ln_key`, bound
+  only for youtube.com pages, which presses a real key (`win.TapKey`,
+  SendInput) only while that window is in front. Checked here against
+  the real youtube.com/tv in Chromium with a stubbed pad; not seen on a
+  PC: docs/TESTING.md 35. The old Edge profile `youtube-tv` is left.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

@@ -357,10 +357,11 @@ func (a *App) pidOf(key string) uint32 {
 
 func (a *App) mediaApps() []core.MediaApp {
 	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
+	self, _ := os.Executable()
 	return core.FindMediaApps(core.MediaPaths{
 		AppData: os.Getenv("APPDATA"), LocalAppData: os.Getenv("LOCALAPPDATA"),
 		ProgramFiles: os.Getenv("ProgramFiles"), ProgramFilesX86: os.Getenv("ProgramFiles(x86)"),
-		DataDir: DataDir(),
+		Self: self,
 	}, exists)
 }
 
@@ -388,7 +389,11 @@ func (a *App) apiLaunchApp(id string) error {
 		if old := a.pidOf(key); old != 0 && win.ProcessAlive(old) {
 			r.pid = old
 		} else {
-			pid, err := win.StartTracked(app.Exe, app.Args, filepath.Dir(app.Exe))
+			args := app.Args
+			if app.Own { // on the monitor Lootnest is on
+				args += " --on " + strconv.FormatUint(uint64(a.hwnd), 10)
+			}
+			pid, err := win.StartTracked(app.Exe, args, filepath.Dir(app.Exe))
 			if err != nil {
 				return err
 			}

@@ -111,7 +111,11 @@ func ForceForeground(hwnd uintptr) {
 }
 
 // altTap sends Alt down and up.
-func altTap() {
+func altTap() { TapKey(0x12) } // VK_MENU
+
+// TapKey presses and lets go of a key, as the keyboard would, for the
+// window in front.
+func TapKey(vk uint16) {
 	type keyInput struct {
 		typ   uint32
 		_     uint32 // padding to the union on 64-bit
@@ -122,8 +126,12 @@ func altTap() {
 		extra uintptr
 		_     [8]byte // the union is as large as MOUSEINPUT
 	}
-	const vkMenu, keyUp = 0x12, 0x0002
-	in := [2]keyInput{{typ: 1, vk: vkMenu}, {typ: 1, vk: vkMenu, flags: keyUp}}
+	const extended, keyUp = 0x0001, 0x0002
+	var flags uint32
+	if vk >= 0x25 && vk <= 0x28 { // the arrows, not the number pad's
+		flags = extended
+	}
+	in := [2]keyInput{{typ: 1, vk: vk, flags: flags}, {typ: 1, vk: vk, flags: flags | keyUp}}
 	procSendInput.Call(2, uintptr(unsafe.Pointer(&in[0])), unsafe.Sizeof(in[0]))
 }
 

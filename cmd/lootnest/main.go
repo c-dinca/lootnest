@@ -7,12 +7,14 @@
 //	Lootnest.exe --launch <id>   ask who's playing, then start that game
 //	Lootnest.exe --safe-mode     start with background work off (or hold Shift while it opens)
 //	Lootnest.exe --tv            TV mode, for a streaming host: runs until TV mode ends
+//	Lootnest.exe --app <id>      a site as an app, full screen (YouTube's TV interface)
 //	Lootnest.exe --uninstall     remove Lootnest
 package main
 
 import (
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,7 +29,8 @@ func init() {
 
 func main() {
 	var tray, uninstall, quiet, safe, restarted, tv bool
-	var launch string
+	var launch, site string
+	var on uintptr
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
 		switch strings.ToLower(args[i]) {
@@ -43,6 +46,17 @@ func main() {
 			tv = true
 		case "--restarted": // the old Lootnest is still closing
 			restarted = true
+		case "--app":
+			if i+1 < len(args) {
+				site = args[i+1]
+				i++
+			}
+		case "--on": // the window whose monitor --app fills
+			if i+1 < len(args) {
+				n, _ := strconv.ParseUint(args[i+1], 10, 64)
+				on = uintptr(n)
+				i++
+			}
 		case "--launch", "/launch":
 			if i+1 < len(args) {
 				launch = args[i+1]
@@ -59,6 +73,11 @@ func main() {
 	if uninstall {
 		app.Uninstall(quiet)
 		return
+	}
+
+	// A site shown as an app is a program of its own (app/webapp.go).
+	if site != "" {
+		os.Exit(app.RunWebApp(site, on))
 	}
 
 	// A streaming host's app: this process only holds the stream, while

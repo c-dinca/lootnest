@@ -61,6 +61,17 @@ func FullscreenPrimary(hwnd uintptr) {
 	fillMonitor(hwnd, mon)
 }
 
+// FullscreenLike fills the monitor another window is on (the primary one
+// when that window is gone), borderless.
+func FullscreenLike(hwnd, other uintptr) {
+	if other == 0 || !IsWindow(other) {
+		FullscreenPrimary(hwnd)
+		return
+	}
+	mon, _, _ := procMonitorFromWindow.Call(other, 2) // MONITOR_DEFAULTTONEAREST
+	fillMonitor(hwnd, mon)
+}
+
 const gwlStyle = ^uintptr(15) // GWL_STYLE (-16)
 
 func fillMonitor(hwnd, mon uintptr) {

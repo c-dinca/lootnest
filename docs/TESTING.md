@@ -744,7 +744,7 @@ On the LG TV, with section 27 done on the PC.
 
 ## 31. Apps in TV mode (2.5.0)
 
-1. With Spotify, Stremio and Edge on the PC, TV mode's Home has Apps
+1. With Spotify and Stremio on the PC, TV mode's Home has Apps
    with all three.
 2. Spotify: opens over Lootnest; Home opens the menu; Close the game
    closes its window and Lootnest is back (Spotify may stay in the tray).
@@ -812,3 +812,21 @@ On the LG TV, with section 27 done on the PC.
    game, once.
 9. Show recent activity has "Controller as Xbox: ..." lines for each
    change.
+
+## 35. YouTube as Lootnest's own window
+
+1. Big Picture or TV mode, Home, Apps, YouTube: the game-start screen,
+   then YouTube full screen in its TV layout (Get started, a QR code),
+   never the desktop site or a cookie question over it.
+2. The controller: D-pad and left stick move, a held direction repeats,
+   A chooses, B goes back. With a DualSense and A PlayStation controller
+   as an Xbox one on, one press moves one step, not two.
+3. Sign in with the code on a phone; play a video with sound. Close
+   YouTube from the Home menu and open it again: still signed in.
+4. The Home button opens Lootnest's menu over it; while the menu is
+   open the controller doesn't move YouTube; Resume goes back to it;
+   Close the game closes it and Lootnest is back.
+5. With two monitors and Lootnest in Big Picture on the second: YouTube
+   opens on that monitor.
+6. Task Manager: a second Lootnest.exe while YouTube is open, gone after
+   it closes. No Edge window is opened.
