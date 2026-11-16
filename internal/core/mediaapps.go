@@ -1,19 +1,20 @@
 package core
 
 import (
+	"math"
 	"net/url"
 	"path/filepath"
 	"strings"
 )
 
-// Apps TV mode offers beside the games: Spotify, YouTube's TV interface and
-// Stremio. Spotify and Stremio are started when they're on the PC, and
-// nothing is ever installed or added to them; YouTube is a window of
-// Lootnest's own (WebApp).
+// Apps TV mode offers beside the games: YouTube's TV interface and Spotify's
+// web player, each a window of Lootnest's own (WebApp), and Spotify's own
+// program and Stremio when they're on the PC. Nothing is ever installed or
+// added to them.
 
 // MediaApp is one app TV mode can start.
 type MediaApp struct {
-	ID   string `json:"id"`   // "spotify", "youtube" or "stremio"
+	ID   string `json:"id"`   // "youtube", "spotify", "spotify-app" or "stremio"
 	Name string `json:"name"` // as shown
 	Exe  string `json:"-"`
 	Args string `json:"-"`
@@ -43,6 +44,28 @@ type WebApp struct {
 	// Host is the one host whose pages may ask for a key press (the
 	// controller's, see app/webapp.go).
 	Host string
+	// Nav is how a controller drives it: "keys" for a site made for a
+	// remote, which reads arrows, Enter and Escape itself (YouTube's TV
+	// interface); "spatial" for an ordinary site, where the D-pad moves a
+	// focus of Lootnest's own to the nearest thing that way (Spotify).
+	Nav string
+	// Width is how many of the site's pixels the screen is across, so an
+	// ordinary site is large enough to read from a sofa; 0 leaves it.
+	Width int
+}
+
+// WebAppZoom is how much a site is magnified to be width of its pixels
+// across a screen of screenPx real ones at this DPI (96 is 100%), which
+// Windows has magnified once already. Between 1 and 4.
+func WebAppZoom(width, screenPx, dpi int) float64 {
+	if width <= 0 || screenPx <= 0 {
+		return 1
+	}
+	if dpi <= 0 {
+		dpi = 96
+	}
+	z := float64(screenPx) / (float64(width) * float64(dpi) / 96)
+	return math.Max(1, math.Min(4, z))
 }
 
 // Owns says whether a page at this address is the site's own: https, on
@@ -56,7 +79,11 @@ func (w WebApp) Owns(source string) bool {
 const tvUserAgent = "Mozilla/5.0 (PS4; Leanback Shell) Gecko/20100101 Firefox/65.0 LeanbackShell/01.00.01.75 Sony PS4/ (PS4, , no, CH)"
 
 var webApps = []WebApp{
-	{ID: "youtube", Name: "YouTube", URL: "https://www.youtube.com/tv", UserAgent: tvUserAgent, Host: "www.youtube.com"},
+	{ID: "youtube", Name: "YouTube", URL: "https://www.youtube.com/tv", UserAgent: tvUserAgent, Host: "www.youtube.com", Nav: "keys"},
+	// Spotify has no interface for TVs on the web (it serves the same page
+	// to a TV's or a console's browser), so this is its web player,
+	// magnified, with the focus Lootnest adds.
+	{ID: "spotify", Name: "Spotify", URL: "https://open.spotify.com/", Host: "open.spotify.com", Nav: "spatial", Width: 1280},
 }
 
 // WebAppByID is the site shown for --app <id>.
@@ -90,11 +117,14 @@ func FindMediaApps(p MediaPaths, exists func(string) bool) []MediaApp {
 		return filepath.Join(append([]string{base}, parts...)...)
 	}
 	var out []MediaApp
-	if exe := first(j(p.AppData, "Spotify", "Spotify.exe"), j(p.LocalAppData, "Microsoft", "WindowsApps", "Spotify.exe")); exe != "" {
-		out = append(out, MediaApp{ID: "spotify", Name: "Spotify", Exe: exe, Proc: "spotify"})
-	}
 	if p.Self != "" {
-		out = append(out, MediaApp{ID: "youtube", Name: "YouTube", Exe: p.Self, Args: WebAppArgs("youtube"), ByPID: true, Own: true})
+		for _, w := range webApps {
+			out = append(out, MediaApp{ID: w.ID, Name: w.Name, Exe: p.Self, Args: WebAppArgs(w.ID), ByPID: true, Own: true})
+		}
+	}
+	// Spotify's own program too, when it's installed, beside the web one.
+	if exe := first(j(p.AppData, "Spotify", "Spotify.exe"), j(p.LocalAppData, "Microsoft", "WindowsApps", "Spotify.exe")); exe != "" {
+		out = append(out, MediaApp{ID: "spotify-app", Name: "Spotify on this PC", Exe: exe, Proc: "spotify"})
 	}
 	if exe := first(j(p.LocalAppData, "Programs", "LNV", "Stremio-4", "stremio.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio", "stremio.exe"),
 		j(p.LocalAppData, "Programs", "Stremio", "stremio.exe"), j(p.LocalAppData, "Programs", "stremio-shell-ng", "stremio-shell-ng.exe"),

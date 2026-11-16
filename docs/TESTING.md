@@ -849,3 +849,18 @@ On the LG TV, with section 27 done on the PC.
    back to the games; Up from the first game reaches the bar.
 6. Who's playing: the chosen profile grows, its ring spreads, the others
    fade, then Home. With Motion at Less or Off it happens at once.
+
+## 37. Spotify's web player as Lootnest's own window
+
+1. Big Picture, Apps, Spotify: Spotify's web player full screen, larger
+   than in a browser (about 1280 of its pixels across the screen).
+2. Sign in with the PC's keyboard and mouse. Close it from the Home menu
+   and open it again: still signed in.
+3. The controller: a white frame moves card to card with the D-pad or
+   stick; Down past the last row on screen scrolls the list and moves on;
+   A opens a playlist; B goes back; B with a menu open closes the menu.
+4. A on a Play button starts the music, with sound (this is protected
+   playback: if it says it can't play here, note what it says). X pauses
+   and plays; LB and RB change track.
+5. Apps also has Spotify on this PC when Spotify is installed, which
+   opens the program as before.

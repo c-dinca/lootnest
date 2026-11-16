@@ -1,6 +1,8 @@
 package edge
 
 import (
+	"math"
+	"syscall"
 	"unsafe"
 
 	"github.com/jchv/go-webview2/internal/w32"
@@ -127,6 +129,20 @@ func (i *ICoreWebView2Controller) MoveFocus(reason uintptr) error {
 	)
 	if err != windows.ERROR_SUCCESS {
 		return err
+	}
+	return nil
+}
+
+// PutZoomFactor magnifies the page (Lootnest patch). The factor is a
+// double, which Windows' x64 calls take in a floating point register; Go's
+// call puts each of the first four arguments in both kinds.
+func (i *ICoreWebView2Controller) PutZoomFactor(zoom float64) error {
+	hr, _, _ := i.vtbl.PutZoomFactor.Call(
+		uintptr(unsafe.Pointer(i)),
+		uintptr(math.Float64bits(zoom)),
+	)
+	if windows.Handle(hr) != windows.S_OK {
+		return syscall.Errno(hr)
 	}
 	return nil
 }
