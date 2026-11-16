@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.9.0, beta)
+## Where things stand (2.10.0, beta)
 
 These shipped recently, newest last:
 
@@ -1389,7 +1389,7 @@ These shipped recently, newest last:
   the on-screen keyboard least of all (it may refuse made-up clicks):
   docs/TESTING.md 38.
 
-- **Unreleased, Discord as an app** (the owner, 16 Nov: Discord on the
+- **2.10.0, Discord as an app** (the owner, 16 Nov: Discord on the
   TV, joining a server's voice, hearing the others, sharing the
   screen). `core.WebApp` `discord` (discord.com/app, `Nav` spatial,
   `Mic`). `WebViewOptions.Microphone` (go-webview2 patch) allows the
@@ -1404,6 +1404,25 @@ These shipped recently, newest last:
   works only when that controller is on the PC by USB. Tried only on
   discord.com's sign-in page (the QR code, the frame moving); voice and
   screen sharing in WebView2 are not seen: docs/TESTING.md 39.
+
+- **2.10.0, Lootnest for TV 1.5.0** (c-dinca/lootnest-tv-webos#10; the
+  owner, 16 Nov: the TV is on Wi-Fi, the PC wired, and the delay makes
+  games hard to play). 1.4.0's 25 Mbps was too much for Wi-Fi. The TV
+  app's home screen has a Picture key (`lootnest_picture_t`: Automatic,
+  Smooth 720p 6 Mbps, Balanced 1080p 12 Mbps, Sharp 1080p 25 Mbps, As
+  in Settings; `lootnest_picture_next`, `_sync` turns a hand change in
+  Settings into As in Settings). Automatic (`lootnest_picture_review`,
+  once per stream of 45 s or more, from the 1.4.0 counts) steps down at
+  1% of frames lost, loss in 20% of the seconds, or the TV showing a
+  tenth fewer than arrived; up only after a clean 5 minutes and not for
+  three clean streams after a step down (`lootnest_hold`).
+  `lootnest_tuned` 2 moves everyone to Automatic at Balanced once.
+  Under Ready: `lootnest_picture_line` and `lootnest_last_stream_line`.
+  The protocol can't change bitrate in a stream, so a step is for the
+  next one. Not seen on a TV. Still to come from the owner's numbers:
+  whether the host's `fec_percentage` or the TV's decoder is the limit.
+  The TV's picture mode (Game) and the 5 GHz band are the owner's to
+  set.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

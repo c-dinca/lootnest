@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 2.10.0
 
+Discord on the TV, and a picture for a TV on Wi-Fi.
+
+- **A Picture choice on the TV, made for Wi-Fi.** Lootnest for TV 1.5.0 has a Picture key beside Play: Automatic, Smooth (720p, 6 Mbps), Balanced (1080p, 12 Mbps), Sharp (1080p, 25 Mbps, for a TV on a cable) or what its Settings say. A lighter picture arrives whole and on time over Wi-Fi, which is what makes a game feel quick; the last version's 25 Mbps was too much for it. Install it from Settings, TV, Add an LG TV, Install again.
+- **Automatic follows your network.** It starts at Balanced. After each stream it looks at how many frames were lost on the way and whether the TV kept up, steps the picture down when they weren't arriving, and tries a step back up only after long clean streams.
+- **How the last stream went, on the TV.** Under Ready the TV app says what the next stream asks for and, for the last one, how many frames a second were shown, the share lost on the way and how long the network took there and back.
 - **Discord on the TV.** Apps has Discord: its web version in a window of Lootnest's own, full screen and magnified, driven by the controller as Spotify is (the D-pad moves a white frame, A chooses, B goes back). Sign in by scanning the QR code on its sign-in page with Discord on your phone. Join a voice channel and you hear the others wherever the PC's sound goes, which is the TV while it streams. To be heard you need a microphone the PC can hear: a stream to a TV carries no microphone back, so a headset plugged into the TV or into a controller that's plugged into the TV won't reach Discord. Only Discord's own pages get the microphone.
 
 ## 2.9.0
