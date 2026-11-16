@@ -1,6 +1,7 @@
 package core
 
 import (
+	"net/url"
 	"path/filepath"
 	"strings"
 )
@@ -39,15 +40,23 @@ type WebApp struct {
 	// signing in is a code typed on a phone, only to a TV or a console;
 	// anything else is sent to the desktop site.
 	UserAgent string
-	// Origin is the start of every address whose page may ask for a key
-	// press (the controller's, see app/webapp.go).
-	Origin string
+	// Host is the one host whose pages may ask for a key press (the
+	// controller's, see app/webapp.go).
+	Host string
+}
+
+// Owns says whether a page at this address is the site's own: https, on
+// its host exactly. Anything else (another site it went to, a frame, a
+// look-alike host) may not ask Lootnest for anything.
+func (w WebApp) Owns(source string) bool {
+	u, err := url.Parse(source)
+	return err == nil && u.Scheme == "https" && w.Host != "" && u.Host == w.Host
 }
 
 const tvUserAgent = "Mozilla/5.0 (PS4; Leanback Shell) Gecko/20100101 Firefox/65.0 LeanbackShell/01.00.01.75 Sony PS4/ (PS4, , no, CH)"
 
 var webApps = []WebApp{
-	{ID: "youtube", Name: "YouTube", URL: "https://www.youtube.com/tv", UserAgent: tvUserAgent, Origin: "https://www.youtube.com/"},
+	{ID: "youtube", Name: "YouTube", URL: "https://www.youtube.com/tv", UserAgent: tvUserAgent, Host: "www.youtube.com"},
 }
 
 // WebAppByID is the site shown for --app <id>.

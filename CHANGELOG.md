@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **The Home button's screen over a game is new.** It no longer jumps between its choices: a controller's direction moves one step, and holding it repeats calmly, in Big Picture too (a stick resting near its edge used to press again and again). The light slides from one choice to the next. Beside the choices are the game's achievements: how far along you are, the latest you unlocked and the ones most players have that you don't yet. New choices: Make a save point without leaving the game, and Achievements, which opens the game's achievements in Lootnest.
+- **Achievements in Big Picture, as on a console.** The games are down the left; the one in focus shows its achievements on the right, with a ring, the count and how many of each rarity you have. OK goes into the list: every achievement with what it asks, how many players have it and when you unlocked it, the rarest first.
+- **Choosing answers back.** The profile you pick comes forward with a ring in its colour while the others step back, a cover comes forward as its page opens and a light crosses it when the focus lands on it, a page's keys and rows arrive one after another, and the art behind comes a step closer. All of it follows Motion in Settings.
 - **YouTube on the TV opens in its TV layout.** It opened the desktop site in Edge, with the cookie question and nothing a controller could move through. YouTube is now a window of Lootnest's own, full screen, in the layout TVs and consoles get: the controller's D-pad or stick, A and B drive it, signing in is the code YouTube shows for your phone, and you stay signed in the next time. It no longer needs Edge or Chrome, and nothing of your browser opens in it.
 
 ## 2.7.0

@@ -2648,23 +2648,48 @@ html.is-tv {
 
 /* TV mode's menu over a game (25-bigpicture.js tvMenu): the Home or PS
    button, as on a console. */
-.tv-menu { position: fixed; inset: 0; z-index: 47; display: flex; align-items: center; padding: var(--bp-safe-y) var(--bp-safe-x);
-  animation: bp-launch-in var(--dur-3) var(--ease-emph) both; }
+.tv-menu { position: fixed; inset: 0; z-index: 47; overflow: hidden; color: var(--fg-1); font: 500 var(--bp-text)/1.3 var(--font-ui); animation: bp-in-fade var(--bp-dur-screen) var(--ease-out) both; }
 .tv-menu.out { animation: bp-launch-out var(--dur-3) var(--ease-in-out) both; }
 .tv-menu-shot, .tv-menu-veil { position: absolute; inset: 0; width: 100%; height: 100%; }
-.tv-menu-shot { object-fit: cover; }
+.tv-menu-shot { object-fit: cover; animation: tv-shot-back var(--dur-4) var(--ease-emph) both; }
 .tv-menu-veil { background: var(--tv-menu-scrim); }
-.tv-menu-panel { position: relative; width: var(--tv-menu-w); display: grid; gap: var(--bp-3); padding: var(--bp-7); border-radius: var(--bp-r-panel);
-  background: var(--bg-raised); box-shadow: var(--key-light), var(--bp-shadow-focus);
-  animation: bp-in-left var(--bp-dur-screen) var(--ease-emph) both; }
-.tv-menu-name { font: 400 var(--bp-text-h1)/1.1 var(--font-title); color: var(--fg-1); margin-bottom: var(--bp-5); text-wrap: balance; }
-.tv-menu-item { display: flex; align-items: center; width: 100%; height: var(--bp-key-h); padding: 0 var(--bp-6); border: 0; border-radius: var(--bp-r-key);
-  background: var(--bg-active); box-shadow: var(--key-light); color: var(--fg-1); font: 700 var(--bp-text-key)/1 var(--font-ui); text-align: left; cursor: pointer; outline: none;
-  transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
-.tv-menu-item.on { transform: scale(1.03); background: var(--fg-1); color: var(--bg-ground); }
-.tv-menu-foot { display: flex; align-items: center; gap: var(--bp-3); margin-top: var(--bp-5); color: var(--fg-2); font: 600 var(--bp-text)/1 var(--font-ui); }
-.tv-menu-foot span:not(.bp-g) { width: var(--bp-4); }
-@media (prefers-reduced-motion: reduce) { .tv-menu, .tv-menu-panel { animation: none; } }
+.tv-menu-top { position: absolute; left: var(--bp-safe-x); right: var(--bp-safe-x); top: var(--bp-safe-y); height: var(--bp-bar-h); display: flex; align-items: center; gap: var(--bp-5); }
+.tv-menu-seat { display: flex; align-items: center; gap: var(--bp-3); margin-left: auto; font-weight: 650; white-space: nowrap; }
+.tv-menu-seat .ln-avatar { width: var(--bp-avatar-bar); height: var(--bp-avatar-bar); font-size: var(--bp-text); }
+.tv-menu-body { position: absolute; inset: var(--bp-top) var(--bp-safe-x) var(--bp-foot); display: grid; grid-template-columns: var(--tv-menu-side) minmax(0, 1fr); align-items: center; gap: var(--bp-9); }
+.tv-menu-side { display: grid; gap: var(--bp-7); animation: tv-side-in var(--dur-4) var(--ease-emph) both; }
+.tv-menu-head { display: grid; gap: var(--bp-4); }
+.tv-menu-head .bp-logo { max-width: 100%; }
+.tv-menu-name { margin: 0; font: 400 var(--bp-text-h1)/1.05 var(--font-title); text-wrap: balance; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+/* The choices: a light slides to the one in focus, whose words turn dark. */
+.tv-menu-list { position: relative; isolation: isolate; display: grid; gap: var(--bp-2); }
+.tv-menu-ind { position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: var(--bp-key-h); border-radius: var(--bp-r-key); background: var(--fg-1); box-shadow: var(--bp-shadow-focus); pointer-events: none;
+  transition: transform var(--bp-dur-slide) var(--ease-out), height var(--bp-dur-slide) var(--ease-out); will-change: transform; }
+.tv-menu-item { display: flex; align-items: center; gap: var(--bp-5); width: 100%; height: var(--bp-key-h); padding: 0 var(--bp-6); border: 0; border-radius: var(--bp-r-key); background: none; color: var(--fg-2); font: 700 var(--bp-text-key)/1 var(--font-ui); text-align: left; white-space: nowrap; cursor: pointer; outline: none;
+  transition: color var(--bp-dur-focus) var(--ease-out), transform var(--bp-dur-slide) var(--ease-out); }
+.tv-menu-item svg { flex: none; width: var(--bp-icon); height: var(--bp-icon); }
+.tv-menu-item:hover { color: var(--fg-1); }
+.tv-menu-item.on { color: var(--bg-ground); transform: translate3d(var(--bp-2), 0, 0); }
+.tv-menu-item[aria-busy="true"] svg { animation: tv-busy var(--launch-run) var(--ease-in-out) infinite alternate; }
+.tv-menu-info { justify-self: end; width: min(100%, var(--tv-menu-info)); }
+/* The game's achievements, beside the choices. */
+.tv-ach { display: grid; gap: var(--bp-4); padding: var(--bp-6) var(--bp-7); border-radius: var(--bp-r-panel); background: var(--bp-fill); box-shadow: var(--key-light), var(--bp-shadow-focus); animation: tv-info-in var(--dur-4) var(--ease-emph) 60ms both; }
+.tv-ach h3 { margin: var(--bp-2) 0 0; font: 700 var(--bp-text)/1 var(--font-ui); color: var(--fg-2); }
+.tv-ach-rows { display: grid; gap: var(--bp-2); }
+.tv-ach .bp-arow { --bp-arow-h: var(--bp-arow-h-s); --bp-arow-ico: var(--bp-arow-ico-s); background: var(--bp-fill-in); box-shadow: none; }
+.tv-menu-foot { position: absolute; right: var(--bp-safe-x); bottom: var(--bp-safe-y); display: flex; align-items: center; gap: var(--bp-6); color: var(--fg-2); font-weight: 600; }
+.tv-menu-foot > span { display: flex; align-items: center; gap: var(--bp-3); white-space: nowrap; }
+@keyframes tv-shot-back { from { transform: scale(1); } to { transform: scale(1.04); } }
+@keyframes tv-side-in { from { opacity: 0; transform: translate3d(calc(-1 * var(--bp-7)), 0, 0); } }
+@keyframes tv-info-in { from { opacity: 0; transform: translate3d(var(--bp-7), 0, 0); } }
+@keyframes tv-busy { to { opacity: .35; } }
+:root:is(.motion-less, .motion-off) :is(.tv-menu-shot, .tv-menu-side, .tv-ach) { animation: none; }
+:root.motion-off :is(.tv-menu, .tv-menu.out) { animation: none; }
+:root.motion-off :is(.tv-menu-ind, .tv-menu-item) { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .tv-menu, .tv-menu.out, .tv-menu-shot, .tv-menu-side, .tv-ach, .tv-menu-item svg { animation: none; }
+  .tv-menu-ind, .tv-menu-item { transition: none; }
+}
 body:has(> #tv-menu) .bp-launch-body { opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
 
 
@@ -2744,6 +2769,23 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 @keyframes bp-in-near { from { opacity: 0; transform: scale(.97); } }
 @keyframes bp-in-far { from { opacity: 0; transform: scale(1.03); } }
 @keyframes bp-leave { to { opacity: 0; } }
+/* The screen that leaves goes the way the new one came from: through it
+   into a page, back out of one, aside for another section. */
+.bp-screen.leaving[data-leave="in"] { animation-name: bp-leave-in; }
+.bp-screen.leaving[data-leave="out"] { animation-name: bp-leave-out; }
+.bp-screen.leaving[data-leave="right"] { animation-name: bp-leave-left; }
+.bp-screen.leaving[data-leave="left"] { animation-name: bp-leave-right; }
+@keyframes bp-leave-in { to { opacity: 0; transform: scale(1.05); } }
+@keyframes bp-leave-out { to { opacity: 0; transform: scale(.96); } }
+@keyframes bp-leave-left { to { opacity: 0; transform: translate3d(calc(-.5 * var(--bp-slide)), 0, 0); } }
+@keyframes bp-leave-right { to { opacity: 0; transform: translate3d(calc(.5 * var(--bp-slide)), 0, 0); } }
+/* A page's parts come one after another: its keys, then its row. */
+.bp-screen[data-enter="in"] .bp-keys > *, .bp-screen[data-enter="in"] .bp-opts > *, .bp-screen[data-enter="in"] .bp-people > * { animation: bp-screen-in var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-screen[data-enter="in"] :is(.bp-keys, .bp-opts, .bp-people) > :nth-child(1) { animation-delay: calc(3 * var(--bp-step)); }
+.bp-screen[data-enter="in"] :is(.bp-keys, .bp-opts, .bp-people) > :nth-child(2) { animation-delay: calc(4 * var(--bp-step)); }
+.bp-screen[data-enter="in"] :is(.bp-keys, .bp-opts, .bp-people) > :nth-child(3) { animation-delay: calc(5 * var(--bp-step)); }
+.bp-screen[data-enter="in"] :is(.bp-keys, .bp-opts, .bp-people) > :nth-child(n + 4) { animation-delay: calc(6 * var(--bp-step)); }
+.bp-screen[data-enter="in"] .bp-row { animation: bp-row-in var(--bp-dur-screen) var(--ease-emph) calc(6 * var(--bp-step)) both; }
 .bp-scroll { position: absolute; inset: 0; padding-top: var(--bp-top); transition: transform var(--bp-dur-slide) var(--ease-out); will-change: transform; }
 .bp-scroll::after { content: ""; display: block; height: var(--bp-fade-h); }  /* the last row stops above the fade */
 
@@ -2768,6 +2810,9 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 :is(.bp-tile, .bp-key, .bp-person, .bp-card):focus::before, :is(.bp-tile, .bp-key, .bp-person, .bp-card):focus::after { opacity: 1; }
 .bp-art { position: relative; display: block; aspect-ratio: 2 / 3; border-radius: var(--bp-r-tile); overflow: hidden; background: var(--bg-active); }
 .bp-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bp-art::before { content: ""; position: absolute; z-index: 1; inset: 0; background: var(--bp-sheen); transform: translate3d(-110%, 0, 0); pointer-events: none; }
+.bp-tile:focus .bp-art::before { animation: bp-sheen var(--bp-dur-sheen) var(--ease-out) 80ms both; }
+@keyframes bp-sheen { to { transform: translate3d(110%, 0, 0); } }
 .bp-art .ln-tile__none { justify-content: flex-end; padding: var(--bp-4); }
 .bp-art .ln-tile__none img:not(.ln-tile__logo) { width: var(--bp-7); height: var(--bp-7); margin-bottom: auto; }
 .bp-art .ln-tile__none b { margin: 0; font: 400 var(--bp-text)/var(--lh-tight) var(--font-title); -webkit-line-clamp: 4; }
@@ -2833,9 +2878,10 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-ach.tier-ultra { --tier: var(--tier-ultra); } .bp-ach.tier-rare { --tier: var(--tier-rare); } .bp-ach.tier-uncommon { --tier: var(--tier-uncommon); } .bp-ach.tier-common { --tier: var(--tier-common); }
 .bp-ach > span:last-child { display: grid; gap: var(--bp-1); min-width: 0; }
 .bp-ach b { color: var(--fg-1); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-ach[class*="tier-"]:not(.is-locked, :focus) > span > span { color: var(--tier); font-weight: 650; }
 .bp-ach.is-locked { opacity: .6; }
 .bp-ach:focus { transform: scale(var(--bp-grow-key)); background: var(--fg-1); color: var(--bg-active); opacity: 1; z-index: 2; }
-.bp-ach:focus b { color: var(--bg-ground); }
+.bp-ach:focus b, .bp-ach:focus > span > span { color: var(--bg-ground); }
 
 /* A list to go down: a game's save points. */
 .bp-list { width: min(var(--bp-list-w), calc(100% - 2 * var(--bp-safe-x))); margin: 0 var(--bp-safe-x); }
@@ -2860,21 +2906,80 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-count { flex: none; color: var(--fg-2); }
 .bp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--bp-tile-w), 1fr)); gap: var(--bp-9) var(--bp-6); }
 .bp-grid .bp-tile { width: auto; }
-.bp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--bp-card-w), 1fr)); gap: var(--bp-6); }
-.bp-card { position: relative; isolation: isolate; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--bp-5); min-height: calc(var(--bp-key-h) + var(--bp-7)); padding: var(--bp-5); border: 0; border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-2); text-align: left; font: inherit; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out); }
-.bp-card::before { border-radius: var(--bp-r-key); }
-.bp-card::after { border-radius: calc(var(--bp-r-key) + var(--bp-2)); }
-.bp-card { grid-template-columns: auto 1fr auto; }
 .bp-card-art { width: var(--bp-card-art); aspect-ratio: 2 / 3; border-radius: var(--bp-2); overflow: hidden; background: var(--bg-active); }
 .bp-card-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bp-card-text { display: grid; gap: var(--bp-2); min-width: 0; }
-.bp-card b { display: block; font-weight: 700; color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-card-text b { display: block; font-weight: 700; color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bp-meter { display: block; height: var(--bp-2); border-radius: var(--radius-round); background: var(--glass-ctl); overflow: hidden; }
 .bp-meter i { display: block; height: 100%; border-radius: inherit; background: var(--fg-1); }
-.bp-card .ach-gring { width: var(--bp-key-h); height: var(--bp-key-h); }
-.bp-card .ach-ring { width: 100%; height: 100%; }
-.bp-h1 { flex: 1; margin: 0; font: 400 var(--bp-text-h1)/1.05 var(--font-title); }
-.bp-card--ghost { box-shadow: none; }
+.bp-h1 { margin: 0; font: 400 var(--bp-text-h1)/1.05 var(--font-title); }
+
+/* Achievements: the games down the left, and on the right the game in
+   focus with every achievement to go through. Each list slides in a frame
+   of its own, so the other stays where it is. */
+.bp-achs { display: grid; grid-template-columns: var(--bp-achs-side) minmax(0, 1fr); gap: var(--bp-8); height: calc(100vh - var(--bp-top) - var(--bp-foot)); margin: 0 var(--bp-safe-x); }
+.bp-achs-side, .bp-achs-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.bp-achs-sum { margin: var(--bp-3) 0 var(--bp-6); color: var(--fg-2); }
+.bp-achs-sum b, .bp-ap-head p b, .tv-ach-head p b { color: var(--fg-1); font-weight: 700; }
+.bp-clip { position: relative; flex: 1; min-height: 0; margin: calc(-1 * var(--bp-4)); padding: var(--bp-4); overflow: hidden; }
+.bp-clip::before, .bp-clip::after { content: ""; position: absolute; z-index: 3; left: 0; right: 0; height: var(--bp-7); background: var(--bp-clip-fade); pointer-events: none; transition: opacity var(--bp-dur-focus) var(--ease-out); }
+.bp-clip::after { bottom: 0; }
+.bp-clip::before { top: 0; transform: scaleY(-1); opacity: 0; }
+.bp-clip.is-in::before { opacity: 1; }
+.bp-agames, .bp-arows { position: relative; display: grid; gap: var(--bp-3); padding-bottom: var(--bp-7); transition: transform var(--bp-dur-slide) var(--ease-out); will-change: transform; }
+.bp-agame { position: relative; isolation: isolate; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--bp-5); min-height: var(--bp-agame-h); padding: var(--bp-3) var(--bp-6) var(--bp-3) var(--bp-3); border: 0; border-radius: var(--bp-r-key); background: none; color: var(--fg-2); font: inherit; text-align: left; cursor: pointer; outline: none;
+  transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-agame .bp-card-art { width: var(--bp-agame-art); }
+.bp-agame[aria-pressed="true"] { background: var(--bp-fill-on); box-shadow: var(--key-light); }
+.bp-agame-pct { font: 400 var(--bp-text-key)/1 var(--font-title); color: var(--fg-1); }
+.bp-agame-pct small { margin-left: .1em; font: 700 .6em/1 var(--font-ui); color: var(--fg-2); }
+.bp-agame.is-full .bp-agame-pct { color: var(--lamp); }
+.bp-agame:focus { transform: scale(1.03); z-index: 2; background: var(--fg-1); color: var(--bg-active); box-shadow: var(--bp-shadow-focus); }
+.bp-agame:focus :is(b, .bp-agame-pct, .bp-agame-pct small) { color: var(--bg-ground); }
+.bp-agame:focus .bp-meter { background: var(--edge-3); }
+.bp-agame:focus .bp-meter i { background: var(--bg-ground); }
+.bp-agame--ghost { background: var(--bp-fill); }
+/* How far along: a ring that fills, the count, and the tiers unlocked. */
+.bp-ap-head, .tv-ach-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--bp-6); }
+.bp-ap-head { margin-bottom: var(--bp-6); }
+.bp-ap-head h2 { margin: 0; font: 400 var(--bp-text-h1)/1.05 var(--font-title); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tv-ach-head h2 { margin: 0; font: 400 var(--bp-text-row)/1.1 var(--font-title); }
+.bp-ap-head p, .tv-ach-head p { margin: var(--bp-2) 0 0; color: var(--fg-2); }
+.bp-ring { position: relative; display: grid; place-items: center; flex: none; width: var(--bp-ring-w); height: var(--bp-ring-w); }
+.bp-ring .ach-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bp-ring .ach-ring circle { stroke-width: 2.4; }
+.bp-ring .ach-ring .fg { stroke: var(--fg-1); animation: ring-in var(--bp-dur-ring) var(--ease-emph) both; }
+.bp-ring .ach-ring.is-full .fg { stroke: var(--lamp); }
+.bp-ring .ach-ring-n { position: relative; font: 400 var(--bp-text-ring)/1 var(--font-title); color: var(--fg-1); }
+.bp-ring .ach-ring-n small { margin-left: .1em; font: 700 .55em/1 var(--font-ui); color: var(--fg-2); }
+.bp-tiers { display: flex; flex-wrap: wrap; gap: var(--bp-2) var(--bp-5); }
+.bp-tiers span { display: inline-flex; align-items: center; gap: var(--bp-2); white-space: nowrap; }
+.bp-tiers i { width: var(--bp-3); height: var(--bp-3); border-radius: var(--radius-round); background: var(--tier); }
+.bp-tiers b { color: var(--fg-1); font-weight: 700; }
+/* An achievement: its icon ringed in its tier's colour, what it asks, how
+   many players have it. Locked ones are dimmer; the focus lights the row. */
+:is(.bp-arow, .bp-tiers span).tier-ultra { --tier: var(--tier-ultra); } :is(.bp-arow, .bp-tiers span).tier-rare { --tier: var(--tier-rare); }
+:is(.bp-arow, .bp-tiers span).tier-uncommon { --tier: var(--tier-uncommon); } :is(.bp-arow, .bp-tiers span).tier-common { --tier: var(--tier-common); }
+.bp-arow { position: relative; isolation: isolate; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--bp-5); min-height: var(--bp-arow-h); padding: var(--bp-3) var(--bp-6) var(--bp-3) var(--bp-4); border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-2); outline: none;
+  transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-arow .ach-ico { width: var(--bp-arow-ico); height: var(--bp-arow-ico); border-radius: var(--bp-3); box-shadow: 0 0 0 var(--bp-ring-thin) var(--tier, var(--edge-3)); }
+.bp-arow .ach-ico img, .bp-arow .ach-ico > svg { width: 100%; height: 100%; }
+.bp-arow-text { display: grid; gap: var(--bp-1); min-width: 0; }
+.bp-arow-text b { color: var(--fg-1); font-weight: 700; }
+.bp-arow-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-arow-end { display: grid; justify-items: end; gap: var(--bp-1); white-space: nowrap; }
+.bp-arow-end b { font: 400 var(--bp-text-row)/1 var(--font-title); color: var(--tier, var(--fg-1)); }
+.bp-arow.is-locked :is(.ach-ico, .bp-arow-text, .bp-arow-end) { opacity: .5; }
+.bp-arow:focus { transform: scale(1.02); z-index: 2; background: var(--fg-1); color: var(--bg-active); box-shadow: var(--bp-shadow-focus); }
+.bp-arow:focus :is(.ach-ico, .bp-arow-text, .bp-arow-end) { opacity: 1; }
+.bp-arow:focus b { color: var(--bg-ground); }
+.bp-arow--ghost { box-shadow: none; }
+/* A game's achievements arrive one after another. */
+.bp-arows > .bp-arow { animation: bp-row-in var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-arows > :nth-child(2) { animation-delay: calc(1 * var(--bp-step)); } .bp-arows > :nth-child(3) { animation-delay: calc(2 * var(--bp-step)); }
+.bp-arows > :nth-child(4) { animation-delay: calc(3 * var(--bp-step)); } .bp-arows > :nth-child(5) { animation-delay: calc(4 * var(--bp-step)); }
+.bp-arows > :nth-child(6) { animation-delay: calc(5 * var(--bp-step)); } .bp-arows > :nth-child(n + 7) { animation-delay: calc(6 * var(--bp-step)); }
+@keyframes bp-row-in { from { opacity: 0; transform: translate3d(var(--bp-6), 0, 0); } }
 
 /* Settings for a remote: the parts on the left, rows that OK changes on
    the right, and under them what the row in focus does. */
@@ -2905,6 +3010,14 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-person::after { border-color: var(--player-fill); border-radius: calc(var(--bp-r-panel) + var(--bp-2)); }
 .bp-person .ln-avatar { width: var(--bp-avatar); height: var(--bp-avatar); font-size: var(--bp-text-h1); }
 .bp-person b { font: 400 var(--bp-text-row)/1.1 var(--font-title); color: var(--fg-1); }
+/* Chosen: it comes forward, its ring spreads in its colour and fades, and
+   when it's the one who plays, the others step back. */
+.bp-person.is-picked { z-index: 3; animation: bp-pick var(--bp-dur-pick) var(--ease-emph) both; }
+.bp-person.is-picked::after { opacity: 1; animation: bp-ring-out var(--bp-dur-pick) var(--ease-out) both; }
+.bp-people.is-picking .bp-person:not(.is-picked) { opacity: 0; transform: scale(.9); transition: opacity var(--bp-dur-slide) var(--ease-out), transform var(--bp-dur-slide) var(--ease-out); }
+.bp-center.is-picking > :not(.bp-people) { opacity: 0; transition: opacity var(--bp-dur-slide) var(--ease-out); }
+@keyframes bp-pick { 0% { transform: scale(var(--bp-grow)); } 45% { transform: scale(1.2); } 100% { transform: scale(1.15); } }
+@keyframes bp-ring-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.28); } }
 .bp-person.is-seated { box-shadow: var(--key-light), inset 0 0 0 var(--bp-1) var(--player-fill); }
 
 /* The prompts, and the ground the last row sinks into. */
@@ -2933,11 +3046,18 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 /* Less motion keeps the fades; none, or the system's reduced motion,
    changes screens at once. Nothing drifts or shines in either. */
 :root:is(.motion-less, .motion-off) .bp-bd-l, :root:is(.motion-less, .motion-off) .is-waiting::after { animation: none; }
+:root:is(.motion-less, .motion-off) .bp-tile:focus .bp-art::before, :root:is(.motion-less, .motion-off) .bp-ring .ach-ring .fg { animation: none; }
+:root:is(.motion-less, .motion-off) .bp :is(.bp-agame, .bp-arow):focus { transform: none; }
+:root.motion-less .bp-arows > .bp-arow, :root.motion-less .bp-screen[data-enter] :is(.bp-keys, .bp-opts, .bp-people) > *, :root.motion-less .bp-screen.leaving { animation-name: bp-in-fade; }
+:root.motion-less .bp-screen.leaving { animation-name: bp-leave; }
+:root.motion-off .bp-arows > .bp-arow, :root.motion-off .bp-screen[data-enter] :is(.bp-keys, .bp-opts, .bp-people) > *, :root.motion-off .bp-screen.leaving { animation: none; }
 :root:is(.motion-less, .motion-off) .bp :is(.bp-tile, .bp-key, .bp-person, .bp-card, .bp-tab, .bp-chip, .bp-round):focus { transform: none; }
 :root.motion-less .bp-screen, :root.motion-less .bp-row, :root.motion-less .bp-hero.in > *, :root.motion-less .bp-dlg { animation-name: bp-in-fade; }
 :root.motion-off :is(.bp, .bp-screen, .bp-row, .bp-hero.in > *, .bp-over, .bp-dlg) { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .bp, .bp.out, .bp-screen, .bp-row, .bp-hero.in > *, .bp-over, .bp-dlg, .bp-bd-l, .is-waiting::after { animation: none; }
+  .bp-arows > .bp-arow, .bp-screen[data-enter] :is(.bp-keys, .bp-opts, .bp-people) > *, .bp-tile:focus .bp-art::before, .bp-ring .ach-ring .fg { animation: none; }
+  .bp :is(.bp-agame, .bp-arow):focus { transform: none; }
   .bp *, .bp *::before, .bp *::after { transition: none; }
   .bp :is(.bp-tile, .bp-key, .bp-person, .bp-card, .bp-tab, .bp-chip, .bp-round):focus { transform: none; }
 }

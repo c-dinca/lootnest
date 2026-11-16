@@ -71,6 +71,8 @@
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();
+        if (BP.on) bpSoon();
+        if (BP.tvMenu) drawTVMenu(); // the Home screen over a game shows them too
         break;
       case "bigPicture":
         if (ev.on) bpOpen(); else bpClose();
@@ -79,7 +81,7 @@
         if (ev.on) tvOpen(); else tvClose();
         break;
       case "bpReturn": // the game started from Big Picture closed: back where it was
-        BP.playing = ""; BP.tvMenu = null; drawTVMenu();
+        BP.playing = ""; BP.since = null; BP.tvMenu = null; drawTVMenu();
         if (BP.on) { tvReturn(); renderBP(false); sfx("open"); }
         break;
       case "tvMenu": // the Home or PS button over a game in TV mode (app/tv.go tvHome)
@@ -161,9 +163,10 @@
         const P = S.points[ev.key] || (S.points[ev.key] = {});
         P.busy = false;
         tlAsked.delete(ev.key);
-        if (ev.error) toast(ev.error, "error");
+        const said = !ev.error && !ev.restored && tvMenuPoint(ev); // the Home screen over a game says so itself
+        if (ev.error) { tvMenuPoint(ev); toast(ev.error, "error"); }
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
-        else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
+        else if (ev.point) { if (!ev.hotkey && !said) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
         if (BP.on) bpSoon();
         if (S.view === "saves") askSaves();
@@ -184,9 +187,12 @@
         if (ev.list && ev.list.length) { if (!document.hidden) achPop(ev.list, ev.game, ev.player); if (!ev.native) unlockSound(ev.list); }
         achAsked.delete(ev.key); S.allAch = null;
         if (S.view === "game" || S.view === "achievements") render();
+        if (BP.on) { api.allAchievements().catch(() => {}); bpSoon(); }
+        if (BP.tvMenu) drawTVMenu();
         break;
       case "allAchievements":
         S.allAch = { games: ev.games || [] };
+        if (BP.on) bpSoon();
         if (S.view === "achievements") { S.animateView = "kids"; render(); }
         if (S.dialog && S.dialog.kind === "achshare") { S.dialog.drawnFor = ""; S.dialog.canvas = null; renderOverlay(); }
         break;

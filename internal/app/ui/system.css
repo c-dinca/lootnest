@@ -333,15 +333,22 @@
   --bp-fade: linear-gradient(0deg, rgb(17 18 23 / 1) 46%, rgb(17 18 23 / 0));
   --bp-bar-veil: linear-gradient(180deg, rgb(17 18 23 / 1) 84%, rgb(17 18 23 / 0));
   --bp-shine: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.07) 50%, transparent 70%);
+  --bp-sheen: linear-gradient(105deg, transparent 36%, rgb(255 255 255 / 0.22) 50%, transparent 64%);  /* a light that crosses a cover as the focus lands on it */
+  --bp-clip-fade: linear-gradient(0deg, rgb(17 18 23 / 0.96), rgb(17 18 23 / 0));                        /* where a list goes on under its frame */
+  --bp-fill-in: rgb(255 255 255 / 0.06);  /* a row inside a panel that's already filled */
+  --bp-dur-pick: 460ms; --bp-dur-sheen: 650ms; --bp-dur-ring: 900ms; --bp-step: 30ms;
+  --bp-achs-side: calc(600 * var(--u)); --bp-agame-h: calc(112 * var(--u)); --bp-agame-art: calc(60 * var(--u));
+  --bp-arow-h: calc(104 * var(--u)); --bp-arow-ico: calc(72 * var(--u)); --bp-arow-h-s: calc(80 * var(--u)); --bp-arow-ico-s: calc(56 * var(--u));
+  --bp-ring-w: calc(120 * var(--u)); --bp-text-ring: calc(30 * var(--u)); --bp-ring-thin: calc(3 * var(--u));
   /* TV mode: a game starting over Big Picture */
   --launch-veil: linear-gradient(180deg, rgb(17 18 23 / 0.1) 0%, rgb(17 18 23 / 0.35) 55%, rgb(17 18 23 / 0.92) 100%);
   --launch-zoom: 7s;
   --launch-bar-w: calc(280 * var(--u));
   --launch-run: 1.4s;
-  --tv-menu-w: calc(640 * var(--u));
+  --tv-menu-side: calc(560 * var(--u)); --tv-menu-info: calc(840 * var(--u));  /* the Home screen over a game: what to do, and its achievements */
   /* the apps' own colours, only on their tile in TV mode */
   --app-spotify: #1ed760; --app-youtube: #ff3b30; --app-stremio: #8a5aab;
-  --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.88), rgb(17 18 23 / 0.4) 70%, rgb(17 18 23 / 0.25));  /* over the game's picture: the menu's side dark, the rest dimmed */
+  --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.94) 0%, rgb(17 18 23 / 0.8) 38%, rgb(17 18 23 / 0.5) 100%);  /* over the game's picture: the menu's side dark, the rest dimmed */
   /* TV mode (Lootnest Link), read from about 3 m: no text under 24px at
      1080p, growing with the screen past it. */
   --tv-text-min: max(24px, 2.2vh);

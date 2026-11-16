@@ -740,6 +740,7 @@
       const set = key === "game:cs2" ? { appId: 730, source: "steam", total: 12, unlocked: 5, list: mk(12, 5, names) }
         : key === "dir:d:\\games\\onimusha" ? null
         : key.startsWith("dir:") ? { appId: 1091500, source: "pc", total: 12, unlocked: 3, list: mk(12, 3, names) }
+        : key.startsWith("steam:") ? { appId: 1091500, source: "steam", total: 12, unlocked: 12, list: mk(12, 12, names) }
         : key === "game:bg3" ? { appId: 1086940, source: "pc", total: 12, unlocked: 7, list: mk(12, 7, names),
           players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { source: "pc", total: 12, unlocked: [7, 2, 11, 4, 0, 9][i % 6], list: mk(12, [7, 2, 11, 4, 0, 9][i % 6], names) }])) } : null;
       if (STATE !== "loading") emit({ type: "achievements", key, set });

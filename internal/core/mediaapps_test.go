@@ -24,8 +24,25 @@ func TestFindMediaApps(t *testing.T) {
 		t.Fatalf("youtube %+v", apps[1])
 	}
 	w, ok := WebAppByID("youtube")
-	if !ok || w.URL != "https://www.youtube.com/tv" || !strings.Contains(w.UserAgent, "Leanback") || !strings.HasPrefix(w.URL, w.Origin) {
+	if !ok || w.URL != "https://www.youtube.com/tv" || !strings.Contains(w.UserAgent, "Leanback") || !w.Owns(w.URL) {
 		t.Fatalf("youtube site %+v", w)
+	}
+	// The pages that may ask for a key press: the site's own, as its TV
+	// interface names them, and nothing that only looks like it.
+	for src, want := range map[string]bool{
+		"https://www.youtube.com/tv":                      true,
+		"https://www.youtube.com/tv#/":                    true,
+		"https://www.youtube.com/tv?env=x#/browse":        true,
+		"http://www.youtube.com/tv":                       false,
+		"https://www.youtube.com.evil.example/tv":         false,
+		"https://evil.example/https://www.youtube.com/tv": false,
+		"https://accounts.google.com/":                    false,
+		"":                                                false,
+		"about:blank":                                     false,
+	} {
+		if got := w.Owns(src); got != want {
+			t.Errorf("Owns(%q) = %v, want %v", src, got, want)
+		}
 	}
 	if _, ok := WebAppByID("spotify"); ok {
 		t.Fatal("spotify isn't a site")

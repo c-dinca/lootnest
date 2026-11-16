@@ -65,6 +65,8 @@ const shots = [
   ["tv-library", "tv=1&players=1", [key("e"), key("ArrowDown"), key("ArrowRight")]],
   ["tv-library-400", "tv=1&players=1&games=400", [key("e"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],
   ["tv-achievements", "tv=1&players=1", [key("e"), key("e")]],
+  ["tv-achievements-in", "tv=1&players=1", [key("e"), key("e"), key("ArrowDown"), key("ArrowDown"), "0", key("Enter"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],
+  ["tv-achievements-loading", "tv=1&players=1&state=loading", [key("e"), key("e")]],
   ["tv-leave", "tv=1&players=1", [key("Escape"), key("Escape")]],
   ["tv-menu", "tv=1&players=1", [key("ArrowUp"), key("ArrowLeft"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter")]],
   ["tv-settings", "tv=1&players=1", [key("ArrowUp"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter"), key("ArrowDown"), key("Enter"), key("ArrowDown"), key("ArrowRight")]],

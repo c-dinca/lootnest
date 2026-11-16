@@ -4,7 +4,6 @@ package app
 
 import (
 	"path/filepath"
-	"strings"
 
 	webview2 "github.com/jchv/go-webview2"
 
@@ -73,11 +72,7 @@ func RunWebApp(id string, on uintptr) int {
 		DataPath:  filepath.Join(DataDir(), "apps", site.ID),
 		UserAgent: site.UserAgent,
 		// Only the site's own pages may ask for a key press.
-		AllowMessage: func(source string) bool {
-			originOK := source == site.Origin || strings.HasPrefix(source, site.Origin+"/")
-			urlOK := source == site.URL || strings.HasPrefix(source, site.URL)
-			return originOK && urlOK
-		},
+		AllowMessage: site.Owns,
 		WindowOptions: webview2.WindowOptions{
 			Title:      site.Name,
 			IconId:     1,

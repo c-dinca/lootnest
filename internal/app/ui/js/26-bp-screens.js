@@ -110,15 +110,20 @@
     }
     if (BP.tab === "achievements") {
       const rows = (S.allAch ? S.allAch.games : []).map((g) => ({ g, it: itemByKey(g.key) })).filter((r) => r.it);
-      if (!S.allAch) return `<section class="bp-lib" data-block><div class="bp-cards">${Array.from({ length: 6 }, () => '<span class="bp-card bp-card--ghost is-waiting" aria-hidden="true"></span>').join("")}</div></section>`;
+      if (!S.allAch) return `<section class="bp-achs" data-block><div class="bp-achs-side"><h1 class="bp-h1">Achievements</h1><div class="bp-agames">${Array.from({ length: 5 }, () => '<span class="bp-agame bp-agame--ghost is-waiting" aria-hidden="true"></span>').join("")}</div></div></section>`;
       if (!rows.length) return bpEmpty("No achievements yet", "They show here once a game on this PC has some.", "");
       const who = (seated() || cfg().players[0] || {}).id;
-      const mine = rows.map((r) => ({ ...r, u: r.g.players && r.g.players[who] ? r.g.players[who].unlocked : r.g.unlocked }));
+      const mine = rows.map((r) => ({ ...r, k: bpKey(r.it), u: r.g.players && r.g.players[who] ? r.g.players[who].unlocked : r.g.unlocked }));
       const sum = mine.reduce((n, r) => n + r.u, 0), of = mine.reduce((n, r) => n + r.g.total, 0);
-      return `<section class="bp-lib" data-block><div class="bp-lib-head"><h1 class="bp-h1"><span class="ln-num">${sum}</span> of ${of} unlocked</h1><span class="bp-count ln-num">${rows.length} ${rows.length === 1 ? "game" : "games"}</span></div>
-        <div class="bp-cards" data-zone="ach" data-grid>${mine.map(({ g, it, u }) => {
-        const pct = Math.round((u / g.total) * 100), a = bpArt(it, false);
-        return `<button class="bp-card" data-bp data-bpid="a:${esc(bpKey(it))}" data-k="${esc(bpKey(it))}" data-go="open" data-focus="ach:0" data-hint="Open"><span class="bp-card-art">${a.url ? artImg(a, "cover") : ""}</span><span class="bp-card-text"><b>${esc(g.name)}</b><span>${u} of ${g.total}</span><span class="bp-meter"><i style="width:${pct}%"></i></span></span><span class="ach-gring">${ring(pct, 64)}</span></button>`; }).join("")}</div></section>`;
+      const cur = mine.find((r) => r.k === BP.achKey) || mine[0];
+      BP.achKey = cur.k;
+      // The games on the left; the one in focus shows its achievements on the right, and OK goes into them.
+      return `<section class="bp-achs" data-block><div class="bp-achs-side"><h1 class="bp-h1">Achievements</h1>
+          <p class="bp-achs-sum"><b class="ln-num">${sum}</b> of ${of} unlocked in ${rows.length} ${rows.length === 1 ? "game" : "games"}</p>
+          <div class="bp-clip"><div class="bp-agames" data-zone="ach" data-col data-right="achlist" data-vtrack data-live>${mine.map(({ g, it, u, k }) => {
+        const pct = g.total ? Math.round((u / g.total) * 100) : 0, a = bpArt(it, false);
+        return `<button class="bp-agame${pct === 100 ? " is-full" : ""}" data-bp data-bpid="ag:${esc(k)}" data-agame="${esc(k)}" data-k="${esc(k)}" data-go="ach-in" aria-pressed="${k === cur.k}" data-hint="Look through"><span class="bp-card-art">${a.url ? artImg(a, "cover") : ""}</span><span class="bp-card-text"><b>${esc(g.name)}</b><span><span class="ln-num">${u}</span> of ${g.total}</span><span class="bp-meter"><i style="width:${pct}%"></i></span></span><span class="bp-agame-pct ln-num">${pct}<small>%</small></span></button>`; }).join("")}</div></div></div>
+        <div class="bp-achs-main">${bpAchPanel(cur)}</div></section>`;
     }
     const recent = recentItems(all, false).slice(0, 12);
     const tags = {};
@@ -133,13 +138,48 @@
       ${small.length ? bpRowHTML("tags", "Collections", small.map((t) => bpTagTile(t, tags[t])).join("")) : ""}
       ${recent.length ? bpRow("all", "Your games", all.slice(0, 40)) : ""}`;
   }
+  // An achievement as a line: its icon ringed in its tier's colour, its
+  // name and what it asks, and how many players have it. One that's hidden
+  // says nothing until it's unlocked. With an id it can take the focus.
+  function bpAchRow(a, id) {
+    const hid = a.hidden && !a.unlocked, t = hid ? "" : tierOf(a.percent);
+    const when = a.unlocked && a.at && new Date(a.at).getFullYear() > 1971 ? ago(new Date(a.at)) : "";
+    const line = hid ? "Hidden until it's unlocked" : a.description || (a.unlocked ? "Unlocked" : "Not unlocked yet");
+    const end = hid ? "" : `<span class="bp-arow-end">${a.percent ? `<b class="ln-num">${pctText(a.percent)}</b>` : ""}<span>${esc(a.unlocked && when ? when : t ? TIERS[t] : a.unlocked ? "Unlocked" : "")}</span></span>`;
+    return `<div class="bp-arow${a.unlocked ? "" : " is-locked"}${t ? " tier-" + t : ""}"${id ? ` tabindex="-1" data-bp data-bpid="${esc(id)}" data-hint=""` : ""}>${achIcon(a)}<span class="bp-arow-text"><b>${hid ? "Hidden achievement" : esc(a.name)}</b><span>${esc(line)}</span></span>${end}</div>`;
+  }
+  const bpAchRing = (pct) => `<span class="bp-ring">${ring(pct, 120)}</span>`; // ring() brings its own number
+  // How many of each tier are unlocked, in the tier's colour.
+  function bpTierLine(list) {
+    const n = { ultra: 0, rare: 0, uncommon: 0, common: 0 };
+    list.forEach((a) => { const t = a.unlocked && tierOf(a.percent); if (t) n[t]++; });
+    const parts = Object.keys(n).filter((t) => n[t]).map((t) => `<span class="tier-${t}"><i></i><b class="ln-num">${n[t]}</b> ${TIERS[t].toLowerCase()}</span>`);
+    return parts.length ? `<p class="bp-tiers">${parts.join("")}</p>` : "";
+  }
+  // The Achievements screen's right side: the game in focus, how far along
+  // it is, and every achievement to go down through, the unlocked ones
+  // first with the rarest leading, then what's left, the nearest first.
+  function bpAchPanel(r) {
+    const X = achFor(r.it), key = recentKey(r.it); // reads them if it hasn't yet
+    const total = X ? X.A.total : r.g.total, u = X ? X.A.unlocked : r.u, pct = total ? Math.round((u / total) * 100) : 0;
+    const head = `<div class="bp-ap-head">${bpAchRing(pct)}<div><h2>${esc(r.g.name)}</h2><p><b class="ln-num">${u}</b> of ${total} unlocked</p>${X ? bpTierLine(X.A.list) : ""}</div></div>`;
+    if (!X) {
+      // Not read yet, or only the summary is known: what the summary has.
+      const known = [...(r.g.rarest || []), ...(r.g.recent || [])].filter((a, i, l) => l.findIndex((b) => b.name === a.name) === i).slice(0, 6);
+      const body = S.ach[key] === undefined ? Array.from({ length: 5 }, () => '<span class="bp-arow bp-arow--ghost is-waiting" aria-hidden="true"></span>').join("") : known.map((a) => bpAchRow(a, "")).join("");
+      return `${head}<div class="bp-clip"><div class="bp-arows">${body}</div></div>`;
+    }
+    const rank = (a) => (a.unlocked ? (a.percent || 100) : 1000 - (a.hidden ? -1 : a.percent || 0));
+    const list = [...X.A.list].sort((a, b) => rank(a) - rank(b)).slice(0, 80);
+    return `${head}<div class="bp-clip"><div class="bp-arows" data-zone="achlist" data-col data-left="ach" data-vtrack data-live>${list.map((a, i) => bpAchRow(a, "ar:" + i)).join("")}</div></div>`;
+  }
   // A game's achievements as a row to look through: the ones unlocked
   // first, the rarest of them leading, then what's left.
   function bpAchCards(list) {
     const rank = (a) => (a.unlocked ? 0 : 1000) + (a.percent || 100);
     return [...list].sort((a, b) => rank(a) - rank(b)).slice(0, 40).map((a, i) => {
-      const hid = a.hidden && !a.unlocked, t = a.unlocked ? tierOf(a.percent) : "";
-      const line = hid ? "Not unlocked yet" : a.unlocked ? (a.percent ? `${a.percent < 10 ? a.percent.toFixed(1) : Math.round(a.percent)}% of players` : "Unlocked") : "Not unlocked yet";
+      const hid = a.hidden && !a.unlocked, t = hid ? "" : tierOf(a.percent);
+      const line = hid ? "Not unlocked yet" : a.percent ? `${pctText(a.percent)} of players` : a.unlocked ? "Unlocked" : "Not unlocked yet";
       return `<div class="bp-ach${a.unlocked ? "" : " is-locked"}${t ? " tier-" + t : ""}" tabindex="-1" data-bp data-bpid="ach:${i}" data-hint="">${achIcon(a)}<span><b>${hid ? "Hidden achievement" : esc(a.name)}</b><span>${esc(line)}</span></span></div>`;
     }).join("");
   }
@@ -278,7 +318,11 @@
     const seat = seated(), sub = bpSub();
     const seatHTML = seat ? `<span class="ln-player" style="--player:${esc(seat.color)}">${lnAvatar(seat, "32")}</span>${esc(seat.name)}` : "";
     const seatEl = el.querySelector(".bp-seat");
-    if (seatEl.innerHTML !== seatHTML) seatEl.innerHTML = seatHTML;
+    if (seatEl.lnHTML !== seatHTML) {
+      const was = seatEl.lnHTML;
+      seatEl.lnHTML = seatHTML; seatEl.innerHTML = seatHTML;
+      if (was !== undefined && seatHTML && moving()) seatEl.animate({ scale: ["0.7", "1.12", "1"], opacity: ["0", "1", "1"] }, { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
     const fam = pad.fam + "|" + BP.signs;
     if (bpFam !== fam) { bpFam = fam; el.querySelector(".bp-lb").innerHTML = pad.fam ? glyph("LB") : ""; el.querySelector(".bp-rb").innerHTML = pad.fam ? glyph("RB") : ""; bpHintHTML = ""; }
     el.querySelector(".bp-clock").textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
@@ -296,14 +340,17 @@
       const neu = document.createElement("div");
       neu.className = "bp-screen"; neu.dataset.key = key; neu.innerHTML = `<div class="bp-scroll" data-live>${html}</div>`; neu.bpHTML = html;
       if (changed) {
-        if (scr) { const old = scr; old.classList.add("leaving"); old.inert = true; setTimeout(() => old.remove(), 240); }
         neu.dataset.enter = bpEnter(bpShown, key);
+        if (scr) { const old = scr; old.dataset.leave = neu.dataset.enter; old.classList.add("leaving"); old.inert = true; setTimeout(() => old.remove(), 240); }
         main.appendChild(neu); scr = neu; bpShown = key;
         scr.querySelectorAll(".bp-track").forEach((t) => bpShift(t, -(BP.sx[key + "|" + t.dataset.zone] || 0), 0, true));
+        scr.querySelectorAll("[data-vtrack]").forEach((t) => bpShift(t, 0, -(BP.sx[key + "|" + t.dataset.zone] || 0), true));
+        if (neu.dataset.enter === "in") bpPush();
       } else {
         bpMorph(scr.firstElementChild, neu.firstElementChild); scr.bpHTML = html;
         // What was replaced whole goes back where it had slid to.
         scr.querySelectorAll(".bp-track").forEach((t) => { if (!t.style.transform) bpShift(t, -(BP.sx[key + "|" + t.dataset.zone] || 0), 0, true); });
+        scr.querySelectorAll("[data-vtrack]").forEach((t) => { if (!t.style.transform) bpShift(t, 0, -(BP.sx[key + "|" + t.dataset.zone] || 0), true); });
         if (!scr.firstElementChild.style.transform) bpShift(scr.firstElementChild, 0, -(scr.bpY || 0), true);
       }
     }
@@ -318,7 +365,7 @@
     let f = bpFind(BP.focus);
     if (!f && !bpOver()) f = bpFind(bpMem(key).focus) || scr.querySelector("[data-bp]") || el.querySelector('.bp-tab[aria-current="true"]');
     if (!f) f = bpScope().querySelector("[data-bp]");
-    if (f && !S.dialog && !S.picker) { if (document.activeElement !== f) f.focus({ preventScroll: true }); bpFocused(f, changed); }
+    if (f && !S.dialog && !S.picker && !BP.tvMenu) { if (document.activeElement !== f) f.focus({ preventScroll: true }); bpFocused(f, changed); }
   }
   function bpSoon() { if (BP.timer) return; BP.timer = requestAnimationFrame(() => { BP.timer = 0; if (BP.on) renderBP(); }); }
   // What follows the focus: the place it's kept, the slide that brings it
@@ -355,7 +402,16 @@
       const x = Math.max(0, Math.min(f.offsetLeft - padX, last.offsetLeft + last.offsetWidth + padX - track.clientWidth));
       bpShift(track, -x, 0, jump); BP.sx[scr.dataset.key + "|" + track.dataset.zone] = x;
     }
-    const blocks = [...sc.querySelectorAll("[data-block]")], grid = inScr && f.closest("[data-grid], [data-col]");
+    // A column in a frame of its own (the Achievements screen's two lists)
+    // slides inside the frame, and the screen stays put.
+    const vt = inScr && f.closest("[data-vtrack]");
+    if (vt) {
+      const box = vt.parentElement, max = Math.max(0, vt.scrollHeight - box.clientHeight);
+      const vy = Math.max(0, Math.min(f.offsetTop - (box.clientHeight - f.offsetHeight) / 2, max));
+      bpShift(vt, 0, -vy, jump); BP.sx[scr.dataset.key + "|" + vt.dataset.zone] = vy;
+      box.classList.toggle("is-in", vy > 0);
+    }
+    const blocks = [...sc.querySelectorAll("[data-block]")], grid = inScr && !vt && f.closest("[data-grid], [data-col]");
     const bi = inScr ? blocks.indexOf(f.closest("[data-block]")) : 0;
     let y = 0;
     const padTop = parseFloat(getComputedStyle(sc).paddingTop) || 0;
@@ -479,6 +535,7 @@
   function bpMove(dir) {
     const scope = bpScope();
     if (!scope) return;
+    if (BP.picking) return;
     const a = document.activeElement, cur = a && a.closest && a.closest("[data-bp]");
     if (!cur || !scope.contains(cur) || cur.closest(".leaving")) { renderBP(); return; }
     const zone = cur.closest("[data-zone]"), items = [...zone.querySelectorAll("[data-bp]")], i = items.indexOf(cur);
@@ -492,7 +549,7 @@
       else if (dir === "down" && Math.floor(i / cols) < Math.floor((items.length - 1) / cols)) next = items[items.length - 1];
       else leave = true;
     } else if (zone.dataset.col !== undefined) {
-      if (!horiz) next = items[i + step] || null;
+      if (!horiz) { next = items[i + step] || null; if (!next && dir === "up" && !bpSub() && !bpOver()) next = bpInto(scope.querySelector('[data-zone="bar"]'), cur, dir); }
       else { const z = zone.dataset[dir] && scope.querySelector(`[data-zone="${zone.dataset[dir]}"]`); if (z && z.querySelector("[data-bp]")) next = bpInto(z, cur, dir); } // the column beside it
     }
     else if (horiz) next = items[i + step] || null;
@@ -557,10 +614,16 @@
   function bpSelect(el) {
     if (!el) return;
     const go = el.dataset.go;
-    if (el.animate && moving()) el.animate({ scale: ["1", "0.95", "1"] }, { duration: 180, easing: "ease-out" });
+    if (BP.picking) return;
+    // What's chosen answers: a cover and a card come forward as their page opens, a key dips.
+    if (el.animate && moving()) el.animate({ scale: go === "open" ? ["1", "1.07", "1"] : ["1", "0.95", "1"] }, { duration: go === "open" ? 260 : 180, easing: "ease-out" });
     if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.from = el.dataset.bpid; BP.focus = "play"; BP.want = el.dataset.focus || ""; sfx("go"); renderBP(); }
     else if (go === "menu-settings") { BP.menu = false; BP.settings = true; BP.setFrom = BP.menuFrom; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "cat") { el.focus({ preventScroll: true }); bpMove("right"); }
+    else if (go === "ach-in") { // into the game's achievements, or as soon as they've been read
+      el.focus({ preventScroll: true });
+      if (bpFind("ar:0")) bpMove("right"); else { BP.want = "ar:0"; sfx("go"); }
+    }
     else if (go === "set") {
       const [c, o] = el.dataset.opt.split(":"), part = bpSettingsParts().find((x) => x.id === c), opt = part && part.opts.find((x) => x.id === o);
       if (opt && opt.run) { sfx("toggle"); opt.run(); }
@@ -579,11 +642,15 @@
     else if (go === "chip") { if (BP.tag !== el.dataset.tag) { BP.tag = el.dataset.tag; BP.tagFrom = ""; BP.focus = el.dataset.bpid; sfx("tab"); renderBP(); } }
     else if (go === "choose") { BP.choose = el.dataset.k; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "close-game") bpCloseGame(el.dataset.k);
-    else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
+    else if (go === "play-as") { sfx("go"); bpPick(el, true, () => bpPlay(bpItem(BP.choose), el.dataset.p)); }
     else if (go === "seat") {
-      actions.seat({ dataset: { player: el.dataset.p } }); sfx("go");
-      if (BP.who) { BP.who = false; BP.tab = "home"; BP.focus = ""; }
-      renderBP();
+      sfx("go");
+      // Choosing who plays steps forward and the rest step back; sitting down on the Profiles screen only answers.
+      bpPick(el, BP.who, () => {
+        actions.seat({ dataset: { player: el.dataset.p } });
+        if (BP.who) { BP.who = false; BP.tab = "home"; BP.focus = ""; }
+        renderBP();
+      });
     }
     else if (go === "menu") bpMenu(true);
     else if (go === "menu-close") bpMenu(false);
@@ -595,6 +662,24 @@
       else { el.focus({ preventScroll: true }); bpMove("down"); } // Select on the tab on show goes into its screen
     }
     else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); sfx("toggle"); toast(BP.sounds ? "Sounds on" : "Sounds off"); }
+  }
+  // A profile chosen: it comes forward with a ring that spreads in its
+  // colour while the others step back, and only then does what was chosen
+  // happen. Nothing else is taken in meanwhile. Without motion it's at once.
+  function bpPick(el, away, then) {
+    if (!moving() || !el.animate) { then(); return; }
+    const zone = el.closest("[data-zone]"), block = el.closest("[data-block]");
+    el.classList.add("is-picked");
+    if (!away) { setTimeout(() => el.classList.remove("is-picked"), 520); then(); return; }
+    if (zone) zone.classList.add("is-picking");
+    if (block) block.classList.add("is-picking");
+    BP.picking = true;
+    setTimeout(() => { BP.picking = false; then(); }, 460);
+  }
+  // A page opening: the art behind comes a step closer.
+  function bpPush() {
+    const bd = $("#bp .bp-bd");
+    if (bd && bd.animate && moving()) bd.animate({ transform: ["scale(1.06)", "scale(1)"] }, { duration: 520, easing: "cubic-bezier(.2,.7,.2,1)" });
   }
   // Makes a save point of a game's saves (id empty), or goes back to one.
   async function bpPoint(k, id) {
@@ -609,6 +694,7 @@
   // to its cover, a screen goes up to the bar, the bar goes Home, and Home
   // asks before leaving.
   function bpBack() {
+    if (BP.picking) return;
     BP.want = "";
     if (BP.ask) { bpAnswer(false); return; }
     if (BP.menu) { bpMenu(false); return; }
@@ -621,6 +707,7 @@
     else if (BP.detail && BP.points) { BP.points = false; BP.focus = "points"; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
     else if (BP.tab === "library" && BP.tagFrom) { BP.focus = BP.tagFrom; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; }
+    else if (BP.tab === "achievements" && a && a.closest && a.closest('[data-zone="achlist"]')) BP.focus = "ag:" + BP.achKey;
     else if (!inBar) BP.focus = "tab:" + BP.tab;
     else if (BP.tab !== "home" && !BP.who) { BP.tab = "home"; BP.tag = ""; BP.focus = "tab:home"; }
     else { bpMenu(true, "leave"); return; }
@@ -644,6 +731,11 @@
     if (!f || f.closest(".leaving")) return;
     bpFocused(f, false);
     if (f.dataset.cat && f.dataset.cat !== (BP.setCat || "sound")) { BP.setCat = f.dataset.cat; renderBP(); } // Settings: the part in focus shows its rows
+    if (f.dataset.agame && f.dataset.agame !== BP.achKey) { // Achievements: the game in focus shows its own, from the top
+      const key = bpScreenKey();
+      BP.achKey = f.dataset.agame; delete bpMem(key).rows.achlist; BP.sx[key + "|achlist"] = 0;
+      renderBP();
+    }
     // Resting on another tab shows its screen, as on a TV's home.
     if (f.classList.contains("bp-tab") && f.dataset.t !== BP.tab && !bpSub() && !bpOver()) bpTabTo(f.dataset.t);
   });
@@ -659,6 +751,14 @@
   window.addEventListener("resize", () => { const f = BP.on && document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-bp]"); if (f) bpPlace(f, true); });
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "F11") { ev.preventDefault(); if (BP.on) bpClose(); else bpOpen(); return; }
+    if (BP.tvMenu) { // the Home screen over a game: its own keys, nothing under it
+      const k = ev.key;
+      if (k === "ArrowUp" || k === "ArrowDown") tvMenuMove(k === "ArrowUp" ? "up" : "down");
+      else if (k === "Enter" || k === " ") tvMenuGo(BP.tvMenu.at);
+      else if (k === "Escape" || k === "Backspace") tvMenuGo("resume");
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      return;
+    }
     if (!BP.on || S.picker || S.dialog) return;
     const k = ev.key;
     const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
