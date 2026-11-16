@@ -1199,11 +1199,27 @@ These shipped recently, newest last:
   arrives), `bpBack` (top layer, page, up to the bar, Home, then
   `bpMenu(true, "leave")`). The menu is an overlay (`.bp-over`,
   `bpMenuHTML`). Sizes are `--u` tokens (`--bp-*` in system.css); no
-  blur in Big Picture. Harness shots `tv-*`. Next: 2 a game's page
-  (achievements row, save points), the launch screen and the Home-button
-  menu; 3 Library and Achievements; 4 Profiles, Settings for the remote,
-  the picker, dialogs and toasts at TV scale; 5 trailers, sounds, a pass
-  at 400 games and 4K; 6 the webOS connection screen.
+  blur in Big Picture. Harness shots `tv-*`.
+- **Unreleased: Big Picture rebuilt, part 2**: a game's page has its
+  achievements as a row (`bpAchCards`: unlocked first, rarest leading;
+  cards take the focus but do nothing) and Save points (`BP.points`,
+  screen key `points:<key>`, `bpPointsScreen`, `bpPoint` over
+  `api.makeSavePoint`/`restoreSavePoint`). `bpAsk({title, body, ok,
+  run})` asks before anything that changes files, on the menu's sheet
+  with Cancel in focus (`bpAnswer`, `bpOver()` is menu or question).
+  Column zones (`data-col`) slide like grids. Toasts over Big Picture
+  sit under the bar at its scale. `bpOpen` starts the pad loop when a
+  pad is already there. The launch screen and `#tv-menu` use `--u`.
+  Next: 3 Library and Achievements; 4 Profiles, Settings for the remote
+  (with Button signs: automatic, Xbox, PlayStation, Nintendo, since a
+  pad on the TV reaches the PC as an Xbox one), the picker and dialogs
+  at TV scale; 5 trailers, sounds, a pass at 400 games and 4K; 6 the
+  webOS connection screen.
+- **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
+  games inside Lootnest, as DS4Windows does. That reverses the roadmap's
+  Controllers "will not do" (no virtual pad). Not started: it waits on
+  their answer about the driver (use ViGEmBus when it's already on the
+  PC, as the TV streaming engine installs it; never ship one).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

@@ -11,6 +11,10 @@ Big Picture and TV mode, rebuilt for the sofa (part 1: how you move, and Home).
 - **Collections are chips in the Library.**
 - **Motion**: the focus grows a cover and rings it, rows and screens slide, the art behind cross-fades and drifts slowly, covers that are still loading shine. Settings, Appearance, Motion (and Windows' reduced motion) turn it down or off.
 - The same picture at 1080p and at 4K, with text never under 24 pixels at 1080p.
+- **A game's page in Big Picture** has its achievements as a row to look through, the rarest you have first, and a **Save points** key: make one now, or go back to one. Going back asks first, with Cancel in focus, and keeps the saves as they are now.
+- **Notes in Big Picture** show under the bar on the right, at TV size, instead of over the prompts.
+- **A controller that was already on shows its own signs at once** (a DualSense's cross, circle, square and triangle, L1 and R1), without waiting for a press.
+- The screen a game starts on and the Home-button menu over a game are the same size on any TV.
 
 ## 2.5.2
 
