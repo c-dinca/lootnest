@@ -517,3 +517,16 @@ func TestTVAppVersionIn(t *testing.T) {
 		}
 	}
 }
+
+func TestTVSystemInfoIn(t *testing.T) {
+	for answer, want := range map[string]string{
+		`{"modelName":"49UJ630V","sdkVersion":"3.5.0","firmwareVersion":"05.80.40","returnValue":true}`: "49UJ630V, webOS 3.5.0, firmware 05.80.40",
+		"luna-send-pub: ready\n{\"sdkVersion\":\"2.2.0\",\"returnValue\":true}\n":                       "webOS 2.2.0",
+		`{"returnValue":false,"errorText":"Denied"}`:                                                    "",
+		"": "",
+	} {
+		if got := tvSystemInfoIn(answer); got != want {
+			t.Errorf("%q: %q, want %q", answer, got, want)
+		}
+	}
+}

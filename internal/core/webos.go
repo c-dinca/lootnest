@@ -736,7 +736,41 @@ func TVAppStarted(log string) bool {
 // WebOSVersion is the TV's webOS release, from /etc/starfish-release, or "".
 func (t *TV) WebOSVersion() string {
 	out, _ := t.run("cat /etc/starfish-release 2>/dev/null | head -n 1", nil)
-	return strings.TrimSpace(out)
+	if v := strings.TrimSpace(out); v != "" {
+		return v
+	}
+	// A developer session can't read that file on every TV; the system
+	// property service answers any app.
+	out, _ = t.luna("luna://com.webos.service.tv.systemproperty/getSystemInfo", `{"keys":["modelName","sdkVersion","firmwareVersion"]}`, tvLunaLimit)
+	return tvSystemInfoIn(out)
+}
+
+// tvSystemInfoIn reads the model and versions from getSystemInfo's answer:
+// "OLED55C9PLA, webOS 4.9.0, firmware 05.30.25", or "".
+func tvSystemInfoIn(answer string) string {
+	i := strings.Index(answer, "{")
+	if i < 0 {
+		return ""
+	}
+	var info struct {
+		Model    string `json:"modelName"`
+		SDK      string `json:"sdkVersion"`
+		Firmware string `json:"firmwareVersion"`
+	}
+	if json.NewDecoder(strings.NewReader(answer[i:])).Decode(&info) != nil {
+		return ""
+	}
+	var parts []string
+	if info.Model != "" {
+		parts = append(parts, info.Model)
+	}
+	if info.SDK != "" {
+		parts = append(parts, "webOS "+info.SDK)
+	}
+	if info.Firmware != "" {
+		parts = append(parts, "firmware "+info.Firmware)
+	}
+	return strings.Join(parts, ", ")
 }
 
 // WiFi is the TV's wireless link as Linux counts it (/proc/net/wireless:

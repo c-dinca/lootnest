@@ -55,28 +55,38 @@ func LastStream(log string) (line string, s StreamStats, ok bool) {
 // Stream verdicts: what a finished stream's numbers point at.
 const (
 	StreamTooShort = "short"   // under 45 s: not enough to judge
-	StreamNetwork  = "network" // frames lost or a slow, uneven network
+	StreamNetwork  = "network" // frames lost through the stream, or a slow, uneven network
 	StreamTV       = "tv"      // the TV shows fewer frames than arrive
-	StreamPC       = "pc"      // the PC is slow to draw and encode
+	StreamPC       = "pc"      // the PC is slow to encode a frame
+	StreamGame     = "game"    // the PC sent fewer frames than the stream's rate
 	StreamClean    = "clean"   // none of those: the rest is the TV and the game
 )
 
 // StreamVerdict says which part of a stream held it back, and a line in
-// plain words with the numbers that say so.
+// plain words with the numbers that say so. Frames lost in a few seconds
+// only are a hiccup, said beside the verdict, not a slow network.
 func StreamVerdict(s StreamStats) (kind, says string) {
-	switch {
-	case s.Seconds < 45:
+	if s.Seconds < 45 {
 		return StreamTooShort, "The last stream was too short to judge."
-	case s.LostPct >= 1 || (s.Seconds > 0 && s.BadSecs*5 >= s.Seconds):
+	}
+	spread := s.BadSecs > 5 && s.BadSecs*50 >= s.Seconds // lost in 2% of its seconds or more
+	hiccup := ""
+	if s.LostPct > 0 && !spread && s.BadSecs > 0 {
+		hiccup = fmt.Sprintf(" The picture broke up for %d of its %d seconds, a hiccup of the Wi-Fi and not its usual state.", s.BadSecs, s.Seconds)
+	}
+	switch {
+	case (s.LostPct >= 1 && spread) || s.BadSecs*5 >= s.Seconds:
 		return StreamNetwork, fmt.Sprintf("The network lost %s%% of the picture, in %d of %d seconds. A lighter Quality on the TV, its 5 GHz Wi-Fi or a cable will help most.", trimFloat(s.LostPct), s.BadSecs, s.Seconds)
-	case s.RoundTrip >= 20 || s.Jitter >= 15:
+	case s.RoundTrip >= 20:
 		return StreamNetwork, fmt.Sprintf("The network takes %d ms there and back, uneven by up to %d ms. The TV's 5 GHz Wi-Fi or a cable will help most.", s.RoundTrip, s.Jitter)
 	case s.Arrived > 0 && s.Shown < 0.9*s.Arrived:
-		return StreamTV, fmt.Sprintf("The TV showed %s of the %s frames a second that arrived. A smaller Size on the TV will help.", trimFloat(s.Shown), trimFloat(s.Arrived))
+		return StreamTV, fmt.Sprintf("The TV showed %s of the %s frames a second that arrived. A smaller Size on the TV will help.", trimFloat(s.Shown), trimFloat(s.Arrived)) + hiccup
 	case s.HostMs >= 12:
-		return StreamPC, fmt.Sprintf("The PC took %s ms for each frame. Capping the game at %d frames a second leaves the graphics card room to send them.", trimFloat(s.HostMs), s.FPS)
+		return StreamPC, fmt.Sprintf("The PC took %s ms for each frame. Capping the game at %d frames a second leaves the graphics card room to send them.", trimFloat(s.HostMs), s.FPS) + hiccup
+	case s.FPS > 0 && s.Arrived < 0.92*float64(s.FPS):
+		return StreamGame, fmt.Sprintf("The network and the PC were quick (%d ms there and back, %s ms a frame), but the PC sent %s frames a second of %d. If the game runs under %d, a lower graphics setting in it will feel quicker.", s.RoundTrip, trimFloat(s.HostMs), trimFloat(s.Arrived), s.FPS, s.FPS) + hiccup
 	}
-	return StreamClean, fmt.Sprintf("Nothing was lost: %d ms there and back, %s ms on the PC, %s ms into the TV's decoder. The delay that's left is the TV's own picture processing and the game's V-Sync.", s.RoundTrip, trimFloat(s.HostMs), trimFloat(s.DecoderMs))
+	return StreamClean, fmt.Sprintf("The network and the PC were quick: %d ms there and back, %s ms on the PC, %s ms into the TV's decoder. The delay that's left is the TV's own picture processing and the game's V-Sync.", s.RoundTrip, trimFloat(s.HostMs), trimFloat(s.DecoderMs)) + hiccup
 }
 
 func trimFloat(f float64) string {

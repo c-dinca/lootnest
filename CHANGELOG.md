@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.10.3
+
+Last stream reads a real stream better.
+
+- **A hiccup isn't a slow network.** Frames lost in a few seconds only are said as a hiccup, beside what the rest of the stream shows, and no longer blame the network.
+- **A game under the stream's rate is named.** When the network and the PC are quick but fewer frames a second were sent than the stream asks for, Last stream says so: a lower graphics setting in the game will feel quicker.
+- **Save a report names the TV**: its model and webOS version, on TVs that didn't say before.
+
 ## 2.10.2
 
 For a stream that feels slow: Lootnest says where the delay was, and can have games drawn sooner.
