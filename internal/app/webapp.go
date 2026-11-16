@@ -212,6 +212,7 @@ func RunWebApp(id string, on uintptr) int {
 	}
 	win.EnableDPIAwareness()
 	dpi := win.SystemDPI()
+	asMouse := false
 	// An ordinary site is magnified to be read from a sofa.
 	var zoom float64
 	if site.Width > 0 {
@@ -232,6 +233,15 @@ func RunWebApp(id string, on uintptr) int {
 			Hidden:     true,
 			Background: 0x0F0F0F,
 			OnCreate:   func(hwnd uintptr) { win.SetWindowIcons(hwnd, dpi) },
+			// Lootnest says when the controller is a mouse over this window
+			// (pointer.go), so its presses aren't also keys here.
+			MessageHook: func(_, msg, wp, _ uintptr) (uintptr, bool) {
+				if msg == wmPointer {
+					asMouse = wp != 0
+					return 0, true
+				}
+				return 0, false
+			},
 		},
 	})
 	if w == nil {
@@ -244,7 +254,7 @@ func RunWebApp(id string, on uintptr) int {
 	var pressed int
 	_ = w.Bind("ln_key", func(k string) {
 		vk, ok := webAppKeys[k]
-		if !ok || win.Foreground() != hwnd {
+		if !ok || asMouse || win.Foreground() != hwnd {
 			return
 		}
 		if now := time.Now(); now.Sub(second) >= time.Second {

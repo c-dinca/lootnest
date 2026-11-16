@@ -409,5 +409,8 @@ func (a *App) apiLaunchApp(id string) error {
 	foundRunsMu.Unlock()
 	a.logf("Starting %s from TV mode", app.Name)
 	a.tvGameStarting(key, app.Name)
+	// A program made for a mouse gets the controller as one; a site in
+	// Lootnest's own window is driven by the controller already.
+	a.pointerSet(conKey(key), !app.Own)
 	return nil
 }

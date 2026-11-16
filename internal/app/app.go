@@ -164,6 +164,8 @@ type App struct {
 	conWin       uintptr    // that game's window, when Lootnest found it
 	conGen       int        // which launch the curtain is following
 	guideOn      bool       // the Home button is being watched
+	pointerFor   string     // the program over Lootnest the controller is a mouse for (pointer.go)
+	pointerRun   bool       // its loop runs
 	pad          *padBridge // a PlayStation pad shown to games as an Xbox one (padbridge.go)
 	padNote      string     // why the last try couldn't, said once
 	openTV       bool       // TV mode was asked for before the page was ready

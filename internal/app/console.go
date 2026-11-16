@@ -309,7 +309,10 @@ func (a *App) tvHome() {
 		a.tvMenuOn = true
 		a.mu.Unlock()
 		a.raise()
-		a.emit("tvMenu", map[string]any{"on": true, "key": playing, "shot": shot})
+		a.mu.Lock()
+		pointer := a.pointerFor == playing
+		a.mu.Unlock()
+		a.emit("tvMenu", map[string]any{"on": true, "key": playing, "shot": shot, "pointer": pointer})
 	}
 }
 

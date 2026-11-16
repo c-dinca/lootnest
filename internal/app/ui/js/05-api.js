@@ -134,6 +134,7 @@
     tvResume: () => call("ps_tvResume"),
     tvStay: () => call("ps_tvStay"),
     tvCloseGame: () => call("ps_tvCloseGame"),
+    tvPointer: (on) => call("ps_tvPointer", on),
     mediaApps: () => call("ps_mediaApps"),
     launchApp: (id) => call("ps_launchApp", id),
     newCopies: () => call("ps_newCopies"),

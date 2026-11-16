@@ -782,6 +782,7 @@
     ps_tvResume: () => ok(),
     ps_tvStay: () => ok(),
     ps_tvCloseGame: () => ok(),
+    ps_tvPointer: () => ok(),
     ps_mediaApps: () => ok([{ id: "youtube", name: "YouTube" }, { id: "spotify", name: "Spotify" }, { id: "spotify-app", name: "Spotify on this PC" }, { id: "stremio", name: "Stremio" }]),
     ps_launchApp: () => ok(),
     ps_linkMakePrivate: () => { setTimeout(() => emit({ type: "linkPrivate", ok: true }), 400); return ok(); },

@@ -1369,6 +1369,26 @@ These shipped recently, newest last:
   over any app, from the Home menu (the owner: "when it's needed and
   only then").
 
+- **Unreleased, the controller as a mouse** (the owner, 16 Nov: "over
+  everything, when it's needed and only then"; it was M1's open item
+  for store launchers). `core/padmouse.go`: `Pointer.Step` (dead zone
+  0.24, a curve that's fine for small pushes, 1.15 screen heights a
+  second, leftovers kept; the right stick is the wheel). `win/
+  padmouse.go`: `XInputRead` (every XInput pad as one), `MouseMove`,
+  `MouseButton`, `MouseWheel` (SendInput). `app/pointer.go`:
+  `pointerFor` is the key of the one program it's on for; `pointerLoop`
+  (8 ms) acts only while that program is `conGame`, the Home menu is
+  shut and Lootnest's window isn't in front, lets the button go
+  otherwise, and ends 3 s after the program is gone. A left button,
+  X right, B Escape, Y `osk.exe`, D-pad arrows with repeat. On by
+  itself from `apiLaunchApp` for apps that aren't Lootnest's own
+  windows; the Home menu's Controller as a mouse (`ps_tvPointer`,
+  `tvMenu`'s `pointer`). A site window is told with `wmPointer`
+  (WM_APP+7) and stops passing `ln_key` on. XInput only: a PlayStation
+  pad counts when it reaches the PC as an Xbox one. Not seen on a PC,
+  the on-screen keyboard least of all (it may refuse made-up clicks):
+  docs/TESTING.md 38.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

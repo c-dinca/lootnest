@@ -118,7 +118,7 @@
   function tvMenu(ev) {
     if (!ev.on) { BP.tvMenu = null; drawTVMenu(); return; }
     const it = everyItem().find((x) => sameGame(x, ev.key)) || null;
-    BP.tvMenu = { key: ev.key, it, name: it ? it.name : (BP.launch && BP.launch.name) || (BP.since && BP.since.key === ev.key && BP.since.name) || ev.name || "", at: "resume", sure: false, shot: ev.shot || "", point: "" };
+    BP.tvMenu = { key: ev.key, it, name: it ? it.name : (BP.launch && BP.launch.name) || (BP.since && BP.since.key === ev.key && BP.since.name) || ev.name || "", at: "resume", sure: false, shot: ev.shot || "", point: "", pointer: !!ev.pointer };
     sfx("open");
     drawTVMenu();
   }
@@ -127,6 +127,8 @@
     const list = [{ k: "resume", icon: "play", label: app && M.name ? `Back to ${M.name}` : "Resume game" }];
     if (M.it) list.push({ k: "point", icon: M.point === "done" ? "check-circle" : "floppy-disk", label: M.point === "busy" ? "Making a save point" : M.point === "done" ? "Save point made" : "Make a save point" });
     if (X) list.push({ k: "ach", icon: "trophy", label: "Achievements" });
+    // For a program that only knows a mouse: the stick moves the pointer (app/pointer.go).
+    list.push({ k: "pointer", icon: "game-controller", label: "Controller as a mouse", value: M.pointer ? "On" : "Off" });
     list.push({ k: "home", icon: "house", label: "Go to Lootnest" });
     list.push({ k: "close", icon: "x-circle", label: M.sure ? "Press again to close it" : app && M.name ? `Close ${M.name}` : "Close the game" });
     return list;
@@ -170,7 +172,7 @@
       ${facts.length ? `<p class="bp-facts">${facts.map((x) => `<span>${x}</span>`).join("")}</p>` : ""}`);
     const items = tvMenuItems(M);
     if (!items.some((x) => x.k === M.at)) M.at = "resume";
-    put(".tv-menu-list", `<span class="tv-menu-ind" aria-hidden="true"></span>${items.map((x) => `<button class="tv-menu-item" role="menuitem" data-tvm="${x.k}" tabindex="-1"${x.k === "point" && M.point === "busy" ? ' aria-busy="true"' : ""}>${ph(x.icon)}<span>${esc(x.label)}</span></button>`).join("")}`);
+    put(".tv-menu-list", `<span class="tv-menu-ind" aria-hidden="true"></span>${items.map((x) => `<button class="tv-menu-item" role="menuitem" data-tvm="${x.k}" tabindex="-1"${x.k === "point" && M.point === "busy" ? ' aria-busy="true"' : ""}>${ph(x.icon)}<span>${esc(x.label)}</span>${x.value ? `<span class="tv-menu-val">${esc(x.value)}</span>` : ""}</button>`).join("")}`);
     if (put(".tv-menu-info", tvMenuInfo(M))) el.classList.toggle("has-info", !!el.querySelector(".tv-menu-info").firstChild);
     put(".tv-menu-foot", `<span>${glyph("A")}Select</span><span>${glyph("B")}${it ? "Resume" : "Back"}</span>`);
     tvMenuLight(el, M);
@@ -210,6 +212,11 @@
       // Its achievements: the game's page in Big Picture, at their row.
       if (k === "ach" && M.it && BP.on) { BP.settings = false; BP.choose = null; BP.points = false; BP.menu = false; BP.detail = bpKey(M.it); BP.from = ""; BP.focus = "play"; BP.want = "ach:0"; }
       if (BP.on) renderBP(false);
+      return;
+    }
+    if (k === "pointer") {
+      M.pointer = !M.pointer; sfx("toggle"); drawTVMenu();
+      api.tvPointer(M.pointer).catch((e) => { M.pointer = !M.pointer; if (BP.tvMenu === M) drawTVMenu(); toast(errText(e), "error"); });
       return;
     }
     if (k === "point") {
