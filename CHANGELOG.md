@@ -9,6 +9,7 @@ Lootnest stays on the screen while you play from Big Picture or TV mode, as a co
 - **The menu remembers the game.** Resume and Close the game did nothing after the menu had opened once; they work now.
 - **A game left running shows as Playing** in Big Picture, and its page has Go back to the game and Close the game, for Library games too.
 - When the game closes, Lootnest is what's there, also for games Lootnest can't follow by their process.
+- **A PlayStation controller as an Xbox one in games** (Settings, Controllers, off unless you turn it on): while a game runs, Lootnest reads your DualSense or DualShock 4 and games see an Xbox 360 controller, for games that only know Xbox ones. It uses the ViGEmBus driver when it's already on the PC (DS4Windows and the TV streaming set-up install it); Lootnest installs no driver. A game that knows your controller itself can be left alone in its Launch options.
 
 ## 2.6.0
 

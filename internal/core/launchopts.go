@@ -25,6 +25,10 @@ type LaunchOptions struct {
 	StartBefore  []Program  `json:"startBefore,omitempty"`
 	StartAfter   []Program  `json:"startAfter,omitempty"`
 	ReopenClosed bool       `json:"reopenClosed,omitempty"`
+	// KeepPad leaves a PlayStation controller as it is for this game when
+	// Settings.PadAsXbox is on: a game that knows the pad itself would see
+	// it twice.
+	KeepPad bool `json:"keepPad,omitempty"`
 }
 
 // CloseApp is a program to close before play, by its process name
@@ -59,7 +63,9 @@ func (o LaunchOptions) Moved(from, to string) LaunchOptions {
 }
 
 // Empty says whether the options change nothing.
-func (o LaunchOptions) Empty() bool { return o.WorkDir == "" && !o.RunAsAdmin && !o.HasSteps() }
+func (o LaunchOptions) Empty() bool {
+	return o.WorkDir == "" && !o.RunAsAdmin && !o.KeepPad && !o.HasSteps()
+}
 
 const (
 	closeAppsMax = 10

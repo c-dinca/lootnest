@@ -1034,7 +1034,7 @@
         { name: "DS4Windows", does: "Makes your PlayStation pad look like an Xbox pad to games.", running: true, installed: true },
         ...(HIDHIDE ? [{ name: "HidHide", does: "Hides the pads you choose from games, so they see only the translated one.", running: false, installed: true }] : []),
         { name: "ViGEmBus", does: "The driver that apps such as DS4Windows use to add a virtual Xbox or PlayStation pad.", running: true, installed: true },
-      ] : [], copiers: TRANSLATORS && !HIDHIDE ? ["DS4Windows"] : [], notes: TRANSLATORS ? ["Steam Input and DS4Windows both translating can make games see double input. For a game Steam starts, you can turn Steam Input off in the game's Properties, under Controller.",
+      ] : [], vigem: q.get("vigem") !== "0", bridge: settings.padAsXbox ? "games see your DualSense as an Xbox controller" : "", copiers: TRANSLATORS && !HIDHIDE ? ["DS4Windows"] : [], notes: TRANSLATORS ? ["Steam Input and DS4Windows both translating can make games see double input. For a game Steam starts, you can turn Steam Input off in the game's Properties, under Controller.",
         ...(HIDHIDE ? [] : ["Games may see two pads, your own and the copy DS4Windows makes, unless HidHide hides your own."])] : [] });
     },
     ps_steamProperties: () => ok(),

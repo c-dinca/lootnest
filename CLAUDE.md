@@ -1262,11 +1262,28 @@ These shipped recently, newest last:
   (`.tv-menu-shot`), `bpBehind`, Playing on the tile, Go back to the
   game. `win/console.go`: `TopWindows`, `ScreenOf`, `PlaceBehind`,
   `IsWindow`, `Foreground`. Not seen on a PC: docs/TESTING.md 33.
-- **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
-  games inside Lootnest, as DS4Windows does. That reverses the roadmap's
-  Controllers "will not do" (no virtual pad). Not started: it waits on
-  their answer about the driver (use ViGEmBus when it's already on the
-  PC, as the TV streaming engine installs it; never ship one).
+- **Unreleased: a PlayStation controller as an Xbox one** (the owner,
+  16 Nov 2026: "do the DualSense to Xbox translation with ViGEmBus",
+  reversing the roadmap's "Lootnest does not translate controllers";
+  ROADMAP Controllers phase 6). `Settings.PadAsXbox`, off by default.
+  `core/padmap.go`: `PSPadPath` (a HID path's Sony vendor and product,
+  USB or Bluetooth), `PSToXbox(dualsense, bluetooth, report)` (which
+  report layout follows from how the pad is connected, never from the
+  length: Windows pads every report to the pad's longest), `PadState`,
+  `XUSBReport`. `win/vigem.go`: ViGEmBus's interface by its GUID
+  (`CM_Get_Device_Interface_List`), `NewViGEmPad` (version handshake,
+  `VIGEM_PLUGIN_TARGET` with the first free serial), `Submit`, `Close`;
+  a pad goes when the handle that plugged it closes. `win/pshid.go`:
+  `HIDPaths`, `OpenPad` (read only, shared), `Read`, `Close` with
+  `CancelIoEx`; nothing is ever sent to the pad. `app/padbridge.go`:
+  `padTick` from `achTick` (on while a followed game runs, or Lootnest
+  stands behind one; never in safe mode), `runPad`, `padSay` (logged
+  once per change, shown in Settings). The PS button isn't passed on:
+  it is Lootnest's Home, read by raw input. `LaunchOptions.KeepPad`
+  leaves the pad alone for one game. Games started by Steam itself
+  aren't followed, so Steam Input stays in charge of those. Not seen on
+  a PC: docs/TESTING.md 34. Not done: rumble, the lightbar, hiding the
+  real pad.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

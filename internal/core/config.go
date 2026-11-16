@@ -204,6 +204,11 @@ type Settings struct {
 	// updates to games no launcher updates (on unless turned off; it reads
 	// only names, on this PC).
 	DownloadsOff bool `json:"downloadsOff,omitempty"`
+	// PadAsXbox turns a PlayStation controller into an Xbox one while a
+	// game runs, for games that only know Xbox pads: Lootnest reads the
+	// pad and feeds a virtual Xbox 360 pad through ViGEmBus, when that
+	// driver is already on the PC (app/padbridge.go). Off unless turned on.
+	PadAsXbox bool `json:"padAsXbox,omitempty"`
 	// ModsLinkOff puts mods in by copy only, never as hard links to
 	// Lootnest's copy of them.
 	ModsLinkOff bool `json:"modsLinkOff,omitempty"`

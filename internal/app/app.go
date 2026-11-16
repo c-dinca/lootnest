@@ -149,24 +149,26 @@ type App struct {
 	scanning     bool
 	sources      []core.SourceCheck // what the last scan saw of each source
 	sourcesAt    time.Time
-	seat         string  // the profile seated in the window ("Who's here")
-	bigPicture   bool    // the window is in Big Picture
-	hidFor       string  // the game Big Picture's window hid itself for
-	openBP       bool    // open in Big Picture once the page is ready
-	tv           bool    // TV mode: Big Picture on the primary display for a streaming host (tv.go)
-	tvHolder     uint32  // the "--tv" process holding the stream
-	tvWasHidden  bool    // the window was in the tray before TV mode
-	tvMenuOn     bool    // TV mode's Home menu is over the game
-	tvPSDown     bool    // a PlayStation pad's PS button is held
-	tvPlaying    string  // the game TV mode started last, for the bar on the PC
-	tvKeyHeld    bool    // Ctrl+Shift+F11 is Lootnest's while TV mode is on
-	conGame      string  // the game running over Big Picture or TV mode (console.go); show() doesn't forget it
-	conWin       uintptr // that game's window, when Lootnest found it
-	conGen       int     // which launch the curtain is following
-	guideOn      bool    // the Home button is being watched
-	openTV       bool    // TV mode was asked for before the page was ready
-	safe         bool    // safe mode: started with every optional background piece off
-	restartArgs  string  // start Lootnest again with these once this one quits
+	seat         string     // the profile seated in the window ("Who's here")
+	bigPicture   bool       // the window is in Big Picture
+	hidFor       string     // the game Big Picture's window hid itself for
+	openBP       bool       // open in Big Picture once the page is ready
+	tv           bool       // TV mode: Big Picture on the primary display for a streaming host (tv.go)
+	tvHolder     uint32     // the "--tv" process holding the stream
+	tvWasHidden  bool       // the window was in the tray before TV mode
+	tvMenuOn     bool       // TV mode's Home menu is over the game
+	tvPSDown     bool       // a PlayStation pad's PS button is held
+	tvPlaying    string     // the game TV mode started last, for the bar on the PC
+	tvKeyHeld    bool       // Ctrl+Shift+F11 is Lootnest's while TV mode is on
+	conGame      string     // the game running over Big Picture or TV mode (console.go); show() doesn't forget it
+	conWin       uintptr    // that game's window, when Lootnest found it
+	conGen       int        // which launch the curtain is following
+	guideOn      bool       // the Home button is being watched
+	pad          *padBridge // a PlayStation pad shown to games as an Xbox one (padbridge.go)
+	padNote      string     // why the last try couldn't, said once
+	openTV       bool       // TV mode was asked for before the page was ready
+	safe         bool       // safe mode: started with every optional background piece off
+	restartArgs  string     // start Lootnest again with these once this one quits
 
 	page      core.PageSource // the one document that may call ps_*
 	dropped   int             // calls from any other since the last log line
