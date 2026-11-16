@@ -7,14 +7,14 @@
   // opens the menu (it leaves, outside TV mode). The keyboard works the
   // same: arrows, Enter, Escape, Q and E. Everything Y, X, LB, RB and Start
   // do can also be reached with the arrows alone.
-  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
+  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", signs: pref("bpSigns", ""), tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
   const BP_SEC = { home: "home", library: "library", achievements: "ach", profiles: "profiles" };
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
   const bpKey = (it) => it.kind + ":" + it.id;
   function bpOpen() {
     if (BP.on) return;
-    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.ask = null; BP.mem = {}; BP.sx = {};
+    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.settings = false; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.ask = null; BP.mem = {}; BP.sx = {};
     closeContext(); gqClose();
     if (!S.allAch) api.allAchievements().catch(() => {});
     api.bigPicture(true).catch(() => {});
@@ -174,7 +174,7 @@
   };
   const pad = { prev: [], held: "", next: 0, raf: 0, fam: "", hello: 0, joined: [] };
   const glyph = (b) => {
-    const f = pad.fam || "xbox", v = PADS[f][b], face = b.length === 1;
+    const f = BP.signs || pad.fam || "xbox", v = PADS[f][b], face = b.length === 1; // the signs chosen in Big Picture's Settings, else the pad's own
     const cls = f === "xbox" || !face ? " bp-g--" + b.toLowerCase() : "";
     return `<span class="bp-g${cls}" aria-hidden="true">${PAD_SHAPES[v] ? gsvg(PAD_SHAPES[v]) : esc(v)}</span>`;
   };

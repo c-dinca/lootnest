@@ -313,10 +313,10 @@
   --bp-top: calc(var(--bp-safe-y) + var(--bp-bar-h) + var(--bp-6));  /* where a screen starts, under the bar */
   --bp-foot: calc(var(--bp-safe-y) + var(--bp-8));                   /* the prompts' band */
   --bp-tile-w: calc(196 * var(--u)); --bp-tag-w: calc(404 * var(--u)); --bp-app-w: calc(300 * var(--u));
-  --bp-person-w: calc(260 * var(--u)); --bp-avatar: calc(120 * var(--u)); --bp-avatar-bar: calc(44 * var(--u)); --bp-card-w: calc(420 * var(--u));
+  --bp-person-w: calc(260 * var(--u)); --bp-avatar: calc(120 * var(--u)); --bp-avatar-bar: calc(44 * var(--u)); --bp-card-w: calc(520 * var(--u));
   --bp-key-h: calc(76 * var(--u)); --bp-round: calc(56 * var(--u)); --bp-glyph: calc(34 * var(--u)); --bp-icon: calc(28 * var(--u));
   --bp-logo-h: calc(170 * var(--u)); --bp-logo-w: calc(560 * var(--u)); --bp-hero-w: calc(1100 * var(--u)); --bp-hero-h: calc(340 * var(--u));
-  --bp-dlg-w: calc(760 * var(--u)); --bp-toast-w: calc(640 * var(--u)); --bp-page-h: calc(540 * var(--u)); --bp-ach-w: calc(440 * var(--u)); --bp-ach-ico: calc(76 * var(--u)); --bp-list-w: calc(1100 * var(--u)); --bp-opt-h: calc(96 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
+  --bp-dlg-w: calc(760 * var(--u)); --bp-cats-w: calc(440 * var(--u)); --bp-sw-w: calc(72 * var(--u)); --bp-sw-h: calc(40 * var(--u)); --bp-sw-dot: calc(30 * var(--u)); --bp-sw-go: calc(32 * var(--u)); --bp-card-art: calc(96 * var(--u)); --bp-toast-w: calc(640 * var(--u)); --bp-page-h: calc(540 * var(--u)); --bp-ach-w: calc(440 * var(--u)); --bp-ach-ico: calc(76 * var(--u)); --bp-list-w: calc(1100 * var(--u)); --bp-opt-h: calc(96 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
   --bp-r-tile: calc(12 * var(--u)); --bp-r-key: calc(16 * var(--u)); --bp-r-panel: calc(24 * var(--u));
   --bp-ring: calc(4 * var(--u)); --bp-ring-out: calc(-7 * var(--u)); --bp-r-ring: calc(19 * var(--u));  /* the focus ring, a dark gap inside it */
   --bp-grow: 1.08; --bp-grow-key: 1.05;                              /* what the focus does to a tile, to a key */

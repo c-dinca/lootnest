@@ -2857,10 +2857,35 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-card { position: relative; isolation: isolate; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--bp-5); min-height: calc(var(--bp-key-h) + var(--bp-7)); padding: var(--bp-5); border: 0; border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-2); text-align: left; font: inherit; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out); }
 .bp-card::before { border-radius: var(--bp-r-key); }
 .bp-card::after { border-radius: calc(var(--bp-r-key) + var(--bp-2)); }
-.bp-card b { display: block; font-weight: 700; color: var(--fg-1); }
+.bp-card { grid-template-columns: auto 1fr auto; }
+.bp-card-art { width: var(--bp-card-art); aspect-ratio: 2 / 3; border-radius: var(--bp-2); overflow: hidden; background: var(--bg-active); }
+.bp-card-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bp-card-text { display: grid; gap: var(--bp-2); min-width: 0; }
+.bp-card b { display: block; font-weight: 700; color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-meter { display: block; height: var(--bp-2); border-radius: var(--radius-round); background: var(--glass-ctl); overflow: hidden; }
+.bp-meter i { display: block; height: 100%; border-radius: inherit; background: var(--fg-1); }
 .bp-card .ach-gring { width: var(--bp-key-h); height: var(--bp-key-h); }
 .bp-card .ach-ring { width: 100%; height: 100%; }
+.bp-h1 { flex: 1; margin: 0; font: 400 var(--bp-text-h1)/1.05 var(--font-title); }
 .bp-card--ghost { box-shadow: none; }
+
+/* Settings for a remote: the parts on the left, rows that OK changes on
+   the right, and under them what the row in focus does. */
+.bp-set { display: grid; grid-template-columns: var(--bp-cats-w) minmax(0, 1fr); gap: var(--bp-8); margin: 0 var(--bp-safe-x); }
+.bp-set h1 { margin: 0 0 var(--bp-6); font: 400 var(--bp-text-h1)/1.05 var(--font-title); }
+.bp-cats { display: grid; gap: var(--bp-2); }
+.bp-cat { display: flex; align-items: center; height: var(--bp-key-h); padding: 0 var(--bp-5); border: 0; border-radius: var(--bp-r-key); background: none; color: var(--fg-2); font: 650 var(--bp-text-key)/1 var(--font-ui); text-align: left; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-cat[aria-pressed="true"] { background: var(--bp-fill-on); color: var(--fg-1); }
+.bp-cat:focus { transform: scale(1.03); background: var(--fg-1); color: var(--bg-ground); }
+.bp-set-main { padding-top: calc(var(--bp-text-h1) + var(--bp-6)); max-width: var(--bp-list-w); }
+.bp-val { flex: none; color: var(--fg-2); font-weight: 600; }
+.bp-opt:focus .bp-val { color: var(--bg-active); }
+.bp-sw { position: relative; flex: none; width: var(--bp-sw-w); height: var(--bp-sw-h); border-radius: var(--radius-round); background: var(--edge-3); transition: background-color var(--bp-dur-focus) var(--ease-out); }
+.bp-sw::after { content: ""; position: absolute; top: 50%; left: var(--bp-1); width: var(--bp-sw-dot); height: var(--bp-sw-dot); margin-top: calc(var(--bp-sw-dot) / -2); border-radius: var(--radius-round); background: var(--fg-1); transition: transform var(--bp-dur-focus) var(--ease-out); }
+.bp-sw.on { background: var(--lamp); }
+.bp-sw.on::after { transform: translate3d(var(--bp-sw-go), 0, 0); background: var(--bg-ground); }
+.bp-opt:focus .bp-sw:not(.on) { background: var(--fg-3); }
+.bp-say { margin: var(--bp-5) var(--bp-2) 0; min-height: 3em; color: var(--fg-2); }
 
 /* Who's playing, and screens with nothing yet. */
 .bp-center, .bp-empty { display: grid; justify-items: center; align-content: center; gap: var(--bp-4); min-height: calc(100vh - var(--bp-top) - var(--bp-foot)); padding: 0 var(--bp-safe-x); text-align: center; }
