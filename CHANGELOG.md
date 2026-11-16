@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.9.0
+
+Spotify on the TV, driven by the controller, and the controller as a mouse over any program that needs one.
 
 - **The controller as a mouse, when a program needs one.** In Big Picture and TV mode, the Home button's menu over anything running has Controller as a mouse. On, the left stick moves the pointer, A clicks (held, it drags), X is the right button, the right stick scrolls, the D-pad is the arrows, B is Escape and Y opens Windows' on-screen keyboard. It works only over that program, never over Lootnest, and ends when the program closes. It's on by itself for Spotify's own program and Stremio, which only know a mouse, and off for games, YouTube and Spotify's web player, which the controller drives already.
 - **Spotify on the TV, driven by the controller.** Spotify has no TV interface on the web, so Lootnest opens its web player in a window of its own, full screen and magnified to be read from a sofa. The D-pad or stick moves a white frame to the nearest thing that way and scrolls the list when there's more; A chooses, B goes back, X plays or pauses, LB and RB change track. Sign in once with the PC's keyboard and it stays signed in. Spotify's own program is still in Apps as Spotify on this PC when it's installed.
