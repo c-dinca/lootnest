@@ -919,3 +919,19 @@ On the LG TV, with section 27 done on the PC.
 6. After developer mode was turned on again on the TV (a new key):
    Update says the kept key no longer opens the TV and to use the
    passphrase; Add an LG TV with the passphrase works as before.
+
+## 41. A stream's numbers, and drawing at twice the rate
+
+1. Stream a game from the TV for two minutes or more, then leave TV
+   mode. Within half a minute Settings, TV has Last stream for that TV:
+   one line that says what held it back, and its numbers. Lootnest's
+   log has the TV's "Stream: ended after ..." line.
+2. Save a report with the TV on: its section has "Wi-Fi link" when the
+   TV is on Wi-Fi.
+3. Turn on Draw at twice the stream's rate with no stream running: the
+   log says the engine's settings are up to date, and Settings, TV shows
+   the engine On again within a minute.
+4. Start a stream: Windows' display settings show the TV's display at
+   120 Hz while the stream is 60. A game with V-Sync on runs at 120.
+5. Turn the switch off while a stream runs: the log says the engine
+   takes its settings at the next start, and the stream isn't cut.

@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.10.1, beta)
+## Where things stand (2.10.2, beta)
 
 These shipped recently, newest last:
 
@@ -1450,6 +1450,28 @@ These shipped recently, newest last:
   Nov). Not seen on a TV: docs/TESTING.md 40. Still open: setting a
   TV's Size and Quality from Lootnest (Big Picture's Settings), since
   the TV app's screen is hidden while a stream runs.
+
+- **2.10.2, a slow stream** (the owner, 16 Nov: Size and Quality show
+  now, "but I still have latency"; their report had no stream numbers,
+  the TV being off when it was saved). Read first: Apollo 0.4.6 on
+  their PC encodes with AMD's AMF (RX 6700 XT; `amd_usage`
+  ultralowlatency, `amd_rc` vbr_latency are its defaults, left alone),
+  and the TV app's decoders already run without buffering (ss4s: NDL
+  before SMP by weight, SMP with `lowDelayMode`); Moonlight TV's FAQ
+  puts the TV's own share at about 30 ms at 1080p. So what's left is
+  the network, the TV's picture processing and how the PC draws.
+  `core/streamcheck.go`: `LastStream` reads the TV app's "Stream: ended
+  after ..." line, `StreamVerdict` says which part held it back (short,
+  network, tv, pc, clean). `noteStreams` (app/lgtv.go, 8 s after
+  `leaveTV`) logs it with the TV's Wi-Fi link (`TV.WiFi`,
+  /proc/net/wireless) and keeps it in link.json (`savedTV.Stream`);
+  `LGStatus.Stream*`; `lastStreams` in 82-link.js. `Settings.TVQuick`
+  (off by default) is Apollo's `double_refreshrate`:
+  `ApolloSettings(pc, quick)`, `engineSettings`, `bringEngine`,
+  `engineSettingsSoon` from `apiSaveSettings` (applied when no stream
+  runs, else at the next start); `ApolloSettingsDiffer` reads a missing
+  key as "disabled". Not seen on a PC or TV: docs/TESTING.md 41. The
+  TV's picture mode and Wi-Fi band are the owner's to set.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

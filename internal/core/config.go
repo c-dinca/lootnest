@@ -209,6 +209,11 @@ type Settings struct {
 	// pad and feeds a virtual Xbox 360 pad through ViGEmBus, when that
 	// driver is already on the PC (app/padbridge.go). Off unless turned on.
 	PadAsXbox bool `json:"padAsXbox,omitempty"`
+	// TVQuick has the streaming engine make the TV's display at twice the
+	// stream's frame rate (Apollo's double_refreshrate), so a game waits
+	// half as long for the display before a frame is sent. Off unless
+	// turned on: a game that can't hold the higher rate may look uneven.
+	TVQuick bool `json:"tvQuick,omitempty"`
 	// ModsLinkOff puts mods in by copy only, never as hard links to
 	// Lootnest's copy of them.
 	ModsLinkOff bool `json:"modsLinkOff,omitempty"`

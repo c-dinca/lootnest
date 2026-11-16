@@ -35,6 +35,8 @@ type savedTV struct {
 	Installed time.Time `json:"installed,omitzero"`
 	Extended  time.Time `json:"extended,omitzero"` // developer mode last extended
 	Problem   string    `json:"problem,omitempty"`
+	Stream    string    `json:"stream,omitempty"` // the last finished stream, as the TV app wrote it
+	StreamAt  time.Time `json:"streamAt,omitzero"`
 }
 
 // LGStatus is a saved LG TV as Settings, TV shows it.
@@ -46,6 +48,12 @@ type LGStatus struct {
 	Installed time.Time `json:"installed"`
 	Extended  time.Time `json:"extended"`
 	Problem   string    `json:"problem,omitempty"`
+	// The last finished stream: its numbers, what they point at
+	// (core.Stream*) and that in plain words. Nil until one was read.
+	Stream     *core.StreamStats `json:"stream,omitempty"`
+	StreamKind string            `json:"streamKind,omitempty"`
+	StreamSays string            `json:"streamSays,omitempty"`
+	StreamAt   time.Time         `json:"streamAt,omitzero"`
 }
 
 func lgStatuses(r *linkRecord) []LGStatus {
@@ -54,7 +62,12 @@ func lgStatuses(r *linkRecord) []LGStatus {
 		return out
 	}
 	for _, t := range r.TVs {
-		out = append(out, LGStatus{Name: t.Name, IP: t.IP, Version: t.Version, Latest: core.TVAppPinned.Version, Installed: t.Installed, Extended: t.Extended, Problem: t.Problem})
+		st := LGStatus{Name: t.Name, IP: t.IP, Version: t.Version, Latest: core.TVAppPinned.Version, Installed: t.Installed, Extended: t.Extended, Problem: t.Problem}
+		if _, stats, ok := core.LastStream(t.Stream); ok {
+			st.Stream, st.StreamAt = &stats, t.StreamAt
+			st.StreamKind, st.StreamSays = core.StreamVerdict(stats)
+		}
+		out = append(out, st)
 	}
 	return out
 }
@@ -524,6 +537,55 @@ func (a *App) apiLinkMakePrivate(ip string) {
 	}()
 }
 
+// noteStreams reads each saved TV's last finished stream from the TV app's
+// log and keeps it: in Lootnest's log, so a report has the numbers even
+// when the TV is off by then, and in link.json for Settings, TV. Called
+// when TV mode ends, which is when the TV has just written it.
+func (a *App) noteStreams() {
+	r := loadLink()
+	if r == nil || a.safe {
+		return
+	}
+	found := map[string]string{}
+	for _, t := range r.TVs {
+		key := revealSecret(t.Key)
+		if key == "" {
+			continue
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		tv, _, err := core.ConnectTV(ctx, t.IP, []byte(key), t.HostKey)
+		cancel()
+		if err != nil {
+			continue
+		}
+		line, stats, ok := core.LastStream(tv.TVAppLog())
+		wifi := tv.WiFi()
+		tv.Close()
+		if !ok || line == t.Stream {
+			continue
+		}
+		found[t.IP] = line
+		_, says := core.StreamVerdict(stats)
+		a.logf("TV streaming: %s: %s", t.Name, line)
+		if wifi != "" {
+			a.logf("TV streaming: %s: its Wi-Fi link (quality, signal, noise): %s", t.Name, wifi)
+		}
+		a.logf("TV streaming: %s: %s", t.Name, says)
+	}
+	if len(found) == 0 {
+		return
+	}
+	if now := loadLink(); now != nil {
+		for i := range now.TVs {
+			if line, ok := found[now.TVs[i].IP]; ok {
+				now.TVs[i].Stream, now.TVs[i].StreamAt = line, time.Now()
+			}
+		}
+		_ = saveLink(now)
+	}
+	a.emitLink()
+}
+
 // tvAppLog reads a saved TV's app log over SSH, or says why it couldn't.
 func tvAppLog(t savedTV) string {
 	key := revealSecret(t.Key)
@@ -540,6 +602,9 @@ func tvAppLog(t savedTV) string {
 	head := ""
 	if v := tv.WebOSVersion(); v != "" {
 		head = "webOS: " + v + "\r\n"
+	}
+	if w := tv.WiFi(); w != "" {
+		head += "Wi-Fi link (quality, signal, noise): " + w + "\r\n"
 	}
 	if l := tv.TVAppLog(); l != "" {
 		return head + l
