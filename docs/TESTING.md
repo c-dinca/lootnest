@@ -867,7 +867,8 @@ On the LG TV, with section 27 done on the PC.
 
 ## 38. The controller as a mouse
 
-1. Big Picture, Apps, Stremio: a note says the
+1. Big Picture, a game or a store launcher that wants a mouse, the Home
+   button, Controller as a mouse: a note says the
    controller is a mouse now. The left stick moves the pointer, slowly
    for a small push; A clicks and, held, drags; X opens the right-click
    menu; the right stick scrolls; the D-pad moves as the arrow keys; B
@@ -935,3 +936,22 @@ On the LG TV, with section 27 done on the PC.
    120 Hz while the stream is 60. A game with V-Sync on runs at 120.
 5. Turn the switch off while a stream runs: the log says the engine
    takes its settings at the next start, and the stream isn't cut.
+
+## 42. Stremio with a TV interface
+
+1. In TV mode or Big Picture, Apps has one Stremio, whether or not the
+   Stremio program is installed.
+2. Open it: Stremio's web version fills the screen. The stick and the
+   D-pad move a white frame over posters, the side bar and the search
+   box; A opens, B goes back a page.
+3. With the Stremio program installed and not running: no yellow
+   "Streaming server is not available" bar. Task Manager has
+   stremio-runtime.exe while the window is open, and not after it closes.
+4. Sign in (Stremio's own page), open a title and a stream: it plays
+   with sound on the TV. X pauses.
+5. With Stremio already open on the PC, Lootnest starts no second
+   server, and closing Lootnest's window leaves Stremio's running.
+6. With no Stremio installed, the yellow bar shows and Lootnest
+   installs nothing.
+7. The Home button opens Lootnest's menu over it; Close ends it and
+   Lootnest is back.

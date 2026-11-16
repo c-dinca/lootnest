@@ -11,6 +11,10 @@ func TestFindMediaApps(t *testing.T) {
 	have := map[string]bool{
 		filepath.Join("/u/roaming", "Spotify", "Spotify.exe"):                    true,
 		filepath.Join("/u/local", "Programs", "LNV", "Stremio-4", "stremio.exe"): true,
+		filepath.Join("/u/local", "Programs", "Stremio", "stremio-shell-ng.exe"): true,
+		filepath.Join("/u/local", "Programs", "Stremio", "stremio-runtime.exe"):  true,
+		filepath.Join("/u/local", "Programs", "Stremio", "server.js"):            true,
+		filepath.Join("/pf", "Stremio", "stremio-runtime.exe"):                   true, // no server.js beside it
 	}
 	apps := FindMediaApps(p, func(x string) bool { return have[x] })
 	ids := ""
@@ -20,7 +24,7 @@ func TestFindMediaApps(t *testing.T) {
 	if ids != "youtube spotify discord stremio " {
 		t.Fatalf("apps: %s", ids)
 	}
-	if apps[3].Proc != "stremio" || apps[3].Own || !apps[0].ByPID || !apps[0].Own || !apps[1].Own || !apps[2].Own {
+	if !apps[3].Own || apps[3].Args != "--app stremio" || !apps[0].ByPID || !apps[0].Own || !apps[1].Own || !apps[2].Own {
 		t.Fatalf("following: %+v", apps)
 	}
 	// YouTube and Spotify are Lootnest's own windows, not a browser on the PC.
@@ -57,8 +61,21 @@ func TestFindMediaApps(t *testing.T) {
 	if !ok || !dc.Mic || sp.Mic || w.Mic || !dc.Owns("https://discord.com/channels/@me") || dc.Owns("https://discord.com.evil.example/app") || dc.Owns("https://cdn.discordapp.com/x") {
 		t.Fatalf("discord site %+v", dc)
 	}
-	if _, ok := WebAppByID("stremio"); ok {
-		t.Fatal("stremio isn't a site")
+	// Stremio's web version, and only its own pages press keys.
+	st, ok := WebAppByID("stremio")
+	if !ok || st.Nav != "spatial" || st.Mic || !st.Owns("https://web.stremio.com/#/detail/movie/tt1") || st.Owns("https://www.stremio.com/") || st.Owns("http://web.stremio.com/") {
+		t.Fatalf("stremio site %+v", st)
+	}
+	// The program's streaming server: its runtime and script, together.
+	exists := func(x string) bool { return have[x] }
+	if r, sc, ok := StremioServer(p, exists); !ok || r != filepath.Join("/u/local", "Programs", "Stremio", "stremio-runtime.exe") || sc != filepath.Join("/u/local", "Programs", "Stremio", "server.js") {
+		t.Fatalf("server %q %q %v", r, sc, ok)
+	}
+	if _, _, ok := StremioServer(MediaPaths{ProgramFiles: "/pf"}, exists); ok {
+		t.Fatal("a runtime without its script counts as a server")
+	}
+	if _, _, ok := StremioServer(MediaPaths{}, exists); ok {
+		t.Fatal("a server on a PC with no folders")
 	}
 	for _, c := range []struct {
 		width, px, dpi int

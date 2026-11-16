@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Stremio with a TV interface.** Stremio in Apps is now Stremio's own web version in a window of Lootnest's, which the controller drives: the stick or D-pad moves, A opens, B goes back. Behind it runs the streaming server of the Stremio program on your PC, started when the window opens and ended when it closes, so what the program plays, this plays. Without Stremio installed the page says its server is missing; Lootnest installs nothing.
+
 ## 2.10.4
 
 Apps in TV mode and Big Picture, tidied.

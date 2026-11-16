@@ -210,6 +210,11 @@ func RunWebApp(id string, on uintptr) int {
 	if !ok {
 		return 2
 	}
+	if site.ID == "stremio" {
+		if stop := startStremioServer(); stop != nil {
+			defer stop()
+		}
+	}
 	win.EnableDPIAwareness()
 	dpi := win.SystemDPI()
 	asMouse := false
