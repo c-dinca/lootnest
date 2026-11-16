@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+Lootnest stays on the screen while you play from Big Picture or TV mode, as a console's home does.
+
+- **No desktop when a game starts.** In Big Picture and TV mode, the game's art fills the screen while it starts, the game comes to the front, and Lootnest stays right behind it. In Big Picture the window used to hide and show the desktop; in TV mode other programs' windows could show.
+- **The Home button over a game** (Xbox's Guide, a PlayStation pad's PS button) opens a menu over a picture of the game, in Big Picture as well as TV mode: go back to the game, go to Lootnest, or close the game.
+- **The menu remembers the game.** Resume and Close the game did nothing after the menu had opened once; they work now.
+- **A game left running shows as Playing** in Big Picture, and its page has Go back to the game and Close the game, for Library games too.
+- When the game closes, Lootnest is what's there, also for games Lootnest can't follow by their process.
+
 ## 2.6.0
 
 Big Picture and TV mode, rebuilt for the sofa: a console's home screen that a controller or a TV's remote is enough for.

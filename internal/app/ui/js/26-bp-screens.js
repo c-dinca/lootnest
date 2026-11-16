@@ -18,7 +18,7 @@
     const a = bpArt(it, false), s = it.g && session(it.g.id);
     return `<button class="bp-tile" data-bp data-bpid="t:${esc(row)}:${esc(bpKey(it))}" data-k="${esc(bpKey(it))}" data-go="open" data-hint="Open">
       <span class="bp-art${!a.url && bpWaiting(it) ? " is-waiting" : ""}">${a.url ? artImg(a, "cover") : typeCover(it, "", { icon: true })}</span>
-      ${s ? `<span class="bp-live">${s.phase === "playing" ? "Playing" : esc(sessionText(s))}</span>` : ""}<span class="bp-name">${esc(it.name)}</span></button>`;
+      ${s ? `<span class="bp-live">${s.phase === "playing" ? "Playing" : esc(sessionText(s))}</span>` : bpBehind(it) ? '<span class="bp-live">Playing</span>' : ""}<span class="bp-name">${esc(it.name)}</span></button>`;
   }
   // A collection too small for a row of its own: one wide tile with its first three covers and its name.
   function bpTagTile(t, list) {
@@ -63,8 +63,8 @@
   function bpApp(id, name) {
     const key = "app:" + id;
     sfx("go");
-    if (BP.tv && BP.playing === key) { api.tvResume().catch(() => {}); return; }
-    if (BP.tv) { BP.launch = { key, name, art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch(); }
+    if (BP.playing === key) { api.tvResume().catch(() => {}); return; }
+    BP.launch = { key, name, art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch();
     api.launchApp(id).catch((e) => { tvReturn(); toast(errText(e), "error"); });
   }
   const bpPerson = (p, id, go, line, on) => `<button class="bp-person ln-player${on ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="${id}:${esc(p.id)}" data-go="${go}" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${esc(line)}</span></button>`;
@@ -86,7 +86,7 @@
       const seat = seated(), as = it.g && seat, k = esc(bpKey(it));
       return `<section class="bp-page" data-block><div class="bp-hero in">${bpHero(it, true)}</div>
         <div class="bp-keys" data-zone="keys">
-          <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="Play">${GI.play}${as ? `Play as ${esc(seat.name)}` : "Play"}</button>
+          <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="${bpBehind(it) ? "Go back to it" : "Play"}">${GI.play}${bpBehind(it) ? "Go back to the game" : as ? `Play as ${esc(seat.name)}` : "Play"}</button>
           ${it.g && cfg().players.length > 1 ? `<button class="bp-key" data-bp data-bpid="playas" data-go="choose" data-k="${k}">Play as someone else</button>` : ""}
           <button class="bp-key" data-bp data-bpid="points" data-go="points" data-k="${k}" data-hint="Open">Save points</button>
           ${bpRunning(it) ? `<button class="bp-key" data-bp data-bpid="close" data-go="close-game" data-k="${k}">Close the game</button>` : ""}</div></section>
@@ -528,8 +528,8 @@
   function bpPlay(it, pid) {
     if (!it) return;
     sfx("go");
-    // The game TV mode is playing: Play goes back to it.
-    if (BP.tv && BP.playing && sameGame(it, BP.playing)) { api.tvResume().catch(() => {}); return; }
+    // The game running behind Big Picture: Play goes back to it.
+    if (BP.playing && sameGame(it, BP.playing)) { api.tvResume().catch(() => {}); return; }
     if (it.kind === "found") { tvLaunch(it); actions["play-found"]({ dataset: { key: it.id } }); return; }
     const p = pid || (seated() || {}).id;
     if (!p) { BP.choose = bpKey(it); BP.focus = ""; renderBP(); return; }
@@ -538,11 +538,15 @@
     tvLaunch(it);
     actions["play-as"]({ dataset: { game: it.id, player: p } });
   }
-  const bpRunning = (it) => { const s = it && it.g && session(it.g.id); return !!s && s.phase === "playing"; };
+  // Running: a profile game's session says so, and so does the game Big
+  // Picture stands behind (BP.playing), which may be a Library game.
+  const bpBehind = (it) => !!it && !!BP.playing && sameGame(it, BP.playing);
+  const bpRunning = (it) => { const s = it && it.g && session(it.g.id); return (!!s && s.phase === "playing") || bpBehind(it); };
   function bpCloseGame(k) {
     const it = bpItem(k);
     if (!bpRunning(it)) return;
     sfx("go");
+    if (bpBehind(it)) { api.tvCloseGame().catch((e) => toast(errText(e), "error")); return; }
     actions["close-game"]({ dataset: { game: it.g.id } });
   }
   function bpX() {

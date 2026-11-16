@@ -86,7 +86,7 @@
         tvMenu(ev);
         break;
       case "tvHome": // the Home or PS button with no game: Big Picture's menu
-        if (BP.on && BP.tv && !S.picker && !S.dialog) bpMenu(!BP.menu);
+        if (BP.on && !S.picker && !S.dialog) bpMenu(!BP.menu);
         break;
       case "tvGame": // TV mode: a game is starting or up (app/tv.go)
         tvGame(ev);

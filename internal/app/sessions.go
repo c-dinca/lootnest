@@ -325,13 +325,13 @@ func (a *App) tick() {
 
 	a.mu.Lock()
 	cfg := a.cfg
-	if a.tv { // in TV mode, Library games started from it hide it too
+	if a.tv || a.bigPicture { // TV mode and Big Picture stand behind Library games started from them too
 		if len(upFound) > 0 {
 			hide = upFound[0]
 		}
 		for _, k := range downFound {
-			if k == a.hidFor {
-				a.hidFor, back = "", true
+			if k == a.hidFor || k == a.conGame {
+				a.hidFor, a.conGame, back = "", "", true
 			}
 		}
 	}
@@ -367,7 +367,7 @@ func (a *App) tick() {
 				changed = true
 				// Hidden only now, once the game is running, so the window
 				// doesn't vanish to the desktop while the game is loading.
-				if cfg.Settings.HideWhilePlaying || a.tv {
+				if cfg.Settings.HideWhilePlaying || a.tv || a.bigPicture {
 					hide = g.ID
 				}
 				c := cfg.Clone()
@@ -382,7 +382,7 @@ func (a *App) tick() {
 		case s != nil && s.Phase == "playing":
 			if running {
 				s.missed = 0
-				if g.ID == a.hidFor {
+				if g.ID == a.hidFor || g.ID == a.conGame {
 					s.front = win.ForegroundIs(procName(g))
 				}
 				continue
@@ -391,8 +391,8 @@ func (a *App) tick() {
 			if s.missed < 2 { // ignore quick restarts (launcher -> game)
 				continue
 			}
-			if g.ID == a.hidFor {
-				a.hidFor, back = "", s.front || a.tv
+			if g.ID == a.hidFor || g.ID == a.conGame {
+				a.hidFor, a.conGame, back = "", "", s.front || a.tv || a.bigPicture
 			}
 			go func(g core.Game, player string, since time.Time) {
 				now, key := time.Now(), "game:"+g.ID
@@ -413,14 +413,14 @@ func (a *App) tick() {
 	if hide != "" {
 		a.ui(func() {
 			a.mu.Lock()
-			tv := a.tv
-			if a.bigPicture && (tv || win.IsVisible(a.hwnd)) {
-				a.hidFor = hide
+			con := a.tv || a.bigPicture && win.IsVisible(a.hwnd)
+			if con {
+				a.hidFor, a.conGame = hide, hide
 			}
 			a.mu.Unlock()
-			if tv {
-				// TV mode stays behind the game, covering the desktop, and
-				// the game comes to the front.
+			if con {
+				// TV mode and Big Picture stay right behind the game,
+				// covering the desktop, and the game comes to the front.
 				a.tvGameUp(hide)
 				return
 			}
@@ -434,15 +434,11 @@ func (a *App) tick() {
 			a.mu.Lock()
 			bp, tv := a.bigPicture, a.tv
 			a.mu.Unlock()
-			switch {
-			case tv:
+			if tv || bp {
 				a.mu.Lock()
-				a.tvMenuOn, a.tvPlaying = false, ""
+				a.tvMenuOn, a.tvPlaying, a.conWin = false, "", 0
 				a.mu.Unlock()
 				a.tvBack()
-				a.emit("bpReturn", nil)
-			case bp && !win.IsVisible(a.hwnd):
-				a.show()
 				a.emit("bpReturn", nil)
 			}
 		})

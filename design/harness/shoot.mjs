@@ -60,6 +60,7 @@ const shots = [
   ["tv-points-ask", "tv=1&players=1", [key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter"), key("ArrowRight"), key("Enter"), key("ArrowDown"), key("Enter")]],
   ["tv-ds5", "tv=1&players=1&pad=ds5", [key("ArrowRight"), key("Enter")]],
   ["tv-launch", "tv=1&players=1", ['window.__ps({ type: "tvGame", key: "game:bg3", phase: "starting" })']],
+  ["bp-game-menu", "players=1", [click('[data-action="bp-open"]'), 'window.__ps({ type: "tvGame", key: "bg3", phase: "playing" })', 'window.__ps({ type: "tvMenu", on: true, key: "bg3", shot: (document.querySelector("#bp .bp-bd-l[src]") || {}).src || "" })']],
   ["tv-home-menu", "tv=1&players=1", ['window.__ps({ type: "tvGame", key: "game:bg3", phase: "playing" })', 'window.__ps({ type: "tvMenu", on: true, key: "game:bg3" })']],
   ["tv-library", "tv=1&players=1", [key("e"), key("ArrowDown"), key("ArrowRight")]],
   ["tv-library-400", "tv=1&players=1&games=400", [key("e"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],

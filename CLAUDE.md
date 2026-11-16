@@ -1240,6 +1240,28 @@ These shipped recently, newest last:
   the owner finds on the real TV. The owner asked for 2.6.0 as its
   release (16 Nov), and for the older releases to be pruned: kept are
   the 1.x milestones, 2.0.0, 2.2.11, 2.5.2 and the latest.
+- **Unreleased: Lootnest as a console's screen** (the owner, 16 Nov: "I
+  want Lootnest there all the time, as on a PlayStation", in TV mode and
+  Big Picture; the Home button as an overlay; go back to the game or
+  close it without leaving Lootnest). `app/console.go`: `console()` is
+  TV mode or Big Picture; `tvGameStarting` snapshots the windows on show
+  and starts `curtain`, which finds the game's window (its process when
+  known, else `core.NewGameWindow`: the front-most new window on
+  Lootnest's display taking a quarter of it), puts it in front and
+  Lootnest right behind it (`front`, `win.PlaceBehind`), keeps looking
+  30 s for a launcher followed by the game, falls back to `SendToBack`
+  after 25 s with nothing, and for a game with no known process brings
+  Lootnest back when the window is gone (`watchGone`). `conGame` and
+  `conWin` are the game behind Lootnest; `show()` clears `hidFor` but
+  not them (the 2.4.0 Home menu forgot the game once it opened, so
+  Resume and Close did nothing). The tick stands behind games in Big
+  Picture as in TV mode and always comes back. `tvHome` works in both:
+  `gameShot` (a JPEG of the game, taken before `raise`) goes with
+  `tvMenu`. `startGuide`/`watchGuide` and raw input run in Big Picture
+  too. Page: the launch screen and `#tv-menu` in Big Picture
+  (`.tv-menu-shot`), `bpBehind`, Playing on the tile, Go back to the
+  game. `win/console.go`: `TopWindows`, `ScreenOf`, `PlaceBehind`,
+  `IsWindow`, `Foreground`. Not seen on a PC: docs/TESTING.md 33.
 - **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
   games inside Lootnest, as DS4Windows does. That reverses the roadmap's
   Controllers "will not do" (no virtual pad). Not started: it waits on

@@ -341,7 +341,7 @@
   --tv-menu-w: calc(640 * var(--u));
   /* the apps' own colours, only on their tile in TV mode */
   --app-spotify: #1ed760; --app-youtube: #ff3b30; --app-stremio: #8a5aab;
-  --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.75), transparent 70%);  /* the prompt bar, its prompts above the safe area */
+  --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.88), rgb(17 18 23 / 0.4) 70%, rgb(17 18 23 / 0.25));  /* over the game's picture: the menu's side dark, the rest dimmed */
   /* TV mode (Lootnest Link), read from about 3 m: no text under 24px at
      1080p, growing with the screen past it. */
   --tv-text-min: max(24px, 2.2vh);
