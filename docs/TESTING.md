@@ -765,3 +765,27 @@ On the LG TV, with section 27 done on the PC.
 5. YouTube: full screen in its TV layout, no browser window or extension
    page; Sign in with the code at youtube.com/activate, still signed in
    the next time.
+
+## 33. Lootnest stays behind the game (Big Picture and TV mode)
+
+1. In Big Picture (F11, not TV mode), start a game Lootnest starts by its
+   exe: its art fills the screen with "Starting", then the game is in
+   front. The desktop, the taskbar's programs and other windows don't
+   show in between.
+2. The same for a Steam game (Steam's own "launching" note may show over
+   Lootnest for a moment) and for a game from a folder with no known
+   process.
+3. A windowed game: what's around its window is Lootnest, not the desktop.
+4. Press the controller's Home button (Xbox's Guide, a PlayStation pad's
+   PS) over the game: the menu comes over a still picture of the game.
+   Resume goes back to the game.
+5. Home again, Lootnest: Big Picture is in front, the game shows as
+   Playing, and its page has Go back to the game and Close the game.
+   Go back to the game returns to it.
+6. Home, Close the game (twice): the game closes and Lootnest is what's
+   there, with the keyboard and the controller.
+7. Quit a game from its own menu: Lootnest is in front again within a few
+   seconds, with no desktop in between.
+8. All of it again in TV mode on the TV.
+9. Show recent activity names each start: "its window is up after ...",
+   or "no window found in 25 s" for a game Lootnest couldn't see.

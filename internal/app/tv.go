@@ -138,7 +138,7 @@ func (a *App) enterTV(holder uint32) {
 	a.tvKeyHeld = held || a.tvKeyHeld && was
 	a.mu.Unlock()
 	if !was {
-		go a.watchGuide()
+		a.startGuide()
 		go a.keepCursor()
 	}
 	if ready {
@@ -170,6 +170,8 @@ func (a *App) leaveTV() {
 	hidden, playing := a.tvWasHidden, a.hidFor != ""
 	a.tv, a.tvHolder, a.openTV, a.bigPicture = false, 0, false, false
 	a.hidFor, a.tvMenuOn, a.tvPlaying, a.tvKeyHeld = "", false, "", false
+	a.conGame, a.conWin = "", 0
+	a.conGen++
 	a.mu.Unlock()
 	win.UnregisterHotKey(a.hwnd, hotkeyTV)
 	win.HideTVBar()
@@ -190,11 +192,16 @@ func (a *App) apiTVExit() {
 	})
 }
 
-// tvBack brings TV mode back to the front, with the keyboard and the
-// controller, once the game it hid for closed.
+// tvBack brings TV mode or Big Picture back to the front, with the
+// keyboard and the controller, once the game it stood behind closed.
 func (a *App) tvBack() {
 	a.show()
-	win.FullscreenPrimary(a.hwnd)
+	a.mu.Lock()
+	tv := a.tv
+	a.mu.Unlock()
+	if tv {
+		win.FullscreenPrimary(a.hwnd)
+	}
 	win.ForceForeground(a.hwnd)
 }
 
@@ -222,62 +229,6 @@ func tvTaskbarAtStart() {
 	}
 }
 
-// tvGameStarting runs right after a game was asked to start. In TV mode,
-// Big Picture shows the game starting, and Lootnest lets the game come to
-// the front over it and steps behind every other window a moment later,
-// still covering the desktop, rather than hiding.
-func (a *App) tvGameStarting(key, name string) {
-	a.mu.Lock()
-	tv := a.tv
-	a.mu.Unlock()
-	if !tv {
-		return
-	}
-	a.mu.Lock()
-	a.tvPlaying = name
-	a.mu.Unlock()
-	a.emit("tvGame", map[string]any{"phase": "starting", "key": key, "name": name})
-	go func() {
-		time.Sleep(1500 * time.Millisecond)
-		a.ui(func() {
-			a.mu.Lock()
-			tv := a.tv
-			a.mu.Unlock()
-			if tv {
-				win.SendToBack(a.hwnd)
-			}
-		})
-	}()
-}
-
-// tvGameUp brings the game TV mode started to the front once its process
-// runs, as its window may open behind Lootnest. Call it on the window's
-// thread.
-func (a *App) tvGameUp(key string) {
-	proc, pid := a.procOf(key), a.pidOf(key)
-	a.emit("tvGame", map[string]any{"phase": "playing", "key": key})
-	win.SendToBack(a.hwnd)
-	if proc == "" && pid == 0 {
-		return
-	}
-	go func() {
-		// Its window can take a while after its process.
-		for i := 0; i < 20; i++ {
-			gw := uintptr(0)
-			if pid != 0 {
-				gw = win.WindowOfPID(pid)
-			} else {
-				gw = win.GameWindow(proc)
-			}
-			if gw != 0 {
-				a.ui(func() { win.ForceForeground(gw) })
-				return
-			}
-			time.Sleep(time.Second)
-		}
-	}()
-}
-
 // procOf is the process name of a game by its profile game id or Library
 // key, or "" when Lootnest doesn't know it.
 func (a *App) procOf(key string) string {
@@ -296,26 +247,6 @@ func (a *App) procOf(key string) string {
 		return r.proc
 	}
 	return ""
-}
-
-// watchGuide follows XInput pads' Guide button while TV mode is on: the
-// TV's controller reaches the PC as one, through the streaming host.
-func (a *App) watchGuide() {
-	was := false
-	for {
-		time.Sleep(60 * time.Millisecond)
-		a.mu.Lock()
-		tv := a.tv
-		a.mu.Unlock()
-		if !tv {
-			return
-		}
-		down := win.XInputGuideDown()
-		if down && !was {
-			a.ui(a.tvHome)
-		}
-		was = down
-	}
 }
 
 // keepCursor keeps the PC's mouse on the PC's own displays while TV mode is
@@ -412,77 +343,6 @@ func (a *App) tvLeaveFromPC() {
 		a.logf("TV mode off: left from the PC")
 		a.leaveTV()
 	})
-}
-
-// tvHome is the controller's Home button in TV mode. Over a game it opens
-// TV mode's menu, as a console's does, and closes it again; with no game it
-// opens Big Picture's own menu. Call it on the window's thread.
-func (a *App) tvHome() {
-	a.mu.Lock()
-	tv, playing, on := a.tv, a.hidFor, a.tvMenuOn
-	a.mu.Unlock()
-	if !tv {
-		return
-	}
-	switch {
-	case playing == "":
-		a.emit("tvHome", map[string]any{})
-	case on:
-		a.tvResume()
-	default:
-		a.mu.Lock()
-		a.tvMenuOn = true
-		a.mu.Unlock()
-		a.tvBack()
-		a.emit("tvMenu", map[string]any{"on": true, "key": playing})
-	}
-}
-
-// tvResume closes TV mode's menu and brings the game back to the front.
-func (a *App) tvResume() {
-	a.mu.Lock()
-	playing := a.hidFor
-	a.tvMenuOn = false
-	a.mu.Unlock()
-	a.emit("tvMenu", map[string]any{"on": false})
-	if playing != "" {
-		a.tvGameUp(playing)
-	}
-}
-
-// apiTVResume is Resume in TV mode's menu, and Play on the game running.
-func (a *App) apiTVResume() { a.ui(a.tvResume) }
-
-// apiTVStay is Lootnest in TV mode's menu: the menu closes, Lootnest stays
-// in front, and the game keeps running behind it.
-func (a *App) apiTVStay() {
-	a.mu.Lock()
-	a.tvMenuOn = false
-	a.mu.Unlock()
-}
-
-// apiTVCloseGame asks the game TV mode started to quit, as closing its
-// window would; Lootnest comes back when it's gone (tick).
-func (a *App) apiTVCloseGame() error {
-	a.mu.Lock()
-	playing := a.hidFor
-	a.tvMenuOn = false
-	a.mu.Unlock()
-	if playing == "" {
-		return nil
-	}
-	proc, pid := a.procOf(playing), a.pidOf(playing)
-	closed := 0
-	if pid != 0 {
-		closed = win.CloseWindowsOfPID(pid)
-	} else if proc != "" {
-		closed = win.CloseProcessWindows(proc)
-	}
-	if closed == 0 {
-		return errors.New("Lootnest couldn't close the game. Quit it from its own menu")
-	}
-	a.logf("Asked %s to close from TV mode's menu", proc)
-	return nil
 }
 
 // pidOf is the process an app is followed by, or 0.

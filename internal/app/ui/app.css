@@ -2649,9 +2649,12 @@ html.is-tv {
 /* TV mode's menu over a game (25-bigpicture.js tvMenu): the Home or PS
    button, as on a console. */
 .tv-menu { position: fixed; inset: 0; z-index: 47; display: flex; align-items: center; padding: var(--bp-safe-y) var(--bp-safe-x);
-  background: var(--tv-menu-scrim); animation: bp-launch-in var(--dur-3) var(--ease-emph) both; }
+  animation: bp-launch-in var(--dur-3) var(--ease-emph) both; }
 .tv-menu.out { animation: bp-launch-out var(--dur-3) var(--ease-in-out) both; }
-.tv-menu-panel { width: var(--tv-menu-w); display: grid; gap: var(--bp-3); padding: var(--bp-7); border-radius: var(--bp-r-panel);
+.tv-menu-shot, .tv-menu-veil { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tv-menu-shot { object-fit: cover; }
+.tv-menu-veil { background: var(--tv-menu-scrim); }
+.tv-menu-panel { position: relative; width: var(--tv-menu-w); display: grid; gap: var(--bp-3); padding: var(--bp-7); border-radius: var(--bp-r-panel);
   background: var(--bg-raised); box-shadow: var(--key-light), var(--bp-shadow-focus);
   animation: bp-in-left var(--bp-dur-screen) var(--ease-emph) both; }
 .tv-menu-name { font: 400 var(--bp-text-h1)/1.1 var(--font-title); color: var(--fg-1); margin-bottom: var(--bp-5); text-wrap: balance; }

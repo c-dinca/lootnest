@@ -328,10 +328,19 @@ func (a *App) apiBigPicture(on bool) {
 		}
 		return
 	}
+	if on {
+		a.startGuide()
+	} else {
+		a.mu.Lock()
+		a.hidFor, a.conGame, a.conWin, a.tvMenuOn, a.tvPlaying = "", "", 0, false, ""
+		a.conGen++
+		a.mu.Unlock()
+	}
 	a.ui(func() {
 		if on {
 			win.Present(a.hwnd)
 		}
 		win.SetFullscreen(a.hwnd, on)
+		win.WatchPadRawInput(a.hwnd, on) // a PlayStation pad's PS button is Big Picture's Home too
 	})
 }

@@ -33,6 +33,7 @@
     const el = $("#bp");
     if (el) { el.removeAttribute("id"); el.classList.add("out"); setTimeout(() => el.remove(), 320); }
     bpShown = ""; bpTrailerStop();
+    BP.launch = null; drawLaunch(); BP.tvMenu = null; drawTVMenu(); BP.playing = "";
     api.bigPicture(false).catch(() => {});
     sfx("close");
     if (behindBP) render();
@@ -58,7 +59,7 @@
   // A game starting from TV mode: its art fills the screen while it loads
   // (Lootnest stays behind it, app/tv.go), and fades back when it closes.
   function tvLaunch(it) {
-    if (!BP.tv || !it) return;
+    if (!BP.on || !it) return;
     BP.launch = { key: bpKey(it), name: it.name, art: launchArt(it), phase: "starting", at: Date.now() };
     bpTrailerStop();
     drawLaunch();
@@ -82,7 +83,7 @@
     setInterval(() => { if (BP.launch && BP.launch.phase === "starting" && document.hasFocus() && Date.now() - BP.launch.at > 120000) tvReturn(); }, 5000);
   }
   function tvGame(ev) {
-    if (!BP.tv) return;
+    if (!BP.on) return;
     if (!BP.launch || (ev.key && BP.launch.key && !BP.launch.key.endsWith(ev.key) && !ev.key.endsWith(BP.launch.key))) {
       const it = everyItem().find((x) => bpKey(x) === ev.key || (x.g && "game:" + x.g.id === ev.key) || (x.g && x.g.id === ev.key) || x.id === ev.key);
       if (it) { tvLaunch(it); }
@@ -108,12 +109,12 @@
     el.querySelector(".bp-launch-word").textContent = L.phase === "playing" ? "Playing" : "Starting";
   }
   const sameGame = (it, key) => !!it && !!key && (bpKey(it) === key || it.id === key || (!!it.g && (it.g.id === key || "game:" + it.g.id === key)));
-  // TV mode's menu over a game, on the controller's Home or PS button.
+  // The menu over a game in Big Picture and TV mode, on the controller's Home or PS button.
   const TV_MENU = [["resume", "Resume game"], ["home", "Lootnest"], ["close", "Close the game"]];
   function tvMenu(ev) {
     if (!ev.on) { BP.tvMenu = null; drawTVMenu(); return; }
     const it = everyItem().find((x) => sameGame(x, ev.key));
-    BP.tvMenu = { key: ev.key, name: it ? it.name : (BP.launch && BP.launch.name) || "", at: 0, sure: false };
+    BP.tvMenu = { key: ev.key, name: it ? it.name : (BP.launch && BP.launch.name) || "", at: 0, sure: false, shot: ev.shot || "" };
     sfx("open");
     drawTVMenu();
   }
@@ -121,10 +122,16 @@
     const M = BP.tvMenu;
     let el = $("#tv-menu");
     if (!M) { if (el) { el.classList.add("out"); el.removeAttribute("id"); setTimeout(() => el.remove(), 320); } return; }
-    if (!el) { el = document.createElement("div"); el.id = "tv-menu"; el.className = "tv-menu ln-root"; el.setAttribute("role", "menu"); document.body.appendChild(el); }
-    el.innerHTML = `<div class="tv-menu-panel"><div class="tv-menu-name">${esc(M.name)}</div>
+    if (!el) {
+      // The game's picture as it was when Home was pressed lies behind the
+      // menu, so the menu reads as lying over the game.
+      el = document.createElement("div"); el.id = "tv-menu"; el.className = "tv-menu ln-root"; el.setAttribute("role", "menu");
+      el.innerHTML = `${M.shot ? `<img class="tv-menu-shot" src="${M.shot}" alt="">` : ""}<div class="tv-menu-veil"></div><div class="tv-menu-panel"></div>`;
+      document.body.appendChild(el);
+    }
+    el.querySelector(".tv-menu-panel").innerHTML = `<div class="tv-menu-name">${esc(M.name)}</div>
       ${TV_MENU.map(([k, l], i) => `<button class="tv-menu-item${i === M.at ? " on" : ""}" role="menuitem" data-tvm="${k}" tabindex="-1">${k === "close" && M.sure ? "Press again to close it" : esc(l)}</button>`).join("")}
-      <div class="tv-menu-foot">${glyph("A")}Select<span></span>${glyph("B")}Resume</div></div>`;
+      <div class="tv-menu-foot">${glyph("A")}Select<span></span>${glyph("B")}Resume</div>`;
     const on = el.querySelector(".tv-menu-item.on");
     if (on) on.focus({ preventScroll: true });
   }
@@ -235,8 +242,8 @@
   const realPad = (g) => padFamily(g.id) !== "xbox";
   // The standard mapping's buttons; 16 is the PS or Home button, 17 the touchpad.
   const PAD_ROLES = { 0: "A", 1: "B", 2: "X", 3: "Y", 4: "LB", 5: "RB", 8: "View", 9: "Start", 16: "Start", 17: "View" };
-  // In TV mode the Home or PS button is Lootnest's own (app/tv.go tvHome).
-  const padRole = (fam, i) => (BP.tv && i === 16 ? "" : fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
+  // In Big Picture and TV mode the Home or PS button is Lootnest's own (app/console.go tvHome).
+  const padRole = (fam, i) => (BP.on && i === 16 ? "" : fam === "nintendo" && i < 2 ? (i ? "A" : "B") : i === 17 && fam !== "playstation" ? "" : PAD_ROLES[i] || "");
   const padDir = (g) => {
     const b = (i) => !!(g.buttons[i] && g.buttons[i].pressed), ax = g.axes[0] || 0, ay = g.axes[1] || 0;
     return b(12) || ay < -0.5 ? "up" : b(13) || ay > 0.5 ? "down" : b(14) || ax < -0.5 ? "left" : b(15) || ax > 0.5 ? "right" : "";
