@@ -1,17 +1,20 @@
   // ----------------------------------------------------------- big picture --
   // Big Picture: Lootnest as a console's screen, on the whole screen, for a
-  // controller from the sofa. Tabs along the top (LB and RB), rows of games
-  // to move through with the stick or the D-pad, A to choose, B to go back,
-  // Y to play as someone else, Start to leave. The keyboard works the same:
-  // arrows, Enter, Escape, Q and E.
-  const BP = { on: false, tab: "home", tag: "", detail: null, choose: null, focus: "", from: "", keep: false, timer: 0, sounds: pref("bpSounds", "1") === "1", tv: false, menu: false, menuFrom: "", who: false };
+  // controller or a TV's remote from the sofa. This part holds its state, TV
+  // mode, the controller and the sounds; its screens and how the focus moves
+  // are in 26-bp-screens.js. The stick or the D-pad moves, A chooses, B goes
+  // back a step, Y plays as someone else, LB and RB change section, Start
+  // opens the menu (it leaves, outside TV mode). The keyboard works the
+  // same: arrows, Enter, Escape, Q and E. Everything Y, X, LB, RB and Start
+  // do can also be reached with the arrows alone.
+  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
   const BP_SEC = { home: "home", library: "library", achievements: "ach", profiles: "profiles" };
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
   const bpKey = (it) => it.kind + ":" + it.id;
   function bpOpen() {
     if (BP.on) return;
-    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.detail = null; BP.choose = null; BP.focus = ""; BP.from = "";
+    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.mem = {}; BP.sx = {};
     closeContext(); gqClose();
     if (!S.allAch) api.allAchievements().catch(() => {});
     api.bigPicture(true).catch(() => {});
@@ -28,6 +31,7 @@
     BP.on = false;
     const el = $("#bp");
     if (el) { el.removeAttribute("id"); el.classList.add("out"); setTimeout(() => el.remove(), 320); }
+    bpShown = "";
     api.bigPicture(false).catch(() => {});
     sfx("close");
     if (behindBP) render();
@@ -35,8 +39,6 @@
   // TV mode (Lootnest Link): Big Picture on a TV for a streaming host,
   // which ends the stream when TV mode ends. Who's playing comes first when
   // more than one person uses the PC; Start opens a menu instead of leaving.
-  // What Start does, unless its glyph already says it (an Xbox pad's Menu button).
-  const startWord = () => (!BP.tv ? "Leave" : PADS[pad.fam || "xbox"].Start === "Menu" ? "" : "Menu");
   function tvOpen() {
     const was = BP.tv;
     BP.tv = true; BP.menu = false;
@@ -143,12 +145,15 @@
     drawLaunch();
     return true;
   }
-  function bpMenu(on) {
+  // The menu, over whatever screen is up: Start in TV mode, the key at the
+  // end of the bar, and Back on Home, which asks before leaving.
+  function bpMenu(on, why) {
     if (on && (S.picker || S.dialog)) return;
-    if (on) { const a = document.activeElement; BP.menuFrom = (a && a.dataset && a.dataset.bpid) || BP.focus; }
-    BP.menu = on; BP.focus = on ? "menu:back" : BP.menuFrom || ""; BP.keep = true;
+    if (on === BP.menu) return;
+    if (on) BP.menuFrom = BP.focus;
+    BP.menu = on; BP.menuWhy = on ? why || "" : ""; BP.focus = on ? "menu:back" : BP.menuFrom || "";
     sfx(on ? "open" : "back");
-    renderBP(true);
+    renderBP(false);
   }
   function bpSoon() { if (BP.timer) return; BP.timer = requestAnimationFrame(() => { BP.timer = 0; if (BP.on) renderBP(false); }); }
   // The buttons, named by what they do here as on an Xbox pad, the way each
@@ -172,196 +177,6 @@
     const cls = f === "xbox" || !face ? " bp-g--" + b.toLowerCase() : "";
     return `<span class="bp-g${cls}" aria-hidden="true">${PAD_SHAPES[v] ? gsvg(PAD_SHAPES[v]) : esc(v)}</span>`;
   };
-  function bpArt(it, wide) {
-    loadArt(it); ensureCover(it);
-    return artFor(it, wide ? "hero" : "cover");
-  }
-  function bpTile(it, wide) {
-    const a = bpArt(it, wide), kind = wide ? "hero" : "cover";
-    const s = it.g && session(it.g.id);
-    return `<button class="bp-tile${wide ? " bp-tile--wide" : ""}" data-bp data-bpid="t:${esc(bpKey(it))}:${wide ? "w" : "c"}" data-k="${esc(bpKey(it))}" data-go="open">
-      <span class="bp-tile-art">${a.url ? artImg(a, kind) : typeCover(it, "", { icon: true })}</span>
-      ${s ? `<span class="bp-live">${esc(sessionText(s))}</span>` : ""}<span class="bp-tile-name">${esc(it.name)}</span></button>`;
-  }
-  // A collection too small for a row of its own: one wide tile with its first three covers and its name.
-  function bpTagTile(t, list) {
-    const covers = list.slice(0, 3).map((it) => {
-      const a = bpArt(it, false);
-      return `<span class="bp-tag-cover">${a.url ? artImg(a, "cover") : plate(S.icons[coverKey(it)], "", "")}</span>`;
-    }).join("");
-    return `<button class="bp-tile bp-tile--wide bp-tile--tag" data-bp data-bpid="c:${esc(t)}" data-go="tag" data-tag="${esc(t)}">
-      <span class="bp-tile-art">${covers}<span class="bp-tag-name"><b>${esc(t)}</b>${list.length} ${list.length === 1 ? "game" : "games"}</span></span></button>`;
-  }
-  const bpRow = (id, title, list, wide) => (list.length ? `<section class="bp-row"><h2><span class="ln-label">${esc(title)}</span></h2><div class="bp-row-track" data-row="${esc(id)}">${list.map((it) => bpTile(it, wide)).join("")}</div></section>` : "");
-  function bpScreen() {
-    const all = libraryItems();
-    if (BP.menu) {
-      const seat = seated();
-      return `<div class="bp-choose bp-menu"><h1>Menu</h1>
-        <div class="bp-menu-keys">
-          <button class="bp-btn" data-bp data-bpid="menu:back" data-go="menu-close">${GI.back}Back to games</button>
-          ${cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="menu:who" data-go="menu-who">${seat ? lnAvatar(seat, "32") : GI.profiles}${solo() ? "Switch profile" : "Who's playing"}</button>` : ""}
-          <button class="bp-btn" data-bp data-bpid="menu:exit" data-go="tv-exit">${GI.power}Exit TV mode</button></div></div>`;
-    }
-    if (BP.choose) {
-      const it = bpItem(BP.choose);
-      const ps = cfg().players;
-      return `<div class="bp-choose"><p class="bp-kicker">${esc(it ? it.name : "")}</p><h1>Who's playing?</h1>
-        <div class="bp-people">${ps.map((p) => `<button class="bp-person ln-player" style="--player:${esc(p.color)}" data-bp data-bpid="who:${esc(p.id)}" data-go="play-as" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${it && it.g && S.d.active[it.g.id] === p.id ? "Files loaded" : it && it.g && hasProfile(it.g.id, p.id) ? "Has a profile" : "New profile"}</span></button>`).join("")}</div></div>`;
-    }
-    if (BP.detail) {
-      const it = bpItem(BP.detail);
-      if (!it) { BP.detail = null; return bpScreen(); }
-      const key = recentKey(it), t = totalPlayed(it) || steamTime(it), seat = seated();
-      const A = S.ach[key], det = cfg().settings.gameDetails && (S.details[key] || {}).details;
-      achFor(it); // reads its achievements if it hasn't yet
-      const logo = artFor(it, "logo").url;
-      const as = it.g && seat;
-      return `<div class="bp-detail">
-        <div class="bp-detail-text">${logo ? `<img class="bp-logo" src="${logo}" alt="${esc(it.name)}">` : `<h1>${esc(it.name)}</h1>`}
-          <p class="bp-meta">${[esc(storeNames(it)), playedAt(it) ? "Played " + esc(ago(new Date(playedAt(it)))) : "", t ? esc(hours(t)) + " played" : "", A && A.total ? `${A.unlocked} of ${A.total} achievements` : "", det && CTL_SAYS[det.controller]].filter(Boolean).map((x) => `<span>${x}</span>`).join("")}</p>
-          <div class="bp-actions"><button class="bp-btn ${as ? `bp-btn--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-btn--primary"'} data-bp data-bpid="play" data-go="play" data-k="${esc(bpKey(it))}">${GI.play}${as ? `Play as ${esc(seat.name)}` : "Play"}</button>
-            ${it.g && cfg().players.length > 1 ? `<button class="bp-btn" data-bp data-bpid="playas" data-go="choose" data-k="${esc(bpKey(it))}">${glyph("Y")}Play as someone else</button>` : ""}
-            ${bpRunning(it) ? `<button class="bp-btn" data-bp data-bpid="close" data-go="close-game" data-k="${esc(bpKey(it))}">${glyph("X")}Close the game</button>` : ""}
-            <button class="bp-btn" data-bp data-bpid="back" data-go="back">${glyph("B")}Back</button></div></div></div>`;
-    }
-    if (!all.length && (BP.tab === "library" || BP.tab === "home")) {
-      return `<div class="bp-empty"><h2>No games yet</h2>
-        <button class="bp-btn" data-bp data-bpid="exit" data-go="exit">${glyph("Start")}Leave Big Picture</button></div>`;
-    }
-    if (BP.tab === "library") {
-      const list = BP.tag ? all.filter((it) => tagsOf(it).includes(BP.tag)) : all;
-      return `<div class="bp-grid-wrap"><h2 class="bp-h"><span class="ln-label">${BP.tag ? esc(BP.tag) : "All games"}<span class="ln-count ln-num">${list.length}</span></span></h2><div class="bp-grid">${list.map((it) => bpTile(it, false)).join("")}</div></div>`;
-    }
-    if (BP.tab === "profiles") {
-      const ps = cfg().players, seat = seated(), alone = solo();
-      return `<div class="bp-choose"><h1>${BP.who ? "Who's playing?" : alone ? "Playing as" : "Who's here?"}</h1>
-        <div class="bp-people">${ps.map((p) => `<button class="bp-person ln-player${seat && seat.id === p.id ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="seat:${esc(p.id)}" data-go="seat" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${seat && seat.id === p.id ? (alone ? "Playing" : "Sitting here") : alone ? "Play as this" : "Sit down"}</span></button>`).join("")}</div></div>`;
-    }
-    if (BP.tab === "achievements") {
-      const rows = (S.allAch ? S.allAch.games : []).map((g) => ({ g, it: itemByKey(g.key) })).filter((r) => r.it);
-      if (!rows.length) return `<div class="bp-empty"><h2>${S.allAch ? "No achievements found yet" : "Reading achievements"}</h2></div>`;
-      const who = (seated() || cfg().players[0] || {}).id;
-      return `<div class="bp-grid-wrap"><h2 class="bp-h"><span class="ln-label">Achievements</span></h2><div class="bp-ach">${rows.map(({ g, it }) => {
-        const own = g.players && g.players[who], u = own ? own.unlocked : g.unlocked, pct = Math.round((u / g.total) * 100);
-        return `<button class="bp-achcard" data-bp data-bpid="a:${esc(bpKey(it))}" data-k="${esc(bpKey(it))}" data-go="open"><span class="ach-gring">${ring(pct, 64)}</span><span><b>${esc(g.name)}</b><span>${u} of ${g.total}</span></span></button>`; }).join("")}</div></div>`;
-    }
-    const recent = recentItems(all, false).slice(0, 12);
-    const tags = {};
-    all.forEach((it) => tagsOf(it).forEach((t) => (tags[t] = tags[t] || []).push(it)));
-    const names = allTags().filter((t) => tags[t]); // the sidebar's order
-    const big = names.filter((t) => tags[t].length >= 5).slice(0, 3);
-    const small = names.filter((t) => !big.includes(t));
-    return `<div class="bp-home">${bpRow("recent", "Continue playing", recent.length ? recent : all.slice(0, 12), true)}
-      ${bpAppsRow()}
-      ${big.map((t) => bpRow("tag:" + t, t, tags[t], false)).join("")}
-      ${small.length ? `<section class="bp-row"><h2><span class="ln-label">Collections</span></h2><div class="bp-row-track" data-row="tags">${small.map((t) => bpTagTile(t, tags[t])).join("")}</div></section>` : ""}
-      ${bpRow("all", "Your games", all.slice(0, 40), false)}</div>`;
-  }
-  // TV mode's apps: Spotify, YouTube's TV interface and Stremio, when the
-  // PC has them (app/tv.go apiMediaApps).
-  const APP_ICONS = { spotify: "spotify-logo", youtube: "youtube-logo", stremio: "popcorn" };
-  function bpAppsRow() {
-    if (!BP.apps) { BP.apps = []; api.mediaApps().then((l) => { BP.apps = l || []; if (BP.apps.length && BP.on && BP.tab === "home") renderBP(false); }).catch(() => {}); }
-    if (!BP.apps.length) return "";
-    return `<section class="bp-row"><h2><span class="ln-label">Apps</span></h2><div class="bp-row-track" data-row="apps">${BP.apps.map((a) =>
-      `<button class="bp-app" data-bp data-bpid="app:${esc(a.id)}" data-go="app" data-app="${esc(a.id)}" data-name="${esc(a.name)}"><span class="bp-app-icon bp-app--${esc(a.id)}">${ph(APP_ICONS[a.id] || "television-simple", "fill")}</span><span class="bp-tile-name">${esc(a.name)}</span></button>`).join("")}</div></section>`;
-  }
-  function bpApp(id, name) {
-    const key = "app:" + id;
-    sfx("go");
-    if (BP.tv && BP.playing === key) { api.tvResume().catch(() => {}); return; }
-    if (BP.tv) { BP.launch = { key, name, art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch(); }
-    api.launchApp(id).catch((e) => { tvReturn(); toast(errText(e), "error"); });
-  }
-  let bpSeat = "", bpFootX = false, bpFam = "";
-  function renderBP(first) {
-    let el = $("#bp");
-    if (!el) { el = document.createElement("div"); el.id = "bp"; el.className = "bp ln-root"; el.setAttribute("role", "application"); el.setAttribute("aria-label", "Big Picture"); document.body.appendChild(el); }
-    // Keep where each row and the page were scrolled, and what had focus.
-    const rows = {};
-    el.querySelectorAll("[data-row]").forEach((r) => (rows[r.dataset.row] = r.scrollLeft));
-    let main = el.querySelector(".bp-main");
-    const top = main ? main.scrollTop : 0;
-    const a = document.activeElement;
-    if (!BP.keep && a && a.dataset && a.dataset.bpid && el.contains(a)) BP.focus = a.dataset.bpid;
-    BP.keep = false;
-    const seat = seated();
-    const seatHTML = seat ? `<span class="bp-seat ln-player" style="--player:${esc(seat.color)}">${lnAvatar(seat, "32")}${esc(seat.name)}</span>` : "";
-    const now = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-    const sub = BP.detail || BP.choose || BP.menu;
-    const sound = BP.sounds ? "Sounds on" : "Sounds off";
-    const fresh = !main, fam = bpFam !== pad.fam;
-    bpFam = pad.fam;
-    if (fresh) {
-      el.innerHTML = `<div class="bp-bg" aria-hidden="true"><div class="bp-bg-l"></div><div class="bp-bg-l"></div></div>
-      <header class="bp-top"><div class="bp-brand">${BRAND_MARK}<span class="bp-brand-name">Lootnest</span></div>
-        <nav class="bp-tabs"><span class="bp-ind" aria-hidden="true"></span>${glyph("LB")}${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-go="tab" data-t="${k}" tabindex="-1">${l}</button>`).join("")}${glyph("RB")}</nav>
-        <div class="bp-right">${seatHTML}<time class="bp-clock ln-num"></time>
-          <button class="bp-exit" data-go="exit" tabindex="-1" title="${BP.tv ? "Menu" : "Leave Big Picture"}">${glyph("Start")}${startWord()}</button></div></header>
-      <main class="bp-main"></main>
-      <footer class="bp-foot"></footer>`;
-      main = el.querySelector(".bp-main");
-    } else {
-      if (seatHTML !== bpSeat) {
-        el.querySelectorAll(".bp-right .bp-seat").forEach((x) => x.remove());
-        el.querySelector(".bp-right").insertAdjacentHTML("afterbegin", seatHTML);
-      }
-      if (fam) {
-        const [lb, rb] = el.querySelectorAll(".bp-tabs > .bp-g");
-        lb.outerHTML = glyph("LB"); rb.outerHTML = glyph("RB");
-        el.querySelector(".bp-exit").innerHTML = glyph("Start") + startWord();
-      }
-    }
-    bpSeat = seatHTML;
-    const closeHint = !!BP.detail && bpRunning(bpItem(BP.detail));
-    if (fresh || fam || closeHint !== bpFootX) el.querySelector(".bp-foot").innerHTML = `${glyph("A")}Select<span></span>${glyph("B")}Back<span></span>${closeHint ? `${glyph("X")}Close the game<span></span>` : ""}${glyph("Y")}Play as someone else<span></span>${glyph("LB")}${glyph("RB")}Tabs<span></span>${glyph("Start")}${startWord()}<button class="bp-sound" data-go="sound" tabindex="-1">${glyph("View")}<span></span></button>`;
-    bpFootX = closeHint;
-    el.querySelector(".bp-tabs").classList.toggle("is-dim", !!sub);
-    el.querySelectorAll(".bp-tab").forEach((t) => t.setAttribute("aria-current", String(BP.tab === t.dataset.t)));
-    el.dataset.sec = BP_SEC[BP.tab];
-    slideInd(el.querySelector(".bp-ind"), el.querySelector('.bp-tab[aria-current="true"]'));
-    el.querySelector(".bp-clock").textContent = now;
-    const snd = el.querySelector(".bp-sound");
-    snd.setAttribute("aria-pressed", String(BP.sounds));
-    snd.lastElementChild.textContent = sound;
-    main.classList.toggle("bp-arrive", !!first);
-    main.innerHTML = bpScreen();
-    el.querySelectorAll("[data-row]").forEach((r) => { if (rows[r.dataset.row]) r.scrollLeft = rows[r.dataset.row]; });
-    if (!first) main.scrollTop = top;
-    let f = BP.focus && el.querySelector(`[data-bpid="${CSS.escape(BP.focus)}"]`);
-    if (!f) f = el.querySelector("[data-bp]");
-    if (f && !S.dialog && !S.picker) f.focus({ preventScroll: !first });
-    bpArtFor(f, fresh);
-  }
-  // The background follows the game in focus: its art, large and soft.
-  let bpBgFront = 0, bpBgUrl = "";
-  function bpArtFor(el, now) {
-    const it = el && el.dataset.k && bpItem(el.dataset.k);
-    const url = it ? bpArt(it, true).url : BP.detail ? bpArt(bpItem(BP.detail), true).url : "";
-    if (url === bpBgUrl && !now) return;
-    bpBgUrl = url;
-    const ls = document.querySelectorAll("#bp .bp-bg-l");
-    if (ls.length < 2) return;
-    const next = ls[bpBgFront ^ 1];
-    if (url) next.style.backgroundImage = `url("${url}")`;
-    next.classList.toggle("on", !!url); ls[bpBgFront].classList.remove("on");
-    bpBgFront ^= 1;
-  }
-  // Moving the focus to the nearest thing in a direction, as on a console.
-  function bpMove(dir) {
-    const els = [...document.querySelectorAll("#bp [data-bp]")];
-    if (!els.length) return;
-    const cur = document.activeElement && document.activeElement.closest && document.activeElement.closest("#bp [data-bp]");
-    if (!cur) { ((BP.focus && document.querySelector(`#bp [data-bpid="${CSS.escape(BP.focus)}"]`)) || els[0]).focus(); return; }
-    const best = nearest(els, cur, dir);
-    if (!best) { sfx("edge"); return; }
-    best.focus({ preventScroll: true });
-    best.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced() ? "auto" : "smooth" });
-    BP.focus = best.dataset.bpid;
-    bpArtFor(best);
-    sfx("move");
-  }
   // The same over the picker or a dialog above Big Picture: its keys, the
   // main choices first.
   function overlayMove(dir) {
@@ -394,83 +209,6 @@
     }
     return best;
   }
-  function bpTab(step) {
-    if (BP.detail || BP.choose || BP.menu) return;
-    const i = BP_TABS.findIndex((t) => t[0] === BP.tab);
-    BP.tab = BP_TABS[(i + step + BP_TABS.length) % BP_TABS.length][0];
-    BP.tag = ""; BP.focus = ""; BP.keep = true;
-    sfx("tab");
-    renderBP(true);
-  }
-  function bpPlay(it, pid) {
-    if (!it) return;
-    sfx("go");
-    // The game TV mode is playing: Play goes back to it.
-    if (BP.tv && BP.playing && sameGame(it, BP.playing)) { api.tvResume().catch(() => {}); return; }
-    if (it.kind === "found") { tvLaunch(it); actions["play-found"]({ dataset: { key: it.id } }); return; }
-    const p = pid || (seated() || {}).id;
-    if (!p) { BP.choose = bpKey(it); BP.focus = ""; BP.keep = true; renderBP(true); return; }
-    BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; BP.keep = true;
-    renderBP(false);
-    tvLaunch(it);
-    actions["play-as"]({ dataset: { game: it.id, player: p } });
-  }
-  const bpRunning = (it) => { const s = it && it.g && session(it.g.id); return !!s && s.phase === "playing"; };
-  function bpCloseGame(k) {
-    const it = bpItem(k);
-    if (!bpRunning(it)) return;
-    sfx("go");
-    actions["close-game"]({ dataset: { game: it.g.id } });
-  }
-  function bpX() {
-    const el = document.activeElement;
-    bpCloseGame((el && el.dataset && el.dataset.k) || BP.detail);
-  }
-  function bpSelect(el) {
-    if (!el) return;
-    const go = el.dataset.go;
-    if (go === "open") { BP.detail = el.dataset.k; BP.from = el.dataset.bpid; BP.focus = "play"; BP.keep = true; sfx("go"); renderBP(true); }
-    else if (go === "play") bpPlay(bpItem(el.dataset.k));
-    else if (go === "app") bpApp(el.dataset.app, el.dataset.name);
-    else if (go === "tag") { BP.tab = "library"; BP.tag = el.dataset.tag; BP.focus = ""; BP.keep = true; sfx("go"); renderBP(true); }
-    else if (go === "choose") { BP.choose = el.dataset.k; BP.focus = ""; sfx("go"); renderBP(true); }
-    else if (go === "close-game") bpCloseGame(el.dataset.k);
-    else if (go === "play-as") bpPlay(bpItem(BP.choose), el.dataset.p);
-    else if (go === "back") bpBack();
-    else if (go === "seat") {
-      actions.seat({ dataset: { player: el.dataset.p } }); sfx("go");
-      if (BP.who) { BP.who = false; BP.tab = "home"; BP.focus = ""; renderBP(true); } else renderBP(false);
-    }
-    else if (go === "menu-close") bpMenu(false);
-    else if (go === "menu-who") { BP.menu = false; BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("go"); renderBP(true); }
-    else if (go === "tv-exit") { api.tvExit().catch(() => {}); tvClose(); }
-    else if (go === "tab") { BP.tab = el.dataset.t; BP.tag = ""; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("tab"); renderBP(true); }
-    else if (go === "exit") bpClose();
-    else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); sfx("toggle"); renderBP(false); }
-  }
-  function bpBack() {
-    if (BP.menu) { bpMenu(false); return; }
-    if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
-    else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
-    else if (BP.tag) { BP.focus = "c:" + BP.tag; BP.tab = "home"; BP.tag = ""; }
-    else { sfx("edge"); return; }
-    BP.keep = true;
-    sfx("back");
-    renderBP(true);
-  }
-  function bpY() {
-    const el = document.activeElement;
-    const k = (el && el.dataset && el.dataset.k) || BP.detail;
-    const it = k && bpItem(k);
-    if (it && it.g && cfg().players.length > 1) { if (!BP.detail) BP.from = el.dataset.bpid || ""; BP.choose = k; BP.focus = ""; sfx("go"); renderBP(true); }
-  }
-  document.addEventListener("click", (ev) => {
-    const el = BP.on && ev.target.closest("#bp [data-go]");
-    if (!el) return;
-    ev.preventDefault(); ev.stopPropagation();
-    bpSelect(el);
-  }, true);
-  document.addEventListener("focusin", (ev) => { if (BP.on && ev.target.closest && ev.target.closest("#bp [data-bp]")) { BP.focus = ev.target.dataset.bpid || BP.focus; bpArtFor(ev.target); } });
   // Tab stays inside what's on top: the picker, a dialog or drawer, or Big Picture.
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Tab") return;
@@ -483,22 +221,6 @@
     else if (ev.shiftKey && (a === first || a === root)) { ev.preventDefault(); last.focus(); }
     else if (!ev.shiftKey && a === last) { ev.preventDefault(); first.focus(); }
   }, true);
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "F11") { ev.preventDefault(); if (BP.on) bpClose(); else bpOpen(); return; }
-    if (!BP.on || S.picker || S.dialog) return;
-    const k = ev.key;
-    const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
-    if (dirs[k]) { ev.preventDefault(); bpMove(dirs[k]); }
-    else if (k === "Enter" || k === " ") { ev.preventDefault(); bpSelect(document.activeElement.closest && document.activeElement.closest("#bp [data-go]")); }
-    else if (k === "Escape" || k === "Backspace") { ev.preventDefault(); if (BP.detail || BP.choose || BP.tag) bpBack(); else bpClose(); }
-    else if (k === "q" || k === "PageUp") { ev.preventDefault(); bpTab(-1); }
-    else if (k === "e" || k === "PageDown") { ev.preventDefault(); bpTab(1); }
-    else if (k === "y") { ev.preventDefault(); bpY(); }
-    else if (k === "x") { ev.preventDefault(); bpX(); }
-    else if (k === "F5") ev.preventDefault();
-    ev.stopImmediatePropagation();
-  }, true);
-  setInterval(() => { const c = BP.on && $("#bp .bp-clock"); if (c) c.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); }, 15000);
 
   // The controller: read every frame while one is connected. Start (or the
   // PS button) opens Big Picture from anywhere in Lootnest; in it, the stick

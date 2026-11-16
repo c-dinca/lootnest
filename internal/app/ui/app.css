@@ -2092,130 +2092,6 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
   .ach-ring .fg, .arrive .ach-ring .fg, .arrive .ach-bar span, .ach-pop, .ach-pop .ach-ico, .ach-pop.out, .ach-ico::after { animation: none !important; transition: none; }
 }
 
-/* ============================================================ big picture
-   The whole screen, for a controller from the sofa: large type, tiles that
-   grow as the focus reaches them, the art of the game in focus behind. */
-.bp { position: fixed; inset: 0; z-index: 45; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--shell); color: var(--fg-1); font-family: var(--font-ui); animation: bp-in var(--dur-4) var(--ease-emph) both; overflow: hidden; transition: --sec var(--dur-3) var(--ease-emph); }
-.bp.out { animation: bp-out var(--dur-3) var(--ease-in-out) both; }
-body:has(> #bp) #overlay .scrim { z-index: 46; }
-@keyframes bp-in { from { opacity: 0; transform: scale(1.03); } }
-@keyframes bp-out { to { opacity: 0; transform: scale(1.02); } }
-.bp-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.bp-bg-l { position: absolute; inset: -4%; background: center 30% / cover no-repeat; opacity: 0; transform: scale(1.04); transition: opacity var(--dur-backdrop) var(--ease-out), transform 6s linear; filter: saturate(115%); }
-.bp-bg-l.on { opacity: .55; transform: scale(1); }
-.bp-bg::after { content: ""; position: absolute; inset: 0; background: var(--scrim-bp); }
-.bp-top, .bp-main { position: relative; z-index: 1; }
-.bp-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-6); padding: var(--bp-safe-y) var(--bp-safe-x) var(--space-4); }
-.bp-brand { display: flex; align-items: center; gap: var(--space-3); font: 700 var(--fs-24)/1 var(--font-title); }
-.bp-brand .brand-mark { width: 30px; height: 30px; }
-.bp-tabs { position: relative; display: flex; align-items: center; gap: var(--space-2); margin-left: var(--space-8); transition: opacity var(--dur-2) var(--ease-out); }
-.bp-tabs.is-dim { opacity: .4; }
-.bp-tab { position: relative; z-index: 1; padding: var(--space-3) var(--space-5); border: 0; background: none; color: var(--fg-2); font: 650 var(--fs-24)/1 var(--font-ui); cursor: pointer; transition: color var(--dur-2) var(--ease-out); }
-.bp-tab[aria-current="true"] { color: var(--fg-1); font-weight: 750; }
-/* The current tab: a cartridge, raised, the section's colour along its top
-   and its lip below, sliding from tab to tab (bpInd). */
-.bp-ind { position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: linear-gradient(180deg, var(--sec) 0 var(--slot-band), var(--bg-raised) var(--slot-band) calc(100% - var(--lip)), var(--shell-lip) calc(100% - var(--lip))); transform-origin: 0 0; opacity: 0; pointer-events: none; transition: transform var(--dur-3) var(--ease-emph), opacity var(--dur-2) var(--ease-out); }
-.bp-right { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-5); }
-.bp-seat { display: flex; align-items: center; gap: var(--space-2); font: 650 var(--text-body)/1 var(--font-ui); white-space: nowrap; }
-.bp-clock { font: 600 var(--fs-18)/1 var(--font-ui); color: var(--fg-2); white-space: nowrap; }
-/* Narrow screens: the tabs keep the room; the mark stands for the name. */
-@media (max-width: 1260px) { .bp-brand-name, .bp-clock { display: none; } .bp-tabs { margin-left: 0; } }
-.bp-exit, .bp-sound { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-ctl); background: var(--bg-raised); box-shadow: var(--lip-key); color: var(--fg-2); font: 650 var(--fs-13)/1 var(--font-ui); cursor: pointer; transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out); }
-.bp-exit:hover, .bp-sound:hover { color: var(--fg-1); background: var(--bg-active); }
-.bp-exit:active, .bp-sound:active { transform: translateY(var(--press)); box-shadow: var(--lip-down); transition-duration: var(--dur-press); }
-/* A controller's buttons, as they look on the controller. */
-.bp-g { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: var(--radius-round); background: var(--bg-active); color: var(--fg-1); font: 800 var(--fs-12)/1 var(--font-ui); box-shadow: inset 0 0 0 1.5px var(--edge-3); }
-.bp-g--a { background: var(--pad-a); color: var(--pad-a-on); box-shadow: none; }
-.bp-g--b { background: var(--pad-b); color: var(--pad-b-on); box-shadow: none; }
-.bp-g--x { background: var(--pad-x); color: var(--pad-x-on); box-shadow: none; }
-.bp-g--y { background: var(--pad-y); color: var(--pad-y-on); box-shadow: none; }
-.bp-g--lb, .bp-g--rb, .bp-g--start, .bp-g--view { border-radius: var(--radius-ctl); }
-.bp-g .ln-icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: 2; }
-
-.bp-main { overflow-y: auto; overflow-x: hidden; padding: var(--space-4) 0 calc(var(--bp-foot-h) + var(--space-8)); scroll-padding: var(--space-4) 0 calc(var(--bp-foot-h) + var(--space-8)); -webkit-mask-image: var(--mask-bp); mask-image: var(--mask-bp); scrollbar-width: none; }
-.bp-main::-webkit-scrollbar { display: none; }
-/* A new screen comes up into place; the one it replaces is gone at once. */
-.bp-arrive > * { animation: bp-screen-in var(--dur-3) var(--ease-emph) both; }
-@keyframes bp-screen-in { from { opacity: 0; transform: translateY(calc(2 * var(--rise))); } }
-.bp-row { margin-bottom: var(--space-8); }
-.bp-row h2, .bp-h, .bp-empty h2 { margin: 0 var(--bp-safe-x) var(--space-3); font: 800 var(--text-section)/1.1 var(--font-ui); }
-/* Rows start with their label on its rule, at 10-foot scale. */
-.bp-row h2, .bp-h { display: flex; border-bottom: var(--rule) solid var(--sec); }
-.bp .ln-label { padding: var(--space-2) var(--space-4); font-size: var(--text-section); }
-.bp .ln-label .ln-count { min-width: calc(1.5 * var(--patch)); height: calc(1.5 * var(--patch)); font-size: var(--fs-18); }
-.bp-row-track { display: flex; gap: var(--space-5); overflow-x: auto; padding: var(--space-4) var(--bp-safe-x) var(--space-6); scroll-padding: 0 var(--bp-safe-x); scrollbar-width: none; }
-.bp-row-track::-webkit-scrollbar { display: none; }
-.bp-tile { position: relative; flex: none; display: grid; gap: var(--space-2); width: var(--bp-tile-w); padding: 0; border: 0; background: none; color: var(--fg-2); text-align: left; cursor: pointer; outline: none; transition: transform var(--dur-2) var(--ease-emph); }
-.bp-tile--wide { width: var(--bp-tile-wide-w); }
-.bp-tile-art { position: relative; display: block; aspect-ratio: 2 / 3; border-radius: var(--radius-panel); overflow: hidden; background: var(--bg-raised); box-shadow: var(--shadow-lift); transition: box-shadow var(--dur-2) var(--ease-emph); }
-.bp-tile--wide .bp-tile-art { aspect-ratio: 16 / 7.5; }
-.bp-tile-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.bp-tile-art .ln-tile__none { justify-content: flex-end; padding: var(--space-4); }
-.bp-tile-art .ln-tile__none img:not(.ln-tile__logo) { width: var(--space-12); height: var(--space-12); margin-bottom: auto; }
-.bp-tile-art .ln-tile__none b { margin: 0; font: 750 var(--text-section)/var(--lh-tight) var(--font-title); -webkit-line-clamp: 3; }
-.bp-tile-name { font: 650 var(--text-body)/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .0; transform: translateY(-4px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
-.bp-tile:focus, .bp-tile:hover { transform: scale(1.05); color: var(--fg-1); z-index: 2; }
-.bp-tile:focus .bp-tile-art, .bp-tile:hover .bp-tile-art { box-shadow: var(--focus-ring-bp), var(--shadow-overlay); }
-.bp-tile:focus .bp-tile-name, .bp-tile:hover .bp-tile-name { opacity: 1; transform: none; }
-.bp-tile--tag .bp-tile-art { display: flex; gap: var(--space-1); }
-.bp-tag-cover { flex: none; height: 100%; aspect-ratio: 2 / 3; overflow: hidden; }
-.bp-tag-cover > img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.bp-tag-name { position: absolute; inset: 0; display: grid; align-content: end; gap: var(--space-1); padding: var(--space-4) var(--space-5); background: var(--scrim-art); font: 600 var(--text-body)/1.2 var(--font-ui); color: var(--fg-2); }
-.bp-tag-name b { font: 800 var(--text-section)/var(--lh-tight) var(--font-ui); color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bp-live { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 1; padding: var(--space-1) var(--space-2); border-radius: var(--radius-tag); background: var(--success); color: var(--fg-on-success); font: 700 var(--fs-12)/1 var(--font-ui); }
-.bp-grid-wrap { padding: 0 var(--bp-safe-x); }
-.bp-grid-wrap .bp-h { margin-inline: 0; }
-.bp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--bp-tile-w), 1fr)); gap: var(--space-8) var(--space-6); padding-top: var(--space-4); }
-.bp-grid .bp-tile { width: auto; }
-.bp-ach { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--space-4); padding-top: var(--space-4); }
-.bp-achcard { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-5); border: 0; border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: var(--lip-panel); color: var(--fg-2); text-align: left; cursor: pointer; outline: none; transition: transform var(--dur-2) var(--ease-emph), box-shadow var(--dur-2) var(--ease-emph); }
-.bp-achcard b { display: block; font: 700 var(--fs-18)/1.2 var(--font-ui); color: var(--fg-1); }
-.bp-achcard .ach-gring { width: 64px; height: 64px; }
-.bp-achcard:focus, .bp-achcard:hover { transform: scale(1.05); box-shadow: var(--lip-panel), var(--focus-ring-bp), var(--shadow-overlay); }
-
-.bp-detail { display: grid; align-content: end; min-height: 100%; padding: 0 var(--bp-safe-x) var(--space-8); }
-.bp-detail-text { display: grid; gap: var(--space-4); }
-.bp-detail h1, .bp-meta { max-width: 720px; }
-.bp-detail h1 { margin: 0; font: 400 var(--fs-72)/0.95 var(--font-title); text-wrap: balance; }
-.bp-logo { max-width: 560px; max-height: 220px; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
-.bp-meta { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: 0; font: 600 var(--fs-18)/1.3 var(--font-ui); color: var(--fg-2); }
-.bp-actions { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-top: var(--space-4); }
-/* Keys at 10-foot scale: on a lip, down when pressed. Play is the red key,
-   or the colour of the profile it plays as, in Tilt Warp. */
-.bp-btn { --bp-lip: var(--lip-key); display: inline-flex; align-items: center; gap: var(--space-3); height: 60px; padding: 0 var(--space-8); border: 0; border-radius: var(--radius-panel); background: var(--bg-raised); box-shadow: var(--bp-lip); color: var(--fg-1); font: 700 var(--fs-18)/1 var(--font-ui); cursor: pointer; outline: none; transition: transform var(--dur-2) var(--ease-emph), box-shadow var(--dur-2) var(--ease-emph), background-color var(--dur-2) var(--ease-out); }
-.bp-btn .ln-icon { width: 22px; height: 22px; }
-.bp-btn--primary, .bp-btn--play { font: 400 var(--fs-24)/1 var(--font-title); }
-.bp-btn--primary { --bp-lip: inset 0 calc(-1 * var(--lip)) 0 var(--accent-lip); background: var(--accent); color: var(--fg-on-accent); }
-.bp-btn--play { --bp-lip: inset 0 calc(-1 * var(--lip)) 0 var(--player-lip); background: var(--player-fill); color: var(--player-on); }
-.bp-btn--primary .ln-icon, .bp-btn--play .ln-icon { fill: currentColor; stroke: none; }
-.bp-btn:focus, .bp-btn:hover { transform: scale(1.05); box-shadow: var(--bp-lip), var(--focus-ring-bp), var(--shadow-overlay); }
-.bp-btn:active { --bp-lip: var(--lip-down); transform: translateY(var(--press)); box-shadow: var(--bp-lip), var(--focus-ring-bp); transition-duration: var(--dur-press); }
-.bp-btn--primary:active { --bp-lip: inset 0 calc(var(--press) - var(--lip)) 0 var(--accent-lip); }
-.bp-btn--play:active { --bp-lip: inset 0 calc(var(--press) - var(--lip)) 0 var(--player-lip); }
-
-.bp-choose { display: grid; justify-items: center; align-content: center; min-height: 100%; gap: var(--space-3); padding: 0 var(--bp-safe-x); text-align: center; }
-.bp-choose h1 { margin: 0; font: 800 var(--fs-56)/1 var(--font-title); }
-.bp-kicker, .bp-sub { margin: 0; font: 600 var(--fs-18)/1.3 var(--font-ui); color: var(--fg-2); }
-.bp-people { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-6); margin-top: var(--space-8); }
-.bp-person { display: grid; justify-items: center; gap: var(--space-3); width: 200px; padding: var(--space-6) var(--space-4); border: var(--hairline) solid transparent; border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: var(--lip-panel); color: var(--fg-2); cursor: pointer; outline: none; transition: transform var(--dur-2) var(--ease-emph), box-shadow var(--dur-2) var(--ease-emph), border-color var(--dur-2) var(--ease-out); }
-.bp-person .ln-avatar { width: 96px; height: 96px; font-size: var(--fs-40); }
-.bp-person b { font: 700 var(--fs-24)/1.1 var(--font-ui); color: var(--fg-1); }
-.bp-person span { font-size: var(--fs-14); }
-.bp-person:focus, .bp-person:hover { transform: scale(1.05); box-shadow: var(--lip-panel), var(--focus-ring-bp), var(--shadow-overlay); }
-.bp-person.is-seated { border-color: var(--player-fill); }
-.bp-empty { display: grid; place-items: center; align-content: center; gap: var(--space-4); min-height: 60%; color: var(--fg-2); text-align: center; }
-.bp-empty h2 { margin: 0; color: var(--fg-1); }
-.bp-empty .bp-btn { margin-top: var(--space-4); }
-
-.bp-foot { position: absolute; inset: auto 0 0; z-index: 2; display: flex; align-items: center; gap: var(--space-2); height: var(--bp-foot-h); padding: 0 var(--bp-safe-x) var(--bp-safe-y); font: 600 var(--text-body)/1 var(--font-ui); color: var(--fg-2); }
-.bp-foot > span:not(.bp-g) { width: var(--space-5); }
-.bp-foot .bp-sound { margin-left: auto; }
-
-@media (prefers-reduced-motion: reduce) {
-  .bp, .bp.out, .bp-arrive > * { animation: none; }
-  .bp, .bp-tile, .bp-btn, .bp-person, .bp-achcard, .bp-bg-l, .bp-ind, .bp-exit, .bp-sound { transition: none; }
-  .bp-tile:focus, .bp-tile:hover, .bp-btn:focus, .bp-btn:hover, .bp-btn:active, .bp-person:focus, .bp-person:hover, .bp-achcard:focus, .bp-achcard:hover, .bp-exit:active, .bp-sound:active { transform: none; }
-}
 
 /* Safety you can see on a game's page. */
 .gp-conflict { margin: var(--space-4) 0 0; }
@@ -2322,30 +2198,6 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .ln-drawer__foot .ln-button--sm { height: var(--ctl-md); padding: 0 var(--space-4); font-size: var(--fs-14); }
 .ln-drawer__foot .ln-button--sm.ln-button--icon { width: var(--ctl-md); padding: 0; }
 
-/* =========================================================== big picture
-   Since the rework (R7): the same room and glass at 10-foot scale. The
-   focused game's art fills the screen; the tabs are pills with a light
-   that slides; row labels are plain Tilt Warp; keys and cards are glass
-   with a top light. */
-.bp { background: var(--bg-ground); }
-.bp-bg-l.on { opacity: .8; }
-.bp-tab { border-radius: var(--radius-round); font: 400 var(--fs-24)/1 var(--font-title); }
-.bp-tab[aria-current="true"] { font-weight: 400; }
-.bp-ind { top: 0; bottom: 0; width: 0; border-radius: var(--radius-round); background: var(--glass-ctl-hover); box-shadow: var(--key-light); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
-  transition: transform var(--dur-page) var(--ease-spring), width var(--dur-page) var(--ease-spring), opacity var(--dur-2) var(--ease-out); }
-.bp-row h2, .bp-h { border-bottom: 0; }
-.bp .ln-label { padding: 0; background: none; color: var(--fg-1); font: 400 var(--text-section)/1.1 var(--font-title); }
-.bp .ln-label::before, .bp .ln-label::after { display: none; }
-.bp-exit, .bp-sound { border-radius: var(--radius-key); background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); }
-.bp-exit:hover, .bp-sound:hover { background: var(--glass-strong); }
-.bp-exit:active, .bp-sound:active { transform: translateY(1px); box-shadow: var(--key-down); }
-.bp-tile-art { border-radius: var(--radius-cover); }
-.bp-btn { --bp-lip: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); border-radius: var(--radius-play); background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
-.bp-btn--primary { --bp-lip: var(--key-light-strong); background: var(--accent); }
-.bp-btn--play { --bp-lip: var(--key-light-strong), 0 12px 40px -12px color-mix(in oklab, var(--player-fill) 70%, transparent); background: var(--player-fill); }
-.bp-btn:active, .bp-btn--primary:active, .bp-btn--play:active { --bp-lip: var(--key-down); transform: translateY(1px); }
-.bp-achcard, .bp-person { background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--glass-light); border-radius: var(--radius-glass); }
-.bp-choose h1 { font-weight: 400; }
 
 /* Profiles on or off for a game: a pill with a switch in it. */
 .prof-pill { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--ctl-key); padding: 0 var(--space-2) 0 var(--space-3); border: 0; border-radius: var(--radius-round); background: var(--glass-ctl); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); color: var(--fg-2); font: 700 var(--fs-13)/1 var(--font-ui); cursor: pointer;
@@ -2750,8 +2602,6 @@ html.is-tv {
   --text-meta: var(--tv-text-min); --text-body: var(--tv-text-min); --text-label: var(--tv-text-min);
   --text-lead: var(--tv-text-min); --text-section: var(--tv-text-mid);
 }
-.bp-menu-keys { display: grid; gap: var(--space-4); width: min(100%, var(--bp-tile-wide-w)); margin-top: var(--space-6); }
-.bp-menu-keys .bp-btn { justify-content: flex-start; }
 
 /* Settings, TV (Lootnest Link, 82-link.js). */
 .link-acts { display: flex; flex: none; align-items: center; gap: var(--space-4); }
@@ -2815,15 +2665,214 @@ html.is-tv {
 @media (prefers-reduced-motion: reduce) { .tv-menu, .tv-menu-panel { animation: none; } }
 body:has(> #tv-menu) .bp-launch-body { opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
 
-/* TV mode's apps (bpAppsRow) */
-.bp-app { flex: none; display: grid; gap: var(--space-2); width: var(--bp-app-w); padding: 0; border: 0; background: none; color: var(--fg-2); text-align: left; cursor: pointer; outline: none; transition: transform var(--dur-2) var(--ease-emph); }
-.bp-app-icon { display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: var(--radius-cover); background: var(--bg-raised); box-shadow: var(--shadow-lift); color: var(--fg-1); transition: box-shadow var(--dur-2) var(--ease-emph); }
-.bp-app-icon svg { width: 34%; height: 34%; }
+
+/* ============================================================ big picture
+   Lootnest on the whole screen, for a controller or a TV's remote, read
+   from a sofa (26-bp-screens.js). The game in focus fills the screen with
+   its art; a bar of sections on top, rows of covers below. Sizes are counts
+   of --u. The focus grows a thing, rings it and lifts it; only transform
+   and opacity move, and nothing is blurred, so it holds 60 frames and
+   stays sharp in a stream. */
+.bp { position: fixed; inset: 0; z-index: 45; overflow: hidden; background: var(--bg-ground); color: var(--fg-1); font: 500 var(--bp-text)/1.3 var(--font-ui); animation: bp-open var(--dur-4) var(--ease-emph) both; }
+.bp.out { animation: bp-shut var(--dur-3) var(--ease-in-out) both; }
+body:has(> #bp) #overlay .scrim { z-index: 46; }
+@keyframes bp-open { from { opacity: 0; transform: scale(1.03); } }
+@keyframes bp-shut { to { opacity: 0; transform: scale(1.02); } }
+@keyframes bp-screen-in { from { opacity: 0; transform: translate3d(0, var(--bp-rise), 0); } }
+
+/* The art behind: two layers that cross-fade, drifting slowly. */
+.bp-bd { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.bp-bd-l { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 20%; opacity: 0; transition: opacity var(--bp-dur-art) linear; animation: bp-drift var(--bp-drift) ease-in-out infinite alternate; }
+.bp-bd-l:not([src]) { visibility: hidden; }
+.bp-bd-l.on { opacity: 1; }
+@keyframes bp-drift { from { transform: scale(1.03); } to { transform: scale(1.1) translate3d(-1.2%, -0.8%, 0); } }
+.bp-bd-scrim, .bp-bd-deep { position: absolute; inset: 0; }
+.bp-bd-scrim { background: var(--bp-scrim); }
+.bp-bd-deep { background: var(--bp-scrim-deep); opacity: 0; transition: opacity var(--bp-dur-screen) var(--ease-out); }
+.bp.is-deep .bp-bd-deep, .bp.is-dim .bp-bd-deep { opacity: 1; }
+
+/* The bar: the sections, who's at the PC, the time, the menu. */
+.bp-bar { position: absolute; z-index: 3; left: var(--bp-safe-x); right: var(--bp-safe-x); top: var(--bp-safe-y); height: var(--bp-bar-h); display: flex; align-items: center; gap: var(--bp-5); isolation: isolate; transition: opacity var(--bp-dur-focus) var(--ease-out); }
+.bp-bar::before { content: ""; position: absolute; z-index: -1; inset: calc(-1 * var(--bp-safe-y)) calc(-1 * var(--bp-safe-x)) calc(-1 * var(--bp-6)); background: var(--bp-bar-veil); opacity: 0; transition: opacity var(--bp-dur-screen) var(--ease-out); pointer-events: none; }
+.bp.is-deep .bp-bar::before { opacity: 1; }
+.bp-bar.is-sub .bp-tabs { opacity: .45; }
+.bp-mark { display: grid; color: var(--fg-1); }
+.bp-mark .brand-mark { width: var(--bp-7); height: var(--bp-7); }
+.bp-mark .brand-mark circle { stroke: var(--accent); }
+.bp-tabs { position: relative; display: flex; align-items: center; gap: var(--bp-2); transition: opacity var(--bp-dur-focus) var(--ease-out); }
+.bp-tab { position: relative; z-index: 1; padding: var(--bp-4) var(--bp-5); border: 0; border-radius: var(--radius-round); background: none; color: var(--fg-2); font: 400 var(--bp-text-tab)/1 var(--font-title); cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out); }
+.bp-tab[aria-current="true"] { color: var(--fg-1); }
+.bp-tab:hover { color: var(--fg-1); }
+.bp-tab:focus { transform: scale(var(--bp-grow-key)); background: var(--fg-1); color: var(--bg-ground); }
+.bp-ind { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: var(--radius-round); background: var(--bp-fill-on); box-shadow: var(--key-light); opacity: 0; pointer-events: none; transition: transform var(--bp-dur-slide) var(--ease-out), width var(--bp-dur-slide) var(--ease-out), opacity var(--bp-dur-focus) var(--ease-out); }
+.bp-lb, .bp-rb { display: grid; }
+.bp-bar-end { display: flex; align-items: center; gap: var(--bp-5); margin-left: auto; }
+.bp-seat { display: flex; align-items: center; gap: var(--bp-3); font-weight: 650; white-space: nowrap; }
+.bp-seat .ln-avatar { width: var(--bp-avatar-bar); height: var(--bp-avatar-bar); font-size: var(--bp-text); }
+.bp-clock { color: var(--fg-2); white-space: nowrap; }
+.bp-round { display: grid; place-items: center; width: var(--bp-round); height: var(--bp-round); padding: 0; border: 0; border-radius: var(--radius-round); background: var(--bp-fill-on); color: var(--fg-1); cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-round svg { width: var(--bp-icon); height: var(--bp-icon); }
+.bp-round:focus { transform: scale(var(--bp-grow)); background: var(--fg-1); color: var(--bg-ground); }
+
+/* A controller's buttons, as they look on the controller. */
+.bp-g { display: inline-grid; place-items: center; min-width: var(--bp-glyph); height: var(--bp-glyph); padding: 0 var(--bp-2); border-radius: var(--radius-round); background: var(--bg-active); color: var(--fg-1); font: 800 var(--bp-text-glyph)/1 var(--font-ui); box-shadow: inset 0 0 0 var(--hairline) var(--edge-3); }
+.bp-g--a { background: var(--pad-a); color: var(--pad-a-on); box-shadow: none; }
+.bp-g--b { background: var(--pad-b); color: var(--pad-b-on); box-shadow: none; }
+.bp-g--x { background: var(--pad-x); color: var(--pad-x-on); box-shadow: none; }
+.bp-g--y { background: var(--pad-y); color: var(--pad-y-on); box-shadow: none; }
+.bp-g--lb, .bp-g--rb, .bp-g--start, .bp-g--view { border-radius: var(--bp-2); }
+.bp-g .ln-icon { width: var(--bp-5); height: var(--bp-5); stroke-width: 2; }
+
+/* A screen: a sheet that slides up and down under the bar. A new screen
+   comes from the side its tab is on, a game's page from further in. */
+.bp-main { position: absolute; inset: 0; z-index: 1; }
+.bp-screen { position: absolute; inset: 0; overflow: hidden; animation: bp-in-fade var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-screen[data-enter="right"] { animation-name: bp-in-right; }
+.bp-screen[data-enter="left"] { animation-name: bp-in-left; }
+.bp-screen[data-enter="in"] { animation-name: bp-in-near; }
+.bp-screen[data-enter="out"] { animation-name: bp-in-far; }
+.bp-screen.leaving { animation: bp-leave var(--bp-dur-leave) var(--ease-out) both; pointer-events: none; }
+@keyframes bp-in-fade { from { opacity: 0; } }
+@keyframes bp-in-right { from { opacity: 0; transform: translate3d(var(--bp-slide), 0, 0); } }
+@keyframes bp-in-left { from { opacity: 0; transform: translate3d(calc(-1 * var(--bp-slide)), 0, 0); } }
+@keyframes bp-in-near { from { opacity: 0; transform: scale(.97); } }
+@keyframes bp-in-far { from { opacity: 0; transform: scale(1.03); } }
+@keyframes bp-leave { to { opacity: 0; } }
+.bp-scroll { position: absolute; inset: 0; padding-top: var(--bp-top); transition: transform var(--bp-dur-slide) var(--ease-out); will-change: transform; }
+.bp-scroll::after { content: ""; display: block; height: var(--bp-foot); }
+
+/* Rows of things to choose. */
+.bp-row { margin-bottom: var(--bp-8); transition: opacity var(--bp-dur-focus) var(--ease-out); }
+.bp-row.is-above { opacity: 0; }
+.bp-screen:is([data-enter="right"], [data-enter="left"], [data-enter="fade"]) .bp-row { animation: bp-screen-in var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-screen[data-enter] .bp-row:nth-child(2) { animation-delay: 40ms; }
+.bp-screen[data-enter] .bp-row:nth-child(3) { animation-delay: 80ms; }
+.bp-screen[data-enter] .bp-row:nth-child(n + 4) { animation-delay: 120ms; }
+.bp-row h2 { margin: 0 var(--bp-safe-x) var(--bp-6); min-height: var(--bp-text-row); font: 400 var(--bp-text-row)/1 var(--font-title); color: var(--fg-2); transition: color var(--bp-dur-focus) var(--ease-out); }
+.bp-row:focus-within h2 { color: var(--fg-1); }
+.bp-track { position: relative; display: flex; gap: var(--bp-5); padding: 0 var(--bp-safe-x); transition: transform var(--bp-dur-slide) var(--ease-out); will-change: transform; }
+
+/* A cover. In focus it grows, a ring of Ice Grey with a dark gap goes
+   round it and a shadow comes under it; its name shows below. The ring
+   and the shadow are there all along and only fade in. */
+.bp-tile { position: relative; flex: none; width: var(--bp-tile-w); padding: 0; border: 0; background: none; color: var(--fg-1); text-align: left; cursor: pointer; outline: none; isolation: isolate; transition: transform var(--bp-dur-focus) var(--ease-out); }
+.bp-tile::before, .bp-key::before, .bp-person::before, .bp-card::before { content: ""; position: absolute; z-index: -1; inset: 0; border-radius: var(--bp-r-tile); box-shadow: var(--bp-shadow-focus); opacity: 0; transition: opacity var(--bp-dur-focus) var(--ease-out); pointer-events: none; }
+.bp-tile::after, .bp-key--play::after, .bp-key--primary::after, .bp-person::after, .bp-card::after { content: ""; position: absolute; inset: var(--bp-ring-out); border: var(--bp-ring) solid var(--focus-ring); border-radius: var(--bp-r-ring); opacity: 0; transition: opacity var(--bp-dur-focus) var(--ease-out); pointer-events: none; }
+.bp-tile:focus, .bp-person:focus, .bp-card:focus { transform: scale(var(--bp-grow)); z-index: 2; }
+:is(.bp-tile, .bp-key, .bp-person, .bp-card):focus::before, :is(.bp-tile, .bp-key, .bp-person, .bp-card):focus::after { opacity: 1; }
+.bp-art { position: relative; display: block; aspect-ratio: 2 / 3; border-radius: var(--bp-r-tile); overflow: hidden; background: var(--bg-active); }
+.bp-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bp-art .ln-tile__none { justify-content: flex-end; padding: var(--bp-4); }
+.bp-art .ln-tile__none img:not(.ln-tile__logo) { width: var(--bp-7); height: var(--bp-7); margin-bottom: auto; }
+.bp-art .ln-tile__none b { margin: 0; font: 400 var(--bp-text)/var(--lh-tight) var(--font-title); -webkit-line-clamp: 4; }
+.bp-art .ln-tile__none span { font-size: var(--bp-text); }
+.bp-tile:hover .bp-art { filter: brightness(1.08); }
+.bp-name { position: absolute; left: 0; top: calc(100% + var(--bp-4)); font: 700 var(--bp-text)/1.2 var(--font-ui); white-space: nowrap; opacity: 0; transition: opacity var(--bp-dur-focus) var(--ease-out); pointer-events: none; }
+.bp-tile:focus .bp-name { opacity: 1; }
+.bp-row:has(> .bp-hero) .bp-name { display: none; }
+.bp-live { position: absolute; top: var(--bp-3); left: var(--bp-3); padding: var(--bp-1) var(--bp-3); border-radius: var(--bp-2); background: var(--success); color: var(--fg-on-success); font: 800 var(--bp-text)/1.2 var(--font-ui); }
+/* Art on its way: a slow shine across the plate. */
+.is-waiting { position: relative; overflow: hidden; }
+.is-waiting::after { content: ""; position: absolute; inset: 0; background: var(--bp-shine); transform: translate3d(-100%, 0, 0); animation: bp-shine var(--bp-shimmer) linear infinite; }
+@keyframes bp-shine { to { transform: translate3d(100%, 0, 0); } }
+.bp-tile--tag { width: var(--bp-tag-w); }
+.bp-tile--tag .bp-art { display: flex; gap: var(--bp-1); aspect-ratio: auto; height: calc(var(--bp-tile-w) * 1.5); }
+.bp-tag-cover { flex: none; height: 100%; aspect-ratio: 2 / 3; overflow: hidden; }
+.bp-tag-name { position: absolute; inset: 0; display: grid; align-content: end; gap: var(--bp-1); padding: var(--bp-5); background: var(--scrim-art); color: var(--fg-2); }
+.bp-tag-name b { font: 400 var(--bp-text-row)/var(--lh-tight) var(--font-title); color: var(--fg-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-tile--app { width: var(--bp-app-w); }
+.bp-tile--app .bp-art { display: grid; place-items: center; aspect-ratio: 16 / 9; background: var(--bg-raised); box-shadow: var(--key-light); }
+.bp-tile--app .bp-art svg { height: 42%; width: auto; }
 .bp-app--spotify { color: var(--app-spotify); }
 .bp-app--youtube { color: var(--app-youtube); }
 .bp-app--stremio { color: var(--app-stremio); }
-.bp-app:focus, .bp-app:hover { transform: scale(1.05); color: var(--fg-1); z-index: 2; }
-.bp-app:focus .bp-app-icon, .bp-app:hover .bp-app-icon { box-shadow: var(--focus-ring-bp), var(--shadow-overlay); }
-@media (prefers-reduced-motion: reduce) { .bp-app:focus, .bp-app:hover { transform: none; } }
-.bp-app .bp-tile-name { position: static; opacity: 1; transform: none; font: 700 var(--fs-18)/1.2 var(--font-ui); }
-.bp-app-icon svg { width: auto; height: 42%; }
+
+/* The game in focus, said large. */
+.bp-hero { display: flex; flex-direction: column; justify-content: flex-end; gap: var(--bp-5); width: min(var(--bp-hero-w), calc(100% - 2 * var(--bp-safe-x))); margin: 0 var(--bp-safe-x); }
+.bp-row > .bp-hero { height: var(--bp-hero-h); margin-bottom: var(--bp-7); }
+.bp-hero.in > * { animation: bp-screen-in var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-hero.in > :nth-child(2) { animation-delay: 40ms; }
+.bp-hero.in > :nth-child(3) { animation-delay: 80ms; }
+.bp-kick { display: flex; align-items: center; gap: var(--bp-3); margin: 0; font: 700 var(--bp-text)/1.2 var(--font-ui); }
+.bp-kick .ln-lamp { width: var(--bp-3); height: var(--bp-3); }
+.bp-logo { align-self: flex-start; max-width: var(--bp-logo-w); height: var(--bp-logo-h); object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
+.bp-title { margin: 0; font: 400 var(--bp-text-hero)/1 var(--font-title); text-wrap: balance; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.bp-facts { display: flex; flex-wrap: wrap; gap: var(--bp-2) var(--bp-6); margin: 0; color: var(--fg-2); font-weight: 600; }
+.bp-facts b { color: var(--fg-1); font-weight: 700; }
+
+/* Keys. Play is the seated profile's colour (Racing Red with nobody
+   seated) and takes the ring; the others light up in focus. */
+.bp-keys { display: flex; flex-wrap: wrap; gap: var(--bp-5); }
+.bp-key { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: var(--bp-4); height: var(--bp-key-h); padding: 0 var(--bp-6); border: 0; border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-1); font: 700 var(--bp-text-key)/1 var(--font-ui); white-space: nowrap; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-key::before { border-radius: var(--bp-r-key); }
+.bp-key .ln-icon, .bp-key svg { width: var(--bp-icon); height: var(--bp-icon); }
+.bp-key .ln-avatar { width: var(--bp-avatar-bar); height: var(--bp-avatar-bar); font-size: var(--bp-text); }
+.bp-key:hover { background: var(--bg-active); }
+.bp-key:focus { transform: scale(var(--bp-grow-key)); background: var(--fg-1); color: var(--bg-ground); }
+.bp-key--play, .bp-key--primary { padding: 0 var(--bp-7); font: 400 var(--bp-text-play)/1 var(--font-title); box-shadow: var(--key-light-strong); }
+.bp-key--play, .bp-key--play:hover, .bp-key--play:focus { background: var(--player-fill); color: var(--player-on); }
+.bp-key--primary, .bp-key--primary:hover, .bp-key--primary:focus { background: var(--accent); color: var(--fg-on-accent); }
+.bp-key--play .ln-icon, .bp-key--primary .ln-icon { fill: currentColor; stroke: none; }
+.bp-key--play::after, .bp-key--primary::after { border-radius: calc(var(--bp-r-key) + var(--bp-2)); }
+
+/* A game's page. */
+.bp-page { display: grid; align-content: end; gap: var(--bp-6); min-height: calc(100vh - var(--bp-top) - var(--bp-foot) - var(--bp-8)); }
+.bp-page .bp-keys { margin: 0 var(--bp-safe-x); }
+
+/* The Library: collections as chips, then every game. */
+.bp-lib { padding: 0 var(--bp-safe-x); }
+.bp-lib-head { display: flex; align-items: center; gap: var(--bp-6); margin-bottom: var(--bp-7); }
+.bp-chips { flex: 1; min-width: 0; gap: var(--bp-3); padding: 0; }
+.bp-chip { flex: none; padding: var(--bp-3) var(--bp-5); border: 0; border-radius: var(--radius-round); background: var(--glass-ctl); color: var(--fg-2); font: 650 var(--bp-text)/1.2 var(--font-ui); white-space: nowrap; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-chip[aria-pressed="true"] { background: var(--bp-fill-on); color: var(--fg-1); }
+.bp-chip:focus { transform: scale(var(--bp-grow-key)); background: var(--fg-1); color: var(--bg-ground); }
+.bp-count { flex: none; color: var(--fg-2); }
+.bp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--bp-tile-w), 1fr)); gap: var(--bp-9) var(--bp-6); }
+.bp-grid .bp-tile { width: auto; }
+.bp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--bp-card-w), 1fr)); gap: var(--bp-6); }
+.bp-card { position: relative; isolation: isolate; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--bp-5); min-height: calc(var(--bp-key-h) + var(--bp-7)); padding: var(--bp-5); border: 0; border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-2); text-align: left; font: inherit; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out); }
+.bp-card::before { border-radius: var(--bp-r-key); }
+.bp-card::after { border-radius: calc(var(--bp-r-key) + var(--bp-2)); }
+.bp-card b { display: block; font-weight: 700; color: var(--fg-1); }
+.bp-card .ach-gring { width: var(--bp-key-h); height: var(--bp-key-h); }
+.bp-card .ach-ring { width: 100%; height: 100%; }
+.bp-card--ghost { box-shadow: none; }
+
+/* Who's playing, and screens with nothing yet. */
+.bp-center, .bp-empty { display: grid; justify-items: center; align-content: center; gap: var(--bp-4); min-height: calc(100vh - var(--bp-top) - var(--bp-foot)); padding: 0 var(--bp-safe-x); text-align: center; }
+.bp-center h1, .bp-empty h1, .bp-dlg h1 { margin: 0; font: 400 var(--bp-text-h1)/1.05 var(--font-title); }
+.bp-empty p { margin: 0; max-width: 34em; color: var(--fg-2); }
+.bp-empty .bp-keys { margin-top: var(--bp-5); }
+.bp-people { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--bp-6); margin-top: var(--bp-7); }
+.bp-person { position: relative; isolation: isolate; display: grid; justify-items: center; align-content: start; gap: var(--bp-3); width: var(--bp-person-w); padding: var(--bp-6) var(--bp-4); border: 0; border-radius: var(--bp-r-panel); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-2); font: inherit; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out); }
+.bp-person::before { border-radius: var(--bp-r-panel); }
+.bp-person::after { border-color: var(--player-fill); border-radius: calc(var(--bp-r-panel) + var(--bp-2)); }
+.bp-person .ln-avatar { width: var(--bp-avatar); height: var(--bp-avatar); font-size: var(--bp-text-h1); }
+.bp-person b { font: 400 var(--bp-text-row)/1.1 var(--font-title); color: var(--fg-1); }
+.bp-person.is-seated { box-shadow: var(--key-light), inset 0 0 0 var(--bp-1) var(--player-fill); }
+
+/* The prompts, and the ground the last row sinks into. */
+.bp-fade { position: absolute; z-index: 2; inset: auto 0 0; height: var(--bp-fade-h); background: var(--bp-fade); pointer-events: none; }
+.bp-foot { position: absolute; z-index: 3; right: var(--bp-safe-x); bottom: var(--bp-safe-y); display: flex; align-items: center; gap: var(--bp-6); color: var(--fg-2); font-weight: 600; pointer-events: none; }
+.bp-foot > span { display: flex; align-items: center; gap: var(--bp-3); white-space: nowrap; }
+
+/* The menu, over the screen. */
+.bp-over { position: absolute; z-index: 5; inset: 0; display: grid; place-items: center; background: var(--bp-scrim-over); animation: bp-in-fade var(--bp-dur-focus) var(--ease-out) both; }
+.bp-over[hidden] { display: none; }
+.bp-dlg { width: min(var(--bp-dlg-w), calc(100% - 2 * var(--bp-safe-x))); padding: var(--bp-7); border-radius: var(--bp-r-panel); background: var(--bg-raised); box-shadow: var(--key-light), var(--bp-shadow-focus); animation: bp-in-near var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-dlg p { margin: var(--bp-3) 0 0; color: var(--fg-2); }
+.bp-dlg-keys { display: grid; gap: var(--bp-4); margin-top: var(--bp-6); }
+.bp-dlg-keys .bp-key { justify-content: flex-start; background: var(--bg-active); }
+.bp-dlg-keys .bp-key:focus { background: var(--fg-1); }
+
+/* Less motion keeps the fades; none, or the system's reduced motion,
+   changes screens at once. Nothing drifts or shines in either. */
+:root:is(.motion-less, .motion-off) .bp-bd-l, :root:is(.motion-less, .motion-off) .is-waiting::after { animation: none; }
+:root:is(.motion-less, .motion-off) .bp :is(.bp-tile, .bp-key, .bp-person, .bp-card, .bp-tab, .bp-chip, .bp-round):focus { transform: none; }
+:root.motion-less .bp-screen, :root.motion-less .bp-row, :root.motion-less .bp-hero.in > *, :root.motion-less .bp-dlg { animation-name: bp-in-fade; }
+:root.motion-off :is(.bp, .bp-screen, .bp-row, .bp-hero.in > *, .bp-over, .bp-dlg) { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bp, .bp.out, .bp-screen, .bp-row, .bp-hero.in > *, .bp-over, .bp-dlg, .bp-bd-l, .is-waiting::after { animation: none; }
+  .bp *, .bp *::before, .bp *::after { transition: none; }
+  .bp :is(.bp-tile, .bp-key, .bp-person, .bp-card, .bp-tab, .bp-chip, .bp-round):focus { transform: none; }
+}

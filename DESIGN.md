@@ -33,7 +33,7 @@ Nothing in `design/` is built into `Lootnest.exe`.
 11. **Motion answers what you did.** Transform and opacity only. Art crossfades; pages rise and settle; lights slide on a spring; covers lift; nothing loops. Settings, Appearance, Motion: Full, Less (fades only) or Off; reduced motion means Off.
 12. **One dominant action per view.** Play leads Home and a game's page. Everything else is a secondary or ghost key, or lives in Manage.
 13. **The swap is the signature moment:** the profile's colour, the avatar, three steps (back to its slot, a copy read back, in).
-14. **Big Picture is the same system at 10-foot scale:** the room and glass, type about 1.5x, a 5% safe area, a double focus ring, a fixed prompt bar, every screen reachable with the D-pad.
+14. **Big Picture is the same system at 10-foot scale:** the game in focus fills the screen, sizes are counts of `--u` (a pixel at 1080p, two at 4K) with no text under 24 of them, a 5% safe area, a focus that grows a thing and rings it, prompts at the bottom right, and every screen and action reachable with the D-pad, OK and Back. Only transform and opacity move, and nothing there is blurred: it's streamed to TVs.
 
 Every UI change is checked in the harness at 1024, 1280, 1440, 1920 and 2560 wide, with `players=6`, `games=0` and `art=missing`, with no sideways scroll.
 

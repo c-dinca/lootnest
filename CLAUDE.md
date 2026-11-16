@@ -1180,6 +1180,31 @@ These shipped recently, newest last:
   (`hotkeyTV`, held from `enterTV` to `leaveTV`, `tvKeyHeld`) and the
   tray's Leave TV mode do the same. `tvPlaying` names the game in the bar.
 
+- **Unreleased: Big Picture rebuilt, part 1** (the owner, 16 Nov: a
+  console-quality TV interface; they approved the direction in
+  `design/mocks/bp-tv.html`: bar on top, OK opens a game's page, the
+  achievements row, Save points key, "files are loaded" line and trailers
+  behind, off by default; and the webOS connection screen last. They
+  asked for one sign for the menu, not two, and not to forget
+  animations). `25-bigpicture.js` keeps state, TV mode, the pad and
+  sounds; `26-bp-screens.js` has the screens and the focus: zones
+  (`data-zone`; a row, `data-grid`, `data-col`) of `[data-bp]` things,
+  `bpMove` (left/right in a zone, up/down between zones via `bpInto`,
+  which goes back to what the zone had in focus), `BP.mem` per screen
+  (`bpScreenKey`), `bpPlace` (rows and the screen slide with transforms:
+  `.bp-track`, `.bp-scroll`, `BP.sx`; rows above fade), `bpAmbient` (the
+  art behind and Home's hero, 180 ms after the focus rests), `bpHints`,
+  `bpMorph` (a redraw changes only what differs; `data-live` keeps a
+  slide's style, `data-own` its children), `bpEnter` (how a new screen
+  arrives), `bpBack` (top layer, page, up to the bar, Home, then
+  `bpMenu(true, "leave")`). The menu is an overlay (`.bp-over`,
+  `bpMenuHTML`). Sizes are `--u` tokens (`--bp-*` in system.css); no
+  blur in Big Picture. Harness shots `tv-*`. Next: 2 a game's page
+  (achievements row, save points), the launch screen and the Home-button
+  menu; 3 Library and Achievements; 4 Profiles, Settings for the remote,
+  the picker, dialogs and toasts at TV scale; 5 trailers, sounds, a pass
+  at 400 games and 4K; 6 the webOS connection screen.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

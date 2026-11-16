@@ -299,34 +299,54 @@
   --side-rail: 64px;
   --thumb-w: 22px; --thumb-h: 30px;  /* a game's cover in the sidebar's list */
 
-  /* Big Picture, read from a sofa: a 5% safe area from the screen's edges,
-     the prompt bar's height, and a focus ring of Ice Grey with a dark gap
-     between it and the art, so it shows on dark and white art alike. */
-  --bp-safe-x: max(48px, 5vw);
-  --bp-safe-y: max(27px, 5vh);
-  --bp-foot-h: calc(var(--bp-safe-y) + var(--space-16));
+  /* Big Picture, read from a sofa. One unit (--u) is a pixel at 1080p and
+     two at 4K, so a screen is the same at any size; a window narrower than
+     16:9 shrinks it. Every size in Big Picture is a count of units, and
+     its smallest text is 24 of them. */
+  --u: min(calc(100vh / 1080), calc(100vw / 1560));
+  --bp-safe-x: calc(96 * var(--u)); --bp-safe-y: calc(54 * var(--u));  /* 5% in from the screen's edges */
+  --bp-1: calc(4 * var(--u)); --bp-2: calc(8 * var(--u)); --bp-3: calc(12 * var(--u)); --bp-4: calc(16 * var(--u)); --bp-5: calc(24 * var(--u));
+  --bp-6: calc(32 * var(--u)); --bp-7: calc(48 * var(--u)); --bp-8: calc(64 * var(--u)); --bp-9: calc(96 * var(--u));
+  --bp-text: calc(24 * var(--u)); --bp-text-key: calc(26 * var(--u)); --bp-text-tab: calc(28 * var(--u)); --bp-text-row: calc(30 * var(--u));
+  --bp-text-play: calc(32 * var(--u)); --bp-text-h1: calc(56 * var(--u)); --bp-text-hero: calc(76 * var(--u)); --bp-text-glyph: calc(18 * var(--u));
+  --bp-bar-h: calc(64 * var(--u));
+  --bp-top: calc(var(--bp-safe-y) + var(--bp-bar-h) + var(--bp-6));  /* where a screen starts, under the bar */
+  --bp-foot: calc(var(--bp-safe-y) + var(--bp-8));                   /* the prompts' band */
+  --bp-tile-w: calc(196 * var(--u)); --bp-tag-w: calc(404 * var(--u)); --bp-app-w: calc(300 * var(--u));
+  --bp-person-w: calc(260 * var(--u)); --bp-avatar: calc(120 * var(--u)); --bp-avatar-bar: calc(44 * var(--u)); --bp-card-w: calc(420 * var(--u));
+  --bp-key-h: calc(76 * var(--u)); --bp-round: calc(56 * var(--u)); --bp-glyph: calc(34 * var(--u)); --bp-icon: calc(28 * var(--u));
+  --bp-logo-h: calc(170 * var(--u)); --bp-logo-w: calc(560 * var(--u)); --bp-hero-w: calc(1100 * var(--u)); --bp-hero-h: calc(340 * var(--u));
+  --bp-dlg-w: calc(760 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
+  --bp-r-tile: calc(12 * var(--u)); --bp-r-key: calc(16 * var(--u)); --bp-r-panel: calc(24 * var(--u));
+  --bp-ring: calc(4 * var(--u)); --bp-ring-out: calc(-7 * var(--u)); --bp-r-ring: calc(19 * var(--u));  /* the focus ring, a dark gap inside it */
+  --bp-grow: 1.08; --bp-grow-key: 1.05;                              /* what the focus does to a tile, to a key */
+  --bp-dur-focus: 160ms; --bp-dur-slide: 220ms; --bp-dur-screen: 240ms; --bp-dur-leave: 160ms; --bp-dur-art: 320ms; --bp-drift: 40s; --bp-shimmer: 1.6s;
+  --bp-shadow-focus: 0 calc(28 * var(--u)) calc(56 * var(--u)) rgb(0 0 0 / 0.6);
+  --bp-fill: rgb(31 34 43 / 0.88);       /* keys and cards over art: no blur, so a stream stays sharp */
+  --bp-fill-on: rgb(255 255 255 / 0.14);
+  --bp-scrim:                            /* text on the left, the art free on the right */
+    linear-gradient(90deg, rgb(17 18 23 / 0.94) 0%, rgb(17 18 23 / 0.72) 34%, rgb(17 18 23 / 0.12) 68%, rgb(17 18 23 / 0.2) 100%),
+    linear-gradient(0deg, rgb(17 18 23 / 1) 0%, rgb(17 18 23 / 0.92) 22%, rgb(17 18 23 / 0) 58%),
+    linear-gradient(180deg, rgb(17 18 23 / 0.7) 0%, rgb(17 18 23 / 0) 18%);
+  --bp-scrim-deep: rgb(17 18 23 / 0.86); /* over the art once the focus is past Home's first row */
+  --bp-scrim-over: rgb(11 12 16 / 0.8);  /* behind the menu */
+  --bp-fade: linear-gradient(0deg, rgb(17 18 23 / 1) 46%, rgb(17 18 23 / 0));
+  --bp-bar-veil: linear-gradient(180deg, rgb(17 18 23 / 1) 84%, rgb(17 18 23 / 0));
+  --bp-shine: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.07) 50%, transparent 70%);
   /* TV mode: a game starting over Big Picture */
   --launch-veil: linear-gradient(180deg, rgb(17 18 23 / 0.1) 0%, rgb(17 18 23 / 0.35) 55%, rgb(17 18 23 / 0.92) 100%);
   --launch-zoom: 7s;
   --launch-bar-w: 240px;
   --launch-run: 1.4s;
   --tv-menu-w: min(560px, 42vw);
-  --bp-app-w: calc(var(--bp-tile-w) * 1.4);
   /* the apps' own colours, only on their tile in TV mode */
   --app-spotify: #1ed760; --app-youtube: #ff3b30; --app-stremio: #8a5aab;
   --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.75), transparent 70%);  /* the prompt bar, its prompts above the safe area */
-  --bp-tile-w: clamp(160px, 11vw, 240px);
-  --bp-tile-wide-w: clamp(320px, 24vw, 520px);
   /* TV mode (Lootnest Link), read from about 3 m: no text under 24px at
      1080p, growing with the screen past it. */
   --tv-text-min: max(24px, 2.2vh);
   --tv-text-mid: max(28px, 2.6vh);
   --link-pin-w: 6.5em;  /* the 4-digit PIN box in Settings, TV */
-  --focus-ring-bp: 0 0 0 3px var(--shell), 0 0 0 7px var(--focus-ring);
-  --mask-bp: linear-gradient(180deg, transparent, #000 var(--space-4), #000 calc(100% - var(--bp-foot-h) - var(--space-8)), transparent calc(100% - var(--bp-foot-h)));  /* rows fade out before the prompt bar */
-  --scrim-bp:  /* the focused game's art behind Big Picture */
-    linear-gradient(90deg, rgb(11 12 16 / 0.96) 0%, rgb(11 12 16 / 0.7) 45%, rgb(11 12 16 / 0.35) 100%),
-    linear-gradient(0deg, var(--shell) 4%, transparent 55%);
   --shadow-logo: drop-shadow(0 8px 24px oklch(0 0 0 / 0.6));
   /* A controller's face buttons, in the colours players know. */
   --pad-a: oklch(0.72 0.17 145); --pad-a-on: oklch(0.18 0.03 145);
