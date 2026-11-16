@@ -285,7 +285,7 @@
     el.querySelectorAll(".bp-tab").forEach((t) => { t.setAttribute("aria-current", String(BP.tab === t.dataset.t)); t.tabIndex = sub ? -1 : 0; });
     el.querySelector(".bp-round").tabIndex = sub ? -1 : 0;
     slideInd(el.querySelector(".bp-ind"), el.querySelector('.bp-tab[aria-current="true"]'));
-    el.classList.toggle("is-dim", !sub && BP.tab !== "home");
+    el.classList.toggle("is-dim", BP.settings || (!sub && BP.tab !== "home"));
     // The screen: a new one arrives over the one that leaves; the same one
     // is brought up to date in place.
     const key = bpScreenKey(), html = bpScreen();
