@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Discord on the TV.** Apps has Discord: its web version in a window of Lootnest's own, full screen and magnified, driven by the controller as Spotify is (the D-pad moves a white frame, A chooses, B goes back). Sign in by scanning the QR code on its sign-in page with Discord on your phone. Join a voice channel and you hear the others wherever the PC's sound goes, which is the TV while it streams. To be heard you need a microphone the PC can hear: a stream to a TV carries no microphone back, so a headset plugged into the TV or into a controller that's plugged into the TV won't reach Discord. Only Discord's own pages get the microphone.
+
 ## 2.9.0
 
 Spotify on the TV, driven by the controller, and the controller as a mouse over any program that needs one.

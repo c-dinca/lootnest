@@ -36,6 +36,9 @@ type Chromium struct {
 	// permissions
 	permissions      map[CoreWebView2PermissionKind]CoreWebView2PermissionState
 	globalPermission *CoreWebView2PermissionState
+	// PermissionFilter (Lootnest patch) says whether the page at this
+	// address may have what's allowed.
+	PermissionFilter func(uri string) bool
 
 	// Callbacks
 	MessageCallback              func(message, source string)
@@ -266,10 +269,12 @@ func (e *Chromium) SetGlobalPermission(state CoreWebView2PermissionState) {
 }
 
 func (e *Chromium) PermissionRequested(_ *ICoreWebView2, args *iCoreWebView2PermissionRequestedEventArgs) uintptr {
+	// Lootnest patch: the kind is read into kind (it was passed by value,
+	// so every request read as "unknown" and none was ever answered).
 	var kind CoreWebView2PermissionKind
 	_, _, _ = args.vtbl.GetPermissionKind.Call(
 		uintptr(unsafe.Pointer(args)),
-		uintptr(kind),
+		uintptr(unsafe.Pointer(&kind)),
 	)
 	var result CoreWebView2PermissionState
 	if e.globalPermission != nil {
@@ -279,6 +284,23 @@ func (e *Chromium) PermissionRequested(_ *ICoreWebView2, args *iCoreWebView2Perm
 		result, ok = e.permissions[kind]
 		if !ok {
 			result = CoreWebView2PermissionStateDefault
+		}
+	}
+	// Lootnest patch: PermissionFilter, when set, is asked about the page
+	// that wants it; a page it refuses is denied whatever is allowed.
+	if e.PermissionFilter != nil && result == CoreWebView2PermissionStateAllow {
+		var uri *uint16
+		_, _, _ = args.vtbl.GetURI.Call(
+			uintptr(unsafe.Pointer(args)),
+			uintptr(unsafe.Pointer(&uri)),
+		)
+		page := ""
+		if uri != nil {
+			page = windows.UTF16PtrToString(uri)
+			windows.CoTaskMemFree(unsafe.Pointer(uri))
+		}
+		if !e.PermissionFilter(page) {
+			result = CoreWebView2PermissionStateDeny
 		}
 	}
 	_, _, _ = args.vtbl.PutState.Call(

@@ -12,7 +12,7 @@ import (
 	"lootnest/internal/win"
 )
 
-// A site as an app (YouTube's TV interface, Spotify's web player):
+// A site as an app (YouTube's TV interface, Spotify's web player, Discord):
 // `lootnest.exe --app <id>` is
 // a small program of its own that shows the site full screen in a
 // WebView2 window, with its own sign-in kept under Lootnest's data and
@@ -219,11 +219,17 @@ func RunWebApp(id string, on uintptr) int {
 		_, w, _ := win.ScreenOf(on)
 		zoom = core.WebAppZoom(site.Width, int(w), dpi)
 	}
+	// A voice chat's own pages get the microphone; nothing else does.
+	var mic func(string) bool
+	if site.Mic {
+		mic = site.Owns
+	}
 	w := webview2.NewWithOptions(webview2.WebViewOptions{
-		AutoFocus: true,
-		DataPath:  filepath.Join(DataDir(), "apps", site.ID),
-		UserAgent: site.UserAgent,
-		Zoom:      zoom,
+		AutoFocus:  true,
+		Microphone: mic,
+		DataPath:   filepath.Join(DataDir(), "apps", site.ID),
+		UserAgent:  site.UserAgent,
+		Zoom:       zoom,
 		// Only the site's own pages may ask for a key press.
 		AllowMessage: site.Owns,
 		WindowOptions: webview2.WindowOptions{

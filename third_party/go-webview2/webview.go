@@ -116,6 +116,10 @@ type WebViewOptions struct {
 
 	// Lootnest patch: Zoom, when over 0, magnifies the page by that much.
 	Zoom float64
+
+	// Lootnest patch: Microphone, when set, lets the pages it says yes to
+	// use the microphone without asking each time (a voice chat's site).
+	Microphone func(uri string) bool
 }
 
 // New creates a new webview in a new window.
@@ -138,7 +142,13 @@ func NewWithOptions(options WebViewOptions) WebView {
 	chromium := edge.NewChromium()
 	chromium.MessageCallback = w.msgcb
 	chromium.DataPath = options.DataPath
-	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
+	if options.Microphone != nil {
+		// Only the microphone, and only for those pages; nothing else here is the app's own page.
+		chromium.SetPermission(edge.CoreWebView2PermissionKindMicrophone, edge.CoreWebView2PermissionStateAllow)
+		chromium.PermissionFilter = options.Microphone
+	} else {
+		chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
+	}
 
 	w.browser = chromium
 	w.mainthread, _, _ = w32.Kernel32GetCurrentThreadID.Call()

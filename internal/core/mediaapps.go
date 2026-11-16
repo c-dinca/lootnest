@@ -14,7 +14,7 @@ import (
 
 // MediaApp is one app TV mode can start.
 type MediaApp struct {
-	ID   string `json:"id"`   // "youtube", "spotify", "spotify-app" or "stremio"
+	ID   string `json:"id"`   // "youtube", "spotify", "discord", "spotify-app" or "stremio"
 	Name string `json:"name"` // as shown
 	Exe  string `json:"-"`
 	Args string `json:"-"`
@@ -52,6 +52,9 @@ type WebApp struct {
 	// Width is how many of the site's pixels the screen is across, so an
 	// ordinary site is large enough to read from a sofa; 0 leaves it.
 	Width int
+	// Mic lets the site's own pages use the microphone without asking each
+	// time: a voice chat's site (Discord).
+	Mic bool
 }
 
 // WebAppZoom is how much a site is magnified to be width of its pixels
@@ -84,6 +87,11 @@ var webApps = []WebApp{
 	// to a TV's or a console's browser), so this is its web player,
 	// magnified, with the focus Lootnest adds.
 	{ID: "spotify", Name: "Spotify", URL: "https://open.spotify.com/", Host: "open.spotify.com", Nav: "spatial", Width: 1280},
+	// Discord in a browser: servers, text and voice. Signing in can be the
+	// QR code its page shows for the phone's app. What friends say comes
+	// out wherever the PC's sound goes (the TV, in a stream); what you say
+	// needs a microphone the PC can hear, since a stream carries none back.
+	{ID: "discord", Name: "Discord", URL: "https://discord.com/app", Host: "discord.com", Nav: "spatial", Width: 1280, Mic: true},
 }
 
 // WebAppByID is the site shown for --app <id>.
