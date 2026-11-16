@@ -60,7 +60,10 @@ What makes it different, and the direction to keep pushing:
   `trailer.html`/`trailer.js` is one page where `seek(t)` places every
   frame (titles, the swap diagram, the keys, the TV, the end; each take's
   offset in the film); `music.mjs` makes the sound (a synthesized score at
-  120 BPM and the app's own interface sounds at the picture's cues);
+  120 BPM and the app's own interface sounds at the picture's cues; or,
+  with `TRACK=`, somebody's piece cut on its bars under those sounds:
+  Kevin MacLeod's are CC BY 4.0 and need a credit where the film is shown;
+  `render.mjs mux <name>` lays a sound under the rendered picture);
   `render.mjs` screenshots each frame into ffmpeg
   (`out/lootnest-trailer.mp4`, 1080p60, 70 s; `sheet` and `still` to look
   at parts). `out/` isn't committed. Names are "Player 1" and "Player 2"

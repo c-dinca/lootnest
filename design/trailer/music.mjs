@@ -3,9 +3,17 @@
 // what trailer.js cuts on), and the app's own interface sounds (Kenney's,
 // CC0, internal/app/ui/sounds) at the moments the picture shows them.
 //   node design/trailer/music.mjs   writes out/sound.wav
+//
+// Or a piece of music somebody else made, under the same hits and interface
+// sounds: TRACK=<name> writes out/sound-<name>.wav. The pieces below are
+// Kevin MacLeod's (incompetech.com), licensed CC BY 4.0, so the film must
+// credit them wherever it is shown (README). They are at 120 beats a minute
+// on the film's own grid; "cut" says which second of the piece plays from
+// which second of the film, in whole bars, so its lifts land on the cuts.
+// Any other file: TRACK=/path/to/piece.mp3 CUT="0:10,24:14" (film:piece).
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 const here = path.dirname(new URL(import.meta.url).pathname), out = path.join(here, "out");
 const SOUNDS = path.join(here, "..", "..", "internal", "app", "ui", "sounds");
 fs.mkdirSync(out, { recursive: true });
@@ -21,6 +29,16 @@ const CH = [
   { bass: 36, notes: [52, 55, 60, 62] },
   { bass: 31, notes: [50, 55, 59, 62] },
 ];
+const TRACKS = {
+  // the quiet stabs under the hook, the groove from the Library, one bar's breath for the keys, the heavy drums on the TV
+  "long-time-coming": { file: "Long Time Coming.mp3", cut: [[0, 10], [24, 14], [26, 26]] },
+  // drums that keep growing; a breath before the TV
+  stormfront: { file: "Stormfront.mp3", cut: [[0, 10], [32, 38]] },
+  // the same lift twice: at the Library and at the TV
+  voltaic: { file: "Voltaic.mp3", cut: [[0, 58], [38, 62]] },
+};
+const TRACK = process.env.TRACK || "";
+const T = !TRACK ? null : TRACKS[TRACK] ? { name: TRACK, ...TRACKS[TRACK] } : { name: path.basename(TRACK).replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-"), path: TRACK, cut: (process.env.CUT || "0:0").split(",").map((c) => c.split(":").map(Number)) };
 const chordAt = (bar) => (bar >= 33 ? CH[2] : bar === 32 ? CH[1] : CH[(((bar - 3) % 4) + 4) % 4]);
 // What plays when (seconds): the film's parts.
 const drums = (t) => (t >= 6 && t < 24) || (t >= 26 && t < 62);
@@ -29,7 +47,7 @@ const big = (t) => t >= 40 && t < 58;
 
 // ------------------------------------------------------------------ pad --
 const pad = buf();
-for (let bar = 0; bar < LEN / BAR; bar++) {
+if (!T) for (let bar = 0; bar < LEN / BAR; bar++) {
   const c = chordAt(bar), t0 = bar * BAR, a = Math.max(0, Math.floor((t0 - 0.25) * SR)), b = Math.min(N, Math.floor((t0 + BAR + 0.35) * SR));
   for (const m of [c.bass + 12, ...c.notes]) {
     for (const [det, pan] of [[-0.07, 0.25], [0.07, 0.75], [0.02, 0.5]]) {
@@ -44,7 +62,7 @@ for (let bar = 0; bar < LEN / BAR; bar++) {
   }
 }
 // two one-pole lowpasses, opening as the film grows
-for (const ch of pad) {
+if (!T) for (const ch of pad) {
   let y1 = 0, y2 = 0;
   for (let i = 0; i < N; i++) {
     const t = i / SR, open = t < 6 ? 0.35 + 0.1 * (t / 6) : big(t) ? 1 : t >= 62 && t < 65 ? 0.4 : t >= 65 ? 0.9 : 0.7;
@@ -64,7 +82,7 @@ function pluck(t0, m, gain, pan = 0.5, len = 0.9, bright = 1) {
     for (let i = a; i < b; i++) { const n = i - a, v = Math.sin(w * n) * amp * Math.exp(-dec * n) * Math.min(1, n / 96); pl[0][i] += v * (1 - pan); pl[1][i] += v * pan; }
   }
 }
-for (let bar = 0; bar < LEN / BAR; bar++) {
+if (!T) for (let bar = 0; bar < LEN / BAR; bar++) {
   const c = chordAt(bar), t0 = bar * BAR, n = c.notes;
   if (t0 < 6) { pluck(t0, n[2] + 12, 0.16, 0.4, 1.8, 0.7); pluck(t0 + 0.75, n[3] + 12, 0.11, 0.62, 1.6, 0.7); pluck(t0 + 1.5, n[1] + 12, 0.09, 0.5, 1.4, 0.7); continue; }
   if (t0 >= 62 && t0 < 65) continue; // the nevers: quiet
@@ -78,7 +96,7 @@ for (let bar = 0; bar < LEN / BAR; bar++) {
   }
 }
 // a ping-pong echo on the plucks, a dotted eighth apart
-{
+if (!T) {
   const d = Math.floor(0.375 * SR), fb = 0.4, wet = 0.34, eL = new Float32Array(N), eR = new Float32Array(N);
   for (let i = d; i < N; i++) { eL[i] = pl[1][i - d] * 0.9 + eR[i - d] * fb; eR[i] = pl[0][i - d] * 0.5 + eL[i - d] * fb; }
   for (let i = 0; i < N; i++) { pl[0][i] += eL[i] * wet; pl[1][i] += eR[i] * wet; }
@@ -86,7 +104,7 @@ for (let bar = 0; bar < LEN / BAR; bar++) {
 
 // ------------------------------------------------------------------ bass --
 const bass = buf();
-for (let bar = 0; bar < LEN / BAR; bar++) {
+if (!T) for (let bar = 0; bar < LEN / BAR; bar++) {
   const c = chordAt(bar), t0 = bar * BAR, f = hz(c.bass), w = (2 * Math.PI * f) / SR;
   const hits = t0 < 6 || (t0 >= 62 && t0 < 65) || t0 >= 66 ? [[0, BAR]] : Array.from({ length: 8 }, (_, s) => [s * 0.25, 0.25]);
   for (const [at, len] of hits) {
@@ -101,7 +119,7 @@ for (let bar = 0; bar < LEN / BAR; bar++) {
 }
 
 // ----------------------------------------------------------------- drums --
-const dr = buf(), kicks = [];
+const dr = buf(), hits = buf(), kicks = [];
 function kick(t0, g = 1) {
   kicks.push(t0);
   const a = Math.floor(t0 * SR); let ph = 0;
@@ -111,15 +129,15 @@ function kick(t0, g = 1) {
     dr[0][a + n] += v; dr[1][a + n] += v;
   }
 }
-function noise(t0, len, gain, hp, pan = 0.5, shape = (k) => Math.exp(-k * 6)) {
+function noise(t0, len, gain, hp, pan = 0.5, shape = (k) => Math.exp(-k * 6), to = dr) {
   const a = Math.floor(t0 * SR), n1 = Math.floor(len * SR); let last = 0, lp = 0;
   for (let n = 0; n < n1 && a + n < N; n++) {
     const x = rnd(); lp += hp * (x - lp); const v = (hp >= 1 ? x - last : x - lp) * gain * shape(n / n1); last = x;
-    dr[0][a + n] += v * (1 - pan) * 2; dr[1][a + n] += v * pan * 2;
+    to[0][a + n] += v * (1 - pan) * 2; to[1][a + n] += v * pan * 2;
   }
 }
 function clap(t0, g) { for (const d of [0, 0.011, 0.023]) noise(t0 + d, 0.11, g, 0.35, 0.5, (k) => Math.exp(-k * 9)); }
-for (let t = 0; t < LEN; t += BEAT) {
+if (!T) for (let t = 0; t < LEN; t += BEAT) {
   if (!drums(t)) continue;
   const beat = Math.round(t / BEAT) % 4;
   kick(t, t >= 58 ? 0.9 : 1);
@@ -131,8 +149,8 @@ for (let t = 0; t < LEN; t += BEAT) {
 // hits where the film turns, and air rushing into them
 function hit(t0, g = 1) {
   const a = Math.floor(t0 * SR); let ph = 0;
-  for (let n = 0; n < 1.6 * SR && a + n < N; n++) { const t = n / SR; ph += (2 * Math.PI * (38 + 60 * Math.exp(-t / 0.05))) / SR; const v = Math.sin(ph) * Math.exp(-t / 0.5) * 0.7 * g; dr[0][a + n] += v; dr[1][a + n] += v; }
-  noise(t0, 1.2, 0.16 * g, 0.2, 0.5, (k) => Math.exp(-k * 5));
+  for (let n = 0; n < 1.6 * SR && a + n < N; n++) { const t = n / SR; ph += (2 * Math.PI * (38 + 60 * Math.exp(-t / 0.05))) / SR; const v = Math.sin(ph) * Math.exp(-t / 0.5) * 0.7 * g; hits[0][a + n] += v; hits[1][a + n] += v; }
+  noise(t0, 1.2, 0.16 * g, 0.2, 0.5, (k) => Math.exp(-k * 5), hits);
 }
 function rush(t1, len, g = 1) { // a band of noise that climbs and stops at t1
   const a = Math.floor((t1 - len) * SR), n1 = Math.floor(len * SR); let lo = 0, bp = 0;
@@ -140,7 +158,7 @@ function rush(t1, len, g = 1) { // a band of noise that climbs and stops at t1
     if (a + n < 0) continue;
     const k = n / n1, fc = 300 + 5200 * k * k, q = 1 - Math.exp((-2 * Math.PI * fc) / SR), x = rnd();
     lo += q * (x - lo); bp += q * (lo - bp); const v = (lo - bp) * 0.5 * g * k * k, pan = 0.5 + 0.35 * Math.sin(k * 5);
-    dr[0][a + n] += v * (1 - pan) * 2; dr[1][a + n] += v * pan * 2;
+    hits[0][a + n] += v * (1 - pan) * 2; hits[1][a + n] += v * pan * 2;
   }
 }
 [[6, 1], [26, 0.7], [40, 1], [65, 1]].forEach(([t, g]) => hit(t, g));
@@ -181,20 +199,42 @@ const CUES = [
 for (const [t, name, gain, pan] of CUES) play(t, S[name], gain, pan);
 
 // ------------------------------------------------------------------- mix --
-// The music breathes with the kick, and steps back a little under the UI's sounds.
 const L = new Float32Array(N), R = new Float32Array(N);
-let ki = 0, since = 9;
-kicks.sort((a, b) => a - b);
-for (let i = 0; i < N; i++) {
-  const t = i / SR;
-  while (ki < kicks.length && kicks[ki] <= t) { since = 0; ki++; }
-  since += 1 / SR;
-  const duck = 1 - 0.55 * Math.exp(-since / 0.11);
-  const lvl = t < 6 ? 0.85 : t >= 24 && t < 26 ? 0.7 : t >= 62 && t < 65 ? 0.75 : 1;
-  const end = Math.min(1, t / 0.4) * Math.min(1, Math.max(0, (LEN - 0.15 - t) / 2.2));
-  for (const [o, c] of [[L, 0], [R, 1]]) {
-    const music = (pad[c][i] * 0.9 + pl[c][i] * 1.9 + bass[c][i] * 0.8) * duck * lvl + dr[c][i] * 0.9;
-    o[i] = Math.tanh((music * 0.8 + fx[c][i] * 1.2) * 1.15) * end;
+if (!T) {
+  // The music breathes with the kick, and steps back a little under the UI's sounds.
+  let ki = 0, since = 9;
+  kicks.sort((a, b) => a - b);
+  for (let i = 0; i < N; i++) {
+    const t = i / SR;
+    while (ki < kicks.length && kicks[ki] <= t) { since = 0; ki++; }
+    since += 1 / SR;
+    const duck = 1 - 0.55 * Math.exp(-since / 0.11);
+    const lvl = t < 6 ? 0.85 : t >= 24 && t < 26 ? 0.7 : t >= 62 && t < 65 ? 0.75 : 1;
+    const end = Math.min(1, t / 0.4) * Math.min(1, Math.max(0, (LEN - 0.15 - t) / 2.2));
+    for (const [o, c] of [[L, 0], [R, 1]]) {
+      const music = (pad[c][i] * 0.9 + pl[c][i] * 1.9 + bass[c][i] * 0.8) * duck * lvl + (dr[c][i] + hits[c][i]) * 0.9;
+      o[i] = Math.tanh((music * 0.8 + fx[c][i] * 1.2) * 1.15) * end;
+    }
+  }
+} else {
+  // Somebody's piece, cut on its bars, under the hits and the UI's sounds.
+  const file = T.path || path.join(out, "music", T.file);
+  if (!fs.existsSync(file)) { fs.mkdirSync(path.dirname(file), { recursive: true }); execFileSync("curl", ["-fsSL", "-A", "Mozilla/5.0", "-o", file, "https://incompetech.com/music/royalty-free/mp3-royaltyfree/" + encodeURIComponent(T.file)]); }
+  const raw = execFileSync("ffmpeg", ["-loglevel", "error", "-i", file, "-f", "f32le", "-ac", "2", "-ar", String(SR), "-"], { maxBuffer: 1 << 30 });
+  const src = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4), frames = src.length / 2, X = 0.025 * SR;
+  const at = (seg, i, c) => { const n = Math.round((seg[1] - seg[0]) * SR) + i; return n >= 0 && n < frames ? src[2 * n + c] : 0; };
+  const ext = buf(); let e2 = 0;
+  for (let i = 0; i < N; i++) {
+    const t = i / SR; let k = 0; while (k + 1 < T.cut.length && T.cut[k + 1][0] <= t) k++;
+    const into = i - T.cut[k][0] * SR, x = k && into < X ? into / X : 1; // a short crossfade over each cut
+    for (const c of [0, 1]) { const v = at(T.cut[k], i, c) * x + (x < 1 ? at(T.cut[k - 1], i, c) * (1 - x) : 0); ext[c][i] = v; e2 += v * v; }
+  }
+  const lvl = 0.15 / Math.sqrt(e2 / (2 * N)); let env = 0; const rel = Math.exp(-1 / (0.2 * SR));
+  for (let i = 0; i < N; i++) {
+    const t = i / SR, end = Math.min(1, t / 0.25) * Math.min(1, Math.max(0, (LEN - 0.1 - t) / 2.6));
+    env = Math.max(Math.abs(fx[0][i]), Math.abs(fx[1][i]), env * rel);
+    const duck = 1 - 0.4 * Math.min(1, env / 0.18);
+    for (const [o, c] of [[L, 0], [R, 1]]) o[i] = Math.tanh((ext[c][i] * lvl * duck + hits[c][i] * 0.8 + fx[c][i] * 1.25) * 1.1) * end;
   }
 }
 if (process.env.STEMS) for (const [name, b] of [["pad", pad], ["plucks", pl], ["bass", bass], ["drums", dr], ["ui", fx]]) for (const [from, to] of [[1, 5], [8, 22], [42, 56]]) { let e = 0; for (let i = from * SR; i < to * SR; i++) e += b[0][i] * b[0][i]; console.log(name, from + "-" + to, (10 * Math.log10(e / ((to - from) * SR))).toFixed(1), "dB"); }
@@ -203,5 +243,10 @@ const g = 0.89 / peak, wav = Buffer.alloc(44 + N * 4);
 wav.write("RIFF", 0); wav.writeUInt32LE(36 + N * 4, 4); wav.write("WAVEfmt ", 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(2, 22);
 wav.writeUInt32LE(SR, 24); wav.writeUInt32LE(SR * 4, 28); wav.writeUInt16LE(4, 32); wav.writeUInt16LE(16, 34); wav.write("data", 36); wav.writeUInt32LE(N * 4, 40);
 for (let i = 0; i < N; i++) { wav.writeInt16LE(Math.round(Math.max(-1, Math.min(1, L[i] * g)) * 32767), 44 + i * 4); wav.writeInt16LE(Math.round(Math.max(-1, Math.min(1, R[i] * g)) * 32767), 46 + i * 4); }
-fs.writeFileSync(path.join(out, "sound.wav"), wav);
-console.log("out/sound.wav", LEN, "s, peak before the last gain", peak.toFixed(2));
+const name = T ? `sound-${T.name}.wav` : "sound.wav";
+fs.writeFileSync(path.join(out, name), wav);
+// as loud as the web expects, about -14 LUFS, with the peaks held
+const said = spawnSync("ffmpeg", ["-hide_banner", "-nostats", "-i", path.join(out, name), "-af", "ebur128", "-f", "null", "-"], { maxBuffer: 1 << 26 }).stderr.toString();
+const I = +(said.match(/I:\s+(-?[\d.]+) LUFS(?![\s\S]*I:\s)/) || [0, -14])[1], up = Math.max(-6, Math.min(6, -14 - I));
+if (Math.abs(up) > 0.3) { const tmp = path.join(out, "sound-tmp.wav"); execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", path.join(out, name), "-af", `volume=${up.toFixed(2)}dB,alimiter=limit=0.8:attack=3:release=60:level=disabled`, tmp]); fs.renameSync(tmp, path.join(out, name)); }
+console.log("out/" + name, LEN, "s,", I, "LUFS before, moved by", up.toFixed(1), "dB");

@@ -31,6 +31,31 @@ node design/trailer/music.mjs        # out/sound.wav
 node design/trailer/render.mjs       # out/lootnest-trailer.mp4: about 12 minutes
 ```
 
+The picture and the sound are separate, so the music can change without
+rendering again:
+
+```bash
+TRACK=long-time-coming node design/trailer/music.mjs   # out/sound-long-time-coming.wav
+node design/trailer/render.mjs mux long-time-coming    # out/lootnest-trailer-long-time-coming.mp4
+```
+
+`TRACK` is one of the pieces listed in `music.mjs` (`long-time-coming`,
+`stormfront`, `voltaic`; downloaded into `out/music` the first time), or
+the path of any file, with `CUT="0:10,24:14"` saying which second of the
+piece plays from which second of the film. The film cuts on a 120 BPM
+grid, so a piece at 120 sits on it without stretching; cut in whole bars
+(two seconds). The hits at the cuts and the interface sounds stay on top.
+
+Those three pieces are Kevin MacLeod's (incompetech.com), under Creative
+Commons Attribution 4.0. A film that uses one must say so wherever it is
+shown, for example:
+
+> "Long Time Coming" Kevin MacLeod (incompetech.com). Licensed under
+> Creative Commons: By Attribution 4.0.
+> https://creativecommons.org/licenses/by/4.0/
+
+The score `music.mjs` makes on its own needs no credit.
+
 Needs Node, ffmpeg and the Playwright that the harness uses. Everything it
 writes goes to `out/`, which isn't committed.
 

@@ -6,6 +6,7 @@
 //   node design/trailer/music.mjs           the sound (out/sound.wav)
 //   node design/trailer/render.mjs          out/lootnest-trailer.mp4
 //
+//   node design/trailer/render.mjs mux [name]         out/silent.mp4 with out/sound-<name>.wav, no rendering
 //   node design/trailer/render.mjs still 12.5 31 44   single frames into out/stills
 //   node design/trailer/render.mjs sheet 6 17 0.5     a contact sheet from 6 s to 17 s, every 0.5 s
 //   SRC=preview ...                                   with record.mjs's PREVIEW frames
@@ -47,7 +48,12 @@ async function open() {
 }
 const [mode, ...args] = process.argv.slice(2);
 
-if (mode === "still" || mode === "sheet") {
+if (mode === "mux") {
+  // The picture is already rendered: lay another sound under it.
+  const name = args[0] ? "-" + args[0] : "", film = path.join(out, `lootnest-trailer${name}.mp4`);
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", path.join(out, "silent.mp4"), "-i", path.join(out, `sound${name}.wav`), "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-shortest", "-movflags", "+faststart", film]);
+  console.log(film);
+} else if (mode === "still" || mode === "sheet") {
   const p = await open(), dir = path.join(out, "stills");
   fs.mkdirSync(dir, { recursive: true });
   let times = args.map(Number);
