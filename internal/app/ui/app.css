@@ -2685,6 +2685,10 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-bd-l:not([src]) { visibility: hidden; }
 .bp-bd-l.on { opacity: 1; }
 @keyframes bp-drift { from { transform: scale(1.03); } to { transform: scale(1.1) translate3d(-1.2%, -0.8%, 0); } }
+/* A trailer over the art, under the scrims, once it plays. */
+.bp-bd-v { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--bp-dur-video) linear; }
+.bp-bd-v.on { opacity: 1; }
+.bp.is-deep .bp-bd-v, .bp.is-dim .bp-bd-v { opacity: 0; }
 .bp-bd-scrim, .bp-bd-deep { position: absolute; inset: 0; }
 .bp-bd-scrim { background: var(--bp-scrim); }
 .bp-bd-deep { background: var(--bp-scrim-deep); opacity: 0; transition: opacity var(--bp-dur-screen) var(--ease-out); }
@@ -2913,6 +2917,9 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-dlg-keys { display: grid; gap: var(--bp-4); margin-top: var(--bp-6); }
 .bp-dlg-keys .bp-key { justify-content: flex-start; background: var(--bg-active); }
 .bp-dlg-keys .bp-key:focus { background: var(--fg-1); }
+
+/* The picker and dialogs over Big Picture: a plain dark veil, no blur. */
+body:has(> #bp) #overlay .scrim { background: var(--bp-scrim-over); -webkit-backdrop-filter: none; backdrop-filter: none; }
 
 /* Notes over Big Picture: under the bar on the right, at its scale, and
    out of the prompts' way. */

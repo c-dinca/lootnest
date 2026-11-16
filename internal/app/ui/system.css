@@ -320,7 +320,7 @@
   --bp-r-tile: calc(12 * var(--u)); --bp-r-key: calc(16 * var(--u)); --bp-r-panel: calc(24 * var(--u));
   --bp-ring: calc(4 * var(--u)); --bp-ring-out: calc(-7 * var(--u)); --bp-r-ring: calc(19 * var(--u));  /* the focus ring, a dark gap inside it */
   --bp-grow: 1.08; --bp-grow-key: 1.05;                              /* what the focus does to a tile, to a key */
-  --bp-dur-focus: 160ms; --bp-dur-slide: 220ms; --bp-dur-screen: 240ms; --bp-dur-leave: 160ms; --bp-dur-art: 320ms; --bp-drift: 40s; --bp-shimmer: 1.6s;
+  --bp-dur-focus: 160ms; --bp-dur-slide: 220ms; --bp-dur-screen: 240ms; --bp-dur-leave: 160ms; --bp-dur-art: 320ms; --bp-dur-video: 600ms; --bp-drift: 40s; --bp-shimmer: 1.6s;
   --bp-shadow-focus: 0 calc(28 * var(--u)) calc(56 * var(--u)) rgb(0 0 0 / 0.6);
   --bp-fill: rgb(31 34 43 / 0.88);       /* keys and cards over art: no blur, so a stream stays sharp */
   --bp-fill-on: rgb(255 255 255 / 0.14);
