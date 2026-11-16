@@ -7,36 +7,35 @@ import (
 )
 
 func TestFindMediaApps(t *testing.T) {
-	p := MediaPaths{AppData: "/u/roaming", LocalAppData: "/u/local", ProgramFiles: "/pf", ProgramFilesX86: "/pf86", DataDir: "/u/lootnest"}
+	p := MediaPaths{AppData: "/u/roaming", LocalAppData: "/u/local", ProgramFiles: "/pf", ProgramFilesX86: "/pf86", Self: "/pf/Lootnest/Lootnest.exe"}
 	have := map[string]bool{
 		filepath.Join("/u/roaming", "Spotify", "Spotify.exe"):                    true,
-		filepath.Join("/pf86", "Microsoft", "Edge", "Application", "msedge.exe"): true,
 		filepath.Join("/u/local", "Programs", "LNV", "Stremio-4", "stremio.exe"): true,
 	}
 	apps := FindMediaApps(p, func(x string) bool { return have[x] })
 	if len(apps) != 3 || apps[0].ID != "spotify" || apps[1].ID != "youtube" || apps[2].ID != "stremio" {
 		t.Fatalf("%+v", apps)
 	}
-	if apps[0].Proc != "spotify" || apps[2].Proc != "stremio" || !apps[1].ByPID {
+	if apps[0].Proc != "spotify" || apps[2].Proc != "stremio" || !apps[1].ByPID || !apps[1].Own {
 		t.Fatalf("following: %+v", apps)
 	}
-	for _, want := range []string{"--kiosk https://www.youtube.com/tv", "--disable-extensions", "--disable-sync", "UserAgentClientHint", "Leanback"} {
-		if !strings.Contains(apps[1].Args, want) {
-			t.Fatalf("youtube args %q lack %q", apps[1].Args, want)
-		}
+	// YouTube is Lootnest's own window, not a browser on the PC.
+	if apps[1].Exe != p.Self || apps[1].Args != "--app youtube" {
+		t.Fatalf("youtube %+v", apps[1])
 	}
-	if strings.Contains(apps[1].Args, "--app=") {
-		t.Fatalf("youtube args %q open a browser window", apps[1].Args)
+	w, ok := WebAppByID("youtube")
+	if !ok || w.URL != "https://www.youtube.com/tv" || !strings.Contains(w.UserAgent, "Leanback") || !strings.HasPrefix(w.URL, w.Origin) {
+		t.Fatalf("youtube site %+v", w)
 	}
-	if !strings.Contains(apps[1].Args, filepath.Join("/u/lootnest", "youtube-tv")) {
-		t.Fatalf("youtube args %q", apps[1].Args)
+	if _, ok := WebAppByID("spotify"); ok {
+		t.Fatal("spotify isn't a site")
 	}
-	if got := FindMediaApps(p, func(string) bool { return false }); len(got) != 0 {
+	if got := FindMediaApps(MediaPaths{AppData: "/u/roaming", LocalAppData: "/u/local"}, func(string) bool { return false }); len(got) != 0 {
 		t.Fatalf("found %+v on an empty PC", got)
 	}
 	// The Store's Spotify, through its app alias.
 	alias := filepath.Join("/u/local", "Microsoft", "WindowsApps", "Spotify.exe")
-	if got := FindMediaApps(p, func(x string) bool { return x == alias }); len(got) != 1 || got[0].Exe != alias {
+	if got := FindMediaApps(MediaPaths{LocalAppData: "/u/local"}, func(x string) bool { return x == alias }); len(got) != 1 || got[0].Exe != alias {
 		t.Fatalf("store spotify %+v", got)
 	}
 }

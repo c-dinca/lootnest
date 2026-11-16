@@ -109,6 +109,9 @@ type WebViewOptions struct {
 	// page makes to a bound function, with the address of the document that
 	// made it. Calls it refuses are dropped without an answer.
 	AllowMessage func(source string) bool
+
+	// Lootnest patch: UserAgent, when set, is what the browser says it is.
+	UserAgent string
 }
 
 // New creates a new webview in a new window.
@@ -178,6 +181,11 @@ func NewWithOptions(options WebViewOptions) WebView {
 	// No status bar for hovered links and no host objects: neither is used.
 	_ = settings.PutIsStatusBarEnabled(false)
 	_ = settings.PutAreHostObjectsAllowed(false)
+	if options.UserAgent != "" {
+		if err := settings.PutUserAgent(options.UserAgent); err != nil {
+			log.Printf("user agent: %v", err)
+		}
+	}
 
 	return w
 }

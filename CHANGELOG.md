@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **YouTube on the TV opens in its TV layout.** It opened the desktop site in Edge, with the cookie question and nothing a controller could move through. YouTube is now a window of Lootnest's own, full screen, in the layout TVs and consoles get: the controller's D-pad or stick, A and B drive it, signing in is the code YouTube shows for your phone, and you stay signed in the next time. It no longer needs Edge or Chrome, and nothing of your browser opens in it.
+
 ## 2.7.0
 
 Lootnest stays on the screen while you play from Big Picture or TV mode, as a console's home does.
