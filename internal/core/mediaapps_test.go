@@ -17,10 +17,10 @@ func TestFindMediaApps(t *testing.T) {
 	for _, a := range apps {
 		ids += a.ID + " "
 	}
-	if ids != "youtube spotify discord stremio spotify-app stremio-app " {
+	if ids != "youtube spotify discord stremio stremio-app " {
 		t.Fatalf("apps: %s", ids)
 	}
-	if apps[4].Proc != "spotify" || apps[5].Proc != "stremio" || apps[5].Own || !apps[0].ByPID || !apps[0].Own || !apps[1].Own || !apps[2].Own || !apps[3].Own {
+	if apps[4].Proc != "stremio" || apps[4].Own || !apps[0].ByPID || !apps[0].Own || !apps[1].Own || !apps[2].Own || !apps[3].Own {
 		t.Fatalf("following: %+v", apps)
 	}
 	// YouTube and Spotify are Lootnest's own windows, not a browser on the PC.
@@ -76,9 +76,10 @@ func TestFindMediaApps(t *testing.T) {
 	if got := FindMediaApps(MediaPaths{AppData: "/u/roaming", LocalAppData: "/u/local"}, func(string) bool { return false }); len(got) != 0 {
 		t.Fatalf("found %+v on an empty PC", got)
 	}
-	// The Store's Spotify, through its app alias.
+	// Spotify's own program isn't an app here, however it was installed:
+	// Apps has one Spotify, the web one.
 	alias := filepath.Join("/u/local", "Microsoft", "WindowsApps", "Spotify.exe")
-	if got := FindMediaApps(MediaPaths{LocalAppData: "/u/local"}, func(x string) bool { return x == alias }); len(got) != 1 || got[0].Exe != alias {
-		t.Fatalf("store spotify %+v", got)
+	if got := FindMediaApps(MediaPaths{LocalAppData: "/u/local"}, func(x string) bool { return x == alias }); len(got) != 0 {
+		t.Fatalf("the Spotify program is listed: %+v", got)
 	}
 }

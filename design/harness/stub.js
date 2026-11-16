@@ -785,7 +785,7 @@
     ps_tvStay: () => ok(),
     ps_tvCloseGame: () => ok(),
     ps_tvPointer: () => ok(),
-    ps_mediaApps: () => ok([{ id: "youtube", name: "YouTube" }, { id: "spotify", name: "Spotify" }, { id: "discord", name: "Discord" }, { id: "stremio", name: "Stremio" }, { id: "spotify-app", name: "Spotify on this PC" }, { id: "stremio-app", name: "Stremio on this PC" }]),
+    ps_mediaApps: () => ok([{ id: "youtube", name: "YouTube" }, { id: "spotify", name: "Spotify" }, { id: "discord", name: "Discord" }, { id: "stremio", name: "Stremio" }, { id: "stremio-app", name: "Stremio on this PC" }]),
     ps_launchApp: () => ok(),
     ps_linkMakePrivate: () => { setTimeout(() => emit({ type: "linkPrivate", ok: true }), 400); return ok(); },
     ps_saveSettings: (r) => { Object.assign(settings, r.settings); return ok(); },

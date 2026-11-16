@@ -862,12 +862,12 @@ On the LG TV, with section 27 done on the PC.
 4. A on a Play button starts the music, with sound (this is protected
    playback: if it says it can't play here, note what it says). X pauses
    and plays; LB and RB change track.
-5. Apps also has Spotify on this PC when Spotify is installed, which
-   opens the program as before.
+5. Apps has one Spotify, this one, also when the Spotify program is
+   installed.
 
 ## 38. The controller as a mouse
 
-1. Big Picture, Apps, Stremio (or Spotify on this PC): a note says the
+1. Big Picture, Apps, Stremio on this PC: a note says the
    controller is a mouse now. The left stick moves the pointer, slowly
    for a small push; A clicks and, held, drags; X opens the right-click
    menu; the right stick scrolls; the D-pad moves as the arrow keys; B

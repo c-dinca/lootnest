@@ -1522,7 +1522,8 @@ These shipped recently, newest last:
   Lootnest installs and starts neither Stremio nor Stremio Service.
   Tried against the real site in Chromium with a stubbed pad (moving
   over posters and rows); playback in WebView2 isn't seen:
-  docs/TESTING.md 42.
+  docs/TESTING.md 42. `spotify-app` (Spotify on this PC) is no longer
+  listed: the owner wants one Spotify in Apps, the web one.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
