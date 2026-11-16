@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Big Picture and TV mode, rebuilt for the sofa (part 1: how you move, and Home).
+
+- **Everything is reachable with the arrows, OK and Back.** Up from the first row goes to the bar; left and right there change the section; the menu has its own key at the end of the bar. A TV remote is enough.
+- **The focus is kept.** Each row remembers where you were, and so does each screen. Back from a game's page lands on its cover.
+- **Back goes one step at a time**: it closes what's on top, then goes up to the bar, then to Home, and on Home it asks before leaving.
+- **Home shows the game in focus large**: its art over the whole screen, its logo, when it was played, the hours, the achievements, and whose files are loaded. A row of covers sits below, with Apps, your collections and all your games under it.
+- **Collections are chips in the Library.**
+- **Motion**: the focus grows a cover and rings it, rows and screens slide, the art behind cross-fades and drifts slowly, covers that are still loading shine. Settings, Appearance, Motion (and Windows' reduced motion) turn it down or off.
+- The same picture at 1080p and at 4K, with text never under 24 pixels at 1080p.
+
 ## 2.5.2
 
 Leaving TV mode from the PC.

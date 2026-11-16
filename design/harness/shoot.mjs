@@ -11,6 +11,7 @@ fs.mkdirSync(out, { recursive: true });
 const page = "file://" + path.join(here, "dist", "page.html");
 
 const click = (sel) => `(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) throw new Error("no " + ${JSON.stringify(sel)}); e.click(); })()`;
+const key = (k) => `document.dispatchEvent(new KeyboardEvent("keydown", { key: ${JSON.stringify(k)}, bubbles: true }))`;
 const nav = (v) => click(`[data-view="${v}"]`);
 const game = (attr) => [nav("library"), click(`[data-action="open-sheet"][${attr}]`)];
 
@@ -52,6 +53,14 @@ const shots = [
   ["bp-400", "games=400", [click('[data-action="bp-open"]')]],
   ["tv-who", "tv=1", []],
   ["tv-solo", "tv=1&players=1", []],
+  ["tv-row2", "tv=1&players=1", [key("ArrowDown"), key("ArrowDown")]],
+  ["tv-game", "tv=1&players=1", [key("ArrowRight"), key("Enter")]],
+  ["tv-library", "tv=1&players=1", [key("e"), key("ArrowDown"), key("ArrowRight")]],
+  ["tv-library-400", "tv=1&players=1&games=400", [key("e"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],
+  ["tv-achievements", "tv=1&players=1", [key("e"), key("e")]],
+  ["tv-leave", "tv=1&players=1", [key("Escape"), key("Escape")]],
+  ["tv-empty", "tv=1&players=1&games=0", []],
+  ["tv-scanning", "tv=1&players=1&state=loading", []],
   ["players-edit", "", [nav("players"), click('[data-action="edit-profiles"]')]],
   ["saves", "", [nav("saves")]],
   ["saves-calm", "saves=calm", [nav("saves")]],
