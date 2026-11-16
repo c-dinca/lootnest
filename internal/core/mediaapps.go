@@ -28,8 +28,34 @@ type MediaPaths struct {
 	DataDir                                              string // Lootnest's own, for YouTube's browser profile
 }
 
-// tvUserAgent asks YouTube for its TV interface, which a controller drives.
-const tvUserAgent = "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.5) AppleWebKit/537.36 (KHTML, like Gecko) 85.0.4183.93/6.5 TV Safari/537.36"
+// tvUserAgent asks YouTube for its TV interface (Leanback), which a
+// controller drives and where signing in is a code typed on a phone.
+// YouTube also reads client hints, which would still say Windows, so
+// they're turned off for that browser profile (youTubeArgs).
+const tvUserAgent = "Mozilla/5.0 (PS4; Leanback Shell) Gecko/20100101 Firefox/65.0 LeanbackShell/01.00.01.75 Sony PS4/ (PS4, , no, CH)"
+
+// youTubeArgs start the browser as a TV app: full screen with no browser
+// window around it (kiosk), in Lootnest's own profile for it, with that
+// profile's extensions, sync and implicit sign-in off so nothing of the
+// user's browser opens on the TV. The user's own browser isn't touched.
+func youTubeArgs(browser, profile string) string {
+	args := []string{
+		"--kiosk", "https://www.youtube.com/tv",
+		`--user-data-dir="` + profile + `"`,
+		`--user-agent="` + tvUserAgent + `"`,
+		"--no-first-run",
+		"--no-default-browser-check",
+		"--disable-extensions",
+		"--disable-sync",
+		"--disable-component-extensions-with-background-pages",
+		"--autoplay-policy=no-user-gesture-required",
+		"--disable-features=UserAgentClientHint,msImplicitSignin,msEdgeSidebarV2,msSyncPromo,Translate",
+	}
+	if strings.EqualFold(filepath.Base(browser), "msedge.exe") {
+		args = append(args, "--edge-kiosk-type=fullscreen")
+	}
+	return strings.Join(args, " ")
+}
 
 // FindMediaApps lists the apps found, in the order they're shown. exists
 // says whether a file is there.
@@ -54,13 +80,7 @@ func FindMediaApps(p MediaPaths, exists func(string) bool) []MediaApp {
 	}
 	if browser := first(j(p.ProgramFilesX86, "Microsoft", "Edge", "Application", "msedge.exe"), j(p.ProgramFiles, "Microsoft", "Edge", "Application", "msedge.exe"),
 		j(p.ProgramFiles, "Google", "Chrome", "Application", "chrome.exe"), j(p.LocalAppData, "Google", "Chrome", "Application", "chrome.exe")); browser != "" && p.DataDir != "" {
-		args := strings.Join([]string{
-			"--app=https://www.youtube.com/tv",
-			"--start-fullscreen",
-			"--no-first-run",
-			`--user-data-dir="` + filepath.Join(p.DataDir, "youtube-tv") + `"`,
-			`--user-agent="` + tvUserAgent + `"`,
-		}, " ")
+		args := youTubeArgs(browser, filepath.Join(p.DataDir, "youtube-tv"))
 		out = append(out, MediaApp{ID: "youtube", Name: "YouTube", Exe: browser, Args: args, ByPID: true})
 	}
 	if exe := first(j(p.LocalAppData, "Programs", "LNV", "Stremio-4", "stremio.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio", "stremio.exe"),

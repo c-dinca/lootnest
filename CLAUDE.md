@@ -1155,6 +1155,14 @@ These shipped recently, newest last:
   (c-dinca/lootnest-tv-webos#7) notes its picture and sound backends and
   whether a stream's sound opened, for the owner's silent TV.
 
+- **2.5.1** YouTube in 2.5.0 opened youtube.com/tv in the desktop layout,
+  and the fresh Edge profile signed itself in and synced the user's
+  extensions, whose pages opened in browser windows on the TV.
+  `youTubeArgs`: `--kiosk` (Edge adds `--edge-kiosk-type=fullscreen`),
+  extensions, sync and implicit sign-in off, a PS4 Leanback user agent
+  and `UserAgentClientHint` off (client hints still said Windows).
+  Signing in is YouTube TV's own code at youtube.com/activate.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

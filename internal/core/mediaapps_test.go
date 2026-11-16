@@ -20,7 +20,15 @@ func TestFindMediaApps(t *testing.T) {
 	if apps[0].Proc != "spotify" || apps[2].Proc != "stremio" || !apps[1].ByPID {
 		t.Fatalf("following: %+v", apps)
 	}
-	if !strings.Contains(apps[1].Args, "youtube.com/tv") || !strings.Contains(apps[1].Args, filepath.Join("/u/lootnest", "youtube-tv")) {
+	for _, want := range []string{"--kiosk https://www.youtube.com/tv", "--disable-extensions", "--disable-sync", "UserAgentClientHint", "Leanback"} {
+		if !strings.Contains(apps[1].Args, want) {
+			t.Fatalf("youtube args %q lack %q", apps[1].Args, want)
+		}
+	}
+	if strings.Contains(apps[1].Args, "--app=") {
+		t.Fatalf("youtube args %q open a browser window", apps[1].Args)
+	}
+	if !strings.Contains(apps[1].Args, filepath.Join("/u/lootnest", "youtube-tv")) {
 		t.Fatalf("youtube args %q", apps[1].Args)
 	}
 	if got := FindMediaApps(p, func(string) bool { return false }); len(got) != 0 {

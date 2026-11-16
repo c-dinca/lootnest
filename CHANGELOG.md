@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.1
+
+- **YouTube opens in its TV layout, full screen,** with no browser window around it and none of your browser's extensions or sign-in opening on the TV. Your own browser is left as it is. To use your account, choose Sign in on YouTube and type the code it shows at youtube.com/activate on your phone; it stays signed in after that.
+
 ## 2.5.0
 
 Apps in TV mode.
