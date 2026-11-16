@@ -867,7 +867,7 @@ On the LG TV, with section 27 done on the PC.
 
 ## 38. The controller as a mouse
 
-1. Big Picture, Apps, Stremio on this PC: a note says the
+1. Big Picture, Apps, Stremio: a note says the
    controller is a mouse now. The left stick moves the pointer, slowly
    for a small push; A clicks and, held, drags; X opens the right-click
    menu; the right stick scrolls; the D-pad moves as the arrow keys; B
@@ -935,19 +935,3 @@ On the LG TV, with section 27 done on the PC.
    120 Hz while the stream is 60. A game with V-Sync on runs at 120.
 5. Turn the switch off while a stream runs: the log says the engine
    takes its settings at the next start, and the stream isn't cut.
-
-## 42. Stremio as Lootnest's own window
-
-1. In TV mode or Big Picture, Apps has Stremio whether or not the
-   Stremio program is installed; with it installed there's also Stremio
-   on this PC.
-2. Open Stremio: its web version fills the screen. The stick and the
-   D-pad move a white frame over posters, the side bar and the search
-   box; A opens, B goes back a page.
-3. Sign in (Stremio's own page), open a title and a stream that plays
-   in a browser: it plays with sound on the TV. X pauses.
-4. With Stremio or Stremio Service running on the PC, the yellow
-   "Streaming server is not available" bar isn't shown, and a stream
-   that needs the server plays.
-5. The Home button opens Lootnest's menu over it; Close ends it and
-   Lootnest is back.

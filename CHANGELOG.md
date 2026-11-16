@@ -2,7 +2,6 @@
 
 ## Unreleased
 
-- **Stremio on the TV.** Stremio's web version is an app in TV mode and Big Picture, in a window of Lootnest's own that the controller drives: the stick or D-pad moves, A opens, B goes back. Nothing to install for it. What needs Stremio's streaming server plays when Stremio or Stremio Service is running on the PC; the page says when it isn't. The Stremio program, when it's installed, stays beside it as Stremio on this PC.
 - **One Spotify in Apps.** Spotify on this PC is gone from TV mode and Big Picture; Spotify is the one the controller drives.
 
 ## 2.10.3

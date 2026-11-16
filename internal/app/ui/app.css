@@ -2840,7 +2840,7 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-app--spotify { color: var(--app-spotify); }
 .bp-app--youtube { color: var(--app-youtube); }
 .bp-app--discord { color: var(--app-discord); }
-.bp-app--stremio, .bp-app--stremio-app { color: var(--app-stremio); }
+.bp-app--stremio { color: var(--app-stremio); }
 
 /* The game in focus, said large. */
 .bp-hero { display: flex; flex-direction: column; justify-content: flex-end; gap: var(--bp-5); width: min(var(--bp-hero-w), calc(100% - 2 * var(--bp-safe-x))); margin: 0 var(--bp-safe-x); }
