@@ -7,7 +7,7 @@
   // opens the menu (it leaves, outside TV mode). The keyboard works the
   // same: arrows, Enter, Escape, Q and E. Everything Y, X, LB, RB and Start
   // do can also be reached with the arrows alone.
-  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", signs: pref("bpSigns", ""), tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
+  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", signs: pref("bpSigns", ""), trailers: pref("bpTrailers", "0") === "1", tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
   const BP_SEC = { home: "home", library: "library", achievements: "ach", profiles: "profiles" };
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
@@ -32,7 +32,7 @@
     BP.on = false;
     const el = $("#bp");
     if (el) { el.removeAttribute("id"); el.classList.add("out"); setTimeout(() => el.remove(), 320); }
-    bpShown = "";
+    bpShown = ""; bpTrailerStop();
     api.bigPicture(false).catch(() => {});
     sfx("close");
     if (behindBP) render();
@@ -60,6 +60,7 @@
   function tvLaunch(it) {
     if (!BP.tv || !it) return;
     BP.launch = { key: bpKey(it), name: it.name, art: launchArt(it), phase: "starting", at: Date.now() };
+    bpTrailerStop();
     drawLaunch();
     launchWatch();
     // Art still loading: in once it's there.

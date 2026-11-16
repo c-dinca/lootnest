@@ -1221,10 +1221,17 @@ These shipped recently, newest last:
   Xbox one. Achievements: a total, cards with cover and `.bp-meter`,
   OK opens the game at `ach:0` (`BP.want` takes the focus when what it
   names is drawn). `bpMorph` takes both child lists before it walks
-  them (a replaced child leaves the new tree). Next: 4 the picker and
-  dialogs at TV scale, Profiles; 5 trailers behind the game in focus
-  (a row in Settings, off by default), sounds, a pass at 400 games and
-  4K; 6 the webOS connection screen.
+  them (a replaced child leaves the new tree).
+- **Unreleased: Big Picture rebuilt, part 4**: trailers behind the game
+  in focus (`BP.trailers`, pref `bpTrailers`, off by default, a row in
+  Big Picture's Settings; `bpTrailer` from `bpAmbient`: only with Game
+  details on, 2 s after the focus rests, asking for that game's details
+  and waiting for them, a muted looping `video.bp-bd-v` under the
+  scrims through the 2.2.0 `loadHls`; `bpTrailerStop` when the focus
+  moves, a game starts, the screen is deep or dim, or Big Picture
+  shuts). The scrim behind the picker and dialogs over Big Picture is
+  plain, not blurred. Next: 6 the webOS connection screen (the fork),
+  and anything the owner finds on the real TV.
 - **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
   games inside Lootnest, as DS4Windows does. That reverses the roadmap's
   Controllers "will not do" (no virtual pad). Not started: it waits on

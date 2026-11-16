@@ -172,6 +172,7 @@
         { id: "cues", name: "Sounds for unlocks, save points and swaps", on: !s.soundsOff, say: "Heard over a game too. Never for a game with an anti-cheat.", run: flip("soundsOff") }] },
       { id: "picture", name: "Picture and motion", opts: [
         { id: "motion", name: "Motion", value: label(BP_MOTION, s.motion || ""), say: "Full moves and fades everything. Less keeps only the fades. Off changes screens at once.", run: () => bpSet("motion", next(BP_MOTION, s.motion || "")) },
+        { id: "trailers", name: "Trailers behind the game in focus", on: BP.trailers, say: s.gameDetails ? "A game's trailer plays behind it, without sound, once the focus has rested on it. A moving picture costs the stream to a TV more than a still one." : "Needs Game details, which is turned on in Lootnest's Settings on the PC, under Online.", run: () => { BP.trailers = !BP.trailers; setPref("bpTrailers", BP.trailers ? "1" : "0"); if (!BP.trailers) bpTrailerStop(); renderBP(); } },
         { id: "start", name: "Open in Big Picture when Lootnest starts", on: !!s.openBigPicture, say: "For a PC that is mostly used from the sofa.", run: flip("openBigPicture") }] },
       { id: "controller", name: "Controller", opts: [
         { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV reaches the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
@@ -386,6 +387,7 @@
         if (!url) show();
         else { next.src = url; (next.decode ? next.decode() : Promise.resolve()).then(show, show); }
       }
+      bpTrailer(el.classList.contains("is-deep") || el.classList.contains("is-dim") || bpOver() || BP.settings || BP.points ? null : it);
       if (hero) {
         const html = bpHero(it, false);
         if (hero.bpHTML !== html) {
@@ -397,6 +399,51 @@
       }
     };
     if (now) run(); else bpAmbT = setTimeout(run, 180);
+  }
+  // A trailer behind the game in focus (Settings, Picture and motion; off
+  // unless turned on, and only with Game details on, where trailers come
+  // from). It starts two seconds after the focus rests on a game, without
+  // sound, fades in over the art once it plays, and goes when the focus
+  // moves on, a game starts, or motion is turned down.
+  let bpVid = null; // { key, timer, el, hls }
+  function bpTrailerStop() {
+    const v = bpVid;
+    bpVid = null;
+    if (!v) return;
+    clearTimeout(v.timer);
+    if (!v.el) return;
+    v.el.classList.remove("on");
+    setTimeout(() => { if (v.hls) v.hls.destroy(); v.el.remove(); }, 700);
+  }
+  function bpTrailer(it) {
+    const key = it ? recentKey(it) : "";
+    if (bpVid && bpVid.key === key) return; // already playing, waiting, or it has none
+    bpTrailerStop();
+    if (!key || !BP.trailers || !moving() || !cfg().settings.gameDetails || BP.launch || (S.d.sessions || []).some((x) => x.phase === "playing")) return;
+    const v = (bpVid = { key });
+    const start = (tries) => {
+      v.timer = 0;
+      if (bpVid !== v || !BP.on) return;
+      if (!S.details[key]) { S.details[key] = { loading: true }; api.gameDetails(key).catch(() => {}); }
+      const R = S.details[key] || {}, d = R.details, m = d && (d.movies || []).find((x) => x.hls), host = $("#bp .bp-bd");
+      if (R.loading && tries < 15) { v.timer = setTimeout(() => start(tries + 1), 700); return; } // its details are on their way
+      if (!m || !host) return;
+      const el = document.createElement("video");
+      el.className = "bp-bd-v"; el.muted = true; el.loop = true; el.playsInline = true; el.preload = "auto";
+      v.el = el;
+      host.insertBefore(el, host.querySelector(".bp-bd-scrim"));
+      el.addEventListener("playing", () => { if (bpVid === v) el.classList.add("on"); });
+      loadHls().then((Hls) => {
+        if (bpVid !== v) return;
+        if (Hls && Hls.isSupported()) {
+          const h = new Hls({ enableWorker: false, capLevelToPlayerSize: true });
+          h.on(Hls.Events.ERROR, (_, e) => { if (e.fatal && bpVid === v) bpTrailerStop(); });
+          h.loadSource(m.hls); h.attachMedia(el); v.hls = h;
+        } else if (el.canPlayType("application/vnd.apple.mpegurl")) el.src = m.hls;
+        el.play().catch(() => {});
+      }).catch(() => { if (bpVid === v) bpTrailerStop(); });
+    };
+    v.timer = setTimeout(() => start(0), 2000);
   }
   // The prompts at the bottom say what the buttons do where the focus is.
   // The menu has one sign, its key at the end of the bar; Start opens it too.

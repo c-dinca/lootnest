@@ -18,6 +18,8 @@ Big Picture and TV mode, rebuilt for the sofa (part 1: how you move, and Home).
 - **Settings in Big Picture**, made for a remote, from its menu: the parts on the left, big rows that OK changes on the right, and a line saying what the row in focus does. Sounds, Motion, Open in Big Picture, achievement notes, and **Button signs**.
 - **Button signs** can be set to Xbox, PlayStation or Nintendo. A controller plugged into the TV reaches the PC as an Xbox one, so this is how a DualSense on the TV gets its own signs.
 - **Achievements in Big Picture** says how many you have of all, and each game's card has its cover and a bar. OK opens the game at its achievements.
+- **Trailers behind the game in focus** in Big Picture: a row in its Settings, off unless you turn it on, and only with Game details on. The trailer starts without sound two seconds after the focus rests on a game, and goes when you move on or a game starts.
+- The picker and dialogs over Big Picture have a plain dark veil instead of a blurred one.
 
 ## 2.5.2
 
