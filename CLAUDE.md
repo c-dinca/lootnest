@@ -1230,8 +1230,14 @@ These shipped recently, newest last:
   scrims through the 2.2.0 `loadHls`; `bpTrailerStop` when the focus
   moves, a game starts, the screen is deep or dim, or Big Picture
   shuts). The scrim behind the picker and dialogs over Big Picture is
-  plain, not blurred. Next: 6 the webOS connection screen (the fork),
-  and anything the owner finds on the real TV.
+  plain, not blurred.
+- **Unreleased: Lootnest for TV 1.3.2** (c-dinca/lootnest-tv-webos#8)
+  is pinned: its screen was already in Lootnest's look at TV sizes
+  (`ui->dpi` is the height over 3, so a unit is 2.25 px at 1080p), so
+  only the keys changed: the one in focus is Ice Grey with dark words
+  and grows a little (`key_tr`, 160 ms), the main key keeps red and the
+  ring. Not seen on a TV. The Big Picture rebuild is done; next is what
+  the owner finds on the real TV.
 - **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
   games inside Lootnest, as DS4Windows does. That reverses the roadmap's
   Controllers "will not do" (no virtual pad). Not started: it waits on

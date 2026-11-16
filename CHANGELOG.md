@@ -20,6 +20,7 @@ Big Picture and TV mode, rebuilt for the sofa (part 1: how you move, and Home).
 - **Achievements in Big Picture** says how many you have of all, and each game's card has its cover and a bar. OK opens the game at its achievements.
 - **Trailers behind the game in focus** in Big Picture: a row in its Settings, off unless you turn it on, and only with Game details on. The trailer starts without sound two seconds after the focus rests on a game, and goes when you move on or a game starts.
 - The picker and dialogs over Big Picture have a plain dark veil instead of a blurred one.
+- **Lootnest for TV 1.3.2**: on the TV app's own screen, the key in focus lights up and grows a little, as in Big Picture; Play keeps its red and takes the ring. Add an LG TV again to get it.
 
 ## 2.5.2
 
