@@ -181,7 +181,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.10.3, beta)
+## Where things stand (2.10.4, beta)
 
 These shipped recently, newest last:
 
@@ -1511,7 +1511,7 @@ These shipped recently, newest last:
   in says "The requested resource is in use", and the engine refused
   connections on localhost:47990 when the report was saved.
 
-- **Unreleased, one Spotify and Stremio as its program** (the owner,
+- **2.10.4, one Spotify and Stremio as its program** (the owner,
   16 Nov). `spotify-app` (Spotify on this PC) is no longer listed: one
   Spotify in Apps, the web one. Stremio's web version (web.stremio.com
   with `padSpatial`, which drives it well) was built and taken out the
