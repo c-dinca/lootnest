@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.10.0, beta)
+## Where things stand (2.10.1, beta)
 
 These shipped recently, newest last:
 
@@ -1430,6 +1430,26 @@ These shipped recently, newest last:
   whether the host's `fec_percentage` or the TV's decoder is the limit;
   setting a TV's picture from Lootnest on the PC. The TV's picture
   mode (Game) and the 5 GHz band are the owner's to set.
+
+- **2.10.1, the TV app kept up to date** (the owner, 16 Nov, after
+  2.10.0: "I don't see the Size key"). Install again opened the whole
+  Add an LG TV drawer and asked for Developer Mode's passphrase, so
+  their TV had most likely stayed on an older app; and Size and Quality
+  only show on the TV app's own screen, which a stream covers at once.
+  `installTV` with an empty passphrase uses the key kept in link.json
+  (`againLGTV` in 82-link.js; a key that no longer opens the TV says
+  to use the passphrase). `TV.TVAppVersion` reads the app's
+  appinfo.json. `updateTVApps` (from `keepDevModes` at start and every
+  hour, and 2 minutes after `leaveTV`): for each saved TV with an older
+  app than `TVAppPinned`, installs it, unless this PC is streaming or
+  the app is what's on the TV's screen (`AppRunning`); it never opens
+  the app; `linkTVUpdated` toasts. `LGStatus.Latest`; the row's key is
+  Update to x when they differ. Lootnest for TV 1.6.1
+  (c-dinca/lootnest-tv-webos#12) has its version in a corner of its
+  home screen. Published without asking, as a TV fix (the owner, 15
+  Nov). Not seen on a TV: docs/TESTING.md 40. Still open: setting a
+  TV's Size and Quality from Lootnest (Big Picture's Settings), since
+  the TV app's screen is hidden while a stream runs.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

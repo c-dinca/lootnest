@@ -60,9 +60,9 @@ var (
 )
 
 var TVAppPinned = TVAppRelease{
-	Version: "1.6.0",
-	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.6.0/com.lootnest.tv_1.6.0_arm.ipk",
-	SHA256:  "cbc10062a21727a9ff786582e243484e94f199c0a2e785b9a97d38ff108f1b6d",
+	Version: "1.6.1",
+	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.6.1/com.lootnest.tv_1.6.1_arm.ipk",
+	SHA256:  "8db8519c38c0979befe19a0c23243086ac45cf3c004c483ba2d9d138fdebddb0",
 }
 
 // ErrTVAppNotPinned stops an install Lootnest has no checksum for.
@@ -559,6 +559,26 @@ func (t *TV) HasTVApp() bool {
 	payload, _ := json.Marshal(map[string]any{"id": TVAppID})
 	out, _ = t.luna("luna://com.webos.applicationManager/getAppInfo", string(payload), tvLunaLimit)
 	return strings.Contains(out, `"returnValue":true`) || strings.Contains(out, `"returnValue": true`)
+}
+
+// TVAppVersion is the version of Lootnest for TV on the TV, from the
+// app's own appinfo.json; "" when it isn't there or can't be read.
+func (t *TV) TVAppVersion() string {
+	out, err := t.run("cat "+shQuote("/media/developer/apps/usr/palm/applications/"+TVAppID+"/appinfo.json"), nil)
+	if err != nil {
+		return ""
+	}
+	return tvAppVersionIn(out)
+}
+
+func tvAppVersionIn(appinfo string) string {
+	var m struct {
+		Version string `json:"version"`
+	}
+	if json.Unmarshal([]byte(appinfo), &m) != nil {
+		return ""
+	}
+	return strings.TrimSpace(m.Version)
 }
 
 func tvErrorText(line string) string {

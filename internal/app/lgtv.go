@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"lootnest/internal/core"
@@ -41,6 +42,7 @@ type LGStatus struct {
 	Name      string    `json:"name"`
 	IP        string    `json:"ip"`
 	Version   string    `json:"version"`
+	Latest    string    `json:"latest"` // the version this Lootnest has for it
 	Installed time.Time `json:"installed"`
 	Extended  time.Time `json:"extended"`
 	Problem   string    `json:"problem,omitempty"`
@@ -52,7 +54,7 @@ func lgStatuses(r *linkRecord) []LGStatus {
 		return out
 	}
 	for _, t := range r.TVs {
-		out = append(out, LGStatus{Name: t.Name, IP: t.IP, Version: t.Version, Installed: t.Installed, Extended: t.Extended, Problem: t.Problem})
+		out = append(out, LGStatus{Name: t.Name, IP: t.IP, Version: t.Version, Latest: core.TVAppPinned.Version, Installed: t.Installed, Extended: t.Extended, Problem: t.Problem})
 	}
 	return out
 }
@@ -126,10 +128,25 @@ func (a *App) installTV(ip, name, passphrase string) error {
 			return &core.PublicNetworkError{PC: pc}
 		}
 	}
-	a.logf("TV streaming: Add an LG TV on %s: unlocking the key", ip)
-	keyPEM, err := core.FetchTVKey(ctx, ip, passphrase)
-	if err != nil {
-		return err
+	// A TV added before: the key Lootnest kept for it, so installing again
+	// needs nothing from the TV. A new TV, or a passphrase typed: the key
+	// the TV hands out for it.
+	var keyPEM []byte
+	if passphrase == "" {
+		if old := r.tv(ip); old != nil {
+			keyPEM = []byte(revealSecret(old.Key))
+		}
+		if len(keyPEM) == 0 {
+			return errors.New("Lootnest has no key for this TV yet. Type the passphrase Developer Mode shows")
+		}
+		a.logf("TV streaming: Add an LG TV on %s: with the key kept for it", ip)
+	} else {
+		a.logf("TV streaming: Add an LG TV on %s: unlocking the key", ip)
+		k, err := core.FetchTVKey(ctx, ip, passphrase)
+		if err != nil {
+			return err
+		}
+		keyPEM = k
 	}
 
 	setLinkStep("tvdownload")
@@ -154,6 +171,11 @@ func (a *App) installTV(ip, name, passphrase string) error {
 		tv, hostKey, err = core.ConnectTV(ctx, ip, keyPEM, "")
 	}
 	if err != nil {
+		if passphrase == "" {
+			// The kept key no longer opens the TV: developer mode was turned
+			// on again, or the TV was reset.
+			return fmt.Errorf("the key Lootnest kept for this TV no longer opens it (%v). Turn on Key Server in the TV's Developer Mode and type its passphrase", err)
+		}
 		return err
 	}
 	defer tv.Close()
@@ -309,7 +331,90 @@ func (a *App) keepDevModes() {
 	defer t.Stop()
 	for {
 		a.extendDevModes()
+		a.updateTVApps()
 		<-t.C
+	}
+}
+
+var tvUpdating sync.Mutex
+
+// updateTVApps puts the Lootnest for TV this Lootnest comes with on every
+// saved TV that has an older one, with the key kept for it, so a new
+// version needs nothing done at the TV. It runs at start, every hour and
+// a while after TV mode ends; never while this PC streams to a TV, and
+// never while the app is what's on the TV's screen (it would be closed
+// under the person). It only installs: the app isn't opened.
+func (a *App) updateTVApps() {
+	a.mu.Lock()
+	streaming := a.tv
+	a.mu.Unlock()
+	want := core.TVAppPinned
+	if a.safe || streaming || len(want.SHA256) != 64 || !tvUpdating.TryLock() {
+		return
+	}
+	defer tvUpdating.Unlock()
+	r := loadLink()
+	if r == nil || len(r.TVs) == 0 {
+		return
+	}
+	changed := false
+	for i := range r.TVs {
+		t := &r.TVs[i]
+		key := revealSecret(t.Key)
+		if key == "" {
+			continue
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		func() {
+			tv, _, err := core.ConnectTV(ctx, t.IP, []byte(key), t.HostKey)
+			if err != nil {
+				return // off or away: another time
+			}
+			defer tv.Close()
+			have := tv.TVAppVersion()
+			if have == "" {
+				return
+			}
+			if have != t.Version {
+				t.Version, changed = have, true
+			}
+			if !core.NewerVersion(have, want.Version) {
+				return
+			}
+			if on, known := tv.AppRunning(); !known || on {
+				a.logf("TV streaming: %s has Lootnest for TV %s and %s is ready; it's open on the TV, so it's left for later", t.Name, have, want.Version)
+				return
+			}
+			if !claimLink("tvinstall") {
+				return
+			}
+			defer setLinkStep("")
+			ipk := filepath.Join(DataDir(), "downloads", "tv", "lootnest-tv-"+want.Version+".ipk")
+			if err := core.DownloadTVApp(ctx, want, ipk, nil); err != nil {
+				a.logf("TV streaming: Lootnest for TV %s couldn't be downloaded for %s: %v", want.Version, t.Name, err)
+				return
+			}
+			if err := tv.InstallTVApp(ctx, ipk); err != nil {
+				a.logf("TV streaming: Lootnest for TV %s couldn't be put on %s: %v", want.Version, t.Name, err)
+				return
+			}
+			a.logf("TV streaming: Lootnest for TV on %s went from %s to %s", t.Name, have, want.Version)
+			t.Version, t.Installed, changed = want.Version, time.Now(), true
+			a.emit("linkTVUpdated", map[string]any{"name": t.Name, "version": want.Version})
+		}()
+		cancel()
+	}
+	if changed {
+		// Only what this pass learned: the record may have changed meanwhile.
+		if now := loadLink(); now != nil {
+			for _, t := range r.TVs {
+				if cur := now.tv(t.IP); cur != nil {
+					cur.Version, cur.Installed = t.Version, t.Installed
+				}
+			}
+			_ = saveLink(now)
+		}
+		a.emitLink()
 	}
 }
 

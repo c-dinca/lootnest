@@ -503,3 +503,17 @@ func TestTVAppStarted(t *testing.T) {
 		t.Fatal("an earlier run's start counted")
 	}
 }
+
+func TestTVAppVersionIn(t *testing.T) {
+	for in, want := range map[string]string{
+		`{"id":"com.lootnest.tv","version":"1.6.0","title":"Lootnest"}`: "1.6.0",
+		`{"id":"com.lootnest.tv", "version": " 1.4.0 "}`:                "1.4.0",
+		`{"id":"com.lootnest.tv"}`:                                      "",
+		`cat: can't open`:                                               "",
+		``:                                                              "",
+	} {
+		if got := tvAppVersionIn(in); got != want {
+			t.Errorf("tvAppVersionIn(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

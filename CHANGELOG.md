@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.10.1
+
+Lootnest keeps the app on your TV up to date, and says where its picture settings are.
+
+- **Updating the TV app is one click, or none.** Install again in Settings, TV asked for Developer Mode's passphrase every time, so a TV easily stayed on an old app without the Size and Quality keys. Lootnest now uses the key it kept when you added the TV: the row says which version the TV has, and Update puts the new one on with nothing done at the TV. It also does this by itself, at start and every hour, when the TV is on and Lootnest for TV isn't what's on its screen.
+- **The TV app says its version.** Lootnest for TV 1.6.1 has its version in the corner of its screen.
+- **Where Size and Quality are.** They're on the TV app's own screen, beside Play, which shows when no stream runs: hold Start and Select for two seconds to leave a stream. Settings, TV says so.
+
 ## 2.10.0
 
 Discord on the TV, and a picture for a TV on Wi-Fi.
