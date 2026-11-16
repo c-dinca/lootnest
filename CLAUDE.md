@@ -1523,6 +1523,23 @@ These shipped recently, newest last:
   unmodified LG takes apps from outside its store only in Developer
   Mode.
 
+- **Unreleased, Stremio with a TV interface** (the owner, 16 Nov,
+  after 2.10.4: "can't we make Stremio with the TV interface, and the
+  app?"). One Stremio tile: `core.WebApp` `stremio` (web.stremio.com,
+  `padSpatial`) in Lootnest's own window, with the installed program's
+  streaming server behind it. `core.StremioServer` finds
+  `stremio-runtime.exe` and `server.js` in `stremioDirs` (Stremio 5's
+  installer puts it in `%LOCALAPPDATA%\Programs\Stremio`, exe
+  `stremio-shell-ng.exe`; read in stremio-shell-ng's `setup/Stremio.iss`
+  and `server.rs`, which runs exactly that pair with no window);
+  `startStremioServer` (app/stremio.go, in the `--app stremio` process)
+  starts it when nothing answers on 127.0.0.1:11470 and kills it when
+  the window closes; a Stremio that's already running is left alone.
+  `FindMediaApps` lists only site windows now, so no app turns the
+  controller into a mouse by itself; the Home menu's switch remains.
+  Tried against the real site in Chromium with a stubbed pad; the
+  server start and playback in WebView2 aren't seen: docs/TESTING.md 42.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

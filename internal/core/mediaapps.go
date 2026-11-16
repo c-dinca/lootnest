@@ -4,7 +4,6 @@ import (
 	"math"
 	"net/url"
 	"path/filepath"
-	"strings"
 )
 
 // Apps TV mode offers beside the games: YouTube's TV interface and Spotify's
@@ -92,6 +91,47 @@ var webApps = []WebApp{
 	// out wherever the PC's sound goes (the TV, in a stream); what you say
 	// needs a microphone the PC can hear, since a stream carries none back.
 	{ID: "discord", Name: "Discord", URL: "https://discord.com/app", Host: "discord.com", Nav: "spatial", Width: 1280, Mic: true},
+	// Stremio's own web version, which is laid out for a TV already, with
+	// the streaming server of the Stremio program on this PC behind it
+	// (StremioServer), so what the program plays, this plays.
+	{ID: "stremio", Name: "Stremio", URL: "https://web.stremio.com/", Host: "web.stremio.com", Nav: "spatial", Width: 1280},
+}
+
+// StremioServerPort is where Stremio's streaming server listens, and where
+// its web version looks for it.
+const StremioServerPort = "11470"
+
+// StremioServer finds the streaming server inside a Stremio installed on
+// this PC: its runtime and the script it runs, which is how Stremio's own
+// program starts it (stremio-shell-ng, server.rs). ok is false when no
+// Stremio with a server is installed. Lootnest never installs it.
+func StremioServer(p MediaPaths, exists func(string) bool) (runtime, script string, ok bool) {
+	for _, dir := range stremioDirs(p) {
+		r, s := filepath.Join(dir, "stremio-runtime.exe"), filepath.Join(dir, "server.js")
+		if exists(r) && exists(s) {
+			return r, s, true
+		}
+	}
+	return "", "", false
+}
+
+// stremioDirs are the folders Stremio installs into: Stremio 5's
+// installer (for one user, or for everyone), then Stremio 4's.
+func stremioDirs(p MediaPaths) []string {
+	var out []string
+	add := func(base string, parts ...string) {
+		if base != "" {
+			out = append(out, filepath.Join(append([]string{base}, parts...)...))
+		}
+	}
+	add(p.LocalAppData, "Programs", "Stremio")
+	add(p.ProgramFiles, "Stremio")
+	add(p.LocalAppData, "Programs", "LNV", "Stremio-5")
+	add(p.LocalAppData, "Programs", "LNV", "Stremio-4")
+	add(p.LocalAppData, "Programs", "LNV", "Stremio")
+	add(p.LocalAppData, "Programs", "stremio-shell-ng")
+	add(p.ProgramFilesX86, "Stremio")
+	return out
 }
 
 // WebAppByID is the site shown for --app <id>.
@@ -107,38 +147,19 @@ func WebAppByID(id string) (WebApp, bool) {
 // WebAppArgs are the arguments Lootnest's program shows that site with.
 func WebAppArgs(id string) string { return "--app " + id }
 
-// FindMediaApps lists the apps found, in the order they're shown. exists
-// says whether a file is there.
+// FindMediaApps lists the apps, in the order they're shown: each is a
+// site in a window of Lootnest's own. One tile each (the owner, 16 Nov
+// 2026): Spotify's and Stremio's own programs aren't listed beside their
+// web versions; Stremio's program still does its part, as the streaming
+// server behind the web one (StremioServer). exists is kept for programs
+// that may be listed again.
 func FindMediaApps(p MediaPaths, exists func(string) bool) []MediaApp {
-	first := func(paths ...string) string {
-		for _, x := range paths {
-			if x != "" && exists(x) {
-				return x
-			}
-		}
-		return ""
-	}
-	j := func(base string, parts ...string) string {
-		if base == "" {
-			return ""
-		}
-		return filepath.Join(append([]string{base}, parts...)...)
-	}
+	_ = exists
 	var out []MediaApp
 	if p.Self != "" {
 		for _, w := range webApps {
 			out = append(out, MediaApp{ID: w.ID, Name: w.Name, Exe: p.Self, Args: WebAppArgs(w.ID), ByPID: true, Own: true})
 		}
-	}
-	// Stremio is its own program, when it's installed (the owner, 16 Nov
-	// 2026: only the program, not its web version, which needs the
-	// program's streaming server anyway). Spotify's program isn't listed:
-	// one Spotify, the web one.
-	if exe := first(j(p.LocalAppData, "Programs", "LNV", "Stremio-5", "stremio-shell-ng.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio-5", "stremio.exe"),
-		j(p.LocalAppData, "Programs", "LNV", "Stremio-4", "stremio.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio", "stremio.exe"),
-		j(p.LocalAppData, "Programs", "Stremio", "stremio.exe"), j(p.LocalAppData, "Programs", "stremio-shell-ng", "stremio-shell-ng.exe"),
-		j(p.ProgramFiles, "Stremio", "stremio.exe")); exe != "" {
-		out = append(out, MediaApp{ID: "stremio", Name: "Stremio", Exe: exe, Proc: strings.ToLower(strings.TrimSuffix(filepath.Base(exe), ".exe"))})
 	}
 	return out
 }
