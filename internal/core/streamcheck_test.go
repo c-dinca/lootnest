@@ -38,7 +38,12 @@ func TestStreamVerdict(t *testing.T) {
 		{with(func(s *StreamStats) { s.RoundTrip = 35; s.Jitter = 20 }), StreamNetwork, "35 ms there and back, uneven by up to 20 ms"},
 		{with(func(s *StreamStats) { s.Shown = 40 }), StreamTV, "showed 40 of the 60 frames"},
 		{with(func(s *StreamStats) { s.HostMs = 18.5 }), StreamPC, "18.5 ms for each frame"},
+		{with(func(s *StreamStats) { s.Arrived = 51.7; s.Shown = 51.7 }), StreamGame, "sent 51.7 frames a second of 60"},
 		{base, StreamClean, "6 ms there and back, 4 ms on the PC, 5 ms into the TV's decoder"},
+		// One bad moment (the owner's stream of 16 Nov: 1.24% lost, all of
+		// it in 4 of 411 seconds, 5 ms there and back) isn't a slow network.
+		{StreamStats{Seconds: 411, FPS: 60, Arrived: 51.7, Shown: 51.7, LostPct: 1.24, BadSecs: 4, HostMs: 4.4, DecoderMs: 0.6, RoundTrip: 5, RoundMax: 49, Jitter: 43}, StreamGame, "broke up for 4 of its 411 seconds"},
+		{with(func(s *StreamStats) { s.LostPct = 0.4; s.BadSecs = 3 }), StreamClean, "a hiccup of the Wi-Fi"},
 	} {
 		kind, says := StreamVerdict(c.s)
 		if kind != c.kind || !strings.Contains(says, c.has) {

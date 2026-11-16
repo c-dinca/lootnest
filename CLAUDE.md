@@ -181,7 +181,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.10.2, beta)
+## Where things stand (2.10.3, beta)
 
 These shipped recently, newest last:
 
@@ -1488,6 +1488,28 @@ These shipped recently, newest last:
   runs, else at the next start); `ApolloSettingsDiffer` reads a missing
   key as "disabled". Not seen on a PC or TV: docs/TESTING.md 41. The
   TV's picture mode and Wi-Fi band are the owner's to set.
+
+- **2.10.3, the owner's first real stream numbers** (16 Nov, Onimusha,
+  411 s of H264 1080p60): 5 ms there and back, 4.4 ms a frame on the
+  PC, 51.7 frames a second sent, 1.24% lost but all of it in 4 seconds.
+  So the network and the PC aren't the delay. Their TV decodes through
+  "NetCast Legacy" (ss4s `lgnc`: an LG before webOS 5, H.264 only, up
+  to 40 Mbps, no low-delay control; the app can't measure or shorten
+  what happens after it hands a frame over), so what's left is inside
+  the TV and in the game's frame rate. `StreamVerdict` no longer calls
+  a few bad seconds a slow network (`spread`: lost in over 5 seconds
+  and 2% of them; else a hiccup said beside the verdict) and has
+  `StreamGame` (under 92% of the stream's rate sent). `WebOSVersion`
+  falls back to `systemproperty/getSystemInfo` (`tvSystemInfoIn`:
+  model, sdkVersion, firmware), since /etc/starfish-release wasn't
+  readable on their TV; the model decides whether NDL could be used.
+  The controller's disconnects in that log were the owner's own.
+  The TV app's Automatic has the same hiccup flaw
+  (`lootnest_picture_review` steps down at 1% lost however few the
+  seconds): fix it with the next TV app version. Also seen in that
+  log, not looked into: the pad bridge's first `Submit` after plugging
+  in says "The requested resource is in use", and the engine refused
+  connections on localhost:47990 when the report was saved.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
