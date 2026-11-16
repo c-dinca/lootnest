@@ -154,6 +154,7 @@
       case "savePoints":
         S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
         if (S.view === "game") render();
+        if (BP.on) bpSoon();
         renderGq(); // the box's Make a save point
         break;
       case "savePointMade": {
@@ -164,6 +165,7 @@
         else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
         else if (ev.point) { if (!ev.hotkey) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
+        if (BP.on) bpSoon();
         if (S.view === "saves") askSaves();
         break;
       }

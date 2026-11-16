@@ -14,10 +14,11 @@
   const bpKey = (it) => it.kind + ":" + it.id;
   function bpOpen() {
     if (BP.on) return;
-    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.mem = {}; BP.sx = {};
+    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.ask = null; BP.mem = {}; BP.sx = {};
     closeContext(); gqClose();
     if (!S.allAch) api.allAchievements().catch(() => {});
     api.bigPicture(true).catch(() => {});
+    if (!pad.raf && padsNow().length) pad.raf = requestAnimationFrame(padLoop); // a pad that was there before the page: its signs show at once
     renderBP(true);
     sfx("open");
   }
@@ -148,7 +149,7 @@
   // The menu, over whatever screen is up: Start in TV mode, the key at the
   // end of the bar, and Back on Home, which asks before leaving.
   function bpMenu(on, why) {
-    if (on && (S.picker || S.dialog)) return;
+    if (on && (S.picker || S.dialog || BP.ask)) return;
     if (on === BP.menu) return;
     if (on) BP.menuFrom = BP.focus;
     BP.menu = on; BP.menuWhy = on ? why || "" : ""; BP.focus = on ? "menu:back" : BP.menuFrom || "";

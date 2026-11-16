@@ -6,7 +6,7 @@
   // itself: rows and the screen slide (transform only) to keep the focus in
   // place. A redraw changes only what differs, so nothing blinks or loses
   // its place when art or a session arrives.
-  const bpScreenKey = () => (BP.choose ? "choose:" + BP.choose : BP.detail ? "detail:" + BP.detail : "tab:" + BP.tab + (BP.tab === "library" ? ":" + BP.tag : ""));
+  const bpScreenKey = () => (BP.choose ? "choose:" + BP.choose : BP.detail && BP.points ? "points:" + BP.detail : BP.detail ? "detail:" + BP.detail : "tab:" + BP.tab + (BP.tab === "library" ? ":" + BP.tag : ""));
   const bpMem = (k) => BP.mem[k] || (BP.mem[k] = { focus: "", rows: {} });
   const bpSub = () => !!(BP.detail || BP.choose);
   function bpArt(it, wide) {
@@ -79,13 +79,17 @@
     if (BP.detail) {
       const it = bpItem(BP.detail);
       if (!it) { BP.detail = null; return bpScreen(); }
-      achFor(it); // reads its achievements if it hasn't yet
+      if (BP.points) return bpPointsScreen(it);
+      const X = achFor(it); // reads its achievements if it hasn't yet
+      pointsFor(it);
       const seat = seated(), as = it.g && seat, k = esc(bpKey(it));
       return `<section class="bp-page" data-block><div class="bp-hero in">${bpHero(it, true)}</div>
         <div class="bp-keys" data-zone="keys">
           <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="Play">${GI.play}${as ? `Play as ${esc(seat.name)}` : "Play"}</button>
           ${it.g && cfg().players.length > 1 ? `<button class="bp-key" data-bp data-bpid="playas" data-go="choose" data-k="${k}">Play as someone else</button>` : ""}
-          ${bpRunning(it) ? `<button class="bp-key" data-bp data-bpid="close" data-go="close-game" data-k="${k}">Close the game</button>` : ""}</div></section>`;
+          <button class="bp-key" data-bp data-bpid="points" data-go="points" data-k="${k}" data-hint="Open">Save points</button>
+          ${bpRunning(it) ? `<button class="bp-key" data-bp data-bpid="close" data-go="close-game" data-k="${k}">Close the game</button>` : ""}</div></section>
+        ${X ? bpRowHTML("ach", `Achievements, ${X.A.unlocked} of ${X.A.total}`, bpAchCards(X.A.list)) : ""}`;
     }
     if (!all.length && (BP.tab === "library" || BP.tab === "home")) {
       if (S.found.scanning) return `${bpRowHTML("wait", "Looking for your games", bpGhosts(9))}${bpRowHTML("wait2", "", bpGhosts(9))}`;
@@ -125,8 +129,40 @@
       ${small.length ? bpRowHTML("tags", "Collections", small.map((t) => bpTagTile(t, tags[t])).join("")) : ""}
       ${recent.length ? bpRow("all", "Your games", all.slice(0, 40)) : ""}`;
   }
+  // A game's achievements as a row to look through: the ones unlocked
+  // first, the rarest of them leading, then what's left.
+  function bpAchCards(list) {
+    const rank = (a) => (a.unlocked ? 0 : 1000) + (a.percent || 100);
+    return [...list].sort((a, b) => rank(a) - rank(b)).slice(0, 40).map((a, i) => {
+      const hid = a.hidden && !a.unlocked, t = a.unlocked ? tierOf(a.percent) : "";
+      const line = hid ? "Not unlocked yet" : a.unlocked ? (a.percent ? `${a.percent < 10 ? a.percent.toFixed(1) : Math.round(a.percent)}% of players` : "Unlocked") : "Not unlocked yet";
+      return `<div class="bp-ach${a.unlocked ? "" : " is-locked"}${t ? " tier-" + t : ""}" tabindex="-1" data-bp data-bpid="ach:${i}" data-hint="">${achIcon(a)}<span><b>${hid ? "Hidden achievement" : esc(a.name)}</b><span>${esc(line)}</span></span></div>`;
+    }).join("");
+  }
+  // A game's save points: make one now, or go back to one. Going back asks
+  // first, and keeps the saves as they are now as a point of their own.
+  function bpPointsScreen(it) {
+    const P = pointsFor(it), k = esc(bpKey(it)), list = (P && P.points) || [];
+    const head = `<p class="bp-kick">${esc(it.name)}</p><h1>Save points</h1>`;
+    if (!P || !P.loaded) return `<section class="bp-list" data-block>${head}<div class="bp-opts">${'<span class="bp-opt bp-opt--ghost is-waiting" aria-hidden="true"></span>'.repeat(4)}</div></section>`;
+    const make = `<button class="bp-opt" data-bp data-bpid="pt:make" data-go="pt-make" data-k="${k}"${P.busy ? " disabled" : ""} data-hint="Make">${ph("plus")}<b>${P.busy ? "Working on it" : "Make a save point now"}</b></button>`;
+    const rows = list.map((p) => {
+      const when = new Date(p.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+      const facts = [when, p.playtime ? hours(p.playtime) + " played" : "", p.player && player(p.player) ? pname(p.player) : ""].filter(Boolean).join(", ");
+      return `<button class="bp-opt" data-bp data-bpid="pt:${esc(p.id)}" data-go="pt-restore" data-k="${k}" data-id="${esc(p.id)}" data-name="${esc(p.name)}"${P.busy ? " disabled" : ""} data-hint="Go back to it"><b>${esc(p.name)}</b><span>${esc(facts)}</span></button>`;
+    }).join("");
+    return `<section class="bp-list" data-block>${head}${P.error ? `<p class="bp-note">${esc(P.error)}</p>` : !list.length ? '<p class="bp-note">None yet. A save point is a copy of this game\'s saves as they are now, to come back to.</p>' : ""}
+      <div class="bp-opts" data-zone="points" data-col>${make}${rows}</div></section>`;
+  }
   // The menu over the screen: what Start opens, and what Back on Home asks.
+  // A question (BP.ask) uses the same sheet, with the safe answer in focus.
   function bpMenuHTML() {
+    if (BP.ask) {
+      return `<div class="bp-dlg" role="alertdialog" aria-modal="true" aria-label="${esc(BP.ask.title)}"><h1>${esc(BP.ask.title)}</h1><p>${esc(BP.ask.body)}</p>
+        <div class="bp-dlg-keys" data-zone="ask" data-col>
+          <button class="bp-key" data-bp data-bpid="ask:no" data-go="ask-no">Cancel</button>
+          <button class="bp-key" data-bp data-bpid="ask:yes" data-go="ask-yes">${esc(BP.ask.ok)}</button></div></div>`;
+    }
     const seat = seated(), leave = BP.menuWhy === "leave";
     return `<div class="bp-dlg" role="dialog" aria-modal="true" aria-label="Menu"><h1>${leave ? (BP.tv ? "Leave TV mode?" : "Leave Big Picture?") : "Menu"}</h1>
       ${BP.tv ? "<p>Leaving ends the stream to the TV. Lootnest stays open on the PC.</p>" : ""}
@@ -139,10 +175,11 @@
   // further in, the way back from further out.
   function bpEnter(from, to) {
     const tab = (k) => (k.startsWith("tab:") ? BP_TABS.findIndex((t) => t[0] === k.split(":")[1]) : -1);
+    const depth = (k) => (k.startsWith("tab:") ? 0 : k.startsWith("detail:") ? 1 : 2);
     if (!from) return "fade";
     const a = tab(from), b = tab(to);
     if (a >= 0 && b >= 0) return a === b ? "fade" : b > a ? "right" : "left";
-    return b >= 0 ? "out" : "in";
+    return depth(to) < depth(from) ? "out" : "in";
   }
   // Makes a what b is, touching only what differs. An element marked
   // data-live keeps the style a slide gave it; one marked data-own keeps its
@@ -158,7 +195,22 @@
     if (own) return;
     for (let i = 0; i < a.children.length; i++) bpMorph(a.children[i], b.children[i]);
   }
-  const bpScope = () => (BP.menu ? $("#bp .bp-over") : $("#bp"));
+  const bpOver = () => !!(BP.menu || BP.ask);
+  const bpScope = () => (bpOver() ? $("#bp .bp-over") : $("#bp"));
+  // Asks before something that changes files; Back says no.
+  function bpAsk(q) {
+    BP.ask = q; BP.askFrom = BP.focus; BP.focus = "ask:no";
+    sfx("open");
+    renderBP();
+  }
+  function bpAnswer(yes) {
+    const q = BP.ask;
+    if (!q) return;
+    BP.ask = null; BP.focus = BP.askFrom || "";
+    sfx(yes ? "go" : "back");
+    renderBP();
+    if (yes) q.run();
+  }
   const bpFind = (id) => { const sc = bpScope(); return id && sc ? [...sc.querySelectorAll("[data-bp]")].find((e) => e.dataset.bpid === id && !e.closest(".leaving")) : null; };
   let bpShown = "", bpFam = null, bpHintHTML = "";
   function renderBP() {
@@ -208,12 +260,12 @@
         if (!scr.firstElementChild.style.transform) bpShift(scr.firstElementChild, 0, -(scr.bpY || 0), true);
       }
     }
-    const over = el.querySelector(".bp-over"), mh = BP.menu ? bpMenuHTML() : "";
+    const over = el.querySelector(".bp-over"), mh = bpOver() ? bpMenuHTML() : "";
     if (over.bpHTML !== mh) { over.bpHTML = mh; over.innerHTML = mh; over.hidden = !mh; }
     scr.inert = !!mh; el.querySelector(".bp-bar").inert = !!mh;
     // The focus: where it was, else where this screen last had it, else its first thing.
     let f = bpFind(BP.focus);
-    if (!f && !BP.menu) f = bpFind(bpMem(key).focus) || scr.querySelector("[data-bp]") || el.querySelector('.bp-tab[aria-current="true"]');
+    if (!f && !bpOver()) f = bpFind(bpMem(key).focus) || scr.querySelector("[data-bp]") || el.querySelector('.bp-tab[aria-current="true"]');
     if (!f) f = bpScope().querySelector("[data-bp]");
     if (f && !S.dialog && !S.picker) { if (document.activeElement !== f) f.focus({ preventScroll: true }); bpFocused(f, changed); }
   }
@@ -250,14 +302,16 @@
       const x = Math.max(0, Math.min(f.offsetLeft - padX, last.offsetLeft + last.offsetWidth + padX - track.clientWidth));
       bpShift(track, -x, 0, jump); BP.sx[scr.dataset.key + "|" + track.dataset.zone] = x;
     }
-    const blocks = [...sc.querySelectorAll("[data-block]")], grid = inScr && f.closest("[data-grid]");
+    const blocks = [...sc.querySelectorAll("[data-block]")], grid = inScr && f.closest("[data-grid], [data-col]");
     const bi = inScr ? blocks.indexOf(f.closest("[data-block]")) : 0;
     let y = 0;
+    const padTop = parseFloat(getComputedStyle(sc).paddingTop) || 0;
     if (grid) y = bpTopIn(f, sc) - (scr.clientHeight - f.offsetHeight) / 2;
-    else if (bi > 0) y = bpTopIn(blocks[bi], sc) - (parseFloat(getComputedStyle(sc).paddingTop) || 0);
+    else if (bi > 0) y = bpTopIn(blocks[bi], sc) - padTop;
     y = Math.max(0, Math.min(y, sc.scrollHeight - scr.clientHeight));
     bpShift(sc, 0, -y, jump); scr.bpY = y;
-    blocks.forEach((b, i) => b.classList.toggle("is-above", !grid && i < bi));
+    // A row that has gone up under the bar fades out.
+    blocks.forEach((b, i) => b.classList.toggle("is-above", !grid && i < bi && bpTopIn(b, sc) + b.offsetHeight - y <= padTop));
     $("#bp").classList.toggle("is-deep", y > 0);
   }
   // The art behind follows the game in focus, once the focus rests: its
@@ -297,10 +351,10 @@
   // The menu has one sign, its key at the end of the bar; Start opens it too.
   function bpHints(f) {
     const it = f && f.dataset.k && bpItem(f.dataset.k);
-    const list = [["A", (f && f.dataset.hint) || "Select"]];
-    if (it && it.g && cfg().players.length > 1 && !BP.choose) list.push(["Y", "Play as someone else"]);
-    if (it && bpRunning(it)) list.push(["X", "Close the game"]);
-    list.push(["B", BP.menu ? "Close" : "Back"]);
+    const list = f && f.dataset.hint === "" ? [] : [["A", (f && f.dataset.hint) || "Select"]];
+    if (it && it.g && cfg().players.length > 1 && !BP.choose && !BP.points && !bpOver()) list.push(["Y", "Play as someone else"]);
+    if (it && bpRunning(it) && !BP.points && !bpOver()) list.push(["X", "Close the game"]);
+    list.push(["B", BP.ask ? "Cancel" : BP.menu ? "Close" : "Back"]);
     const html = list.map(([g, t]) => `<span>${glyph(g)}${esc(t)}</span>`).join("");
     if (html !== bpHintHTML) { bpHintHTML = html; const foot = $("#bp .bp-foot"); if (foot) foot.innerHTML = html; }
   }
@@ -355,7 +409,7 @@
     sfx("move");
   }
   function bpTab(step) {
-    if (bpSub() || BP.menu) return;
+    if (bpSub() || bpOver()) return;
     const i = BP_TABS.findIndex((t) => t[0] === BP.tab);
     bpTabTo(BP_TABS[(i + step + BP_TABS.length) % BP_TABS.length][0]);
   }
@@ -364,7 +418,7 @@
   function bpTabTo(t) {
     if (t === BP.tab && !bpSub()) return;
     const a = document.activeElement, inBar = !!(a && a.closest && a.closest(".bp-bar"));
-    BP.tab = t; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.choose = null; BP.who = false;
+    BP.tab = t; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.choose = null; BP.who = false;
     BP.focus = inBar ? "tab:" + t : bpMem(bpScreenKey()).focus;
     sfx("tab");
     renderBP();
@@ -397,7 +451,15 @@
     if (!el) return;
     const go = el.dataset.go;
     if (el.animate && moving()) el.animate({ scale: ["1", "0.95", "1"] }, { duration: 180, easing: "ease-out" });
-    if (go === "open") { BP.detail = el.dataset.k; BP.from = el.dataset.bpid; BP.focus = "play"; sfx("go"); renderBP(); }
+    if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.from = el.dataset.bpid; BP.focus = "play"; sfx("go"); renderBP(); }
+    else if (go === "points") { BP.points = true; BP.focus = ""; sfx("go"); renderBP(); }
+    else if (go === "pt-make") bpPoint(el.dataset.k, "");
+    else if (go === "pt-restore") {
+      const it = bpItem(el.dataset.k), id = el.dataset.id;
+      if (it) bpAsk({ title: `Go back to ${el.dataset.name}?`, body: `The saves of ${it.name} become what they were then. The saves as they are now are kept as a save point first, so you can come back to them too.`, ok: "Go back to it", run: () => bpPoint(el.dataset.k, id) });
+    }
+    else if (go === "ask-no") bpAnswer(false);
+    else if (go === "ask-yes") bpAnswer(true);
     else if (go === "play") bpPlay(bpItem(el.dataset.k));
     else if (go === "app") bpApp(el.dataset.app, el.dataset.name);
     else if (go === "tag") { BP.tab = "library"; BP.tag = el.dataset.tag; BP.tagFrom = el.dataset.bpid; BP.focus = ""; sfx("go"); renderBP(); }
@@ -421,13 +483,24 @@
     }
     else if (go === "sound") { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); sfx("toggle"); toast(BP.sounds ? "Sounds on" : "Sounds off"); }
   }
+  // Makes a save point of a game's saves (id empty), or goes back to one.
+  async function bpPoint(k, id) {
+    const it = bpItem(k);
+    if (!it) return;
+    const key = recentKey(it), P = S.points[key] || (S.points[key] = {});
+    P.busy = true; renderBP();
+    try { if (id) await api.restoreSavePoint(key, id); else await api.makeSavePoint(key, ""); }
+    catch (e) { P.busy = false; toast(errText(e), "error"); renderBP(); }
+  }
   // Back, one step at a time: what's on top closes, a game's page goes back
   // to its cover, a screen goes up to the bar, the bar goes Home, and Home
   // asks before leaving.
   function bpBack() {
+    if (BP.ask) { bpAnswer(false); return; }
     if (BP.menu) { bpMenu(false); return; }
     const a = document.activeElement, inBar = !!(a && a.closest && a.closest(".bp-bar"));
     if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
+    else if (BP.detail && BP.points) { BP.points = false; BP.focus = "points"; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
     else if (BP.tab === "library" && BP.tagFrom) { BP.focus = BP.tagFrom; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; }
     else if (!inBar) BP.focus = "tab:" + BP.tab;
@@ -440,7 +513,7 @@
     const el = document.activeElement;
     const k = (el && el.dataset && el.dataset.k) || BP.detail;
     const it = k && bpItem(k);
-    if (it && it.g && cfg().players.length > 1 && !BP.choose) { if (!BP.detail) BP.from = el.dataset.bpid || ""; BP.choose = k; BP.focus = ""; sfx("go"); renderBP(); }
+    if (it && it.g && cfg().players.length > 1 && !BP.choose && !BP.points && !bpOver()) { if (!BP.detail) BP.from = el.dataset.bpid || ""; BP.choose = k; BP.focus = ""; sfx("go"); renderBP(); }
   }
   document.addEventListener("click", (ev) => {
     const el = BP.on && ev.target.closest("#bp [data-go]");
@@ -453,7 +526,7 @@
     if (!f || f.closest(".leaving")) return;
     bpFocused(f, false);
     // Resting on another tab shows its screen, as on a TV's home.
-    if (f.classList.contains("bp-tab") && f.dataset.t !== BP.tab && !bpSub() && !BP.menu) bpTabTo(f.dataset.t);
+    if (f.classList.contains("bp-tab") && f.dataset.t !== BP.tab && !bpSub() && !bpOver()) bpTabTo(f.dataset.t);
   });
   // A mouse wheel moves the focus, since nothing here scrolls by itself.
   let bpWheelAt = 0;
