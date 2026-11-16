@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.7.0, beta)
+## Where things stand (2.8.0, beta)
 
 These shipped recently, newest last:
 
@@ -1285,7 +1285,7 @@ These shipped recently, newest last:
   a PC: docs/TESTING.md 34. Not done: rumble, the lightbar, hiding the
   real pad.
 
-- **Unreleased, YouTube as Lootnest's own window** (the owner, 16 Nov:
+- **2.8.0, YouTube as Lootnest's own window** (the owner, 16 Nov:
   "pagina de youtube inca arata asa", the desktop site in Edge's kiosk).
   Edge didn't take `--user-agent` on the owner's PC, and its kiosk window
   is InPrivate, so a sign-in wouldn't have lasted. `lootnest.exe --app
@@ -1302,7 +1302,7 @@ These shipped recently, newest last:
   the real youtube.com/tv in Chromium with a stubbed pad; not seen on a
   PC: docs/TESTING.md 35. The old Edge profile `youtube-tv` is left.
 
-- **Unreleased, Big Picture design details** (the owner, 16 Nov: the
+- **2.8.0, Big Picture design details** (the owner, 16 Nov: the
   Home menu jumped between its buttons; a nicer overlay with
   achievements; achievements "as on PS" with the game's on the right;
   animations when choosing). `padLoop` has one pace for every screen
@@ -1328,7 +1328,7 @@ These shipped recently, newest last:
   `tv-achievements-in`, `tv-achievements-loading`. Not seen on a TV:
   docs/TESTING.md 36.
 
-- **Unreleased, Lootnest for TV 1.4.0** (c-dinca/lootnest-tv-webos#9; the
+- **2.8.0, Lootnest for TV 1.4.0** (c-dinca/lootnest-tv-webos#9; the
   owner, 16 Nov: less latency and stutter, a perfect picture). Moonlight's
   default stream was 720p at 10 Mbps; `lootnest_tune_picture` sets
   1920x1080 at 60 and 25 Mbps with HEVC once (`lootnest_tuned` in the

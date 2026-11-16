@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.8.0
+
+Big Picture's Home screen over a game and its Achievements are new, YouTube opens in its TV layout, and the TV's picture is sharper.
 
 - **A sharper picture on the TV.** Lootnest for TV 1.4.0 asks the PC for 1080p at 60 frames a second and 25 Mbps; it had been asking for 720p at 10 Mbps, which the TV stretched. What you choose in the TV app's Settings afterwards stays. Install it from Settings, TV, Add an LG TV, Install again.
 - **How a stream went.** When a stream ends, the TV app notes how many frames arrived and were shown, how many the network lost and in how many seconds, and how long a frame took on the PC, on the way and on the TV. Save a report includes it, so stutter can be traced to the network, the PC or the TV.
