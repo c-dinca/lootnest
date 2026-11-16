@@ -30,3 +30,20 @@ func TestCursorKeep(t *testing.T) {
 		}
 	}
 }
+
+func TestPCDisplay(t *testing.T) {
+	tv := Rect{0, 0, 1920, 1080}
+	small, big := Rect{-1280, -720, 0, 0}, Rect{-4480, -1440, -1920, 0}
+	if d, ok := PCDisplay(tv, []Rect{tv, small, big}); !ok || d != big {
+		t.Fatalf("%v %v", d, ok)
+	}
+	if d, ok := PCDisplay(tv, []Rect{tv, {1920, 0, 3840, 1080}}); !ok || d.L != 1920 {
+		t.Fatalf("beside: %v %v", d, ok)
+	}
+	if _, ok := PCDisplay(tv, []Rect{tv}); ok {
+		t.Fatal("only the TV")
+	}
+	if _, ok := PCDisplay(tv, []Rect{tv, {100, 100, 500, 500}}); ok {
+		t.Fatal("inside the TV")
+	}
+}

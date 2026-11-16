@@ -437,7 +437,7 @@ func (a *App) tick() {
 			switch {
 			case tv:
 				a.mu.Lock()
-				a.tvMenuOn = false
+				a.tvMenuOn, a.tvPlaying = false, ""
 				a.mu.Unlock()
 				a.tvBack()
 				a.emit("bpReturn", nil)
