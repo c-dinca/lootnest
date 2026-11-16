@@ -53,6 +53,18 @@ What makes it different, and the direction to keep pushing:
   ordered parts (`00-head.js` to `99-boot.js`, about 5,600 lines) that
   `app.go` (`uiJS`) and the harness join in name order. A part isn't valid
   on its own; put new code in the part it belongs to.
+- `design/trailer`: the trailer, a dev-only film made from this repo (its
+  README has the steps). `record.mjs` records the harness's page frame by
+  frame (Playwright's clock plus every animation stepped by hand, a drawn
+  pointer over the real mouse; takes and their cues are in `takes`);
+  `trailer.html`/`trailer.js` is one page where `seek(t)` places every
+  frame (titles, the swap diagram, the keys, the TV, the end; each take's
+  offset in the film); `music.mjs` makes the sound (a synthesized score at
+  120 BPM and the app's own interface sounds at the picture's cues);
+  `render.mjs` screenshots each frame into ffmpeg
+  (`out/lootnest-trailer.mp4`, 1080p60, 70 s; `sheet` and `still` to look
+  at parts). `out/` isn't committed. Names are "Player 1" and "Player 2"
+  (`anon=1`). When the launcher's look changes, record and render again.
 - `cmd/lootnest`, `cmd/setup` (the installer and its `setup.html`),
   `tools/mkicon.py` (draws the icon), `build.sh`.
 - `site/`: the website (https://c-dinca.github.io/lootnest/), plain

@@ -8,3 +8,6 @@ plugsign.key
 
 # Design directions being tried in the harness (large, dev only)
 design/directions/
+
+# The trailer: footage, frames and the film itself (large, made by design/trailer)
+design/trailer/out/
