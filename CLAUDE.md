@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.8.0, beta)
+## Where things stand (2.9.0, beta)
 
 These shipped recently, newest last:
 
@@ -1346,7 +1346,7 @@ These shipped recently, newest last:
   Big Picture screen over the Web API with the owner's client id: asked,
   not decided.
 
-- **Unreleased, Spotify's web player as an app** (the owner, 16 Nov:
+- **2.9.0, Spotify's web player as an app** (the owner, 16 Nov:
   Spotify "as on consoles"; a client id of their own was a no, since
   Spotify's development mode allows 5 listed users and extended access
   is for registered businesses). `core.WebApp` has `Nav` ("keys":
@@ -1369,7 +1369,7 @@ These shipped recently, newest last:
   over any app, from the Home menu (the owner: "when it's needed and
   only then").
 
-- **Unreleased, the controller as a mouse** (the owner, 16 Nov: "over
+- **2.9.0, the controller as a mouse** (the owner, 16 Nov: "over
   everything, when it's needed and only then"; it was M1's open item
   for store launchers). `core/padmouse.go`: `Pointer.Step` (dead zone
   0.24, a curve that's fine for small pushes, 1.15 screen heights a
