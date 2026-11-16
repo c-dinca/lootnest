@@ -14,7 +14,7 @@ import (
 
 // MediaApp is one app TV mode can start.
 type MediaApp struct {
-	ID   string `json:"id"`   // "youtube", "spotify", "discord", "spotify-app" or "stremio"
+	ID   string `json:"id"`   // "youtube", "spotify", "discord", "stremio", "spotify-app" or "stremio-app"
 	Name string `json:"name"` // as shown
 	Exe  string `json:"-"`
 	Args string `json:"-"`
@@ -92,6 +92,11 @@ var webApps = []WebApp{
 	// out wherever the PC's sound goes (the TV, in a stream); what you say
 	// needs a microphone the PC can hear, since a stream carries none back.
 	{ID: "discord", Name: "Discord", URL: "https://discord.com/app", Host: "discord.com", Nav: "spatial", Width: 1280, Mic: true},
+	// Stremio's own web version, which is laid out for a TV already. What
+	// needs Stremio's streaming server plays when Stremio or Stremio
+	// Service runs on this PC (the page finds it at 127.0.0.1:11470 and
+	// says so when it isn't there); Lootnest installs and starts neither.
+	{ID: "stremio", Name: "Stremio", URL: "https://web.stremio.com/", Host: "web.stremio.com", Nav: "spatial", Width: 1280},
 }
 
 // WebAppByID is the site shown for --app <id>.
@@ -130,14 +135,15 @@ func FindMediaApps(p MediaPaths, exists func(string) bool) []MediaApp {
 			out = append(out, MediaApp{ID: w.ID, Name: w.Name, Exe: p.Self, Args: WebAppArgs(w.ID), ByPID: true, Own: true})
 		}
 	}
-	// Spotify's own program too, when it's installed, beside the web one.
+	// Spotify's and Stremio's own programs too, when they're installed,
+	// beside the web ones.
 	if exe := first(j(p.AppData, "Spotify", "Spotify.exe"), j(p.LocalAppData, "Microsoft", "WindowsApps", "Spotify.exe")); exe != "" {
 		out = append(out, MediaApp{ID: "spotify-app", Name: "Spotify on this PC", Exe: exe, Proc: "spotify"})
 	}
 	if exe := first(j(p.LocalAppData, "Programs", "LNV", "Stremio-4", "stremio.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio", "stremio.exe"),
 		j(p.LocalAppData, "Programs", "Stremio", "stremio.exe"), j(p.LocalAppData, "Programs", "stremio-shell-ng", "stremio-shell-ng.exe"),
 		j(p.ProgramFiles, "Stremio", "stremio.exe")); exe != "" {
-		out = append(out, MediaApp{ID: "stremio", Name: "Stremio", Exe: exe, Proc: strings.ToLower(strings.TrimSuffix(filepath.Base(exe), ".exe"))})
+		out = append(out, MediaApp{ID: "stremio-app", Name: "Stremio on this PC", Exe: exe, Proc: strings.ToLower(strings.TrimSuffix(filepath.Base(exe), ".exe"))})
 	}
 	return out
 }

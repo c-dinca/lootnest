@@ -17,10 +17,10 @@ func TestFindMediaApps(t *testing.T) {
 	for _, a := range apps {
 		ids += a.ID + " "
 	}
-	if ids != "youtube spotify discord spotify-app stremio " {
+	if ids != "youtube spotify discord stremio spotify-app stremio-app " {
 		t.Fatalf("apps: %s", ids)
 	}
-	if apps[3].Proc != "spotify" || apps[4].Proc != "stremio" || !apps[0].ByPID || !apps[0].Own || !apps[1].Own || !apps[2].Own {
+	if apps[4].Proc != "spotify" || apps[5].Proc != "stremio" || apps[5].Own || !apps[0].ByPID || !apps[0].Own || !apps[1].Own || !apps[2].Own || !apps[3].Own {
 		t.Fatalf("following: %+v", apps)
 	}
 	// YouTube and Spotify are Lootnest's own windows, not a browser on the PC.
@@ -57,8 +57,13 @@ func TestFindMediaApps(t *testing.T) {
 	if !ok || !dc.Mic || sp.Mic || w.Mic || !dc.Owns("https://discord.com/channels/@me") || dc.Owns("https://discord.com.evil.example/app") || dc.Owns("https://cdn.discordapp.com/x") {
 		t.Fatalf("discord site %+v", dc)
 	}
-	if _, ok := WebAppByID("stremio"); ok {
-		t.Fatal("stremio isn't a site")
+	// Stremio's web version, and only its own pages press keys.
+	st, ok := WebAppByID("stremio")
+	if !ok || st.Nav != "spatial" || st.Mic || !st.Owns("https://web.stremio.com/#/detail/movie/tt1") || st.Owns("https://www.stremio.com/") || st.Owns("http://web.stremio.com/") {
+		t.Fatalf("stremio site %+v", st)
+	}
+	if _, ok := WebAppByID("stremio-app"); ok {
+		t.Fatal("the Stremio program isn't a site")
 	}
 	for _, c := range []struct {
 		width, px, dpi int

@@ -1511,6 +1511,19 @@ These shipped recently, newest last:
   in says "The requested resource is in use", and the engine refused
   connections on localhost:47990 when the report was saved.
 
+- **Unreleased, Stremio's web version as an app** (the owner, 16 Nov:
+  "vreau sa avem si stremio pe tv"; they also said no, for now, to
+  dropping Developer Mode through store apps: an unmodified LG takes
+  apps from outside its store only in Developer Mode). `core.WebApp`
+  `stremio` (web.stremio.com, `Nav` spatial, Width 1280): the site is
+  laid out for a TV and `padSpatial` drives it as it is. The installed
+  program's tile is now `stremio-app`, "Stremio on this PC". The page
+  looks for Stremio's streaming server at 127.0.0.1:11470 itself;
+  Lootnest installs and starts neither Stremio nor Stremio Service.
+  Tried against the real site in Chromium with a stubbed pad (moving
+  over posters and rows); playback in WebView2 isn't seen:
+  docs/TESTING.md 42.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
