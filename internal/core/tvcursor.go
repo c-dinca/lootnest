@@ -60,3 +60,19 @@ func CursorKeep(tv Rect, displays []Rect) (clip Rect, homeX, homeY int, ok bool)
 	}
 	return clip, (big.L + big.R) / 2, (big.T + big.B) / 2, true
 }
+
+// PCDisplay is the PC's own display while the TV shows tv: the largest
+// other display that doesn't overlap it, where TV mode's bar on the PC goes.
+// ok is false when the TV's is the only one.
+func PCDisplay(tv Rect, displays []Rect) (Rect, bool) {
+	var best Rect
+	for _, d := range displays {
+		if d == tv || d.area() <= 0 || overlap(d.L, d.R, tv.L, tv.R) > 0 && overlap(d.T, d.B, tv.T, tv.B) > 0 {
+			continue
+		}
+		if d.area() > best.area() {
+			best = d
+		}
+	}
+	return best, best.area() > 0
+}

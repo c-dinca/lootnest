@@ -158,6 +158,8 @@ type App struct {
 	tvWasHidden  bool   // the window was in the tray before TV mode
 	tvMenuOn     bool   // TV mode's Home menu is over the game
 	tvPSDown     bool   // a PlayStation pad's PS button is held
+	tvPlaying    string // the game TV mode started last, for the bar on the PC
+	tvKeyHeld    bool   // Ctrl+Shift+F11 is Lootnest's while TV mode is on
 	openTV       bool   // TV mode was asked for before the page was ready
 	safe         bool   // safe mode: started with every optional background piece off
 	restartArgs  string // start Lootnest again with these once this one quits
@@ -513,6 +515,10 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 	case msg == win.WM_HOTKEY && wp == hotkeyShot:
 		a.quickShot()
 		return 0, true
+	case msg == win.WM_HOTKEY && wp == hotkeyTV:
+		a.logf("TV mode off: Ctrl+Shift+F11 on the PC")
+		a.leaveTV()
+		return 0, true
 	case msg == win.WM_DPICHANGED:
 		win.ApplyDPIRect(hwnd, lp)
 		return 0, true
@@ -533,6 +539,9 @@ func (a *App) trayMenu() {
 		if s.Phase == "playing" {
 			items = append(items, win.MenuItem{Text: fmt.Sprintf("%s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID)), Disabled: true, ID: 9999})
 		}
+	}
+	if a.tv {
+		items = append(items, win.MenuItem{ID: 5, Text: "Leave TV mode"})
 	}
 	items = append(items, win.MenuItem{ID: 1, Text: "Open Lootnest"}, win.MenuItem{ID: 3, Text: "Big Picture"}, win.MenuItem{Sep: true})
 	games := a.cfg.Games
@@ -566,6 +575,9 @@ func (a *App) trayMenu() {
 		a.emit("bigPicture", map[string]any{"on": true})
 	case id == 4:
 		a.restart(!a.safe)
+	case id == 5:
+		a.logf("TV mode off: left from the tray")
+		a.leaveTV()
 	case id >= 100 && id-100 < len(ids):
 		a.requestLaunch(ids[id-100], "")
 	}

@@ -130,6 +130,13 @@ func (a *App) enterTV(holder uint32) {
 	win.ForceForeground(a.hwnd)
 	tvTaskbar(false)
 	win.WatchPadRawInput(a.hwnd, true)
+	held := win.RegisterHotKey(a.hwnd, hotkeyTV, win.ModControl|win.ModShift|win.ModNoRepeat, win.VK_F11)
+	if !held && !was {
+		a.logf("Ctrl+Shift+F11 is taken by another program; TV mode is left from the bar on the PC's screen")
+	}
+	a.mu.Lock()
+	a.tvKeyHeld = held || a.tvKeyHeld && was
+	a.mu.Unlock()
 	if !was {
 		go a.watchGuide()
 		go a.keepCursor()
@@ -162,8 +169,10 @@ func (a *App) leaveTV() {
 	}
 	hidden, playing := a.tvWasHidden, a.hidFor != ""
 	a.tv, a.tvHolder, a.openTV, a.bigPicture = false, 0, false, false
-	a.hidFor, a.tvMenuOn = "", false
+	a.hidFor, a.tvMenuOn, a.tvPlaying, a.tvKeyHeld = "", false, "", false
 	a.mu.Unlock()
+	win.UnregisterHotKey(a.hwnd, hotkeyTV)
+	win.HideTVBar()
 	tvTaskbar(true)
 	win.WatchPadRawInput(a.hwnd, false)
 	win.SetFullscreen(a.hwnd, false)
@@ -224,6 +233,9 @@ func (a *App) tvGameStarting(key, name string) {
 	if !tv {
 		return
 	}
+	a.mu.Lock()
+	a.tvPlaying = name
+	a.mu.Unlock()
 	a.emit("tvGame", map[string]any{"phase": "starting", "key": key, "name": name})
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
@@ -331,6 +343,7 @@ func (a *App) keepCursor() {
 			if held {
 				win.ClipCursor(nil)
 			}
+			win.HideTVBar()
 			return
 		}
 		if time.Since(looked) >= time.Second {
@@ -353,6 +366,11 @@ func (a *App) keepCursor() {
 				held = false
 			}
 			keep, hx, hy, clip = ok, x, y, [4]int{c.L, c.T, c.R, c.B}
+			if pc, ok := core.PCDisplay(tv, ds); ok {
+				win.ShowTVBar([4]int{pc.L, pc.T, pc.R, pc.B}, a.tvBarShows(), a.tvLeaveFromPC)
+			} else {
+				win.HideTVBar()
+			}
 		}
 		if !keep {
 			continue
@@ -365,6 +383,35 @@ func (a *App) keepCursor() {
 			held = true
 		}
 	}
+}
+
+// hotkeyTV is Ctrl+Shift+F11, held while TV mode is on: it leaves TV mode
+// from the PC's keyboard, wherever the focus is.
+const hotkeyTV = 0x4C54 // "LT"
+
+// tvBarShows is what TV mode's bar on the PC says.
+func (a *App) tvBarShows() win.TVBar {
+	a.mu.Lock()
+	playing, keys := a.tvPlaying, a.tvKeyHeld
+	a.mu.Unlock()
+	line := "The TV's stream ends when you leave"
+	if keys {
+		line = "Ctrl+Shift+F11 leaves it too"
+	}
+	title := "Lootnest is on the TV"
+	if playing != "" {
+		title = playing + " is on the TV"
+	}
+	return win.TVBar{Title: title, Line: line, Key: "Leave TV mode", Busy: "Leaving"}
+}
+
+// tvLeaveFromPC is the bar's key and Ctrl+Shift+F11: TV mode ends, the
+// stream with it, and the PC is as it was.
+func (a *App) tvLeaveFromPC() {
+	a.ui(func() {
+		a.logf("TV mode off: left from the PC")
+		a.leaveTV()
+	})
 }
 
 // tvHome is the controller's Home button in TV mode. Over a game it opens

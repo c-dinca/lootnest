@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.2
+
+Leaving TV mode from the PC.
+
+- **A bar on the PC's screen while Lootnest is on the TV**, at its bottom right, saying what's on the TV, with **Leave TV mode**. It never takes the keyboard from what you're doing on the PC.
+- **Ctrl+Shift+F11 leaves TV mode** from the PC's keyboard, wherever you are, and so does **Leave TV mode** in Lootnest's tray menu.
+- Leaving ends the TV's stream and puts the PC back as it was: the taskbar, a free mouse, and Lootnest where it was before.
+
 ## 2.5.1
 
 - **The mouse no longer gets stuck on the TV in TV mode.** It stays on the PC's own screens while TV mode is on, so you can use the PC, and the TV is driven by the controller alone. It's free again when TV mode ends.
