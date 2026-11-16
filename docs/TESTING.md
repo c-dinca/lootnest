@@ -751,3 +751,17 @@ On the LG TV, with section 27 done on the PC.
 3. YouTube: its TV layout in a window of its own, driven by the
    controller; your own Edge windows are untouched when it closes.
 4. Stremio: as Spotify.
+
+## 32. Leaving TV mode from the PC (2.5.2)
+
+1. With TV mode on and the PC's monitor on, the mouse stays on the PC's
+   monitor, and a bar at its bottom right says Lootnest (or the game) is
+   on the TV, with Leave TV mode.
+2. Typing in another program on the PC keeps its focus: the bar never
+   takes it.
+3. Leave TV mode on the bar: the TV's stream ends, the taskbar comes back
+   and the mouse is free; Lootnest is back where it was, or in the tray.
+4. Again with Ctrl+Shift+F11, and again from the tray's Leave TV mode.
+5. YouTube: full screen in its TV layout, no browser window or extension
+   page; Sign in with the code at youtube.com/activate, still signed in
+   the next time.

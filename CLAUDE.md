@@ -1170,6 +1170,15 @@ These shipped recently, newest last:
   the TV's) and `keepCursor` in app/tv.go hold it on the PC's displays
   (`win.ClipCursor`, set again whenever it's let go; a cursor on the TV
   goes to the largest PC display) and let it go when TV mode ends.
+- **2.5.2** Leaving TV mode from the PC (the owner: "easy, not a
+  struggle"; the main taskbar and tray are on the TV and hidden there).
+  `win/tvbar.go`: a GDI bar on its own thread (`ShowTVBar`, `HideTVBar`;
+  top-most, tool window, never activates, `MA_NOACTIVATE`) at the bottom
+  right of `core.PCDisplay` (the largest display not overlapping the
+  TV's), with a Racing Red Leave TV mode key (`tvLeaveFromPC`).
+  `keepCursor` shows and places it every second. Ctrl+Shift+F11
+  (`hotkeyTV`, held from `enterTV` to `leaveTV`, `tvKeyHeld`) and the
+  tray's Leave TV mode do the same. `tvPlaying` names the game in the bar.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
