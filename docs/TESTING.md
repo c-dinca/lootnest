@@ -899,3 +899,23 @@ On the LG TV, with section 27 done on the PC.
    choose the screen comes up and whether the others see it.
 5. Typing a message needs a keyboard: with Controller as a mouse on from
    the Home menu, Y opens Windows' on-screen keyboard.
+
+## 40. The TV app kept up to date
+
+1. With an older Lootnest for TV on a saved TV, Settings, TV: the TV's
+   row says its version and that the new one is ready; the key is
+   Update to that version.
+2. Update: no passphrase is asked for; the drawer counts through
+   connecting and installing, the TV opens Lootnest, and the row then
+   shows the new version. On the TV, the corner of Lootnest's screen
+   says the same version.
+3. End the stream (hold Start and Select two seconds): Size and Quality
+   are beside Play.
+4. With the TV on another app and an older Lootnest for TV on it, start
+   Lootnest on the PC and wait a minute: a note says the TV app is now
+   the new version, and the log has "went from ... to ...".
+5. With Lootnest for TV open on the TV, the log says it's left for
+   later, and nothing closes on the TV.
+6. After developer mode was turned on again on the TV (a new key):
+   Update says the kept key no longer opens the TV and to use the
+   passphrase; Add an LG TV with the passphrase works as before.

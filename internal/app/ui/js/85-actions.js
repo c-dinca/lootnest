@@ -657,7 +657,7 @@
     },
     "link-logs"() { api.linkLogs().catch(() => {}); },
     "lg-add"() { openLGTV(); },
-    "lg-again"(el) { openLGTV(el.dataset.ip, el.dataset.name); },
+    "lg-again"(el) { againLGTV(el.dataset.ip, el.dataset.name); },
     async "lg-forget"(el) {
       if (!(await confirmDialog({ title: `Forget ${el.dataset.name}?`, body: "It has to pair again to play here, and Lootnest stops keeping its developer mode on. The app stays on the TV until developer mode runs out.", ok: "Forget" }))) return;
       api.linkForgetLG(el.dataset.ip).catch(() => {});

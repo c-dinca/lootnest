@@ -21,6 +21,7 @@
       if (D && D.kind === "lgtv") { D.busy = false; D.error = ev.error || ""; D.public = !!ev.public; D.note = ""; D.done = !!ev.ok; renderOverlay(); }
       if (ev.ok) toast(`Lootnest is on ${ev.name}. Pick it up from the TV's home screen.`, "success");
     }
+    else if (ev.type === "linkTVUpdated") { toast(`Lootnest for TV on ${ev.name} is now ${ev.version}.`, "success"); return; }
     else if (ev.type === "linkPrivate") {
       const D = S.dialog;
       if (D && D.kind === "lgtv") {
@@ -43,6 +44,16 @@
     S.dialog = { kind: "lgtv", tvs: null, finding: true, ip: ip || "", name: name || "", busy: false, error: "", done: false };
     renderOverlay(); focusOverlay();
     api.linkFindTVs().catch(() => { S.dialog.finding = false; S.dialog.tvs = []; renderOverlay(); });
+  }
+  // A TV added before: Lootnest kept its key, so its app is installed again
+  // (or brought up to date) without anything done at the TV. If the key no
+  // longer opens the TV, the drawer asks for the passphrase as at first.
+  function againLGTV(ip, name) {
+    const D = S.dialog = { kind: "lgtv", tvs: [], finding: false, ip, name, busy: true, kept: true, error: "", done: false, started: Date.now() };
+    S.link = S.link || {}; S.link.step = { step: "copy" };
+    renderOverlay(); focusOverlay();
+    const tick = setInterval(() => { if (S.dialog !== D || !D.busy) { clearInterval(tick); return; } renderOverlay(); }, 1000);
+    api.linkInstallTV(ip, name, "").catch((e) => { D.busy = false; D.error = errText(e); renderOverlay(); });
   }
   function viewLGTV() {
     const D = S.dialog, L = S.link || {};
@@ -113,8 +124,10 @@
     const lgRows = (st.lg || []).map((t) => {
       const c = (st.tvs || []).find((x) => x.name === t.name);
       const state = c ? (c.connected ? "Streaming now" : "Paired") : "Not paired";
-      return setRow(esc(t.name), t.problem ? `<p class="error-text">${esc(t.problem)}</p>` : `${state}. Lootnest for TV ${esc(t.version || "")}, developer mode extended ${t.extended ? esc(ago(t.extended) || "just now") : "never"}.`,
-      `<span class="link-acts">${key(`data-action="lg-again" data-ip="${esc(t.ip)}" data-name="${esc(t.name)}"`, "Install again", "ghost")}${key(`data-action="lg-forget" data-ip="${esc(t.ip)}" data-name="${esc(t.name)}"${c ? ` data-uuid="${esc(c.uuid)}"` : ""}`, "Forget", "ghost")}</span>`);
+      // An older app on the TV than this Lootnest has for it: Update is the row's main key.
+      const old = !!(t.version && t.latest && t.version !== t.latest);
+      return setRow(esc(t.name), t.problem ? `<p class="error-text">${esc(t.problem)}</p>` : `${state}. Lootnest for TV ${esc(t.version || "")}${old ? `, and ${esc(t.latest)} is ready for it` : ""}, developer mode extended ${t.extended ? esc(ago(t.extended) || "just now") : "never"}.`,
+      `<span class="link-acts">${key(`data-action="lg-again" data-ip="${esc(t.ip)}" data-name="${esc(t.name)}"${busy ? " disabled" : ""}`, old ? `Update to ${esc(t.latest)}` : "Install again", old ? "primary" : "ghost")}${key(`data-action="lg-forget" data-ip="${esc(t.ip)}" data-name="${esc(t.name)}"${c ? ` data-uuid="${esc(c.uuid)}"` : ""}`, "Forget", "ghost")}</span>`);
     }).join("");
     const addLG = setRow("Add an LG TV", st.tvApp ? "Lootnest installs its TV app on the TV and pairs it. The TV needs developer mode, which takes a few minutes once." : "Comes with a later version of Lootnest.",
       key(`data-action="lg-add"${st.tvApp && on ? "" : " disabled"}`, "Add an LG TV", "primary"));
@@ -126,6 +139,6 @@
       ${L.pairError ? `<p class="error-text" role="alert">${esc(L.pairError)}</p>` : ""}</div>`;
     return setSub("Streaming engine", "", card(rows.join("")))
       + setSub("TVs", "", card(lgRows + tvRows + addLG + pair))
-      + setSub("Picture", "", card(setRow("In Moonlight's settings on the TV", "1080p at 60 fps and 20 to 30 Mbps, or 4K at 60 fps and 60 Mbps when the TV is on a cable. Lower the bitrate if the picture stutters.")))
+      + setSub("Picture", "", card(setRow("Size and Quality, on the TV", "In Lootnest on the TV, beside Play: Size (1080p, 1440p, 4K) and Quality (Automatic, Light, Balanced, Sharp). That screen shows when no stream runs: hold Start and Select for two seconds to leave one. Its Settings key has the frame rate and the exact bitrate.")))
       + setSub("Problems", "", card(setRow("Save a report", "The streaming engine's log and Lootnest's, without the engine's password, in one file to attach to a GitHub issue.", key('data-action="link-logs"', "Save"))));
   }

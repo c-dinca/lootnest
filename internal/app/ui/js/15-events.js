@@ -120,6 +120,7 @@
       case "linkPaired":
       case "linkTVs":
       case "linkTVDone":
+      case "linkTVUpdated":
       case "linkPrivate":
         linkEvent(ev);
         break;

@@ -174,6 +174,11 @@ func (a *App) leaveTV() {
 	a.conGen++
 	a.mu.Unlock()
 	win.UnregisterHotKey(a.hwnd, hotkeyTV)
+	// A newer Lootnest for TV goes on the TV once the app there is closed.
+	go func() {
+		time.Sleep(2 * time.Minute)
+		a.updateTVApps()
+	}()
 	win.HideTVBar()
 	tvTaskbar(true)
 	win.WatchPadRawInput(a.hwnd, false)

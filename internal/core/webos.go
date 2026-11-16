@@ -561,6 +561,26 @@ func (t *TV) HasTVApp() bool {
 	return strings.Contains(out, `"returnValue":true`) || strings.Contains(out, `"returnValue": true`)
 }
 
+// TVAppVersion is the version of Lootnest for TV on the TV, from the
+// app's own appinfo.json; "" when it isn't there or can't be read.
+func (t *TV) TVAppVersion() string {
+	out, err := t.run("cat "+shQuote("/media/developer/apps/usr/palm/applications/"+TVAppID+"/appinfo.json"), nil)
+	if err != nil {
+		return ""
+	}
+	return tvAppVersionIn(out)
+}
+
+func tvAppVersionIn(appinfo string) string {
+	var m struct {
+		Version string `json:"version"`
+	}
+	if json.Unmarshal([]byte(appinfo), &m) != nil {
+		return ""
+	}
+	return strings.TrimSpace(m.Version)
+}
+
 func tvErrorText(line string) string {
 	var m map[string]any
 	if json.Unmarshal([]byte(line), &m) == nil {
