@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Spotify on the TV, driven by the controller.** Spotify has no TV interface on the web, so Lootnest opens its web player in a window of its own, full screen and magnified to be read from a sofa. The D-pad or stick moves a white frame to the nearest thing that way and scrolls the list when there's more; A chooses, B goes back, X plays or pauses, LB and RB change track. Sign in once with the PC's keyboard and it stays signed in. Spotify's own program is still in Apps as Spotify on this PC when it's installed.
+
 ## 2.8.0
 
 Big Picture's Home screen over a game and its Achievements are new, YouTube opens in its TV layout, and the TV's picture is sharper.

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log"
 	"reflect"
+	"runtime"
 	"strconv"
 	"sync"
 	"unsafe"
@@ -112,6 +113,9 @@ type WebViewOptions struct {
 
 	// Lootnest patch: UserAgent, when set, is what the browser says it is.
 	UserAgent string
+
+	// Lootnest patch: Zoom, when over 0, magnifies the page by that much.
+	Zoom float64
 }
 
 // New creates a new webview in a new window.
@@ -181,6 +185,13 @@ func NewWithOptions(options WebViewOptions) WebView {
 	// No status bar for hovered links and no host objects: neither is used.
 	_ = settings.PutIsStatusBarEnabled(false)
 	_ = settings.PutAreHostObjectsAllowed(false)
+	if options.Zoom > 0 && runtime.GOARCH == "amd64" {
+		if ctl := chromium.GetController(); ctl != nil {
+			if err := ctl.PutZoomFactor(options.Zoom); err != nil {
+				log.Printf("zoom: %v", err)
+			}
+		}
+	}
 	if options.UserAgent != "" {
 		if err := settings.PutUserAgent(options.UserAgent); err != nil {
 			log.Printf("user agent: %v", err)

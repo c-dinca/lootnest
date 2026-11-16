@@ -1346,6 +1346,29 @@ These shipped recently, newest last:
   Big Picture screen over the Web API with the owner's client id: asked,
   not decided.
 
+- **Unreleased, Spotify's web player as an app** (the owner, 16 Nov:
+  Spotify "as on consoles"; a client id of their own was a no, since
+  Spotify's development mode allows 5 listed users and extended access
+  is for registered businesses). `core.WebApp` has `Nav` ("keys":
+  YouTube's TV interface reads arrows itself; "spatial": `padSpatial`
+  in app/webapp.go) and `Width` (the site's pixels across the screen;
+  `WebAppZoom`, applied with `WebViewOptions.Zoom` through
+  `ICoreWebView2Controller.PutZoomFactor`, a patch that passes the
+  double as Go's amd64 calls do). `padSpatial` keeps its own focus
+  (`data-ln-focus`, a white frame): the nearest thing that way among
+  what's visible and not covered, inside the open dialog or menu when
+  there is one, staying in the list being scrolled while it has more;
+  A is a real Enter for links and buttons (so sound may start) and a
+  click for the rest; B is Escape for what's on top, else
+  `history.back()`; X, LB, RB are the media keys. `ln_key` takes at
+  most 30 presses a second. Apps: `youtube`, `spotify` (web),
+  `spotify-app` (the program, when installed), `stremio`. Tried against
+  the real open.spotify.com signed out in Chromium with a stubbed pad;
+  protected playback (Widevine) in WebView2 and the zoom call are not
+  seen on a PC: docs/TESTING.md 37. Next: the controller as a mouse
+  over any app, from the Home menu (the owner: "when it's needed and
+  only then").
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
