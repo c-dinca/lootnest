@@ -165,7 +165,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.5.0, beta)
+## Where things stand (2.6.0, beta)
 
 These shipped recently, newest last:
 
@@ -1180,7 +1180,7 @@ These shipped recently, newest last:
   (`hotkeyTV`, held from `enterTV` to `leaveTV`, `tvKeyHeld`) and the
   tray's Leave TV mode do the same. `tvPlaying` names the game in the bar.
 
-- **Unreleased: Big Picture rebuilt, part 1** (the owner, 16 Nov: a
+- **2.6.0, Big Picture rebuilt, part 1** (the owner, 16 Nov: a
   console-quality TV interface; they approved the direction in
   `design/mocks/bp-tv.html`: bar on top, OK opens a game's page, the
   achievements row, Save points key, "files are loaded" line and trailers
@@ -1200,7 +1200,7 @@ These shipped recently, newest last:
   `bpMenu(true, "leave")`). The menu is an overlay (`.bp-over`,
   `bpMenuHTML`). Sizes are `--u` tokens (`--bp-*` in system.css); no
   blur in Big Picture. Harness shots `tv-*`.
-- **Unreleased: Big Picture rebuilt, part 2**: a game's page has its
+- **2.6.0, Big Picture rebuilt, part 2**: a game's page has its
   achievements as a row (`bpAchCards`: unlocked first, rarest leading;
   cards take the focus but do nothing) and Save points (`BP.points`,
   screen key `points:<key>`, `bpPointsScreen`, `bpPoint` over
@@ -1210,7 +1210,7 @@ These shipped recently, newest last:
   Column zones (`data-col`) slide like grids. Toasts over Big Picture
   sit under the bar at its scale. `bpOpen` starts the pad loop when a
   pad is already there. The launch screen and `#tv-menu` use `--u`.
-- **Unreleased: Big Picture rebuilt, part 3**: Settings for a remote
+- **2.6.0, Big Picture rebuilt, part 3**: Settings for a remote
   (`BP.settings`, screen `settings`, from the menu's sheet:
   `bpSettingsParts` is the one list of parts and rows, each row with
   `on` or `value`, `say` and `run`; `bpSet` saves a setting; column
@@ -1222,7 +1222,7 @@ These shipped recently, newest last:
   OK opens the game at `ach:0` (`BP.want` takes the focus when what it
   names is drawn). `bpMorph` takes both child lists before it walks
   them (a replaced child leaves the new tree).
-- **Unreleased: Big Picture rebuilt, part 4**: trailers behind the game
+- **2.6.0, Big Picture rebuilt, part 4**: trailers behind the game
   in focus (`BP.trailers`, pref `bpTrailers`, off by default, a row in
   Big Picture's Settings; `bpTrailer` from `bpAmbient`: only with Game
   details on, 2 s after the focus rests, asking for that game's details
@@ -1231,13 +1231,15 @@ These shipped recently, newest last:
   moves, a game starts, the screen is deep or dim, or Big Picture
   shuts). The scrim behind the picker and dialogs over Big Picture is
   plain, not blurred.
-- **Unreleased: Lootnest for TV 1.3.2** (c-dinca/lootnest-tv-webos#8)
+- **2.6.0, Lootnest for TV 1.3.2** (c-dinca/lootnest-tv-webos#8)
   is pinned: its screen was already in Lootnest's look at TV sizes
   (`ui->dpi` is the height over 3, so a unit is 2.25 px at 1080p), so
   only the keys changed: the one in focus is Ice Grey with dark words
   and grows a little (`key_tr`, 160 ms), the main key keeps red and the
   ring. Not seen on a TV. The Big Picture rebuild is done; next is what
-  the owner finds on the real TV.
+  the owner finds on the real TV. The owner asked for 2.6.0 as its
+  release (16 Nov), and for the older releases to be pruned: kept are
+  the 1.x milestones, 2.0.0, 2.2.11, 2.5.2 and the latest.
 - **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
   games inside Lootnest, as DS4Windows does. That reverses the roadmap's
   Controllers "will not do" (no virtual pad). Not started: it waits on

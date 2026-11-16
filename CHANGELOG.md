@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.6.0
 
-Big Picture and TV mode, rebuilt for the sofa (part 1: how you move, and Home).
+Big Picture and TV mode, rebuilt for the sofa: a console's home screen that a controller or a TV's remote is enough for.
 
 - **Everything is reachable with the arrows, OK and Back.** Up from the first row goes to the bar; left and right there change the section; the menu has its own key at the end of the bar. A TV remote is enough.
 - **The focus is kept.** Each row remembers where you were, and so does each screen. Back from a game's page lands on its cover.
