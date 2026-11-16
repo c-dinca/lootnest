@@ -1162,6 +1162,14 @@ These shipped recently, newest last:
   extensions, sync and implicit sign-in off, a PS4 Leanback user agent
   and `UserAgentClientHint` off (client hints still said Windows).
   Signing in is YouTube TV's own code at youtube.com/activate.
+  The mouse was trapped on the TV: Apollo's isolated display is primary
+  at (0,0) with the PC's displays moved so they touch it only at its
+  top-left corner (`rearrangeVirtualDisplayForLowerRight` in vdw.cpp), and
+  Windows puts the cursor on the primary. `core.CursorKeep` (only for
+  that isolated layout: no shared edge, other displays' bounds outside
+  the TV's) and `keepCursor` in app/tv.go hold it on the PC's displays
+  (`win.ClipCursor`, set again whenever it's let go; a cursor on the TV
+  goes to the largest PC display) and let it go when TV mode ends.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
