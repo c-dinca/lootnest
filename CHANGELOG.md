@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.10.4
+
+Apps in TV mode and Big Picture, tidied.
+
+- **One Spotify in Apps.** Spotify on this PC is gone from TV mode and Big Picture; Spotify is the one the controller drives.
+- **Stremio 5 is found.** Stremio shows in Apps when the program is installed, in Stremio 5's folder too.
+
 ## 2.10.3
 
 Last stream reads a real stream better.

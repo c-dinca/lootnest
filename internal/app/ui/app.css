@@ -2837,7 +2837,7 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-tile--app { width: var(--bp-app-w); }
 .bp-tile--app .bp-art { display: grid; place-items: center; aspect-ratio: 16 / 9; background: var(--bg-raised); box-shadow: var(--key-light); }
 .bp-tile--app .bp-art svg { height: 42%; width: auto; }
-.bp-app--spotify, .bp-app--spotify-app { color: var(--app-spotify); }
+.bp-app--spotify { color: var(--app-spotify); }
 .bp-app--youtube { color: var(--app-youtube); }
 .bp-app--discord { color: var(--app-discord); }
 .bp-app--stremio { color: var(--app-stremio); }

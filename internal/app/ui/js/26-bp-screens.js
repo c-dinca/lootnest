@@ -54,7 +54,7 @@
   // TV mode's apps: YouTube's TV interface and Spotify's web player in
   // windows of Lootnest's own, and Spotify's program and Stremio when the
   // PC has them (app/tv.go apiMediaApps).
-  const APP_ICONS = { spotify: "spotify-logo", "spotify-app": "spotify-logo", youtube: "youtube-logo", discord: "discord-logo", stremio: "popcorn" };
+  const APP_ICONS = { spotify: "spotify-logo", youtube: "youtube-logo", discord: "discord-logo", stremio: "popcorn" };
   function bpAppsRow() {
     if (!BP.apps) { BP.apps = []; api.mediaApps().then((l) => { BP.apps = l || []; if (BP.apps.length && BP.on && BP.tab === "home") renderBP(false); }).catch(() => {}); }
     if (!BP.apps.length) return "";

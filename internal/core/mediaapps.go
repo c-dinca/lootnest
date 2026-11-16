@@ -14,7 +14,7 @@ import (
 
 // MediaApp is one app TV mode can start.
 type MediaApp struct {
-	ID   string `json:"id"`   // "youtube", "spotify", "discord", "spotify-app" or "stremio"
+	ID   string `json:"id"`   // "youtube", "spotify", "discord" or "stremio"
 	Name string `json:"name"` // as shown
 	Exe  string `json:"-"`
 	Args string `json:"-"`
@@ -130,11 +130,12 @@ func FindMediaApps(p MediaPaths, exists func(string) bool) []MediaApp {
 			out = append(out, MediaApp{ID: w.ID, Name: w.Name, Exe: p.Self, Args: WebAppArgs(w.ID), ByPID: true, Own: true})
 		}
 	}
-	// Spotify's own program too, when it's installed, beside the web one.
-	if exe := first(j(p.AppData, "Spotify", "Spotify.exe"), j(p.LocalAppData, "Microsoft", "WindowsApps", "Spotify.exe")); exe != "" {
-		out = append(out, MediaApp{ID: "spotify-app", Name: "Spotify on this PC", Exe: exe, Proc: "spotify"})
-	}
-	if exe := first(j(p.LocalAppData, "Programs", "LNV", "Stremio-4", "stremio.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio", "stremio.exe"),
+	// Stremio is its own program, when it's installed (the owner, 16 Nov
+	// 2026: only the program, not its web version, which needs the
+	// program's streaming server anyway). Spotify's program isn't listed:
+	// one Spotify, the web one.
+	if exe := first(j(p.LocalAppData, "Programs", "LNV", "Stremio-5", "stremio-shell-ng.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio-5", "stremio.exe"),
+		j(p.LocalAppData, "Programs", "LNV", "Stremio-4", "stremio.exe"), j(p.LocalAppData, "Programs", "LNV", "Stremio", "stremio.exe"),
 		j(p.LocalAppData, "Programs", "Stremio", "stremio.exe"), j(p.LocalAppData, "Programs", "stremio-shell-ng", "stremio-shell-ng.exe"),
 		j(p.ProgramFiles, "Stremio", "stremio.exe")); exe != "" {
 		out = append(out, MediaApp{ID: "stremio", Name: "Stremio", Exe: exe, Proc: strings.ToLower(strings.TrimSuffix(filepath.Base(exe), ".exe"))})
