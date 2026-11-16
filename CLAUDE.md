@@ -1294,11 +1294,11 @@ These shipped recently, newest last:
   full screen on Lootnest's monitor (`win.FullscreenLike`), data in
   `apps\youtube`, the PS4 Leanback name set through
   `WebViewOptions.UserAgent` (a patch to third_party/go-webview2:
-  `PutUserAgent`). `core.WebApp`, `WebAppByID`; `MediaApp.Own`,
+  `PutUserAgent`). `core.WebApp` (`Host`), `WebAppByID`; `MediaApp.Own`,
   `MediaPaths.Self`. Leanback reads keys, never the Gamepad API: `padKeys`
   (added to every page) reads every pad as one and asks `ln_key`, bound
   only for youtube.com pages, which presses a real key (`win.TapKey`,
-  SendInput) only while that window is in front. Checked here against
+  SendInput) only while that window is in front (`WebApp.Owns`: https and the host exactly; a Copilot Autofix merged with #254 had made it refuse every page). Checked here against
   the real youtube.com/tv in Chromium with a stubbed pad; not seen on a
   PC: docs/TESTING.md 35. The old Edge profile `youtube-tv` is left.
 
