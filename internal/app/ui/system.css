@@ -347,7 +347,7 @@
   --launch-run: 1.4s;
   --tv-menu-side: calc(560 * var(--u)); --tv-menu-info: calc(840 * var(--u));  /* the Home screen over a game: what to do, and its achievements */
   /* the apps' own colours, only on their tile in TV mode */
-  --app-spotify: #1ed760; --app-youtube: #ff3b30; --app-stremio: #8a5aab;
+  --app-spotify: #1ed760; --app-youtube: #ff3b30; --app-stremio: #8a5aab; --app-discord: #7c88f7;
   --tv-menu-scrim: linear-gradient(90deg, rgb(17 18 23 / 0.94) 0%, rgb(17 18 23 / 0.8) 38%, rgb(17 18 23 / 0.5) 100%);  /* over the game's picture: the menu's side dark, the rest dimmed */
   /* TV mode (Lootnest Link), read from about 3 m: no text under 24px at
      1080p, growing with the screen past it. */

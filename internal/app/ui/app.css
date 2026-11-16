@@ -2837,6 +2837,7 @@ body:has(> #bp) #overlay .scrim { z-index: 46; }
 .bp-tile--app .bp-art svg { height: 42%; width: auto; }
 .bp-app--spotify, .bp-app--spotify-app { color: var(--app-spotify); }
 .bp-app--youtube { color: var(--app-youtube); }
+.bp-app--discord { color: var(--app-discord); }
 .bp-app--stremio { color: var(--app-stremio); }
 
 /* The game in focus, said large. */

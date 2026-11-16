@@ -883,3 +883,19 @@ On the LG TV, with section 27 done on the PC.
 5. Over a game it's off unless turned on from the Home menu (for a
    launcher's window); it's off again for the next game.
 6. Close the program: the pointer stops following the stick.
+
+## 39. Discord as Lootnest's own window
+
+1. Big Picture, Apps, Discord: its sign-in page, full screen and large.
+   Scan the QR code with Discord on a phone: signed in, and still signed
+   in the next time.
+2. The controller moves a white frame through servers, channels and
+   messages; A opens a server and a channel; B goes back or closes what's
+   on top.
+3. Join a voice channel: no question about the microphone, the others
+   are heard (on the TV while it streams), and with a microphone on the
+   PC they hear you.
+4. Share your screen from the voice channel: note whether a window to
+   choose the screen comes up and whether the others see it.
+5. Typing a message needs a keyboard: with Controller as a mouse on from
+   the Home menu, Y opens Windows' on-screen keyboard.

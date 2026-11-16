@@ -1389,6 +1389,22 @@ These shipped recently, newest last:
   the on-screen keyboard least of all (it may refuse made-up clicks):
   docs/TESTING.md 38.
 
+- **Unreleased, Discord as an app** (the owner, 16 Nov: Discord on the
+  TV, joining a server's voice, hearing the others, sharing the
+  screen). `core.WebApp` `discord` (discord.com/app, `Nav` spatial,
+  `Mic`). `WebViewOptions.Microphone` (go-webview2 patch) allows the
+  microphone for the pages it says yes to (`WebApp.Owns`), through
+  `Chromium.PermissionFilter`; the library's `PermissionRequested` read
+  the permission's kind by value, so no request had ever been answered:
+  fixed, which also makes the main window's clipboard permission real.
+  Icon `discord-logo` (tools/icons.py), `--app-discord`. Sound comes
+  out where the PC's does (Apollo's sink, so the TV). A stream carries
+  no microphone back (Apollo 0.4.6 and moonlight-common-c have none),
+  so talking needs a microphone on the PC; a headset in a controller
+  works only when that controller is on the PC by USB. Tried only on
+  discord.com's sign-in page (the QR code, the frame moving); voice and
+  screen sharing in WebView2 are not seen: docs/TESTING.md 39.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
