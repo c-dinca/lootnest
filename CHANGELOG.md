@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.1
+
+- **The mouse no longer gets stuck on the TV in TV mode.** It stays on the PC's own screens while TV mode is on, so you can use the PC, and the TV is driven by the controller alone. It's free again when TV mode ends.
+- **YouTube opens in its TV layout, full screen,** with no browser window around it and none of your browser's extensions or sign-in opening on the TV. Your own browser is left as it is. To use your account, choose Sign in on YouTube and type the code it shows at youtube.com/activate on your phone; it stays signed in after that.
+
 ## 2.5.0
 
 Apps in TV mode.

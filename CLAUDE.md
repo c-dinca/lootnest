@@ -1155,6 +1155,22 @@ These shipped recently, newest last:
   (c-dinca/lootnest-tv-webos#7) notes its picture and sound backends and
   whether a stream's sound opened, for the owner's silent TV.
 
+- **2.5.1** YouTube in 2.5.0 opened youtube.com/tv in the desktop layout,
+  and the fresh Edge profile signed itself in and synced the user's
+  extensions, whose pages opened in browser windows on the TV.
+  `youTubeArgs`: `--kiosk` (Edge adds `--edge-kiosk-type=fullscreen`),
+  extensions, sync and implicit sign-in off, a PS4 Leanback user agent
+  and `UserAgentClientHint` off (client hints still said Windows).
+  Signing in is YouTube TV's own code at youtube.com/activate.
+  The mouse was trapped on the TV: Apollo's isolated display is primary
+  at (0,0) with the PC's displays moved so they touch it only at its
+  top-left corner (`rearrangeVirtualDisplayForLowerRight` in vdw.cpp), and
+  Windows puts the cursor on the primary. `core.CursorKeep` (only for
+  that isolated layout: no shared edge, other displays' bounds outside
+  the TV's) and `keepCursor` in app/tv.go hold it on the PC's displays
+  (`win.ClipCursor`, set again whenever it's let go; a cursor on the TV
+  goes to the largest PC display) and let it go when TV mode ends.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

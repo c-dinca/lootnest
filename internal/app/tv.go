@@ -132,6 +132,7 @@ func (a *App) enterTV(holder uint32) {
 	win.WatchPadRawInput(a.hwnd, true)
 	if !was {
 		go a.watchGuide()
+		go a.keepCursor()
 	}
 	if ready {
 		a.emit("tv", map[string]any{"on": true})
@@ -302,6 +303,67 @@ func (a *App) watchGuide() {
 			a.ui(a.tvHome)
 		}
 		was = down
+	}
+}
+
+// keepCursor keeps the PC's mouse on the PC's own displays while TV mode is
+// on (core.CursorKeep): TV mode is driven by the controller, and the
+// isolated display the TV shows touches the PC's only at a corner, so a
+// cursor Windows put on it couldn't come back. A cursor found on the TV is
+// moved to the PC's largest display, and it's held there again whenever
+// Windows or a game lets it go. It's let go when TV mode ends.
+func (a *App) keepCursor() {
+	var (
+		clip   [4]int
+		tv     core.Rect
+		keep   bool
+		held   bool
+		hx, hy int
+		looked time.Time
+	)
+	box := func(b [4]int) core.Rect { return core.Rect{L: b[0], T: b[1], R: b[2], B: b[3]} }
+	for {
+		time.Sleep(100 * time.Millisecond)
+		a.mu.Lock()
+		on := a.tv
+		a.mu.Unlock()
+		if !on {
+			if held {
+				win.ClipCursor(nil)
+			}
+			return
+		}
+		if time.Since(looked) >= time.Second {
+			looked = time.Now()
+			var ds []core.Rect
+			for _, d := range win.Displays() {
+				ds = append(ds, box(d))
+			}
+			tv = box(win.PrimaryDisplay())
+			c, x, y, ok := core.CursorKeep(tv, ds)
+			if ok != keep {
+				if ok {
+					a.logf("TV mode: the mouse stays on the PC's displays (%d,%d to %d,%d); the TV's is %d,%d to %d,%d", c.L, c.T, c.R, c.B, tv.L, tv.T, tv.R, tv.B)
+				} else {
+					a.logf("TV mode: the mouse is free (%d displays, the TV's isn't on its own)", len(ds))
+				}
+			}
+			if !ok && held {
+				win.ClipCursor(nil)
+				held = false
+			}
+			keep, hx, hy, clip = ok, x, y, [4]int{c.L, c.T, c.R, c.B}
+		}
+		if !keep {
+			continue
+		}
+		if x, y, ok := win.CursorPos(); ok && tv.Has(x, y) {
+			win.MoveCursor(hx, hy)
+		}
+		if win.CursorClip() != clip {
+			win.ClipCursor(&clip)
+			held = true
+		}
 	}
 }
 
