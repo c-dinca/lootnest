@@ -65,6 +65,8 @@ const shots = [
   ["tv-library-400", "tv=1&players=1&games=400", [key("e"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],
   ["tv-achievements", "tv=1&players=1", [key("e"), key("e")]],
   ["tv-leave", "tv=1&players=1", [key("Escape"), key("Escape")]],
+  ["tv-menu", "tv=1&players=1", [key("ArrowUp"), key("ArrowLeft"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter")]],
+  ["tv-settings", "tv=1&players=1", [key("ArrowUp"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter"), key("ArrowDown"), key("Enter"), key("ArrowDown"), key("ArrowRight")]],
   ["tv-empty", "tv=1&players=1&games=0", []],
   ["tv-scanning", "tv=1&players=1&state=loading", []],
   ["players-edit", "", [nav("players"), click('[data-action="edit-profiles"]')]],

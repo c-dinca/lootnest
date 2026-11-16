@@ -6,9 +6,9 @@
   // itself: rows and the screen slide (transform only) to keep the focus in
   // place. A redraw changes only what differs, so nothing blinks or loses
   // its place when art or a session arrives.
-  const bpScreenKey = () => (BP.choose ? "choose:" + BP.choose : BP.detail && BP.points ? "points:" + BP.detail : BP.detail ? "detail:" + BP.detail : "tab:" + BP.tab + (BP.tab === "library" ? ":" + BP.tag : ""));
+  const bpScreenKey = () => (BP.settings ? "settings" : BP.choose ? "choose:" + BP.choose : BP.detail && BP.points ? "points:" + BP.detail : BP.detail ? "detail:" + BP.detail : "tab:" + BP.tab + (BP.tab === "library" ? ":" + BP.tag : ""));
   const bpMem = (k) => BP.mem[k] || (BP.mem[k] = { focus: "", rows: {} });
-  const bpSub = () => !!(BP.detail || BP.choose);
+  const bpSub = () => !!(BP.detail || BP.choose || BP.settings);
   function bpArt(it, wide) {
     loadArt(it); ensureCover(it);
     return artFor(it, wide ? "hero" : "cover");
@@ -71,6 +71,7 @@
   // The screen on show, as the inside of its sliding sheet.
   function bpScreen() {
     const all = libraryItems();
+    if (BP.settings) return bpSettingsScreen();
     if (BP.choose) {
       const it = bpItem(BP.choose);
       return `<div class="bp-center" data-block><p class="bp-kick">${esc(it ? it.name : "")}</p><h1>Who's playing?</h1>
@@ -112,9 +113,12 @@
       if (!S.allAch) return `<section class="bp-lib" data-block><div class="bp-cards">${Array.from({ length: 6 }, () => '<span class="bp-card bp-card--ghost is-waiting" aria-hidden="true"></span>').join("")}</div></section>`;
       if (!rows.length) return bpEmpty("No achievements yet", "They show here once a game on this PC has some.", "");
       const who = (seated() || cfg().players[0] || {}).id;
-      return `<section class="bp-lib" data-block><div class="bp-cards" data-zone="ach" data-grid>${rows.map(({ g, it }) => {
-        const own = g.players && g.players[who], u = own ? own.unlocked : g.unlocked, pct = Math.round((u / g.total) * 100);
-        return `<button class="bp-card" data-bp data-bpid="a:${esc(bpKey(it))}" data-k="${esc(bpKey(it))}" data-go="open" data-hint="Open"><span class="ach-gring">${ring(pct, 64)}</span><span><b>${esc(g.name)}</b><span>${u} of ${g.total}</span></span></button>`; }).join("")}</div></section>`;
+      const mine = rows.map((r) => ({ ...r, u: r.g.players && r.g.players[who] ? r.g.players[who].unlocked : r.g.unlocked }));
+      const sum = mine.reduce((n, r) => n + r.u, 0), of = mine.reduce((n, r) => n + r.g.total, 0);
+      return `<section class="bp-lib" data-block><div class="bp-lib-head"><h1 class="bp-h1"><span class="ln-num">${sum}</span> of ${of} unlocked</h1><span class="bp-count ln-num">${rows.length} ${rows.length === 1 ? "game" : "games"}</span></div>
+        <div class="bp-cards" data-zone="ach" data-grid>${mine.map(({ g, it, u }) => {
+        const pct = Math.round((u / g.total) * 100), a = bpArt(it, false);
+        return `<button class="bp-card" data-bp data-bpid="a:${esc(bpKey(it))}" data-k="${esc(bpKey(it))}" data-go="open" data-focus="ach:0" data-hint="Open"><span class="bp-card-art">${a.url ? artImg(a, "cover") : ""}</span><span class="bp-card-text"><b>${esc(g.name)}</b><span>${u} of ${g.total}</span><span class="bp-meter"><i style="width:${pct}%"></i></span></span><span class="ach-gring">${ring(pct, 64)}</span></button>`; }).join("")}</div></section>`;
     }
     const recent = recentItems(all, false).slice(0, 12);
     const tags = {};
@@ -154,6 +158,44 @@
     return `<section class="bp-list" data-block>${head}${P.error ? `<p class="bp-note">${esc(P.error)}</p>` : !list.length ? '<p class="bp-note">None yet. A save point is a copy of this game\'s saves as they are now, to come back to.</p>' : ""}
       <div class="bp-opts" data-zone="points" data-col>${make}${rows}</div></section>`;
   }
+  // Settings, made for a remote: the parts on the left, big rows on the
+  // right that OK changes, and a line under them saying what the row in
+  // focus does. Only settings Lootnest already has.
+  const BP_SIGNS = [["", "Automatic"], ["xbox", "Xbox"], ["playstation", "PlayStation"], ["nintendo", "Nintendo"]];
+  const BP_MOTION = [["", "Full"], ["less", "Less"], ["off", "Off"]];
+  function bpSettingsParts() {
+    const s = cfg().settings, next = (list, v) => list[(list.findIndex((x) => x[0] === v) + 1) % list.length][0], label = (list, v) => (list.find((x) => x[0] === v) || list[0])[1];
+    const flip = (key) => () => bpSet(key, !s[key]);
+    const parts = [
+      { id: "sound", name: "Sound", opts: [
+        { id: "move", name: "Sounds as you move", on: BP.sounds, say: "A click as the focus moves, and one for Select and Back.", run: () => { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); renderBP(); } },
+        { id: "cues", name: "Sounds for unlocks, save points and swaps", on: !s.soundsOff, say: "Heard over a game too. Never for a game with an anti-cheat.", run: flip("soundsOff") }] },
+      { id: "picture", name: "Picture and motion", opts: [
+        { id: "motion", name: "Motion", value: label(BP_MOTION, s.motion || ""), say: "Full moves and fades everything. Less keeps only the fades. Off changes screens at once.", run: () => bpSet("motion", next(BP_MOTION, s.motion || "")) },
+        { id: "start", name: "Open in Big Picture when Lootnest starts", on: !!s.openBigPicture, say: "For a PC that is mostly used from the sofa.", run: flip("openBigPicture") }] },
+      { id: "controller", name: "Controller", opts: [
+        { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV reaches the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
+      { id: "play", name: "While you play", opts: [
+        { id: "toasts", name: "Show achievements as they unlock", on: !s.achToastsOff, say: "A small note over the game, in the profile's colour. Never over a game with an anti-cheat.", run: flip("achToastsOff") }] },
+      { id: "about", name: "About", opts: [
+        { id: "version", name: "Lootnest", value: [S.d.version, S.d.stage].filter(Boolean).join(" "), say: "Everything else is in Settings in Lootnest's window on the PC.", run: null }] },
+    ];
+    if (BP.tv) parts[4].opts.push({ id: "leave", name: "Leave TV mode", value: "", say: "Ends the stream to the TV. Lootnest stays open on the PC.", run: () => { api.tvExit().catch(() => {}); tvClose(); } });
+    return parts;
+  }
+  function bpSet(key, value) {
+    const s = JSON.parse(JSON.stringify(cfg().settings));
+    s[key] = value;
+    api.saveSettings({ settings: s, autostart: S.d.autostart }).then(refresh, (e) => { toast(errText(e), "error"); refresh(); });
+  }
+  function bpSettingsScreen() {
+    const parts = bpSettingsParts(), cur = parts.find((x) => x.id === BP.setCat) || parts[0];
+    return `<section class="bp-set" data-block><div><h1>Settings</h1>
+      <div class="bp-cats" data-zone="cats" data-col data-right="opts">${parts.map((x) => `<button class="bp-cat" data-bp data-bpid="cat:${x.id}" data-cat="${x.id}" data-go="cat" aria-pressed="${x === cur}" data-hint="Open">${esc(x.name)}</button>`).join("")}</div></div>
+      <div class="bp-set-main"><div class="bp-opts" data-zone="opts" data-col data-left="cats">${cur.opts.map((o) =>
+        `<button class="bp-opt" data-bp data-bpid="opt:${cur.id}:${o.id}" data-go="set" data-opt="${cur.id}:${o.id}" data-say="${esc(o.say)}" data-hint="${o.run ? (o.on === undefined && o.value ? "Change" : o.on === undefined ? "Select" : o.on ? "Turn off" : "Turn on") : ""}"><b>${esc(o.name)}</b>${o.on === undefined ? `<span class="bp-val">${esc(o.value || "")}</span>` : `<span class="bp-val">${o.on ? "On" : "Off"}</span><span class="bp-sw${o.on ? " on" : ""}"></span>`}</button>`).join("")}</div>
+        <p class="bp-say" data-own></p></div></section>`;
+  }
   // The menu over the screen: what Start opens, and what Back on Home asks.
   // A question (BP.ask) uses the same sheet, with the safe answer in focus.
   function bpMenuHTML() {
@@ -165,10 +207,11 @@
     }
     const seat = seated(), leave = BP.menuWhy === "leave";
     return `<div class="bp-dlg" role="dialog" aria-modal="true" aria-label="Menu"><h1>${leave ? (BP.tv ? "Leave TV mode?" : "Leave Big Picture?") : "Menu"}</h1>
-      ${BP.tv ? "<p>Leaving ends the stream to the TV. Lootnest stays open on the PC.</p>" : ""}
+      ${BP.tv && leave ? "<p>Leaving ends the stream to the TV. Lootnest stays open on the PC.</p>" : ""}
       <div class="bp-dlg-keys" data-zone="menu" data-col>
         <button class="bp-key" data-bp data-bpid="menu:back" data-go="menu-close">${leave ? "Stay" : "Back to games"}</button>
-        ${cfg().players.length > 1 ? `<button class="bp-key" data-bp data-bpid="menu:who" data-go="menu-who">${seat ? lnAvatar(seat, "32") : ""}${solo() ? "Switch profile" : "Who's playing"}</button>` : ""}
+        ${cfg().players.length > 1 && !leave ? `<button class="bp-key" data-bp data-bpid="menu:who" data-go="menu-who">${seat ? lnAvatar(seat, "32") : ""}${solo() ? "Switch profile" : "Who's playing"}</button>` : ""}
+        ${leave ? "" : `<button class="bp-key" data-bp data-bpid="menu:settings" data-go="menu-settings">${ph("gear-six")}Settings</button>`}
         <button class="bp-key" data-bp data-bpid="menu:exit" data-go="${BP.tv ? "tv-exit" : "shut"}">${BP.tv ? "Leave TV mode" : "Leave Big Picture"}</button></div></div>`;
   }
   // How a new screen arrives: a tab from its side, a game's page from
@@ -193,7 +236,8 @@
     for (const at of [...a.attributes]) if (!b.hasAttribute(at.name) && !(live && (at.name === "style" || at.name === "class" || at.name === "data-k"))) a.removeAttribute(at.name);
     for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value && !(own && at.name === "class")) a.setAttribute(at.name, at.value);
     if (own) return;
-    for (let i = 0; i < a.children.length; i++) bpMorph(a.children[i], b.children[i]);
+    const as = [...a.children], bs = [...b.children]; // a replaced child leaves b, so the lists are taken first
+    for (let i = 0; i < as.length; i++) bpMorph(as[i], bs[i]);
   }
   const bpOver = () => !!(BP.menu || BP.ask);
   const bpScope = () => (bpOver() ? $("#bp .bp-over") : $("#bp"));
@@ -233,7 +277,8 @@
     const seatHTML = seat ? `<span class="ln-player" style="--player:${esc(seat.color)}">${lnAvatar(seat, "32")}</span>${esc(seat.name)}` : "";
     const seatEl = el.querySelector(".bp-seat");
     if (seatEl.innerHTML !== seatHTML) seatEl.innerHTML = seatHTML;
-    if (bpFam !== pad.fam) { bpFam = pad.fam; el.querySelector(".bp-lb").innerHTML = pad.fam ? glyph("LB") : ""; el.querySelector(".bp-rb").innerHTML = pad.fam ? glyph("RB") : ""; bpHintHTML = ""; }
+    const fam = pad.fam + "|" + BP.signs;
+    if (bpFam !== fam) { bpFam = fam; el.querySelector(".bp-lb").innerHTML = pad.fam ? glyph("LB") : ""; el.querySelector(".bp-rb").innerHTML = pad.fam ? glyph("RB") : ""; bpHintHTML = ""; }
     el.querySelector(".bp-clock").textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     el.querySelector(".bp-bar").classList.toggle("is-sub", sub);
     el.querySelectorAll(".bp-tab").forEach((t) => { t.setAttribute("aria-current", String(BP.tab === t.dataset.t)); t.tabIndex = sub ? -1 : 0; });
@@ -264,6 +309,10 @@
     if (over.bpHTML !== mh) { over.bpHTML = mh; over.innerHTML = mh; over.hidden = !mh; }
     scr.inert = !!mh; el.querySelector(".bp-bar").inert = !!mh;
     // The focus: where it was, else where this screen last had it, else its first thing.
+    // A place asked for that isn't drawn yet (a game's achievements, still
+    // being read) takes the focus when it comes, unless the focus has moved.
+    const want = BP.want && !bpOver() && bpFind(BP.want);
+    if (want) { BP.focus = BP.want; BP.want = ""; }
     let f = bpFind(BP.focus);
     if (!f && !bpOver()) f = bpFind(bpMem(key).focus) || scr.querySelector("[data-bp]") || el.querySelector('.bp-tab[aria-current="true"]');
     if (!f) f = bpScope().querySelector("[data-bp]");
@@ -280,6 +329,8 @@
     bpPlace(f, jump);
     bpAmbient(f, jump);
     bpHints(f);
+    const say = scr && scr.querySelector(".bp-say");
+    if (say && f.dataset.say !== undefined && say.textContent !== f.dataset.say) say.textContent = f.dataset.say;
   }
   const bpTopIn = (el, root) => { let y = 0; for (let n = el; n && n !== root; n = n.offsetParent) y += n.offsetTop; return y; };
   function bpShift(el, x, y, jump) {
@@ -392,7 +443,10 @@
       else if (j >= 0 && j < items.length) next = items[j];
       else if (dir === "down" && Math.floor(i / cols) < Math.floor((items.length - 1) / cols)) next = items[items.length - 1];
       else leave = true;
-    } else if (zone.dataset.col !== undefined) { if (!horiz) next = items[i + step] || null; }
+    } else if (zone.dataset.col !== undefined) {
+      if (!horiz) next = items[i + step] || null;
+      else { const z = zone.dataset[dir] && scope.querySelector(`[data-zone="${zone.dataset[dir]}"]`); if (z && z.querySelector("[data-bp]")) next = bpInto(z, cur, dir); } // the column beside it
+    }
     else if (horiz) next = items[i + step] || null;
     else leave = true;
     if (leave) {
@@ -405,6 +459,7 @@
       if (moving()) { const d = 10 * step; cur.animate({ translate: ["0 0", horiz ? `${d}px 0` : `0 ${d}px`, "0 0"] }, { duration: 200, easing: "ease-out" }); }
       return;
     }
+    BP.want = "";
     next.focus({ preventScroll: true });
     sfx("move");
   }
@@ -418,7 +473,7 @@
   function bpTabTo(t) {
     if (t === BP.tab && !bpSub()) return;
     const a = document.activeElement, inBar = !!(a && a.closest && a.closest(".bp-bar"));
-    BP.tab = t; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.choose = null; BP.who = false;
+    BP.tab = t; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.choose = null; BP.who = false; BP.settings = false;
     BP.focus = inBar ? "tab:" + t : bpMem(bpScreenKey()).focus;
     sfx("tab");
     renderBP();
@@ -451,7 +506,13 @@
     if (!el) return;
     const go = el.dataset.go;
     if (el.animate && moving()) el.animate({ scale: ["1", "0.95", "1"] }, { duration: 180, easing: "ease-out" });
-    if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.from = el.dataset.bpid; BP.focus = "play"; sfx("go"); renderBP(); }
+    if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.from = el.dataset.bpid; BP.focus = "play"; BP.want = el.dataset.focus || ""; sfx("go"); renderBP(); }
+    else if (go === "menu-settings") { BP.menu = false; BP.settings = true; BP.setFrom = BP.menuFrom; BP.focus = ""; sfx("go"); renderBP(); }
+    else if (go === "cat") { el.focus({ preventScroll: true }); bpMove("right"); }
+    else if (go === "set") {
+      const [c, o] = el.dataset.opt.split(":"), part = bpSettingsParts().find((x) => x.id === c), opt = part && part.opts.find((x) => x.id === o);
+      if (opt && opt.run) { sfx("toggle"); opt.run(); }
+    }
     else if (go === "points") { BP.points = true; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "pt-make") bpPoint(el.dataset.k, "");
     else if (go === "pt-restore") {
@@ -474,7 +535,7 @@
     }
     else if (go === "menu") bpMenu(true);
     else if (go === "menu-close") bpMenu(false);
-    else if (go === "menu-who") { BP.menu = false; BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.choose = null; BP.focus = ""; sfx("go"); renderBP(); }
+    else if (go === "menu-who") { BP.menu = false; BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.settings = false; BP.choose = null; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "tv-exit") { api.tvExit().catch(() => {}); tvClose(); }
     else if (go === "shut") { BP.menu = false; bpShut(); }
     else if (go === "tab") {
@@ -496,10 +557,15 @@
   // to its cover, a screen goes up to the bar, the bar goes Home, and Home
   // asks before leaving.
   function bpBack() {
+    BP.want = "";
     if (BP.ask) { bpAnswer(false); return; }
     if (BP.menu) { bpMenu(false); return; }
     const a = document.activeElement, inBar = !!(a && a.closest && a.closest(".bp-bar"));
-    if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
+    if (BP.settings) {
+      if (a && a.closest && a.closest('[data-zone="opts"]')) BP.focus = "cat:" + (BP.setCat || "sound");
+      else { BP.settings = false; BP.focus = BP.setFrom || ""; }
+    }
+    else if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
     else if (BP.detail && BP.points) { BP.points = false; BP.focus = "points"; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
     else if (BP.tab === "library" && BP.tagFrom) { BP.focus = BP.tagFrom; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; }
@@ -525,6 +591,7 @@
     const f = BP.on && ev.target.closest && ev.target.closest("#bp [data-bp]");
     if (!f || f.closest(".leaving")) return;
     bpFocused(f, false);
+    if (f.dataset.cat && f.dataset.cat !== (BP.setCat || "sound")) { BP.setCat = f.dataset.cat; renderBP(); } // Settings: the part in focus shows its rows
     // Resting on another tab shows its screen, as on a TV's home.
     if (f.classList.contains("bp-tab") && f.dataset.t !== BP.tab && !bpSub() && !bpOver()) bpTabTo(f.dataset.t);
   });

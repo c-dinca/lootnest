@@ -1210,11 +1210,21 @@ These shipped recently, newest last:
   Column zones (`data-col`) slide like grids. Toasts over Big Picture
   sit under the bar at its scale. `bpOpen` starts the pad loop when a
   pad is already there. The launch screen and `#tv-menu` use `--u`.
-  Next: 3 Library and Achievements; 4 Profiles, Settings for the remote
-  (with Button signs: automatic, Xbox, PlayStation, Nintendo, since a
-  pad on the TV reaches the PC as an Xbox one), the picker and dialogs
-  at TV scale; 5 trailers, sounds, a pass at 400 games and 4K; 6 the
-  webOS connection screen.
+- **Unreleased: Big Picture rebuilt, part 3**: Settings for a remote
+  (`BP.settings`, screen `settings`, from the menu's sheet:
+  `bpSettingsParts` is the one list of parts and rows, each row with
+  `on` or `value`, `say` and `run`; `bpSet` saves a setting; column
+  zones name the column beside them with `data-left`/`data-right`; the
+  part in focus shows its rows; `.bp-say` says the row in focus). Only
+  settings Lootnest has. Button signs (`BP.signs`, pref `bpSigns`,
+  read first by `glyph`), since a pad on the TV reaches the PC as an
+  Xbox one. Achievements: a total, cards with cover and `.bp-meter`,
+  OK opens the game at `ach:0` (`BP.want` takes the focus when what it
+  names is drawn). `bpMorph` takes both child lists before it walks
+  them (a replaced child leaves the new tree). Next: 4 the picker and
+  dialogs at TV scale, Profiles; 5 trailers behind the game in focus
+  (a row in Settings, off by default), sounds, a pass at 400 games and
+  4K; 6 the webOS connection screen.
 - **Owner, 16 Nov 2026**: wants a DualSense turned into an Xbox pad for
   games inside Lootnest, as DS4Windows does. That reverses the roadmap's
   Controllers "will not do" (no virtual pad). Not started: it waits on

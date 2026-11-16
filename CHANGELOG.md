@@ -15,6 +15,9 @@ Big Picture and TV mode, rebuilt for the sofa (part 1: how you move, and Home).
 - **Notes in Big Picture** show under the bar on the right, at TV size, instead of over the prompts.
 - **A controller that was already on shows its own signs at once** (a DualSense's cross, circle, square and triangle, L1 and R1), without waiting for a press.
 - The screen a game starts on and the Home-button menu over a game are the same size on any TV.
+- **Settings in Big Picture**, made for a remote, from its menu: the parts on the left, big rows that OK changes on the right, and a line saying what the row in focus does. Sounds, Motion, Open in Big Picture, achievement notes, and **Button signs**.
+- **Button signs** can be set to Xbox, PlayStation or Nintendo. A controller plugged into the TV reaches the PC as an Xbox one, so this is how a DualSense on the TV gets its own signs.
+- **Achievements in Big Picture** says how many you have of all, and each game's card has its cover and a bar. OK opens the game at its achievements.
 
 ## 2.5.2
 
