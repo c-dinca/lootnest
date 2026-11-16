@@ -39,7 +39,7 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 
 **What users get.** DualSense, Xbox and Switch pads work properly in Lootnest and Big Picture, with the right glyphs. Settings lists controllers and translators, game pages say what each game expects, and folder games can use Steam Input through Lootnest's swap.
 
-**Approach.** Lootnest does not translate controllers. A virtual pad games see needs a Microsoft-signed kernel driver ([signing rules](https://learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/code-signing-reqs)), which one developer can't ship or maintain, and the usual route is ending: ViGEmBus [retired in 2023](https://docs.nefarius.at/projects/ViGEm/End-of-Life/), the main DS4Windows fork [archived in March 2026](https://github.com/schmaldeo/DS4Windows). Steam Input is free, signed and maintained, and covers any game Steam starts, shortcuts included. Detection is pure Go (SetupAPI, hid.dll, XInput).
+**Approach.** Lootnest did not translate controllers at first (phase 6 is the owner's change). A virtual pad games see needs a Microsoft-signed kernel driver ([signing rules](https://learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/code-signing-reqs)), which one developer can't ship or maintain, and the usual route is ending: ViGEmBus [retired in 2023](https://docs.nefarius.at/projects/ViGEm/End-of-Life/), the main DS4Windows fork [archived in March 2026](https://github.com/schmaldeo/DS4Windows). Steam Input is free, signed and maintained, and covers any game Steam starts, shortcuts included. Detection is pure Go (SetupAPI, hid.dll, XInput).
 
 **Phases.**
 - 1, S: read every pad and ignore a translator's virtual twin; glyph families from the pad's id ([Chromium's mappings](https://chromium.googlesource.com/chromium/src/+/main/device/gamepad/gamepad_standard_mappings_win.cc)); PS and touchpad buttons; rumble only where offered.
@@ -48,7 +48,9 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 - 4, L: Play with Steam Input: append-only `shortcuts.vdf`, Steam closed with consent, a copy first, name clashes refused. Exe-launched games only; launcher hand-offs lose Steam Input.
 - 5, M, optional: the seated profile's colour on the lightbar, USB only.
 
-**Will not do.** Ship drivers, hide the real pad, remap input, inject into games.
+- 6, M, the owner's change of 16 Nov 2026: a PlayStation controller shown to games as an Xbox one, as DS4Windows does, inside Lootnest. Lootnest still ships no driver: it talks to ViGEmBus when that driver is already on the PC (DS4Windows and the TV streaming set-up install it), reads the pad's input reports without sending it anything, and feeds a virtual Xbox 360 pad only while a game Lootnest follows runs. Off unless turned on; a game's Launch options can leave the pad as it is. ViGEmBus is retired but still signed and working; if it stops loading, this stops and says so.
+
+**Will not do.** Ship drivers, hide the real pad, remap buttons, inject into games.
 
 ## 4. Game details
 

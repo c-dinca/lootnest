@@ -177,6 +177,7 @@
       { id: "controller", name: "Controller", opts: [
         { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV reaches the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
       { id: "play", name: "While you play", opts: [
+        { id: "xbox", name: "PlayStation controller as an Xbox one in games", on: !!s.padAsXbox, say: "For games that only know Xbox controllers: while a game runs, it sees your DualSense or DualShock 4 as an Xbox controller. It needs the ViGEmBus driver, which the TV streaming set-up installs.", run: flip("padAsXbox") },
         { id: "toasts", name: "Show achievements as they unlock", on: !s.achToastsOff, say: "A small note over the game, in the profile's colour. Never over a game with an anti-cheat.", run: flip("achToastsOff") }] },
       { id: "about", name: "About", opts: [
         { id: "version", name: "Lootnest", value: [S.d.version, S.d.stage].filter(Boolean).join(" "), say: "Everything else is in Settings in Lootnest's window on the PC.", run: null }] },

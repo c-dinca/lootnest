@@ -789,3 +789,26 @@ On the LG TV, with section 27 done on the PC.
 8. All of it again in TV mode on the TV.
 9. Show recent activity names each start: "its window is up after ...",
    or "no window found in 25 s" for a game Lootnest couldn't see.
+
+## 34. A PlayStation controller as an Xbox one (Settings, Controllers)
+
+1. With ViGEmBus on the PC (DS4Windows or the TV streaming set-up
+   installed it), Settings, Controllers says so under In games; turn
+   **Show a PlayStation controller to games as an Xbox one** on.
+2. With a DualSense on USB, start a game that only knows Xbox
+   controllers: it answers to the DualSense, with Xbox signs. Sticks,
+   both triggers, the D-pad, every face button, L1 and R1, L3 and R3,
+   Create as View and Options as Menu.
+3. The same over Bluetooth, and with a DualShock 4.
+4. Unplug the pad while the game runs and plug it back: it works again
+   within a few seconds.
+5. Close the game: Settings, Controllers no longer lists Lootnest's Xbox
+   360 controller under On this PC.
+6. A game that knows the DualSense itself, with **Leave a PlayStation
+   controller as it is** on in its Launch options: only its own pad.
+7. Without ViGEmBus: the switch says the driver isn't on this PC, and
+   nothing else changes.
+8. The PS button in Big Picture still opens Lootnest's menu over the
+   game, once.
+9. Show recent activity has "Controller as Xbox: ..." lines for each
+   change.

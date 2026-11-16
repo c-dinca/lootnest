@@ -19,6 +19,8 @@ type Controllers struct {
 	Translators []core.ControllerTool `json:"translators"`
 	Notes       []string              `json:"notes"`
 	Copiers     []string              `json:"copiers"` // core.PadCopiers, for the game page's note
+	ViGEm       bool                  `json:"vigem"`   // the ViGEmBus driver is on this PC, for Settings.PadAsXbox
+	Bridge      string                `json:"bridge"`  // what the pad Lootnest makes is doing now, or why it can't
 }
 
 // apiControllers only reads: the device list, XInput's slots, the running
@@ -49,5 +51,6 @@ func (a *App) apiControllers() Controllers {
 		devs = append(devs, core.PadDevice(d))
 	}
 	_, vigem := services["ViGEmBus"]
-	return Controllers{Pads: core.Pads(devs, slots, tools, vigem), XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools)}
+	return Controllers{Pads: core.Pads(devs, slots, tools, vigem), XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools),
+		ViGEm: win.ViGEmPresent(), Bridge: a.padState()}
 }
