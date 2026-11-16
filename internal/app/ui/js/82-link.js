@@ -48,6 +48,20 @@
   // A TV added before: Lootnest kept its key, so its app is installed again
   // (or brought up to date) without anything done at the TV. If the key no
   // longer opens the TV, the drawer asks for the passphrase as at first.
+  // What each LG TV's last finished stream says about where the delay was
+  // (core.StreamVerdict), with its numbers; nothing until one was read.
+  function lastStreams(st) {
+    const rows = (st.lg || []).filter((t) => t.stream).map((t) => {
+      const s = t.stream, mins = Math.max(1, Math.round(s.seconds / 60));
+      const nums = [`${s.width}x${s.height} at ${s.fps}`, `${mins} min`, `${s.shown} of ${s.arrived} frames a second shown`, `${s.lostPct}% lost`,
+        `${s.roundTrip} ms there and back`, `PC ${s.hostMs} ms`, `TV ${s.decoderMs} ms`].join(", ");
+      return setRow(esc(t.name) + (t.streamAt ? `<span class="link-when">${esc(ago(t.streamAt) || "just now")}</span>` : ""),
+        `${esc(t.streamSays || "")}</p><p class="ln-num link-nums">${esc(nums)}`,
+        `<span class="ln-lamp${t.streamKind === "clean" ? " ln-lamp--on" : t.streamKind === "short" ? "" : " ln-lamp--warn"}" aria-hidden="true"></span>`);
+    }).join("");
+    return `<div class="bk-card">${rows || setRow("Nothing yet", "After a stream of a minute or more, Lootnest reads from the TV how it went: frames lost, the network's time, the PC's and the TV's.", "")}</div>`;
+  }
+
   function againLGTV(ip, name) {
     const D = S.dialog = { kind: "lgtv", tvs: [], finding: false, ip, name, busy: true, kept: true, error: "", done: false, started: Date.now() };
     S.link = S.link || {}; S.link.step = { step: "copy" };
@@ -139,6 +153,10 @@
       ${L.pairError ? `<p class="error-text" role="alert">${esc(L.pairError)}</p>` : ""}</div>`;
     return setSub("Streaming engine", "", card(rows.join("")))
       + setSub("TVs", "", card(lgRows + tvRows + addLG + pair))
+      + setSub("Last stream", "", lastStreams(st))
+      + setSub("Response", "", card(sw("tvQuick", "Draw at twice the stream's rate",
+        "The TV's display on this PC runs at 120 for a 60 stream, so a game's frame waits half as long before it's sent. Turn it off if a game looks uneven. The streaming engine restarts when no stream runs.",
+        !!cfg().settings.tvQuick)))
       + setSub("Picture", "", card(setRow("Size and Quality, on the TV", "In Lootnest on the TV, beside Play: Size (1080p, 1440p, 4K) and Quality (Automatic, Light, Balanced, Sharp). That screen shows when no stream runs: hold Start and Select for two seconds to leave one. Its Settings key has the frame rate and the exact bitrate.")))
       + setSub("Problems", "", card(setRow("Save a report", "The streaming engine's log and Lootnest's, without the engine's password, in one file to attach to a GitHub issue.", key('data-action="link-logs"', "Save"))));
   }

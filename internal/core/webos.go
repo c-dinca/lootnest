@@ -739,6 +739,14 @@ func (t *TV) WebOSVersion() string {
 	return strings.TrimSpace(out)
 }
 
+// WiFi is the TV's wireless link as Linux counts it (/proc/net/wireless:
+// the interface, link quality, signal and noise), or "" on a cable or when
+// the TV doesn't say.
+func (t *TV) WiFi() string {
+	out, _ := t.run("tail -n +3 /proc/net/wireless 2>/dev/null | head -n 1", nil)
+	return strings.Join(strings.Fields(out), " ")
+}
+
 // TVAppLog is the end of the TV app's own log of its steps, or "".
 func (t *TV) TVAppLog() string {
 	out, _ := t.run("tail -n 30 "+shQuote(tvTempDir+"/lootnest-tv.log")+" 2>/dev/null", nil)

@@ -493,7 +493,11 @@ func (a *Apollo) Logs(ctx context.Context) (string, error) {
 
 // ApolloSettings are the engine settings Lootnest sets: its name on the
 // TV, its web pages only from this PC.
-func ApolloSettings(pcName string) map[string]string {
+func ApolloSettings(pcName string, quick bool) map[string]string {
+	double := "disabled"
+	if quick {
+		double = "enabled"
+	}
 	name := "Lootnest"
 	if pcName = strings.TrimSpace(pcName); pcName != "" {
 		name += " on " + pcName
@@ -508,6 +512,9 @@ func ApolloSettings(pcName string) map[string]string {
 		// The TV's display sits only at a corner of the PC's monitors, so
 		// the PC's mouse doesn't wander onto it.
 		"isolated_virtual_display_option": "enabled",
+		// Settings.TVQuick: the TV's display runs at twice the stream's
+		// frame rate, so a game's frame waits half as long for it.
+		"double_refreshrate": double,
 	}
 }
 
@@ -515,6 +522,9 @@ func ApolloSettings(pcName string) map[string]string {
 // want, as an engine set up by an older Lootnest does.
 func ApolloSettingsDiffer(cur map[string]any, want map[string]string) bool {
 	for k, v := range want {
+		if _, has := cur[k]; !has && v == "disabled" {
+			continue // the engine's own default
+		}
 		if fmt.Sprint(cur[k]) != v {
 			return true
 		}

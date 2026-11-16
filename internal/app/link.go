@@ -298,7 +298,7 @@ func reachSoon(ctx context.Context, ap *core.Apollo, wait time.Duration) error {
 // updates TV mode as its app, pins its certificate and restarts it.
 func (a *App) configureEngine(ctx context.Context, r *linkRecord, ap *core.Apollo) error {
 	a.linkProgress("configure", 0, 0)
-	if err := ap.SetConfig(ctx, core.ApolloSettings(os.Getenv("COMPUTERNAME"))); err != nil {
+	if err := ap.SetConfig(ctx, a.engineSettings()); err != nil {
 		return err
 	}
 	if err := a.registerApp(ctx, ap); err != nil {
@@ -331,6 +331,57 @@ func (a *App) registerApp(ctx context.Context, ap *core.Apollo) error {
 
 // linkAtStart keeps TV mode's app pointing at this Lootnest.exe after an
 // update or a move, once the engine answers.
+// engineSettings is what Lootnest wants the engine's settings to be now.
+func (a *App) engineSettings() map[string]string {
+	a.mu.Lock()
+	quick := a.cfg != nil && a.cfg.Settings.TVQuick
+	a.mu.Unlock()
+	return core.ApolloSettings(os.Getenv("COMPUTERNAME"), quick)
+}
+
+// bringEngine gives the engine Lootnest's settings when they differ, and
+// restarts it so they hold. Only call it while no stream runs. It's false
+// when the engine didn't come back.
+func (a *App) bringEngine(ctx context.Context, ap *core.Apollo) bool {
+	cfg, err := ap.Config(ctx)
+	if err != nil {
+		return true
+	}
+	want := a.engineSettings()
+	if !core.ApolloSettingsDiffer(cfg, want) {
+		return true
+	}
+	if err := ap.SetConfig(ctx, want); err != nil {
+		a.logf("TV streaming: the engine's settings couldn't be brought up to date: %v", err)
+		return true
+	}
+	if err := ap.Restart(ctx); err != nil {
+		a.logf("TV streaming: the engine didn't restart with its new settings: %v", err)
+		return true
+	}
+	a.logf("TV streaming: the engine's settings are up to date (the TV's display at twice the stream's rate: %s)", want["double_refreshrate"])
+	time.Sleep(3 * time.Second)
+	return reachSoon(ctx, ap, 60*time.Second) == nil
+}
+
+// engineSettingsSoon applies a changed setting to the engine in the
+// background: now when no stream runs, else at Lootnest's next start.
+func (a *App) engineSettingsSoon() {
+	go func() {
+		ap, _, err := engine()
+		if err != nil {
+			return
+		}
+		ctx := context.Background()
+		if _, current, err := ap.Apps(ctx); err != nil || current != "" {
+			a.logf("TV streaming: a stream is running, so the engine takes its new settings the next time Lootnest starts")
+			return
+		}
+		a.bringEngine(ctx, ap)
+		a.emitLink()
+	}()
+}
+
 func (a *App) linkAtStart() {
 	go a.keepDevModes()
 	r := loadLink()
@@ -352,20 +403,8 @@ func (a *App) linkAtStart() {
 	}
 	// Settings a newer Lootnest adds (the TV's display as the main one)
 	// reach an engine set up before, once no stream runs.
-	if cfg, err := ap.Config(ctx); err == nil && current == "" {
-		if want := core.ApolloSettings(os.Getenv("COMPUTERNAME")); core.ApolloSettingsDiffer(cfg, want) {
-			if err := ap.SetConfig(ctx, want); err != nil {
-				a.logf("TV streaming: the engine's settings couldn't be brought up to date: %v", err)
-			} else if err := ap.Restart(ctx); err != nil {
-				a.logf("TV streaming: the engine didn't restart with its new settings: %v", err)
-			} else {
-				a.logf("TV streaming: the engine's settings are up to date; the TV's display is the main one while it streams")
-				time.Sleep(3 * time.Second)
-				if reachSoon(ctx, ap, 60*time.Second) != nil {
-					return
-				}
-			}
-		}
+	if current == "" && !a.bringEngine(ctx, ap) {
+		return
 	}
 	app := core.LootnestAppIn(apps)
 	if want := core.LootnestApp(a.exePath, "", ""); app == nil || app["cmd"] != want["cmd"] {

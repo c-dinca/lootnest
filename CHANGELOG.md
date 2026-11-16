@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.10.2
+
+For a stream that feels slow: Lootnest says where the delay was, and can have games drawn sooner.
+
+- **How the last stream went.** When TV mode ends, Lootnest reads from the TV how the stream went and keeps it: Settings, TV has Last stream, with frames lost, the network's time there and back, the PC's time and the TV's for each frame, and one line that says which of them held it back. The numbers also go in Lootnest's log, so Save a report has them when the TV is off.
+- **Draw at twice the stream's rate.** A switch in Settings, TV: the TV's display on the PC runs at 120 for a 60 stream, so a game's frame waits half as long before it's sent. Off unless you turn it on; turn it off again if a game looks uneven.
+- **Save a report has the TV's Wi-Fi link**, when the TV says it.
+
 ## 2.10.1
 
 Lootnest keeps the app on your TV up to date, and says where its picture settings are.

@@ -598,9 +598,13 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	s.GogToken, s.GogUser, s.GogDir = old.GogToken, old.GogUser, old.GogDir   // and gog.go these
 	saveDBOn := s.SaveDB && !old.SaveDB
 	capturesOn := !s.CapturesOff && old.CapturesOff
+	tvQuick := s.TVQuick != old.TVQuick
 	cfg.Settings = s
 	if err := a.saveConfig(cfg); err != nil {
 		return err
+	}
+	if tvQuick {
+		a.engineSettingsSoon()
 	}
 	if checkNow {
 		go a.checkUpdate(false)

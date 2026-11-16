@@ -149,7 +149,7 @@ func TestApolloFirstRunPairAndPin(t *testing.T) {
 		t.Fatalf("second first user: %v", err)
 	}
 
-	if err := a.SetConfig(ctx, ApolloSettings("DESKTOP-7")); err != nil {
+	if err := a.SetConfig(ctx, ApolloSettings("DESKTOP-7", false)); err != nil {
 		t.Fatalf("set config: %v", err)
 	}
 	if f.saved["encoder"] != "nvenc" || f.saved["sunshine_name"] != "Lootnest on DESKTOP-7" || f.saved["origin_web_ui_allowed"] != "pc" {
@@ -269,7 +269,7 @@ func TestApolloPinned(t *testing.T) {
 }
 
 func TestApolloSettingsDiffer(t *testing.T) {
-	want := ApolloSettings("DESKTOP-7")
+	want := ApolloSettings("DESKTOP-7", false)
 	if want["dd_configuration_option"] != "ensure_primary" {
 		t.Fatalf("settings %v", want)
 	}
@@ -284,5 +284,13 @@ func TestApolloSettingsDiffer(t *testing.T) {
 	cur["other"] = "1"
 	if ApolloSettingsDiffer(cur, want) {
 		t.Fatal("an engine set up reads as different")
+	}
+	// An engine that never heard of the doubled rate has it off already.
+	delete(cur, "double_refreshrate")
+	if ApolloSettingsDiffer(cur, want) {
+		t.Fatal("an engine without the doubled rate reads as different from one with it off")
+	}
+	if quick := ApolloSettings("DESKTOP-7", true); quick["double_refreshrate"] != "enabled" || !ApolloSettingsDiffer(cur, quick) {
+		t.Fatalf("the doubled rate isn't asked for: %v", quick)
 	}
 }

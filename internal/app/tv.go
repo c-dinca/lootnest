@@ -176,6 +176,9 @@ func (a *App) leaveTV() {
 	win.UnregisterHotKey(a.hwnd, hotkeyTV)
 	// A newer Lootnest for TV goes on the TV once the app there is closed.
 	go func() {
+		// The TV app writes a stream's numbers as it ends.
+		time.Sleep(8 * time.Second)
+		a.noteStreams()
 		time.Sleep(2 * time.Minute)
 		a.updateTVApps()
 	}()
