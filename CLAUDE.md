@@ -59,10 +59,11 @@ What makes it different, and the direction to keep pushing:
   pointer over the real mouse; takes and their cues are in `takes`);
   `trailer.html`/`trailer.js` is one page where `seek(t)` places every
   frame (titles, the swap diagram, the keys, the TV, the end; each take's
-  offset in the film); `music.mjs` makes the sound (a synthesized score at
-  120 BPM and the app's own interface sounds at the picture's cues; or,
-  with `TRACK=`, somebody's piece cut on its bars under those sounds:
-  Kevin MacLeod's are CC BY 4.0 and need a credit where the film is shown;
+  offset in the film); `music.mjs` makes the sound: "Voltaic" by Kevin MacLeod
+  (the owner's pick by ear, 16 Nov 2026; CC BY 4.0, so the film needs the
+  credit in the README wherever it is shown), cut on its bars at 120 BPM,
+  under hits and the app's own interface sounds at the picture's cues
+  (`TRACK=` tries another piece, `TRACK=score` a synthesized one;
   `render.mjs mux <name>` lays a sound under the rendered picture);
   `render.mjs` screenshots each frame into ffmpeg
   (`out/lootnest-trailer.mp4`, 1080p60, 70 s; `sheet` and `still` to look

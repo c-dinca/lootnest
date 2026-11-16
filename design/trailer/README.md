@@ -18,16 +18,26 @@ everything. Titles, the swap as a diagram, the keys, the TV and the end
 are drawn there, in the launcher's look (DESIGN.md) and its copy voice.
 `render.mjs` asks for each frame, screenshots it and hands it to ffmpeg.
 
-The sound is made by `music.mjs`: a small synthesized score at 120 beats a
-minute (a bar is two seconds, which is what the film cuts on) and the app's
-own interface sounds (Kenney's, CC0, `internal/app/ui/sounds`) at the
-moments the picture shows them, mapped as Big Picture maps them.
+The sound is put together by `music.mjs`: the music, hits where the film
+turns, and the app's own interface sounds (Kenney's, CC0,
+`internal/app/ui/sounds`) at the moments the picture shows them, mapped as
+Big Picture maps them. The music is "Voltaic" by Kevin MacLeod, which the
+owner chose by ear; it is at 120 beats a minute, the grid the film cuts on
+(a bar is two seconds), and its lift plays twice, at the Library and at the
+TV.
+
+**The credit.** "Voltaic" is under Creative Commons Attribution 4.0, so
+wherever the film is shown it needs this beside it (a video's description,
+a page's footer):
+
+> "Voltaic" Kevin MacLeod (incompetech.com). Licensed under Creative
+> Commons: By Attribution 4.0. https://creativecommons.org/licenses/by/4.0/
 
 ```bash
 node design/harness/fetch-art.mjs    # once: the fixtures' art
 node design/harness/build.mjs        # the real UI as one page
 node design/trailer/record.mjs       # out/footage: about 15 minutes
-node design/trailer/music.mjs        # out/sound.wav
+node design/trailer/music.mjs        # out/sound.wav (fetches the music the first time)
 node design/trailer/render.mjs       # out/lootnest-trailer.mp4: about 12 minutes
 ```
 
@@ -35,26 +45,18 @@ The picture and the sound are separate, so the music can change without
 rendering again:
 
 ```bash
-TRACK=long-time-coming node design/trailer/music.mjs   # out/sound-long-time-coming.wav
-node design/trailer/render.mjs mux long-time-coming    # out/lootnest-trailer-long-time-coming.mp4
+TRACK=stormfront node design/trailer/music.mjs   # out/sound-stormfront.wav
+node design/trailer/render.mjs mux stormfront    # out/lootnest-trailer-stormfront.mp4
 ```
 
-`TRACK` is one of the pieces listed in `music.mjs` (`long-time-coming`,
-`stormfront`, `voltaic`; downloaded into `out/music` the first time), or
-the path of any file, with `CUT="0:10,24:14"` saying which second of the
-piece plays from which second of the film. The film cuts on a 120 BPM
-grid, so a piece at 120 sits on it without stretching; cut in whole bars
-(two seconds). The hits at the cuts and the interface sounds stay on top.
-
-Those three pieces are Kevin MacLeod's (incompetech.com), under Creative
-Commons Attribution 4.0. A film that uses one must say so wherever it is
-shown, for example:
-
-> "Long Time Coming" Kevin MacLeod (incompetech.com). Licensed under
-> Creative Commons: By Attribution 4.0.
-> https://creativecommons.org/licenses/by/4.0/
-
-The score `music.mjs` makes on its own needs no credit.
+`TRACK` is a piece listed in `music.mjs` (`voltaic`, the film's;
+`long-time-coming`, `stormfront`; each is downloaded into `out/music` the
+first time), `score` for a score synthesized in `music.mjs` itself, which
+needs no credit, or the path of any file, with `CUT="0:10,24:14"` saying
+which second of the piece plays from which second of the film. A piece at
+120 BPM sits on the film's grid without stretching; cut in whole bars. The
+listed pieces are all Kevin MacLeod's, CC BY 4.0, credited as above with
+their own title.
 
 Needs Node, ffmpeg and the Playwright that the harness uses. Everything it
 writes goes to `out/`, which isn't committed.

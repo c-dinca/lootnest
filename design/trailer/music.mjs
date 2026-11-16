@@ -4,8 +4,10 @@
 // CC0, internal/app/ui/sounds) at the moments the picture shows them.
 //   node design/trailer/music.mjs   writes out/sound.wav
 //
-// Or a piece of music somebody else made, under the same hits and interface
-// sounds: TRACK=<name> writes out/sound-<name>.wav. The pieces below are
+// The film's music is "Voltaic" (the owner's pick, 16 Nov 2026), a piece
+// somebody else made, under the hits and interface sounds made here.
+// TRACK=<name> tries another one and writes out/sound-<name>.wav;
+// TRACK=score is the score synthesized here. The pieces below are
 // Kevin MacLeod's (incompetech.com), licensed CC BY 4.0, so the film must
 // credit them wherever it is shown (README). They are at 120 beats a minute
 // on the film's own grid; "cut" says which second of the piece plays from
@@ -37,8 +39,8 @@ const TRACKS = {
   // the same lift twice: at the Library and at the TV
   voltaic: { file: "Voltaic.mp3", cut: [[0, 58], [38, 62]] },
 };
-const TRACK = process.env.TRACK || "";
-const T = !TRACK ? null : TRACKS[TRACK] ? { name: TRACK, ...TRACKS[TRACK] } : { name: path.basename(TRACK).replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-"), path: TRACK, cut: (process.env.CUT || "0:0").split(",").map((c) => c.split(":").map(Number)) };
+const FILM = "voltaic", TRACK = process.env.TRACK || FILM;
+const T = TRACK === "score" ? null : TRACKS[TRACK] ? { name: TRACK, ...TRACKS[TRACK] } : { name: path.basename(TRACK).replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-"), path: TRACK, cut: (process.env.CUT || "0:0").split(",").map((c) => c.split(":").map(Number)) };
 const chordAt = (bar) => (bar >= 33 ? CH[2] : bar === 32 ? CH[1] : CH[(((bar - 3) % 4) + 4) % 4]);
 // What plays when (seconds): the film's parts.
 const drums = (t) => (t >= 6 && t < 24) || (t >= 26 && t < 62);
@@ -243,7 +245,7 @@ const g = 0.89 / peak, wav = Buffer.alloc(44 + N * 4);
 wav.write("RIFF", 0); wav.writeUInt32LE(36 + N * 4, 4); wav.write("WAVEfmt ", 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(2, 22);
 wav.writeUInt32LE(SR, 24); wav.writeUInt32LE(SR * 4, 28); wav.writeUInt16LE(4, 32); wav.writeUInt16LE(16, 34); wav.write("data", 36); wav.writeUInt32LE(N * 4, 40);
 for (let i = 0; i < N; i++) { wav.writeInt16LE(Math.round(Math.max(-1, Math.min(1, L[i] * g)) * 32767), 44 + i * 4); wav.writeInt16LE(Math.round(Math.max(-1, Math.min(1, R[i] * g)) * 32767), 46 + i * 4); }
-const name = T ? `sound-${T.name}.wav` : "sound.wav";
+const name = TRACK === FILM ? "sound.wav" : `sound-${T ? T.name : "score"}.wav`;
 fs.writeFileSync(path.join(out, name), wav);
 // as loud as the web expects, about -14 LUFS, with the peaks held
 const said = spawnSync("ffmpeg", ["-hide_banner", "-nostats", "-i", path.join(out, name), "-af", "ebur128", "-f", "null", "-"], { maxBuffer: 1 << 26 }).stderr.toString();
