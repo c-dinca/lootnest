@@ -1328,6 +1328,24 @@ These shipped recently, newest last:
   `tv-achievements-in`, `tv-achievements-loading`. Not seen on a TV:
   docs/TESTING.md 36.
 
+- **Unreleased, Lootnest for TV 1.4.0** (c-dinca/lootnest-tv-webos#9; the
+  owner, 16 Nov: less latency and stutter, a perfect picture). Moonlight's
+  default stream was 720p at 10 Mbps; `lootnest_tune_picture` sets
+  1920x1080 at 60 and 25 Mbps with HEVC once (`lootnest_tuned` in the
+  TV app's settings file), so Settings on the TV still wins afterwards.
+  `lootnest_stream_begin/second/end` sum the stats overlay's counts into
+  one "Stream: ended after ..." line in `lootnest-tv.log` (frames
+  arrived and shown, lost on the network and in how many seconds, a
+  frame's time on the PC and the TV, round trip), which Save a report
+  carries. Apollo's settings were read (`src/config.cpp` at v0.4.6:
+  nvenc preset 1, `fec_percentage` 20, `limit_framerate` on) and left
+  alone: they're already latency first, so the next change waits for a
+  report's numbers. A TV that has the app needs Install again. Spotify
+  has no TV web interface (open.spotify.com serves the same page to TV
+  and console user agents; no /tv), so a console-like Spotify would be a
+  Big Picture screen over the Web API with the owner's client id: asked,
+  not decided.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
