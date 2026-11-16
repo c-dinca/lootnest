@@ -2668,6 +2668,7 @@ html.is-tv {
 .tv-menu-item { display: flex; align-items: center; gap: var(--bp-5); width: 100%; height: var(--bp-key-h); padding: 0 var(--bp-6); border: 0; border-radius: var(--bp-r-key); background: none; color: var(--fg-2); font: 700 var(--bp-text-key)/1 var(--font-ui); text-align: left; white-space: nowrap; cursor: pointer; outline: none;
   transition: color var(--bp-dur-focus) var(--ease-out), transform var(--bp-dur-slide) var(--ease-out); }
 .tv-menu-item svg { flex: none; width: var(--bp-icon); height: var(--bp-icon); }
+.tv-menu-val { margin-left: auto; padding-left: var(--bp-5); font-weight: 600; opacity: .7; }
 .tv-menu-item:hover { color: var(--fg-1); }
 .tv-menu-item.on { color: var(--bg-ground); transform: translate3d(var(--bp-2), 0, 0); }
 .tv-menu-item[aria-busy="true"] svg { animation: tv-busy var(--launch-run) var(--ease-in-out) infinite alternate; }

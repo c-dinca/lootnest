@@ -71,6 +71,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_tvResume", a.apiTVResume))
 	must(a.w.Bind("ps_tvStay", a.apiTVStay))
 	must(a.w.Bind("ps_tvCloseGame", a.apiTVCloseGame))
+	must(a.w.Bind("ps_tvPointer", a.apiTVPointer))
 	must(a.w.Bind("ps_mediaApps", a.apiMediaApps))
 	must(a.w.Bind("ps_launchApp", a.apiLaunchApp))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
