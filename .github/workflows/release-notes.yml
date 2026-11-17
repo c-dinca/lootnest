@@ -1,0 +1,49 @@
+name: Release notes
+
+# Run by hand only (Actions, Release notes, Run workflow). Sets the notes of
+# each listed release to that version's section in CHANGELOG.md on main, the
+# same section build.yml publishes. Use it after a CHANGELOG section has been
+# rewritten. Only the notes change: the release's files and its tag stay.
+# "dry_run" (on by default) only prints the notes it would set.
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: Release tags, separated by spaces (such as v2.11.0 v2.11.1)
+        required: true
+      dry_run:
+        description: Only print the notes
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set the notes from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAGS: ${{ inputs.tags }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          for tag in $TAGS; do
+            v="${tag#v}"
+            awk -v h="## $v" '$0 == h { f = 1; next } /^## / { if (f) exit } f' CHANGELOG.md > notes.md
+            if ! grep -q '[^[:space:]]' notes.md; then
+              echo "::error::CHANGELOG.md has no '## $v' section"
+              exit 1
+            fi
+            echo "--- $tag"
+            cat notes.md
+            if [ "$DRY" != "true" ]; then
+              gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+              echo "updated $tag"
+            fi
+          done

@@ -1647,8 +1647,9 @@ These shipped recently, newest last:
   update call is "start", over http(s) with a SHA-256), the
   `Steam\dodi` achievements path is gone (named after a repack group),
   PRIVACY.md and PLUGINS.md no longer describe the plugin or a launcher's
-  download record, and the 2.11.0 and 2.11.1 release notes on GitHub were
-  rewritten to describe only script plugins. Git history still holds the
+  download record, and the 2.11.0 and 2.11.1 release notes on GitHub are
+  set from CHANGELOG.md by `.github/workflows/release-notes.yml` (run
+  by hand, `tags`, `dry_run`), so they describe only script plugins. Git history still holds the
   plugin; rewriting it is the owner's call (GitHub keeps pull request
   refs, so only GitHub Support can purge them).
 
