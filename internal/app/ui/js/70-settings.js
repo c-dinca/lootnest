@@ -87,6 +87,7 @@
       ["tv", SET_CATS.tv, ph("television-simple"), viewLink],
       ["storage", SET_CATS.storage, GI.drive, viewStorage],
       ["plugins", SET_CATS.plugins, GI.puzzle, viewPlugins],
+      ...(S.d.pluginPages || []).map((p) => [ppTab(p), esc(p.title), GI.puzzle, () => viewPluginPage(p)]),
       ["online", SET_CATS.online, GI.globe, () => sub("What Lootnest looks up", "", `
           ${sw("findGames", "Store", "Sends what you search for to Steam and CheapShark.", s.findGames)}
           ${sw("saveDb", "Find save locations online", "Downloads a list of save locations from GitHub weekly.", s.saveDb)}

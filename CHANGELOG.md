@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Plugins can hold a script.** A plugin may now bring one script that Lootnest runs inside itself, with a time limit. It's off until you read what it asks to do (go online, read the list of your games, offer updates, show notices) and allow it, and a new version that asks for more waits for you again. A script can keep a key for a service; Lootnest stores it encrypted and sends it only to that service. Its pages show in Settings, drawn by Lootnest. In safe mode no script runs. Data plugins work as before.
+- **Sources and updates, a plugin.** In the repository's `plugins` folder, not installed by default: add the address of a JSON list of downloads (the format Hydra's sources use, or Lootnest's richer one), and it reads the list at start and every few hours, keeps the last good copy, and shows each source's entries, last refresh and errors. It comes with no sources. This is its first part; matching your games and updating them come next.
+
 - **Stremio with a TV interface.** Stremio in Apps is now Stremio's own web version in a window of Lootnest's, which the controller drives: the stick or D-pad moves, A opens, B goes back. Behind it runs the streaming server of the Stremio program on your PC, started when the window opens and ended when it closes, so what the program plays, this plays. Without Stremio installed the page says its server is missing; Lootnest installs nothing.
 
 ## 2.10.4

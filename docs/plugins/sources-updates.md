@@ -1,43 +1,27 @@
 # Sources and updates: findings and plan
 
-Status: a proposal, waiting for the owner's answer on the three decisions below. Nothing here is built.
+Status: being built, one phase per commit on this branch. Done so far: script plugins and phase 1 (sources and feeds).
 
 The request: the user adds their own feeds (JSON files listing downloads), Lootnest matches them to games already in the Library (games Hydra installed above all), says when a feed lists a newer version, downloads it and replaces the game's folder with the saves kept. Lootnest ships no feed, suggests none, and does nothing about DRM.
 
-## Three decisions before any code
+## The owner's decisions (17 Nov 2026)
 
-### 1. It can't be a plugin
+1. **It is a plugin, and a plugin may now hold code.** Plugins were data only. A script plugin has one .js that Lootnest runs inside itself, with permissions the user allows first ([PLUGINS.md](../PLUGINS.md), `core/pluginscript.go`). Sources and updates is the first one, in `plugins/sources-updates`, installed by the user like any plugin.
+2. **Lootnest provides no sources; it is a place where the user's own can be used.** The plugin, the sources added to it and what is downloaded from them are the user's doing. Lootnest's part is general: plugins with permissions, a download queue, and an update that keeps the saves. The README's line was reworded to say that.
+3. **Downloads from sources, and Real-Debrid as Hydra has it.** https links download directly. A magnet link, or a link to a file host, goes through the user's own Real-Debrid account, which turns it into https links (so nothing is uploaded from this PC). There is no BitTorrent client inside Lootnest; without Real-Debrid a magnet link opens in the user's torrent app and the Downloads watcher (1.58) picks the result up. A built-in client stays the owner's to ask for.
 
-A Lootnest plugin is data, never code (`docs/PLUGINS.md`, `core/plugins.go`): a .zip of `.json`, `.ini`, `.vdf`, `.yaml`, `.txt` and images, checked file by file. It has no lifecycle, no API, no settings and no place in the UI beyond what its four kinds (`sources`, `saves`, `metadata`, `theme`) draw. A plugin can't go online, download, write a game's folder or write saves, and the roadmap lists exactly those under "Will not do" for every later phase, script plugins included.
+What stays true: no feed in the app, the installer, the site, the docs or the tests (fixtures use made-up names and a local server); no search across feeds for games the user doesn't have, so no catalogue; nothing about DRM, emulators' files or making a game start; saves and game folders are changed only by Lootnest's own code, with a copy first, after the user says yes.
 
-This feature needs all four. So it has to be one of:
+## Who does what
 
-- **A. Part of Lootnest itself** (recommended): Go in `internal/core` and `internal/app`, a part in `ui/js`, off until the user adds a first source. It reuses the update centre, the save copies and the journals that exist, and it is the only route where the safety rules ("a copy before anything moves") are enforced by code that has tests.
-- **B. Script plugins first** (roadmap Plugins 4, XL) with a new API that may download and replace folders. That undoes the plugin system's security model for every plugin, to host one feature. Not recommended.
-
-The name "plugin" can stay in the UI sense (a feature that isn't there until turned on), but the code would be A.
-
-### 2. It reverses a line Lootnest states in public
-
-These say the opposite today, and each would need the owner's new wording:
-
-| Where | What it says |
+| The plugin's script (`plugins/sources-updates/main.js`) | Lootnest (`internal/core`, `internal/app`) |
 |---|---|
-| `README.md`, Never | "It never downloads games, except ones you own from itch.io or GOG, through their own API" |
-| `CLAUDE.md`, The product and the line | never downloads, "never other sources, never a catalogue", "never shows where to get games" |
-| `docs/ROADMAP.md`, 7 and 8 | "Any source other than the store the user bought from"; "Find, suggest or download updates from anywhere" under Will not do |
-| `docs/PRIVACY.md`, the website's Never section | the same promise |
-| 1.33's note on Hydra | "Lootnest never offers Hydra's downloads or sources" |
-
-The owner has changed lines before (controllers, 16 Nov), so this is theirs to change. What changes with it, plainly: the Hydra feed format carries magnet links with no owner, licence or checksum, so Lootnest can't tell a publisher's own build from a copy nobody has the right to share. "Source-agnostic" is true of the code and is also how the feature will be read from outside: the market research's position (the vault of profiles and saves, "Playnite + Lootnest") and the rule about public wording were written to keep Lootnest out of that reading. Two practical checks before a release with this in it: SignPath's terms for the signing set up in 1.59, and winget's.
-
-What stays true whatever the answer: no feed in the app, the installer, the site, the docs or the tests' fixtures (fixtures use made-up names and a local server); no search across feeds for games the user doesn't have (so no catalogue: feeds are only matched against the Library); nothing about DRM, emulators' files or making a game start.
-
-### 3. BitTorrent means uploading
-
-Lootnest is Go without cgo, so libtorrent is out. The maintained pure-Go library is `github.com/anacrolix/torrent` (MPL 2.0). Costs: a large dependency tree for govulncheck and the exe's size, a listening port and a Windows Firewall prompt, DHT and tracker traffic, and the fact that a BitTorrent client uploads the pieces it has while it downloads. "Seeding off after completion" doesn't change that; uploading can be refused altogether (`NoUpload`), at the price of slow or refused downloads on many swarms.
-
-Options: **(a)** https only in the first version, magnet entries shown with **Open in your torrent app** (`magnet:` handed to Windows) and the finished download picked up by the existing Downloads watcher (1.58); **(b)** the built-in client as its own phase after the rest works. Recommended: (a) first, (b) as phase 4b once the owner has seen the rest on a PC. The plan below is written so (b) slots in behind one interface.
+| Sources: add, edit, remove, on and off; the notice | Runs the script with a time limit; draws its page from data |
+| Reading feeds: formats behind adapters, every field checked, the last good copy kept, ETag and Last-Modified | `lootnest.net.fetch`: size and time limits, never this PC or its network, each request logged |
+| Matching entries to games, versions from titles, what counts as newer | The Library list a script may read, with Hydra's download record per game |
+| Real-Debrid: magnet or host link to https links, with the user's token | Keeps the token (DPAPI), sends it only to api.real-debrid.com |
+| Offers on the Updates page; ignore lists | The download queue, free space, staging |
+| | Saves copied, the folder swapped, checked, rolled back; the log |
 
 ## What's in the repo
 
@@ -100,73 +84,74 @@ Not seen on a PC: this session has no Windows machine and the container has no H
 
 ## Plan
 
-Decision 1 as A, decision 3 as (a) then (b). Each phase is one PR with `## Unreleased` lines and no VERSION bump.
+Each phase is one commit with `## Unreleased` lines and no VERSION bump.
 
-### Data, in Lootnest's data folder
+### Data
 
-- `sources.json`: `{id, name, url, on, format, added, etag, lastModified, checked, count, error}` per source, and `noticeSeen`.
-- `feeds\<id>.json.gz`: the last good copy of each feed, already validated and cut down to the fields used.
-- `sourcelinks.json`, by Library key: `{baseline: {title, version, date, from}, confirmed: [...], rejected: [...], ignoredVersions: [...], ignoredSources: [...], extraPaths: [...], keepPaths: [...]}`. Moved by `RekeyGame`.
-- `fullupdates\<sha1 of key>\`: `state.json` (the state machine), `log.txt`, and the staging folder's place when it isn't beside the game.
+The plugin's own, in `plugin-data\sources-updates` (JSON, through `lootnest.storage`):
+
+- `sources`: `{notice, hours, list: [{id, name, url, on, format, added, checked, changed, count, skipped, http, etag, modified, error}]}`.
+- `feed-<id>`: the last good copy of each feed, already checked and cut down to the fields used.
+- `links`, by Library key: the installed baseline, confirmed and rejected matches, ignored versions and sources.
+
+Lootnest's, in its data folder:
+
+- `plugin-secrets.json`: each plugin's keys, encrypted for the Windows user.
+- `fullupdates\<sha1 of key>\`: `state.json` (the state machine), `log.txt`.
 - Save copies: the safety net's format, in `backups\saves-before-update\<game>` through a local `core.Cloud`, keep 5 by default.
 
-### Phase 1: sources and feeds (`core/feeds.go`, `app/feeds.go`, `83-sources.js`)
+### Phase 1: script plugins, sources and feeds. Done.
 
-- `FeedAdapter` interface: `Name() string`, `Sniff(json.RawMessage) bool`, `Parse(io.Reader, limits) (Feed, []Warning, error)`. Two adapters: `hydra` (the format in the request) and `lootnest` (the same plus optional `steamAppId`, `version`, `changelog`, `sha256`, `kind`).
-- Feeds are untrusted. A hand-written strict decoder (Go has no zod; `encoding/json` with `DisallowUnknownFields` off and every field checked): body at most 64 MB, 30 s to connect and 2 min in all, at most 5 redirects and only to http or https, at most 200,000 entries, a title of 1 to 300 runes with control characters dropped, 1 to 20 addresses per entry of at most 4 KB each, schemes `magnet:` and `https:` (and `http:` kept with a warning shown on the source), a date that parses or is dropped, a size read as a number of bytes or dropped. An entry that fails is skipped and counted; a feed with none left is an error. Titles are only ever drawn as text. Nothing from a feed is run, opened or used as a path.
-- The feed's own address: https, or http with the same warning. Requests carry no cookies and Lootnest's plain user agent, and are logged.
-- Refresh at start and every 6 h (setting: 1 h to 7 days, or only by hand), `If-None-Match` / `If-Modified-Since`, never in safe mode. A failed refresh keeps the last good copy and shows the error.
-- UI: Settings, a **Sources** category in `SET_CATS`: rows with the name, address, a lamp, last refresh, entries, the error; Add, Edit, Remove, a switch. The first Add shows the notice once ("You add sources yourself. What they list, and whether you may download it, is between you, the law and the game's publisher."), kept as `noticeSeen`. Settings, Online lists the feature, as it does everything that goes online.
-- Tests: the decoder's limits, each bad shape, schemes, the adapters, conditional requests against `httptest`.
+- `core/pluginscript.go`: the manifest's `script`, `permissions`, `secrets`, `pages`; a script is off until what it asks is allowed (`GrantPlugin`, `PluginAsks`), and asks again when a version asks for something else; the host (`StartScript`, `Call`, a time limit per call, `schedule`, `storage`, `net.fetch` with `guardedDial`, `library.games`, `updates.offer`, `notify`). `app/pluginscript.go`: one host per plugin that's on and allowed, none in safe mode; keys in `plugin-secrets.json`; `ps_pluginGrant`, `ps_pluginView`, `ps_pluginAction`. `79-pluginscript.js` draws a plugin's page and forms.
+- The plugin: `ADAPTERS` (`lootnest` and `hydra`; each has `sniff(doc)` and `parse(doc, now)`), `parseFeed`, `readURI`. Feeds are untrusted: at most 64 MB and 120 s, at most 200,000 entries, a title of 1 to 300 characters with control and direction characters dropped, 1 to 20 addresses per entry of at most 4 KB each, only `magnet:` (with an info hash), `https:` and `http:` (kept, counted and shown as a warning), no user or password part, a date that parses or is dropped, a size read as bytes or dropped. An entry that fails is skipped and counted; a feed with none left is an error and the last good copy stays. Unknown fields are ignored. Titles are only ever drawn as text. Nothing from a feed is run, opened or used as a path.
+- Refresh 5 s after start and every 6 h (1, 3, 6, 12, 24 h, or only by hand), one source per call, `If-None-Match` / `If-Modified-Since`.
+- The Sources page in Settings: rows with the name, address, a lamp, entries, format, last refresh, what was left out, the error; Add, Edit, Remove, Refresh, a switch. The first Add shows the notice once.
+- Tests: `core/pluginscript_test.go` (install rules, permissions, limits, keys, this PC out of reach), `core/sourcesplugin_test.go` (the real plugin against `httptest`: every bad shape, conditional requests, a feed that breaks).
 
-### Phase 2: linking, Hydra, detection (`core/feedmatch.go`, `core/titleversion.go`)
+### Phase 2: linking, Hydra, detection
 
-- Hydra: `HydraDownloads(dbDir, tmp)` beside `HydraGames`, read-only, giving the fields above; baselines filled as described. No import step is needed for the games themselves: they are in the Library already.
-- Matching an entry to a game: Steam id when the feed has one; else `NormTitle` (lowercase, versions, build numbers, `+ DLC`, edition words, bracketed tags and punctuation dropped, roman numerals to digits) scored by token overlap with a penalty for leftover number tokens (so "2" never matches "3"); 0.9 and up links by itself, 0.6 to 0.9 asks ("Is this Game X?"), under that nothing. Answers are kept in `sourcelinks.json`. **Link to an entry** on any folder game's Manage menu searches that game's name in the user's feeds only.
-- Versions: `TitleVersion(title)` gives `{semver, build, date, from}` by a chain: `vA.B.C` and `A.B.C.D`, `Build 12345` / `b12345`, a date in the title, and "Update vX to vY" (then the entry is a patch, see phase 5). Comparison: same kind compares; otherwise `uploadDate` against the baseline's date; otherwise "can't tell", which is shown as a possible update and never applied by itself.
-- The installed version: the exe's file version (`win.FileVersion`, new, read-only) and `FolderVersion`, preferred over the stored baseline when they parse.
-- The badge and the Updates page: these are rows in the existing Updates page (`storeUpdRows`' pattern, kind "From a source"), with the source, title, version, size, date, and **Update**, **Ignore this version**, **Ignore this source for this game**. A toast when new ones are found, once per version.
-- Tests: tables of real-shaped titles for normalising, scoring and versions.
+- `HydraDownloads(dbDir, tmp)` beside `HydraGames`, read-only; `ScriptGame.Origin` carries a game's record to the script. No import step is needed for the games themselves: they are in the Library already.
+- In the script. Matching an entry to a game: Steam id when the feed has one; else `normTitle` (lowercase, versions, build numbers, `+ DLC`, edition words, bracketed tags and punctuation dropped, roman numerals to digits) scored by token overlap with a penalty for leftover number tokens (so "2" never matches "3"); 0.9 and up links by itself, 0.6 to 0.9 asks, under that nothing. Answers are kept. A game can be linked to an entry by hand from the plugin's page.
+- Versions: `titleVersion(title)` gives semver, build and date by a chain: `vA.B.C` and `A.B.C.D`, `Build 12345` / `b12345`, a date in the title, and "Update vX to vY" (then the entry is a patch). Same kind compares; otherwise `uploadDate` against the baseline's date; otherwise "can't tell", shown as a possible update.
+- The installed version: the folder's name (`FolderVersion`) and the exe's file version, preferred over the stored baseline when they parse.
+- Offers: rows on the Updates page (`lootnest.updates.offer`) with the source, title, version, size, date, and **Update**, **Ignore this version**, **Ignore this source for this game**. A notice when new ones are found, once per version.
 
-### Phase 3: downloads (`core/dlqueue.go`, `app/dlqueue.go`)
+### Phase 3: downloads
 
-- A queue over the existing `downloader`: one active download, the rest waiting; pause and resume (the `.part` and Range are there), cancel, speed over a 5 s window, ETA; state in `downloads.json` so a queue survives a restart. `Fetcher` interface (`Start`, `Pause`, `Resume`, `Cancel`, `Progress`) with `httpsFetcher` now.
-- Before starting: free space on the staging drive against the listed size times 2.2 (the download, what it unpacks to, a margin) plus, when the game's drive is the same, nothing more (the old folder is renamed, not copied); refused with the numbers when short.
-- Always into a staging folder: `<game folder>.lootnest-new` beside the game when that drive has the room (so the swap is a rename), else under Lootnest's data folder.
-- `http:` downloads only with a `sha256` in the feed. Magnet entries, until 4b: **Open in your torrent app**, and the Downloads watcher offers the result.
-- 4b, if the owner says yes to decision 3 (b): `torrentFetcher` on `anacrolix/torrent`, no seeding after completion by default, upload limit and the choice in Settings, the port closed when the queue is empty.
+- Lootnest: a queue over the existing `downloader` (one active, the rest waiting; pause and resume on the `.part` and Range; cancel; speed, ETA; kept in `downloads.json`). Free space checked first (the listed size times 2.2 on the staging drive) and refused with the numbers when short. Always into a staging folder: `<game folder>.lootnest-new` beside the game when that drive has room, else under Lootnest's data folder. `http:` only with a `sha256`.
+- The script: Real-Debrid (`api.real-debrid.com/rest/1.0`: `torrents/addMagnet`, `torrents/selectFiles`, `torrents/info`, `unrestrict/link`), with the user's API token as the plugin's one key. A magnet without Real-Debrid: **Open in your torrent app**.
 
 ### Phase 4: the save copy and the full update (`core/fullupdate.go`)
 
 Kinds of package, decided after staging: a **full build** (has the game's exe, or one top folder that does), a **patch** (versions "from to", or far smaller than the game and without its exe), an **installer** (a lone setup exe, or one with `.bin` parts).
 
 - A patch goes through the existing `PlanUpdate` / `ApplyUpdate` with `CheckVersions`, as an update the user brought does.
-- An installer goes through the 1.40 flow: Lootnest shows the file, its size, publisher from its signature if it has one and the exact command line, and runs it only on the user's click, never silently, into the staging folder when the installer takes a target (Inno `/DIR=`), with the snapshot diff after.
+- An installer goes through the 1.40 flow: Lootnest shows the file, its size and the exact command line, and runs it only on the user's click, never silently, with the snapshot diff after.
 - A full build goes through the state machine below.
 
 States, each written to `state.json` (temp file, fsync, rename) before its work starts, each step safe to run twice:
 
-1. `prepare`: the download's `sha256` when the feed gave one; unpack with `StageUpdate` (cap from free space); find the build's root and its exe. Refused here: the game is running, has a pending mod or swap journal, is in Program Files or WindowsApps, or a profile's files are loaded and the game has in-folder saves the swap engine owns (then: finish the swap first).
-2. `backup`: mods out (`modsOffBefore`); every save location (`savesOf` plus the Ludusavi manifest's, plus the game's `extraPaths`) into a new version in `backups\saves-before-update`, with its list of what was copied, read back before going on. Registry saves: exported with `reg export` to a file in the same version (new; restore is `reg import` only from the Restore action).
-3. `preserve`: the list of what stays from the old folder: in-folder save locations, known config files (`modConfigFile`), `keepPaths` the user chose, and, shown and ticked by default, files the old folder has that neither the new build nor the previous version's file list knows. The user sees the list before the swap.
-4. `swap`: rename `<folder>` to `<folder>.lootnest-old`; move the staged build to `<folder>` (a rename on one volume; otherwise copy with read-back, as `MoveGame`, then rename a temp name into place); copy the preserved files in from `.lootnest-old`, never over a newer file of the same name without keeping it.
-5. `verify`: the exe exists (same relative path, else the main exe found again, and the stored path updated in the one place it lives for that game); the baseline becomes the new entry; sizes recounted.
-6. `finish`: `.lootnest-old` stays until the game has run once for 60 s without closing in the first 20 (the 1.40 `watchFirstStart` rule) or 14 days pass (setting), then goes to the Recycle Bin. **Roll back** until then.
+1. `prepare`: the download's `sha256` when the feed gave one; unpack with `StageUpdate` (cap from free space); find the build's root and its exe. Refused here: the game is running, has a pending mod or swap journal, is in Program Files or WindowsApps, or a profile's files are loaded and the game has in-folder saves the swap engine owns.
+2. `backup`: mods out (`modsOffBefore`); every save location (`savesOf` plus the Ludusavi manifest's, plus the game's extra paths) into a new version in `backups\saves-before-update`, with its list of what was copied, read back before going on. Registry saves: exported with `reg export` to a file in the same version.
+3. `preserve`: the list of what stays from the old folder: in-folder save locations, known config files (`modConfigFile`), paths the user chose, and, shown and ticked by default, files the old folder has that the new build doesn't know. The user sees the list before the swap.
+4. `swap`: rename `<folder>` to `<folder>.lootnest-old`; move the staged build to `<folder>` (a rename on one volume; otherwise copy with read-back, as `MoveGame`, then rename a temp name into place); copy the preserved files in from `.lootnest-old`.
+5. `verify`: the exe exists (same relative path, else the main exe found again, and the stored path updated); the baseline becomes the new entry.
+6. `finish`: `.lootnest-old` stays until the game has run once without closing in its first 20 s (the 1.40 `watchFirstStart` rule) or 14 days pass (a setting), then goes to the Recycle Bin. **Roll back** until then.
 
 On a failure at any state, and at start for a `state.json` left behind (not in safe mode, not for a running game): if `<folder>.lootnest-old` exists, whatever is at `<folder>` is renamed aside (`.lootnest-failed`, kept), the old folder renamed back, and the saves restored from the version made in `backup` only where a location changed since. The result and the log are shown. Roll back is the same path, by hand.
 
-**Back up saves now** and **Restore saves from a copy** on every game's Saves tab use state 2's code alone; for games outside the stores this is what the safety net and Copies on this PC already do, so the work is the manifest locations, extra paths and the registry export.
+**Back up saves now** and **Restore saves from a copy** on every game's Saves tab use state 2's code alone.
 
-- Tests: traversal in each archive kind, every transition, a kill between each pair of states followed by recovery, preserve and restore, rollback, retention. One integration test: `httptest` serving a feed and a zip, a made-up game folder with saves in the folder and outside, a full update, the saves compared byte for byte, then rollback and the same compare.
+- Tests: traversal in each archive kind, every transition, a stop between each pair of states followed by recovery, preserve and restore, rollback, retention. One integration test: `httptest` serving a feed and a zip, a made-up game folder with saves in the folder and outside, a full update, the saves compared byte for byte, then rollback and the same compare.
 
 ### Phase 5: the rest
 
-The progress drawer (downloading, unpacking, copying saves, replacing, checking) with each step's log lines, read from `log.txt`; toasts for found, finished and failed; harness stubs and `?sources=1|empty|error&srcupd=hold`; `docs/GUIDE.md`, `docs/PRIVACY.md`, `docs/TESTING.md` (a new section: all of this is unseen on a PC), the README's wording as the owner decides it.
+The progress drawer (downloading, unpacking, copying saves, replacing, checking) with each step's log lines; notices for found, finished and failed; `docs/GUIDE.md`, `docs/TESTING.md` (a new section: all of this is unseen on a PC).
 
 ## Differences from the request
 
-- Go, so no zod and no WebTorrent or libtorrent; see decision 3.
+- Go and a script engine, so no zod, WebTorrent or libtorrent; the feed checks are hand-written in the plugin.
 - No separate Updates view and no import step for Hydra games: both exist.
 - "Download title as the baseline" can't come from Hydra's records; see above.
-- Linux: Lootnest is Windows only, so the Windows parts aren't built for Linux; `core` and its tests run on both.
-- Not built: copying the user's sources out of Hydra; any search of feeds beyond matching the Library; running an installer without a click.
+- Linux: Lootnest is Windows only; `core` and its tests run on both.
+- Not built: copying the user's sources out of Hydra; any search of feeds beyond matching the Library; running an installer without a click; a BitTorrent client.

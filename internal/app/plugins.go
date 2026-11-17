@@ -84,6 +84,7 @@ func (a *App) pluginsChanged(sources, on bool) {
 	plugMu.Lock()
 	plugRead = nil
 	plugMu.Unlock()
+	go a.syncScripts()
 	if !sources {
 		return
 	}

@@ -642,6 +642,7 @@ img.ln-art-crop { object-fit: cover; object-position: var(--art-focal); }
 .ln-lamp { flex: none; width: var(--lamp-dot); height: var(--lamp-dot); border-radius: var(--radius-round); background: var(--fg-3); }
 .ln-lamp--on { background: var(--lamp); box-shadow: var(--lamp-glow); }
 .ln-lamp--warn { background: var(--warning); box-shadow: var(--warning-glow); }
+.ln-lamp--bad { background: var(--danger); }
 
 /* ================================================================ titles
    A section's title is plain: Tilt Warp, Ice Grey, no patch and no rule

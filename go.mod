@@ -6,6 +6,7 @@ toolchain go1.27.4
 
 require (
 	github.com/bodgit/sevenzip v1.6.5
+	github.com/dop251/goja v0.0.0-20261116234614-2eded47d7035
 	github.com/jchv/go-webview2 v0.0.0-00010101000000-000000000000
 	github.com/nwaples/rardecode/v2 v2.4.6
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d
@@ -17,7 +18,10 @@ require (
 	github.com/andybalholm/brotli v1.2.7 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
+	github.com/dlclark/regexp2/v2 v2.11.0 // indirect
+	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
 	github.com/klauspost/compress v1.20.2 // indirect

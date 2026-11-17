@@ -1,6 +1,6 @@
 # Plugins
 
-A Lootnest plugin is data, never code. It can add games to the Library, suggest save locations, fill in game details and change colours. Nothing in a plugin is run or loaded as code, and a plugin can't write saves or game folders, start programs or go online.
+There are two kinds of plugin. A **data plugin** can add games to the Library, suggest save locations, fill in game details and change colours; nothing in it is run. A **script plugin** has one JavaScript file that Lootnest runs inside itself, and it can only do what its `plugin.json` asks for and you allow (see [script](#script-a-plugin-with-code)). No plugin holds a program, and Lootnest comes with none installed.
 
 Install one in Settings, Plugins, **Install from file**. A plugin can be signed by its author (see Signing). Lootnest keeps it in `plugins\<id>` in its data folder, and the version it replaced in `plugins\.old\<id>\<version>` for **Roll back**. In safe mode every plugin is off.
 
@@ -21,11 +21,11 @@ A `.zip` with `plugin.json` at its top:
 
 - `id`: 3 to 40 lowercase letters, digits or hyphens. A plugin with the same id replaces the one installed, once the new one checks out. Ids starting `ln-` are kept for Lootnest's own themes.
 - `version`: three numbers, such as `1.2.0`.
-- `provides`: one or more of `sources`, `saves`, `metadata` and `theme`.
+- `provides`: one or more of `sources`, `saves`, `metadata`, `theme` and `script`.
 
 Lootnest refuses the whole plugin, and says why, when:
 
-- a file isn't `.json`, `.ini`, `.vdf`, `.yaml`, `.yml`, `.txt`, `.png`, `.jpg` or `.webp`;
+- a file isn't `.json`, `.ini`, `.vdf`, `.yaml`, `.yml`, `.txt`, `.png`, `.jpg` or `.webp`, or, in a script plugin, its one `.js` (at most 2 MB);
 - a file's path leaves the plugin's folder, or is a link;
 - a file is over 8 MB, all of them are over 32 MB, or there are more than 500;
 - `plugin.json` doesn't check out, or something it provides can't be read.
@@ -138,6 +138,69 @@ go run ./cmd/plugsign sign path\to\my-plugin
 
 `keygen` writes `plugsign.key`, the private key (keep it safe, and never commit or share it), in the folder you run it from, and prints its fingerprint. It never replaces a key that's there: with a lost key, your next version needs your users to accept a new one. `sign` checks the folder the way Lootnest does, then writes its `signature.json`; give it another key file as a third argument. Sign last, after every other change, then zip the folder's contents.
 
+## script: a plugin with code
+
+```json
+{
+  "id": "my-plugin",
+  "name": "My plugin",
+  "version": "1.0.0",
+  "provides": ["script"],
+  "script": "main.js",
+  "permissions": ["net", "library", "updates", "notify"],
+  "secrets": [{ "name": "service", "host": "api.example.com", "label": "Example API token" }],
+  "pages": [{ "id": "main", "title": "My plugin" }]
+}
+```
+
+The script is JavaScript (ES2020 or so, no modules), run by an engine inside Lootnest. It isn't a browser or Node: there's no `window`, `fetch`, `require`, files or processes, only the `lootnest` object. Nothing of the plugin's is ever started as a program.
+
+**It asks first.** A script plugin is off when installed. Turning it on shows what it asks to do, in words, with its signature, and it runs only once you allow that. A new version that asks for the same keeps running; one that asks for anything else is off until you allow it again. In safe mode no script runs.
+
+| In `permissions` | What the script may do |
+|---|---|
+| (always) | Keep its own data (`lootnest.storage`), draw its pages, write to Lootnest's log, plan a later call |
+| `net` | `lootnest.net.fetch`: http and https requests to the public internet, never this PC or its network; each has a size and time limit and is logged |
+| `library` | `lootnest.library.games()`: each game's key, name, where it came from, Steam id, its folder's name, its version when Lootnest can read one, and what the launcher that installed it recorded about its download |
+| `updates` | `lootnest.updates.offer(list)`: rows on the Updates page for games in the Library. Downloading and replacing a game's folder is Lootnest's own code, started by you from such a row, with the saves copied first |
+| `notify` | `lootnest.notify(text)`: a notice |
+
+**Keys.** A service's token is listed in `secrets` with the one site it's for. You type it into a form Lootnest draws; it's encrypted for your Windows user and the script never reads it. `lootnest.net.fetch(url, { secret: "service" })` sends it as `Authorization: Bearer`, only over https and only to that site.
+
+**The calls.**
+
+- `lootnest.on(name, fn)`: a handler. Lootnest calls `start` when the script starts, `view({page})` to draw a page, `action({id, row, value, on, values, secrets})` for a page's buttons and forms, and any name you gave `schedule`. Only JSON goes in and out. A handler has 3 minutes; one that takes longer is stopped.
+- `lootnest.schedule(name, ms, arg)`: calls the handler `name` after `ms`. One pending call per name; `ms` under 0 cancels it.
+- `lootnest.storage.get(key)`, `.set(key, value)`, `.remove(key)`: JSON values in `plugin-data\<id>` in Lootnest's data folder, at most 64 MB each and 512 MB in all. They stay when the plugin is removed.
+- `lootnest.net.fetch(url, {method, headers, body, form, maxBytes, timeout, secret})` waits and gives `{status, headers, text}`. `maxBytes` is 8 MB unless set, 64 MB at most; `timeout` is 30 seconds unless set.
+- `lootnest.ui.changed()`: asks Lootnest to draw the plugin's open page again.
+- `lootnest.log(text)`, `lootnest.hash(text)` (SHA-256 in hex), `lootnest.secrets.has(name)`, `lootnest.plugin.id`.
+
+**Pages.** Each page in `pages` is a category in Settings. `view` returns data and Lootnest draws it with its own components: no HTML, CSS or script of the plugin's reaches the window.
+
+```js
+lootnest.on("view", () => ({
+  sections: [{
+    title: "Things",
+    actions: [{ id: "add", label: "Add", kind: "primary", form: "add" }],
+    empty: "Nothing yet",
+    rows: [{
+      id: "t1", title: "A thing", sub: "a second line", lamp: "on",        // on, warn, bad, off, busy
+      tags: ["3 items"], note: "Checked 5 min ago", warn: "", error: "",
+      toggle: { on: true },                                               // action "toggle" with {row, on}
+      select: { value: "6", options: [{ value: "6", label: "Six" }] },    // action "select" with {row, value}
+      actions: [{ id: "remove", label: "Remove", confirm: { title: "Remove it?", body: "", ok: "Remove" } }],
+    }],
+  }],
+  forms: { add: { title: "Add a thing", ok: "Add", fields: [{ id: "name", label: "Name", type: "text" }, { id: "token", label: "Token", secret: "service" }] } },
+}));
+lootnest.on("action", (a) => (a.id === "add" && !a.values.name ? { error: "Give it a name." } : { toast: "Done." }));
+```
+
+A field's `type` is `text`, `url`, `number`, `select` or `check`. An action's answer may hold `error` (shown, and a form stays open), `toast`, or `form` (the id of a form to open next).
+
+The engine has a time limit but no memory limit, which is one reason a script plugin is never on by itself. Install only ones whose author you trust; signing (below) tells you a later version is from the same author.
+
 ## What plugins can't do
 
-No code of any kind: no scripts, DLLs, .NET, PowerShell or Python. A plugin can't write saves or game folders, start programs, download or go online, or depend on another plugin. Online metadata and script plugins are later phases in [ROADMAP.md](ROADMAP.md), section 1.
+No programs of any kind: no DLLs, .NET, PowerShell, Python or executables, and a data plugin has no code at all. A script reaches only the calls above: it can't read or write files outside its own data, start programs, read keys, reach this PC or its network, or depend on another plugin. Saves and game folders are only ever changed by Lootnest's own code, with a copy first, when you ask.

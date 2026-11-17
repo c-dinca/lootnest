@@ -32,7 +32,11 @@ What makes it different, and the direction to keep pushing:
   The owner's one exception (8 Nov 2026): games the user owns, from the
   store they bought them from (itch.io now, GOG next), through that
   store's official API after the user connects it; never other sources,
-  never a catalogue;
+  never a catalogue. The owner's change of 17 Nov 2026: Lootnest still
+  ships no sources and looks for none, but a plugin the user installs may
+  read download sources the user adds and update games from them; the
+  plugin, the sources and the downloads are the user's doing (see
+  Unreleased, script plugins);
 - cloud saves through the user's own OneDrive or Google Drive folder, with
   versions, encryption and per-profile sync;
 - nothing goes online unless the user turns it on (README, Privacy table).
@@ -1540,6 +1544,40 @@ These shipped recently, newest last:
   Tried against the real site in Chromium with a stubbed pad; the
   server start and playback in WebView2 aren't seen: docs/TESTING.md 42.
 
+- **Unreleased, script plugins and Sources and updates** (the owner,
+  17 Nov 2026, answering `docs/plugins/sources-updates.md`: "we change
+  what a plugin is"; Lootnest provides no sources, it is where the user's
+  can be used; downloads from sources, and Real-Debrid as Hydra has it;
+  and: the owner makes the decisions, don't make them for them). A
+  plugin that provides `script` has one .js run inside Lootnest by goja
+  (pure Go; a time limit per call, no memory limit) and reaches only the
+  `lootnest` object (`core/pluginscript.go`: `StartScript`, `Call`,
+  `on`, `schedule`, `storage`, `net.fetch` behind `guardedDial`, which
+  refuses this PC and its network, `library.games`, `updates.offer`,
+  `notify`; only JSON crosses). `permissions` (net, library, updates,
+  notify) and `secrets` (a key and the one host it goes to) are shown in
+  words (`PluginAsks`) and allowed before it runs (`GrantPlugin`,
+  `plugins.json` `granted`); a version asking for something else is off
+  again. `app/pluginscript.go`: `syncScripts` (from `pluginsChanged` and
+  at start, never in safe mode), keys in `plugin-secrets.json` (DPAPI),
+  `ps_pluginGrant`, `ps_pluginView`, `ps_pluginAction`, events
+  `pluginPages`, `pluginView`, `pluginChanged`, `pluginActed`. A plugin's
+  pages are Settings categories drawn from data by `79-pluginscript.js`
+  (`viewPluginPage`, `ppRow`, forms as dialog `ppform`; every word
+  escaped, no HTML from a plugin). goja has no locales
+  (`toLocaleString` fails) and no `URL`, `fetch` or timers.
+  The plugin is `plugins/sources-updates` (`main.js`), installed by the
+  user from that folder or its zip, never bundled on: sources in its
+  storage, `ADAPTERS` (lootnest, hydra), `parseFeed` (every field
+  checked; see the plan's limits), refresh one source per `refresh` call
+  with ETag. Its tests run the real file under the host
+  (`core/sourcesplugin_test.go`; its `test` handler exposes the pure
+  parts). Harness `?plugins=1` (installed, not allowed) and
+  `?sources=1|empty|error`. The plan and what's left (matching and Hydra's
+  download records, the download queue and Real-Debrid, the save copy and
+  the folder swap with rollback) are in `docs/plugins/sources-updates.md`.
+  Not seen on a PC.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
@@ -1686,7 +1724,10 @@ games (no sources, official-looking or hidden), never bypasses DRM, and
 never generates, ships or "repairs" anything that makes a game start. It
 downloads only games the user owns, from the store they bought them from,
 through its official API once the user connects it (itch.io now, GOG
-next): never from anywhere else, and never a catalogue. Opening Hydra for an
+next): never from anywhere else, and never a catalogue. Since 17 Nov 2026 a
+script plugin the user installs and allows may read sources the user adds
+(`plugins/sources-updates`); Lootnest itself brings none, suggests none,
+and never searches a source for games the user doesn't have. Opening Hydra for an
 update of a game that came from it is the owner's one other exception (14
 Nov 2026): Lootnest opens the app and copies the game's name, nothing more.
 

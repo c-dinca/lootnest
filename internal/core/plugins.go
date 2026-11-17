@@ -33,10 +33,12 @@ const (
 	pluginFileMax  = 8 << 20
 	pluginTotalMax = 32 << 20
 	pluginFilesMax = 500
+	// pluginScriptMax is the most a script plugin's .js can be.
+	pluginScriptMax = 2 << 20
 )
 
 // PluginKinds are what a plugin can provide.
-var PluginKinds = []string{"sources", "saves", "metadata", "theme"}
+var PluginKinds = []string{"sources", "saves", "metadata", "theme", "script"}
 
 var (
 	pluginIDRe      = regexp.MustCompile(`^[a-z0-9-]{3,40}$`)
@@ -51,6 +53,12 @@ type PluginManifest struct {
 	Author      string   `json:"author"`
 	Description string   `json:"description"`
 	Provides    []string `json:"provides"`
+	// A script plugin's (pluginscript.go): its one .js, what it asks to
+	// do, the keys it keeps and the Settings pages it draws.
+	Script      string         `json:"script,omitempty"`
+	Permissions []string       `json:"permissions,omitempty"`
+	Secrets     []PluginSecret `json:"secrets,omitempty"`
+	Pages       []PluginPage   `json:"pages,omitempty"`
 }
 
 // Plugin is an installed plugin as Settings lists it. Problem says why a
@@ -61,7 +69,11 @@ type Plugin struct {
 	Older   string `json:"older,omitempty"` // the version Roll back brings back
 	Key     string `json:"key,omitempty"`   // the fingerprint of the key it's signed with
 	Problem string `json:"problem,omitempty"`
-	Dir     string `json:"-"`
+	// Asks is what a script plugin wants to do, in words, and Granted
+	// whether the user allowed exactly that; it runs only then.
+	Asks    []string `json:"asks,omitempty"`
+	Granted bool     `json:"granted,omitempty"`
+	Dir     string   `json:"-"`
 }
 
 func (p Plugin) Has(kind string) bool { return slices.Contains(p.Provides, kind) }
@@ -83,13 +95,21 @@ func checkPluginFile(name string, size int64) (string, error) {
 			return "", errors.New("it has a file Windows can't name (" + rel + ")")
 		}
 	}
-	if !slices.Contains(pluginExts, strings.ToLower(filepath.Ext(rel))) {
-		return "", errors.New("it has a file that isn't data (" + rel + "); plugins can only hold .json, .ini, .vdf, .yaml, .txt and pictures")
+	if ext := strings.ToLower(filepath.Ext(rel)); ext == ".js" {
+		if size > pluginScriptMax {
+			return "", errors.New(rel + " is over 2 MB")
+		}
+	} else if !slices.Contains(pluginExts, ext) {
+		return "", errors.New(notData(rel))
 	}
 	if size > pluginFileMax {
 		return "", errors.New(rel + " is over 8 MB")
 	}
 	return rel, nil
+}
+
+func notData(rel string) string {
+	return "it has a file that isn't data (" + rel + "); plugins can only hold .json, .ini, .vdf, .yaml, .txt and pictures, and a script plugin its one .js"
 }
 
 // pluginTally counts files and bytes against the limits.
@@ -114,6 +134,7 @@ func (t *pluginTally) add(size int64) error {
 // provides, and returns its manifest.
 func CheckPluginDir(dir string) (*PluginManifest, error) {
 	var t pluginTally
+	var scripts []string
 	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -122,6 +143,9 @@ func CheckPluginDir(dir string) (*PluginManifest, error) {
 			return nil
 		}
 		rel, _ := filepath.Rel(dir, p)
+		if !d.IsDir() && strings.EqualFold(filepath.Ext(rel), ".js") {
+			scripts = append(scripts, filepath.ToSlash(rel))
+		}
 		if d.Type()&(fs.ModeSymlink|fs.ModeIrregular) != 0 {
 			return errors.New("it has a link (" + filepath.ToSlash(rel) + ")")
 		}
@@ -144,8 +168,21 @@ func CheckPluginDir(dir string) (*PluginManifest, error) {
 	if err != nil {
 		return nil, err
 	}
+	for _, js := range scripts {
+		if js != m.Script {
+			return nil, errors.New(notData(js))
+		}
+	}
+	if m.Script != "" && len(scripts) == 0 {
+		return nil, errors.New("its script, " + m.Script + ", isn't in it")
+	}
 	for _, kind := range m.Provides {
 		if err := checkPluginKind(dir, kind); err != nil {
+			return nil, err
+		}
+	}
+	if m.hasScript() {
+		if err := checkPluginScript(dir, m); err != nil {
 			return nil, err
 		}
 	}
@@ -183,9 +220,12 @@ func readPluginManifest(dir string) (*PluginManifest, error) {
 	seen := map[string]bool{}
 	for _, k := range m.Provides {
 		if !slices.Contains(PluginKinds, k) || seen[k] {
-			return nil, fmt.Errorf("it provides %q, which isn't sources, saves, metadata or theme", k)
+			return nil, fmt.Errorf("it provides %q, which isn't sources, saves, metadata, theme or script", k)
 		}
 		seen[k] = true
+	}
+	if err := checkScriptManifest(&m, seen["script"]); err != nil {
+		return nil, err
 	}
 	return &m, nil
 }
@@ -314,7 +354,11 @@ func installPlugin(dataDir, src, accepted string) (*PluginInstalled, error) {
 		return nil, err
 	}
 	if _, ok := state.On[m.ID]; !ok {
-		state.On[m.ID] = true
+		state.On[m.ID] = !m.hasScript() // a script waits for the user to allow what it asks
+	}
+	if m.hasScript() && !slices.Equal(state.Granted[m.ID], pluginGrant(m)) {
+		delete(state.Granted, m.ID) // it asks for something else now
+		state.On[m.ID] = false
 	}
 	if key != nil {
 		state.Keys[m.ID] = base64.StdEncoding.EncodeToString(key)
@@ -354,6 +398,8 @@ func checkPluginZip(src string) error {
 type pluginsFile struct {
 	On   map[string]bool   `json:"on"`
 	Keys map[string]string `json:"keys,omitempty"`
+	// Granted is what the user allowed each script plugin to do.
+	Granted map[string][]string `json:"granted,omitempty"`
 }
 
 func loadPlugins(dataDir string) pluginsFile {
@@ -366,6 +412,9 @@ func loadPlugins(dataDir string) pluginsFile {
 	}
 	if f.Keys == nil {
 		f.Keys = map[string]string{}
+	}
+	if f.Granted == nil {
+		f.Granted = map[string][]string{}
 	}
 	return f
 }
@@ -409,6 +458,10 @@ func ListPlugins(dataDir string) []Plugin {
 			}
 		} else {
 			p.PluginManifest, p.On = *m, st.On[m.ID]
+			if m.hasScript() {
+				p.Asks, p.Granted = PluginAsks(m), slices.Equal(st.Granted[m.ID], pluginGrant(m))
+				p.On = p.On && p.Granted
+			}
 			if key != nil {
 				p.Key = KeyFingerprint(key)
 			}
@@ -511,9 +564,12 @@ func RemovePlugin(dataDir, id string) error {
 		return err
 	}
 	st := loadPlugins(dataDir)
-	if _, ok := st.Keys[id]; !ok {
+	_, key := st.Keys[id]
+	_, grant := st.Granted[id]
+	if !key && !grant {
 		return nil
 	}
 	delete(st.Keys, id)
+	delete(st.Granted, id)
 	return writeJSONAtomic(pluginsState(dataDir), st)
 }
