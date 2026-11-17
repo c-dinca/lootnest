@@ -1611,6 +1611,30 @@ These shipped recently, newest last:
   input miss this; click with the mouse at the switch's box. A script
   plugin's row has **Allow and turn on** (`plugin-allow`) until granted,
   and `pluginInstalled` asks (`allowPlugin`) right after install.
+- **Unreleased, updates that take only what changed** (the owner, 17
+  Nov: a 100 GB game shouldn't need the whole download or 100 GB free).
+  A job whose files are one .zip, .7z or .rar (parts too) at https
+  addresses gets `Mode` "delta" (`deltaOK`, `runDelta` in
+  `app/deltaupdate.go`, phase "fetch"). `core/remotefile.go`:
+  `RemoteFile` (Range reads in 4 MB blocks as an `io.ReaderAt`,
+  `ErrNoRanges`), `RemoteVolumes` (an `fs.FS` of a .rar's parts, each
+  one stream that reconnects where it dropped). `core/delta.go`:
+  `StageDelta` (`rootFromNames`, CRC-32 and size against the game's
+  files, only differing files into `<folder>.lootnest-new/files`,
+  `plan.json`, room checked as it's known, staged files kept across
+  tries), `DeltaExtras`, `DeltaRemovals` (only when `Full`: the archive
+  has the game's exe), `ApplyDelta` (moves on the game's drive, old
+  files to `<folder>.lootnest-old/<rel>`, `delta.json` saved before each
+  move), `RevertDelta` (Roll back, failures and `deltaRecover` at
+  start; safe twice). A site without Range gets the whole download
+  first (`delta-local`, `deltaFromDisk`, the archive deleted after).
+  UI: `DELTA_STEPS`, `isDelta`, the "fetch" case in `jobParts`, the
+  delta review in `ppJobHTML` (`JobPlan.Delta/Full/Changed/Added/Same/
+  Removed/Bytes`). Harness `?sources=1&srcupd=compare|fetch|
+  fetchpaused|deltaready|deltakept`. Tests in `core/delta_test.go`
+  (zip, solid and non-solid 7z fixtures, .rar written by a small RAR5
+  writer, over httptest with a dropped connection, a crash at every
+  move). Not seen on a PC: docs/TESTING.md 43, items 8 and 9.
 - **Unreleased, no plugins in Lootnest** (the owner, 17 Nov 2026, after
   asking whether the sources plugin was legal: "scoate-l"). The Sources
   and updates plugin, its plan, its tests, `./build.sh plugins` and the

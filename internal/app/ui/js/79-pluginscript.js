@@ -191,14 +191,24 @@
   }
   let ppJobsLater = 0;
   const JOB_STEPS = ["Download", "Open", "Copy saves", "Replace", "Check"];
+  // Only what changed: the archive is read where it lies (deltaupdate.go).
+  const DELTA_STEPS = ["Compare", "Get what changed", "Copy saves", "Replace"];
+  const isDelta = (j) => /^delta/.test(j.mode || "");
   function jobAt(j) {
+    if (isDelta(j)) {
+      if (j.phase === "download") return 1;
+      if (j.phase === "fetch") return j.step === "fetch" ? 1 : 0;
+      if (j.phase === "ready" || j.phase === "hand") return 2;
+      if (j.phase === "apply") return /saves/i.test(j.step || "") ? 2 : 3;
+      return j.phase === "kept" || j.phase === "done" ? 4 : -1;
+    }
     if (j.phase === "download") return 0;
     if (j.phase === "unpack") return 1;
     if (j.phase === "ready" || j.phase === "hand") return 2;
     if (j.phase === "apply") return /saves/i.test(j.step || "") ? 2 : /Check/.test(j.step || "") ? 4 : 3;
     return j.phase === "kept" || j.phase === "done" ? 5 : -1;
   }
-  const jobSteps = (j) => { const at = jobAt(j); return at < 0 ? "" : `<ol class="pp-steps" aria-label="Steps">${JOB_STEPS.map((s, i) => `<li class="${i < at ? "is-done" : i === at && j.phase !== "ready" && j.phase !== "hand" ? "is-now" : ""}"${i === at ? ' aria-current="step"' : ""}>${s}</li>`).join("")}</ol>`; };
+  const jobSteps = (j) => { const at = jobAt(j); return at < 0 ? "" : `<ol class="pp-steps" aria-label="Steps">${(isDelta(j) ? DELTA_STEPS : JOB_STEPS).map((s, i) => `<li class="${i < at ? "is-done" : i === at && j.phase !== "ready" && j.phase !== "hand" ? "is-now" : ""}"${i === at ? ' aria-current="step"' : ""}>${s}</li>`).join("")}</ol>`; };
   const mins = (s) => (s < 90 ? "a minute" : s < 5400 ? `${Math.round(s / 60)} minutes` : `${Math.round(s / 3600)} hours`);
   const jobBtn = (j, op, label, cls) => `<button class="${cls || "upd-note"}" data-action="pp-job" data-job="${esc(j.id)}" data-op="${op}"${op === "plan" || op === "log" ? ' aria-haspopup="dialog"' : ""}>${label}</button>`;
   const jobKey = (j, op, label, primary) => jobBtn(j, op, label, `ln-button ${primary ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm`);
@@ -213,20 +223,34 @@
         return { text: `Downloading: ${fmtBytes(j.done)}${j.total ? ` of ${fmtBytes(j.total)}` : ""}${j.speed ? `, ${fmtBytes(j.speed)} a second` : ""}${j.eta ? `, about ${mins(j.eta)} left` : ""}`, bar,
           key: jobKey(j, "pause", "Pause"), rest: cancel };
       }
+      case "fetch": {
+        const bar = j.of ? `<progress class="pp-bar" max="${j.of}" value="${Math.min(j.count || 0, j.of)}" aria-label="${j.step === "fetch" ? "Files taken" : "Files compared"}"></progress>` : "";
+        const got = j.done ? `${fmtBytes(j.done)} downloaded` : "";
+        if (j.error) return { text: j.error, bad: true, key: jobKey(j, "resume", "Try again"), rest: cancel + log };
+        if (j.paused) return { text: `Paused${got ? `, ${got}` : ""}. What's taken so far is kept.`, bar, key: jobKey(j, "resume", "Resume"), rest: cancel };
+        const what = j.step === "fetch"
+          ? `Taking the changed files${j.of ? `: ${j.count || 0} of ${j.of}` : ""}`
+          : `Comparing with your files${j.of ? `: ${j.count || 0} of ${j.of}` : ""}`;
+        return { text: `${what}${got ? `, ${got}` : ""}${j.speed ? `, ${fmtBytes(j.speed)} a second` : ""}`, bar, busy: !j.of,
+          key: jobKey(j, "pause", "Pause"), rest: cancel };
+      }
       case "unpack": return { text: "Opening the download", busy: true, key: "", rest: "" };
-      case "ready": return { text: "Downloaded and opened. Nothing in the game's folder has changed yet.", key: jobKey(j, "plan", "Review and update", true), rest: cancel + log };
+      case "ready": return { text: isDelta(j) ? "Only the changed files were taken. Nothing in the game's folder has changed yet." : "Downloaded and opened. Nothing in the game's folder has changed yet.", key: jobKey(j, "plan", "Review and update", true), rest: cancel + log };
       case "hand": return { text: j.kind === "installer" ? "It's an installer. Lootnest runs it only when you say so, after copying your saves." : "It isn't a whole game: its files go over the game's, with each one it replaces kept.",
         key: jobKey(j, "hand", "Open the update", true), rest: jobBtn(j, "dismiss", "Delete the download") + log };
       case "apply": return { text: j.step || "Updating", busy: true, key: "", rest: "" };
-      case "kept": return { text: j.broke ? "The game closed right after its first start. Roll back puts the folder from before back." : "Updated. The folder from before is kept until you've played, or for 14 days.", warn: j.broke,
-        key: jobKey(j, "rollback", "Roll back"), rest: jobBtn(j, "finish", "Remove the old folder now") + log };
+      case "kept": return isDelta(j)
+        ? { text: j.broke ? "The game closed right after its first start. Roll back puts the old files back." : "Updated. The files it replaced are kept until you've played, or for 14 days.", warn: j.broke,
+          key: jobKey(j, "rollback", "Roll back"), rest: jobBtn(j, "finish", "Remove the old files now") + log }
+        : { text: j.broke ? "The game closed right after its first start. Roll back puts the folder from before back." : "Updated. The folder from before is kept until you've played, or for 14 days.", warn: j.broke,
+          key: jobKey(j, "rollback", "Roll back"), rest: jobBtn(j, "finish", "Remove the old folder now") + log };
       case "failed": return { text: j.error || "The update failed. The game is as it was.", bad: true, key: jobKey(j, "dismiss", "Dismiss"), rest: log };
       case "rolledback": return { text: "Rolled back. The game is as it was before the update.", key: jobKey(j, "dismiss", "Dismiss"), rest: log };
       default: return { text: "Updated.", key: jobKey(j, "dismiss", "Dismiss"), rest: log };
     }
   }
   function jobCard(j) {
-    const p = jobParts(j), st = j.phase === "failed" || (j.phase === "download" && j.error) ? { k: "low", text: "Needs a look" } : j.phase === "kept" || j.phase === "done" ? { k: "ok", text: "Updated" }
+    const p = jobParts(j), st = j.phase === "failed" || ((j.phase === "download" || j.phase === "fetch") && j.error) ? { k: "low", text: "Needs a look" } : j.phase === "kept" || j.phase === "done" ? { k: "ok", text: "Updated" }
       : j.phase === "rolledback" ? { k: "dim", text: "Rolled back" } : j.phase === "ready" || j.phase === "hand" ? { k: "new", text: "Ready" } : { k: "new", text: "Updating" };
     const meta = `<p class="upd-meta"><span>From ${esc(j.source || j.pluginName || "a plugin")}</span><span class="upd-why" title="${esc(j.title)}">${esc(j.title)}</span></p>
       ${jobSteps(j)}
@@ -247,19 +271,32 @@
     const j = (S.plugJobs || []).find((x) => x.id === D.job), P = D.plan;
     if (!j) return "";
     const item = (k) => `<li><span class="selectable">${esc(k.rel)}</span><span class="ln-num">${esc(fmtBytes(k.size || 0))}</span></li>`;
-    const body = D.error && !P ? `<p class="error-text">${esc(D.error)}</p>` : !P ? lnInline("", "Looking at what's in the folder") : `
+    const files = (n) => `${n} ${n === 1 ? "file" : "files"}`;
+    const extras = (P) => P.extra.length ? `<div class="pp-keep"><b>Only in your folder. Keep any?</b><ul>${P.extra.map((k) => `<li><label><input type="checkbox" data-pp-keep="${esc(k.rel)}" ${(P.yours || []).includes(k.rel) ? "checked" : ""} ${D.busy ? "disabled" : ""}><span class="selectable">${esc(k.rel)}</span></label><span class="ln-num">${esc(fmtBytes(k.size || 0))}</span></li>`).join("")}</ul></div>` : "";
+    const delta = (P) => `
+      <dl class="ln-facts">
+        <div><dt>Your saves</dt><dd>${P.saves ? `${P.saves} ${P.saves === 1 ? "place" : "places"} copied first` : "None found to copy"}</dd></div>
+        <div><dt>What changes</dt><dd>${[P.changed ? `${files(P.changed)} replaced` : "", P.added ? `${files(P.added)} new` : ""].filter(Boolean).join(", ")}, ${esc(fmtBytes(P.bytes || 0))}</dd></div>
+        ${P.same ? `<div><dt>Already the same</dt><dd>${files(P.same)}, not downloaded</dd></div>` : ""}
+        ${P.full && P.removed ? `<div><dt>Not in the new version</dt><dd>${files(P.removed)} moved aside</dd></div>` : ""}
+        <div><dt>The files it replaces</dt><dd>Kept until you've played, or ${P.days} days</dd></div>
+      </dl>
+      ${P.keep.length ? `<div class="pp-keep"><b>Left as they are</b><ul>${P.keep.map(item).join("")}</ul></div>` : ""}
+      ${extras(P)}
+      <p class="sub">${P.full ? "Only the files listed above change" : "It's a patch: only its files go in, the rest of the folder isn't touched"}. Every file replaced or moved aside goes to <span class="selectable">${esc(P.old)}</span>, so Roll back puts the game back as it was.</p>`;
+    const body = D.error && !P ? `<p class="error-text">${esc(D.error)}</p>` : !P ? lnInline("", "Looking at what's in the folder") : P.delta ? delta(P) : `
       <dl class="ln-facts">
         <div><dt>Your saves</dt><dd>${P.saves ? `${P.saves} ${P.saves === 1 ? "place" : "places"} copied first` : "None found to copy"}</dd></div>
         <div><dt>The folder from before</dt><dd>Kept until you've played, or ${P.days} days</dd></div>
       </dl>
       ${P.keep.length ? `<div class="pp-keep"><b>Carried into the new folder</b><ul>${P.keep.map(item).join("")}</ul></div>` : ""}
-      ${P.extra.length ? `<div class="pp-keep"><b>Only in your folder. Keep any?</b><ul>${P.extra.map((k) => `<li><label><input type="checkbox" data-pp-keep="${esc(k.rel)}" ${(P.yours || []).includes(k.rel) ? "checked" : ""} ${D.busy ? "disabled" : ""}><span class="selectable">${esc(k.rel)}</span></label><span class="ln-num">${esc(fmtBytes(k.size || 0))}</span></li>`).join("")}</ul></div>` : ""}
+      ${extras(P)}
       <p class="sub">Everything else in <span class="selectable">${esc(P.folder)}</span> is replaced by the new build. Roll back puts the old folder back.</p>`;
     return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="Update ${esc(j.name)}">
       <div><h2>Update ${esc(j.name)}?</h2><p class="sub">${esc(j.title)}${j.source ? `, from ${esc(j.source)}` : ""}.</p></div>
       ${body}
       <div class="dialog-foot"><span class="error-text grow" role="alert">${P ? esc(D.error || "") : ""}</span><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
-      <button class="btn primary" data-action="pp-job-apply" ${D.busy || !P ? "disabled" : ""}>Replace the game's folder</button></div></div></div>`;
+      <button class="btn primary" data-action="pp-job-apply" ${D.busy || !P ? "disabled" : ""}>${P && P.delta ? "Update the game" : "Replace the game's folder"}</button></div></div></div>`;
   }
   const ppLogHTML = (D) => `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="The update's log">
       <div><h2>${esc(D.name)}</h2><p class="sub">Every step of this update.</p></div><div class="log selectable" tabindex="0">${esc(D.text || "Nothing yet.")}</div>

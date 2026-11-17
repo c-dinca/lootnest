@@ -121,6 +121,11 @@
     apply: { phase: "apply", step: "Replacing the game's folder" },
     kept: { phase: "kept", old: "D:\\Games\\Onimusha.lootnest-old" },
     failed: { phase: "failed", error: "Moving the new build into place failed: the disk is full. The game is as it was." },
+    compare: { mode: "delta", phase: "fetch", step: "compare", count: 2140, of: 5312, done: 6.2 * 2 ** 20 },
+    fetch: { mode: "delta", phase: "fetch", step: "fetch", count: 37, of: 112, done: 1.9 * 2 ** 30, total: 45.2 * 2 ** 30, speed: 31 * 2 ** 20 },
+    fetchpaused: { mode: "delta", phase: "fetch", paused: true, done: 1.9 * 2 ** 30 },
+    deltaready: { mode: "delta", phase: "ready" },
+    deltakept: { mode: "delta", phase: "kept", old: "D:\\Games\\Onimusha.lootnest-old" },
   }[SRCUPD] || { phase: "download" })];
   const PLUGIN_PAGES = () => PLUGIN_LIST.some((p) => p.id === "update-notices" && p.on && p.granted) ? [{ plugin: "update-notices", name: "Update notices", id: "sources", title: "Sources" }] : [];
   const THEMES = PLUGINS ? { "deep-sea": { name: "Deep sea", tokens: { "--bg-well": "#0a1019", "--bg-ground": "#0d1520", "--bg-surface": "#152131", "--bg-raised": "#1b2a3d", "--bg-active": "#22344a",
@@ -512,7 +517,8 @@
       return ok();
     },
     ps_pluginJobs: () => ok(SRC_JOBS.slice()),
-    ps_pluginJobPlan: () => ok({ keep: [{ rel: "Saved/SaveGames", why: "saves", size: 48 * 2 ** 20 }], extra: [{ rel: "Mods", why: "yours", size: 1.3 * 2 ** 30 }, { rel: "reshade-shaders", why: "yours", size: 22 * 2 ** 20 }, { rel: "notes.txt", why: "yours", size: 2048 }],
+    ps_pluginJobPlan: () => SRC_JOBS[0] && SRC_JOBS[0].mode ? ok({ keep: [{ rel: "Saved/SaveGames", why: "saves", size: 48 * 2 ** 20 }], extra: [{ rel: "reshade-shaders", why: "yours", size: 22 * 2 ** 20 }], yours: ["reshade-shaders"],
+      saves: 2, folder: "D:\\Games\\Onimusha", old: "D:\\Games\\Onimusha.lootnest-old", days: 14, delta: true, full: true, changed: 96, added: 16, same: 5200, removed: 3, bytes: 3.4 * 2 ** 30 }) : ok({ keep: [{ rel: "Saved/SaveGames", why: "saves", size: 48 * 2 ** 20 }], extra: [{ rel: "Mods", why: "yours", size: 1.3 * 2 ** 30 }, { rel: "reshade-shaders", why: "yours", size: 22 * 2 ** 20 }, { rel: "notes.txt", why: "yours", size: 2048 }],
       buildSize: 46 * 2 ** 30, oldSize: 37.2 * 2 ** 30, yours: ["Mods"], saves: 2, folder: "D:\\Games\\Onimusha", old: "D:\\Games\\Onimusha.lootnest-old", days: 14 }),
     ps_pluginJobOp: (id, op) => {
       const j = SRC_JOBS[0];

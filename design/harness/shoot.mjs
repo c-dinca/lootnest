@@ -88,6 +88,8 @@ const shots = [
   ["sources-game", "sources=1", [nav("updates"), ...game('data-key="dir:d:\\\\games\\\\onimusha"')]],
   ...["download", "paused", "ready", "hand", "apply", "kept", "failed"].map((s) => ["srcupd-" + s, "sources=1&srcupd=" + s, [nav("updates")]]),
   ["srcupd-review", "sources=1&srcupd=ready", [nav("updates"), click('[data-action="pp-job"][data-op="plan"]')]],
+  ...["compare", "fetch", "fetchpaused", "deltaready", "deltakept"].map((s) => ["srcupd-" + s, "sources=1&srcupd=" + s, [nav("updates")]]),
+  ["srcupd-deltareview", "sources=1&srcupd=deltaready", [nav("updates"), click('[data-action="pp-job"][data-op="plan"]')]],
   ["srcupd-log", "sources=1&srcupd=kept", [nav("updates"), click('[data-action="pp-job"][data-op="log"]')]],
   ["srcupd-game", "sources=1&srcupd=download", [nav("updates"), ...game('data-key="dir:d:\\\\games\\\\onimusha"')]],
   ["sources-error", "sources=error", [nav("settings"), click('[data-action="set-tab"][data-tab="pp:update-notices:sources"]')]],

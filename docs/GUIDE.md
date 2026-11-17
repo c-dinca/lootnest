@@ -75,7 +75,8 @@ A plugin adds something Lootnest doesn't come with. Install one in Settings, Plu
 A script plugin you install and allow can offer updates for games no store keeps up to date. Lootnest comes with no such plugin.
 
 - **Updates**, under From plugins, and on the game's page: **Update** downloads beside the game, never over it.
-- When the download is the whole game, Lootnest shows what it keeps, copies your saves, and replaces the folder. The old folder stays until you've played or for 14 days, and **Roll back** puts it back.
+- When the update is one archive (.zip, .7z or .rar) at an https address, Lootnest reads it where it lies and takes only the files that differ from the game's, so you need room for what changed, not for the whole game twice. It shows how many files change and are new, copies your saves, then moves the new files in; the ones they replace go to `<folder>.lootnest-old` and **Roll back** puts them back.
+- Otherwise, when the download is the whole game, Lootnest shows what it keeps, copies your saves, and replaces the folder. The old folder stays until you've played or for 14 days, and **Roll back** puts it back.
 
 ## Installing without a window
 
