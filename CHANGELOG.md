@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.11.2
 
 - **Plugin and mod switches work with the mouse.** The switch beside a plugin, and beside a mod in a game's Mods tab, didn't react to a click (only to the keyboard). A plugin with a script also shows **Allow and turn on** until it's allowed, and asks right after it's installed.
 

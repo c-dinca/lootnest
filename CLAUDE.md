@@ -185,7 +185,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.11.1, beta)
+## Where things stand (2.11.2, beta)
 
 These shipped recently, newest last:
 
@@ -1627,7 +1627,7 @@ These shipped recently, newest last:
   to the artifact and every release. Still installed only by the user,
   off until allowed. `TestRepoPluginsInstallAsZips` installs every repo
   plugin from such a zip. Not signed: no plugin key is set up in CI.
-- **Unreleased, switches that take a click** (the owner, 17 Nov, on
+- **2.11.2, switches that take a click** (the owner, 17 Nov, on
   2.11.1: "I see nothing asking me anything"). A `.switch` outside a
   `<label>` (plugin rows, a plugin page's rows, mods) never got a mouse
   click: its drawing (`span`) lay over the hidden input. `.switch input`
