@@ -213,6 +213,45 @@ func FolderVersion(dir string) string {
 	return ""
 }
 
+// versionFiles are small files some games keep their version in, at the top
+// of their folder.
+var versionFiles = []string{"version.txt", "VERSION", "version", "build.txt", "buildid.txt", "build_version.txt", ".version"}
+
+var versionLineRe = regexp.MustCompile(`(?i)^(?:version|ver|v|build)?[\s:=._-]*(\d+(?:\.\d+){0,4}[a-z]?)\s*$`)
+
+// LocalVersion is the version of the game in dir as this PC can tell it:
+// from the folder's name (FolderVersion), else from a version file at its
+// top whose first line is a version and nothing else. "" when neither says.
+func LocalVersion(dir string) string {
+	if v := FolderVersion(dir); v != "" {
+		return v
+	}
+	for _, name := range versionFiles {
+		p := filepath.Join(dir, name)
+		st, err := os.Stat(p)
+		if err != nil || !st.Mode().IsRegular() || st.Size() == 0 || st.Size() > 4096 {
+			continue
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		line, _, _ := strings.Cut(strings.TrimSpace(strings.TrimPrefix(string(b), "\uFEFF")), "\n")
+		m := versionLineRe.FindStringSubmatch(strings.TrimSpace(line))
+		if m == nil {
+			continue
+		}
+		if !strings.Contains(m[1], ".") {
+			if len(m[1]) < 4 {
+				continue // "2" says too little
+			}
+			return "build " + m[1]
+		}
+		return m[1]
+	}
+	return ""
+}
+
 // CompareVersions orders two versions ("1.0.10" after "1.0.9", "build 2"
 // after "build 1"): -1, 0 or 1. Versions of different kinds compare equal.
 func CompareVersions(a, b string) int {

@@ -305,6 +305,9 @@ func (a *App) errMoving(p string) error {
 	if dir != "" && isInside(p, dir) {
 		return fmt.Errorf("Lootnest is moving %s to another drive. Start it once the move is done.", name)
 	}
+	if err := a.errUpdating(p); err != nil {
+		return err
+	}
 	return a.errModding(p)
 }
 

@@ -1,8 +1,8 @@
   // --------------------------------------------------------------- plugins --
-  // Plugins, a Settings category (ps_plugins, core/plugins.go): data only,
-  // installed from a .zip. A theme plugin's colours, checked in Go, show
+  // Plugins, a Settings category (ps_plugins, core/plugins.go): data, or
+  // a script that asks first (79-pluginscript.js), installed from a .zip. A theme plugin's colours, checked in Go, show
   // while a profile that chose it is seated (applyTheme, from renderSeat).
-  const PLUGIN_KINDS = { sources: "Adds games", saves: "Suggests save locations", metadata: "Fills in game details", theme: "Changes colours" };
+  const PLUGIN_KINDS = { sources: "Adds games", saves: "Suggests save locations", metadata: "Fills in game details", theme: "Changes colours", script: "Runs a script" };
   let pluginsAsked = false;
   function askPlugins(force) {
     if (pluginsAsked && !force) return;
@@ -18,11 +18,12 @@
         <b>${esc(p.name)}${p.version ? ` <span class="set-opt"><span class="ln-num">${esc(p.version)}</span>${p.author ? `, by ${esc(p.author)}` : ""}</span>` : ""}</b>
         ${p.description ? `<p>${esc(p.description)}</p>` : ""}
         ${p.problem ? "" : `<p class="pl-key"><span>${p.key ? `Signed, key <span class="ln-num">${esc(p.key)}</span>` : "Not signed"}</span>${(p.provides || []).map((k) => `<span class="ln-tag">${PLUGIN_KINDS[k] || esc(k)}</span>`).join("")}</p>`}
+        ${p.asks && !p.problem ? `<p class="pl-asks">${p.granted ? "Allowed to" : "Asks to"}: ${esc(p.asks.map((a, i) => (i ? a[0].toLowerCase() + a.slice(1) : a)).join("; "))}.</p>` : ""}
         ${p.problem ? `<p class="error-text">${esc(p.problem)}</p>` : ""}</div>
       <div class="pl-acts">${p.older && !safe ? b(`data-action="plugin-rollback" data-id="${esc(p.id)}"`, `Roll back to ${esc(p.older)}`) : ""}
         ${b(`data-action="plugin-remove" data-id="${esc(p.id)}"`, "Remove")}
         <span class="switch"><input type="checkbox" data-plugin-on="${esc(p.id)}" aria-label="${esc(p.name)} on" ${p.on && !safe ? "checked" : ""} ${safe || p.problem ? "disabled" : ""}><span></span></span></div></div>`).join("");
-    const install = `<div class="bk-row pl-row"><div><b>Install a plugin</b><p>A .zip of data only. Every file is checked first.</p>${S.pluginError ? `<p class="error-text">${esc(S.pluginError)}</p>` : ""}</div>
+    const install = `<div class="bk-row pl-row"><div><b>Install a plugin</b><p>A .zip. Every file is checked first, and one with a script asks before it runs.</p>${S.pluginError ? `<p class="error-text">${esc(S.pluginError)}</p>` : ""}</div>
       <button class="ln-button ln-button--secondary ln-button--sm" data-action="plugin-install" ${safe ? "disabled" : ""}>Install from file</button></div>`;
     const note = safe ? "Safe mode: every plugin is off." : "";
     return setSub("Installed", note, `<div class="bk-card">${install}${rows || `<div class="bk-row"><div><b>No plugins yet</b></div></div>`}</div>`);

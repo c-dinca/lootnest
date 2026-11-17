@@ -116,6 +116,15 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_setPluginOn", a.apiSetPluginOn))
 	must(a.w.Bind("ps_removePlugin", a.apiRemovePlugin))
 	must(a.w.Bind("ps_rollbackPlugin", a.apiRollbackPlugin))
+	must(a.w.Bind("ps_pluginGrant", a.apiPluginGrant))
+	must(a.w.Bind("ps_pluginView", a.apiPluginView))
+	must(a.w.Bind("ps_pluginAction", a.apiPluginAction))
+	must(a.w.Bind("ps_pluginOffers", a.apiPluginOffers))
+	must(a.w.Bind("ps_pluginOfferAction", a.apiPluginOfferAction))
+	must(a.w.Bind("ps_pluginJobs", a.apiPluginJobs))
+	must(a.w.Bind("ps_pluginJobPlan", a.apiPluginJobPlan))
+	must(a.w.Bind("ps_pluginJobOp", a.apiPluginJobOp))
+	must(a.w.Bind("ps_pluginJobLog", a.apiPluginJobLog))
 	must(a.w.Bind("ps_ignoreFound", a.apiIgnoreFound))
 	must(a.w.Bind("ps_unhideFound", a.apiUnhideFound))
 	must(a.w.Bind("ps_setPrimaryCopy", a.apiSetPrimaryCopy))
@@ -278,6 +287,8 @@ type AppState struct {
 	Themes    map[string]PluginTheme                `json:"themes"`    // plugin id -> the colours of an on theme plugin
 	// PluginMeta: a plugin that's on fills in game details.
 	PluginMeta bool `json:"pluginMeta,omitempty"`
+	// PluginPages: the Settings categories running script plugins draw.
+	PluginPages []PluginPageInfo `json:"pluginPages"`
 }
 
 func (a *App) apiState() AppState {
@@ -297,6 +308,7 @@ func (a *App) apiState() AppState {
 	st.CustomArt = a.store.CustomArt()
 	pd := a.plugins()
 	st.Themes, st.PluginMeta = pd.themes, len(pd.meta) > 0
+	st.PluginPages = a.pluginPages()
 	st.Playtime = core.WithOffsets(a.store.LoadPlaytime(), st.Shelf)
 	st.Avatars, st.Banners = map[string]string{}, map[string]string{}
 	for _, p := range cfg.Players {

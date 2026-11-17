@@ -1059,6 +1059,26 @@
       try { await pluginInstalled(r.path, await api.installPlugin(r.path)); }
       catch (e) { S.pluginError = errText(e); render(); }
     },
+    "pp-job"(el) { jobOp(el.dataset.job, el.dataset.op); },
+    async "pp-job-apply"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "ppjob" || !D.plan || D.busy) return;
+      const keep = [...document.querySelectorAll("#overlay [data-pp-keep]")].filter((i) => i.checked).map((i) => i.dataset.ppKeep);
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.pluginJobOp(D.job, "apply", keep); if (S.dialog === D) closeDialog(); }
+      catch (e) { D.busy = false; D.error = errText(e); if (S.dialog === D) renderOverlay(); }
+    },
+    "pp-offer"(el) {
+      const d = el.dataset;
+      api.pluginOfferAction(d.plugin, d.offer, d.act).catch((e) => toast(errText(e), "error"));
+    },
+    async "pp-act"(el) {
+      const d = el.dataset, a = ppFind(d.plugin, d.page, d.row, d.act);
+      if (!a) return;
+      if (a.confirm && !await confirmDialog({ title: a.confirm.title || a.label, body: a.confirm.body || "", ok: a.confirm.ok || a.label, safe: true })) return;
+      if (a.form) return ppOpenForm(d.plugin, d.page, a.form, a.id, d.row);
+      ppSend(d.plugin, d.page, { id: a.id, row: d.row });
+    },
     async "plugin-rollback"(el) {
       try { const m = await api.rollbackPlugin(el.dataset.id); await pluginsDone(`${m.name} is back to ${m.version}.`); } catch (e) { toast(errText(e), "error"); }
     },
@@ -1481,8 +1501,9 @@
     if (el.dataset.svf) { svF()[el.dataset.svf] = el.value; S.svMore = false; render(); return; }
     if (el.dataset.pluginOn) {
       const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.pluginOn), on = el.checked;
-      api.setPluginOn(el.dataset.pluginOn, on).then(() => pluginsDone(p && !on && (p.provides || []).includes("sources") ? `${p.name} is off. Its games left the Library; games with profiles stay as they are.` : ""),
-        (e) => { el.checked = !on; toast(errText(e), "error"); });
+      const go = p && on && p.asks && !p.granted ? allowPlugin(p).then((yes) => { if (!yes) throw ""; }) : api.setPluginOn(el.dataset.pluginOn, on);
+      go.then(() => pluginsDone(p && !on && (p.provides || []).includes("sources") ? `${p.name} is off. Its games left the Library; games with profiles stay as they are.` : ""),
+        (e) => { el.checked = !on; if (e) toast(errText(e), "error"); });
       return;
     }
     if (el.dataset.backup === "auto") { saveBackup({ auto: el.checked }); return; }

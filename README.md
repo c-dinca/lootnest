@@ -57,7 +57,7 @@ Needs Windows 10 or 11 (64-bit) with the WebView2 Runtime, which Windows already
 - No account, ads or telemetry. It works offline.
 - It never injects into a game, hooks it or reads its memory.
 - It never bypasses DRM.
-- It never downloads games, except ones you own from itch.io or GOG, through their own API, after you connect them.
+- It comes with no download sources and never looks for games to download. By itself it downloads only games you own from itch.io or GOG, through their own API, after you connect them. A plugin you install can read sources you add yourself; what you add and download that way is your choice.
 
 ## Privacy
 

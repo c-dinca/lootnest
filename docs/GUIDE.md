@@ -66,6 +66,18 @@ With a streaming host you set up yourself (Apollo or Sunshine), add an app whose
 
 The app the host starts is a second, small Lootnest that only keeps the stream open. The one that loads profiles and starts games runs on its own, so the host ending the stream never stops it in the middle of loading a profile's files.
 
+## Plugins
+
+A plugin adds something Lootnest doesn't come with. Install one in Settings, Plugins, **Install from file**. Most are data only. One with a script is off until you've read what it asks to do and allowed it, and in safe mode (hold Shift while opening Lootnest) none runs. [PLUGINS.md](PLUGINS.md) has the details and how to write one.
+
+### Sources and updates
+
+A plugin in this repository's `plugins/sources-updates` folder, not installed by default. Lootnest comes with no download sources; with this plugin you add your own, as addresses of JSON lists, and what you add and download is your choice and your responsibility.
+
+- **Sources** in Settings: add, edit, turn off or remove a source, and see when each was last read and what went wrong.
+- **Updates**, under From your sources: games you have, that no store keeps up to date, for which a source lists something newer. **Update** downloads it beside the game, never over it. A magnet link needs your own Real-Debrid token (also under Sources), or opens in your torrent app.
+- When the download is the whole game, Lootnest shows what it keeps, copies your saves, and replaces the folder. The old folder stays until you've played or for 14 days, and **Roll back** puts it back.
+
 ## Installing without a window
 
 For scripts and package managers, run `start /wait Lootnest-Setup.exe --silent` in Command Prompt, or `Start-Process Lootnest-Setup.exe --silent -Wait` in PowerShell (`/S` and `/silent` work too). It installs for your Windows account with a Start menu shortcut; on an upgrade the desktop shortcut and Start with Windows stay as they are, and a first install adds neither. It doesn't open Lootnest afterwards. It exits with 0 when Lootnest is installed and 1 when it couldn't be, and then writes the reason to `Lootnest-Setup.log` in your `%TEMP%` folder.

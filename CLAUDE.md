@@ -32,7 +32,11 @@ What makes it different, and the direction to keep pushing:
   The owner's one exception (8 Nov 2026): games the user owns, from the
   store they bought them from (itch.io now, GOG next), through that
   store's official API after the user connects it; never other sources,
-  never a catalogue;
+  never a catalogue. The owner's change of 17 Nov 2026: Lootnest still
+  ships no sources and looks for none, but a plugin the user installs may
+  read download sources the user adds and update games from them; the
+  plugin, the sources and the downloads are the user's doing (see
+  2.11.0, script plugins);
 - cloud saves through the user's own OneDrive or Google Drive folder, with
   versions, encryption and per-profile sync;
 - nothing goes online unless the user turns it on (README, Privacy table).
@@ -181,7 +185,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.10.4, beta)
+## Where things stand (2.11.0, beta)
 
 These shipped recently, newest last:
 
@@ -1523,7 +1527,7 @@ These shipped recently, newest last:
   unmodified LG takes apps from outside its store only in Developer
   Mode.
 
-- **Unreleased, Stremio with a TV interface** (the owner, 16 Nov,
+- **2.11.0, Stremio with a TV interface** (the owner, 16 Nov,
   after 2.10.4: "can't we make Stremio with the TV interface, and the
   app?"). One Stremio tile: `core.WebApp` `stremio` (web.stremio.com,
   `padSpatial`) in Lootnest's own window, with the installed program's
@@ -1539,6 +1543,84 @@ These shipped recently, newest last:
   controller into a mouse by itself; the Home menu's switch remains.
   Tried against the real site in Chromium with a stubbed pad; the
   server start and playback in WebView2 aren't seen: docs/TESTING.md 42.
+
+- **2.11.0, script plugins and Sources and updates** (the owner,
+  17 Nov 2026, answering `docs/plugins/sources-updates.md`: "we change
+  what a plugin is"; Lootnest provides no sources, it is where the user's
+  can be used; downloads from sources, and Real-Debrid as Hydra has it;
+  and: the owner makes the decisions, don't make them for them). A
+  plugin that provides `script` has one .js run inside Lootnest by goja
+  (pure Go; a time limit per call, no memory limit) and reaches only the
+  `lootnest` object (`core/pluginscript.go`: `StartScript`, `Call`,
+  `on`, `schedule`, `storage`, `net.fetch` behind `guardedDial`, which
+  refuses this PC and its network, `library.games`, `updates.offer`,
+  `notify`; only JSON crosses). `permissions` (net, library, updates,
+  notify) and `secrets` (a key and the one host it goes to) are shown in
+  words (`PluginAsks`) and allowed before it runs (`GrantPlugin`,
+  `plugins.json` `granted`); a version asking for something else is off
+  again. `app/pluginscript.go`: `syncScripts` (from `pluginsChanged` and
+  at start, never in safe mode), keys in `plugin-secrets.json` (DPAPI),
+  `ps_pluginGrant`, `ps_pluginView`, `ps_pluginAction`, events
+  `pluginPages`, `pluginView`, `pluginChanged`, `pluginActed`. A plugin's
+  pages are Settings categories drawn from data by `79-pluginscript.js`
+  (`viewPluginPage`, `ppRow`, forms as dialog `ppform`; every word
+  escaped, no HTML from a plugin). goja has no locales
+  (`toLocaleString` fails) and no `URL`, `fetch` or timers.
+  The plugin is `plugins/sources-updates` (`main.js`), installed by the
+  user from that folder or its zip, never bundled on: sources in its
+  storage, `ADAPTERS` (lootnest, hydra), `parseFeed` (every field
+  checked; see the plan's limits), refresh one source per `refresh` call
+  with ETag. Its tests run the real file under the host
+  (`core/sourcesplugin_test.go`; its `test` handler exposes the pure
+  parts). Harness `?plugins=1` (installed, not allowed) and
+  `?sources=1|empty|error`. The plan and what's left (matching and Hydra's
+  download records, the download queue and Real-Debrid, the save copy and
+  the folder swap with rollback) are in `docs/plugins/sources-updates.md`.
+  Not seen on a PC.
+  Part 2, detection: `core.HydraOrigins` (Hydra's `!downloads!` record
+  per game: address, folder name, size, time; never the entry's title),
+  `core.LocalVersion`, `win.FileVersion`; `app.scriptGames` gives scripts
+  the version and Hydra's record of games no store updates;
+  `scriptsLibraryChanged` after a scan; `ps_pluginOffers`,
+  `ps_pluginOfferAction` (the script's `offer` handler), event
+  `pluginOffers`; `S.plugOffers`, `offersSection` on the Updates page,
+  `offerBanner` on a game's page. In the plugin: `normTitle`,
+  `titleScore` (0.9 links by itself, 0.6 asks), `titleVersion` (from-to
+  patches, v1.2.3, Build n, dates), `installed` (this PC's reading
+  before the baseline; the exe's version only when it continues the
+  baseline's numbering), `detect`, `links` in its storage (seen, base,
+  manual, yes, no, skip, mute). Write a plugin's .js in ASCII with
+  `\uXXXX` escapes: a raw U+2028 in a regular expression parses in goja
+  and not in Node.
+  Parts 3 and 4, downloads and the update: `core/dlqueue.go`
+  (`DownloadQueue`: one at a time, Pause, Resume, Remove, `Job`,
+  downloads.json, `GuardedClient`; http only with a SHA-256),
+  `core/fullupdate.go` (`FindBuild`, `PlanFullUpdate`, `RunFullUpdate`:
+  backup, swap, restore, verify, kept, with `state.json` written before
+  each step; `RecoverFullUpdate`, `RollbackFullUpdate`,
+  `FinishFullUpdate`; the old folder is renamed to
+  `<folder>.lootnest-old`, never changed; a build that failed goes
+  aside, never deleted; `keepBlocked` never carries a store's files or a
+  stand-in tool's). `app/fullupdate.go`: a script's
+  `lootnest.updates.run("start", ...)` makes a job
+  (`fullupdates\<hash>\job.json`, `log.txt`), staging in
+  `<folder>.lootnest-new`; `jobUnpack` finds a whole build, else hands a
+  patch or an installer to the 1.37/1.40 update drawer; `jobApply`
+  (after the user's yes in dialog `ppjob`), `copySaves` (a version in the
+  safety net's store, so it shows under Copies on this PC), `watchKept`,
+  `recoverJobs` at start, `errUpdating`. `ps_pluginJobs`,
+  `ps_pluginJobPlan`, `ps_pluginJobOp`, `ps_pluginJobLog`, event
+  `pluginJobs`; `jobCard`, `jobSteps`, `ppJobHTML` in
+  79-pluginscript.js. The plugin: `startUpdate` (an https archive
+  directly; a magnet or a host's link through the user's Real-Debrid
+  token, the plugin's one key, `rdCall`/`rdTick`; else Open in your
+  torrent app, `updates.run("magnet")`, the only thing ever opened for a
+  plugin). No BitTorrent client in Lootnest (the owner hasn't asked for
+  one). Harness `?sources=1&srcupd=download|paused|ready|hand|apply|
+  kept|failed`. docs/TESTING.md 43. Released as 2.11.0 at the owner's
+  word (17 Nov 2026), unseen on a PC. The plugin isn't in the release's
+  files: it's the repository's `plugins/sources-updates` folder, zipped
+  by whoever wants it; how it reaches users is the owner's to decide.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
@@ -1686,7 +1768,10 @@ games (no sources, official-looking or hidden), never bypasses DRM, and
 never generates, ships or "repairs" anything that makes a game start. It
 downloads only games the user owns, from the store they bought them from,
 through its official API once the user connects it (itch.io now, GOG
-next): never from anywhere else, and never a catalogue. Opening Hydra for an
+next): never from anywhere else, and never a catalogue. Since 17 Nov 2026 a
+script plugin the user installs and allows may read sources the user adds
+(`plugins/sources-updates`); Lootnest itself brings none, suggests none,
+and never searches a source for games the user doesn't have. Opening Hydra for an
 update of a game that came from it is the owner's one other exception (14
 Nov 2026): Lootnest opens the app and copies the game's name, nothing more.
 

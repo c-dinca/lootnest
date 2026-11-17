@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -79,5 +80,46 @@ func TestHydraDownloadsPath(t *testing.T) {
 	defer db.Close()
 	if p, err := HydraDownloadsPath(src, filepath.Join(root, "tmp")); p != dl || err != nil {
 		t.Fatalf("set: %q %v", p, err)
+	}
+}
+
+func TestHydraOrigins(t *testing.T) {
+	root := t.TempDir()
+	games := filepath.Join(root, "Games")
+	exe := filepath.Join(games, "Night Tale", "bin", "NightTale.exe")
+	write(t, exe, "MZ")
+	src := filepath.Join(root, "hydra-db")
+	db, err := leveldb.OpenFile(src, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	put := func(k string, v map[string]any) {
+		b, _ := json.Marshal(v)
+		if err := db.Put([]byte(k), b, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	other := filepath.Join(games, "Half Done", "h.exe")
+	put("!games!steam:777", map[string]any{"title": "Night Tale", "objectId": "777", "shop": "steam", "executablePath": exe})
+	put("!games!steam:778", map[string]any{"title": "Half Done", "objectId": "778", "shop": "steam", "executablePath": other})
+	put("!games!custom:abc", map[string]any{"title": "No download", "objectId": "abc", "shop": "custom", "executablePath": filepath.Join(games, "Own", "o.exe")})
+	put("!downloads!steam:777", map[string]any{"uri": "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567", "folderName": "Night.Tale.v1.2.0", "fileSize": 123456,
+		"timestamp": 1790000000000, "status": "complete", "downloader": 1, "downloadPath": games})
+	put("!downloads!steam:778", map[string]any{"uri": "https://files.example.com/h.zip", "folderName": "Half", "status": "paused"})
+	defer db.Close() // Hydra is running
+
+	got, err := HydraOrigins(src, filepath.Join(root, "tmp"), []string{games})
+	if err != nil || len(got) != 1 {
+		t.Fatalf("HydraOrigins = %+v %v", got, err)
+	}
+	o := got["dir:"+strings.ToLower(filepath.Join(games, "Night Tale"))]
+	if !strings.HasPrefix(o.URI, "magnet:") || o.Folder != "Night.Tale.v1.2.0" || o.Size != 123456 || o.Time != 1790000000000 {
+		t.Fatalf("origin = %+v", o)
+	}
+	if isDir(filepath.Join(root, "tmp")) {
+		t.Fatal("the copy should be removed")
+	}
+	if got, err := HydraOrigins(filepath.Join(root, "none"), filepath.Join(root, "tmp"), nil); got != nil || err != nil {
+		t.Fatal("no Hydra, no origins")
 	}
 }

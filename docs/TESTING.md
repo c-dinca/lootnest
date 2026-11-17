@@ -955,3 +955,17 @@ On the LG TV, with section 27 done on the PC.
    installs nothing.
 7. The Home button opens Lootnest's menu over it; Close ends it and
    Lootnest is back.
+
+## 43. Script plugins, and Sources and updates
+
+None of this has run on a PC. Use a test folder game with saves you don't mind losing first.
+
+1. Settings, Plugins, Install from file: the zip of `plugins/sources-updates`. It's listed as off, with what it asks. Turn it on: the dialog lists the same asks; Cancel leaves it off; Allow turns it on and a **Sources** category appears. Restart with Shift (safe mode): the category is gone and nothing of the plugin runs.
+2. Sources: Add a source shows the notice once, then the form. A bad address is refused in the form. A good feed shows its entries, format and "Refreshed just now"; an http one shows the warning. Break the feed's file: Refresh shows the error and the entries stay. Recent activity lists each request by site.
+3. Updates: a game whose name is in the feed with a newer version shows under From your sources, and on its page. A game Hydra installed shows the right "Your copy". Ignore this version, Ignore this source, then Stop ignoring on the Sources page.
+4. Update with a direct https archive of a whole build: the row downloads (Pause, Resume, close Lootnest in the middle and open it again), opens, and says Ready. The game's folder hasn't changed. Review and update lists the saves and what only your folder has. Replace: the steps move, the game starts, saves are there, `<folder>.lootnest-old` exists, and the Saves tab has "Before the update". Play over a minute and close: the old folder goes to the Recycle Bin.
+5. Again, then Roll back before playing: the old build is back, saves as they were, the new build in the Recycle Bin.
+6. Pull the plug (or end Lootnest in Task Manager) right after Replace on a large game on another drive than Lootnest's data: at the next start the game is as it was and the Updates page says the update was cut short.
+7. Not enough room: Update on a drive with less free space than the download needs is refused with both numbers.
+8. A patch and an installer: each ends as Ready with Open the update, which opens the update panel; the installer runs only on Run the installer.
+9. Real-Debrid: add a token (a wrong one is refused and forgotten); Update on a magnet-only entry waits ("Real-Debrid is fetching it"), then downloads. Without a token, Open in your torrent app opens it.

@@ -77,6 +77,52 @@
     { id: "retro-info", name: "Retro game details", version: "2.0.0", author: "Lena M.", description: "Summaries, developers and release years for older games.", provides: ["metadata"], on: false },
     { id: "deep-sea", name: "Deep sea", version: "1.1.0", author: "Ana P.", description: "Dark blue grounds with a cyan accent.", provides: ["theme"], on: true, older: "1.0.0" },
   ] : [];
+  // &sources=1|empty|error: the Sources and updates script plugin, allowed
+  // and running, with its Settings page (one good source, one that failed,
+  // one off); empty has none yet; with plugins=1 alone it's installed but
+  // not allowed, so its switch asks first.
+  const SRC = q.get("sources");
+  if (PLUGINS || SRC) PLUGIN_LIST.push({ id: "sources-updates", name: "Sources and updates", version: "0.1.0", author: "Lootnest", provides: ["script"], on: !!SRC, granted: !!SRC,
+    description: "Add your own download sources (JSON feeds) and see when one lists a newer version of a game you have. It comes with no sources.",
+    asks: ["Run its own script inside Lootnest, and keep its own data there", "Go online, to any address it or you give it", "Read the list of your games: their names, folders and versions",
+      "Offer updates for your games, download them, and replace a game's folder once you say yes", "Show notices"] });
+  const srcForm = (title, okLabel, s) => ({ title, ok: okLabel, fields: [{ id: "url", label: "Address of the JSON file", type: "url", value: s ? s.sub : "", placeholder: "https://" },
+    { id: "name", label: "Name", type: "text", value: s ? s.title : "", placeholder: "Leave empty to use the source's own", max: 60 }] });
+  const srcActs = (name) => [{ id: "refresh", label: "Refresh" }, { id: "edit", label: "Edit", form: "edit:x" }, { id: "remove", label: "Remove", confirm: { title: `Remove ${name}?`, body: "Its list goes from Lootnest. Games you have stay as they are.", ok: "Remove" } }];
+  const SRC_ROWS = SRC === "empty" ? [] : [
+    { id: "s1", title: "Studio builds", sub: "https://builds.example.org/feed.json", lamp: "on", tags: ["128 downloads", "Lootnest"], note: "Refreshed 12 min ago", toggle: { on: true }, actions: srcActs("Studio builds") },
+    { id: "s2", title: "Community patches", sub: "http://patches.example.net/list.json", lamp: SRC === "error" ? "bad" : "warn", tags: ["2,431 downloads", "Hydra-compatible"], note: "Refreshed 3 h ago",
+      warn: "14 entries couldn't be read and were left out. Its address isn't https, so what it lists can be changed on the way", error: SRC === "error" ? "Its site answered 503" : "", toggle: { on: true }, actions: srcActs("Community patches") },
+    { id: "s3", title: "Old mirror", sub: "https://mirror.example.com/games.json", lamp: "off", tags: ["52 downloads", "Hydra-compatible"], note: "Refreshed 9 days ago", toggle: { on: false }, actions: srcActs("Old mirror") },
+  ];
+  let srcNotice = SRC !== "empty";
+  const srcView = () => ({ sections: [
+    { title: "Your sources", actions: [srcNotice ? { id: "add", label: "Add a source", kind: "primary", form: "add" } : { id: "notice", label: "Add a source", kind: "primary", confirm: { title: "Sources are yours to choose",
+      body: "Lootnest comes with no sources and doesn't check what a source lists. What you add, what you download from it, and whether you may under the law and the publisher's terms, is up to you.", ok: "I understand" } },
+      ...(SRC_ROWS.length ? [{ id: "refresh-all", label: "Refresh all" }] : [])], rows: SRC_ROWS, empty: "No sources yet. Lootnest comes with none." },
+    { title: "Refresh", rows: [{ id: "hours", title: "Look for new entries", select: { value: "6", options: [1, 3, 6, 12, 24, 0].map((h) => ({ value: String(h), label: h ? `Every ${h === 1 ? "hour" : h + " hours"}` : "Only when I ask" })) } }] }],
+    forms: { add: srcForm("Add a source", "Add"), "edit:x": srcForm("Edit the source", "Save", SRC_ROWS[0]) } });
+  const offerActs = [{ id: "update", label: "Update" }, { id: "ignore-version", label: "Ignore this version" }, { id: "ignore-source", label: "Ignore this source for this game" }];
+  const SRC_OFFERS = SRC === "1" || SRC === "error" ? [
+    { plugin: "sources-updates", pluginName: "Sources and updates", id: "s1.a1", game: "dir:d:\\games\\onimusha", key: "found:dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword",
+      title: "Onimusha Way of the Sword v1.0.3 + 2 DLCs", version: "1.0.3", have: "1.0.1", source: "Studio builds", size: 48533130445, date: "2026-11-12T10:00:00.000Z", actions: offerActs },
+    { plugin: "sources-updates", pluginName: "Sources and updates", id: "s2.b7", game: "dir:d:\\games\\phantom blade zero", key: "found:dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero",
+      title: "Phantom Blade Zero Build 16251443", version: "Build 16251443", have: "", source: "Community patches", size: 2147483648, date: "2026-11-15T08:30:00.000Z", actions: offerActs },
+  ] : [];
+  // &srcupd=download|paused|ready|apply|kept|failed|hand: an update the plugin started for Onimusha, at that step.
+  const SRCUPD = q.get("srcupd");
+  const srcJob = (o) => Object.assign({ id: "j1", key: "dir:d:\\games\\onimusha", updKey: "found:dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", plugin: "sources-updates", offer: "s1.a1",
+    title: "Onimusha Way of the Sword v1.0.3 + 2 DLCs", version: "1.0.3", source: "Studio builds", done: 0, total: 0, speed: 0, eta: 0, paused: false, started: new Date().toISOString() }, o);
+  const SRC_JOBS = !SRCUPD ? [] : [srcJob({
+    download: { phase: "download", done: 17.4 * 2 ** 30, total: 45.2 * 2 ** 30, speed: 23 * 2 ** 20, eta: 1240 },
+    paused: { phase: "download", done: 17.4 * 2 ** 30, total: 45.2 * 2 ** 30, paused: true },
+    ready: { phase: "ready" },
+    hand: { phase: "hand", kind: "installer", path: "D:\\Games\\Onimusha.lootnest-new\\dl\\setup.exe" },
+    apply: { phase: "apply", step: "Replacing the game's folder" },
+    kept: { phase: "kept", old: "D:\\Games\\Onimusha.lootnest-old" },
+    failed: { phase: "failed", error: "Moving the new build into place failed: the disk is full. The game is as it was." },
+  }[SRCUPD] || { phase: "download" })];
+  const PLUGIN_PAGES = () => PLUGIN_LIST.some((p) => p.id === "sources-updates" && p.on && p.granted) ? [{ plugin: "sources-updates", name: "Sources and updates", id: "sources", title: "Sources" }] : [];
   const THEMES = PLUGINS ? { "deep-sea": { name: "Deep sea", tokens: { "--bg-well": "#0a1019", "--bg-ground": "#0d1520", "--bg-surface": "#152131", "--bg-raised": "#1b2a3d", "--bg-active": "#22344a",
     "--accent": "oklch(0.70 0.15 220)", "--accent-hover": "oklch(0.76 0.14 220)", "--fg-on-accent": "#0d1520" } } } : {};
   if (PLUGINS && q.get("theme") === "1") PLAYERS[0].theme = "deep-sea";
@@ -252,7 +298,7 @@
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, avatars: {}, banners: {}, shelf,
-    customArt: customIndex(), themes: THEMES, pluginMeta: PLUGIN_LIST.some((x) => x.on && x.provides.includes("metadata")),
+    customArt: customIndex(), themes: THEMES, pluginPages: PLUGIN_PAGES(), pluginMeta: PLUGIN_LIST.some((x) => x.on && x.provides.includes("metadata")),
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
@@ -455,7 +501,44 @@
       : Promise.reject("Lootnest didn't install it: it has a file that isn't data (bin/helper.exe); plugins can only hold .json, .ini, .vdf, .yaml, .txt and pictures."),
     // 1.2.0 is kept but has the old key, so Roll back doesn't offer it (core.olderPlugin).
     ps_installPluginNewKey: (path, key) => { const x = PLUGIN_LIST.find((p) => p.id === "retroarch"); Object.assign(x, { version: "1.3.0", key }); delete x.older; return ok({ plugin: { ...x } }); },
-    ps_setPluginOn: (id, on) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) x.on = on; return ok(); },
+    ps_setPluginOn: (id, on) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) x.on = on; emit({ type: "pluginPages", pages: PLUGIN_PAGES() }); return ok(); },
+    ps_pluginGrant: (id) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) { x.on = x.granted = true; } emit({ type: "pluginPages", pages: PLUGIN_PAGES() }); return ok(); },
+    // &sources=1: two updates the plugin lists for folder games; Ignore takes one off.
+    ps_pluginOffers: () => ok(SRC_OFFERS.slice()),
+    ps_pluginOfferAction: (plugin, offer, act) => {
+      const i = SRC_OFFERS.findIndex((o) => o.id === offer);
+      if (act === "update") emit({ type: "toast", kind: "error", text: "Updating from here isn't built yet. The update is listed so you know it's out." });
+      else if (i >= 0) { SRC_OFFERS.splice(i, 1); emit({ type: "pluginOffers" }); emit({ type: "toast", text: "Ignored. A later version will show again." }); }
+      return ok();
+    },
+    ps_pluginJobs: () => ok(SRC_JOBS.slice()),
+    ps_pluginJobPlan: () => ok({ keep: [{ rel: "Saved/SaveGames", why: "saves", size: 48 * 2 ** 20 }], extra: [{ rel: "Mods", why: "yours", size: 1.3 * 2 ** 30 }, { rel: "reshade-shaders", why: "yours", size: 22 * 2 ** 20 }, { rel: "notes.txt", why: "yours", size: 2048 }],
+      buildSize: 46 * 2 ** 30, oldSize: 37.2 * 2 ** 30, yours: ["Mods"], saves: 2, folder: "D:\\Games\\Onimusha", old: "D:\\Games\\Onimusha.lootnest-old", days: 14 }),
+    ps_pluginJobOp: (id, op) => {
+      const j = SRC_JOBS[0];
+      if (!j) return ok();
+      if (op === "pause") j.paused = true; else if (op === "resume") j.paused = false;
+      else if (op === "apply") { j.phase = "apply"; j.step = "Copying your saves"; setTimeout(() => { j.phase = "kept"; emit({ type: "pluginJobs" }); }, 900); }
+      else if (op === "rollback") j.phase = "rolledback";
+      else if (op === "finish") j.phase = "done";
+      else if (op === "cancel" || op === "dismiss") SRC_JOBS.length = 0;
+      emit({ type: "pluginJobs" });
+      return ok();
+    },
+    ps_pluginJobLog: () => ok("[2026-11-17 09:12:01] Started: Onimusha Way of the Sword v1.0.3 + 2 DLCs, from Studio builds, 1 file(s), into D:\\Games\\Onimusha.lootnest-new\r\n[2026-11-17 09:41:37] Downloaded. Opening it\r\n[2026-11-17 09:44:02] It's a whole build (Onimusha.exe). Waiting for you to look at what's kept\r\n[2026-11-17 09:50:10] Copying the saves first\r\n[2026-11-17 09:50:12] Saves copied (2026-11-17 075012 DESKTOP)\r\n[2026-11-17 09:50:12] Moving D:\\Games\\Onimusha aside to D:\\Games\\Onimusha.lootnest-old\r\n[2026-11-17 09:50:13] Moving the new build into place\r\n[2026-11-17 09:50:13] Keeping Saved/SaveGames\r\n[2026-11-17 09:50:14] Done. The old folder is kept at D:\\Games\\Onimusha.lootnest-old"),
+    ps_pluginView: (id, page) => { emit({ type: "pluginView", id, page, view: srcView() }, 80); return ok(null); },
+    // As the plugin answers: the notice once, then the form; an address that isn't http(s) is refused.
+    ps_pluginAction: (id, o) => {
+      let result = {};
+      if (o.id === "notice") { srcNotice = true; result = { form: "add" }; }
+      else if ((o.id === "add" || o.id === "edit") && !/^https?:\/\/\S+\.\S+/.test((o.values || {}).url || "")) result = { error: "Type the address of a JSON file, starting with https://" };
+      else if (o.id === "add") { SRC_ROWS.push({ id: "s" + (SRC_ROWS.length + 9), title: o.values.name || o.values.url.replace(/^https?:\/\//, "").split("/")[0], sub: o.values.url, lamp: "busy", tags: [], note: "Not refreshed yet", toggle: { on: true }, actions: srcActs("it") }); result = { toast: "Added. Reading it now." }; }
+      else if (o.id === "remove") { const i = SRC_ROWS.findIndex((r) => r.id === o.row); if (i >= 0) SRC_ROWS.splice(i, 1); result = { toast: "Removed the source." }; }
+      else if (o.id === "toggle") { const r = SRC_ROWS.find((x) => x.id === o.row); if (r) { r.toggle.on = o.on; r.lamp = o.on ? "busy" : "off"; } }
+      emit({ type: "pluginActed", id, req: o.req, result }, 60);
+      emit({ type: "pluginView", id, page: o.page, view: srcView() }, 120);
+      return ok();
+    },
     ps_removePlugin: (id) => { const i = PLUGIN_LIST.findIndex((p) => p.id === id); if (i >= 0) PLUGIN_LIST.splice(i, 1); return ok(); },
     ps_rollbackPlugin: (id) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (!x || !x.older) return Promise.reject("Lootnest couldn't roll it back: no older version of it is kept."); x.version = x.older; delete x.older; return ok({ ...x }); },
     // The last scan, per source: a mix of found, not installed, no games and an error.

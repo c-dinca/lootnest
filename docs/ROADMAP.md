@@ -15,10 +15,10 @@ Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads,
 - 1, L: install from file; library sources (JSON, INI, VDF, registry, folders); Ludusavi-format save presets as suggestions only; local metadata; token-only themes checked for AA contrast, per profile. Shipped in 1.89: Settings, Plugins installs a .zip into `plugins\<id>` after checking every file (`core/plugins.go`), keeps the replaced version for Roll back, and reads sources (`pluginsources.go`, registry through `win.ReadRegKey`), saves and metadata (`pluginmeta.go`) and themes (`plugintheme.go`, the contrast pairs in Go); the format is in [PLUGINS.md](PLUGINS.md).
 - 2, M: online metadata, declared hosts only, a per-plugin switch in Settings, Online, keys in DPAPI, requests logged.
 - 3, M: Ed25519 signatures with the key pinned per plugin; rollback. Shipped in 1.90: `signature.json` over a sorted list of every file's SHA-256 (`core/pluginsign.go`, `PluginDigest`, `VerifyPlugin`), the key pinned per id in plugins.json on first use, a key change only through a confirm for the key shown (`InstallPluginNewKey`), no unsigned version over a signed one, Roll back offered only for a kept version with the pinned key, and `cmd/plugsign` for authors; rollback shipped in 1.89.
-- 4, XL: script plugins with a read-only API; save points only as requests the user confirms.
+- 4, XL: script plugins with a read-only API; save points only as requests the user confirms. The owner's change of 17 Nov 2026: a plugin may hold code. A script plugin (`core/pluginscript.go`) has one .js run by a JavaScript engine in Go ([goja](https://github.com/dop251/goja)), with permissions the user allows before it runs (net, library, updates, notify), keys kept by Lootnest, and Settings pages it describes as data; see [PLUGINS.md](PLUGINS.md). The first one is Sources and updates (`plugins/sources-updates`, [its plan](plugins/sources-updates.md)).
 - 5, L: panels in sandboxed iframes under a strict CSP.
 
-**Will not do.** DLL, .NET, PowerShell or Python plugins; Playnite extensions; any API that downloads, starts arbitrary programs, writes game folders or writes saves; raw CSS themes, which could hide safety notices; plugin dependencies.
+**Will not do.** DLL, .NET, PowerShell or Python plugins; Playnite extensions; any API that lets a plugin itself start programs or write game folders or saves (a script asks, Lootnest's own code does it with a copy first, after the user says yes); raw CSS themes, which could hide safety notices; plugin dependencies.
 
 ## 2. Mod manager
 

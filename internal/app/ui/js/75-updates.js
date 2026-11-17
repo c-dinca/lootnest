@@ -5,7 +5,7 @@
   const updKey = (it) => (it.kind === "game" ? (it.g.launch.type === "exe" && UPDATABLE.includes(it.source) ? "game:" + it.id : "") : UPDATABLE.includes(it.source) && !it.appId ? "found:" + it.id : "");
   function updateNavCount() {
     const keys = new Set([...(S.updates ? S.updates.games : []), ...(S.dl || []), ...storeUpdRows()].filter((g) => g.newer).map((g) => g.key));
-    const n = keys.size + (S.copies ? S.copies.length : 0);
+    const n = keys.size + (S.copies ? S.copies.length : 0) + new Set([...(S.plugOffers || []).map((o) => o.key), ...(S.plugJobs || []).filter((j) => ["ready", "hand", "failed"].includes(j.phase) || j.broke).map((j) => j.updKey)].filter((k) => !keys.has(k))).size;
     const el = $("#upd-count"); if (el) bump(el, n);
   }
   // "Is this a new copy?": a game reinstalled as a whole new version.
@@ -142,6 +142,7 @@
       return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`;
     }
     if (!S.copies) api.newCopies().catch(() => {});
+    askOffers(); askJobs();
     const games = [...U.games.filter((g) => !skeys.has(g.key)), ...srows];
     const stOf = (r) => (r.from ? storeState(r) : updState(r, U));
     if (!games.length) {
@@ -171,7 +172,7 @@
       .sort((a, b) => (b.newer ? 1 : 0) - (a.newer ? 1 : 0) || byName(a.name, b.name));
     const cards = list.length ? `<ol class="ln-rows upd-cards">${list.map((r, i) => (r.from ? storeUpdCard(r, i === 0 && !!r.newer) : updCard(r, U, i === 0 && !!r.newer))).join("")}</ol>` : `<p class="upd-empty">None of your games ${F === "new" ? "has a newer version out" : F === "ok" ? "is known to be up to date" : F === "all" ? "needs an update" : "is in this group"}.</p>`;
     return `<div class="upd-page ln-root">${head("")}<div class="upd-cols">
-      <div class="upd-main-col">${found}${news}${labelSec("Your games", 0, filter + cards)}</div>
+      <div class="upd-main-col">${found}${offersSection()}${news}${labelSec("Your games", 0, filter + cards)}</div>
       <aside class="upd-aside">${look}<div class="upd-check">${refresh}<span>Checked ${esc(ago(U.at))}</span></div></aside></div></div>`;
   }
   // An update's history: every one Lootnest applied, newest first.

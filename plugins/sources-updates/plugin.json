@@ -1,0 +1,30 @@
+{
+  "id": "sources-updates",
+  "name": "Sources and updates",
+  "version": "0.1.0",
+  "author": "Lootnest",
+  "description": "Add your own download sources (JSON feeds), see when one lists a newer version of a game you have, and update it with your saves kept. It comes with no sources.",
+  "provides": [
+    "script"
+  ],
+  "script": "main.js",
+  "permissions": [
+    "net",
+    "library",
+    "updates",
+    "notify"
+  ],
+  "pages": [
+    {
+      "id": "sources",
+      "title": "Sources"
+    }
+  ],
+  "secrets": [
+    {
+      "name": "realdebrid",
+      "host": "api.real-debrid.com",
+      "label": "Real-Debrid API token"
+    }
+  ]
+}
