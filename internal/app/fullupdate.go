@@ -65,8 +65,13 @@ type updJob struct {
 	Files   []jobFile `json:"files"`
 	Staging string    `json:"staging"`
 	Dir     string    `json:"dir"` // the game's folder
-	// Phase: download, unpack, ready, hand, apply, kept, done, failed,
-	// rolledback.
+	// Mode: "" the whole folder replaced (2.11), "delta" only what changed
+	// read in place (deltaupdate.go), "delta-local" the same from a whole
+	// download.
+	Mode   string `json:"mode,omitempty"`
+	Paused bool   `json:"paused,omitempty"` // a delta job stopped while it fetched
+	// Phase: download, fetch, unpack, ready, hand, apply, kept, done,
+	// failed, rolledback.
 	Phase   string    `json:"phase"`
 	Step    string    `json:"step,omitempty"` // the full update's state while it's applied
 	Error   string    `json:"error,omitempty"`
@@ -86,8 +91,9 @@ type JobView struct {
 	Total  int64  `json:"total"`
 	Speed  int64  `json:"speed"`
 	ETA    int64  `json:"eta"`
-	Paused bool   `json:"paused"`
 	Ready  int    `json:"ready"`
+	Count  int    `json:"count,omitempty"` // files compared or fetched so far
+	Of     int    `json:"of,omitempty"`
 }
 
 const fullKeepDays = 14 // how long an old folder is kept when the game isn't played
@@ -296,8 +302,10 @@ func (a *App) pluginUpdate(id, op string, raw json.RawMessage) (any, error) {
 	if total == 0 {
 		total = max(req.Size, 0)
 	}
-	// Room for the download, what it unpacks to, and a margin.
-	if need, free := total*22/10, win.DiskFree(filepath.Dir(t.Dir)); total > 0 && free >= 0 && free < need {
+	_, delta := deltaOK(files)
+	// Room for the download, what it unpacks to, and a margin. An archive
+	// read in place needs room only for what changed, checked as it's known.
+	if need, free := total*22/10, win.DiskFree(filepath.Dir(t.Dir)); !delta && total > 0 && free >= 0 && free < need {
 		return nil, fmt.Errorf("there isn't enough room on %s: this update needs about %s (the download, what it unpacks to and a margin) and %s is free",
 			strings.ToUpper(filepath.VolumeName(t.Dir)), gb(need), gb(free))
 	}
@@ -323,6 +331,15 @@ func (a *App) pluginUpdate(id, op string, raw json.RawMessage) (any, error) {
 	jobs.Unlock()
 	_ = os.RemoveAll(staging)
 	a.jobLog(j, "Started: %s, from %s, %d file(s), into %s", j.Title, j.Source, len(files), staging)
+	if delta {
+		jobs.Lock()
+		j.Mode, j.Phase = "delta", "fetch"
+		saveJob(j)
+		jobs.Unlock()
+		go a.runDelta(j)
+		a.emitJobs()
+		return map[string]any{"job": j.ID}, nil
+	}
 	list := make([]core.Download, len(files))
 	for i, x := range files {
 		list[i] = core.Download{ID: fmt.Sprintf("%s-%d", j.ID, i), Job: j.ID, URL: x.URL, Dst: filepath.Join(staging, "dl", x.Name), Size: x.Size, SHA256: x.SHA256}
@@ -382,6 +399,11 @@ func (a *App) jobsMoved() {
 // jobUnpack opens what was downloaded and works out what it is: a whole
 // build of the game, a patch, or an installer.
 func (a *App) jobUnpack(j *updJob) {
+	if j.Mode == "delta-local" {
+		a.jobLog(j, "Downloaded. Comparing it with the game's files")
+		a.deltaFromDisk(j)
+		return
+	}
 	a.jobLog(j, "Downloaded. Opening it")
 	a.emitJobs()
 	t, _, err := a.jobTarget(j.Key)
@@ -480,6 +502,10 @@ func (a *App) apiPluginJobs() []JobView {
 				v.Error = p.Failed
 			}
 		}
+		if j.Phase == "fetch" {
+			a.deltaView(&v)
+			v.Paused = v.Paused || j.Paused
+		}
 		out = append(out, v)
 	}
 	sort.Slice(out, func(i, k int) bool { return out[i].Started.After(out[k].Started) })
@@ -526,6 +552,14 @@ type JobPlan struct {
 	Folder string   `json:"folder"` // the game's folder
 	Old    string   `json:"old"`    // where the old one is kept
 	Days   int      `json:"days"`
+	// Only what changed (deltaupdate.go).
+	Delta   bool  `json:"delta,omitempty"`
+	Full    bool  `json:"full,omitempty"` // the whole game: files it lacks are moved aside
+	Changed int   `json:"changed,omitempty"`
+	Added   int   `json:"added,omitempty"`
+	Same    int   `json:"same,omitempty"`
+	Removed int   `json:"removed,omitempty"`
+	Bytes   int64 `json:"bytes,omitempty"`
 }
 
 // apiPluginJobPlan says what a ready job would keep and replace.
@@ -533,6 +567,9 @@ func (a *App) apiPluginJobPlan(id string) (*JobPlan, error) {
 	j, err := a.job(id)
 	if err != nil {
 		return nil, err
+	}
+	if strings.HasPrefix(j.Mode, "delta") {
+		return a.deltaPlanFor(j)
 	}
 	u, err := core.LoadFullUpdate(jobDir(j.Key))
 	if err != nil || u == nil || u.State != core.FUStaged {
@@ -560,21 +597,33 @@ func (a *App) apiPluginJobOp(id, op string, keep []string) error {
 	}
 	jobs.Lock()
 	q, phase := jobs.q, j.Phase
+	delta := strings.HasPrefix(j.Mode, "delta")
 	jobs.Unlock()
 	switch op {
 	case "pause":
-		q.Pause(id)
+		if phase == "fetch" {
+			a.deltaPause(j)
+		} else {
+			q.Pause(id)
+		}
 	case "resume":
 		jobs.Lock()
 		j.Error = ""
 		jobs.Unlock()
-		q.Resume(id)
+		if phase == "fetch" {
+			a.deltaResume(j)
+		} else {
+			q.Resume(id)
+		}
 	case "cancel":
 		if phase == "apply" || phase == "kept" {
 			return errors.New("That update is past cancelling. Roll it back instead.")
 		}
 		q.Remove(id)
 		go func() {
+			if phase == "fetch" {
+				a.deltaCancel(j)
+			}
 			_ = os.RemoveAll(j.Staging)
 			a.jobLog(j, "Cancelled; what was downloaded is deleted")
 			jobs.Lock()
@@ -590,12 +639,20 @@ func (a *App) apiPluginJobOp(id, op string, keep []string) error {
 		if phase != "ready" {
 			return errors.New("That update isn't waiting to be applied.")
 		}
-		go a.jobApply(j, keep)
+		if delta {
+			go a.deltaApply(j, keep)
+		} else {
+			go a.jobApply(j, keep)
+		}
 	case "rollback":
 		if phase != "kept" {
 			return errors.New("The folder from before that update isn't kept any more.")
 		}
-		go a.jobRollback(j)
+		if delta {
+			go a.deltaRollback(j)
+		} else {
+			go a.jobRollback(j)
+		}
 	case "finish":
 		if phase != "kept" {
 			return errors.New("That update has nothing kept.")
@@ -801,6 +858,10 @@ func (a *App) jobRollback(j *updJob) {
 
 // jobFinish lets the old folder go, to the Recycle Bin.
 func (a *App) jobFinish(j *updJob, why string) {
+	if strings.HasPrefix(j.Mode, "delta") {
+		a.deltaFinish(j, why)
+		return
+	}
 	u, err := core.LoadFullUpdate(jobDir(j.Key))
 	if err != nil || u == nil {
 		return
@@ -883,6 +944,10 @@ func (a *App) recoverJobs() {
 	}
 	jobs.Unlock()
 	for _, j := range list {
+		if strings.HasPrefix(j.Mode, "delta") && j.Phase != "download" && j.Phase != "unpack" {
+			a.deltaRecover(j)
+			continue
+		}
 		switch j.Phase {
 		case "apply":
 			u, err := core.LoadFullUpdate(jobDir(j.Key))

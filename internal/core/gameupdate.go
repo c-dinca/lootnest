@@ -344,7 +344,14 @@ func ApplyUpdate(gameDir string, p *UpdatePlan, keepDir, game string, now time.T
 		if err != nil {
 			return nil, failUpdate(u, gameDir, err)
 		}
-		if err := copyFile(from, filepath.Join(keepDir, "files", filepath.FromSlash(rel)), info); err != nil {
+		// Through a temp name: a copy cut short is never taken for a whole one
+		// when the update is put back.
+		kept := filepath.Join(keepDir, "files", filepath.FromSlash(rel))
+		if err := copyFile(from, kept+tmpSuffix, info); err != nil {
+			_ = os.Remove(kept + tmpSuffix)
+			return nil, failUpdate(u, gameDir, fmt.Errorf("couldn't keep a copy of %s first: %w", rel, err))
+		}
+		if err := os.Rename(kept+tmpSuffix, kept); err != nil {
 			return nil, failUpdate(u, gameDir, fmt.Errorf("couldn't keep a copy of %s first: %w", rel, err))
 		}
 	}
