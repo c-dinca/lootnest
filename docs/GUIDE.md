@@ -70,12 +70,11 @@ The app the host starts is a second, small Lootnest that only keeps the stream o
 
 A plugin adds something Lootnest doesn't come with. Install one in Settings, Plugins, **Install from file**. Most are data only. One with a script is off until you've read what it asks to do and allowed it, and in safe mode (hold Shift while opening Lootnest) none runs. [PLUGINS.md](PLUGINS.md) has the details and how to write one.
 
-### Sources and updates
+### Updates from a plugin
 
-A plugin that comes with every release as `Lootnest-plugin-sources-updates.zip`, beside the installer, and isn't installed by default: download it, then Settings, Plugins, **Install from file**. Lootnest comes with no download sources; with this plugin you add your own, as addresses of JSON lists, and what you add and download is your choice and your responsibility.
+A script plugin you install and allow can offer updates for games no store keeps up to date. Lootnest comes with no such plugin.
 
-- **Sources** in Settings: add, edit, turn off or remove a source, and see when each was last read and what went wrong.
-- **Updates**, under From your sources: games you have, that no store keeps up to date, for which a source lists something newer. **Update** downloads it beside the game, never over it. A magnet link needs your own Real-Debrid token (also under Sources), or opens in your torrent app.
+- **Updates**, under From plugins, and on the game's page: **Update** downloads beside the game, never over it.
 - When the download is the whole game, Lootnest shows what it keeps, copies your saves, and replaces the folder. The old folder stays until you've played or for 14 days, and **Roll back** puts it back.
 
 ## Installing without a window

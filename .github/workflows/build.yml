@@ -145,16 +145,12 @@ jobs:
         if: steps.unsigned-setup.outcome == 'success'
         run: cp signed/setup/Lootnest-Setup.exe dist/Lootnest-Setup.exe
 
-      - name: Pack the plugins
-        run: ./build.sh plugins
-
       - uses: actions/upload-artifact@v4
         with:
           name: Lootnest
           path: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
-            dist/Lootnest-plugin-*.zip
 
       - name: Publish the new version
         if: steps.newver.outputs.tag != ''
@@ -167,7 +163,6 @@ jobs:
           files: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
-            dist/Lootnest-plugin-*.zip
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -176,7 +171,6 @@ jobs:
           files: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
-            dist/Lootnest-plugin-*.zip
           generate_release_notes: true
 
   # Sends the new release to winget (a pull request to microsoft/winget-pkgs),

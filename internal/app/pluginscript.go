@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"lootnest/internal/core"
 	"lootnest/internal/win"
@@ -149,9 +148,8 @@ func (a *App) pluginOffersChanged() { a.emit("pluginOffers", nil) }
 
 // scriptGames are the Library's games as a script sees them: no full
 // paths; for a game no store keeps up to date, the version this PC can
-// tell, and for one Hydra installed, what Hydra recorded about its download.
+// tell.
 func (a *App) scriptGames() []core.ScriptGame {
-	origins := a.hydraOrigins()
 	var out []core.ScriptGame
 	for _, f := range a.libraryGames() {
 		g := core.ScriptGame{Key: f.Key, Name: f.Name, Source: f.Source, SteamID: f.SteamID}
@@ -164,40 +162,9 @@ func (a *App) scriptGames() []core.ScriptGame {
 				}
 			}
 		}
-		if o, ok := origins[f.Key]; ok {
-			o := o
-			g.Origin = &o
-		}
 		out = append(out, g)
 	}
 	return out
-}
-
-// hydraOrigins reads Hydra's download records at most every ten minutes.
-var hydraOrig struct {
-	sync.Mutex
-	at  time.Time
-	got map[string]core.ScriptOrigin
-}
-
-func (a *App) hydraOrigins() map[string]core.ScriptOrigin {
-	hydraOrig.Lock()
-	defer hydraOrig.Unlock()
-	if !hydraOrig.at.IsZero() && time.Since(hydraOrig.at) < 10*time.Minute {
-		return hydraOrig.got
-	}
-	hydraOrig.at = time.Now()
-	ad := os.Getenv("APPDATA")
-	if ad == "" {
-		return nil
-	}
-	_, containers := gameFolders(a.env)
-	got, err := core.HydraOrigins(filepath.Join(ad, "hydralauncher", "hydra-db"), filepath.Join(DataDir(), "hydra-origins-tmp"), containers)
-	if err != nil {
-		a.logf("Couldn't read Hydra's downloads: %v", err)
-	}
-	hydraOrig.got = got
-	return got
 }
 
 // scriptsLibraryChanged tells every running script the Library was read

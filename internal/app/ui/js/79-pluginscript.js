@@ -173,7 +173,7 @@
   function offersSection() {
     const jobs = S.plugJobs || [], offers = liveOffers();
     if (!jobs.length && !offers.length) return "";
-    return labelSec("From your sources", jobs.length + offers.length, `<ol class="ln-rows upd-cards pp-offers">${jobs.map(jobCard).join("")}${offers.map((o, i) => offerCard(o, i === 0 && !jobs.length)).join("")}</ol>`);
+    return labelSec("From plugins", jobs.length + offers.length, `<ol class="ln-rows upd-cards pp-offers">${jobs.map(jobCard).join("")}${offers.map((o, i) => offerCard(o, i === 0 && !jobs.length)).join("")}</ol>`);
   }
 
   // Updates a plugin started (ps_pluginJobs, app/fullupdate.go): downloaded
@@ -228,7 +228,7 @@
   function jobCard(j) {
     const p = jobParts(j), st = j.phase === "failed" || (j.phase === "download" && j.error) ? { k: "low", text: "Needs a look" } : j.phase === "kept" || j.phase === "done" ? { k: "ok", text: "Updated" }
       : j.phase === "rolledback" ? { k: "dim", text: "Rolled back" } : j.phase === "ready" || j.phase === "hand" ? { k: "new", text: "Ready" } : { k: "new", text: "Updating" };
-    const meta = `<p class="upd-meta"><span>From ${esc(j.source || "a source")}</span><span class="upd-why" title="${esc(j.title)}">${esc(j.title)}</span></p>
+    const meta = `<p class="upd-meta"><span>From ${esc(j.source || j.pluginName || "a plugin")}</span><span class="upd-why" title="${esc(j.title)}">${esc(j.title)}</span></p>
       ${jobSteps(j)}
       <p class="upd-meta pp-job-text${p.bad ? " is-bad" : p.warn ? " is-warn" : ""}">${p.busy ? '<span class="ln-spinner" aria-hidden="true"></span>' : ""}<span>${esc(p.text)}</span></p>${p.bar || ""}
       ${p.rest ? `<p class="upd-meta">${p.rest}</p>` : ""}`;

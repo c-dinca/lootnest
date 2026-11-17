@@ -233,7 +233,7 @@ func TestScriptFetch(t *testing.T) {
 			fmt.Fprint(w, "fresh")
 		case "/form":
 			r.ParseForm()
-			fmt.Fprint(w, r.Method+" "+r.Form.Get("magnet"))
+			fmt.Fprint(w, r.Method+" "+r.Form.Get("link"))
 		default:
 			fmt.Fprint(w, "ok")
 		}
@@ -262,7 +262,7 @@ func TestScriptFetch(t *testing.T) {
 	if got, err := get("/etag", map[string]any{"headers": map[string]string{"If-None-Match": `"v1"`}}); err != nil || !strings.Contains(got, `"status":304`) {
 		t.Errorf("not modified: %s %v", got, err)
 	}
-	if got, err := get("/form", map[string]any{"method": "post", "form": map[string]string{"magnet": "m&x=1"}}); err != nil || !strings.Contains(got, `POST m\u0026x=1`) && !strings.Contains(got, "POST m&x=1") {
+	if got, err := get("/form", map[string]any{"method": "post", "form": map[string]string{"link": "m&x=1"}}); err != nil || !strings.Contains(got, `POST m\u0026x=1`) && !strings.Contains(got, "POST m&x=1") {
 		t.Errorf("form: %s %v", got, err)
 	}
 	for name, c := range map[string]struct {
@@ -328,11 +328,11 @@ func TestScriptOffers(t *testing.T) {
 	var got []ScriptOffer
 	h, _ := startScript(t, []string{"updates", "library"}, `
 		lootnest.on("offer", (list) => lootnest.updates.offer(list));
-		lootnest.on("games", () => lootnest.library.games().map((g) => g.name + ":" + (g.origin ? g.origin.folder : "")).join());
+		lootnest.on("games", () => lootnest.library.games().map((g) => g.name + ":" + (g.folder || "")).join());
 	`, ScriptServices{
 		Offers: func(l []ScriptOffer) { got = l },
 		Games: func() []ScriptGame {
-			return []ScriptGame{{Key: "dir:c:\\games\\a", Name: "A"}, {Key: "dir:c:\\games\\b", Name: "B", Origin: &ScriptOrigin{Folder: "B.v2"}}}
+			return []ScriptGame{{Key: "dir:c:\\games\\a", Name: "A"}, {Key: "dir:c:\\games\\b", Name: "B", Folder: "B v2"}}
 		},
 	})
 	long := strings.Repeat("x", 400)
@@ -344,7 +344,7 @@ func TestScriptOffers(t *testing.T) {
 	if _, err := h.Call("offer", []map[string]any{{"id": "has space", "game": "x", "title": "t"}}); err == nil {
 		t.Error("an offer with a bad id was taken")
 	}
-	if s := callStr(t, h, "games", nil); s != `"A:,B:B.v2"` {
+	if s := callStr(t, h, "games", nil); s != `"A:,B:B v2"` {
 		t.Errorf("games: %s", s)
 	}
 }

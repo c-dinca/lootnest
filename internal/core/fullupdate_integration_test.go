@@ -17,13 +17,35 @@ import (
 	"time"
 )
 
-// The whole way, with the real plugin and Lootnest's own pieces wired as the
-// app wires them: a feed on a local server lists a newer build of a
+// updateScript is a small script plugin that reads one made-up update
+// notice ({version, size, file: {url, name, sha256}}) and offers it for the
+// Library's first game; its Update hands the file to Lootnest.
+const updateScript = `
+	let offered = null;
+	lootnest.on("check", (a) => {
+		const u = JSON.parse(lootnest.net.fetch(a.url).text);
+		const g = lootnest.library.games()[0];
+		if (!g || u.version === g.version) { offered = null; lootnest.updates.offer([]); return 0; }
+		offered = { id: "u1", game: g.key, title: g.name + " " + u.version, version: u.version, have: g.version, source: "Fixture notice", size: u.size, file: u.file };
+		lootnest.updates.offer([{ id: offered.id, game: offered.game, title: offered.title, version: offered.version, have: offered.have,
+			source: offered.source, size: offered.size, actions: [{ id: "update", label: "Update" }] }]);
+		return 1;
+	});
+	lootnest.on("offer", (a) => {
+		if (!offered || a.id !== offered.id || a.action !== "update") return { error: "no such offer" };
+		lootnest.updates.run("start", { offer: offered.id, game: offered.game, title: offered.title, version: offered.version, source: offered.source,
+			size: offered.size, files: [{ url: offered.file.url, name: offered.file.name, size: offered.size, sha256: offered.file.sha256 }] });
+		return {};
+	});
+`
+
+// The whole way, with a script plugin and Lootnest's own pieces wired as the
+// app wires them: a notice on a local server names a newer build of a
 // made-up game; the plugin offers it; Update downloads the archive into a
 // staging folder, checks it, opens it, copies the saves, replaces the
 // game's folder and keeps the old one; the saves are intact; Roll back puts
 // the old folder back with the saves intact again.
-func TestSourcesUpdateEndToEnd(t *testing.T) {
+func TestFullUpdateEndToEnd(t *testing.T) {
 	root := t.TempDir()
 	dir := filepath.Join(root, "Games", "Night Tale")
 	outside := filepath.Join(root, "AppData", "NightTale")
@@ -54,10 +76,9 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 	var mu sync.Mutex
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/feed.json":
-			fmt.Fprintf(w, `{"lootnest": 1, "name": "Fixture feed", "downloads": [
-				{"title": "Night Tale v1.3.0", "uris": ["%s/files/nt130.zip"], "uploadDate": %q, "fileSize": %d, "version": "1.3.0", "sha256": %q}]}`,
-				"http://"+r.Host, time.Now().Add(-time.Hour).UTC().Format(time.RFC3339), len(archive), hex.EncodeToString(sum[:]))
+		case "/update.json":
+			fmt.Fprintf(w, `{"version": "1.3.0", "size": %d, "file": {"url": "%s/files/nt130.zip", "name": "nt130.zip", "sha256": %q}}`,
+				len(archive), "http://"+r.Host, hex.EncodeToString(sum[:]))
 		case "/files/nt130.zip":
 			http.ServeContent(w, r, "nt130.zip", time.Time{}, bytes.NewReader(archive))
 		default:
@@ -68,7 +89,7 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 
 	// Lootnest's side, as app/fullupdate.go does it.
 	const key = "dir:night tale"
-	game := ScriptGame{Key: key, Name: "Night Tale", Source: "hydra", Folder: "Night Tale", Version: "1.2.0"}
+	game := ScriptGame{Key: key, Name: "Night Tale", Source: "folder", Folder: "Night Tale", Version: "1.2.0"}
 	saves := func() []SaveLocation {
 		return []SaveLocation{{Path: "<base>/Saves", Resolved: filepath.Join(dir, "Saves")}, {Path: "<home>/AppData/NightTale", Resolved: outside}}
 	}
@@ -104,7 +125,7 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 			return err
 		},
 	}
-	h, _ = sourcesPlugin(t, ScriptServices{
+	h, _ = startScript(t, []string{"net", "library", "updates"}, updateScript, ScriptServices{
 		Games:  func() []ScriptGame { return []ScriptGame{game} },
 		Offers: func(l []ScriptOffer) { mu.Lock(); offers = l; mu.Unlock() },
 		Notify: func(string) {},
@@ -123,15 +144,10 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 			return map[string]any{"job": "j1"}, nil
 		},
 	})
-	act := func(arg map[string]any) {
+	check := func() {
 		t.Helper()
-		var r actResult
-		out, err := h.Call("action", arg)
-		if err != nil {
+		if _, err := h.Call("check", map[string]any{"url": srv.URL + "/update.json"}); err != nil {
 			t.Fatal(err)
-		}
-		if _ = json.Unmarshal(out, &r); r.Error != "" {
-			t.Fatal(r.Error)
 		}
 	}
 	firstOffer := func() *ScriptOffer {
@@ -151,17 +167,16 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 		}
 	}
 
-	// 1. The feed is read and the update is offered.
-	act(map[string]any{"id": "notice"})
-	act(map[string]any{"id": "add", "values": map[string]any{"url": srv.URL + "/feed.json"}})
+	// 1. The notice is read and the update is offered.
+	check()
 	waitFor("the offer", func() bool { return firstOffer() != nil })
 	o := firstOffer()
-	if o.Game != key || o.Version != "1.3.0" || o.Have != "1.2.0" || o.Source != "Fixture feed" || o.Size != int64(len(archive)) {
+	if o.Game != key || o.Version != "1.3.0" || o.Have != "1.2.0" || o.Source != "Fixture notice" || o.Size != int64(len(archive)) {
 		t.Fatalf("offer: %+v", o)
 	}
 
 	// 2. Update: the plugin hands Lootnest the file; it's downloaded into the
-	// staging folder, never over the game, and checked against the feed's hash.
+	// staging folder, never over the game, and checked against the notice's hash.
 	out, err := h.Call("offer", map[string]any{"id": o.ID, "action": "update"})
 	if err != nil || strings.Contains(string(out), `"error"`) {
 		t.Fatalf("update: %s %v", out, err)
@@ -231,15 +246,11 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 		t.Errorf("the log has %d lines", len(logs))
 	}
 
-	// The plugin hears it's in place: the game isn't offered that build again.
-	game.Version = "" // as the next scan would find: the folder's name says nothing
-	if _, err := h.Call("update", map[string]any{"game": key, "offer": o.ID, "state": "kept"}); err != nil {
-		t.Fatal(err)
-	}
-	var d detected
-	pluginTest(t, h, map[string]any{"what": "detect"}, &d)
-	if len(d.Offers) != 0 {
-		t.Errorf("offered again: %+v", d.Offers)
+	// The next scan reads the new version: that build isn't offered again.
+	game.Version = "1.3.0"
+	check()
+	if firstOffer() != nil {
+		t.Errorf("offered again: %+v", firstOffer())
 	}
 
 	// 5. Played a little, then Roll back: the saves are copied again first,
@@ -259,12 +270,9 @@ func TestSourcesUpdateEndToEnd(t *testing.T) {
 		t.Error("the new build wasn't kept aside for the Recycle Bin")
 	}
 	game.Version = "1.2.0"
-	if _, err := h.Call("update", map[string]any{"game": key, "offer": o.ID, "state": "rolledback"}); err != nil {
-		t.Fatal(err)
-	}
-	pluginTest(t, h, map[string]any{"what": "detect"}, &d)
-	if len(d.Offers) != 1 || d.Offers[0].Version != "1.3.0" {
-		t.Errorf("after the roll back the update should be offered again: %+v", d.Offers)
+	check()
+	if o := firstOffer(); o == nil || o.Version != "1.3.0" {
+		t.Errorf("after the roll back the update should be offered again: %+v", o)
 	}
 
 	// 6. Again, and this time it fails after the swap: the game and every
