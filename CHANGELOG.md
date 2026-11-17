@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Plugin and mod switches work with the mouse.** The switch beside a plugin, and beside a mod in a game's Mods tab, didn't react to a click (only to the keyboard). A plugin with a script also shows **Allow and turn on** until it's allowed, and asks right after it's installed.
+
 ## 2.11.1
 
 - **The Sources and updates plugin comes with the release.** Every release now has `Lootnest-plugin-sources-updates.zip` beside the installer. Download it and choose it in Settings, Plugins, **Install from file**; it stays off until you allow what it asks. Lootnest still comes with no sources.

@@ -20,7 +20,8 @@
         ${p.problem ? "" : `<p class="pl-key"><span>${p.key ? `Signed, key <span class="ln-num">${esc(p.key)}</span>` : "Not signed"}</span>${(p.provides || []).map((k) => `<span class="ln-tag">${PLUGIN_KINDS[k] || esc(k)}</span>`).join("")}</p>`}
         ${p.asks && !p.problem ? `<p class="pl-asks">${p.granted ? "Allowed to" : "Asks to"}: ${esc(p.asks.map((a, i) => (i ? a[0].toLowerCase() + a.slice(1) : a)).join("; "))}.</p>` : ""}
         ${p.problem ? `<p class="error-text">${esc(p.problem)}</p>` : ""}</div>
-      <div class="pl-acts">${p.older && !safe ? b(`data-action="plugin-rollback" data-id="${esc(p.id)}"`, `Roll back to ${esc(p.older)}`) : ""}
+      <div class="pl-acts">${p.asks && !p.granted && !p.problem && !safe ? `<button class="ln-button ln-button--primary ln-button--sm" data-action="plugin-allow" data-id="${esc(p.id)}" aria-haspopup="dialog">Allow and turn on</button>` : ""}
+        ${p.older && !safe ? b(`data-action="plugin-rollback" data-id="${esc(p.id)}"`, `Roll back to ${esc(p.older)}`) : ""}
         ${b(`data-action="plugin-remove" data-id="${esc(p.id)}"`, "Remove")}
         <span class="switch"><input type="checkbox" data-plugin-on="${esc(p.id)}" aria-label="${esc(p.name)} on" ${p.on && !safe ? "checked" : ""} ${safe || p.problem ? "disabled" : ""}><span></span></span></div></div>`).join("");
     const install = `<div class="bk-row pl-row"><div><b>Install a plugin</b><p>A .zip. Every file is checked first, and one with a script asks before it runs.</p>${S.pluginError ? `<p class="error-text">${esc(S.pluginError)}</p>` : ""}</div>
@@ -39,6 +40,13 @@
       return pluginInstalled(path, await api.installPluginNewKey(path, k.key), true);
     }
     const m = r.plugin;
+    // A plugin with a script is off until allowed: ask now, while the user is here.
+    const p = ((await api.plugins()) || {}).plugins.find((x) => x.id === m.id);
+    if (p && p.asks && !p.granted && !p.problem) {
+      S.plugins = { plugins: (S.plugins ? S.plugins.plugins.filter((x) => x.id !== p.id) : []).concat(p) };
+      if (await allowPlugin(p)) return pluginsDone(`${m.name} is on. Its page is in Settings.`);
+      return pluginsDone(`Installed ${m.name} ${m.version}. It stays off until you allow it.`);
+    }
     await pluginsDone(`Installed ${m.name} ${m.version}.${m.pinnedNow ? ` It's signed now, with key ${m.key}, and later versions must have the same key.` : newKey ? ` Later versions must have its new key, ${m.key}.` : ""}`);
   }
   async function pluginsDone(text) {
