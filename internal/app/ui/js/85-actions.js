@@ -1059,6 +1059,15 @@
       try { await pluginInstalled(r.path, await api.installPlugin(r.path)); }
       catch (e) { S.pluginError = errText(e); render(); }
     },
+    "pp-job"(el) { jobOp(el.dataset.job, el.dataset.op); },
+    async "pp-job-apply"() {
+      const D = S.dialog;
+      if (!D || D.kind !== "ppjob" || !D.plan || D.busy) return;
+      const keep = [...document.querySelectorAll("#overlay [data-pp-keep]")].filter((i) => i.checked).map((i) => i.dataset.ppKeep);
+      D.busy = true; D.error = ""; renderOverlay();
+      try { await api.pluginJobOp(D.job, "apply", keep); if (S.dialog === D) closeDialog(); }
+      catch (e) { D.busy = false; D.error = errText(e); if (S.dialog === D) renderOverlay(); }
+    },
     "pp-offer"(el) {
       const d = el.dataset;
       api.pluginOfferAction(d.plugin, d.offer, d.act).catch((e) => toast(errText(e), "error"));

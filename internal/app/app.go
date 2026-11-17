@@ -405,7 +405,7 @@ func Run(opt Options) error {
 			return
 		}
 		a.autoHooks()
-		go a.syncScripts()
+		go func() { a.recoverJobs(); a.syncScripts() }()
 		go a.linkAtStart()
 		go a.watchUpdates()
 		go a.cleanupLegacy()

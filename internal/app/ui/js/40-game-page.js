@@ -377,7 +377,7 @@
         <div class="gpage-others">${startWith}${turnOn()}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
-      note = page ? also + offerBanner(it) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) : "";
+      note = page ? also + (jobBanner(it) || offerBanner(it)) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) : "";
       side = page ? playersPanel(it) + willRunBlock(it) + collectionsBlock(it) : "";
       news = page ? newsHTML(it) : "";
     } else {

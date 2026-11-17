@@ -121,12 +121,18 @@ func (a *App) scriptServices(p core.Plugin) core.ScriptServices {
 	return core.ScriptServices{
 		Log:    func(s string) { a.logf("Plugin %s: %s", name, s) },
 		Secret: func(n string) string { return pluginSecret(id, n) },
-		Games:  a.scriptGames,
+		DropSecret: func(n string) {
+			if err := setPluginSecret(id, n, ""); err != nil {
+				a.logf("Plugin %s: couldn't forget the key %s: %v", name, n, err)
+			}
+		},
+		Games: a.scriptGames,
 		Notify: func(text string) {
 			a.emit("toast", map[string]any{"text": text})
 			a.notify(name, text)
 		},
 		Changed: func() { a.emit("pluginChanged", map[string]any{"id": id}) },
+		Update:  func(op string, req json.RawMessage) (any, error) { return a.pluginUpdate(id, op, req) },
 		Offers: func(list []core.ScriptOffer) {
 			if r := a.scriptRun(id); r != nil {
 				scripts.Lock()

@@ -109,6 +109,19 @@
     { plugin: "sources-updates", pluginName: "Sources and updates", id: "s2.b7", game: "dir:d:\\games\\phantom blade zero", key: "found:dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero",
       title: "Phantom Blade Zero Build 16251443", version: "Build 16251443", have: "", source: "Community patches", size: 2147483648, date: "2026-11-15T08:30:00.000Z", actions: offerActs },
   ] : [];
+  // &srcupd=download|paused|ready|apply|kept|failed|hand: an update the plugin started for Onimusha, at that step.
+  const SRCUPD = q.get("srcupd");
+  const srcJob = (o) => Object.assign({ id: "j1", key: "dir:d:\\games\\onimusha", updKey: "found:dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword", plugin: "sources-updates", offer: "s1.a1",
+    title: "Onimusha Way of the Sword v1.0.3 + 2 DLCs", version: "1.0.3", source: "Studio builds", done: 0, total: 0, speed: 0, eta: 0, paused: false, started: new Date().toISOString() }, o);
+  const SRC_JOBS = !SRCUPD ? [] : [srcJob({
+    download: { phase: "download", done: 17.4 * 2 ** 30, total: 45.2 * 2 ** 30, speed: 23 * 2 ** 20, eta: 1240 },
+    paused: { phase: "download", done: 17.4 * 2 ** 30, total: 45.2 * 2 ** 30, paused: true },
+    ready: { phase: "ready" },
+    hand: { phase: "hand", kind: "installer", path: "D:\\Games\\Onimusha.lootnest-new\\dl\\setup.exe" },
+    apply: { phase: "apply", step: "Replacing the game's folder" },
+    kept: { phase: "kept", old: "D:\\Games\\Onimusha.lootnest-old" },
+    failed: { phase: "failed", error: "Moving the new build into place failed: the disk is full. The game is as it was." },
+  }[SRCUPD] || { phase: "download" })];
   const PLUGIN_PAGES = () => PLUGIN_LIST.some((p) => p.id === "sources-updates" && p.on && p.granted) ? [{ plugin: "sources-updates", name: "Sources and updates", id: "sources", title: "Sources" }] : [];
   const THEMES = PLUGINS ? { "deep-sea": { name: "Deep sea", tokens: { "--bg-well": "#0a1019", "--bg-ground": "#0d1520", "--bg-surface": "#152131", "--bg-raised": "#1b2a3d", "--bg-active": "#22344a",
     "--accent": "oklch(0.70 0.15 220)", "--accent-hover": "oklch(0.76 0.14 220)", "--fg-on-accent": "#0d1520" } } } : {};
@@ -498,6 +511,21 @@
       else if (i >= 0) { SRC_OFFERS.splice(i, 1); emit({ type: "pluginOffers" }); emit({ type: "toast", text: "Ignored. A later version will show again." }); }
       return ok();
     },
+    ps_pluginJobs: () => ok(SRC_JOBS.slice()),
+    ps_pluginJobPlan: () => ok({ keep: [{ rel: "Saved/SaveGames", why: "saves", size: 48 * 2 ** 20 }], extra: [{ rel: "Mods", why: "yours", size: 1.3 * 2 ** 30 }, { rel: "reshade-shaders", why: "yours", size: 22 * 2 ** 20 }, { rel: "notes.txt", why: "yours", size: 2048 }],
+      buildSize: 46 * 2 ** 30, oldSize: 37.2 * 2 ** 30, yours: ["Mods"], saves: 2, folder: "D:\\Games\\Onimusha", old: "D:\\Games\\Onimusha.lootnest-old", days: 14 }),
+    ps_pluginJobOp: (id, op) => {
+      const j = SRC_JOBS[0];
+      if (!j) return ok();
+      if (op === "pause") j.paused = true; else if (op === "resume") j.paused = false;
+      else if (op === "apply") { j.phase = "apply"; j.step = "Copying your saves"; setTimeout(() => { j.phase = "kept"; emit({ type: "pluginJobs" }); }, 900); }
+      else if (op === "rollback") j.phase = "rolledback";
+      else if (op === "finish") j.phase = "done";
+      else if (op === "cancel" || op === "dismiss") SRC_JOBS.length = 0;
+      emit({ type: "pluginJobs" });
+      return ok();
+    },
+    ps_pluginJobLog: () => ok("[2026-11-17 09:12:01] Started: Onimusha Way of the Sword v1.0.3 + 2 DLCs, from Studio builds, 1 file(s), into D:\\Games\\Onimusha.lootnest-new\r\n[2026-11-17 09:41:37] Downloaded. Opening it\r\n[2026-11-17 09:44:02] It's a whole build (Onimusha.exe). Waiting for you to look at what's kept\r\n[2026-11-17 09:50:10] Copying the saves first\r\n[2026-11-17 09:50:12] Saves copied (2026-11-17 075012 DESKTOP)\r\n[2026-11-17 09:50:12] Moving D:\\Games\\Onimusha aside to D:\\Games\\Onimusha.lootnest-old\r\n[2026-11-17 09:50:13] Moving the new build into place\r\n[2026-11-17 09:50:13] Keeping Saved/SaveGames\r\n[2026-11-17 09:50:14] Done. The old folder is kept at D:\\Games\\Onimusha.lootnest-old"),
     ps_pluginView: (id, page) => { emit({ type: "pluginView", id, page, view: srcView() }, 80); return ok(null); },
     // As the plugin answers: the notice once, then the form; an address that isn't http(s) is refused.
     ps_pluginAction: (id, o) => {

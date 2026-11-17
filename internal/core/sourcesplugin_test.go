@@ -262,7 +262,7 @@ func TestSourcesPluginSources(t *testing.T) {
 
 	// Empty at first, and adding is behind the notice, shown once.
 	v := view()
-	if len(v.Sections) != 2 || len(v.Sections[0].Rows) != 0 || !strings.Contains(v.Sections[0].Empty, "comes with none") {
+	if len(v.Sections) != 3 || len(v.Sections[0].Rows) != 0 || !strings.Contains(v.Sections[0].Empty, "comes with none") {
 		t.Fatalf("first view: %+v", v)
 	}
 	if a := v.Sections[0].Actions[0]; a.ID != "notice" || a.Confirm == nil || a.Form != "" {
@@ -716,4 +716,266 @@ func TestSourcesPluginDetect(t *testing.T) {
 		t.Errorf("told again: %q", said)
 	}
 	mu.Unlock()
+}
+
+// rewriteTo sends every request to a test server, whatever host it names:
+// the plugin talks to api.real-debrid.com, which a test stands in for.
+type rewriteTo struct {
+	base *http.Transport
+	host string
+}
+
+func (r rewriteTo) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.URL.Scheme, req.URL.Host = "http", r.host
+	return r.base.RoundTrip(req)
+}
+
+func TestSourcesPluginUpdate(t *testing.T) {
+	recent := time.Now().Add(-24 * time.Hour).UTC().Format(time.RFC3339)
+	magnet := "magnet:?xt=urn:btih:89abcdef0123456789abcdef0123456789abcdef&dn=Moonbase"
+	feed := fmt.Sprintf(`{"name": "Feed A", "downloads": [
+		{"title": "Night Tale v1.3.0", "uris": ["https://files.example.com/pages/nt", "https://files.example.com/nt130.zip?x=1"], "uploadDate": %q, "fileSize": "2 GB"},
+		{"title": "Moonbase v2.0", "uris": [%q], "uploadDate": %q, "fileSize": "1 GB"}]}`, recent, magnet, recent)
+
+	var mu sync.Mutex
+	var rdSeen []string
+	infoCalls, token := 0, ""
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		if r.URL.Path == "/a.json" {
+			fmt.Fprint(w, feed)
+			return
+		}
+		// Everything else is Real-Debrid's API.
+		r.ParseForm()
+		rdSeen = append(rdSeen, r.Method+" "+r.URL.Path+" "+r.Form.Encode()+" | "+r.Header.Get("Authorization"))
+		if r.Header.Get("Authorization") != "Bearer good-token" {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprint(w, `{"error": "bad_token", "error_code": 8}`)
+			return
+		}
+		switch {
+		case r.URL.Path == "/rest/1.0/user":
+			fmt.Fprint(w, `{"username": "alex", "type": "premium"}`)
+		case r.URL.Path == "/rest/1.0/torrents" && r.Method == "GET":
+			fmt.Fprint(w, `[{"id": "OLD1", "hash": "ffffffffffffffffffffffffffffffffffffffff", "status": "downloaded"}]`)
+		case r.URL.Path == "/rest/1.0/torrents/addMagnet":
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprint(w, `{"id": "TOR1", "uri": "https://api.real-debrid.com/rest/1.0/torrents/info/TOR1"}`)
+		case r.URL.Path == "/rest/1.0/torrents/selectFiles/TOR1":
+			w.WriteHeader(http.StatusNoContent)
+		case r.URL.Path == "/rest/1.0/torrents/info/TOR1":
+			infoCalls++
+			switch infoCalls {
+			case 1:
+				fmt.Fprint(w, `{"id": "TOR1", "status": "waiting_files_selection", "links": []}`)
+			case 2:
+				fmt.Fprint(w, `{"id": "TOR1", "status": "downloading", "progress": 41.6, "links": []}`)
+			default:
+				fmt.Fprint(w, `{"id": "TOR1", "status": "downloaded", "progress": 100, "links": ["https://real-debrid.com/d/AAA", "javascript:alert(1)", "https://real-debrid.com/d/BBB"]}`)
+			}
+		case r.URL.Path == "/rest/1.0/unrestrict/link":
+			name := map[string]string{"https://real-debrid.com/d/AAA": "Moonbase.part1.rar", "https://real-debrid.com/d/BBB": "Moonbase.part2.rar"}[r.Form.Get("link")]
+			fmt.Fprintf(w, `{"filename": %q, "filesize": 500000, "download": "https://dl.example.com/%s"}`, name, name)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	games := []ScriptGame{
+		{Key: "dir:c:\\games\\night tale", Name: "Night Tale", Source: "hydra", Folder: "Night Tale", Version: "1.2.0"},
+		{Key: "dir:c:\\games\\moonbase", Name: "Moonbase", Source: "folder", Folder: "Moonbase", Version: "1.0"},
+	}
+	type call struct {
+		op  string
+		req map[string]any
+	}
+	var calls []call
+	var offers []ScriptOffer
+	var refuse error
+	dropped := 0
+	h, _ := sourcesPlugin(t, ScriptServices{
+		Games:      func() []ScriptGame { return games },
+		Offers:     func(l []ScriptOffer) { mu.Lock(); offers = l; mu.Unlock() },
+		Notify:     func(string) {},
+		Secret:     func(string) string { return token },
+		DropSecret: func(string) { dropped++; token = "" },
+		Update: func(op string, raw json.RawMessage) (any, error) {
+			var req map[string]any
+			_ = json.Unmarshal(raw, &req)
+			calls = append(calls, call{op, req})
+			if refuse != nil {
+				return nil, refuse
+			}
+			return map[string]any{"job": "j1"}, nil
+		},
+	})
+	h.client.Transport = rewriteTo{h.client.Transport.(*http.Transport), strings.TrimPrefix(srv.URL, "http://")}
+	act := func(arg map[string]any) actResult {
+		var r actResult
+		out, err := h.Call("action", arg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = json.Unmarshal(out, &r)
+		return r
+	}
+	offer := func(id, action string) actResult {
+		var r actResult
+		out, err := h.Call("offer", map[string]any{"id": id, "action": action})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = json.Unmarshal(out, &r)
+		return r
+	}
+	offerOf := func(game string) *ScriptOffer {
+		mu.Lock()
+		defer mu.Unlock()
+		for i := range offers {
+			if offers[i].Game == game {
+				return &offers[i]
+			}
+		}
+		return nil
+	}
+	act(map[string]any{"id": "notice"})
+	act(map[string]any{"id": "add", "values": map[string]any{"url": "https://feeds.example.com/a.json"}})
+	for end := time.Now().Add(10 * time.Second); offerOf("dir:c:\\games\\night tale") == nil || offerOf("dir:c:\\games\\moonbase") == nil; time.Sleep(30 * time.Millisecond) {
+		if time.Now().After(end) {
+			t.Fatal("the offers never came")
+		}
+	}
+	nt, mb := offerOf("dir:c:\\games\\night tale"), offerOf("dir:c:\\games\\moonbase")
+	if len(nt.Actions) != 3 || len(mb.Actions) != 4 || mb.Actions[3].ID != "magnet" {
+		t.Fatalf("actions: %+v %+v", nt.Actions, mb.Actions)
+	}
+
+	// A refusal from Lootnest (no room, the game is running) is said as it is.
+	refuse = fmt.Errorf("there isn't enough room on D:")
+	if r := offer(nt.ID, "update"); !strings.Contains(r.Error, "enough room") {
+		t.Fatalf("a refusal: %+v", r)
+	}
+	refuse = nil
+	calls = nil
+	// A file over https goes straight to Lootnest: the archive, not the page.
+	if r := offer(nt.ID, "update"); r.Error != "" || len(calls) != 1 || calls[0].op != "start" {
+		t.Fatalf("update: %+v %+v", r, calls)
+	}
+	req := calls[0].req
+	files := req["files"].([]any)
+	f0 := files[0].(map[string]any)
+	if req["game"] != "dir:c:\\games\\night tale" || req["offer"] != nt.ID || req["title"] != "Night Tale v1.3.0" || req["version"] != "1.3.0" || req["source"] != "Feed A" ||
+		len(files) != 1 || f0["url"] != "https://files.example.com/nt130.zip?x=1" || f0["name"] != "nt130.zip" {
+		t.Fatalf("what Lootnest was asked: %+v", req)
+	}
+	// While it's under way the game has no offer, and can't be started twice.
+	if offerOf("dir:c:\\games\\night tale") != nil {
+		t.Error("an offer shows for a game being updated")
+	}
+	var d detected
+	pluginTest(t, h, map[string]any{"what": "detect"}, &d)
+	for _, o := range d.Offers {
+		if o.Game == "dir:c:\\games\\night tale" {
+			t.Error("looking again offered a game being updated")
+		}
+	}
+	// In place: the new build is the baseline. The folder's name still says
+	// 1.2.0 here, so this PC's reading wins until a scan; drop it as a scan would.
+	games[0].Version = ""
+	if _, err := h.Call("update", map[string]any{"game": "dir:c:\\games\\night tale", "offer": nt.ID, "state": "kept"}); err != nil {
+		t.Fatal(err)
+	}
+	pluginTest(t, h, map[string]any{"what": "detect"}, &d)
+	for _, o := range d.Offers {
+		if o.Game == "dir:c:\\games\\night tale" {
+			t.Errorf("offered again after updating: %+v", o)
+		}
+	}
+	// Rolled back: the baseline from before returns, and so does the offer.
+	games[0].Version = "1.2.0"
+	if _, err := h.Call("update", map[string]any{"game": "dir:c:\\games\\night tale", "offer": nt.ID, "state": "rolledback"}); err != nil {
+		t.Fatal(err)
+	}
+	pluginTest(t, h, map[string]any{"what": "detect"}, &d)
+	again := false
+	for _, o := range d.Offers {
+		again = again || o.Game == "dir:c:\\games\\night tale"
+	}
+	if !again {
+		t.Error("the offer didn't return after a roll back")
+	}
+
+	// A magnet link: without Real-Debrid it says what to do; the torrent
+	// app is opened only through Lootnest.
+	calls = nil
+	if r := offer(mb.ID, "update"); !strings.Contains(r.Error, "Real-Debrid") || len(calls) != 0 {
+		t.Fatalf("a magnet without Real-Debrid: %+v %+v", r, calls)
+	}
+	if r := offer(mb.ID, "magnet"); r.Error != "" || len(calls) != 1 || calls[0].op != "magnet" || calls[0].req["uri"] != magnet {
+		t.Fatalf("open in the torrent app: %+v %+v", r, calls)
+	}
+
+	// The token: a refused one is forgotten, a good one says who it is.
+	token = "bad-token"
+	if r := act(map[string]any{"id": "rd-set", "secrets": map[string]any{"realdebrid": true}}); !strings.Contains(r.Error, "refused the token") || dropped != 1 {
+		t.Fatalf("a bad token: %+v, dropped %d", r, dropped)
+	}
+	token = "good-token"
+	if r := act(map[string]any{"id": "rd-set", "secrets": map[string]any{"realdebrid": true}}); !strings.Contains(r.Toast, "alex") {
+		t.Fatalf("a good token: %+v", r)
+	}
+
+	// With Real-Debrid: the magnet is added, its files chosen, and once
+	// it's fetched there its links become https files for Lootnest.
+	calls = nil
+	mu.Lock()
+	rdSeen = nil
+	mu.Unlock()
+	if r := offer(mb.ID, "update"); r.Error != "" || !strings.Contains(r.Toast, "Real-Debrid") {
+		t.Fatalf("update through Real-Debrid: %+v", r)
+	}
+	step := func() {
+		t.Helper()
+		if _, err := h.Call("rd", nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	step() // waiting_files_selection: chooses all
+	if o := offerOf("dir:c:\\games\\moonbase"); o == nil || !o.Busy || len(o.Actions) != 1 || o.Actions[0].ID != "stop" {
+		t.Fatalf("while Real-Debrid works: %+v", o)
+	}
+	step() // downloading 42%
+	if o := offerOf("dir:c:\\games\\moonbase"); o == nil || !strings.Contains(o.Status, "42%") {
+		t.Fatalf("progress: %+v", o)
+	}
+	if len(calls) != 0 {
+		t.Fatalf("Lootnest was asked before Real-Debrid was done: %+v", calls)
+	}
+	step() // downloaded
+	if len(calls) != 1 || calls[0].op != "start" {
+		t.Fatalf("after Real-Debrid was done: %+v", calls)
+	}
+	files = calls[0].req["files"].([]any)
+	if len(files) != 2 || files[0].(map[string]any)["url"] != "https://dl.example.com/Moonbase.part1.rar" || files[1].(map[string]any)["name"] != "Moonbase.part2.rar" || files[0].(map[string]any)["size"] != float64(500000) {
+		t.Fatalf("files from Real-Debrid: %+v", files)
+	}
+	mu.Lock()
+	want := []string{"GET /rest/1.0/torrents", "POST /rest/1.0/torrents/addMagnet", "GET /rest/1.0/torrents/info/TOR1", "POST /rest/1.0/torrents/selectFiles/TOR1 files=all",
+		"GET /rest/1.0/torrents/info/TOR1", "GET /rest/1.0/torrents/info/TOR1", "POST /rest/1.0/unrestrict/link", "POST /rest/1.0/unrestrict/link"}
+	if len(rdSeen) != len(want) {
+		t.Fatalf("Real-Debrid calls: %q", rdSeen)
+	}
+	for i, w := range want {
+		if !strings.HasPrefix(rdSeen[i], w) || !strings.HasSuffix(rdSeen[i], "| Bearer good-token") {
+			t.Errorf("Real-Debrid call %d: %q, want %q with the token", i, rdSeen[i], w)
+		}
+	}
+	mu.Unlock()
+	if offerOf("dir:c:\\games\\moonbase") != nil {
+		t.Error("an offer shows for a game being updated")
+	}
 }

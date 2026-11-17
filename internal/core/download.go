@@ -36,6 +36,9 @@ type downloader struct {
 	status func(code int, status string) error // the store's reading of an HTTP status
 	trace  func(*url.URL)
 	keep   bool // a download cut short keeps its .part
+	// plain lets http through, only for a file whose SHA-256 is known: what
+	// arrives is checked against it, so it can't be changed on the way.
+	plain bool
 }
 
 // get saves the file at u to dst, through dst+".part": only over https,
@@ -47,7 +50,7 @@ type downloader struct {
 // lost connection or a cancel) keeps its .part only with keep.
 func (d downloader) get(ctx context.Context, u, dst string, size int64, sum string, progress func(done, total int64)) (err error) {
 	pu, err := url.Parse(u)
-	if err != nil || pu.Scheme != "https" {
+	if err != nil || (pu.Scheme != "https" && !(d.plain && pu.Scheme == "http" && len(sum) == 64)) {
 		return errors.New("Lootnest only downloads over https")
 	}
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
@@ -159,6 +162,24 @@ func (d downloader) get(ctx context.Context, u, dst string, size int64, sum stri
 		return fmt.Errorf("the download from %s doesn't match its checksum. Try again", d.store)
 	}
 	return os.Rename(part, dst)
+}
+
+// SafeDownloadName is a file name from outside made safe to write: its last
+// part only, no characters Windows refuses, no device name, no leading dot
+// or space. "" when nothing is left.
+func SafeDownloadName(name string) string {
+	n := filepath.Base(strings.ReplaceAll(strings.TrimSpace(name), `\`, "/"))
+	if n == "." || n == "/" || n == ".." {
+		return ""
+	}
+	n = strings.TrimLeft(safeFileName(n), ". ")
+	if n == "" || windowsDevice(n) {
+		return ""
+	}
+	if r := []rune(n); len(r) > 120 {
+		n = string(r[:100]) + filepath.Ext(n)
+	}
+	return n
 }
 
 // downloadPath is where a store's file is downloaded to: Lootnest's own

@@ -1101,6 +1101,25 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .settings-page .bk-row p.pp-sub { overflow-wrap: anywhere; color: var(--fg-3); }
 .settings-page .bk-row p.pp-warn { margin-top: var(--space-2); color: var(--warning); }
 .pp-by { margin-top: var(--gap-group); color: var(--fg-3); }
+/* An update a plugin started: its steps, its bar, and what's kept. */
+.pp-steps { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: var(--space-1) 0 0; padding: 0; list-style: none; font-size: var(--fs-12); color: var(--fg-3); }
+.pp-steps li { display: flex; align-items: center; gap: var(--space-1); }
+.pp-steps li::before { content: ""; width: var(--lamp-dot); height: var(--lamp-dot); border-radius: var(--radius-round); background: var(--edge-3); }
+.pp-steps li.is-done { color: var(--fg-2); }
+.pp-steps li.is-done::before { background: var(--lamp); }
+.pp-steps li.is-now { color: var(--fg-1); font-weight: 600; }
+.pp-steps li.is-now::before { background: var(--fg-1); }
+.upd-meta.pp-job-text { white-space: normal; color: var(--fg-2); align-items: center; }
+.upd-meta.pp-job-text.is-bad { color: var(--bad); }
+.upd-meta.pp-job-text.is-warn { color: var(--warning); }
+.pp-bar { width: min(100%, calc(var(--space-12) * 6)); height: var(--space-1); border: 0; border-radius: var(--radius-round); background: var(--bg-active); accent-color: var(--lamp); overflow: hidden; }
+.pp-bar::-webkit-progress-bar { background: var(--bg-active); }
+.pp-bar::-webkit-progress-value { background: var(--lamp); }
+.pp-keep { display: grid; gap: var(--space-2); }
+.pp-keep ul { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; max-height: calc(var(--space-12) * 3); overflow: auto; }
+.pp-keep li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: var(--text-meta); color: var(--fg-2); }
+.pp-keep label { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.pp-keep li span:first-child, .pp-keep label span { overflow-wrap: anywhere; }
 .pp-field { display: grid; gap: var(--space-1); }
 .pp-field label, .pp-field p { font-size: var(--text-meta); color: var(--fg-2); }
 .dialog-list { display: grid; gap: var(--space-2); margin: 0; padding-left: var(--space-5); color: var(--fg-1); }

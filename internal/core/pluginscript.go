@@ -252,12 +252,14 @@ type ScriptOffer struct {
 // ScriptServices is what the app gives a script's host. A nil function is a
 // service that isn't there (in tests).
 type ScriptServices struct {
-	Log     func(string)
-	Secret  func(name string) string
-	Games   func() []ScriptGame
-	Notify  func(text string)
-	Changed func()
-	Offers  func([]ScriptOffer)
+	Log    func(string)
+	Secret func(name string) string
+	// DropSecret forgets a key.
+	DropSecret func(name string)
+	Games      func() []ScriptGame
+	Notify     func(text string)
+	Changed    func()
+	Offers     func([]ScriptOffer)
 	// Update starts or steers an update the script asked for
 	// (pluginupdate.go); nil until the app can do them.
 	Update func(op string, req json.RawMessage) (any, error)
@@ -565,10 +567,20 @@ func (h *ScriptHost) install() {
 		}
 		return goja.Undefined()
 	}}))
-	_ = ln.Set("secrets", obj(map[string]any{"has": func(c goja.FunctionCall) goja.Value {
-		name := c.Argument(0).String()
-		return vm.ToValue(h.secret(name) != nil && h.svc.Secret != nil && h.svc.Secret(name) != "")
-	}}))
+	_ = ln.Set("secrets", obj(map[string]any{
+		"has": func(c goja.FunctionCall) goja.Value {
+			name := c.Argument(0).String()
+			return vm.ToValue(h.secret(name) != nil && h.svc.Secret != nil && h.svc.Secret(name) != "")
+		},
+		// A script can forget a key (one that was refused, or on the user's
+		// Disconnect), never read or set one.
+		"remove": func(c goja.FunctionCall) goja.Value {
+			if s := h.secret(c.Argument(0).String()); s != nil && h.svc.DropSecret != nil {
+				h.svc.DropSecret(s.Name)
+			}
+			return goja.Undefined()
+		},
+	}))
 	_ = ln.Set("library", obj(map[string]any{"games": func(goja.FunctionCall) goja.Value {
 		h.need("library")
 		var games []ScriptGame

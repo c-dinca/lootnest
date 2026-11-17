@@ -1,6 +1,6 @@
 # Sources and updates: findings and plan
 
-Status: being built, one phase per commit on this branch. Done so far: script plugins, phase 1 (sources and feeds) and phase 2 (linking, Hydra's records, detection).
+Status: built, one phase per commit on this branch; not seen on a PC yet (docs/TESTING.md, section 43). Left open are listed at the end.
 
 The request: the user adds their own feeds (JSON files listing downloads), Lootnest matches them to games already in the Library (games Hydra installed above all), says when a feed lists a newer version, downloads it and replaces the game's folder with the saves kept. Lootnest ships no feed, suggests none, and does nothing about DRM.
 
@@ -118,7 +118,18 @@ Built as planned below, with these names: `core.HydraOrigins`, `core.LocalVersio
 - The installed version: the folder's name (`FolderVersion`) and the exe's file version, preferred over the stored baseline when they parse.
 - Offers: rows on the Updates page (`lootnest.updates.offer`) with the source, title, version, size, date, and **Update**, **Ignore this version**, **Ignore this source for this game**. A notice when new ones are found, once per version.
 
-### Phase 3: downloads
+### Phases 3 and 4: done
+
+As planned below, with these names and differences.
+
+- `core/dlqueue.go` `DownloadQueue` (one at a time, `Pause`, `Resume`, `Remove`, `Job` with speed and ETA, kept in `downloads.json`, `GuardedClient`); `downloader.plain` lets http through only with a SHA-256.
+- `core/fullupdate.go`: `FindBuild`, `PlanFullUpdate` (saves inside the folder, the user's ticks, and what only the old folder has at its top; never a store's files or a stand-in tool's), `RunFullUpdate` (backup, swap, restore, verify, kept), `RecoverFullUpdate`, `RollbackFullUpdate`, `FinishFullUpdate`, `state.json` written before each step.
+- `app/fullupdate.go`: jobs in `fullupdates\<hash>\job.json` with `log.txt`; staging is `<game folder>.lootnest-new` (`dl` and `build`); `pluginUpdate` (the script's `updates.run`), `jobUnpack` (whole build, else patch or installer handed to the update panel), `jobApply`, `jobRollback`, `jobFinish`, `watchKept` (the old folder goes once the game has run a minute and closed, or after 14 days; a first start that ends within 20 seconds is told), `recoverJobs` at start, `errUpdating` refuses a launch during the swap.
+- The saves' copy is a version in the safety net's store, named "Before the update to x", so it shows on the game's Saves tab under Copies on this PC with Restore; five are kept. That tab's save points are "Back up saves now" and its copies "Restore saves from a copy", for any game, with or without an update.
+- In the script: `startUpdate`, `begin`, `updateState`, Real-Debrid (`rdCall`, `rdTorrent`, `rdFiles`, `rdStart`, `rdTick`).
+- Different from the plan: the save copy isn't in a store of its own; registry saves aren't exported (the manifest's registry entries are still unread, as before); the free-space check is the listed size times 2.2 beside the game only; the days an old folder is kept (14) and the save copies kept (5) are constants, not settings yet.
+
+### Phase 3: downloads (as planned)
 
 - Lootnest: a queue over the existing `downloader` (one active, the rest waiting; pause and resume on the `.part` and Range; cancel; speed, ETA; kept in `downloads.json`). Free space checked first (the listed size times 2.2 on the staging drive) and refused with the numbers when short. Always into a staging folder: `<game folder>.lootnest-new` beside the game when that drive has room, else under Lootnest's data folder. `http:` only with a `sha256`.
 - The script: Real-Debrid (`api.real-debrid.com/rest/1.0`: `torrents/addMagnet`, `torrents/selectFiles`, `torrents/info`, `unrestrict/link`), with the user's API token as the plugin's one key. A magnet without Real-Debrid: **Open in your torrent app**.
@@ -149,6 +160,14 @@ On a failure at any state, and at start for a `state.json` left behind (not in s
 ### Phase 5: the rest
 
 The progress drawer (downloading, unpacking, copying saves, replacing, checking) with each step's log lines; notices for found, finished and failed; `docs/GUIDE.md`, `docs/TESTING.md` (a new section: all of this is unseen on a PC).
+
+## Left open
+
+- Nothing here has run on a PC: the swap on NTFS with files in use, the Recycle Bin, the process watch and DPAPI above all.
+- Registry saves; settings for the kept days and copies; a queue page of its own (downloads show as rows on the Updates page).
+- Games with profiles: an update is offered only for the Library's copy of a game; one whose saves a profile's swap owns isn't handled specially yet.
+- A feed is read whole into the script's memory, and the engine has no memory limit.
+- Real-Debrid was only run against a stand-in server in tests, never the real one.
 
 ## Differences from the request
 

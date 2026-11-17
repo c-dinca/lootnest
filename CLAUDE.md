@@ -1592,6 +1592,32 @@ These shipped recently, newest last:
   manual, yes, no, skip, mute). Write a plugin's .js in ASCII with
   `\uXXXX` escapes: a raw U+2028 in a regular expression parses in goja
   and not in Node.
+  Parts 3 and 4, downloads and the update: `core/dlqueue.go`
+  (`DownloadQueue`: one at a time, Pause, Resume, Remove, `Job`,
+  downloads.json, `GuardedClient`; http only with a SHA-256),
+  `core/fullupdate.go` (`FindBuild`, `PlanFullUpdate`, `RunFullUpdate`:
+  backup, swap, restore, verify, kept, with `state.json` written before
+  each step; `RecoverFullUpdate`, `RollbackFullUpdate`,
+  `FinishFullUpdate`; the old folder is renamed to
+  `<folder>.lootnest-old`, never changed; a build that failed goes
+  aside, never deleted; `keepBlocked` never carries a store's files or a
+  stand-in tool's). `app/fullupdate.go`: a script's
+  `lootnest.updates.run("start", ...)` makes a job
+  (`fullupdates\<hash>\job.json`, `log.txt`), staging in
+  `<folder>.lootnest-new`; `jobUnpack` finds a whole build, else hands a
+  patch or an installer to the 1.37/1.40 update drawer; `jobApply`
+  (after the user's yes in dialog `ppjob`), `copySaves` (a version in the
+  safety net's store, so it shows under Copies on this PC), `watchKept`,
+  `recoverJobs` at start, `errUpdating`. `ps_pluginJobs`,
+  `ps_pluginJobPlan`, `ps_pluginJobOp`, `ps_pluginJobLog`, event
+  `pluginJobs`; `jobCard`, `jobSteps`, `ppJobHTML` in
+  79-pluginscript.js. The plugin: `startUpdate` (an https archive
+  directly; a magnet or a host's link through the user's Real-Debrid
+  token, the plugin's one key, `rdCall`/`rdTick`; else Open in your
+  torrent app, `updates.run("magnet")`, the only thing ever opened for a
+  plugin). No BitTorrent client in Lootnest (the owner hasn't asked for
+  one). Harness `?sources=1&srcupd=download|paused|ready|hand|apply|
+  kept|failed`. docs/TESTING.md 43.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

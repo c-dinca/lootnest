@@ -5,7 +5,7 @@
   const updKey = (it) => (it.kind === "game" ? (it.g.launch.type === "exe" && UPDATABLE.includes(it.source) ? "game:" + it.id : "") : UPDATABLE.includes(it.source) && !it.appId ? "found:" + it.id : "");
   function updateNavCount() {
     const keys = new Set([...(S.updates ? S.updates.games : []), ...(S.dl || []), ...storeUpdRows()].filter((g) => g.newer).map((g) => g.key));
-    const n = keys.size + (S.copies ? S.copies.length : 0) + new Set((S.plugOffers || []).map((o) => o.key).filter((k) => !keys.has(k))).size;
+    const n = keys.size + (S.copies ? S.copies.length : 0) + new Set([...(S.plugOffers || []).map((o) => o.key), ...(S.plugJobs || []).filter((j) => ["ready", "hand", "failed"].includes(j.phase) || j.broke).map((j) => j.updKey)].filter((k) => !keys.has(k))).size;
     const el = $("#upd-count"); if (el) bump(el, n);
   }
   // "Is this a new copy?": a game reinstalled as a whole new version.
@@ -142,7 +142,7 @@
       return `<div class="upd-page ln-root">${head("")}<div class="upd-skel">${[0, 1, 2].map(() => '<div class="ln-skeleton"></div>').join("")}</div></div>`;
     }
     if (!S.copies) api.newCopies().catch(() => {});
-    askOffers();
+    askOffers(); askJobs();
     const games = [...U.games.filter((g) => !skeys.has(g.key)), ...srows];
     const stOf = (r) => (r.from ? storeState(r) : updState(r, U));
     if (!games.length) {

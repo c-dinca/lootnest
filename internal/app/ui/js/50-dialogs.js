@@ -30,6 +30,10 @@
         <button class="btn primary" data-action="dialog-ok">${esc(D.ok || "OK")}</button></div></div></div>`;
     } else if (D.kind === "ppform") {
       o.innerHTML = ppFormHTML(D);
+    } else if (D.kind === "ppjob") {
+      o.innerHTML = ppJobHTML(D);
+    } else if (D.kind === "pplog") {
+      o.innerHTML = ppLogHTML(D);
     } else if (D.kind === "newrun") {
       const g = game(D.gameId), per = player(D.person), M = S.mods["game:" + D.gameId];
       const mods = M && M.sets && onIds(M, per && per.id).length ? `<label class="toggle"><span><b>Start with mods</b><p>A copy of ${esc(possessive(per.name))} mods, ${onIds(M, per.id).length} on now.</p></span>

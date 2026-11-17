@@ -455,7 +455,7 @@
       case "pickerClosed":
         if (S.picker && S.picker.reqId) { S.picker = null; render(); }
         break;
-      case "pluginPages": case "pluginView": case "pluginChanged": case "pluginActed": case "pluginOffers":
+      case "pluginPages": case "pluginView": case "pluginChanged": case "pluginActed": case "pluginOffers": case "pluginJobs":
         pluginEvent(ev);
         break;
       case "toast":

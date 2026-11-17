@@ -138,6 +138,8 @@
       if (p && p.plugin === ev.id) askPluginView(p.plugin, p.id, true);
     } else if (ev.type === "pluginOffers") {
       askOffers(true);
+    } else if (ev.type === "pluginJobs") {
+      askJobs(true);
     } else if (ev.type === "pluginActed") {
       const w = PP.waiting[ev.req];
       if (!w) return;
@@ -166,7 +168,128 @@
       ${offerRest(o) ? `<p class="upd-meta">${offerRest(o)}</p>` : ""}`;
     return updRow({ key: o.key, name: o.name }, { k: "new", text: "Newer version listed" }, meta, updVer(o.have || "", o.version ? ["Listed", o.version] : null), offerKey(o, lead));
   }
-  const offersSection = () => ((S.plugOffers || []).length ? labelSec("From your sources", S.plugOffers.length, `<ol class="ln-rows upd-cards pp-offers">${S.plugOffers.map((o, i) => offerCard(o, i === 0)).join("")}</ol>`) : "");
+  // An update under way hides the offers for its game.
+  const liveOffers = () => (S.plugOffers || []).filter((o) => !(S.plugJobs || []).some((j) => j.updKey === o.key && !["done", "rolledback", "failed"].includes(j.phase)));
+  function offersSection() {
+    const jobs = S.plugJobs || [], offers = liveOffers();
+    if (!jobs.length && !offers.length) return "";
+    return labelSec("From your sources", jobs.length + offers.length, `<ol class="ln-rows upd-cards pp-offers">${jobs.map(jobCard).join("")}${offers.map((o, i) => offerCard(o, i === 0 && !jobs.length)).join("")}</ol>`);
+  }
+
+  // Updates a plugin started (ps_pluginJobs, app/fullupdate.go): downloaded
+  // into a staging folder, opened, and applied by Lootnest once the user has
+  // seen what's kept. The steps show where each is.
+  let jobsAsked = false;
+  function askJobs(again) {
+    if (jobsAsked && !again) return;
+    jobsAsked = true;
+    api.pluginJobs().then((l) => {
+      S.plugJobs = l || [];
+      updateNavCount();
+      if (S.view === "updates" || S.view === "game") { if (!S.dialog) render(); else if (!ppJobsLater) ppJobsLater = setTimeout(() => { ppJobsLater = 0; if (S.view === "updates" || S.view === "game") render(); }, 600); }
+    }).catch(() => { jobsAsked = false; });
+  }
+  let ppJobsLater = 0;
+  const JOB_STEPS = ["Download", "Open", "Copy saves", "Replace", "Check"];
+  function jobAt(j) {
+    if (j.phase === "download") return 0;
+    if (j.phase === "unpack") return 1;
+    if (j.phase === "ready" || j.phase === "hand") return 2;
+    if (j.phase === "apply") return /saves/i.test(j.step || "") ? 2 : /Check/.test(j.step || "") ? 4 : 3;
+    return j.phase === "kept" || j.phase === "done" ? 5 : -1;
+  }
+  const jobSteps = (j) => { const at = jobAt(j); return at < 0 ? "" : `<ol class="pp-steps" aria-label="Steps">${JOB_STEPS.map((s, i) => `<li class="${i < at ? "is-done" : i === at && j.phase !== "ready" && j.phase !== "hand" ? "is-now" : ""}"${i === at ? ' aria-current="step"' : ""}>${s}</li>`).join("")}</ol>`; };
+  const mins = (s) => (s < 90 ? "a minute" : s < 5400 ? `${Math.round(s / 60)} minutes` : `${Math.round(s / 3600)} hours`);
+  const jobBtn = (j, op, label, cls) => `<button class="${cls || "upd-note"}" data-action="pp-job" data-job="${esc(j.id)}" data-op="${op}"${op === "plan" || op === "log" ? ' aria-haspopup="dialog"' : ""}>${label}</button>`;
+  const jobKey = (j, op, label, primary) => jobBtn(j, op, label, `ln-button ${primary ? "ln-button--primary" : "ln-button--secondary"} ln-button--sm`);
+  // What a job says, its key and its quiet links, by phase.
+  function jobParts(j) {
+    const log = jobBtn(j, "log", "Show the log"), cancel = jobBtn(j, "cancel", "Cancel");
+    switch (j.phase) {
+      case "download": {
+        const bar = j.total ? `<progress class="pp-bar" max="${j.total}" value="${Math.min(j.done, j.total)}" aria-label="Downloaded"></progress>` : "";
+        if (j.error) return { text: j.error, bad: true, key: jobKey(j, "resume", "Try again"), rest: cancel + log };
+        if (j.paused) return { text: `Paused at ${fmtBytes(j.done)}${j.total ? ` of ${fmtBytes(j.total)}` : ""}`, bar, key: jobKey(j, "resume", "Resume"), rest: cancel };
+        return { text: `Downloading: ${fmtBytes(j.done)}${j.total ? ` of ${fmtBytes(j.total)}` : ""}${j.speed ? `, ${fmtBytes(j.speed)} a second` : ""}${j.eta ? `, about ${mins(j.eta)} left` : ""}`, bar,
+          key: jobKey(j, "pause", "Pause"), rest: cancel };
+      }
+      case "unpack": return { text: "Opening the download", busy: true, key: "", rest: "" };
+      case "ready": return { text: "Downloaded and opened. Nothing in the game's folder has changed yet.", key: jobKey(j, "plan", "Review and update", true), rest: cancel + log };
+      case "hand": return { text: j.kind === "installer" ? "It's an installer. Lootnest runs it only when you say so, after copying your saves." : "It isn't a whole game: its files go over the game's, with each one it replaces kept.",
+        key: jobKey(j, "hand", "Open the update", true), rest: jobBtn(j, "dismiss", "Delete the download") + log };
+      case "apply": return { text: j.step || "Updating", busy: true, key: "", rest: "" };
+      case "kept": return { text: j.broke ? "The game closed right after its first start. Roll back puts the folder from before back." : "Updated. The folder from before is kept until you've played, or for 14 days.", warn: j.broke,
+        key: jobKey(j, "rollback", "Roll back"), rest: jobBtn(j, "finish", "Remove the old folder now") + log };
+      case "failed": return { text: j.error || "The update failed. The game is as it was.", bad: true, key: jobKey(j, "dismiss", "Dismiss"), rest: log };
+      case "rolledback": return { text: "Rolled back. The game is as it was before the update.", key: jobKey(j, "dismiss", "Dismiss"), rest: log };
+      default: return { text: "Updated.", key: jobKey(j, "dismiss", "Dismiss"), rest: log };
+    }
+  }
+  function jobCard(j) {
+    const p = jobParts(j), st = j.phase === "failed" || (j.phase === "download" && j.error) ? { k: "low", text: "Needs a look" } : j.phase === "kept" || j.phase === "done" ? { k: "ok", text: "Updated" }
+      : j.phase === "rolledback" ? { k: "dim", text: "Rolled back" } : j.phase === "ready" || j.phase === "hand" ? { k: "new", text: "Ready" } : { k: "new", text: "Updating" };
+    const meta = `<p class="upd-meta"><span>From ${esc(j.source || "a source")}</span><span class="upd-why" title="${esc(j.title)}">${esc(j.title)}</span></p>
+      ${jobSteps(j)}
+      <p class="upd-meta pp-job-text${p.bad ? " is-bad" : p.warn ? " is-warn" : ""}">${p.busy ? '<span class="ln-spinner" aria-hidden="true"></span>' : ""}<span>${esc(p.text)}</span></p>${p.bar || ""}
+      ${p.rest ? `<p class="upd-meta">${p.rest}</p>` : ""}`;
+    return updRow({ key: j.updKey, name: j.name }, st, meta, j.version ? updVer("", ["Updating to", j.version]).replace(/<div><span>Your copy<\/span>[\s\S]*?<\/div>\s*<svg[\s\S]*?<\/svg>/, "") : "<div></div>", p.key);
+  }
+  function jobBanner(it) {
+    const j = it.kind === "found" && (S.plugJobs || []).find((x) => x.updKey === "found:" + it.id && x.phase !== "done");
+    if (!j) return "";
+    const p = jobParts(j);
+    return banner(j.phase === "kept" ? "Updated" : j.phase === "failed" ? "The update failed" : j.phase === "rolledback" ? "Rolled back" : "Updating", esc(p.text),
+      p.key + `<button class="ln-button ln-button--ghost ln-button--sm" data-action="nav" data-view="updates">More</button>`, p.busy, p.bad ? "warn" : "");
+  }
+  // The dialog before a folder is replaced: what's copied, what's carried
+  // over, what else could be, and where the old folder stays.
+  function ppJobHTML(D) {
+    const j = (S.plugJobs || []).find((x) => x.id === D.job), P = D.plan;
+    if (!j) return "";
+    const item = (k) => `<li><span class="selectable">${esc(k.rel)}</span><span class="ln-num">${esc(fmtBytes(k.size || 0))}</span></li>`;
+    const body = D.error && !P ? `<p class="error-text">${esc(D.error)}</p>` : !P ? lnInline("", "Looking at what's in the folder") : `
+      <dl class="ln-facts">
+        <div><dt>Your saves</dt><dd>${P.saves ? `${P.saves} ${P.saves === 1 ? "place" : "places"} copied first` : "None found to copy"}</dd></div>
+        <div><dt>The folder from before</dt><dd>Kept until you've played, or ${P.days} days</dd></div>
+      </dl>
+      ${P.keep.length ? `<div class="pp-keep"><b>Carried into the new folder</b><ul>${P.keep.map(item).join("")}</ul></div>` : ""}
+      ${P.extra.length ? `<div class="pp-keep"><b>Only in your folder. Keep any?</b><ul>${P.extra.map((k) => `<li><label><input type="checkbox" data-pp-keep="${esc(k.rel)}" ${(P.yours || []).includes(k.rel) ? "checked" : ""} ${D.busy ? "disabled" : ""}><span class="selectable">${esc(k.rel)}</span></label><span class="ln-num">${esc(fmtBytes(k.size || 0))}</span></li>`).join("")}</ul></div>` : ""}
+      <p class="sub">Everything else in <span class="selectable">${esc(P.folder)}</span> is replaced by the new build. Roll back puts the old folder back.</p>`;
+    return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="Update ${esc(j.name)}">
+      <div><h2>Update ${esc(j.name)}?</h2><p class="sub">${esc(j.title)}${j.source ? `, from ${esc(j.source)}` : ""}.</p></div>
+      ${body}
+      <div class="dialog-foot"><span class="error-text grow" role="alert">${P ? esc(D.error || "") : ""}</span><button class="btn quiet" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>
+      <button class="btn primary" data-action="pp-job-apply" ${D.busy || !P ? "disabled" : ""}>Replace the game's folder</button></div></div></div>`;
+  }
+  const ppLogHTML = (D) => `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="The update's log">
+      <div><h2>${esc(D.name)}</h2><p class="sub">Every step of this update.</p></div><div class="log selectable" tabindex="0">${esc(D.text || "Nothing yet.")}</div>
+      <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">Close</button></div></div></div>`;
+  async function jobOp(id, op) {
+    const j = (S.plugJobs || []).find((x) => x.id === id);
+    if (!j) return;
+    try {
+      if (op === "plan") {
+        const D = S.dialog = { kind: "ppjob", job: id, plan: null, error: "", busy: false };
+        renderOverlay();
+        try { D.plan = await api.pluginJobPlan(id); } catch (e) { D.error = errText(e); }
+        if (S.dialog === D) renderOverlay();
+      } else if (op === "log") {
+        S.dialog = { kind: "pplog", name: j.name, text: await api.pluginJobLog(id) };
+        renderOverlay();
+      } else if (op === "hand") {
+        // The update centre's own panel shows what it changes; nothing changes until it's applied there.
+        const U = S.dialog = { kind: "update", key: j.updKey, name: j.name, path: j.path, busy: true };
+        renderOverlay(); focusOverlay();
+        api.updatePlan(U.key, U.path).catch((e) => { U.busy = false; U.error = errText(e); renderOverlay(); });
+      } else {
+        const ask = { cancel: [`Cancel the update of ${j.name}?`, "What was downloaded is deleted. The game stays as it is.", "Cancel the update"],
+          rollback: [`Roll ${j.name} back?`, "Your saves are copied first, then the folder from before the update goes back. The new build goes to the Recycle Bin.", "Roll back"],
+          finish: [`Remove ${j.name}'s old folder?`, "It goes to the Recycle Bin, and Roll back won't be offered any more.", "Remove it"] }[op];
+        if (ask && !await confirmDialog({ title: ask[0], body: ask[1], ok: ask[2], cancel: op === "cancel" ? "Keep going" : "Cancel", safe: true })) return;
+        await api.pluginJobOp(id, op, []);
+      }
+    } catch (e) { toast(errText(e), "error"); }
+  }
   // On a game's page: the first offer for it.
   function offerBanner(it) {
     const o = it.kind === "found" && (S.plugOffers || []).find((x) => x.key === "found:" + it.id);

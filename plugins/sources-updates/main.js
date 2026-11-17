@@ -447,6 +447,7 @@
         else if (o && (o.folder || o.time)) l.base = { title: o.folder || "", date: o.time || l.seen, from: "hydra" };
         else l.base = { title: "", date: l.seen, from: "seen" };
       }
+      if (active()[g.key] && !active()[g.key].kept) continue; // its update is under way
       const inst = installed(g, l), words = normTitle(g.name), mine = words.join(" ");
       const hits = new Map(), asked = new Set(); // words of entries -> how sure; the ones to ask about
       for (const k of l.manual || []) if (byKey.has(k)) hits.set(k, 1);
@@ -484,11 +485,17 @@
     lootnest.ui.changed();
   }
   const OFFER_ACTIONS = [{ id: "update", label: "Update" }, { id: "ignore-version", label: "Ignore this version" }, { id: "ignore-source", label: "Ignore this source for this game" }];
+  const MAGNET_ACTION = { id: "magnet", label: "Open in your torrent app" };
+  function offerActions(o) {
+    if (prep()[o.id]) return [{ id: "stop", label: "Stop waiting" }];
+    return o.e.u.some((x) => /^magnet:/i.test(x)) ? [...OFFER_ACTIONS, MAGNET_ACTION] : OFFER_ACTIONS;
+  }
   // publish tells Lootnest the offers, and says so once for each new one.
   function publish(tell) {
     lootnest.updates.offer(OFFERS.slice(0, 500).map((o) => ({
       id: o.id, game: o.game, title: o.e.t, version: verText(o.ver), have: o.have, source: o.src.name || o.src.url, size: o.e.s || 0,
-      date: o.e.d ? new Date(o.e.d).toISOString() : "", note: o.ver.from ? `A patch for ${o.ver.from}` : o.e.c || "", actions: OFFER_ACTIONS,
+      date: o.e.d ? new Date(o.e.d).toISOString() : "", note: o.ver.from ? `A patch for ${o.ver.from}` : o.e.c || "", actions: offerActions(o),
+      status: prep()[o.id] ? prep()[o.id].status || "Asking Real-Debrid" : "", busy: !!prep()[o.id],
     })));
     if (!tell) return;
     const told = lootnest.storage.get("told"), seen = new Set(Array.isArray(told) ? told : []);
@@ -512,14 +519,168 @@
       OFFERS = OFFERS.filter((x) => !(x.game === o.game && x.src.id === o.src.id));
     } else if (a.action === "update") {
       return startUpdate(o);
+    } else if (a.action === "stop") {
+      delete prep()[o.id];
+      lootnest.storage.set("prep", prep());
+      publish(false);
+      return { toast: "Stopped waiting. What Real-Debrid fetched stays in your account there." };
+    } else if (a.action === "magnet") {
+      const m = o.e.u.find((x) => /^magnet:/i.test(x));
+      if (!m) return { error: "This download has no magnet link." };
+      try { lootnest.updates.run("magnet", { uri: m }); } catch (e) { return { error: clean(String(e && e.message || e), 300) }; }
+      return { toast: "Opened in your torrent app. When it's in Downloads, Lootnest offers it on the Updates page." };
     } else return { error: "This plugin has no such action." };
     saveLinks();
     publish(false);
     lootnest.ui.changed();
     return { toast: a.action === "ignore-version" ? "Ignored. A later version will show again." : `Ignored ${o.src.name || "that source"} for ${o.name}.` };
   }
-  // Downloading and replacing the game comes with the next part.
-  let startUpdate = () => ({ error: "Updating from here isn't built yet. The update is listed so you know it's out." });
+  // ---------------------------------------------------------------- updates --
+  // Starting an update: this plugin only finds the addresses to download.
+  // Lootnest downloads them into a staging folder, copies the saves, and
+  // replaces the game's folder once the user has seen what's kept.
+  // "active" in storage, by Library key: the update under way for a game
+  // ({offer, title, date, version}), so its baseline can be set when it's
+  // in place. "prep": downloads Real-Debrid is still fetching.
+  let ACTIVE = null, PREP = null;
+  const active = () => { if (!ACTIVE) { const a = lootnest.storage.get("active"); ACTIVE = isObj(a) ? a : {}; } return ACTIVE; };
+  const prep = () => { if (!PREP) { const a = lootnest.storage.get("prep"); PREP = isObj(a) ? a : {}; } return PREP; };
+  const ARCHIVE = /\.(?:zip|7z|rar|exe)(?:[?#].*)?$/i;
+  const fileName = (u) => { try { return decodeURIComponent(u.split(/[?#]/)[0].split("/").pop() || ""); } catch (e) { return ""; } };
+  const isMagnet = (u) => /^magnet:/i.test(u);
+
+  // begin hands the files to Lootnest. It refuses with words when there's
+  // no room, the game is running, or the game isn't one it may update.
+  function begin(o, files) {
+    try {
+      lootnest.updates.run("start", { offer: o.id, game: o.game, title: o.e.t, version: verText(o.ver), source: o.src.name || o.src.url, size: o.e.s || 0, files });
+    } catch (e) {
+      return { error: clean(String(e && e.message || e), 300) };
+    }
+    active()[o.game] = { offer: o.id, title: o.e.t, date: o.e.d || Date.now(), version: verText(o.ver) };
+    lootnest.storage.set("active", active());
+    OFFERS = OFFERS.filter((x) => x.game !== o.game);
+    publish(false);
+    return { toast: `Downloading ${o.name}. It shows on the Updates page.` };
+  }
+  function startUpdate(o) {
+    if (active()[o.game]) return { error: "An update of that game is already under way." };
+    const u = o.e.u, rd = lootnest.secrets.has("realdebrid");
+    // A file over https goes straight to Lootnest; plain http only with the
+    // file's SHA-256 from the source.
+    const file = u.find((x) => /^https:/i.test(x) && ARCHIVE.test(x)) || (o.e.h && u.find((x) => /^http:/i.test(x) && ARCHIVE.test(x)));
+    if (file) return begin(o, [{ url: file, name: fileName(file), size: o.e.s || 0, sha256: o.e.h || "" }]);
+    const magnet = u.find(isMagnet), page = u.find((x) => /^https:/i.test(x));
+    if (rd && (magnet || page)) return rdStart(o, magnet || page);
+    if (page) return begin(o, [{ url: page, name: fileName(page), size: o.e.s || 0, sha256: o.e.h || "" }]);
+    if (magnet) return { error: "This download is a magnet link. Add your Real-Debrid token on the Sources page, or use Open in your torrent app and let Lootnest find it in Downloads." };
+    return { error: "This download has no address Lootnest can use." };
+  }
+  // Lootnest tells what became of an update it ran.
+  function updateState(a) {
+    const act = active()[a.game];
+    if (!act || (a.offer && act.offer !== a.offer)) return;
+    const l = linkOf(a.game);
+    if (a.state === "kept") {
+      l.prev = l.base || null;
+      l.base = { title: act.title, date: act.date, from: "update" };
+    } else if (a.state === "rolledback") {
+      if (l.prev) l.base = l.prev;
+      delete l.prev;
+    }
+    if (a.state === "kept" || a.state === "rolledback" || a.state === "failed" || a.state === "done") {
+      if (a.state !== "kept") delete active()[a.game];
+      else active()[a.game].kept = true;
+      lootnest.storage.set("active", active());
+      saveLinks();
+      lootnest.schedule("detect", 300);
+    }
+  }
+
+  // ----------------------------------------------------------- Real-Debrid --
+  // The user's own Real-Debrid account turns a magnet link, or a link to a
+  // file host, into https links. The token is kept by Lootnest and goes
+  // only to api.real-debrid.com; this script never reads it.
+  const RD = "https://api.real-debrid.com/rest/1.0";
+  function rdCall(method, path, form) {
+    const r = lootnest.net.fetch(RD + path, { method, form, secret: "realdebrid", timeout: 60, maxBytes: 4 << 20 });
+    let body = null;
+    try { body = r.text ? JSON.parse(r.text) : null; } catch (e) { body = null; }
+    if (r.status === 401) throw new Error("Real-Debrid refused the token. Add it again on the Sources page.");
+    if (r.status === 403) throw new Error("Real-Debrid refused: " + clean((body && body.error) || "the account may not be premium", 120).replace(/_/g, " "));
+    if (r.status < 200 || r.status >= 300) throw new Error("Real-Debrid answered " + r.status + (body && body.error ? ": " + clean(body.error, 120).replace(/_/g, " ") : ""));
+    return body;
+  }
+  // One of the user's torrents there with this info hash, or a new one.
+  function rdTorrent(magnet) {
+    const hash = infoHash(magnet);
+    if (hash) {
+      const list = rdCall("GET", "/torrents?limit=100");
+      const have = (Array.isArray(list) ? list : []).find((t) => t && typeof t.hash === "string" && t.hash.toLowerCase() === hash && !["error", "dead", "virus", "magnet_error"].includes(t.status));
+      if (have && typeof have.id === "string") return have.id;
+    }
+    const added = rdCall("POST", "/torrents/addMagnet", { magnet });
+    if (!added || typeof added.id !== "string" || !/^[A-Za-z0-9]{1,40}$/.test(added.id)) throw new Error("Real-Debrid didn't take the magnet link.");
+    return added.id;
+  }
+  // Its links as files for Lootnest: each is unrestricted to an https
+  // address, checked like any address from outside.
+  function rdFiles(links) {
+    const files = [];
+    for (const link of links.slice(0, 300)) {
+      if (!readURI(link, LIMITS.uri)) continue;
+      const f = rdCall("POST", "/unrestrict/link", { link });
+      const r = f && readURI(f.download, LIMITS.uri);
+      if (!r || r.scheme !== "https") throw new Error("Real-Debrid gave an address Lootnest can't use.");
+      files.push({ url: f.download, name: clean(f.filename, 200), size: Number.isFinite(f.filesize) && f.filesize > 0 ? f.filesize : 0 });
+    }
+    if (!files.length) throw new Error("Real-Debrid has no files for that download.");
+    return files;
+  }
+  function rdStart(o, uri) {
+    try {
+      if (!isMagnet(uri)) return begin(o, rdFiles([uri]));
+      const id = rdTorrent(uri);
+      prep()[o.id] = { tid: id, game: o.game, at: Date.now(), status: "Asking Real-Debrid" };
+      lootnest.storage.set("prep", prep());
+      publish(false);
+      lootnest.schedule("rd", 500);
+      return { toast: "Real-Debrid is getting it ready. The download starts by itself." };
+    } catch (e) {
+      return { error: clean(String(e && e.message || e), 300) };
+    }
+  }
+  const RD_WAIT = { magnet_conversion: "Real-Debrid is reading the magnet link", waiting_files_selection: "Real-Debrid is choosing the files", queued: "Waiting in Real-Debrid's queue",
+    downloading: "Real-Debrid is fetching it", compressing: "Real-Debrid is packing it", uploading: "Real-Debrid is finishing it" };
+  // The "rd" handler: looks at each download Real-Debrid is preparing, and
+  // hands the ready ones to Lootnest.
+  function rdTick() {
+    const P = prep();
+    let waiting = false;
+    for (const id of Object.keys(P)) {
+      const p = P[id], o = OFFERS.find((x) => x.id === id);
+      const drop = (why) => { delete P[id]; if (why) lootnest.notify(why); };
+      if (!o) { drop(""); continue; }
+      if (Date.now() - p.at > 48 * HOUR) { drop(`${o.name}: Real-Debrid didn't finish in two days, so Lootnest stopped waiting.`); continue; }
+      try {
+        const info = rdCall("GET", "/torrents/info/" + encodeURIComponent(p.tid));
+        const st = info && info.status;
+        if (st === "waiting_files_selection") { rdCall("POST", "/torrents/selectFiles/" + encodeURIComponent(p.tid), { files: "all" }); p.status = RD_WAIT[st]; waiting = true; }
+        else if (st === "downloaded") {
+          const r = begin(o, rdFiles(Array.isArray(info.links) ? info.links : []));
+          drop(r.error ? `${o.name}: ${r.error}` : "");
+        } else if (RD_WAIT[st]) { p.status = RD_WAIT[st] + (st === "downloading" && Number.isFinite(info.progress) ? `, ${Math.round(info.progress)}%` : ""); waiting = true; }
+        else drop(`${o.name}: Real-Debrid couldn't get it (${clean(String(st || "no answer"), 40).replace(/_/g, " ")}).`);
+      } catch (e) {
+        p.fails = (p.fails || 0) + 1;
+        p.status = clean(String(e && e.message || e), 120);
+        if (p.fails >= 5) drop(`${o.name}: ${p.status}`); else waiting = true;
+      }
+    }
+    lootnest.storage.set("prep", P);
+    publish(false);
+    if (waiting) lootnest.schedule("rd", 8000);
+  }
 
   // ----------------------------------------------------------------- pages --
   const NOTICE = {
@@ -590,6 +751,13 @@
       if (PICK) forms.pick = { title: `Which one is ${PICK.name}?`, ok: "Link", fields: [{ id: "k", label: "Downloads in your sources", type: "select", value: PICK.options[0].value, options: PICK.options }] };
       if (GAMES.length) sections.push({ title: "Games", actions: [{ id: "link", label: "Link a game", form: "link" }], rows, empty: "Games are matched to your sources by name. Nothing here needs you." });
     }
+    const rd = lootnest.secrets.has("realdebrid");
+    forms.rd = { title: "Your Real-Debrid token", ok: "Save", body: "Lootnest keeps it encrypted on this PC and sends it only to api.real-debrid.com. This plugin never reads it.",
+      fields: [{ id: "token", label: "API token", secret: "realdebrid", hint: "From your Real-Debrid account, under API token." }] };
+    sections.push({ title: "Real-Debrid", rows: [{ id: "rd", title: rd ? (s.rdUser ? `Connected as ${s.rdUser}` : "Connected") : "Not connected", lamp: rd ? "on" : "off",
+      sub: "Your own account there turns magnet links and file-host links into downloads. Without it, those open in your torrent app.",
+      actions: rd ? [{ id: "rd-set", label: "Change the token", form: "rd" }, { id: "rd-clear", label: "Disconnect", confirm: { title: "Disconnect Real-Debrid?", body: "Lootnest forgets the token. Your account there isn't changed.", ok: "Disconnect" } }]
+        : [{ id: "rd-set", label: "Add your token", kind: "secondary", form: "rd" }] }] });
     sections.push({ title: "Refresh", rows: [{ id: "hours", title: "Look for new entries", select: { value: String(s.hours), options: INTERVALS.map((h) => ({ value: String(h), label: h ? `Every ${h === 1 ? "hour" : h + " hours"}` : "Only when I ask" })) } }] });
     return { sections, forms };
   }
@@ -655,6 +823,25 @@
       planRefresh();
       return {};
     },
+    // The token went to Lootnest with the form; this only checks it works.
+    "rd-set"(a) {
+      if (!(a.secrets || {}).realdebrid) return { error: "Paste the token." };
+      try {
+        const u = rdCall("GET", "/user");
+        state().rdUser = clean(u && u.username, 60);
+        save();
+        return { toast: state().rdUser ? `Real-Debrid is connected as ${state().rdUser}.` : "Real-Debrid is connected." };
+      } catch (e) {
+        lootnest.secrets.remove("realdebrid");
+        return { error: clean(String(e && e.message || e), 300) };
+      }
+    },
+    "rd-clear"() {
+      lootnest.secrets.remove("realdebrid");
+      delete state().rdUser;
+      save();
+      return { toast: "Real-Debrid is disconnected." };
+    },
     "match-yes"(a) { return answerMatch(a, "yes"); },
     "match-no"(a) { return answerMatch(a, "no"); },
     // Linking by hand: the words typed are looked for in every kept title.
@@ -712,11 +899,13 @@
     return {};
   }
 
-  lootnest.on("start", () => { state(); lootnest.schedule("refresh", 5000); lootnest.schedule("detect", 1500); });
+  lootnest.on("start", () => { state(); lootnest.schedule("refresh", 5000); lootnest.schedule("detect", 1500); if (Object.keys(prep()).length) lootnest.schedule("rd", 4000); });
   lootnest.on("refresh", refreshTick);
   lootnest.on("detect", detect);
   lootnest.on("library", () => lootnest.schedule("detect", 300));
   lootnest.on("offer", offerAction);
+  lootnest.on("update", updateState);
+  lootnest.on("rd", rdTick);
   lootnest.on("view", (a) => (a && a.page === "sources" ? sourcesView() : { sections: [] }));
   lootnest.on("action", (a) => {
     const f = a && Object.prototype.hasOwnProperty.call(ACTIONS, a.id) ? ACTIONS[a.id] : null;
