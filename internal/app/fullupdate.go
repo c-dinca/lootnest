@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -224,8 +223,6 @@ func activeJob(key string) *updJob {
 	return nil
 }
 
-var magnetRe = regexp.MustCompile(`^magnet:\?[A-Za-z0-9=&%.:+\-_~!*'(),;/@\[\]]+$`)
-
 type startReq struct {
 	Offer   string    `json:"offer"`
 	Game    string    `json:"game"`
@@ -238,21 +235,6 @@ type startReq struct {
 
 // pluginUpdate is lootnest.updates.run for the plugin id.
 func (a *App) pluginUpdate(id, op string, raw json.RawMessage) (any, error) {
-	if op == "magnet" {
-		// A magnet link the user asked to open goes to whatever app Windows
-		// has for magnet links. Nothing else is ever opened for a plugin.
-		var m struct {
-			URI string `json:"uri"`
-		}
-		if json.Unmarshal(raw, &m) != nil || !magnetRe.MatchString(m.URI) || len(m.URI) > 4096 {
-			return nil, errors.New("that isn't a magnet link")
-		}
-		if err := win.ShellOpen(m.URI); err != nil {
-			return nil, errors.New("Windows has no app for magnet links")
-		}
-		a.logf("Plugin %s: opened a magnet link in the user's torrent app", id)
-		return nil, nil
-	}
 	if op != "start" {
 		return nil, errors.New("Lootnest has no such update call")
 	}

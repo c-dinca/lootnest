@@ -1593,9 +1593,7 @@ These shipped recently, newest last:
   `recoverJobs` at start, `errUpdating`. `ps_pluginJobs`,
   `ps_pluginJobPlan`, `ps_pluginJobOp`, `ps_pluginJobLog`, event
   `pluginJobs`; `jobCard`, `jobSteps`, `ppJobHTML` in
-  79-pluginscript.js. `updates.run("magnet")` opens a magnet link in the
-  user's own app for them, the only thing ever opened for a plugin; no
-  BitTorrent client in Lootnest. `core/fullupdate_integration_test.go`
+  79-pluginscript.js. (`updates.run("magnet")` was removed after 2.11.2.) `core/fullupdate_integration_test.go`
   runs the whole way with a small inline script (`updateScript`).
   Harness `?plugins=1` (installed, not allowed), `?sources=1|empty|error`
   (a made-up plugin, Update notices, with a Settings page and offers)
@@ -1644,6 +1642,16 @@ These shipped recently, newest last:
   v2.11.2, `plugins/sources-updates`). Don't add it back, or anything
   that names a source format or helps find pirated copies, without the
   owner asking.
+- **Unreleased, the clean-up after the plugin** (the owner, 17 Nov
+  2026: "fa tot"): `updates.run("magnet")` is gone (a plugin's only
+  update call is "start", over http(s) with a SHA-256), the
+  `Steam\dodi` achievements path is gone (named after a repack group),
+  PRIVACY.md and PLUGINS.md no longer describe the plugin or a launcher's
+  download record, and the 2.11.0 and 2.11.1 release notes on GitHub are
+  set from CHANGELOG.md by `.github/workflows/release-notes.yml` (run
+  by hand, `tags`, `dry_run`), so they describe only script plugins. Git history still holds the
+  plugin; rewriting it is the owner's call (GitHub keeps pull request
+  refs, so only GitHub Support can purge them).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
