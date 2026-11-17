@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.12.0
 
 - **Plugins can no longer open magnet links.** A script plugin can ask Lootnest to download an update only over the web, with every file checked; Lootnest hands nothing to a torrent app. Achievements are no longer read from one folder named after a group that repackages games.
 - **Releases come with no plugins.** The Sources and updates plugin is no longer part of Lootnest: not in its releases and not in its code. Lootnest still runs a script plugin you install and allow yourself, and still shows the updates it offers, now under **From plugins** on the Updates page. A plugin no longer sees where a launcher downloaded a game from.

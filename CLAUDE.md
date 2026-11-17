@@ -188,7 +188,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.11.2, beta)
+## Where things stand (2.12.0, beta)
 
 These shipped recently, newest last:
 
@@ -1609,7 +1609,7 @@ These shipped recently, newest last:
   input miss this; click with the mouse at the switch's box. A script
   plugin's row has **Allow and turn on** (`plugin-allow`) until granted,
   and `pluginInstalled` asks (`allowPlugin`) right after install.
-- **Unreleased, updates that take only what changed** (the owner, 17
+- **2.12.0, updates that take only what changed** (the owner, 17
   Nov: a 100 GB game shouldn't need the whole download or 100 GB free).
   A job whose files are one .zip, .7z or .rar (parts too) at https
   addresses gets `Mode` "delta" (`deltaOK`, `runDelta` in
@@ -1633,7 +1633,7 @@ These shipped recently, newest last:
   (zip, solid and non-solid 7z fixtures, .rar written by a small RAR5
   writer, over httptest with a dropped connection, a crash at every
   move). Not seen on a PC: docs/TESTING.md 43, items 8 and 9.
-- **Unreleased, no plugins in Lootnest** (the owner, 17 Nov 2026, after
+- **2.12.0, no plugins in Lootnest** (the owner, 17 Nov 2026, after
   asking whether the sources plugin was legal: "scoate-l"). The Sources
   and updates plugin, its plan, its tests, `./build.sh plugins` and the
   release zips are gone; `core.HydraOrigins` and `ScriptGame.Origin`
