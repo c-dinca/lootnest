@@ -213,18 +213,8 @@ type ScriptGame struct {
 	// ExeVersion is the exe's own file version. For many games it's the
 	// engine's, so a script should only trust it when it fits what else is
 	// known.
-	ExeVersion string        `json:"exeVersion,omitempty"`
-	Size       int64         `json:"size,omitempty"`
-	Origin     *ScriptOrigin `json:"origin,omitempty"`
-}
-
-// ScriptOrigin is what the launcher that installed a game recorded about
-// its download (Hydra's, read from its own library).
-type ScriptOrigin struct {
-	URI    string `json:"uri,omitempty"`
-	Folder string `json:"folder,omitempty"`
-	Time   int64  `json:"time,omitempty"` // Unix milliseconds
-	Size   int64  `json:"size,omitempty"`
+	ExeVersion string `json:"exeVersion,omitempty"`
+	Size       int64  `json:"size,omitempty"`
 }
 
 // ScriptAction is a button a script names; Lootnest draws it.
