@@ -1079,6 +1079,11 @@
       if (a.form) return ppOpenForm(d.plugin, d.page, a.form, a.id, d.row);
       ppSend(d.plugin, d.page, { id: a.id, row: d.row });
     },
+    async "plugin-allow"(el) {
+      const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.id);
+      if (!p) return;
+      try { if (await allowPlugin(p)) await pluginsDone(`${p.name} is on. Its page is in Settings.`); } catch (e) { toast(errText(e), "error"); }
+    },
     async "plugin-rollback"(el) {
       try { const m = await api.rollbackPlugin(el.dataset.id); await pluginsDone(`${m.name} is back to ${m.version}.`); } catch (e) { toast(errText(e), "error"); }
     },

@@ -1627,6 +1627,14 @@ These shipped recently, newest last:
   to the artifact and every release. Still installed only by the user,
   off until allowed. `TestRepoPluginsInstallAsZips` installs every repo
   plugin from such a zip. Not signed: no plugin key is set up in CI.
+- **Unreleased, switches that take a click** (the owner, 17 Nov, on
+  2.11.1: "I see nothing asking me anything"). A `.switch` outside a
+  `<label>` (plugin rows, a plugin page's rows, mods) never got a mouse
+  click: its drawing (`span`) lay over the hidden input. `.switch input`
+  has `z-index: 1` now. Harness checks that call `el.click()` on the
+  input miss this; click with the mouse at the switch's box. A script
+  plugin's row has **Allow and turn on** (`plugin-allow`) until granted,
+  and `pluginInstalled` asks (`allowPlugin`) right after install.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
