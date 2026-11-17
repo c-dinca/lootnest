@@ -76,7 +76,8 @@ A plugin that comes with every release as `Lootnest-plugin-sources-updates.zip`,
 
 - **Sources** in Settings: add, edit, turn off or remove a source, and see when each was last read and what went wrong.
 - **Updates**, under From your sources: games you have, that no store keeps up to date, for which a source lists something newer. **Update** downloads it beside the game, never over it. A magnet link needs your own Real-Debrid token (also under Sources), or opens in your torrent app.
-- When the download is the whole game, Lootnest shows what it keeps, copies your saves, and replaces the folder. The old folder stays until you've played or for 14 days, and **Roll back** puts it back.
+- When the update is one archive (.zip, .7z or .rar) at an https address, Lootnest reads it where it lies and takes only the files that differ from the game's, so you need room for what changed, not for the whole game twice. It shows how many files change and are new, copies your saves, then moves the new files in; the ones they replace go to `<folder>.lootnest-old` and **Roll back** puts them back.
+- Otherwise, when the download is the whole game, Lootnest shows what it keeps, copies your saves, and replaces the folder. The old folder stays until you've played or for 14 days, and **Roll back** puts it back.
 
 ## Installing without a window
 

@@ -129,6 +129,17 @@ As planned below, with these names and differences.
 - In the script: `startUpdate`, `begin`, `updateState`, Real-Debrid (`rdCall`, `rdTorrent`, `rdFiles`, `rdStart`, `rdTick`).
 - Different from the plan: the save copy isn't in a store of its own; registry saves aren't exported (the manifest's registry entries are still unread, as before); the free-space check is the listed size times 2.2 beside the game only; the days an old folder is kept (14) and the save copies kept (5) are constants, not settings yet.
 
+### Only what changed (after 2.11.2)
+
+The owner (17 Nov 2026): a 100 GB game shouldn't need 100 GB free, or a whole download, for an update. So a job whose files are one archive at https addresses is read in place (`core/delta.go`, `core/remotefile.go`, `app/deltaupdate.go`, `Mode` "delta"):
+
+- `RemoteFile` reads a file over https by Range requests in 4 MB blocks (a few kept), as an `io.ReaderAt`; `RemoteVolumes` is an `fs.FS` of a .rar's parts, each one stream that picks up where a dropped connection stopped. A site that won't send parts (`ErrNoRanges`) gets the whole download first (`Mode` "delta-local"), and the archive is deleted once read.
+- `StageDelta` lists the archive, finds its root (`rootFromNames`: the game's exe, else one wrapping folder), compares each file's CRC-32 and size with the game's file, and stages only the ones that differ into `<folder>.lootnest-new/files`, with `plan.json`. A .zip or non-solid .7z fetches only those files' bytes; a .rar or solid .7z is streamed in order, the same files read past, never saved. Room is checked as the changed size is known. Every staged file's CRC is checked; a feed's SHA-256 of the whole archive can't be, so it isn't over https (plain http still downloads whole, to check it).
+- `Full`: the archive has the game's exe, so it's the whole game, and files it doesn't have (`DeltaRemovals`, minus saves inside the folder and what the user keeps) move aside. Otherwise it's a patch and nothing else is touched.
+- `ApplyDelta` moves files on the game's drive: each old file to `<folder>.lootnest-old/<rel>`, the new one in; a record (`delta.json`) is saved before every move, so `RevertDelta` (Roll back, a failure, or a start after a crash) puts each back, and can run twice. Saves are copied first, as for a full build.
+- The page: a "fetch" phase (Compare, Get what changed, Copy saves, Replace) with files done of all, bytes downloaded and speed, Pause, Resume and Cancel; the review dialog says replaced, new, already the same and moved aside. Harness `?sources=1&srcupd=compare|fetch|fetchpaused|deltaready|deltakept`.
+- Limits: an installer needs its whole download; a .rar in parts resumes from its first part after a pause or a restart (what was staged is kept and not fetched again); a solid .7z is read whole, though not saved.
+
 ### Phase 3: downloads (as planned)
 
 - Lootnest: a queue over the existing `downloader` (one active, the rest waiting; pause and resume on the `.part` and Range; cancel; speed, ETA; kept in `downloads.json`). Free space checked first (the listed size times 2.2 on the staging drive) and refused with the numbers when short. Always into a staging folder: `<game folder>.lootnest-new` beside the game when that drive has room, else under Lootnest's data folder. `http:` only with a `sha256`.

@@ -1110,6 +1110,7 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .pp-steps li.is-now { color: var(--fg-1); font-weight: 600; }
 .pp-steps li.is-now::before { background: var(--fg-1); }
 .upd-meta.pp-job-text { white-space: normal; color: var(--fg-2); align-items: center; }
+.upd-meta.pp-job-text > span:last-child { flex: 0 1 auto; min-width: 0; }
 .upd-meta.pp-job-text.is-bad { color: var(--bad); }
 .upd-meta.pp-job-text.is-warn { color: var(--warning); }
 .pp-bar { width: min(100%, calc(var(--space-12) * 6)); height: var(--space-1); border: 0; border-radius: var(--radius-round); background: var(--bg-active); accent-color: var(--lamp); overflow: hidden; }

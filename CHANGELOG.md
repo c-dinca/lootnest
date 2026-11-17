@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **An update from your sources takes only what changed.** When an update is one archive (.zip, .7z or .rar, in one part or several) at an https address, Lootnest no longer downloads the whole thing and unpacks a second copy of the game. It reads the archive where it lies and compares each file with the game's: files that are the same aren't downloaded at all from a .zip or a .7z, and from a .rar or a solid .7z they pass by without being saved. Only the changed and new files are kept, beside the game, so a 100 GB game with a 3 GB update needs about 3 GB free (plus a margin), not 200. Before anything changes, the panel says how many files are replaced, how many are new, how many are already the same, and what's only in your folder; your saves are copied first. Applying moves files on the game's drive, so it's quick and needs no more room: every file replaced or no longer in the new version goes to `<folder>.lootnest-old`, kept until you've played or for 14 days, and **Roll back** puts each one back. If Lootnest closes in the middle, the game goes back as it was at the next start. Pause keeps what's been taken. A site that won't send parts of a file gets the whole download first, as before, and the archive is deleted once it's read. An installer still needs its whole download.
+
 ## 2.11.2
 
 - **Plugin and mod switches work with the mouse.** The switch beside a plugin, and beside a mod in a game's Mods tab, didn't react to a click (only to the keyboard). A plugin with a script also shows **Allow and turn on** until it's allowed, and asks right after it's installed.
