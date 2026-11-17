@@ -36,7 +36,7 @@ What makes it different, and the direction to keep pushing:
   ships no sources and looks for none, but a plugin the user installs may
   read download sources the user adds and update games from them; the
   plugin, the sources and the downloads are the user's doing (see
-  Unreleased, script plugins);
+  2.11.0, script plugins);
 - cloud saves through the user's own OneDrive or Google Drive folder, with
   versions, encryption and per-profile sync;
 - nothing goes online unless the user turns it on (README, Privacy table).
@@ -185,7 +185,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.10.4, beta)
+## Where things stand (2.11.0, beta)
 
 These shipped recently, newest last:
 
@@ -1527,7 +1527,7 @@ These shipped recently, newest last:
   unmodified LG takes apps from outside its store only in Developer
   Mode.
 
-- **Unreleased, Stremio with a TV interface** (the owner, 16 Nov,
+- **2.11.0, Stremio with a TV interface** (the owner, 16 Nov,
   after 2.10.4: "can't we make Stremio with the TV interface, and the
   app?"). One Stremio tile: `core.WebApp` `stremio` (web.stremio.com,
   `padSpatial`) in Lootnest's own window, with the installed program's
@@ -1544,7 +1544,7 @@ These shipped recently, newest last:
   Tried against the real site in Chromium with a stubbed pad; the
   server start and playback in WebView2 aren't seen: docs/TESTING.md 42.
 
-- **Unreleased, script plugins and Sources and updates** (the owner,
+- **2.11.0, script plugins and Sources and updates** (the owner,
   17 Nov 2026, answering `docs/plugins/sources-updates.md`: "we change
   what a plugin is"; Lootnest provides no sources, it is where the user's
   can be used; downloads from sources, and Real-Debrid as Hydra has it;
@@ -1617,7 +1617,10 @@ These shipped recently, newest last:
   torrent app, `updates.run("magnet")`, the only thing ever opened for a
   plugin). No BitTorrent client in Lootnest (the owner hasn't asked for
   one). Harness `?sources=1&srcupd=download|paused|ready|hand|apply|
-  kept|failed`. docs/TESTING.md 43.
+  kept|failed`. docs/TESTING.md 43. Released as 2.11.0 at the owner's
+  word (17 Nov 2026), unseen on a PC. The plugin isn't in the release's
+  files: it's the repository's `plugins/sources-updates` folder, zipped
+  by whoever wants it; how it reaches users is the owner's to decide.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
