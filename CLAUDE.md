@@ -185,7 +185,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.11.0, beta)
+## Where things stand (2.11.1, beta)
 
 These shipped recently, newest last:
 
@@ -1618,9 +1618,15 @@ These shipped recently, newest last:
   plugin). No BitTorrent client in Lootnest (the owner hasn't asked for
   one). Harness `?sources=1&srcupd=download|paused|ready|hand|apply|
   kept|failed`. docs/TESTING.md 43. Released as 2.11.0 at the owner's
-  word (17 Nov 2026), unseen on a PC. The plugin isn't in the release's
-  files: it's the repository's `plugins/sources-updates` folder, zipped
-  by whoever wants it; how it reaches users is the owner's to decide.
+  word (17 Nov 2026), unseen on a PC.
+- **2.11.1, plugins in the release** (the owner, 17 Nov: "fa release cu
+  tot", a release with everything). `./build.sh plugins` packs each
+  folder in `plugins/` as `dist/Lootnest-plugin-<id>.zip` (files at the
+  top, sorted, fixed times; the folder's name must be the plugin's id),
+  `all` includes it, and build.yml attaches `dist/Lootnest-plugin-*.zip`
+  to the artifact and every release. Still installed only by the user,
+  off until allowed. `TestRepoPluginsInstallAsZips` installs every repo
+  plugin from such a zip. Not signed: no plugin key is set up in CI.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

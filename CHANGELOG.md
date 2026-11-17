@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.11.1
+
+- **The Sources and updates plugin comes with the release.** Every release now has `Lootnest-plugin-sources-updates.zip` beside the installer. Download it and choose it in Settings, Plugins, **Install from file**; it stays off until you allow what it asks. Lootnest still comes with no sources.
+
 ## 2.11.0
 
 Plugins can run a script, once you allow what it asks, and the first one, Sources and updates, reads download sources you add yourself. Lootnest comes with no sources.
