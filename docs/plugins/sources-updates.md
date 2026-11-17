@@ -1,6 +1,6 @@
 # Sources and updates: findings and plan
 
-Status: being built, one phase per commit on this branch. Done so far: script plugins and phase 1 (sources and feeds).
+Status: being built, one phase per commit on this branch. Done so far: script plugins, phase 1 (sources and feeds) and phase 2 (linking, Hydra's records, detection).
 
 The request: the user adds their own feeds (JSON files listing downloads), Lootnest matches them to games already in the Library (games Hydra installed above all), says when a feed lists a newer version, downloads it and replaces the game's folder with the saves kept. Lootnest ships no feed, suggests none, and does nothing about DRM.
 
@@ -108,9 +108,11 @@ Lootnest's, in its data folder:
 - The Sources page in Settings: rows with the name, address, a lamp, entries, format, last refresh, what was left out, the error; Add, Edit, Remove, Refresh, a switch. The first Add shows the notice once.
 - Tests: `core/pluginscript_test.go` (install rules, permissions, limits, keys, this PC out of reach), `core/sourcesplugin_test.go` (the real plugin against `httptest`: every bad shape, conditional requests, a feed that breaks).
 
-### Phase 2: linking, Hydra, detection
+### Phase 2: linking, Hydra, detection. Done.
 
-- `HydraDownloads(dbDir, tmp)` beside `HydraGames`, read-only; `ScriptGame.Origin` carries a game's record to the script. No import step is needed for the games themselves: they are in the Library already.
+Built as planned below, with these names: `core.HydraOrigins`, `core.LocalVersion` (the folder's name, else a version file at its top), `win.FileVersion`, `ScriptGame.Origin`, `.Version`, `.ExeVersion`; in the script `normTitle`, `titleScore` (0.9 links, 0.6 asks), `titleVersion`, `compareVer`, `installed`, `isNewer`, `detect`, `publish`, `offerAction`. A game with no version anywhere counts entries uploaded after the plugin first saw it. The exe's version is used only when it continues the baseline's numbering, since many exes carry their engine's version. Offers show on the Updates page (`offersSection` in `79-pluginscript.js`) and on the game's page (`offerBanner`).
+
+- `HydraOrigins(dbDir, tmp, containers)` beside `HydraGames`, read-only; `ScriptGame.Origin` carries a game's record to the script. No import step is needed for the games themselves: they are in the Library already.
 - In the script. Matching an entry to a game: Steam id when the feed has one; else `normTitle` (lowercase, versions, build numbers, `+ DLC`, edition words, bracketed tags and punctuation dropped, roman numerals to digits) scored by token overlap with a penalty for leftover number tokens (so "2" never matches "3"); 0.9 and up links by itself, 0.6 to 0.9 asks, under that nothing. Answers are kept. A game can be linked to an entry by hand from the plugin's page.
 - Versions: `titleVersion(title)` gives semver, build and date by a chain: `vA.B.C` and `A.B.C.D`, `Build 12345` / `b12345`, a date in the title, and "Update vX to vY" (then the entry is a patch). Same kind compares; otherwise `uploadDate` against the baseline's date; otherwise "can't tell", shown as a possible update.
 - The installed version: the folder's name (`FolderVersion`) and the exe's file version, preferred over the stored baseline when they parse.

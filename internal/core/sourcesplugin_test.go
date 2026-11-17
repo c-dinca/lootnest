@@ -15,9 +15,16 @@ import (
 // The Sources and updates plugin (plugins/sources-updates), run by the
 // real host against feeds served on this PC.
 
-func sourcesPlugin(t *testing.T, svc ScriptServices) (*ScriptHost, string) {
+// seed is what the plugin already keeps when it starts: storage key ->
+// JSON.
+func sourcesPlugin(t *testing.T, svc ScriptServices, seed ...map[string]string) (*ScriptHost, string) {
 	t.Helper()
 	data := t.TempDir()
+	for _, m := range seed {
+		for k, v := range m {
+			write(t, filepath.Join(PluginDataDir(data, "sources-updates"), k+".json"), v)
+		}
+	}
 	src, err := filepath.Abs(filepath.Join("..", "..", "plugins", "sources-updates"))
 	if err != nil {
 		t.Fatal(err)
@@ -238,12 +245,18 @@ func TestSourcesPluginSources(t *testing.T) {
 		_ = json.Unmarshal(out, &r)
 		return r
 	}
-	wait := func() {
+	// waitFor waits until the plugin's page, drawn again each time it says
+	// it changed, shows what's expected.
+	waitFor := func(what string, ok func() bool) {
 		t.Helper()
-		select {
-		case <-changed:
-		case <-time.After(10 * time.Second):
-			t.Fatal("the plugin never said its page changed")
+		deadline := time.After(10 * time.Second)
+		for !ok() {
+			select {
+			case <-changed:
+			case <-time.After(50 * time.Millisecond):
+			case <-deadline:
+				t.Fatalf("never happened: %s", what)
+			}
 		}
 	}
 
@@ -285,7 +298,7 @@ func TestSourcesPluginSources(t *testing.T) {
 	if r := act(map[string]any{"id": "add", "values": map[string]any{"url": srv.URL + "/feed.json"}}); !strings.Contains(r.Error, "already") {
 		t.Errorf("twice: %+v", r)
 	}
-	wait()
+	waitFor("the first read", func() bool { r := view().Sections[0].Rows; return len(r) == 1 && len(r[0].Tags) == 2 })
 	row := view().Sections[0].Rows[0]
 	if row.Title != "Fixture feed" || row.Error != "" || len(row.Tags) != 2 || row.Tags[0] != "1 download" || row.Tags[1] != "Hydra-compatible" || !strings.Contains(row.Warn, "isn't https") {
 		t.Fatalf("row: %+v", row)
@@ -296,10 +309,10 @@ func TestSourcesPluginSources(t *testing.T) {
 
 	// Refresh sends the ETag; an unchanged feed isn't read again.
 	act(map[string]any{"id": "refresh", "row": row.ID})
-	wait()
+	waitFor("a conditional request", func() bool { mu.Lock(); defer mu.Unlock(); return conditional == 1 })
 	mu.Lock()
-	if conditional != 1 {
-		t.Errorf("conditional requests: %d of %d", conditional, hits)
+	if hits != 2 {
+		t.Errorf("requests: %d, %d conditional", hits, conditional)
 	}
 	// A feed that breaks keeps the last good copy and says why.
 	feed = `{"downloads": []}`
@@ -307,7 +320,7 @@ func TestSourcesPluginSources(t *testing.T) {
 	act(map[string]any{"id": "edit", "row": row.ID, "values": map[string]any{"url": srv.URL + "/feed.json", "name": "Renamed"}})
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{"downloads": []}`) })
 	act(map[string]any{"id": "refresh", "row": row.ID})
-	wait()
+	waitFor("the broken refresh", func() bool { return view().Sections[0].Rows[0].Error != "" })
 	row = view().Sections[0].Rows[0]
 	if row.Title != "Renamed" || !strings.Contains(row.Error, "lists no downloads") || row.Lamp != "bad" || row.Tags[0] != "1 download" {
 		t.Fatalf("after a broken refresh: %+v", row)
@@ -333,4 +346,374 @@ func TestSourcesPluginSources(t *testing.T) {
 	if r := act(map[string]any{"id": "nope"}); r.Error == "" {
 		t.Error("an unknown action did something")
 	}
+}
+
+func TestSourcesPluginTitles(t *testing.T) {
+	h, _ := sourcesPlugin(t, ScriptServices{})
+	for title, want := range map[string]string{
+		"Starfall Tactics": "starfall tactics",
+		"STARFALL TACTICS II: Gold Edition v1.2.3 + 5 DLCs [MULTi12]":  "starfall tactics 2",
+		"Starfall Tactics 2 (v1.0.4 + Bonus OST, MULTi8) [Some Group]": "starfall tactics 2",
+		"The Starfall Tactics - Deluxe Edition Build 12345":            "starfall tactics",
+		"Starfall.Tactics.v1.2.0":                                      "starfall tactics",
+		"Starfall Tactics: Game of the Year Edition":                   "starfall tactics",
+		"Night's Edge & Dawn":                                          "nights edge dawn",
+		"Caf\u00e9 Ren\u00e9e":                                         "cafe renee",
+		"Legend IV 1.0.2.1":                                            "legend 4",
+		"Moonbase Update v1.0 to v1.1":                                 "moonbase",
+		"Moonbase 2026-10-01":                                          "moonbase",
+		"Echo Remastered":                                              "echo remastered",
+		"":                                                             "",
+	} {
+		var got []string
+		if pluginTest(t, h, map[string]any{"what": "norm", "title": title}, &got); strings.Join(got, " ") != want {
+			t.Errorf("norm %q: %q, want %q", title, strings.Join(got, " "), want)
+		}
+	}
+	for _, c := range []struct {
+		a, b     string
+		min, max float64
+	}{
+		{"Starfall Tactics", "Starfall Tactics v1.2.3 + DLC", 1, 1},
+		{"Starfall Tactics II", "starfall tactics 2 Deluxe Edition", 1, 1},
+		{"Starfall Tactics 2", "Starfall Tactics 3", 0, 0.3},
+		{"Starfall Tactics", "Starfall Tactics 2", 0, 0.3},
+		{"Starfall Tactics Online Arena", "Starfall Tactics Arena", 0.6, 0.89},
+		{"Starfall", "Starfall Tactics", 0, 0.59},
+		{"Starfall Tactics", "Moonbase", 0, 0},
+		{"", "Moonbase", 0, 0},
+	} {
+		var got float64
+		if pluginTest(t, h, map[string]any{"what": "score", "a": c.a, "b": c.b}, &got); got < c.min || got > c.max {
+			t.Errorf("score %q against %q: %.2f, want %.2f to %.2f", c.a, c.b, got, c.min, c.max)
+		}
+	}
+}
+
+type titleVer struct {
+	Sem   string `json:"sem"`
+	From  string `json:"from"`
+	Build int    `json:"build"`
+	Date  int64  `json:"date"`
+}
+
+func TestSourcesPluginVersions(t *testing.T) {
+	h, _ := sourcesPlugin(t, ScriptServices{})
+	day := func(y, m, d int) int64 { return time.Date(y, time.Month(m), d, 0, 0, 0, 0, time.UTC).UnixMilli() }
+	for title, want := range map[string]titleVer{
+		"Starfall Tactics v1.2.3 + DLC":       {Sem: "1.2.3"},
+		"Starfall Tactics V 1.2":              {Sem: "1.2"},
+		"Starfall Tactics (v1.0.4b, MULTi8)":  {Sem: "1.0.4b"},
+		"Starfall Tactics 1.2.3.4":            {Sem: "1.2.3.4"},
+		"Starfall.Tactics.v1.2.0-GROUP":       {Sem: "1.2.0"},
+		"Starfall Tactics Build 16251443":     {Build: 16251443},
+		"Starfall Tactics v1.4 Build 9001":    {Sem: "1.4", Build: 9001},
+		"Starfall Tactics b1234567":           {Build: 1234567},
+		"Starfall Tactics 2026-10-01":         {Date: day(2026, 10, 1)},
+		"Starfall Tactics (01.10.2026)":       {Date: day(2026, 10, 1)},
+		"Starfall Tactics Update v1.0 to 1.1": {Sem: "1.1", From: "1.0"},
+		"Starfall Tactics Update v1.1 -> 1.0": {Sem: "1.1"}, // not a step forward, so not a patch
+		"Starfall Tactics 2":                  {},
+		"Starfall Tactics 2.5":                {},
+		"Area 51":                             {},
+		"Vault 13 build":                      {},
+		"":                                    {},
+	} {
+		var got titleVer
+		if pluginTest(t, h, map[string]any{"what": "version", "title": title}, &got); got != want {
+			t.Errorf("version %q: %+v, want %+v", title, got, want)
+		}
+	}
+	one, zero, minus := 1, 0, -1
+	for _, c := range []struct {
+		a, b string
+		want *int
+	}{
+		{"G v1.0.10", "G v1.0.9", &one},
+		{"G v1.2", "G v1.2.0", &zero},
+		{"G v1.2a", "G v1.2b", &minus},
+		{"G v2", "G v1.9", nil}, // "v2" alone isn't read as a version
+		{"G Build 200", "G Build 1000", &minus},
+		{"G v1.1 Build 5000", "G v1.2 Build 4000", &minus}, // version numbers before builds
+		{"G 2026-10-02", "G 2026-10-01", &one},
+		{"G v1.0", "G Build 500", nil},
+		{"G v1.0", "G", nil},
+	} {
+		var got *int
+		pluginTest(t, h, map[string]any{"what": "compare", "a": c.a, "b": c.b}, &got)
+		if (got == nil) != (c.want == nil) || (got != nil && *got != *c.want) {
+			t.Errorf("compare %q with %q: %v, want %v", c.a, c.b, got, c.want)
+		}
+	}
+
+	// What's installed: this PC's own reading before the stored baseline, and
+	// the exe's version only when it continues the baseline's numbering.
+	type inst struct {
+		V    titleVer `json:"v"`
+		From string   `json:"from"`
+	}
+	base := map[string]any{"base": map[string]any{"title": "G v1.2.0", "date": 5, "from": "hydra"}}
+	for name, c := range map[string]struct {
+		game map[string]any
+		link map[string]any
+		want string
+		from string
+	}{
+		"the baseline":            {map[string]any{}, base, "1.2.0", "hydra"},
+		"the folder's name":       {map[string]any{"version": "1.3.0"}, base, "1.3.0", "pc"},
+		"an exe that continues":   {map[string]any{"exeVersion": "1.4.1"}, base, "1.4.1", "exe"},
+		"an engine's exe version": {map[string]any{"exeVersion": "2021.3.15"}, base, "1.2.0", "hydra"},
+		"an older exe version":    {map[string]any{"exeVersion": "1.0.0"}, base, "1.2.0", "hydra"},
+		"an exe with no baseline": {map[string]any{"exeVersion": "1.4.1"}, map[string]any{}, "", ""},
+	} {
+		var got inst
+		if pluginTest(t, h, map[string]any{"what": "installed", "game": c.game, "link": c.link}, &got); got.V.Sem != c.want || got.From != c.from {
+			t.Errorf("%s: %+v", name, got)
+		}
+	}
+}
+
+type detected struct {
+	Offers []struct {
+		ID, Game, Title, Version, Have string
+	} `json:"offers"`
+	Pending []struct {
+		Game, Name, K, Title, Src string
+	} `json:"pending"`
+}
+
+func TestSourcesPluginDetect(t *testing.T) {
+	const hash = "0123456789abcdef0123456789abcdef01234567"
+	entry := func(title, uri, date string) string {
+		return fmt.Sprintf(`{"title": %q, "uris": [%q], "uploadDate": %q, "fileSize": "2 GB"}`, title, uri, date)
+	}
+	// The plugin first saw these games a while ago; an entry uploaded
+	// yesterday is newer than that, one from January isn't.
+	recent := time.Now().Add(-24 * time.Hour).UTC().Format(time.RFC3339)
+	longAgo := time.Now().Add(-60 * 24 * time.Hour).UnixMilli()
+	feeds := map[string]string{
+		"/a.json": `{"name": "Feed A", "downloads": [` + strings.Join([]string{
+			entry("Night Tale v1.2.0", "magnet:?xt=urn:btih:"+hash, "2026-06-01T00:00:00Z"),
+			entry("Night Tale v1.3.0 + DLC", "https://files.example.com/nt130.zip", "2026-09-01T00:00:00Z"),
+			entry("Night Tale v1.3.1 + DLC", "https://files.example.com/nt131.zip", "2026-10-01T00:00:00Z"),
+			entry("Night Tale 2 v1.0", "https://files.example.com/nt2.zip", "2026-10-05T00:00:00Z"),
+			entry("Moonbase Build 500", "https://files.example.com/mb500.zip", "2026-10-01T00:00:00Z"),
+			entry("Moonbase Build 400", "https://files.example.com/mb400.zip", "2026-08-01T00:00:00Z"),
+			entry("Harbor Lights", "https://files.example.com/hl-old.zip", "2026-01-01T00:00:00Z"),
+			entry("Harbor Lights", "https://files.example.com/hl-new.zip", recent),
+			entry("Echo Valley Online Arena", "https://files.example.com/ev.zip", recent),
+			entry("Quiet Road Update v1.0 to v1.1", "https://files.example.com/qr-patch.zip", "2026-10-01T00:00:00Z"),
+			entry("Quiet Road Update v1.4 to v1.5", "https://files.example.com/qr-patch2.zip", "2026-10-02T00:00:00Z"),
+			entry("Zeta Protocol Reloaded Collection", "https://files.example.com/zp.zip", recent),
+			entry("Store Game v9.9", "https://files.example.com/sg.zip", recent),
+		}, ",") + `]}`,
+		"/b.json": `{"lootnest": 1, "name": "Feed B", "downloads": [
+			{"title": "NT (the new build)", "uris": ["https://b.example.com/nt.zip"], "steamAppId": 777, "version": "1.3.0", "uploadDate": "2026-09-02T00:00:00Z"}]}`,
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f, ok := feeds[r.URL.Path]; ok {
+			fmt.Fprint(w, f)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	seen := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC).UnixMilli()
+	games := []ScriptGame{
+		{Key: "dir:c:\\games\\night tale", Name: "Night Tale", Source: "hydra", SteamID: 777, Folder: "Night Tale",
+			Origin: &ScriptOrigin{URI: "magnet:?xt=urn:btih:" + strings.ToUpper(hash) + "&dn=x", Folder: "Night.Tale", Time: seen}},
+		{Key: "dir:c:\\games\\moonbase", Name: "Moonbase", Source: "folder", Folder: "Moonbase", Version: "build 450"},
+		{Key: "dir:c:\\games\\harbor", Name: "Harbor Lights", Source: "folder", Folder: "Harbor"},
+		{Key: "dir:c:\\games\\echo", Name: "Echo Valley Arena", Source: "folder", Folder: "Echo"},
+		{Key: "dir:c:\\games\\quiet", Name: "Quiet Road", Source: "folder", Folder: "Quiet Road v1.0", Version: "1.0"},
+		{Key: "dir:c:\\games\\zeta", Name: "ZP", Source: "added", Folder: "zp"},
+		{Key: "steam:42", Name: "Store Game", Source: "steam", Folder: "Store Game"},
+	}
+	var mu sync.Mutex
+	var offers []ScriptOffer
+	var said []string
+	h, _ := sourcesPlugin(t, ScriptServices{
+		Games:  func() []ScriptGame { return games },
+		Offers: func(l []ScriptOffer) { mu.Lock(); offers = l; mu.Unlock() },
+		Notify: func(s string) { mu.Lock(); said = append(said, s); mu.Unlock() },
+	}, map[string]string{"links": fmt.Sprintf(`{"dir:c:\\games\\harbor": {"seen": %d}, "dir:c:\\games\\echo": {"seen": %d}, "dir:c:\\games\\zeta": {"seen": %d}}`, longAgo, longAgo, longAgo)})
+	act := func(arg map[string]any) actResult {
+		var r actResult
+		out, err := h.Call("action", arg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = json.Unmarshal(out, &r)
+		return r
+	}
+	act(map[string]any{"id": "notice"})
+	for _, f := range []string{"/a.json", "/b.json"} {
+		if r := act(map[string]any{"id": "add", "values": map[string]any{"url": srv.URL + f}}); r.Error != "" {
+			t.Fatal(r.Error)
+		}
+	}
+	// Both feeds are read before looking.
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		var v pluginView
+		out, _ := h.Call("view", map[string]any{"page": "sources"})
+		_ = json.Unmarshal(out, &v)
+		if rows := v.Sections[0].Rows; len(rows) == 2 && len(rows[0].Tags) == 2 && len(rows[1].Tags) == 2 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the feeds were never read")
+		}
+		time.Sleep(30 * time.Millisecond)
+	}
+	detect := func() detected {
+		var d detected
+		pluginTest(t, h, map[string]any{"what": "detect"}, &d)
+		return d
+	}
+	d := detect()
+	byGame := map[string][]string{}
+	for _, o := range d.Offers {
+		byGame[o.Game] = append(byGame[o.Game], o.Title+" | "+o.Version+" | have "+o.Have)
+	}
+	// Night Tale: Hydra's record is the 1.2.0 entry (same info hash), so
+	// 1.3.1 is newer in Feed A, and Feed B's entry matches by Steam id.
+	if got := byGame["dir:c:\\games\\night tale"]; len(got) != 2 || got[0] != "Night Tale v1.3.1 + DLC | 1.3.1 | have 1.2.0" || got[1] != "NT (the new build) | 1.3.0 | have 1.2.0" {
+		t.Errorf("Night Tale: %q", got)
+	}
+	// Moonbase: build 450 on this PC, so Build 500 and not Build 400.
+	if got := byGame["dir:c:\\games\\moonbase"]; len(got) != 1 || got[0] != "Moonbase Build 500 | Build 500 | have Build 450" {
+		t.Errorf("Moonbase: %q", got)
+	}
+	// Harbor Lights: no versions anywhere, so only the entry uploaded after
+	// the game was first seen.
+	if got := byGame["dir:c:\\games\\harbor"]; len(got) != 1 || !strings.HasPrefix(got[0], "Harbor Lights |  |") {
+		t.Errorf("Harbor Lights: %q", got)
+	}
+	// Quiet Road 1.0: the patch from 1.0, not the one from 1.4.
+	if got := byGame["dir:c:\\games\\quiet"]; len(got) != 1 || got[0] != "Quiet Road Update v1.0 to v1.1 | 1.1 | have 1.0" {
+		t.Errorf("Quiet Road: %q", got)
+	}
+	// A close name is asked about, never linked by itself; a store's game
+	// and a name that doesn't match get nothing.
+	if len(byGame["dir:c:\\games\\echo"]) != 0 || len(byGame["steam:42"]) != 0 || len(byGame["dir:c:\\games\\zeta"]) != 0 {
+		t.Errorf("offers that shouldn't be: %+v", byGame)
+	}
+	if len(d.Pending) != 1 || d.Pending[0].Name != "Echo Valley Arena" || d.Pending[0].Title != "Echo Valley Online Arena" {
+		t.Fatalf("pending: %+v", d.Pending)
+	}
+	mu.Lock()
+	if len(offers) != len(d.Offers) || len(said) != 1 || !strings.Contains(said[0], "updates for your games") {
+		t.Errorf("told Lootnest %d offers, said %q", len(offers), said)
+	}
+	for _, o := range offers {
+		if len(o.Actions) != 3 || o.Source == "" || o.Size != 2<<30 && o.Game != "dir:c:\\games\\night tale" {
+			t.Errorf("offer: %+v", o)
+		}
+	}
+	mu.Unlock()
+
+	// Yes to the close name: its entry is offered from then on.
+	if r := act(map[string]any{"id": "match-yes", "row": "m0"}); r.Error != "" {
+		t.Fatal(r.Error)
+	}
+	d = detect()
+	if len(d.Pending) != 0 {
+		t.Errorf("still pending: %+v", d.Pending)
+	}
+	found := false
+	for _, o := range d.Offers {
+		found = found || o.Game == "dir:c:\\games\\echo"
+	}
+	if !found {
+		t.Error("a confirmed match wasn't offered")
+	}
+
+	// Linking by hand, for a name too different to match.
+	if r := act(map[string]any{"id": "link", "values": map[string]any{"game": "dir:c:\\games\\zeta", "words": "nothing like it"}}); r.Error == "" {
+		t.Error("linked to words no source has")
+	}
+	if r := act(map[string]any{"id": "link", "values": map[string]any{"game": "dir:c:\\games\\zeta", "words": "zeta protocol"}}); r.Form != "pick" {
+		t.Fatalf("link: %+v", r)
+	}
+	if r := act(map[string]any{"id": "pick", "values": map[string]any{"k": "zeta protocol reloaded collection"}}); r.Error != "" {
+		t.Fatal(r.Error)
+	}
+	d = detect()
+	found = false
+	for _, o := range d.Offers {
+		found = found || o.Game == "dir:c:\\games\\zeta"
+	}
+	if !found {
+		t.Error("a game linked by hand wasn't offered")
+	}
+
+	// Ignore this version: 1.3.1 goes and stays gone; the one before it in
+	// the same source shows instead. Ignore the source: nothing from it.
+	offer := func(id, action string) actResult {
+		var r actResult
+		out, err := h.Call("offer", map[string]any{"id": id, "action": action})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = json.Unmarshal(out, &r)
+		return r
+	}
+	var nt131, ntB string
+	for _, o := range d.Offers {
+		if o.Title == "Night Tale v1.3.1 + DLC" {
+			nt131 = o.ID
+		}
+		if o.Title == "NT (the new build)" {
+			ntB = o.ID
+		}
+	}
+	if r := offer(nt131, "ignore-version"); r.Error != "" || r.Toast == "" {
+		t.Fatalf("ignore-version: %+v", r)
+	}
+	d = detect()
+	var titles []string
+	for _, o := range d.Offers {
+		if o.Game == "dir:c:\\games\\night tale" {
+			titles = append(titles, o.Title)
+		}
+	}
+	if strings.Join(titles, ",") != "Night Tale v1.3.0 + DLC,NT (the new build)" {
+		t.Errorf("after ignoring 1.3.1: %q", titles)
+	}
+	if r := offer(ntB, "ignore-source"); r.Error != "" {
+		t.Fatalf("ignore-source: %+v", r)
+	}
+	d = detect()
+	for _, o := range d.Offers {
+		if o.Title == "NT (the new build)" {
+			t.Error("an ignored source still offers")
+		}
+	}
+	if r := offer("nope", "update"); r.Error == "" {
+		t.Error("an offer that isn't there did something")
+	}
+	// Stop ignoring brings both back.
+	act(map[string]any{"id": "unignore", "row": "g:dir:c:\\games\\night tale"})
+	d = detect()
+	n := 0
+	for _, o := range d.Offers {
+		if o.Game == "dir:c:\\games\\night tale" {
+			n++
+		}
+	}
+	if n != 2 {
+		t.Errorf("after Stop ignoring: %d offers for Night Tale", n)
+	}
+	// Told once: looking again says nothing new.
+	mu.Lock()
+	before := len(said)
+	mu.Unlock()
+	detect()
+	mu.Lock()
+	if len(said) != before {
+		t.Errorf("told again: %q", said)
+	}
+	mu.Unlock()
 }

@@ -84,6 +84,8 @@ const shots = [
   ["settings-plugins", "plugins=1", [nav("settings"), click('[data-action="set-tab"][data-tab="plugins"]')]],
   ["settings-plugins-allow", "plugins=1", [nav("settings"), click('[data-action="set-tab"][data-tab="plugins"]'), click('[data-plugin-on="sources-updates"]')]],
   ["sources", "sources=1", [nav("settings"), click('[data-action="set-tab"][data-tab="pp:sources-updates:sources"]')]],
+  ["sources-updates", "sources=1", [nav("updates")]],
+  ["sources-game", "sources=1", [nav("updates"), ...game('data-key="dir:d:\\\\games\\\\onimusha"')]],
   ["sources-error", "sources=error", [nav("settings"), click('[data-action="set-tab"][data-tab="pp:sources-updates:sources"]')]],
   ["sources-empty", "sources=empty", [nav("settings"), click('[data-action="set-tab"][data-tab="pp:sources-updates:sources"]')]],
   ["sources-notice", "sources=empty", [nav("settings"), click('[data-action="set-tab"][data-tab="pp:sources-updates:sources"]'), click('[data-action="pp-act"][data-act="notice"]')]],

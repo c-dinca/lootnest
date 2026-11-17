@@ -204,14 +204,18 @@ func PluginDataDir(dataDir, id string) string { return filepath.Join(dataDir, "p
 
 // ScriptGame is a Library game as a script sees it: no full paths.
 type ScriptGame struct {
-	Key     string        `json:"key"`
-	Name    string        `json:"name"`
-	Source  string        `json:"source"`
-	SteamID int           `json:"steamId,omitempty"`
-	Folder  string        `json:"folder,omitempty"`  // the install folder's name
-	Version string        `json:"version,omitempty"` // read on this PC, when it can be
-	Size    int64         `json:"size,omitempty"`
-	Origin  *ScriptOrigin `json:"origin,omitempty"`
+	Key     string `json:"key"`
+	Name    string `json:"name"`
+	Source  string `json:"source"`
+	SteamID int    `json:"steamId,omitempty"`
+	Folder  string `json:"folder,omitempty"`  // the install folder's name
+	Version string `json:"version,omitempty"` // read on this PC, when it can be
+	// ExeVersion is the exe's own file version. For many games it's the
+	// engine's, so a script should only trust it when it fits what else is
+	// known.
+	ExeVersion string        `json:"exeVersion,omitempty"`
+	Size       int64         `json:"size,omitempty"`
+	Origin     *ScriptOrigin `json:"origin,omitempty"`
 }
 
 // ScriptOrigin is what the launcher that installed a game recorded about
@@ -235,6 +239,7 @@ type ScriptOffer struct {
 	Game    string         `json:"game"` // the Library key
 	Title   string         `json:"title"`
 	Version string         `json:"version,omitempty"`
+	Have    string         `json:"have,omitempty"` // the version on this PC, in words
 	Source  string         `json:"source,omitempty"`
 	Size    int64          `json:"size,omitempty"`
 	Date    string         `json:"date,omitempty"`
@@ -588,7 +593,7 @@ func (h *ScriptHost) install() {
 				if !scriptIDRe.MatchString(o.ID) {
 					h.fail("an offer's id must be 1 to 80 letters, digits, dots, colons, hyphens or underscores")
 				}
-				o.Title, o.Version, o.Source = cutRunes(o.Title, 300), cutRunes(o.Version, 60), cutRunes(o.Source, 60)
+				o.Title, o.Version, o.Source, o.Have = cutRunes(o.Title, 300), cutRunes(o.Version, 60), cutRunes(o.Source, 60), cutRunes(o.Have, 60)
 				o.Date, o.Note, o.Status = cutRunes(o.Date, 40), cutRunes(o.Note, 300), cutRunes(o.Status, 120)
 				if len(o.Actions) > 4 {
 					o.Actions = o.Actions[:4]

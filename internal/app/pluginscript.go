@@ -1,3 +1,5 @@
+//go:build windows
+
 package app
 
 import (
@@ -9,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"lootnest/internal/core"
 	"lootnest/internal/win"
@@ -138,18 +141,139 @@ func (a *App) scriptServices(p core.Plugin) core.ScriptServices {
 // pluginOffersChanged tells the page the updates plugins offer changed.
 func (a *App) pluginOffersChanged() { a.emit("pluginOffers", nil) }
 
-// scriptGames are the Library's games as a script sees them.
+// scriptGames are the Library's games as a script sees them: no full
+// paths; for a game no store keeps up to date, the version this PC can
+// tell, and for one Hydra installed, what Hydra recorded about its download.
 func (a *App) scriptGames() []core.ScriptGame {
+	origins := a.hydraOrigins()
 	var out []core.ScriptGame
 	for _, f := range a.libraryGames() {
 		g := core.ScriptGame{Key: f.Key, Name: f.Name, Source: f.Source, SteamID: f.SteamID}
 		if f.Dir != "" {
 			g.Folder = filepath.Base(f.Dir)
-			g.Version = core.FolderVersion(f.Dir)
+			if updatableSource(f.Source) && f.AppID == 0 {
+				g.Version = core.LocalVersion(f.Dir)
+				if exe, err := a.env.ResolveExe(f.Exe); err == nil && exe != "" {
+					g.ExeVersion = win.FileVersion(exe)
+				}
+			}
+		}
+		if o, ok := origins[f.Key]; ok {
+			o := o
+			g.Origin = &o
 		}
 		out = append(out, g)
 	}
 	return out
+}
+
+// hydraOrigins reads Hydra's download records at most every ten minutes.
+var hydraOrig struct {
+	sync.Mutex
+	at  time.Time
+	got map[string]core.ScriptOrigin
+}
+
+func (a *App) hydraOrigins() map[string]core.ScriptOrigin {
+	hydraOrig.Lock()
+	defer hydraOrig.Unlock()
+	if !hydraOrig.at.IsZero() && time.Since(hydraOrig.at) < 10*time.Minute {
+		return hydraOrig.got
+	}
+	hydraOrig.at = time.Now()
+	ad := os.Getenv("APPDATA")
+	if ad == "" {
+		return nil
+	}
+	_, containers := gameFolders(a.env)
+	got, err := core.HydraOrigins(filepath.Join(ad, "hydralauncher", "hydra-db"), filepath.Join(DataDir(), "hydra-origins-tmp"), containers)
+	if err != nil {
+		a.logf("Couldn't read Hydra's downloads: %v", err)
+	}
+	hydraOrig.got = got
+	return got
+}
+
+// scriptsLibraryChanged tells every running script the Library was read
+// again (its "library" handler), after a scan.
+func (a *App) scriptsLibraryChanged() {
+	scripts.Lock()
+	var runs []*scriptRun
+	for _, r := range scripts.m {
+		runs = append(runs, r)
+	}
+	scripts.Unlock()
+	for _, r := range runs {
+		if _, err := r.host.Call("library", nil); err != nil && !errors.Is(err, core.ErrNoHandler) {
+			a.logf("Plugin %s: library: %v", r.plugin.Name, err)
+		}
+	}
+}
+
+// PluginOffer is an update a script plugin offers for a game that's in the
+// Library and that no store keeps up to date.
+type PluginOffer struct {
+	core.ScriptOffer
+	Plugin     string `json:"plugin"`
+	PluginName string `json:"pluginName"`
+	Key        string `json:"key"` // the Updates page's key of the game
+	Name       string `json:"name"`
+}
+
+// apiPluginOffers lists what the running script plugins offer.
+func (a *App) apiPluginOffers() []PluginOffer {
+	games := map[string]core.FoundGame{}
+	for _, f := range a.libraryGames() {
+		if updatableSource(f.Source) && f.Dir != "" && f.AppID == 0 {
+			games[f.Key] = f
+		}
+	}
+	out := []PluginOffer{}
+	scripts.Lock()
+	defer scripts.Unlock()
+	for _, r := range scripts.m {
+		for _, o := range r.offers {
+			if f, ok := games[o.Game]; ok {
+				out = append(out, PluginOffer{ScriptOffer: o, Plugin: r.plugin.ID, PluginName: r.plugin.Name, Key: "found:" + f.Key, Name: f.Name})
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Name != out[j].Name {
+			return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
+		}
+		return out[i].ID < out[j].ID
+	})
+	return out
+}
+
+// apiPluginOfferAction runs one of an offer's buttons in its script
+// (handler "offer"); what it says comes as a notice.
+func (a *App) apiPluginOfferAction(plugin, offer, action string) error {
+	r := a.scriptRun(plugin)
+	if r == nil {
+		return errors.New("That plugin isn't running.")
+	}
+	go func() {
+		out, err := r.host.Call("offer", map[string]any{"id": offer, "action": action})
+		var res struct {
+			Error string `json:"error"`
+			Toast string `json:"toast"`
+		}
+		if err == nil && out != nil {
+			_ = json.Unmarshal(out, &res)
+		}
+		switch {
+		case err != nil:
+			a.logf("Plugin %s: offer %s: %v", r.plugin.Name, action, err)
+			a.emit("toast", map[string]any{"kind": "error", "text": sentence(err)})
+		case res.Error != "":
+			a.emit("toast", map[string]any{"kind": "error", "text": res.Error})
+		case res.Toast != "":
+			a.emit("toast", map[string]any{"text": res.Toast})
+		}
+	}()
+	return nil
 }
 
 // ---- secrets: plugin-secrets.json, each value encrypted for this Windows

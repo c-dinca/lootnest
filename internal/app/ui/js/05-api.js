@@ -162,6 +162,8 @@
     pluginGrant: (id) => call("ps_pluginGrant", id),
     pluginView: (id, page) => call("ps_pluginView", id, page),
     pluginAction: (id, o) => call("ps_pluginAction", id, o),
+    pluginOffers: () => call("ps_pluginOffers"),
+    pluginOfferAction: (plugin, offer, act) => call("ps_pluginOfferAction", plugin, offer, act),
     saveDetailsEdit: (key, edits) => call("ps_saveDetailsEdit", key, edits),
     openGameFolder: (kind, id) => call("ps_openGameFolder", kind, id),
     foundShortcut: (key) => call("ps_foundShortcut", key),

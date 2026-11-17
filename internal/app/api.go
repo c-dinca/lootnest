@@ -119,6 +119,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_pluginGrant", a.apiPluginGrant))
 	must(a.w.Bind("ps_pluginView", a.apiPluginView))
 	must(a.w.Bind("ps_pluginAction", a.apiPluginAction))
+	must(a.w.Bind("ps_pluginOffers", a.apiPluginOffers))
+	must(a.w.Bind("ps_pluginOfferAction", a.apiPluginOfferAction))
 	must(a.w.Bind("ps_ignoreFound", a.apiIgnoreFound))
 	must(a.w.Bind("ps_unhideFound", a.apiUnhideFound))
 	must(a.w.Bind("ps_setPrimaryCopy", a.apiSetPrimaryCopy))

@@ -1059,6 +1059,10 @@
       try { await pluginInstalled(r.path, await api.installPlugin(r.path)); }
       catch (e) { S.pluginError = errText(e); render(); }
     },
+    "pp-offer"(el) {
+      const d = el.dataset;
+      api.pluginOfferAction(d.plugin, d.offer, d.act).catch((e) => toast(errText(e), "error"));
+    },
     async "pp-act"(el) {
       const d = el.dataset, a = ppFind(d.plugin, d.page, d.row, d.act);
       if (!a) return;

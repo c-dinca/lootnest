@@ -76,6 +76,72 @@ func HydraGames(dbDir, tmp string, containers []string) ([]FoundGame, error) {
 	return out, nil
 }
 
+// hydraDownload is what Hydra recorded about a game's last download, under
+// "!downloads!<shop>:<objectId>". The record has the address used, never
+// the title of the entry it came from.
+type hydraDownload struct {
+	URI        string  `json:"uri"`
+	FolderName *string `json:"folderName"`
+	FileSize   *int64  `json:"fileSize"`
+	Timestamp  int64   `json:"timestamp"`
+	Status     *string `json:"status"`
+}
+
+// HydraOrigins gives, for each game Hydra installed (by its Library key,
+// as HydraGames names it), what Hydra recorded about its download: the
+// address, the downloaded folder's name, its size and when. Only read; a
+// game with no finished download isn't in it.
+func HydraOrigins(dbDir, tmp string, containers []string) (map[string]ScriptOrigin, error) {
+	if !isDir(dbDir) {
+		return nil, nil
+	}
+	defer os.RemoveAll(tmp)
+	if err := copyLevelDB(dbDir, tmp); err != nil {
+		return nil, err
+	}
+	db, err := leveldb.OpenFile(tmp, &opt.Options{ErrorIfMissing: true})
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	out := map[string]ScriptOrigin{}
+	it := db.NewIterator(util.BytesPrefix([]byte("!games!")), nil)
+	defer it.Release()
+	for it.Next() {
+		var g hydraGame
+		if json.Unmarshal(it.Value(), &g) != nil || g.IsDeleted || g.ExecutablePath == nil {
+			continue
+		}
+		exe := filepath.Clean(strings.TrimSpace(*g.ExecutablePath))
+		if !filepath.IsAbs(exe) {
+			continue
+		}
+		root, _, _ := exeRoot(exe, containers)
+		b, err := db.Get([]byte("!downloads!"+g.Shop+":"+g.ObjectID), nil)
+		if err != nil || tooBroadDir(root) {
+			continue
+		}
+		var d hydraDownload
+		if json.Unmarshal(b, &d) != nil || (d.Status != nil && *d.Status != "complete" && *d.Status != "seeding") {
+			continue
+		}
+		o := ScriptOrigin{URI: d.URI, Time: d.Timestamp}
+		if len(o.URI) > 4096 {
+			o.URI = ""
+		}
+		if d.FolderName != nil {
+			o.Folder = *d.FolderName
+		}
+		if d.FileSize != nil {
+			o.Size = *d.FileSize
+		}
+		if o.URI != "" || o.Folder != "" {
+			out["dir:"+strings.ToLower(root)] = o
+		}
+	}
+	return out, nil
+}
+
 // HydraDownloadsPath is the folder Hydra downloads into when the user chose
 // one in its settings ("userPreferences" in its database, downloadsPath),
 // or "" when it uses Windows' Downloads, which Lootnest already looks in.

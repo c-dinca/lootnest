@@ -102,6 +102,13 @@
       ...(SRC_ROWS.length ? [{ id: "refresh-all", label: "Refresh all" }] : [])], rows: SRC_ROWS, empty: "No sources yet. Lootnest comes with none." },
     { title: "Refresh", rows: [{ id: "hours", title: "Look for new entries", select: { value: "6", options: [1, 3, 6, 12, 24, 0].map((h) => ({ value: String(h), label: h ? `Every ${h === 1 ? "hour" : h + " hours"}` : "Only when I ask" })) } }] }],
     forms: { add: srcForm("Add a source", "Add"), "edit:x": srcForm("Edit the source", "Save", SRC_ROWS[0]) } });
+  const offerActs = [{ id: "update", label: "Update" }, { id: "ignore-version", label: "Ignore this version" }, { id: "ignore-source", label: "Ignore this source for this game" }];
+  const SRC_OFFERS = SRC === "1" || SRC === "error" ? [
+    { plugin: "sources-updates", pluginName: "Sources and updates", id: "s1.a1", game: "dir:d:\\games\\onimusha", key: "found:dir:d:\\games\\onimusha", name: "Onimusha: Way of the Sword",
+      title: "Onimusha Way of the Sword v1.0.3 + 2 DLCs", version: "1.0.3", have: "1.0.1", source: "Studio builds", size: 48533130445, date: "2026-11-12T10:00:00.000Z", actions: offerActs },
+    { plugin: "sources-updates", pluginName: "Sources and updates", id: "s2.b7", game: "dir:d:\\games\\phantom blade zero", key: "found:dir:d:\\games\\phantom blade zero", name: "Phantom Blade Zero",
+      title: "Phantom Blade Zero Build 16251443", version: "Build 16251443", have: "", source: "Community patches", size: 2147483648, date: "2026-11-15T08:30:00.000Z", actions: offerActs },
+  ] : [];
   const PLUGIN_PAGES = () => PLUGIN_LIST.some((p) => p.id === "sources-updates" && p.on && p.granted) ? [{ plugin: "sources-updates", name: "Sources and updates", id: "sources", title: "Sources" }] : [];
   const THEMES = PLUGINS ? { "deep-sea": { name: "Deep sea", tokens: { "--bg-well": "#0a1019", "--bg-ground": "#0d1520", "--bg-surface": "#152131", "--bg-raised": "#1b2a3d", "--bg-active": "#22344a",
     "--accent": "oklch(0.70 0.15 220)", "--accent-hover": "oklch(0.76 0.14 220)", "--fg-on-accent": "#0d1520" } } } : {};
@@ -483,6 +490,14 @@
     ps_installPluginNewKey: (path, key) => { const x = PLUGIN_LIST.find((p) => p.id === "retroarch"); Object.assign(x, { version: "1.3.0", key }); delete x.older; return ok({ plugin: { ...x } }); },
     ps_setPluginOn: (id, on) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) x.on = on; emit({ type: "pluginPages", pages: PLUGIN_PAGES() }); return ok(); },
     ps_pluginGrant: (id) => { const x = PLUGIN_LIST.find((p) => p.id === id); if (x) { x.on = x.granted = true; } emit({ type: "pluginPages", pages: PLUGIN_PAGES() }); return ok(); },
+    // &sources=1: two updates the plugin lists for folder games; Ignore takes one off.
+    ps_pluginOffers: () => ok(SRC_OFFERS.slice()),
+    ps_pluginOfferAction: (plugin, offer, act) => {
+      const i = SRC_OFFERS.findIndex((o) => o.id === offer);
+      if (act === "update") emit({ type: "toast", kind: "error", text: "Updating from here isn't built yet. The update is listed so you know it's out." });
+      else if (i >= 0) { SRC_OFFERS.splice(i, 1); emit({ type: "pluginOffers" }); emit({ type: "toast", text: "Ignored. A later version will show again." }); }
+      return ok();
+    },
     ps_pluginView: (id, page) => { emit({ type: "pluginView", id, page, view: srcView() }, 80); return ok(null); },
     // As the plugin answers: the notice once, then the form; an address that isn't http(s) is refused.
     ps_pluginAction: (id, o) => {

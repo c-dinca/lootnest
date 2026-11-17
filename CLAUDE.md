@@ -1577,6 +1577,21 @@ These shipped recently, newest last:
   download records, the download queue and Real-Debrid, the save copy and
   the folder swap with rollback) are in `docs/plugins/sources-updates.md`.
   Not seen on a PC.
+  Part 2, detection: `core.HydraOrigins` (Hydra's `!downloads!` record
+  per game: address, folder name, size, time; never the entry's title),
+  `core.LocalVersion`, `win.FileVersion`; `app.scriptGames` gives scripts
+  the version and Hydra's record of games no store updates;
+  `scriptsLibraryChanged` after a scan; `ps_pluginOffers`,
+  `ps_pluginOfferAction` (the script's `offer` handler), event
+  `pluginOffers`; `S.plugOffers`, `offersSection` on the Updates page,
+  `offerBanner` on a game's page. In the plugin: `normTitle`,
+  `titleScore` (0.9 links by itself, 0.6 asks), `titleVersion` (from-to
+  patches, v1.2.3, Build n, dates), `installed` (this PC's reading
+  before the baseline; the exe's version only when it continues the
+  baseline's numbering), `detect`, `links` in its storage (seen, base,
+  manual, yes, no, skip, mute). Write a plugin's .js in ASCII with
+  `\uXXXX` escapes: a raw U+2028 in a regular expression parses in goja
+  and not in Node.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
