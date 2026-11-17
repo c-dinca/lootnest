@@ -163,6 +163,22 @@ func TestSourcesPluginFeedValidation(t *testing.T) {
 	if pluginTest(t, h, map[string]any{"what": "hash", "uri": strings.ToUpper(testMagnet[:60])}, &hash); hash != "0123456789abcdef0123456789abcdef01234567" {
 		t.Errorf("info hash: %q", hash)
 	}
+	// A source's address can hold a key; outside its own row it's called by
+	// its name, else by its site alone.
+	for name, c := range map[string]struct {
+		src  map[string]any
+		want string
+	}{
+		"a name":          {map[string]any{"name": "Mine", "url": "https://feeds.example.com/f.json?token=SECRET"}, "Mine"},
+		"a key in query":  {map[string]any{"url": "https://Feeds.Example.com/f.json?token=SECRET"}, "feeds.example.com"},
+		"a key in a path": {map[string]any{"url": "https://feeds.example.com:8443/SECRET/f.json#frag"}, "feeds.example.com"},
+		"no address":      {map[string]any{"url": "nonsense SECRET"}, "a source"},
+	} {
+		var label string
+		if pluginTest(t, h, map[string]any{"what": "label", "src": c.src}, &label); label != c.want || strings.Contains(label, "SECRET") {
+			t.Errorf("%s: %q, want %q", name, label, c.want)
+		}
+	}
 }
 
 type pluginRow struct {

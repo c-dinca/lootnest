@@ -262,6 +262,11 @@
   }
   const save = () => lootnest.storage.set("sources", state());
   const sourceBy = (id) => state().list.find((s) => s.id === id);
+  // What a source is called outside its own row on the Sources page: its
+  // name, else its site. Never its whole address, which may hold a key in
+  // its path or query and must not reach a log, a notice or another page.
+  const srcSite = (url) => { const m = /^https?:\/\/([^\/?#:@]+)(?::\d+)?(?:[\/?#]|$)/i.exec(String(url || "")); return m ? m[1].toLowerCase() : "a source"; };
+  const srcLabel = (src) => src.name || srcSite(src.url);
   // A source's kept entries, or null. A copy kept by an older normTitle gets
   // its words again.
   function feedOf(id) {
@@ -309,7 +314,7 @@
     lootnest.storage.set("feed-" + src.id, { norm: NORM, entries: feed.entries });
     Object.assign(src, { error: "", format: feed.format, count: feed.entries.length, skipped: feed.skipped, http: feed.http, changed: now,
       etag: clean(r.headers.etag, 200), modified: clean(r.headers["last-modified"], 60) });
-    if (!src.name) src.name = feed.name || src.url.replace(/^https?:\/\//, "").split("/")[0];
+    if (!src.name) src.name = feed.name || srcSite(src.url);
     return true;
   }
 
@@ -335,7 +340,7 @@
         forced.delete(src.id);
         const got = refreshSource(src);
         save();
-        lootnest.log(`${src.name || src.url}: ${src.error || (got ? plural(src.count, "download") : "no change")}`);
+        lootnest.log(`${srcLabel(src)}: ${src.error || (got ? plural(src.count, "download") : "no change")}`);
         if (got) feedsChanged();
         lootnest.ui.changed();
       }
@@ -429,7 +434,7 @@
         let list = byKey.get(e.k);
         if (!list) {
           byKey.set(e.k, list = []);
-          KEYS.set(e.k, { title: e.t, src: src.name || src.url });
+          KEYS.set(e.k, { title: e.t, src: srcLabel(src) });
           for (const t of new Set(e.k.split(" "))) { if (!byToken.has(t)) byToken.set(t, []); byToken.get(t).push(e.k); }
         }
         list.push(hit);
@@ -493,7 +498,7 @@
   // publish tells Lootnest the offers, and says so once for each new one.
   function publish(tell) {
     lootnest.updates.offer(OFFERS.slice(0, 500).map((o) => ({
-      id: o.id, game: o.game, title: o.e.t, version: verText(o.ver), have: o.have, source: o.src.name || o.src.url, size: o.e.s || 0,
+      id: o.id, game: o.game, title: o.e.t, version: verText(o.ver), have: o.have, source: srcLabel(o.src), size: o.e.s || 0,
       date: o.e.d ? new Date(o.e.d).toISOString() : "", note: o.ver.from ? `A patch for ${o.ver.from}` : o.e.c || "", actions: offerActions(o),
       status: prep()[o.id] ? prep()[o.id].status || "Asking Real-Debrid" : "", busy: !!prep()[o.id],
     })));
@@ -553,7 +558,7 @@
   // no room, the game is running, or the game isn't one it may update.
   function begin(o, files) {
     try {
-      lootnest.updates.run("start", { offer: o.id, game: o.game, title: o.e.t, version: verText(o.ver), source: o.src.name || o.src.url, size: o.e.s || 0, files });
+      lootnest.updates.run("start", { offer: o.id, game: o.game, title: o.e.t, version: verText(o.ver), source: srcLabel(o.src), size: o.e.s || 0, files });
     } catch (e) {
       return { error: clean(String(e && e.message || e), 300) };
     }
@@ -918,6 +923,7 @@
     if (a.what === "uri") return readURI(a.uri, LIMITS.uri);
     if (a.what === "size") return sizeBytes(a.size);
     if (a.what === "hash") return infoHash(a.uri);
+    if (a.what === "label") return srcLabel(a.src);
     if (a.what === "norm") return normTitle(a.title);
     if (a.what === "score") return titleScore(normTitle(a.a), normTitle(a.b));
     if (a.what === "version") return titleVersion(a.title);
