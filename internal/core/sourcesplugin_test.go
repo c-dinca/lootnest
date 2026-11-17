@@ -3,8 +3,10 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -993,5 +995,46 @@ func TestSourcesPluginUpdate(t *testing.T) {
 	mu.Unlock()
 	if offerOf("dir:c:\\games\\moonbase") != nil {
 		t.Error("an offer shows for a game being updated")
+	}
+}
+
+// Every plugin in the repository installs from a zip as build.sh packs it
+// (files at the zip's top), and asks for what plugin.json says.
+func TestRepoPluginsInstallAsZips(t *testing.T) {
+	root := filepath.Join("..", "..", "plugins")
+	ents, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for _, e := range ents {
+		if !e.IsDir() {
+			continue
+		}
+		files := map[string]string{}
+		_ = filepath.WalkDir(filepath.Join(root, e.Name()), func(p string, d fs.DirEntry, err error) error {
+			if err == nil && !d.IsDir() {
+				rel, _ := filepath.Rel(filepath.Join(root, e.Name()), p)
+				b, _ := os.ReadFile(p)
+				files[filepath.ToSlash(rel)] = string(b)
+			}
+			return nil
+		})
+		data := t.TempDir()
+		m, err := InstallPlugin(data, pluginZip(t, files))
+		if err != nil {
+			t.Errorf("%s: %v", e.Name(), err)
+			continue
+		}
+		if m.ID != e.Name() {
+			t.Errorf("%s: its id is %q", e.Name(), m.ID)
+		}
+		if p := ListPlugins(data)[0]; p.Has("script") && (p.On || len(p.Asks) == 0) {
+			t.Errorf("%s: a script plugin must start off and say what it asks: %+v", e.Name(), p)
+		}
+		n++
+	}
+	if n == 0 {
+		t.Fatal("no plugins found")
 	}
 }

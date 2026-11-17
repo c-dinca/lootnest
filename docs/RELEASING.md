@@ -2,7 +2,7 @@
 
 A release is a merge to `main` with a new `VERSION` and a matching `## x.y.z`
 section at the top of `CHANGELOG.md`. GitHub Actions (`.github/workflows/build.yml`)
-builds `Lootnest.exe` and `Lootnest-Setup.exe` and publishes the release.
+builds `Lootnest.exe` and `Lootnest-Setup.exe`, packs each folder in `plugins/` as `Lootnest-plugin-<id>.zip` (`./build.sh plugins`), and publishes the release with all of them.
 
 Releases come out only when the owner asks. Between them, changes collect
 under `## Unreleased` in `CHANGELOG.md`; a release renames that heading to

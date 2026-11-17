@@ -72,7 +72,7 @@ A plugin adds something Lootnest doesn't come with. Install one in Settings, Plu
 
 ### Sources and updates
 
-A plugin in this repository's `plugins/sources-updates` folder, not installed by default. Lootnest comes with no download sources; with this plugin you add your own, as addresses of JSON lists, and what you add and download is your choice and your responsibility.
+A plugin that comes with every release as `Lootnest-plugin-sources-updates.zip`, beside the installer, and isn't installed by default: download it, then Settings, Plugins, **Install from file**. Lootnest comes with no download sources; with this plugin you add your own, as addresses of JSON lists, and what you add and download is your choice and your responsibility.
 
 - **Sources** in Settings: add, edit, turn off or remove a source, and see when each was last read and what went wrong.
 - **Updates**, under From your sources: games you have, that no store keeps up to date, for which a source lists something newer. **Update** downloads it beside the game, never over it. A magnet link needs your own Real-Debrid token (also under Sources), or opens in your torrent app.
