@@ -62,7 +62,6 @@ var achFiles = []achFile{
 	{"PROGRAMDATA", `RLD!\{id}\achievements.ini`, "hex"},
 	{"PROGRAMDATA", `Steam\Player\{id}\stats\achievements.ini`, "hex"},
 	{"PROGRAMDATA", `Steam\RLD!\{id}\stats\achievements.ini`, "hex"},
-	{"PROGRAMDATA", `Steam\dodi\{id}\stats\achievements.ini`, "hex"},
 	{"DOCUMENTS", `SKIDROW\{id}\SteamEmu\UserStats\achiev.ini`, "at"},
 	{"DOCUMENTS", `Player\{id}\SteamEmu\UserStats\achiev.ini`, "at"},
 	{"LOCALAPPDATA", `SKIDROW\{id}\SteamEmu\UserStats\achiev.ini`, "at"},
