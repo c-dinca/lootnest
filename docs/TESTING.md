@@ -969,3 +969,28 @@ None of this has run on a PC. Use a test folder game with saves you don't mind l
 7. A patch and an installer: each ends as Ready with Open the update, which opens the update panel; the installer runs only on Run the installer.
 8. Only what changed: an update that is one .zip at an https address, for a large game where only a few files differ. The row says Compare, then Get what changed with files done of all; Downloaded stays far under the archive's size; `<folder>.lootnest-new` holds only the changed files. Pause, close Lootnest, open it, Resume: it goes on. Review and update says replaced, new and already the same; Update the game: the game starts, saves are there, `<folder>.lootnest-old` holds only the old versions of what changed. Roll back: every file is back (compare a few by size and date). Do the same with a .rar in parts and a .7z.
 9. Only what changed, cut short: end Lootnest in Task Manager during Replacing the changed files. At the next start the game is as before and the row says so.
+
+## 44. Add an Android TV (Lootnest Link, M4a)
+
+None of this has run on a TV. Use an Android TV, Google TV or Fire TV on
+the same network as the PC, with TV streaming set up.
+
+1. On the TV, turn on Developer options and Network debugging (Fire TV:
+   ADB debugging). Settings, TV, **Add an Android TV**: the TV's address
+   is listed, or type it.
+2. Install: the TV asks "Allow USB debugging?" with Lootnest@<PC>. Choose
+   Always allow, then OK. Lootnest downloads, installs and opens
+   Lootnest for TV, which pairs and opens Lootnest's TV mode on the PC.
+3. Choose Cancel on the TV's question instead: the drawer says the TV
+   didn't allow this computer, and nothing is installed.
+4. The row shows the TV's name, model and Android version, and Paired.
+   Play a game, then Start, Select, LB and RB together: Lootnest for TV's
+   screen with Play, Settings, PCs and Quit.
+5. Quit, then open Lootnest from the TV's home screen: it goes straight to
+   the PC. Put the PC to sleep and open it again: "Waking" (when the PC
+   wakes on LAN), then TV mode.
+6. Install again on a paired TV: no question on the TV, no pairing PIN
+   asked, and it ends paired.
+7. Settings, TV, Save a report: the report has the TV app's log (tag
+   LootnestTV) for each Android TV.
+

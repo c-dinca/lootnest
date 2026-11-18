@@ -439,6 +439,6 @@ couch.
 | M1 | TV mode (`--tv`) | ~1 week | Full loop on the LG TV with stock Apollo + Moonlight TV and only a controller: pick profile, launch, play, quit, back in TV mode |
 | M2 | Bundled engine (`streamhost`) | 1 to 2 weeks | On a clean Windows PC, one toggle installs and configures the engine; stock Moonlight pairs from Lootnest's PIN screen; Apollo's own UI is never opened |
 | M3 | webOS client + "Add a TV" | 2 to 4 weeks | A fresh LG TV in developer mode goes from Add a TV to playing with no typing beyond the dev-mode passphrase; Wake-on-LAN works |
-| M4a | Android TV / Google TV / Fire TV client | 2 to 3 weeks | Installed from a store build, pairs through the Allow prompt, passes the same loop as M1 |
+| M4a | Android TV / Google TV / Fire TV client | 2 to 3 weeks | Installed from a store build, pairs through the Allow prompt, passes the same loop as M1. Built first as an install over ADB from Lootnest (the owner, 18 Nov 2026), as on LG: `core/adb.go`, `core/androidtv.go`, `app/androidtv.go`, c-dinca/lootnest-tv-android |
 | M4b | Samsung Tizen client | 2 to 4 weeks | Same loop on a Samsung TV, installed by Lootnest |
 | M4c | Browser client | 2 to 3 weeks | Compatibility check runs on at least 3 TV brands; same loop works on every TV that passes |

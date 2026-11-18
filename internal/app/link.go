@@ -35,6 +35,10 @@ type linkRecord struct {
 	Installed time.Time `json:"installed,omitzero"`
 	Off       bool      `json:"off,omitempty"` // turned off: the service is stopped
 	TVs       []savedTV `json:"tvs,omitempty"` // LG TVs Lootnest installed its app on (lgtv.go)
+	// Android TVs Lootnest installed its app on, and its ADB key for them
+	// ("dpapi:..."), androidtv.go.
+	Androids []savedAndroid `json:"androids,omitempty"`
+	ADBKey   string         `json:"adbKey,omitempty"`
 }
 
 var (
@@ -115,8 +119,10 @@ type LinkStatus struct {
 	Busy      string              `json:"busy,omitempty"`
 	Info      *core.ApolloInfo    `json:"info,omitempty"`
 	TVs       []core.ApolloClient `json:"tvs"`
-	LG        []LGStatus          `json:"lg"`    // LG TVs with Lootnest for TV
-	TVApp     bool                `json:"tvApp"` // this Lootnest can install the TV app
+	LG        []LGStatus          `json:"lg"`         // LG TVs with Lootnest for TV
+	TVApp     bool                `json:"tvApp"`      // this Lootnest can install the TV app
+	Android   []AndroidStatus     `json:"android"`    // Android TVs with Lootnest for TV
+	AndroidOK bool                `json:"androidApp"` // this Lootnest can install the Android TV app
 	Problem   string              `json:"problem,omitempty"`
 }
 
@@ -138,6 +144,7 @@ func (a *App) emitLink() {
 	st.Set = r != nil
 	st.Off = r != nil && r.Off
 	st.LG, st.TVApp = lgStatuses(r), len(core.TVAppPinned.SHA256) == 64
+	st.Android, st.AndroidOK = androidStatuses(r), core.AndroidAppReady()
 	if r != nil && st.Running && st.Busy == "" {
 		if ap, _, err := engine(); err != nil {
 			st.Problem = sentence(err)
@@ -547,6 +554,9 @@ func (a *App) apiLinkLogs() {
 		if lr := loadLink(); lr != nil {
 			for _, t := range lr.TVs {
 				b.WriteString("== Lootnest for TV on " + t.Name + " (" + t.IP + ") ==\r\n" + tvAppLog(t) + "\r\n\r\n")
+			}
+			for _, t := range lr.Androids {
+				b.WriteString("== Lootnest for TV on " + t.Name + " (" + t.IP + ", " + t.Model + ", Android " + t.Android + ") ==\r\n" + androidAppLog(t) + "\r\n\r\n")
 			}
 		}
 		if lb, err := os.ReadFile(filepath.Join(DataDir(), "lootnest.log")); err == nil {
