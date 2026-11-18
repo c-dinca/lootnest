@@ -657,6 +657,21 @@
     },
     "link-logs"() { api.linkLogs().catch(() => {}); },
     "lg-add"() { openLGTV(); },
+    "atv-add"() { openAndroidTV(); },
+    "atv-again"(el) { againAndroidTV(el.dataset.ip); },
+    async "atv-forget"(el) {
+      if (!(await confirmDialog({ title: `Forget ${el.dataset.name}?`, body: "It has to pair again to play here. The app stays on the TV.", ok: "Forget" }))) return;
+      api.linkForgetAndroid(el.dataset.ip).catch(() => {});
+      if (el.dataset.uuid) api.linkUnpair(el.dataset.uuid).catch(() => {});
+    },
+    "atv-find"() { const D = S.dialog; D.ip = ($("#atv-ip") || {}).value || ""; D.finding = true; D.ips = null; renderOverlay(); api.linkFindAndroidTVs().catch(() => {}); },
+    "atv-install"() {
+      const D = S.dialog, pick = $('input[name="atv-pick"]:checked');
+      D.ip = (($("#atv-ip") || {}).value || "").trim();
+      if (!D.ip && pick) D.ip = pick.dataset.ip;
+      if (!/^\d{1,3}(\.\d{1,3}){3}(:\d{1,5})?$/.test(D.ip)) { D.error = "Type the TV's address, such as 192.168.1.30."; renderOverlay(); return; }
+      installAndroidTV(D);
+    },
     "lg-again"(el) { againLGTV(el.dataset.ip, el.dataset.name); },
     async "lg-forget"(el) {
       if (!(await confirmDialog({ title: `Forget ${el.dataset.name}?`, body: "It has to pair again to play here, and Lootnest stops keeping its developer mode on. The app stays on the TV until developer mode runs out.", ok: "Forget" }))) return;
@@ -666,7 +681,7 @@
     "lg-find"() { const D = S.dialog; D.ip = ($("#lg-ip") || {}).value || ""; D.finding = true; D.tvs = null; renderOverlay(); api.linkFindTVs().catch(() => {}); },
     "lg-private"() {
       const D = S.dialog;
-      D.ip = (($("#lg-ip") || {}).value || D.ip || "").trim();
+      D.ip = (($("#lg-ip") || $("#atv-ip") || {}).value || D.ip || "").trim().split(":")[0];
       D.privating = true; D.error = ""; renderOverlay();
       api.linkMakePrivate(D.ip).catch((e) => { D.privating = false; D.error = errText(e); renderOverlay(); });
     },
@@ -1537,6 +1552,7 @@
       return;
     }
     if (el.id === "gog-in" && S.dialog && S.dialog.kind === "gog") { S.dialog.pick = el.value; renderOverlay(); const n = $("#gog-in"); if (n) n.focus(); return; }
+    if (el.name === "atv-pick" && S.dialog && S.dialog.kind === "atv") { const ip = $("#atv-ip"); if (ip) ip.value = el.dataset.ip; return; }
     if (el.name === "lg-pick" && S.dialog && S.dialog.kind === "lgtv") { const ip = $("#lg-ip"), nm = $("#lg-name"); if (ip) ip.value = el.dataset.ip; if (nm) nm.value = el.dataset.name; return; }
     if (el.id === "itch-up" && S.dialog && S.dialog.kind === "itch") { S.dialog.pick = +el.value; renderOverlay(); const n = $("#itch-up"); if (n) n.focus(); return; }
     if (el.id === "recap-year" && S.dialog && S.dialog.kind === "recap") { S.dialog.year = +el.value; renderOverlay(); return; }

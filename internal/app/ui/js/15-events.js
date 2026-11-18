@@ -122,6 +122,8 @@
       case "linkTVDone":
       case "linkTVUpdated":
       case "linkPrivate":
+      case "linkAndroidFound":
+      case "linkAndroidDone":
         linkEvent(ev);
         break;
       case "itch":

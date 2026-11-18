@@ -854,7 +854,8 @@
         tvs: set ? [{ name: "Living room TV", uuid: "tv-1", perm: 117448448, connected: false }] : [],
         lg: set && q.get("lg") === "1" ? [{ name: "Living room TV", ip: "192.168.1.41", version: "1.4.0", latest: "1.6.1", installed: "2026-11-15T18:00:00Z", extended: "2026-11-15T19:00:00Z",
           stream: { seconds: 840, format: "H265", width: 1920, height: 1080, fps: 60, arrived: 59.2, shown: 59.2, lostPct: 1.33, badSecs: 120, hostMs: 4.1, decoderMs: 5.1, roundTrip: 12, roundMax: 31, jitter: 9 },
-          streamKind: "network", streamSays: "The network lost 1.3% of the picture, in 120 of 840 seconds. A lighter Quality on the TV, its 5 GHz Wi-Fi or a cable will help most.", streamAt: "2026-11-16T20:10:00Z" }] : [], tvApp: q.get("tvapp") !== "0" } }), 60);
+          streamKind: "network", streamSays: "The network lost 1.3% of the picture, in 120 of 840 seconds. A lighter Quality on the TV, its 5 GHz Wi-Fi or a cable will help most.", streamAt: "2026-11-16T20:10:00Z" }] : [], tvApp: q.get("tvapp") !== "0",
+        android: set && q.get("atv") === "1" ? [{ name: "Bedroom TV", ip: "192.168.1.52", model: "Google Chromecast", android: "12", version: "1.0.0", latest: "1.0.0", installed: "2026-11-18T18:00:00Z" }] : [], androidApp: q.get("atvapp") !== "0" } }), 60);
       if (m === "busy") setTimeout(() => emit({ type: "linkStep", step: "download", done: 31457280, total: 73400320 }), 80);
       return ok();
     },
@@ -870,6 +871,17 @@
       setTimeout(() => emit({ type: "linkStep", step: "tvinstall", done: 0, total: 0 }), 100); return ok();
     },
     ps_linkForgetLG: () => ok(),
+    // Add an Android TV: ?atv=1 a saved one; ?atvrun=allow|busy|public|done.
+    ps_linkFindAndroidTVs: () => { setTimeout(() => emit({ type: "linkAndroidFound", ips: ["192.168.1.52", "192.168.1.60"] }), 400); return ok(); },
+    ps_linkInstallAndroidTV: () => {
+      const r = q.get("atvrun") || "busy";
+      if (r === "allow") setTimeout(() => emit({ type: "linkAndroidDone", allow: true, error: "The TV didn't allow this computer: when it asks \"Allow USB debugging?\", choose Always allow from this computer, then try again." }), 300);
+      else if (r === "public") setTimeout(() => emit({ type: "linkAndroidDone", public: true, error: "Windows treats this network as public, so the TV can't reach this PC. Make it private, then install again." }), 300);
+      else if (r === "done") setTimeout(() => emit({ type: "linkAndroidDone", ok: true, name: "Bedroom TV" }), 300);
+      else setTimeout(() => emit({ type: "linkStep", step: "adbconnect", done: 0, total: 0 }), 100);
+      return ok();
+    },
+    ps_linkForgetAndroid: () => ok(),
     ps_tvResume: () => ok(),
     ps_tvStay: () => ok(),
     ps_tvCloseGame: () => ok(),

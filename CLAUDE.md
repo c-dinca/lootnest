@@ -1642,6 +1642,38 @@ These shipped recently, newest last:
   v2.11.2, `plugins/sources-updates`). Don't add it back, or anything
   that names a source format or helps find pirated copies, without the
   owner asking.
+- **Unreleased, Lootnest Link M4a, Add an Android TV** (the owner, 18
+  Nov 2026: Moonlight on Android TV, Google TV and Fire TV, installed by
+  Lootnest over ADB rather than through Google Play, in a fork they asked
+  for, c-dinca/lootnest-tv-android). `core/adb.go` speaks the host side
+  of ADB over TCP 5555 itself (no adb.exe): CNXN, AUTH with Lootnest's
+  own RSA key (`NewADBKey`, PKCS#1 v1.5 over the 20-byte token as SHA-1;
+  `ADBPublicKey` is adbd's RSAPublicKey struct, checked byte for byte
+  against Google's `adb keygen` in `testdata/adb`), one stream at a time
+  (`stream`, WRTE waits for OKAY), `Shell`, `Push` (sync SEND/DATA/DONE),
+  `Device`. The TV asks once to allow the computer (`ErrADBNotAllowed`,
+  `adbTimeToAllow` 90 s). `core/androidtv.go`: `AndroidAppPinned`
+  (empty until the fork's first release; `AndroidAppReady` gates the
+  button), `InstallAndroidApp` (push to /data/local/tmp, `pm install -r`,
+  `InstallAnswer`), `LaunchAndroidApp` (`am start -S -n
+  com.lootnest.tv/com.limelight.LootnestActivity --es host --es pairPin`,
+  both checked before the shell), `AndroidAppLog` (logcat tag
+  `LootnestTV`), `AndroidAppStarted`, `FindAndroidTVs` (port 5555 on the
+  /24s). `app/androidtv.go`: `installAndroidTV` mirrors `installTV`
+  (public network check, connect, install when the version differs, PIN
+  to the TV and `ap.Pair` every 2 s for 75 s, `AllowTV`), `link.json`
+  `androids` and `adbKey` (DPAPI); Save a report adds each one's app
+  log. UI in 82-link.js (`openAndroidTV`, `viewAndroidTV`, drawer `atv`,
+  rows, step `adbconnect`); harness `?link=set&atv=1` and
+  `&atvrun=allow|public|done`. The app: Moonlight Android with
+  applicationId `com.lootnest.tv`, `LootnestActivity` as the launcher
+  (adds the PC by `host`, pairs with `pairPin`, opens the host app
+  named Lootnest, wakes the PC for 90 s, then Play, Settings, PCs, Quit),
+  Lootnest's icons and banner, fonts in assets; `VERSION` drives
+  versionName/Code; release.yml signs with four secrets
+  (`LOOTNEST_KEYSTORE_B64` and the passwords) and attaches the APK and
+  SHA256SUMS. Not done: Android 11+ Wireless debugging (TLS pairing
+  with a code), Google Play. Not seen on a TV: docs/TESTING.md 44.
 - **Unreleased, the clean-up after the plugin** (the owner, 17 Nov
   2026: "fa tot"): `updates.run("magnet")` is gone (a plugin's only
   update call is "start", over http(s) with a SHA-256), the
