@@ -6,8 +6,10 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/pem"
 	"errors"
 	"io"
 	mathbig "math/big"
@@ -23,7 +25,9 @@ import (
 // A key and its .pub made by Google's own `adb keygen` (platform-tools):
 // Lootnest's encoding of the public key must be the same bytes.
 func TestADBPublicKeyMatchesADB(t *testing.T) {
-	priv, err := os.ReadFile("testdata/adb/adbkey")
+	// Only the public halves are kept: adbkey.pub.pem is the same key as
+	// adbkey.pub, in PEM.
+	pemKey, err := os.ReadFile("testdata/adb/adbkey.pub.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,12 +35,16 @@ func TestADBPublicKeyMatchesADB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	k, err := parseADBKey(priv)
+	b, _ := pem.Decode(pemKey)
+	if b == nil {
+		t.Fatal("no PEM")
+	}
+	k, err := x509.ParsePKIXPublicKey(b.Bytes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := strings.Fields(string(pub))[0]
-	got, err := ADBPublicKey(&k.PublicKey, "x")
+	got, err := ADBPublicKey(k.(*rsa.PublicKey), "x")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,13 +233,37 @@ func (f *fakeADBD) serve(c net.Conn) {
 	}
 }
 
+var testKey struct {
+	sync.Once
+	pem []byte
+}
+
 func testADBKey(t *testing.T) []byte {
 	t.Helper()
-	k, err := os.ReadFile("testdata/adb/adbkey")
+	testKey.Do(func() {
+		k, err := NewADBKey()
+		if err != nil {
+			t.Fatal(err)
+		}
+		testKey.pem = k
+	})
+	return testKey.pem
+}
+
+// A PKCS #8 key, as adb keygen writes one, reads too.
+func TestADBKeyPKCS8(t *testing.T) {
+	k, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return k
+	der, err := x509.MarshalPKCS8PrivateKey(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := parseADBKey(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}))
+	if err != nil || got.N.Cmp(k.N) != 0 {
+		t.Fatal(err)
+	}
 }
 
 func TestADBAllowOnceThenSignIn(t *testing.T) {

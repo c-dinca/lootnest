@@ -1649,7 +1649,7 @@ These shipped recently, newest last:
   of ADB over TCP 5555 itself (no adb.exe): CNXN, AUTH with Lootnest's
   own RSA key (`NewADBKey`, PKCS#1 v1.5 over the 20-byte token as SHA-1;
   `ADBPublicKey` is adbd's RSAPublicKey struct, checked byte for byte
-  against Google's `adb keygen` in `testdata/adb`), one stream at a time
+  against Google's `adb keygen` in `testdata/adb`, public halves only), one stream at a time
   (`stream`, WRTE waits for OKAY), `Shell`, `Push` (sync SEND/DATA/DONE),
   `Device`. The TV asks once to allow the computer (`ErrADBNotAllowed`,
   `adbTimeToAllow` 90 s). `core/androidtv.go`: `AndroidAppPinned`
