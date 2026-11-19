@@ -298,6 +298,7 @@ func (a *App) startScan() {
 			}()
 			list, checks = a.scanPC()
 		}()
+		padStale() // the Library changed: Big Picture asks again
 		fresh := len(list)
 		list = core.DropPluginGames(core.MergeFound(saved, list, dirExists), a.plugins().sources)
 		a.mu.Lock()

@@ -1326,6 +1326,13 @@
       S.hooksBusy = false; render(); if (S.dialog) renderOverlay();
     },
     sources() { S.sources = null; S.dialog = { kind: "sources" }; renderOverlay(); focusOverlay(); loadSources(); },
+    async "pad-play"(el) {
+      const it = itemFor(el);
+      closeContext();
+      if (!it) return;
+      try { await api.setPadPlay(recentKey(it), el.dataset.pad); } catch (e) { toast(errText(e), "error"); return; }
+      toast(el.dataset.pad === "none" ? `${it.name} stays out of Big Picture, in Library, Keyboard and mouse.` : `${it.name} shows in Big Picture.`);
+    },
     "sources-rescan"() { actions.rescan(); renderOverlay(); },
     async "gamedir-add"() {
       const r = await browse("gameDir", "");

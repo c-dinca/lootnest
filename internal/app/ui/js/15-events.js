@@ -18,6 +18,7 @@
       case "found":
         loadFound().then(() => {
           if (S.owned && !S.found.refreshing) api.ownedGames().catch(() => {}); // an install or uninstall may be done
+          if (!S.found.refreshing && !S.found.scanning && S.pads) { S.pads = null; if (BP.on) api.padSupport().catch(() => {}); }
           if (S.dialog && S.dialog.kind === "sources") loadSources();
         });
         break;
@@ -67,6 +68,10 @@
       case "art":
         S.art[ev.key] = ev.url;
         if (S.view === "game" || S.view === "library" || S.view === "home") render();
+        break;
+      case "padSupport":
+        S.pads = ev.pads || {};
+        if (BP.on) bpSoon();
         break;
       case "achievements":
         S.ach[ev.key] = ev.set || null;

@@ -22,6 +22,7 @@
     sideAnchor: "",   // the row a Shift+click selects from
     sideNew: null,    // the inline New collection field: {keys} of the games it gets
     sideRename: "",   // the collection being renamed in place
+    pads: null,       // Library key -> "full", "partial" or "none" (app/padplay.go), for Big Picture
     tagPick: [],      // Library keys the Add to collection menu is for
     libSel: new Set(), // Library keys of the games picked in the Library's grid or list
     libAnchor: "",    // the game a Shift+click or Shift+arrow picks from

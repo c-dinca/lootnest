@@ -24,6 +24,8 @@
     closeGame: (id) => call("ps_closeGame", id),
     profileInfo: (id) => call("ps_profileInfo", id),
     achievements: (key, appId, dir, name) => call("ps_achievements", key, appId || 0, dir || "", name || ""),
+    padSupport: () => call("ps_padSupport"),
+    setPadPlay: (key, pad) => call("ps_setPadPlay", key, pad || ""),
     setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
     allAchievements: () => call("ps_allAchievements"),
     setTags: (key, tags) => call("ps_setTags", key, tags),

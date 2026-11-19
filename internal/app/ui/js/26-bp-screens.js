@@ -69,9 +69,22 @@
     api.launchApp(id).catch((e) => { tvReturn(); toast(errText(e), "error"); });
   }
   const bpPerson = (p, id, go, line, on) => `<button class="bp-person ln-player${on ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="${id}:${esc(p.id)}" data-go="${go}" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${esc(line)}</span></button>`;
+  // Whether a game plays with a controller (S.pads, app/padplay.go): a game
+  // in several stores does when one of its copies does.
+  function padOf(it) {
+    if (!S.pads) return "";
+    const v = copiesOf(it).map((c) => S.pads[recentKey(c)] || "");
+    return v.includes("full") ? "full" : v.includes("partial") ? "partial" : v.includes("") ? "" : "none";
+  }
+  // Big Picture's games: those played with a keyboard and a mouse only
+  // (Counter-Strike 2, Riot's) stay out, unless that's turned off. A game
+  // nobody says anything about stays in.
+  const BP_KBM = " kbm"; // Library's chip for the ones left out (no collection starts with a space)
+  const bpGames = () => libraryItems().filter((it) => !BP.padOnly || padOf(it) !== "none");
+  const bpLeftOut = () => (BP.padOnly ? libraryItems().filter((it) => padOf(it) === "none") : []);
   // The screen on show, as the inside of its sliding sheet.
   function bpScreen() {
-    const all = libraryItems();
+    const all = bpGames();
     if (BP.settings) return bpSettingsScreen();
     if (BP.choose) {
       const it = bpItem(BP.choose);
@@ -98,10 +111,11 @@
       return bpEmpty("No games yet", "Lootnest lists the games on this PC once it has looked for them.", `<button class="bp-key" data-bp data-bpid="empty:menu" data-go="menu">Open the menu</button>`);
     }
     if (BP.tab === "library") {
-      const tags = allTags().filter((t) => all.some((it) => tagsOf(it).includes(t)));
-      const list = BP.tag ? all.filter((it) => tagsOf(it).includes(BP.tag)) : all;
+      const tags = allTags().filter((t) => all.some((it) => tagsOf(it).includes(t))), out = bpLeftOut();
+      if (BP.tag === BP_KBM && !out.length) BP.tag = "";
+      const list = BP.tag === BP_KBM ? out : BP.tag ? all.filter((it) => tagsOf(it).includes(BP.tag)) : all;
       const chip = (t, l) => `<button class="bp-chip" data-bp data-bpid="chip:${esc(t)}" data-go="chip" data-tag="${esc(t)}" aria-pressed="${BP.tag === t}" data-hint="Show">${esc(l)}</button>`;
-      return `<section class="bp-lib" data-block><div class="bp-lib-head"><div class="bp-track bp-chips" data-zone="chips" data-live>${chip("", "All games")}${tags.map((t) => chip(t, t)).join("")}</div><span class="bp-count ln-num">${list.length} ${list.length === 1 ? "game" : "games"}</span></div>
+      return `<section class="bp-lib" data-block><div class="bp-lib-head"><div class="bp-track bp-chips" data-zone="chips" data-live>${chip("", "All games")}${tags.map((t) => chip(t, t)).join("")}${out.length ? chip(BP_KBM, "Keyboard and mouse") : ""}</div><span class="bp-count ln-num">${list.length} ${list.length === 1 ? "game" : "games"}</span></div>
         <div class="bp-grid" data-zone="grid" data-grid>${list.map((it) => bpTile(it, "grid")).join("")}</div></section>`;
     }
     if (BP.tab === "profiles") {
@@ -216,6 +230,7 @@
         { id: "trailers", name: "Trailers behind the game in focus", on: BP.trailers, say: s.gameDetails ? "A game's trailer plays behind it, without sound, once the focus has rested on it. A moving picture costs the stream to a TV more than a still one." : "Needs Game details, which is turned on in Lootnest's Settings on the PC, under Online.", run: () => { BP.trailers = !BP.trailers; setPref("bpTrailers", BP.trailers ? "1" : "0"); if (!BP.trailers) bpTrailerStop(); renderBP(); } },
         { id: "start", name: "Open in Big Picture when Lootnest starts", on: !!s.openBigPicture, say: "For a PC that is mostly used from the sofa.", run: flip("openBigPicture") }] },
       { id: "controller", name: "Controller", opts: [
+        { id: "padonly", name: "Only games that play with a controller", on: BP.padOnly, say: "Games played only with a keyboard and a mouse, such as Counter-Strike 2 and Riot's games, stay in Library, Keyboard and mouse. Lootnest reads it from Steam's files on this PC. To change it for a game, right-click it in Lootnest's window on the PC.", run: () => { BP.padOnly = !BP.padOnly; setPref("bpPadOnly", BP.padOnly ? "1" : "0"); if (BP.tag === BP_KBM) BP.tag = ""; renderBP(); } },
         { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV reaches the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
       { id: "play", name: "While you play", opts: [
         { id: "xbox", name: "PlayStation controller as an Xbox one in games", on: !!s.padAsXbox, say: "For games that only know Xbox controllers: while a game runs, it sees your DualSense or DualShock 4 as an Xbox controller. It needs the ViGEmBus driver, which the TV streaming set-up installs.", run: flip("padAsXbox") },

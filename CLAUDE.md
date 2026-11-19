@@ -1908,6 +1908,23 @@ These shipped recently, newest last:
   `renderSideGames`: after the folders, groups `installed` (every item
   but `owned`), `owned` (Not installed), then Not in a collection; the old
   `all` group is gone. Harness shot `side-installed`.
+- **Unreleased, Big Picture by controller** (the owner, 19 Nov 2026: no
+  CS2, Valorant or League of Legends on the TV, "with all games").
+  `core/padplay.go`: `padOfCommon` reads appinfo.vdf's `controller_support`
+  or store categories (28 full, 18 partial; categories but neither is
+  none; the binary reader now keeps int32s as digits), `SteamControllers`,
+  `PadGuess` (Riot's games but 2XKO, a few by name: `noPadGames`),
+  `DetailsPad` (kept store details; "" Controller is none only with
+  `ReqsRead`). `app/padplay.go` `padSupport` per Library key: the user's
+  Edit details Controller, appinfo, kept details, the guess; cached 30 min,
+  `padStale` after a scan or a change; `ps_padSupport` (event
+  `padSupport`, `S.pads`), `ps_setPadPlay` (writes the Controller edit).
+  UI: `padOf`, `bpGames`, `bpLeftOut` and chip `BP_KBM` (Keyboard and
+  mouse) in 26-bp-screens.js; `BP.padOnly` (pref `bpPadOnly`, on), a row in
+  Big Picture's Settings, Controller; right-click `pad-play` (Leave out of
+  / Show in Big Picture). Nothing goes online for it. Achievements in Big
+  Picture still lists every game with some. Harness `ctx-pad`,
+  `tv-library-kbm`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

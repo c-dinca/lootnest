@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -55,9 +56,24 @@ func appInfoFile(t *testing.T, path string, version uint32, apps [][3]string) {
 		d.WriteByte(1)
 		key(&d, "name")
 		d.WriteString(a[1] + "\x00")
+		kind, pad, _ := strings.Cut(a[2], "|") // "Game|full": its controller support too
 		d.WriteByte(1)
 		key(&d, "type")
-		d.WriteString(a[2] + "\x00")
+		d.WriteString(kind + "\x00")
+		if pad == "full" || pad == "partial" || pad == "none" {
+			// As Steam keeps it: categories as int32s, 28 full, 18 partial.
+			d.WriteByte(0)
+			key(&d, "category")
+			cat := map[string]string{"full": "category_28", "partial": "category_18", "none": "category_2"}[pad]
+			d.WriteByte(2)
+			key(&d, cat)
+			_ = binary.Write(&d, le, uint32(1))
+			d.WriteByte(8)
+		} else if pad != "" {
+			d.WriteByte(1)
+			key(&d, "controller_support")
+			d.WriteString(pad + "\x00")
+		}
 		d.WriteByte(8)
 		d.WriteByte(8)
 		d.WriteByte(8)

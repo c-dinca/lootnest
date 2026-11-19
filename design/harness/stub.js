@@ -395,6 +395,7 @@
     { source: "Lootnest", dir: "C:\\Users\\you\\Pictures\\Lootnest\\Screenshots" },
   ];
 
+  const PADS = {};
   const TAGS = { "game:cs2": ["Co-op", "Shooters"], "game:ittakestwo": ["Co-op", "For the kids"], "steam:413150": ["Co-op", "Weekend", "For the kids"],
     "steam:1091500": ["Weekend"], "dir:c:\\games\\hades ii": ["Weekend", "Favourites"], "dir:c:\\gog games\\hollow knight": ["Weekend"], "game:bg3": ["Co-op", "Weekend", "Favourites"] };
   // As core's tags.go: Favourites first, then the user's order, then any only on games.
@@ -828,6 +829,10 @@
     // Each player's profile: saved a while ago, a few MB.
     ps_profileInfo: (gid) => { if (STATE !== "loading") emit({ type: "profileInfo", gameId: gid, info: Object.fromEntries((profiles[gid] || []).map((p, j) => [p, { saved: iso((j + 1) * 22 * h), size: (j + 1) * 7.3 * 1048576 }])) }); return ok(); },
     // Achievements: CS2 from Steam's cache, a folder game from a file on this PC.
+    // Which games play with a controller (app/padplay.go): Counter-Strike 2
+    // with a keyboard and a mouse only.
+    ps_padSupport: () => { setTimeout(() => emit({ type: "padSupport", pads: Object.assign({ "game:cs2": "none", "game:bg3": "full", "game:ittakestwo": "full" }, PADS) }), 50); return ok(); },
+    ps_setPadPlay: (key, pad) => { PADS[key] = pad || undefined; setTimeout(() => emit({ type: "padSupport", pads: Object.assign({ "game:cs2": "none", "game:bg3": "full" }, PADS) }), 50); return ok(); },
     ps_achievements: (key) => {
       const mk = (n, got, names) => names.slice(0, n).map((nm, i) => ({ id: "ACH_" + i, name: nm, description: "Do the thing number " + (i + 1), unlocked: i < got, at: i < got ? iso((i + 1) * 9 * h) : undefined, percent: [62.4, 31, 12.8, 4.2, 0.9, 48, 22, 7.5][i % 8], hidden: i === n - 1 }));
       const names = ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist", "Collector", "Completionist", "Speed demon", "Old friends", "Last one standing", "Secret ending"];
