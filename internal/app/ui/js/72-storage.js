@@ -22,8 +22,9 @@
   const about = (n) => "About " + fmtBytes(n);
   const NEAR_FULL = 0.1; // a drive with less than this share free
   const MOVE_ROOM = 1.1; // a move needs the game's size and a tenth more
-  // A game in a folder of its own that Lootnest moves itself.
-  const movable = (it) => !["shortcut", "hydra"].includes(it.source) && (it.kind === "found" ? removable(it) : it.g.launch.type === "exe" && UPDATABLE.includes(it.source));
+  // A game in a folder of its own that Lootnest moves itself. Hydra can't
+  // move its games, so Lootnest does, and the user points Hydra at it.
+  const movable = (it) => it.source !== "shortcut" && (it.kind === "found" ? removable(it) : it.g.launch.type === "exe" && UPDATABLE.includes(it.source));
   const moveItem = (it) => movable(it) ? `<button data-action="movefolder-open" ${itemAttr(it)}>Move to another drive</button>`
     : it.appId ? `<button data-action="move-open" data-app="${it.appId}" data-name="${esc(it.name)}">Move with Game Mover</button>`
     : LAUNCHERS.includes(it.source) ? `<button disabled>Installed by ${esc(sourceLabel(it.source, it.f))}, so move it there</button>` : "";
@@ -72,9 +73,10 @@
     const z = (it && sizeOf(it)) || {}, size = z.install || 0, dir = z.dir || (it && it.f && it.f.dir) || "";
     const wrap = (inner, sub) => moveWrap(D.name, inner, sub);
     if (M && M.key === D.key) {
-      const text = M.step === "check" ? "Checking the copy, then pointing the Library at it" : M.total ? `Copying ${fmtBytes(M.done)} of ${fmtBytes(M.total)}` : "Counting its files";
+      const text = M.step === "firewall" ? "Keeping it offline in its new folder. Allow it in Windows' prompt."
+        : M.step === "check" ? "Checking the copy, then pointing the Library at it" : M.total ? `Copying ${fmtBytes(M.done)} of ${fmtBytes(M.total)}` : "Counting its files";
       return wrap(`${moveProgress(M.done, M.total, text, "Don't start the game until it's done.")}
-        <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button>${M.step === "check" ? "" : `<button class="btn" data-action="movefolder-cancel">Stop the move</button>`}</div>`);
+        <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button>${M.step === "check" || M.step === "firewall" ? "" : `<button class="btn" data-action="movefolder-cancel">Stop the move</button>`}</div>`);
     }
     const only = (text) => wrap(`<p class="note" role="status">${text}</p><div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     if (M || S.moving) return only("Another game is moving. Wait for it to finish.");
@@ -87,8 +89,10 @@
     const list = spots.length ? `<div class="choices">${spots.map((s) => `<button class="choice${D.pick === s.path ? " on" : ""}" data-action="movefolder-pick" data-path="${esc(s.path)}" ${room(s) ? "" : "disabled"} aria-pressed="${D.pick === s.path}">
         <span class="dot"></span><span><b>${esc(s.path)}</b><span>${s.free < 0 ? "A folder you chose" : fmtBytes(s.free) + " free"}${room(s) ? "" : ", not enough room"}</span></span></button>`).join("")}</div>`
       : `<p class="note">This PC has one drive. Choose a folder to move the game into.</p>`;
+    const after = [it && it.source === "hydra" ? "Hydra keeps looking in the old folder, so choose the game's program again in Hydra afterwards." : "",
+      it && isOffline(it) ? "It stays offline: Windows asks once to change the firewall rules." : ""].filter(Boolean).map((t) => `<p class="hint">${esc(t)}</p>`).join("");
     return wrap(`${list}
-      <p class="hint">Copied and checked first, then the old folder goes to the Recycle Bin.</p>
+      <p class="hint">Copied and checked first, then the old folder goes to the Recycle Bin.</p>${after}
       <div class="dialog-foot"><button class="btn quiet" data-action="movefolder-browse">Choose a folder</button><span class="grow"></span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
         <button class="btn primary" data-action="movefolder-go" ${D.pick ? "" : "disabled"}>Move</button></div>`,
       `${size ? esc(about(size)) + ", now in " : "Now in "}<span class="selectable">${esc(dir)}</span>`);

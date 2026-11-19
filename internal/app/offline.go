@@ -78,19 +78,8 @@ func (a *App) apiSetOffline(key string, on bool) error {
 	go func() {
 		out := map[string]any{"key": key, "on": on}
 		defer func() { a.emit("offline", out) }()
-		ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
-		script := core.FirewallScript(core.OfflineTag(key), name, exes, on)
-		args := "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand " + core.EncodePowerShell(script)
-		code, err := plat.RunElevatedAndWait(a.hwnd, ps, args)
-		switch {
-		case errors.Is(err, plat.ErrCancelledByUser):
-			out["error"] = "Nothing changed: Windows' prompt was cancelled."
-			return
-		case err != nil:
-			out["error"] = "Windows Firewall couldn't be changed: " + err.Error()
-			return
-		case code != 0:
-			out["error"] = fmt.Sprintf("Windows Firewall didn't take the rules (code %d). Nothing is blocked.", code)
+		if err := a.runFirewall(core.FirewallScript(core.OfflineTag(key), name, exes, on)); err != nil {
+			out["error"] = err.Error()
 			return
 		}
 		a.mu.Lock()
@@ -116,4 +105,62 @@ func (a *App) apiSetOffline(key string, on bool) error {
 		}
 	}()
 	return nil
+}
+
+// runFirewall runs a FirewallScript as administrator, after Windows asks
+// the user. The error says what happened in the user's words.
+func (a *App) runFirewall(script string) error {
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	args := "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand " + core.EncodePowerShell(script)
+	code, err := plat.RunElevatedAndWait(a.hwnd, ps, args)
+	switch {
+	case errors.Is(err, plat.ErrCancelledByUser):
+		return errors.New("Nothing changed: Windows' prompt was cancelled.")
+	case err != nil:
+		return errors.New("Windows Firewall couldn't be changed: " + err.Error())
+	case code != 0:
+		return fmt.Errorf("Windows Firewall didn't take the rules (code %d). Nothing is blocked.", code)
+	}
+	return nil
+}
+
+// offlineMoved keeps a game that was kept offline offline in the folder it
+// was just moved to: one script, run once as administrator, takes away the
+// rules for the old places (under the old key) and blocks the programs in
+// the new folder (under the new key). If that can't be done, the game is
+// no longer recorded as kept offline, and the answer says so.
+func (a *App) offlineMoved(oldKey, newKey string) string {
+	name, dir, exe, err := a.offlineTarget(newKey)
+	var exes []string
+	if err == nil {
+		exes = core.GameExes(dir, exe)
+	}
+	if err == nil && len(exes) == 0 {
+		err = errors.New("there's no program in its new folder to block")
+	}
+	for i := range exes {
+		exes[i] = plat.LongPath(exes[i])
+	}
+	if err == nil {
+		err = a.runFirewall(core.FirewallMoveScript(core.OfflineTag(oldKey), core.OfflineTag(newKey), name, exes))
+	}
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	delete(cfg.Offline, oldKey)
+	if err == nil {
+		if cfg.Offline == nil {
+			cfg.Offline = map[string][]string{}
+		}
+		cfg.Offline[newKey] = exes
+	}
+	if serr := a.saveConfig(cfg); serr != nil && err == nil {
+		err = serr
+	}
+	if err != nil {
+		a.logf("%s moved but isn't kept offline in its new folder: %v", name, err)
+		return "Windows Firewall wasn't changed for its new folder, so it can go online. Keep it offline again from Manage."
+	}
+	a.logf("%s is kept offline in its new folder: Windows Firewall blocks %d of its programs", name, len(exes))
+	return ""
 }

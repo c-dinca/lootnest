@@ -99,8 +99,8 @@ func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + 
 // running it twice leaves one set.
 func FirewallScript(tag, name string, exes []string, block bool) string {
 	var b strings.Builder
-	b.WriteString("$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n")
-	b.WriteString("Get-NetFirewallRule -Group 'Lootnest' -ErrorAction SilentlyContinue | Where-Object { $_.Description -eq " + psQuote(tag) + " } | Remove-NetFirewallRule\n")
+	b.WriteString(fwHead)
+	b.WriteString(fwRemove(tag))
 	if block {
 		for _, e := range exes {
 			base := e[strings.LastIndexAny(e, `\/`)+1:]
@@ -114,6 +114,24 @@ func FirewallScript(tag, name string, exes []string, block bool) string {
 	// error stops the script before here, with exit code 1.
 	b.WriteString("exit 0\n")
 	return b.String()
+}
+
+const fwHead = "$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n"
+
+// fwRemove takes away the rules Lootnest made under tag.
+func fwRemove(tag string) string {
+	return "Get-NetFirewallRule -Group 'Lootnest' -ErrorAction SilentlyContinue | Where-Object { $_.Description -eq " + psQuote(tag) + " } | Remove-NetFirewallRule\n"
+}
+
+// FirewallMoveScript is FirewallScript for a game kept offline that moved
+// to another folder: it takes away the rules made under oldTag (the old
+// places) and blocks exes under newTag, in one run as administrator.
+func FirewallMoveScript(oldTag, newTag, name string, exes []string) string {
+	s := FirewallScript(newTag, name, exes, true)
+	if oldTag == newTag {
+		return s
+	}
+	return fwHead + fwRemove(oldTag) + strings.TrimPrefix(s, fwHead)
 }
 
 // EncodePowerShell gives a script as powershell -EncodedCommand takes it

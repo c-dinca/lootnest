@@ -35,7 +35,6 @@ func TestMoveGamePlanRefuses(t *testing.T) {
 		want                   string
 	}{
 		{"steam", "steam", game, dst, false, -1, "Its store keeps track"},
-		{"hydra", "hydra", game, dst, false, -1, "Its store keeps track"},
 		{"shortcut", "shortcut", game, dst, false, -1, "shortcut"},
 		{"running", "folder", game, dst, true, -1, "is running"},
 		{"no room", "added", game, dst, false, 10, "isn't enough room"},
@@ -50,6 +49,10 @@ func TestMoveGamePlanRefuses(t *testing.T) {
 		if _, err := e.MoveGamePlan("Hollow Tale", c.source, c.src, c.dst, c.running, c.free); err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: %v, want %q", c.name, err, c.want)
 		}
+	}
+	// Hydra can't move its games, so Lootnest does.
+	if _, err := e.MoveGamePlan("Hollow Tale", "hydra", game, dst, false, -1); err != nil {
+		t.Fatalf("a Hydra game: %v", err)
 	}
 	// Exactly the game and a tenth more is enough.
 	if _, err := e.MoveGamePlan("Hollow Tale", "folder", game, dst, false, 11); err != nil {

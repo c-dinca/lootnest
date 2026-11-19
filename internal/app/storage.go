@@ -238,7 +238,7 @@ func (a *App) apiMoveFolderGame(key, dst string) error {
 					out["error"] = "The move stopped unexpectedly. Details are in lootnest.log."
 				}
 			}()
-			to, leftover, err := a.moveFolderGame(t, key, dst)
+			to, leftover, note, err := a.moveFolderGame(t, key, dst)
 			switch {
 			case errors.Is(err, core.ErrMoveCancelled):
 				out["cancelled"] = true
@@ -247,7 +247,8 @@ func (a *App) apiMoveFolderGame(key, dst string) error {
 				out["error"] = err.Error()
 				a.logf("Move of %s to %s failed: %v", t.Name, dst, err)
 			default:
-				out["to"], out["leftover"], out["newKey"] = to, leftover, movedKey(to)
+				out["to"], out["leftover"], out["newKey"], out["note"] = to, leftover, movedKey(to), note
+				out["hydra"] = t.Source == "hydra"
 				a.logf("Moved %s from %s to %s", t.Name, t.Dir, to)
 				sizeMu.Lock()
 				sizesAt = time.Time{} // counted again after the scan, under its new key
@@ -309,21 +310,19 @@ func (a *App) errMoving(p string) error {
 	return a.errModding(p)
 }
 
-// moveFolderGame does the move, and says where the game is now and, if the
-// old folder couldn't go to the Recycle Bin, where it still is.
-func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, error) {
+// moveFolderGame does the move, and says where the game is now, where the
+// old folder still is if it couldn't go to the Recycle Bin, and a note when
+// a game kept offline couldn't be kept offline in its new folder.
+func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, string, error) {
 	updMu.Lock() // no update goes into the folder meanwhile
 	defer updMu.Unlock()
 	a.mu.Lock()
 	offline := len(a.cfg.Offline[key]) > 0
 	a.mu.Unlock()
-	if offline {
-		return "", "", fmt.Errorf("Windows Firewall keeps %s offline by its programs' places on this PC. Let it go online again first (Manage), move it, then keep it offline again.", t.Name)
-	}
 	vol := filepath.VolumeName(filepath.Clean(dst)) + `\`
 	m, err := a.env.MoveGamePlan(t.Name, t.Source, t.Dir, dst, a.inUse(t), plat.DiskFree(vol))
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	a.logf("Moving %s (%s) from %s to %s", m.Name, gb(m.Size), m.From, m.To)
 	var last time.Time
@@ -336,16 +335,16 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, erro
 	a.emit("folderMoveProgress", map[string]any{"key": key, "done": 0, "total": m.Size})
 	if err := core.MoveGame(m, progress, moveStop.Load); err != nil {
 		if errors.Is(err, core.ErrMoveCancelled) {
-			return "", "", err
+			return "", "", "", err
 		}
-		return "", "", fmt.Errorf("copying it failed (%v). It stays where it was.", err)
+		return "", "", "", fmt.Errorf("copying it failed (%v). It stays where it was.", err)
 	}
 	a.emit("folderMoveProgress", map[string]any{"key": key, "done": m.Size, "total": m.Size, "step": "check"})
-	undo := func(why error) (string, string, error) {
+	undo := func(why error) (string, string, string, error) {
 		if err := os.RemoveAll(m.To); err != nil {
 			a.logf("ERROR removing the copy in %s: %v", m.To, err)
 		}
-		return "", "", fmt.Errorf("%v. It stays where it was.", why)
+		return "", "", "", fmt.Errorf("%v. It stays where it was.", why)
 	}
 	if a.inUse(t) {
 		return undo(fmt.Errorf("%s started while it was copied", t.Name))
@@ -358,11 +357,20 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, erro
 	if err := a.retargetMoved(m, dst); err != nil {
 		return undo(fmt.Errorf("Lootnest couldn't point the Library at the new folder (%v)", err))
 	}
+	note := ""
+	if offline {
+		newKey := key
+		if !strings.HasPrefix(key, "game:") {
+			newKey = movedKey(m.To)
+		}
+		a.emit("folderMoveProgress", map[string]any{"key": key, "done": m.Size, "total": m.Size, "step": "firewall"})
+		note = a.offlineMoved(key, newKey)
+	}
 	if err := plat.Recycle(a.hwnd, m.From); err != nil {
 		a.logf("The old folder of %s stays in %s: %v", m.Name, m.From, err)
-		return m.To, m.From, nil
+		return m.To, m.From, note, nil
 	}
-	return m.To, "", nil
+	return m.To, "", note, nil
 }
 
 // movedKey is a moved folder game's Library key.
@@ -436,7 +444,10 @@ func (a *App) retargetMoved(m core.GameMove, dst string) error {
 			inRoot = inRoot || strings.EqualFold(filepath.Clean(r), filepath.Clean(dst))
 		}
 		cfg.AddedGames = withoutAdded(cfg.AddedGames, oldKey)
-		if f.Added || !inRoot { // else the scan finds it in its new folder
+		// Else the scan finds it in its new folder. A Hydra game stays as
+		// added until Hydra is pointed at it, keeping what Hydra knew (its
+		// Steam id) and its source.
+		if f.Added || !inRoot || f.Source == "hydra" {
 			nf.Added = true
 			cfg.AddedGames = append(cfg.AddedGames, nf)
 		}
