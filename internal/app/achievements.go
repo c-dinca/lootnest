@@ -45,10 +45,19 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 	if strings.EqualFold(filepath.Ext(dir), ".exe") {
 		dir = filepath.Dir(dir) // the game's exe was given
 	}
-	appID = a.achAppID(key, g, appID, dir, name)
-	hand := a.store.LoadHandAch().On(key)
-	if appID <= 0 && hand != nil {
-		appID = hand.AppID
+	if g != nil && appID <= 0 {
+		appID = core.GameAppID(g)
+	}
+	if appID <= 0 && g == nil {
+		if f, ok := a.foundByKey(key); ok {
+			appID = f.SteamID // the id another launcher (Hydra) knows
+		}
+	}
+	if appID <= 0 {
+		appID = core.FolderAppID(dir)
+	}
+	if appID <= 0 {
+		appID = knownStoreAppID(name)
 	}
 	if appID <= 0 {
 		a.logAchOnce("none|"+key, "Achievements for %s: no Steam app id next to the game, so none to read", name)
@@ -108,10 +117,6 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 			}
 		}
 	}
-	if hand != nil && unlocks == nil && own == nil && len(list) == 0 {
-		// Nothing on this PC: the profiles' own marks, on Steam's list.
-		return a.handSet(appID, hand, name, online)
-	}
 	if len(list) == 0 && total == 0 && unlocks == nil && own == nil {
 		a.logAchOnce("none|"+key, "Achievements for %s (app %d): none found on this PC", name, appID)
 		return nil
@@ -161,27 +166,6 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 		a.logf("Achievements for %s (app %d): %d of %d, from %s", name, appID, set.Unlocked, set.Total, from)
 	}
 	return set
-}
-
-// achAppID is the Steam app id of a game's achievements: the one given,
-// else its launch's, the one another launcher (Hydra) knows, one beside
-// the game's files, or one looked up before by name for its cover.
-func (a *App) achAppID(key string, g *core.Game, appID int, dir, name string) int {
-	if g != nil && appID <= 0 {
-		appID = core.GameAppID(g)
-	}
-	if appID <= 0 && g == nil {
-		if f, ok := a.foundByKey(key); ok {
-			appID = f.SteamID
-		}
-	}
-	if appID <= 0 {
-		appID = core.FolderAppID(dir)
-	}
-	if appID <= 0 {
-		appID = knownStoreAppID(name)
-	}
-	return appID
 }
 
 // apiSetSharedAchievements chooses whether a game's achievements are each

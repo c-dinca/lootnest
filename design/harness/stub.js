@@ -307,7 +307,6 @@
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
-  const HAND = q.get("hand") ? { "dir:d:\\games\\onimusha": { [(FIRSTP || PLAYERS)[0].id]: { ACH_0: iso(3 * d), ACH_3: iso(2 * h), ACH_5: iso(9 * d) } } } : {};
   // ?kept=1: Hollow Tale (from Hydra) is kept offline.
   const OFFLINE = q.get("kept") ? { "dir:d:\\games\\hydra\\hollow tale": ["D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe", "D:\\Games\\Hydra\\Hollow Tale\\Crash.exe"] } : {};
   // Saved Library views (core.LibraryView), as core/views.go keeps them.
@@ -828,14 +827,6 @@
     ps_achievements: (key) => {
       const mk = (n, got, names) => names.slice(0, n).map((nm, i) => ({ id: "ACH_" + i, name: nm, description: "Do the thing number " + (i + 1), unlocked: i < got, at: i < got ? iso((i + 1) * 9 * h) : undefined, percent: [62.4, 31, 12.8, 4.2, 0.9, 48, 22, 7.5][i % 8], hidden: i === n - 1 }));
       const names = ["First blood", "The Fool", "Clean sweep", "Night owl", "Against all odds", "Pacifist", "Collector", "Completionist", "Speed demon", "Old friends", "Last one standing", "Secret ending"];
-      if (HAND[key]) {
-        const list = names.map((nm, i) => ({ id: "ACH_" + i, name: nm, description: "Do the thing number " + (i + 1), percent: [62.4, 31, 12.8, 4.2, 0.9, 48, 22, 7.5][i % 8], hidden: i === names.length - 1, seq: i + 1 }));
-        const own = (pid) => { const m = HAND[key][pid] || {}, l = list.map((a) => (m[a.id] ? { ...a, unlocked: true, at: m[a.id] } : { ...a, unlocked: false }));
-          l.sort((a, b) => (b.unlocked - a.unlocked) || (a.unlocked ? b.at.localeCompare(a.at) : 0)); return { source: "hand", total: l.length, unlocked: l.filter((a) => a.unlocked).length, list: l }; };
-        const players = Object.fromEntries(PLAYERS.map((p) => [p.id, own(p.id)]));
-        if (STATE !== "loading") emit({ type: "achievements", key, set: { appId: 1174180, ...players[PLAYERS[0].id], players } });
-        return ok();
-      }
       const set = key === "game:cs2" ? { appId: 730, source: "steam", total: 12, unlocked: 5, list: mk(12, 5, names) }
         : key === "dir:d:\\games\\onimusha" ? null
         : key.startsWith("dir:") ? { appId: 1091500, source: "pc", total: 12, unlocked: 3, list: mk(12, 3, names) }
@@ -845,9 +836,6 @@
       if (STATE !== "loading") emit({ type: "achievements", key, set });
       return ok();
     },
-    // Marking by hand: ?hand=1 starts Onimusha with it on and a few marks.
-    ps_handAch: (key, on) => { setTimeout(() => { if (on) HAND[key] = HAND[key] || {}; else delete HAND[key]; emit({ type: "handAch", key, on }); api.ps_achievements(key); }, 300); return ok(); },
-    ps_markAch: (key, pid, id, on) => { const m = (HAND[key][pid] = HAND[key][pid] || {}); if (on) m[id] = new Date().toISOString(); else delete m[id]; setTimeout(() => api.ps_achievements(key), 60); return ok(); },
     ps_testToast: () => ok(),
     ps_gameBackups: (id) => ok([
       { id: "20261107-201500", when: iso(40 * 60e3), owner: "p2", size: 15e6 },

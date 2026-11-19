@@ -197,18 +197,6 @@
     "game-tab"(el) { setGameTab(el.dataset.tab); },
     manage(el) { const it = itemFor(el); if (it) { S.dialog = { kind: "manage", ik: it.kind, iid: it.id }; renderOverlay(); focusOverlay(); } },
     "ach-who"(el) { S.achWho[el.dataset.key] = el.dataset.player; render(); },
-    async "ach-hand"(el) {
-      const key = el.dataset.key, on = el.dataset.on === "1", it = itemByKey(key);
-      if (!on && !(await confirmDialog({ title: "Stop marking by hand?", body: `${it ? it.name : "This game"} won't show achievements until a file on this PC has them. Every profile's marks are kept, and come back if you mark by hand again.`, ok: "Stop marking" }))) return;
-      S.handBusy[key] = true; render();
-      try { await api.handAch(key, on); } catch (e) { delete S.handBusy[key]; render(); toast(errText(e), "error"); }
-    },
-    async "ach-mark"(el) {
-      const on = el.getAttribute("aria-pressed") !== "true";
-      el.setAttribute("aria-pressed", String(on)); // at once; the list comes back after
-      if (on) uiSound("go");
-      try { await api.markAch(el.dataset.key, el.dataset.player, el.dataset.id, on); } catch (e) { el.setAttribute("aria-pressed", String(!on)); toast(errText(e), "error"); }
-    },
     "ach-page"(el) { S.achPage = el.dataset.player; render(); },
     "status-who"(el) { S.statusWho[el.dataset.key] = el.dataset.player; render(); },
     async "set-status"(el) {

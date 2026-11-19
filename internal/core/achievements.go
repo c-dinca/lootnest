@@ -27,7 +27,6 @@ type Achievement struct {
 	Unlocked    bool      `json:"unlocked"`
 	At          time.Time `json:"at,omitempty"`
 	Percent     float64   `json:"percent,omitempty"` // share of all players who have it, when known
-	Seq         int       `json:"seq,omitempty"`     // its place in the game's own list, for achievements marked by hand
 }
 
 // AchievementSet is what Lootnest knows of a game's achievements.

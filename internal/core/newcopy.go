@@ -365,12 +365,6 @@ func (s *Store) RekeyGame(from, to string) error {
 	if err := rekeyRecords[GogRecord](s.GogPath(), from, to); err != nil {
 		return err
 	}
-	// Achievements marked by hand; a file that doesn't parse is left alone.
-	if h, err := s.readHandAch(); err == nil && h.Rekey(from, to) {
-		if err := writeJSONAtomic(s.HandAchPath(), h); err != nil {
-			return err
-		}
-	}
 	return s.rekeyCustomArt(from, to)
 }
 
