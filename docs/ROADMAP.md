@@ -1,6 +1,6 @@
 # Roadmap
 
-Plugins, mods, controllers, game details, timeline, UI, GOG and itch.io, and updates you already downloaded. Written November 2026 from research on each; every claim that depends on a source links it.
+Plugins, mods, controllers, game details, timeline, UI, GOG and itch.io, updates you already downloaded, and Linux. Written November 2026 from research on each; every claim that depends on a source links it.
 
 Bound by CLAUDE.md: copy first, nothing online unless switched on, no downloads, no DRM bypass, no injection. Sizes S to XL; each phase is one PR and one release.
 
@@ -124,6 +124,24 @@ Done: all three phases shipped by 1.83.
 
 **Will not do.** Find, suggest or download updates from anywhere.
 
+## 9. Lootnest on Linux
+
+The owner's decision, 19 Nov 2026: the Linux desktop in general (not the Steam Deck first), with a WebKitGTK window through cgo.
+
+**What users get.** The same Lootnest on a Linux PC: one Library of native games and Windows games run through Proton or Wine, profiles and runs with their own saves, settings and achievements, save points, the safety net and cloud saves in the user's own folder.
+
+**Approach.** `internal/core` already builds for Linux; the work is the desktop layer and where games keep their files. The app talks to the system only through `internal/plat` (Windows forwards to `internal/win`; `tools/platgen` writes the forwards and the stubs other systems start with), so Linux replaces stubs one hand-written file at a time and Windows doesn't change. Key constraint: a Windows game on Linux keeps its saves inside a Wine prefix (Steam's `steamapps/compatdata/<appid>/pfx/drive_c/users/steamuser/...`; Heroic, Lutris and Bottles each keep their own), so every `%APPDATA%`-style path, the Ludusavi manifest's included, has to be read inside the right game's prefix, and names there are case-insensitive to the game but not to the file system. Wayland gives no window over another app's and no global keys without a portal ([GlobalShortcuts](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.GlobalShortcuts.html)), so the overlay, console mode and hotkeys can't be the same as on Windows.
+
+**Phases.**
+- L0, M: `internal/plat` between the app and the system; `internal/app` compiles for Linux, its window code in `window_windows.go`, `webapp_windows.go` and `proc_windows.go`; CI builds it there and checks the generated files are current. Nothing changes on Windows.
+- L1, L: the Linux path model in `core`: XDG folders for Lootnest's data, a prefix per game and tokens expanded inside it, scans of Steam (native and Flatpak, with `compatdata`), Heroic, Lutris, Bottles and the itch app, the Ludusavi manifest's Windows paths in prefixes, the tools' achievement files in prefixes. Tested with fixtures, no window needed.
+- L2, L: the window: a small cgo binding over WebKitGTK 4.1 with the guarantees `go-webview2` has (only Lootnest's own page, navigation refused through [decide-policy](https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebView.decide-policy.html), each message's frame checked, the CSP nonce), single instance over a socket in `$XDG_RUNTIME_DIR`, a tray ([StatusNotifierItem](https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/)), secrets in the [Secret Service](https://specifications.freedesktop.org/secret-service-spec/latest/) instead of DPAPI, the freedesktop Trash, `xdg-open`, file pickers through the portal, `cmd/lootnest` built for Linux on CI.
+- L3, L: games: running games from `/proc` (a Proton game by `SteamAppId` and its exe), starting native games and folder games through a runner the user picks (Wine, or Proton via [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher)), the swap, save points, safety net and cloud on Linux, notifications over D-Bus, Linux tests in CI; the first Linux build to download (a .tar.gz, then an AppImage).
+- L4, M: Big Picture and controllers (the Gamepad API in WebKitGTK), full screen on X11 and Wayland, hotkeys and screenshots through the desktop portal where the desktop has it.
+- L5, later and only if asked: TV streaming with Sunshine instead of Apollo, the pad bridge through uinput, Keep a game offline without its network.
+
+**Will not do.** Lootnest's own Wine or Proton builds (the user's runner starts the game); a Flatpak at first, since its sandbox can't reach other launchers' prefixes without asking for the whole home folder; the native toasts over a game on Wayland (a notification instead); carrying DPAPI-encrypted keys between systems (they're entered again).
+
 ## Order of work
 
 Groundwork and safety first, then offline work with no Windows-only code, then what only the owner's PC can confirm.
@@ -144,3 +162,4 @@ Groundwork and safety first, then offline work with no Windows-only code, then w
 14. Game details 2 to 4; Plugins 2.
 15. Controllers 4 and Mods 4 (L, L): undocumented Steam and game formats.
 16. Later, if wanted: Plugins 4 and 5, Timeline 5, Controllers 5, UI 6. Mods 5 only on the owner's explicit decision.
+17. Linux, L0 to L5 (M, L, L, L, M, later), one at a time, the owner choosing when each starts. L0 done (unreleased).
