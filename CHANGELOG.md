@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No more marking achievements by hand.** 2.14.0 let each profile mark a game's achievements as done when nothing on the PC records them. That's gone: achievements show only when the game or a tool on the PC records them. Marks made in 2.14.0 stay in `hand-achievements.json` and are no longer shown.
+
 ## 2.14.0
 
 - **Achievements for games that keep none on the PC.** Some games, such as Red Dead Redemption 2 outside Steam, keep their achievements only on their own servers, so Lootnest had nothing to read. A game's Achievements tab now offers **Mark them by hand**: Lootnest gets the game's list from Steam once (names, descriptions, pictures and how rare each is; only the game's Steam id is sent, no key needed), and each profile marks the ones it has done. They show on the Achievements page and in Share like the others, follow the game if it moves, and **Stop marking by hand** keeps every mark. Nothing is written into the game.

@@ -25,8 +25,6 @@
     profileInfo: (id) => call("ps_profileInfo", id),
     achievements: (key, appId, dir, name) => call("ps_achievements", key, appId || 0, dir || "", name || ""),
     setSharedAchievements: (id, shared) => call("ps_setSharedAchievements", id, !!shared),
-    handAch: (key, on) => call("ps_handAch", key, !!on),
-    markAch: (key, player, id, on) => call("ps_markAch", key, player, id, !!on),
     allAchievements: () => call("ps_allAchievements"),
     setTags: (key, tags) => call("ps_setTags", key, tags),
     tagOp: (o) => call("ps_tagOp", o),

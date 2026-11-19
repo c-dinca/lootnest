@@ -68,11 +68,6 @@
         S.art[ev.key] = ev.url;
         if (S.view === "game" || S.view === "library" || S.view === "home") render();
         break;
-      case "handAch":
-        delete S.handBusy[ev.key];
-        if (ev.error) { toast(ev.error, "error"); if (S.view === "game") render(); }
-        else if (ev.on) toast("Mark each achievement as you get it. Each profile has its own.");
-        break;
       case "achievements":
         S.ach[ev.key] = ev.set || null;
         if (S.view === "game") render();

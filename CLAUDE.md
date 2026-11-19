@@ -1819,23 +1819,17 @@ These shipped recently, newest last:
   its Steam id until then); a game kept offline moves, then one elevated
   `FirewallMoveScript` takes away the old tag's rules and blocks the new
   folder's programs under the new key (`offlineMoved`, `runFirewall`).
-  Harness `?kept=1`.
-- **2.14.0, achievements marked by hand** (the owner, 19 Nov 2026,
-  variant A of two: RDR2 outside Steam keeps no achievements on the PC).
-  `core/handach.go`: `hand-achievements.json` (Library key -> `HandGame`
-  {AppID, Off, Marks profile -> id -> time}; in backups, moved by
-  `RekeyGame`), `ParseGameAchievements` reads Steam's public
-  `IPlayerService/GetGameAchievements/v1` (no key: names, descriptions,
-  icons, hidden, percentages), `HandSet` gives every profile its own set
-  (`Achievement.Seq` keeps the game's order). `app/handach.go`:
-  `handList` (kept in `achievements/public-<appid>.json`, asked again
-  after 30 days only with the page open), `ps_handAch` (fetch first, then
-  on; off keeps the marks), `ps_markAch`; `achievements()` uses it only
-  when nothing on the PC has the game's (`achAppID` shared). UI: Mark them
-  by hand under None found, `achRow(..., mark)` adds `.ach-mark`, Stop
-  marking by hand. Harness `?hand=1`. The owner asked for 2.14.0 as
-  their release (19 Nov) with both; the Linux work above ships in no
-  release yet (releases carry only the Windows installer and exe).
+  Harness `?kept=1`. The owner asked for 2.14.0 as their release
+  (19 Nov); the Linux work above ships in no release yet (releases
+  carry only the Windows installer and exe).
+- **2.14.0, achievements marked by hand, then taken out** (the owner,
+  19 Nov 2026, asked for variant A for RDR2 outside Steam, then right
+  after 2.14.0 was published: "that thing feels like cheating, don't
+  give the option to mark them as done"). 2.14.0 shipped it; the next
+  version removes it (the code is in git history, #286, reverted).
+  `hand-achievements.json` files left on a PC are no longer read and
+  never deleted. Don't offer marking achievements by hand again; a game
+  shows achievements only from files on the PC.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

@@ -131,13 +131,12 @@
     const A = who ? top.players[who] : top;
     const pct = A.total ? Math.round((A.unlocked / A.total) * 100) : 0;
     const whoRow = ids.length ? `<div class="ach-who" role="group" aria-label="Whose achievements">${ids.map((id) => { const p = player(id); return `<button class="ln-chip ln-player" style="--player:${esc(p.color)}" data-action="ach-who" data-key="${esc(key)}" data-player="${esc(id)}" aria-pressed="${id === who}">${lnAvatar(p, "20")}${esc(p.name)}<span class="ln-num">${top.players[id].unlocked}</span></button>`; }).join("")}</div>` : "";
-    const g = it.g, hand = A.source === "hand";
-    const note = hand ? "Marked by hand, for each profile" : A.source !== "pc" ? "From Steam, for this PC's account" : ids.length ? "One set per profile" : g && g.sharedAchievements ? "Shared by everyone" : "";
-    const toggle = hand ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-hand" data-key="${esc(key)}" data-on="0" ${S.handBusy[key] ? "disabled" : ""}>Stop marking by hand</button>`
-      : g && A.source === "pc" ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-shared" data-game="${esc(g.id)}" data-on="${g.sharedAchievements ? "0" : "1"}">${g.sharedAchievements ? "Give each profile its own" : "Share one set"}</button>` : "";
+    const g = it.g;
+    const note = A.source !== "pc" ? "From Steam, for this PC's account" : ids.length ? "One set per profile" : g && g.sharedAchievements ? "Shared by everyone" : "";
+    const toggle = g && A.source === "pc" ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-shared" data-game="${esc(g.id)}" data-on="${g.sharedAchievements ? "0" : "1"}">${g.sharedAchievements ? "Give each profile its own" : "Share one set"}</button>` : "";
     const bar = `<div class="ach-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${A.total}" aria-valuenow="${A.unlocked}" aria-label="${A.unlocked} of ${A.total} achievements"><span style="width:${pct}%"></span></div>`;
-    const row = (a) => achRow(a, key, "", false, hand ? who : "");
-    return { key, who, A, pct, whoRow, note, toggle, bar, row, hand };
+    const row = (a) => achRow(a, key);
+    return { key, who, A, pct, whoRow, note, toggle, bar, row };
   }
   // Achievements by how rare they are, as gamers know them: ultra rare in
   // gold, rare in blue, uncommon in green, common in silver.
@@ -148,9 +147,8 @@
   // Every achievement drawn, by its row key, for the card that shows one.
   const ACH_SEEN = new Map();
   // go: the row is on the Achievements page, so a click goes to the game's
-  // Achievements tab first. mark: the profile whose marks these are, for a
-  // game whose achievements are marked by hand; the row gets its key.
-  function achRow(a, key, sub, go, mark) {
+  // Achievements tab first.
+  function achRow(a, key, sub, go) {
     const t = a.unlocked || !a.hidden ? tierOf(a.percent) : "";
     const rk = key + "|" + a.id;
     const hid = a.hidden && !a.unlocked && !S.revealed.has(rk);
@@ -158,11 +156,9 @@
     const line = sub || (a.unlocked ? (a.at && new Date(a.at).getFullYear() > 2000 ? "Unlocked " + esc(ago(a.at)) : "Unlocked") : hid ? "Click to show" : esc(a.description || "Not unlocked yet"));
     const open = hid ? ` data-action="ach-reveal" data-k="${esc(rk)}" role="button" tabindex="0" aria-label="Show this hidden achievement"`
       : ` data-action="ach-card" data-k="${esc(rk)}"${go ? ' data-go="1"' : ""} role="button" tabindex="0" aria-haspopup="dialog" aria-label="${esc(a.name)}: look at it"`;
-    const markKey = mark ? `<button class="ln-button ln-button--ghost ln-button--icon ln-button--sm ach-mark" data-action="ach-mark" data-key="${esc(key)}" data-player="${esc(mark)}" data-id="${esc(a.id)}" aria-pressed="${!!a.unlocked}"
-        aria-label="${a.unlocked ? "Unmark" : "Mark as done"}: ${esc(hid ? "hidden achievement" : a.name)}" title="${a.unlocked ? "Done. Click to unmark" : "Mark as done"}">${ph("check")}</button>` : "";
-    return `<li class="ach${a.unlocked ? " is-on" : " locked"}${t ? " tier-" + t : ""}${hid ? " is-hidden" : ""}${mark ? " is-hand" : ""}"${open}>${achIcon(a)}
+    return `<li class="ach${a.unlocked ? " is-on" : " locked"}${t ? " tier-" + t : ""}${hid ? " is-hidden" : ""}"${open}>${achIcon(a)}
       <div><b>${hid ? "Hidden achievement" : esc(a.name)}</b><span>${line}</span>${a.percent && !hid ? `<span class="ach-rar" aria-hidden="true"><i style="width:${Math.max(3, Math.min(100, a.percent))}%"></i></span>` : ""}</div>
-      ${a.percent && !hid ? `<span class="ach-tier" title="${esc(pctText(a.percent))} of players have it"><em>${TIERS[tierOf(a.percent)]}</em><b class="ln-num">${pctText(a.percent)}</b></span>` : mark ? "<span></span>" : ""}${markKey}</li>`;
+      ${a.percent && !hid ? `<span class="ach-tier" title="${esc(pctText(a.percent))} of players have it"><em>${TIERS[tierOf(a.percent)]}</em><b class="ln-num">${pctText(a.percent)}</b></span>` : ""}</li>`;
   }
   // One achievement as a card in the middle of the screen: it tilts toward
   // the pointer with a light that follows it, turns when dragged, and flips
@@ -289,16 +285,11 @@
     if (!X) {
       // Read and none found: for a game from outside the stores, say why.
       if (few || S.ach[recentKey(it)] !== null || !docWorth(it)) return "";
-      const k = recentKey(it), busy = S.handBusy[k];
       return `<section class="gpage-block gp-ach">${gpHead("Achievements")}<p>None found on this PC</p>
-        <p class="gpage-hint">Mark them by hand: Lootnest gets the game's list from Steam once, and each profile marks what it has done.</p>
-        <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-hand" data-key="${esc(k)}" data-on="1" ${busy ? "disabled" : ""}>${busy ? "Getting the list" : "Mark them by hand"}</button>
-          <button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button></div></section>`;
+        <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button></div></section>`;
     }
     const { key, who, A, pct } = X;
-    // Marked by hand, the whole list keeps the game's order, so a row
-    // doesn't jump away when it's marked.
-    const list = few ? A.list.filter((a) => a.unlocked).slice(0, 3) : X.hand ? [...A.list].sort((a, b) => (a.seq || 0) - (b.seq || 0)) : A.list;
+    const list = few ? A.list.filter((a) => a.unlocked).slice(0, 3) : A.list;
     const acts = few ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="game-tab" data-tab="achievements">Show all ${A.total}</button>`
       : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-share" data-who="${esc(who || "")}" data-scope="${esc(key)}" aria-haspopup="dialog">${ph("share-network")}Share</button>`
         + (docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : "") + X.toggle;

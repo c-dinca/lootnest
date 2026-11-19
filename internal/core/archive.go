@@ -58,7 +58,7 @@ const (
 
 // Files and folders of Lootnest's data that a backup holds.
 var (
-	backupFiles = []string{"config.json", "shelf.json", "activity.json", "playtime.json", "recent.json", "hand-achievements.json"}
+	backupFiles = []string{"config.json", "shelf.json", "activity.json", "playtime.json", "recent.json"}
 	backupDirs  = []string{"profiles", "avatars", "banners"}
 )
 

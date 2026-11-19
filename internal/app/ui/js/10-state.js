@@ -28,7 +28,6 @@
     sideClosed: (() => { try { return new Set(JSON.parse(pref("sideClosed", "[]"))); } catch (e) { return new Set(); } })(),
     folded: pref("folded", "") === "1", // the sidebar folded to a rail
     achWho: {},       // Library key -> whose achievements are shown
-    handBusy: {},     // Library key -> turning marking by hand on or off
     setTab: pref("setTab", "general"), // the Settings category open
     allAch: null,     // the Achievements page: every game's, null until read
     achPage: "",      // whose the Achievements page shows
