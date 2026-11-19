@@ -30,8 +30,12 @@ const AndroidTVLogTag = "LootnestTV"
 
 // AndroidAppPinned is the package Lootnest installs on Android TVs. A new
 // release of c-dinca/lootnest-tv-android is tried with Lootnest first,
-// then its address and SHA-256 change here. Empty until its first release.
-var AndroidAppPinned = TVAppRelease{}
+// then its address and SHA-256 change here.
+var AndroidAppPinned = TVAppRelease{
+	Version: "1.0.0",
+	URL:     androidAppReleases + "v1.0.0/com.lootnest.tv_1.0.0.apk",
+	SHA256:  "966dc3cf7dd20ca0f5872232eaad7d88cdaa36e21c7bab495cf1baef686a7f93",
+}
 
 const androidAppReleases = "https://github.com/c-dinca/lootnest-tv-android/releases/download/"
 
