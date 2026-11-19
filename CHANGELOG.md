@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Achievements for games that keep none on the PC.** Some games, such as Red Dead Redemption 2 outside Steam, keep their achievements only on their own servers, so Lootnest had nothing to read. A game's Achievements tab now offers **Mark them by hand**: Lootnest gets the game's list from Steam once (names, descriptions, pictures and how rare each is; only the game's Steam id is sent, no key needed), and each profile marks the ones it has done. They show on the Achievements page and in Share like the others, follow the game if it moves, and **Stop marking by hand** keeps every mark. Nothing is written into the game.
 - **Move a game from Hydra to another drive.** A game Hydra installed now has **Move to another drive** in Manage and in Settings, Storage, like other games in a folder. Hydra can't move games itself, so Lootnest copies the folder, checks the copy, then sends the old one to the Recycle Bin. Afterwards, choose the game's program again in Hydra, in its new folder.
 - **A game kept offline can move.** Moving a game that Windows Firewall keeps offline no longer asks you to let it go online first: after the move, Windows asks once, and the rules follow the game to its new folder.
 

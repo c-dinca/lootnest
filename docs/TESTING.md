@@ -994,3 +994,20 @@ the same network as the PC, with TV streaming set up.
 7. Settings, TV, Save a report: the report has the TV app's log (tag
    LootnestTV) for each Android TV.
 
+## 45. Achievements marked by hand
+
+1. A game outside the stores with no achievements on the PC and a Steam
+   id (Red Dead Redemption 2 from Hydra): its Achievements tab says None
+   found on this PC, with **Mark them by hand**. Press it: the whole list
+   comes, with names, pictures and rarity, 0 of N.
+2. Press the key at the end of a row: it lights green, the count goes up
+   and the row stays where it is. Press it again: unmarked.
+3. With two profiles, the chips above the list switch whose marks show,
+   and each profile's are its own. Restart Lootnest: the marks are there.
+4. The Achievements page lists the game with the marked ones; Share draws
+   them.
+5. **Stop marking by hand**: the tab says None found again; Mark them by
+   hand again brings the marks back.
+6. Move the game to another drive (Manage): the marks follow it.
+7. Offline (no network), Mark them by hand on a new game: a toast says
+   Lootnest couldn't reach Steam, and nothing turns on.

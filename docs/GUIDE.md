@@ -40,7 +40,12 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `gamesaves.json` and `savedb.json.gz` (cloud saves of games outside Steam, and the save locations list)
 - `safety-net\` and `safetynet.json` (copies of saves games keep inside their own folder, the last 5 per game)
 - `config.json`
+- `hand-achievements.json` (achievements each profile marked by hand)
 - `lootnest.log`
+
+## Achievements marked by hand
+
+Lootnest reads achievements from files already on the PC: Steam's own, or the ones a Steam-compatible tool writes beside a game. Some games keep none on the PC, such as a game from Rockstar or another launcher whose achievements live on its own servers, or a DRM-free game. For those, a game's Achievements tab offers **Mark them by hand**. Lootnest asks Steam once for the game's list (the names, descriptions, pictures and how rare each is), using only the game's Steam app id and no key, and keeps it on your PC; it's asked again only after 30 days, when the game's page is open. Each profile then marks the ones it has done with the key at the end of each row, and they show on the Achievements page and in its share picture like any others. Lootnest writes nothing into the game or its saves for this. **Stop marking by hand** hides them and keeps every mark. If a file on the PC starts having the game's achievements, those are shown instead.
 
 ## Lootnest and Playnite
 
