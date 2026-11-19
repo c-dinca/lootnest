@@ -195,6 +195,9 @@ type Settings struct {
 	// how far its story is (core.StoryOf). Off by default; the game's
 	// Steam id is all that's sent.
 	StoryAch bool `json:"storyAch,omitempty"`
+	// GameDirs are folders the user says hold games (Library, Sources):
+	// the scan looks inside each as it does inside D:\Games.
+	GameDirs []string `json:"gameDirs,omitempty"`
 	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
 	// runs (on unless turned off).
 	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`

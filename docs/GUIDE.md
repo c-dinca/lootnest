@@ -46,6 +46,8 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 
 Lootnest reads a game's achievements from the PC: Steam's own files, or the ones a Steam-compatible tool writes beside the game. It reads them again by itself when a game closes and when you open its page again, so new unlocks show without a button. For a game you also own on Steam whose copy on this PC records none, **Achievements from my Steam account** (Settings, Online, off by default) shows your Steam account's: it needs your Steam Web API key, and your Steam profile's Game details must be public.
 
+A game missing from the Library? Lootnest finds stores' games from their launchers, and games in folders at the top of each drive, in folders named like Games or Jocuri, and one level inside a folder of games with any name. Anywhere else, add the folder in Library, Sources, **Folders with games** (the folder that holds games, or the game's own); it's looked in at every scan.
+
 When a game's achievements mark its chapters or its end, a ring beside Play says how far the story is for the profile shown ("Chapter 3 done", Finished). It's read only from those achievements: a game that doesn't mark its chapters shows nothing, and one that marks only its endings shows Finished once one is reached. Steam keeps many chapter achievements' words hidden; **Story progress** (Settings, Online, off by default) reads them from Steam's public list, sending only the game's Steam id.
 
 ## Lootnest and Playnite

@@ -594,6 +594,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 		s.Motion = ""
 	}
 	s.SteamAccountID = strings.TrimSpace(s.SteamAccountID)
+	s.GameDirs = cleanGameDirs(s.GameDirs)
 	key, err := protectSecret(s.GridDBKey)
 	if err != nil {
 		return fmt.Errorf("couldn't save the SteamGridDB key safely: %w", err)
@@ -803,6 +804,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Folder = true
 		case "exportDir":
 			opt.Title = "Choose where to save the profile"
+			opt.Folder = true
+		case "gameDir":
+			opt.Title = "Choose a folder with games in it"
 			opt.Folder = true
 		case "playniteDir":
 			opt.Title = "Choose Playnite's folder"

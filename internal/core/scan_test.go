@@ -300,3 +300,54 @@ func TestMergeAddedKeepsMovedHydraGame(t *testing.T) {
 		t.Fatalf("store wins: %+v", out[0])
 	}
 }
+
+func TestScanFoldersOfGames(t *testing.T) {
+	drive := t.TempDir()
+	// A folder of games under the user's own name, with one game in it.
+	tk := filepath.Join(drive, "Jocuri PC", "TEKKEN 8")
+	write(t, filepath.Join(tk, "Polaris.exe"), strings.Repeat("x", 200))
+	write(t, filepath.Join(tk, "Engine", "Binaries", "ThirdParty", "x.dll"), "x")
+	write(t, filepath.Join(tk, "Polaris", "Binaries", "Win64", "Polaris-Win64-Shipping.exe"), strings.Repeat("x", 9000))
+	// One with two games.
+	for _, n := range []string{"Hades", "Celeste"} {
+		write(t, filepath.Join(drive, "Fighting and more", n, n+".exe"), strings.Repeat("x", 4000))
+		write(t, filepath.Join(drive, "Fighting and more", n, "UnityPlayer.dll"), "x")
+	}
+	// A game whose program is inside bin is still one game.
+	w3 := filepath.Join(drive, "The Witcher 3")
+	write(t, filepath.Join(w3, "bin", "x64", "witcher3.exe"), strings.Repeat("x", 9000))
+	write(t, filepath.Join(w3, "content", "content0", "a.pak"), "x")
+	// So is a game folder with a program at its top and a game-like part.
+	top := filepath.Join(drive, "Stray")
+	write(t, filepath.Join(top, "Stray.exe"), strings.Repeat("x", 9000))
+	write(t, filepath.Join(top, "Hk_project", "Content", "a.pak"), "x")
+
+	got := map[string]string{}
+	for _, g := range ScanFolders([]string{drive}, []string{drive}) {
+		got[g.Name] = filepath.Base(g.Dir)
+	}
+	want := map[string]string{"TEKKEN 8": "TEKKEN 8", "Hades": "Hades", "Celeste": "Celeste", "The Witcher 3": "The Witcher 3", "Stray": "Stray"}
+	if len(got) != len(want) {
+		t.Fatalf("found %v, want %v", got, want)
+	}
+	for n, d := range want {
+		if got[n] != d {
+			t.Errorf("%s: %q, want %q (all: %v)", n, got[n], d, got)
+		}
+	}
+}
+
+func TestScanFoldersChosenGame(t *testing.T) {
+	// A folder the user chose may be the game itself, or hold games.
+	drive := t.TempDir()
+	tk := filepath.Join(drive, "TEKKEN 8")
+	write(t, filepath.Join(tk, "Polaris.exe"), strings.Repeat("x", 200))
+	write(t, filepath.Join(tk, "Engine", "Binaries", "ThirdParty", "x.dll"), "x")
+	write(t, filepath.Join(tk, "Polaris", "Binaries", "Win64", "Polaris-Win64-Shipping.exe"), strings.Repeat("x", 9000))
+	write(t, filepath.Join(drive, "More", "Hades", "Hades.exe"), strings.Repeat("x", 4000))
+	write(t, filepath.Join(drive, "More", "Hades", "UnityPlayer.dll"), "x")
+	got := ScanFolders([]string{tk, filepath.Join(drive, "More")}, []string{tk, filepath.Join(drive, "More")})
+	if len(got) != 2 || got[0].Name != "TEKKEN 8" || got[1].Name != "Hades" {
+		t.Fatalf("found %+v", got)
+	}
+}

@@ -635,7 +635,14 @@
     const R = S.sources;
     const read = R && R.at && !R.at.startsWith("0001") ? ` Last looked ${ago(R.at)}.` : "";
     const scanBtn = (kind) => `<button class="ln-button ln-button--${kind} ln-button--sm" data-action="sources-rescan" ${S.found.refreshing ? 'aria-busy="true"' : ""}>${S.found.refreshing ? '<span class="ln-spinner" aria-hidden="true"></span>Scanning' : "Scan again"}</button>`;
-    const shell = (body) => drawer({ label: "Sources", title: "Sources", sub: read.trim(), body,
+    // Folders the user says hold games (Settings.GameDirs), looked inside
+    // at every scan as D:\Games is.
+    const dirs = cfg().settings.gameDirs || [];
+    const dirsHTML = `<section class="src-dirs">${gpHead("Folders with games")}
+      ${dirs.map((d) => `<div class="src-dir"><span class="doc-path selectable">${esc(d)}</span><button class="ln-button ln-button--ghost ln-button--sm" data-action="gamedir-remove" data-path="${esc(d)}" aria-label="Stop looking in ${esc(d)}">Remove</button></div>`).join("")}
+      <p class="gpage-hint">${dirs.length ? "Lootnest looks inside these at every scan." : "A game missing from the Library? Add the folder it's in, or the game's own folder."}</p>
+      <div><button class="ln-button ln-button--secondary ln-button--sm" data-action="gamedir-add">${GI.plus}Add a folder</button></div></section>`;
+    const shell = (body, own) => drawer({ label: "Sources", title: "Sources", sub: read.trim(), body: own ? body : body + dirsHTML,
       foot: `<button class="ln-button ln-button--ghost ln-button--sm" data-action="show-log-nav">Show recent activity</button><span class="grow"></span>${scanBtn("secondary")}` });
     if (!R) return shell(lnInline("", "Reading"));
     if (!R.sources.length) return shell(`<p class="gpage-hint">${S.found.refreshing ? "Looking for games now" : "Nothing read yet"}</p>`);
@@ -645,7 +652,7 @@
     return shell(`<ol class="doc-steps">${R.sources.filter((x) => x.installed).map((x) => `<li class="doc-step run-card${tone[x.state] ? " run-card--" + tone[x.state] : ""}"><div class="run-head"><span class="run-dot"></span>
       <div class="grow"><b>${esc(name(x.source))}</b>${x.reason ? `<p>${esc(x.reason)}</p>` : ""}${x.path ? `<p class="doc-path selectable">${esc(x.path)}</p>` : ""}</div>
       ${x.found ? `<span class="src-n ln-num" aria-label="${x.found} ${x.found === 1 ? "game" : "games"}">${x.found}</span>` : ""}</div>
-      ${x.state === "warn" ? `<div>${scanBtn("secondary")}</div>` : ""}</li>`).join("")}</ol>${away.length ? `<p class="gpage-hint">Not on this PC: ${esc(away.join(", "))}.</p>` : ""}`);
+      ${x.state === "warn" ? `<div>${scanBtn("secondary")}</div>` : ""}</li>`).join("")}</ol>${dirsHTML}${away.length ? `<p class="gpage-hint src-away">Not on this PC: ${esc(away.join(", "))}.</p>` : ""}`, true);
   }
   async function loadSources() {
     try { S.sources = await api.sources(); } catch (e) { S.sources = { sources: [] }; }

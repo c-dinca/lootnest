@@ -27,6 +27,8 @@ const shots = [
   ["library", "", [nav("library")]],
   ["library-400", "games=400", [nav("library")]],
   ["library-empty", "games=0", [nav("library")]],
+  ["library-sources", "", [nav("library"), click('[data-action="sources"]')]],
+  ["library-sources-dir", "", [nav("library"), click('[data-action="sources"]'), click('[data-action="gamedir-add"]'), `new Promise((r) => setTimeout(() => { document.querySelectorAll(".ln-drawer *").forEach((e) => { if (e.scrollHeight > e.clientHeight + 4) e.scrollTop = e.scrollHeight; }); r(); }, 400))`]],
   ["library-scanning", "state=loading", [nav("library")]],
   ["library-offline", "state=offline", [nav("library")]],
   ["game-on", "", game('data-game="cs2"')],
