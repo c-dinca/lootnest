@@ -188,7 +188,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.12.0, beta)
+## Where things stand (2.13.0, beta)
 
 These shipped recently, newest last:
 
@@ -1642,7 +1642,7 @@ These shipped recently, newest last:
   v2.11.2, `plugins/sources-updates`). Don't add it back, or anything
   that names a source format or helps find pirated copies, without the
   owner asking.
-- **Unreleased, Lootnest Link M4a, Add an Android TV** (the owner, 18
+- **2.13.0, Lootnest Link M4a, Add an Android TV** (the owner, 18
   Nov 2026: Moonlight on Android TV, Google TV and Fire TV, installed by
   Lootnest over ADB rather than through Google Play, in a fork they asked
   for, c-dinca/lootnest-tv-android). `core/adb.go` speaks the host side
@@ -1675,7 +1675,7 @@ These shipped recently, newest last:
   (`LOOTNEST_KEYSTORE_B64` and the passwords) and attaches the APK and
   SHA256SUMS. Not done: Android 11+ Wireless debugging (TLS pairing
   with a code), Google Play. Not seen on a TV: docs/TESTING.md 44.
-- **Unreleased, the clean-up after the plugin** (the owner, 17 Nov
+- **2.12.0, the clean-up after the plugin** (the owner, 17 Nov
   2026: "fa tot"): `updates.run("magnet")` is gone (a plugin's only
   update call is "start", over http(s) with a SHA-256), the
   `Steam\dodi` achievements path is gone (named after a repack group),
