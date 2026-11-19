@@ -206,7 +206,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.14.0, beta)
+## Where things stand (2.15.0, beta)
 
 These shipped recently, newest last:
 
@@ -1830,7 +1830,7 @@ These shipped recently, newest last:
   `hand-achievements.json` files left on a PC are no longer read and
   never deleted. Don't offer marking achievements by hand again; a game
   shows achievements only from files on the PC.
-- **Unreleased, Motion Full** (the owner, 19 Nov 2026: the achievement
+- **2.15.0, Motion Full** (the owner, 19 Nov 2026: the achievement
   card's tilt worked on a friend's PC, not theirs). Windows' Animation
   effects off sets `prefers-reduced-motion`, which cut nearly all motion.
   `Settings.Motion` "" is Like Windows (default), "full" keeps every
@@ -1838,7 +1838,7 @@ These shipped recently, newest last:
   `:root:not(.motion-full)`, `reduced()` ignores Windows with Full, and
   Motion's row says when Windows has them off. New reduce-only rules need
   the same `:root:not(.motion-full)` scope.
-- **Unreleased, moving a game, its look** (the owner, 19 Nov 2026: time
+- **2.15.0, moving a game, its look** (the owner, 19 Nov 2026: time
   left, nicer and animated, minimise it and keep using Lootnest).
   `moveBody`, `moveNow`, `moveTick` (an averaged speed), `paintMove`
   (numbers changed in place so the bar glides) and the corner card
@@ -1846,7 +1846,7 @@ These shipped recently, newest last:
   72-storage.js, shared by a folder game's move and Game Mover's;
   `moveSays` gives progress events the name and both folders. Harness
   `?move=hold` keeps a move going at about 160 MB/s.
-- **Unreleased, achievements that come by themselves** (the owner, 19
+- **2.15.0, achievements that come by themselves** (the owner, 19
   Nov 2026, after marking by hand was taken out: "sync automatically, not
   a button"; both of the two ways offered). `achAfterPlay`
   (app/achauto.go) reads a game's achievements again 8 s after it closes
@@ -1860,6 +1860,7 @@ These shipped recently, newest last:
   `ErrSteamPrivate` when Game details aren't public), kept an hour in
   `achievements/account-<sid>-<appid>.json`, made stale after a play
   (`accountStale`), pictures from the key's schema (`CompleteList`).
+  The owner asked for 2.15.0 (19 Nov) once these were all in.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
