@@ -307,7 +307,8 @@
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
-  const OFFLINE = {};
+  // ?kept=1: Hollow Tale (from Hydra) is kept offline.
+  const OFFLINE = q.get("kept") ? { "dir:d:\\games\\hydra\\hollow tale": ["D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe", "D:\\Games\\Hydra\\Hollow Tale\\Crash.exe"] } : {};
   // Saved Library views (core.LibraryView), as core/views.go keeps them.
   const VIEWS = [{ name: "Co-op on the couch", collection: "Co-op", sort: "recent" }];
   const retagViews = (from, to) => VIEWS.forEach((v) => { if ((v.collection || "").toLowerCase() === from.toLowerCase()) v.collection = to; });
@@ -639,7 +640,7 @@
       const f = found.find((x) => x.key === key) || {}, total = 38.2 * 2 ** 30;
       emit({ type: "folderMoveProgress", key, done: 0.35 * total, total }, 100);
       const to = dst + "\\" + (f.name || "Game"), newKey = "dir:" + to.toLowerCase();
-      if (q.get("move") !== "hold") setTimeout(() => { if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey }); }, 1500);
+      if (q.get("move") !== "hold") setTimeout(() => { if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey, hydra: f.source === "hydra" }); }, 1500);
       return ok();
     },
     ps_moveFolderCancel: () => ok(),

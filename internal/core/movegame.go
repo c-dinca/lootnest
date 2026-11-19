@@ -16,6 +16,8 @@ import (
 // If anything fails, the copy is removed and the game stays where it was.
 // Games a store or launcher installed are moved by that launcher, which
 // keeps track of where they are (Steam games by Game Mover, mover.go).
+// Hydra is the exception: it has no way to move a game, so Lootnest moves
+// it and the user points Hydra at the program in its new folder.
 // ---------------------------------------------------------------------------
 
 // GameMove is moving one folder game.
@@ -42,7 +44,7 @@ func (e *Env) MoveGamePlan(name, source, src, dst string, running bool, free int
 		return GameMove{}, fmt.Errorf("%s starts from a shortcut, which would still point at the old folder. Move it yourself, then add it again.", name)
 	}
 	switch source {
-	case "folder", "added", "":
+	case "folder", "added", "", "hydra": // Hydra can't move a game; it keeps only its program's place, set again there
 	default:
 		return GameMove{}, fmt.Errorf("Its store keeps track of where %s is installed, so move it there.", name)
 	}

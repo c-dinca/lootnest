@@ -243,7 +243,8 @@
         else if (ev.cancelled) toast(`${ev.name} stays where it was.`);
         else {
           if (S.page && S.page.kind === "found" && S.page.id === ev.key) S.page.id = ev.newKey;
-          toast(ev.leftover ? `${ev.name} is now in ${ev.to}. Its old folder couldn't go to the Recycle Bin and is still in ${ev.leftover}.` : `${ev.name} is now in ${ev.to}. Its old folder is in the Recycle Bin.`);
+          const more = [ev.hydra ? "In Hydra, choose its program again in the new folder." : "", ev.note || ""].filter(Boolean).join(" ");
+          toast((ev.leftover ? `${ev.name} is now in ${ev.to}. Its old folder couldn't go to the Recycle Bin and is still in ${ev.leftover}.` : `${ev.name} is now in ${ev.to}. Its old folder is in the Recycle Bin.`) + (more ? " " + more : ""), ev.note ? "error" : undefined);
         }
         loadFound().then(refresh); // the page's new key is in the Library first
         break;

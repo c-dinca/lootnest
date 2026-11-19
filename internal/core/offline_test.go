@@ -55,6 +55,18 @@ func TestFirewallScript(t *testing.T) {
 	if !strings.HasSuffix(un, "exit 0\n") || !strings.HasSuffix(s, "exit 0\n") {
 		t.Fatal("the script must end in success when there's nothing to take away")
 	}
+	old, nw := OfflineTag(`dir:d:\games\x`), OfflineTag(`dir:e:\games\x`)
+	mv := FirewallMoveScript(old, nw, "X", []string{`E:\Games\X\x.exe`})
+	if !strings.HasPrefix(mv, "$ErrorActionPreference = 'Stop'") || strings.Count(mv, "$ErrorActionPreference") != 1 {
+		t.Fatalf("one head: %s", mv)
+	}
+	ro, rn, add := strings.Index(mv, "-eq '"+old+"'"), strings.Index(mv, "-eq '"+nw+"'"), strings.Index(mv, "New-NetFirewallRule")
+	if ro < 0 || rn < ro || add < rn || !strings.Contains(mv, "-Description '"+nw+"'") || !strings.HasSuffix(mv, "exit 0\n") {
+		t.Fatalf("a move takes the old rules away, then blocks under the new tag: %s", mv)
+	}
+	if same := FirewallMoveScript(nw, nw, "X", []string{"x.exe"}); same != FirewallScript(nw, "X", []string{"x.exe"}, true) {
+		t.Fatal("same tag: the plain script")
+	}
 	enc := EncodePowerShell("hé")
 	raw, _ := base64.StdEncoding.DecodeString(enc)
 	u := make([]uint16, len(raw)/2)
