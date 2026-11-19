@@ -195,11 +195,15 @@ func (e *Engine) SplitSteamAppFolder(cfg *Config, g *Game) (bool, error) {
 	if g.Launch.Type != "steam" {
 		return false, nil
 	}
+	env, err := e.envOf(g)
+	if err != nil {
+		return false, nil
+	}
 	changed := false
 	var paths []PathEntry
 	for _, p := range g.Paths {
-		abs, err := e.Env.expand(p.Path)
-		if err != nil || e.Env.SteamAppFolder(abs) != g.Launch.AppID {
+		abs, err := env.expand(p.Path)
+		if err != nil || env.SteamAppFolder(abs) != g.Launch.AppID {
 			paths = append(paths, p)
 			continue
 		}

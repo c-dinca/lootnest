@@ -33,6 +33,15 @@ type Env struct {
 	// PluginSaves are the save locations plugins list, suggested after
 	// SaveDB's (nil without any).
 	PluginSaves func() []PluginSaveDB
+	// OS is "linux" when the paths are a Linux system's own (a native
+	// game, Lootnest's data), and "" when they're Windows paths: on
+	// Windows, or inside a Wine prefix (InPrefix).
+	OS string
+	// Prefix is the Wine prefix this Env reads Windows paths in (prefix.go).
+	Prefix *Prefix
+	// NeverInside are folders no game path may be in at all, such as a
+	// Linux system's own (/usr, /etc).
+	NeverInside []string
 }
 
 var envVarRe = regexp.MustCompile(`%([A-Za-z0-9_()]+)%`)
@@ -128,9 +137,17 @@ func (e *Env) expand(raw string) (string, error) {
 	if strings.ContainsAny(p, "{}") {
 		return "", fmt.Errorf("unknown {TOKEN} in %s", raw)
 	}
+	if filepath.Separator == '/' {
+		// A Windows path (stored on Windows, or from a list of Windows
+		// save locations) read on Linux.
+		p = strings.ReplaceAll(p, `\`, "/")
+	}
 	p = filepath.Clean(p)
 	if !filepath.IsAbs(p) {
 		return "", fmt.Errorf("%s is not a full path", raw)
+	}
+	if e.Prefix != nil && isWithin(p, e.Prefix.Root) {
+		p = matchCase(p, e.Prefix.Root)
 	}
 	return p, nil
 }
@@ -217,6 +234,11 @@ func (e *Env) CheckSafe(p string) error {
 	if e.DataDir != "" && isWithin(p, e.DataDir) {
 		return errors.New("that folder is inside Lootnest's own data folder")
 	}
+	for _, sys := range e.NeverInside {
+		if isWithin(p, sys) {
+			return fmt.Errorf("%s is the system's own folder; pick the game's folder", p)
+		}
+	}
 	for _, prot := range e.protected() {
 		if isWithin(prot, p) {
 			return fmt.Errorf("%s is too broad (it contains %s); pick the game's own folder inside it", p, prot)
@@ -277,6 +299,9 @@ func (e *Env) Tokenize(abs string) string {
 		add("%LOCALAPPDATA%", e.Getenv("LOCALAPPDATA"))
 		add("%APPDATA%", e.Getenv("APPDATA"))
 		add("%USERPROFILE%", e.Getenv("USERPROFILE"))
+	}
+	if e.OS == "linux" {
+		add("%HOME%", e.Home)
 	}
 	sort.SliceStable(cands, func(i, j int) bool { return len(cands[i].val) > len(cands[j].val) })
 	for _, c := range cands {

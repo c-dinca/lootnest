@@ -105,6 +105,7 @@ type gameLocs struct {
 
 // savesOf finds a Library game's saves on this PC.
 func (a *App) savesOf(f core.FoundGame) gameLocs {
+	env := a.envFor(f.Prefix)
 	base := ""
 	if f.Dir != "" {
 		base = f.Dir
@@ -113,7 +114,7 @@ func (a *App) savesOf(f core.FoundGame) gameLocs {
 	if len(f.Saves) > 0 {
 		var locs []core.SaveLocation
 		for _, p := range f.Saves {
-			if r, err := a.env.Resolve(p); err == nil {
+			if r, err := env.Resolve(p); err == nil {
 				if _, err := os.Stat(r); err == nil {
 					locs = append(locs, core.SaveLocation{Path: p, Resolved: r, Size: core.Size(r)})
 				}
@@ -127,14 +128,14 @@ func (a *App) savesOf(f core.FoundGame) gameLocs {
 			names = append(names, filepath.Base(base))
 		}
 		if dg := db.Find(max(f.AppID, f.SteamID), names...); dg != nil {
-			if locs := a.env.FindSaves(dg, base); len(locs) > 0 {
+			if locs := env.FindSaves(dg, base); len(locs) > 0 {
 				return gameLocs{locs, "list"}
 			}
 		}
 	}
 	var locs []core.SaveLocation
 	for _, p := range f.Paths {
-		r, err := a.env.Resolve(p)
+		r, err := env.Resolve(p)
 		if _, serr := os.Stat(r); err != nil || serr != nil {
 			continue
 		}

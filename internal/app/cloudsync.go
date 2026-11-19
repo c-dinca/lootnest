@@ -67,7 +67,7 @@ func (a *App) liveDirs(g *core.Game) func(core.PathEntry) string {
 			}
 			return filepath.Join(os.TempDir(), "lootnest-unresolved", pe.ID) // never exists
 		}
-		p, err := a.env.Resolve(pe.Path)
+		p, err := a.envFor(g.Prefix).Resolve(pe.Path)
 		if err != nil {
 			return filepath.Join(os.TempDir(), "lootnest-unresolved", pe.ID) // never exists
 		}

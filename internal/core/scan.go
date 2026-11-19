@@ -44,6 +44,9 @@ type FoundGame struct {
 	StoreID string `json:"storeId,omitempty"`
 	// SourceName names a plugin's source (Source is "plugin:<id>").
 	SourceName string `json:"sourceName,omitempty"`
+	// Prefix is the Wine prefix the game runs in on Linux (Game.Prefix);
+	// its Paths and Suggestions are inside it.
+	Prefix string `json:"prefix,omitempty"`
 }
 
 // MergeAdded puts the games the user added by hand into the scan results.
@@ -340,6 +343,15 @@ func (e *Env) ScanSteam() []FoundGame {
 			continue
 		}
 		f := FoundGame{Key: "steam:" + itoa(g.AppID), Name: g.Name, Source: "steam", AppID: g.AppID, Dir: g.InstallDir}
+		// On Linux a Windows game runs through Proton, in a prefix Steam
+		// made for it, where its saves are.
+		env := e
+		if e.OS == "linux" {
+			if pfx := ProtonPrefix(g.InstallDir, g.AppID); pfx != "" {
+				env = e.InPrefix(OpenPrefix(pfx, ProtonUser))
+				f.Prefix = e.Tokenize(pfx)
+			}
+		}
 		var preset *Preset
 		if p, ok := KnownSteamGames[g.AppID]; ok {
 			preset = &p
@@ -348,7 +360,7 @@ func (e *Env) ScanSteam() []FoundGame {
 		} else if c := ProcessCandidates(g.InstallDir); len(c) > 0 {
 			f.ProcessName = c[0].Name
 		}
-		f.Suggestions = e.SuggestPaths(g.Name, g.InstallDir, g.AppID)
+		f.Suggestions = env.SuggestPaths(g.Name, g.InstallDir, g.AppID)
 		f.Paths = ProposePaths(f.Suggestions, preset)
 		f.Ready = f.ProcessName != "" && len(f.Paths) > 0
 		out = append(out, f)
@@ -548,7 +560,11 @@ func (e *Env) FinishFound(list []FoundGame) []FoundGame {
 					f.ProcessName = strings.TrimSuffix(filepath.Base(f.Exe), filepath.Ext(f.Exe))
 				}
 			}
-			f.Suggestions = e.SuggestPaths(f.Name, f.Dir, f.SteamID)
+			env, err := e.For(f.Prefix)
+			if err != nil {
+				env = e
+			}
+			f.Suggestions = env.SuggestPaths(f.Name, f.Dir, f.SteamID)
 			f.Paths = ProposePaths(f.Suggestions, nil)
 			f.Ready = f.ProcessName != "" && f.Exe != "" && len(f.Paths) > 0
 			if f.Exe != "" {

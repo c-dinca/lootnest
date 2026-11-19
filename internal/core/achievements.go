@@ -585,11 +585,12 @@ func GameAppID(g *Game) int {
 // or in someone's profile, and that don't overlap a path the game already
 // swaps. None when the game keeps achievements shared.
 func (e *Engine) achievementEntries(g *Game, have []resolved) []resolved {
-	if g.SharedAchievements || e.Env == nil {
+	if g.SharedAchievements {
 		return nil
 	}
+	env, err := e.envOf(g)
 	appID := GameAppID(g)
-	if appID <= 0 {
+	if err != nil || appID <= 0 {
 		return nil
 	}
 	var out []resolved
@@ -602,7 +603,7 @@ func (e *Engine) achievementEntries(g *Game, have []resolved) []resolved {
 		return false
 	}
 	for _, f := range achFiles {
-		b := e.Env.achBase(f.base)
+		b := env.achBase(f.base)
 		if b == "" {
 			continue
 		}
@@ -614,7 +615,7 @@ func (e *Engine) achievementEntries(g *Game, have []resolved) []resolved {
 			if !exists(c.live) && !e.anyProfileHas(g.ID, c.id) {
 				continue
 			}
-			if e.Env.CheckSafe(c.live) != nil || clashes(c.live) {
+			if env.CheckSafe(c.live) != nil || clashes(c.live) {
 				continue
 			}
 			out = append(out, resolved{PathEntry{ID: c.id, Path: c.live}, c.live})
@@ -741,11 +742,12 @@ func (e *Engine) SyncPaths(g *Game, all bool) []PathEntry {
 	}
 	if all {
 		appID := GameAppID(g)
-		if appID <= 0 || e.Env == nil {
+		env, err := e.envOf(g)
+		if appID <= 0 || err != nil {
 			return out
 		}
 		for _, f := range achFiles {
-			if e.Env.achBase(f.base) == "" {
+			if env.achBase(f.base) == "" {
 				continue
 			}
 			id := achEntryID(f)
@@ -769,11 +771,12 @@ func (e *Engine) SyncPaths(g *Game, all bool) []PathEntry {
 // tool's folder, or its file for an id ending in -f. "" if unknown.
 func (e *Engine) AchLive(g *Game, id string) string {
 	appID := GameAppID(g)
-	if appID <= 0 || e.Env == nil {
+	env, err := e.envOf(g)
+	if appID <= 0 || err != nil {
 		return ""
 	}
 	for _, f := range achFiles {
-		b := e.Env.achBase(f.base)
+		b := env.achBase(f.base)
 		if b == "" {
 			continue
 		}

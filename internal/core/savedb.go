@@ -34,6 +34,9 @@ type DBGame struct {
 	GOG   int      `json:"g,omitempty"`
 	Dirs  []string `json:"d,omitempty"` // install folder names
 	Files []string `json:"f"`
+	// Linux are the locations of the game's native Linux version
+	// (<xdgData>, <xdgConfig>, <home>), for a Linux Env.
+	Linux []string `json:"l,omitempty"`
 }
 
 // SaveDB is the index, with lookups by name and store id.
@@ -47,6 +50,20 @@ type SaveDB struct {
 // placeholders Lootnest can put a Windows path to.
 var dbPlaceholders = []string{"<base>", "<game>", "<storeUserId>", "<osUserName>", "<winPublic>", "<winDir>", "<winAppData>",
 	"<winLocalAppData>", "<winLocalAppDataLow>", "<winDocuments>", "<winProgramData>", "<home>"}
+
+// linuxPlaceholders are the ones Lootnest can put a Linux path to.
+var linuxPlaceholders = []string{"<base>", "<game>", "<storeUserId>", "<osUserName>", "<home>", "<xdgData>", "<xdgConfig>"}
+
+func linuxPath(p string) bool {
+	if strings.Contains(p, "<root>") {
+		return false
+	}
+	rest := p
+	for _, ph := range linuxPlaceholders {
+		rest = strings.ReplaceAll(rest, ph, "")
+	}
+	return !strings.Contains(rest, "<")
+}
 
 func windowsPath(p string) bool {
 	if strings.Contains(p, "<root>") {
@@ -81,9 +98,10 @@ func ParseSaveDB(r io.Reader) (*SaveDB, error) {
 		}
 		for _, p := range fileOrder {
 			f := files[p]
-			win := len(f.whens) == 0
+			win, lin := len(f.whens) == 0, len(f.whens) == 0
 			for _, w := range f.whens {
 				win = win || w == "" || w == "windows"
+				lin = lin || w == "" || w == "linux"
 			}
 			keep := len(f.tags) == 0
 			for _, t := range f.tags {
@@ -92,9 +110,13 @@ func ParseSaveDB(r io.Reader) (*SaveDB, error) {
 			if win && keep && windowsPath(p) && len(p) < 400 {
 				cur.Files = append(cur.Files, p)
 			}
+			if lin && keep && linuxPath(p) && len(p) < 400 {
+				cur.Linux = append(cur.Linux, p)
+			}
 		}
-		if len(cur.Files) > 0 {
+		if len(cur.Files) > 0 || len(cur.Linux) > 0 {
 			sort.Strings(cur.Files)
+			sort.Strings(cur.Linux)
 			sort.Strings(cur.Dirs)
 			db.Games = append(db.Games, *cur)
 		}
@@ -329,7 +351,13 @@ func (e *Env) FindSaves(g *DBGame, base string) []SaveLocation {
 		get = os.Getenv
 	}
 	home := e.Home
+	files, user := g.Files, get("USERNAME")
+	if e.OS == "linux" {
+		files, user = g.Linux, get("USER")
+	}
 	repl := []string{
+		"<xdgData>", XDGDataHome(home, get),
+		"<xdgConfig>", XDGConfigHome(home, get),
 		"<winAppData>", get("APPDATA"),
 		"<winLocalAppDataLow>", e.LocalLow,
 		"<winLocalAppData>", get("LOCALAPPDATA"),
@@ -338,12 +366,12 @@ func (e *Env) FindSaves(g *DBGame, base string) []SaveLocation {
 		"<winProgramData>", get("ProgramData"),
 		"<winDir>", get("WINDIR"),
 		"<home>", home,
-		"<osUserName>", get("USERNAME"),
+		"<osUserName>", user,
 		"<storeUserId>", "*",
 	}
 	seen := map[string]bool{}
 	var out []SaveLocation
-	for _, f := range g.Files {
+	for _, f := range files {
 		if strings.Contains(f, "<base>") || strings.Contains(f, "<game>") {
 			if base == "" {
 				continue

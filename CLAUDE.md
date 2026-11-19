@@ -1710,6 +1710,28 @@ These shipped recently, newest last:
   build job regenerates plat, vets the app for Linux and runs its tests.
   Nothing changes on Windows. Next: L1, the Linux path model in core
   (prefixes), when the owner says.
+- **Unreleased, Linux L1a, Wine prefixes and Steam on Linux** (the
+  owner, 19 Nov 2026: "go ahead with L1"). `core/prefix.go`: `Prefix`
+  (Root holds drive_c, User is `steamuser` for Proton), `IsPrefix`,
+  `OpenPrefix` (the one user folder besides Public), `ProtonPrefix`
+  (`<lib>/steamapps/compatdata/<appid>/pfx`), `Env.InPrefix` (%APPDATA%
+  and the other Windows folders inside the prefix, the Linux home and the
+  prefix's own folders protected), `Env.For(prefix)` (a stored prefix
+  read with this Env's tokens). `Game.Prefix` and `FoundGame.Prefix`; the
+  engine reads a game's paths and the tools' achievement folders in its
+  prefix (`Engine.envOf`), and the app does where it reads a game's
+  saves (`a.envFor`: gameFromFound, Set saves, cloud sources and
+  liveDirs, `savesOf`); the other `a.env` calls wait for L3. `expand`
+  reads `\` as `/` on Linux and finds a prefix path's spelling on disk
+  (`matchCase`). `core/linux.go`: `XDGDataHome`, `XDGConfigHome`,
+  `XDGUserDir` (user-dirs.dirs), `FindSteamLinux` (native, ~/.steam
+  links, Flatpak, Snap), `NewLinuxEnv` (`OS` "linux", %HOME% as a token,
+  `NeverInside` for /usr, /etc...). `ScanSteam` gives a Proton game its
+  prefix and finds its saves there; `SuggestPaths` looks in the XDG
+  folders for native games; the manifest keeps Linux locations apart
+  (`DBGame.Linux`, `<xdgData>`, `<xdgConfig>`), used when `OS` is
+  "linux". Tests in `core/prefix_test.go` (not run on Windows). Next:
+  L1b, Heroic, Lutris, Bottles and the itch app.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

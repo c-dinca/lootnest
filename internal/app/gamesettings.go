@@ -69,9 +69,10 @@ func (a *App) apiSetGameSaves(key string, paths []string) error {
 	if !ok {
 		return errFoundGone
 	}
+	env := a.envFor(f.Prefix)
 	var saves []string
 	for _, raw := range paths {
-		r, err := a.env.Resolve(raw) // refuses drives, the user folder, AppData itself, ...
+		r, err := env.Resolve(raw) // refuses drives, the user folder, AppData itself, ...
 		if err != nil {
 			return err
 		}
@@ -81,7 +82,7 @@ func (a *App) apiSetGameSaves(key string, paths []string) error {
 		if isInside(r, DataDir()) {
 			return errors.New("Lootnest's own data folder can't be a game's save folder.")
 		}
-		t := a.env.Tokenize(r)
+		t := env.Tokenize(r)
 		dup := false
 		for _, s := range saves {
 			dup = dup || strings.EqualFold(s, t)
