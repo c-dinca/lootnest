@@ -206,7 +206,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.16.0, beta)
+## Where things stand (2.16.1, beta)
 
 These shipped recently, newest last:
 
@@ -1926,13 +1926,14 @@ These shipped recently, newest last:
   Picture still lists every game with some. Harness `ctx-pad`,
   `tv-library-kbm`.
   The owner asked for 2.16.0 once these four were in (19 Nov).
-- **Unreleased, every game on Big Picture's Home** (the owner, 19 Nov
+- **2.16.1, every game on Big Picture's Home** (the owner, 19 Nov
   2026: on a friend's PC, TEKKEN 8 was in the Library on the PC but not on
   the TV). Home's first row with nothing played was `all.slice(0, 12)`,
   and Your games `slice(0, 40)`, so most of a Library was only in the
   Library tab. Now Your games holds every game up to `BP_HOME_MAX` (120),
   then `bpAllTile` (opens the Library tab). Harness `?fresh=1` (no recent
   plays), shots `tv-fresh`, `tv-fresh-400`.
+  Released as 2.16.1 at the owner's ask (19 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

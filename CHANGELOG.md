@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.16.1
 
 - **Every game on Big Picture's Home.** On a PC where nothing was played with Lootnest yet, Big Picture's Home showed only the first 12 games by name, so a game such as TEKKEN 8 was only in its Library tab. Home's **Your games** now holds every game (with a long Library, the first 120 and a tile for the whole Library), and after you play, it still follows Continue playing.
 
