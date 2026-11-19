@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -15,7 +13,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -115,7 +113,7 @@ func (t updTarget) running() bool {
 	if t.Process == "" {
 		return false
 	}
-	procs, _ := win.ProcessNames()
+	procs, _ := plat.ProcessNames()
 	return t.runningIn(procs)
 }
 
@@ -218,7 +216,7 @@ func (a *App) apiUpdatePlan(key, path string) {
 		from, to := core.UpdateVersions(p.Name)
 		out["check"] = core.CheckVersions(core.CopyVersion(t.Dir, core.GameUpdates(a.updatesDir(t))), from, to)
 		p.Files = nil // the counts and folders are enough for the page
-		out["plan"], out["dir"], out["free"] = p, t.Dir, win.DiskFree(t.Dir)
+		out["plan"], out["dir"], out["free"] = p, t.Dir, plat.DiskFree(t.Dir)
 	}()
 }
 
@@ -246,7 +244,7 @@ func (a *App) apiUpdateApply(key, path string) error {
 			return
 		}
 		defer clearStaging(t)
-		if free := win.DiskFree(t.Dir); free >= 0 && free < p.Bytes+p.Kept+(64<<20) {
+		if free := plat.DiskFree(t.Dir); free >= 0 && free < p.Bytes+p.Kept+(64<<20) {
 			out["error"] = fmt.Sprintf("There isn't enough room on %s: the update and the copy of the files it replaces need %s.", strings.ToUpper(filepath.VolumeName(t.Dir)), gb(p.Bytes+p.Kept))
 			return
 		}
@@ -302,7 +300,7 @@ func (a *App) planUpdate(t updTarget, path string) (*core.UpdatePlan, error) {
 	ready := stagedFrom[dir] == stamp && dirExists(dir)
 	stagedMu.Unlock()
 	if !ready {
-		if free := win.DiskFree(filepath.Dir(t.Dir)); free >= 0 && free < st.Size()*3 {
+		if free := plat.DiskFree(filepath.Dir(t.Dir)); free >= 0 && free < st.Size()*3 {
 			return nil, fmt.Errorf("there isn't enough room on %s to open the update", strings.ToUpper(filepath.VolumeName(t.Dir)))
 		}
 		a.emit("updatePlan", map[string]any{"key": t.Key, "path": path, "opening": true})
@@ -453,7 +451,7 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		fullCopy := ""
 		if full {
 			size := core.Size(t.Dir)
-			if free := win.DiskFree(a.store.BackupsDir()); free >= 0 && free < size+(256<<20) {
+			if free := plat.DiskFree(a.store.BackupsDir()); free >= 0 && free < size+(256<<20) {
 				out["error"] = fmt.Sprintf("There isn't enough room for a copy of the game (%s). Run it without one, or make room first.", gb(size))
 				return
 			}
@@ -476,7 +474,7 @@ func (a *App) apiUpdateInstaller(key, path string, full bool) error {
 		// GOG's installer runs without questions, so only its exit code
 		// says it stopped part way.
 		args := gogArgs(key, path, t.Dir)
-		code, err := win.RunAndWait(a.hwnd, path, args, filepath.Dir(path))
+		code, err := plat.RunAndWait(a.hwnd, path, args, filepath.Dir(path))
 		if err != nil {
 			_ = os.RemoveAll(keep)
 			out["error"] = sentence(err)
@@ -549,7 +547,7 @@ func sameSnapshot(a, b map[string]core.FileStamp) bool {
 // installerInfo answers a plan for an installer: the game's size and the
 // room for a copy of it.
 func (a *App) installerInfo(t updTarget, path string) map[string]any {
-	return map[string]any{"kind": "installer", "source": path, "name": filepath.Base(path), "gameSize": core.Size(t.Dir), "free": win.DiskFree(a.store.BackupsDir())}
+	return map[string]any{"kind": "installer", "source": path, "name": filepath.Base(path), "gameSize": core.Size(t.Dir), "free": plat.DiskFree(a.store.BackupsDir())}
 }
 
 // ------------------------------------------------------ is it working? --
@@ -577,7 +575,7 @@ func (a *App) watchFirstStart(key string) {
 	}
 	go func() {
 		name := strings.ToLower(strings.TrimSuffix(t.Process, ".exe"))
-		up := func() bool { procs, _ := win.ProcessNames(); return procs[name] }
+		up := func() bool { procs, _ := plat.ProcessNames(); return procs[name] }
 		started := time.Time{}
 		for i := 0; i < 90 && started.IsZero(); i++ {
 			time.Sleep(time.Second)

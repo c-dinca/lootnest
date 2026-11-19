@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -138,8 +136,8 @@ const issuesURL = "https://github.com/c-dinca/lootnest/issues/new"
 // Nothing is sent by Lootnest itself.
 func (a *App) apiReportProblem() error {
 	text := "Lootnest " + Version + " " + Stage + "\n\nRecent activity:\n" + a.apiLog()
-	if err := win.SetClipboardText(a.hwnd, text); err != nil {
+	if err := plat.SetClipboardText(a.hwnd, text); err != nil {
 		return err
 	}
-	return win.ShellOpen(issuesURL)
+	return plat.ShellOpen(issuesURL)
 }

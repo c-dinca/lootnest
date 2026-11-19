@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // Lootnest as a console's screen: in TV mode and in Big Picture, a game
@@ -39,7 +39,7 @@ func (a *App) tvGameStarting(key, name string) {
 	}
 	key = conKey(key)
 	seen := map[uint64]bool{}
-	for _, w := range win.TopWindows() {
+	for _, w := range plat.TopWindows() {
 		seen[uint64(w.HWND)] = true
 	}
 	a.mu.Lock()
@@ -47,7 +47,7 @@ func (a *App) tvGameStarting(key, name string) {
 	a.conGen++
 	gen := a.conGen
 	a.mu.Unlock()
-	win.AllowAnyForeground()
+	plat.AllowAnyForeground()
 	a.emit("tvGame", map[string]any{"phase": "starting", "key": key, "name": name})
 	go a.curtain(key, name, gen, seen)
 }
@@ -55,10 +55,10 @@ func (a *App) tvGameStarting(key, name string) {
 // gameWindowOf is the window of a game Lootnest follows by its process, or 0.
 func (a *App) gameWindowOf(key string) uintptr {
 	if pid := a.pidOf(key); pid != 0 {
-		return win.WindowOfPID(pid)
+		return plat.WindowOfPID(pid)
 	}
 	if proc := a.procOf(key); proc != "" {
-		return win.GameWindow(proc)
+		return plat.GameWindow(proc)
 	}
 	return 0
 }
@@ -69,8 +69,8 @@ func (a *App) front(gw uintptr) {
 	a.mu.Lock()
 	a.conWin = gw
 	a.mu.Unlock()
-	win.ForceForeground(gw)
-	win.PlaceBehind(a.hwnd, gw)
+	plat.ForceForeground(gw)
+	plat.PlaceBehind(a.hwnd, gw)
 }
 
 // curtain follows a game that was just started until its window is up: a
@@ -98,9 +98,9 @@ func (a *App) curtain(key, name string, gen int, seen map[uint64]bool) {
 		}
 		gw := a.gameWindowOf(key)
 		if gw == 0 {
-			screen, sw, sh := win.ScreenOf(a.hwnd)
+			screen, sw, sh := plat.ScreenOf(a.hwnd)
 			var now []core.TopWindow
-			for _, w := range win.TopWindows() {
+			for _, w := range plat.TopWindows() {
 				if w.Screen == screen && w.HWND != a.hwnd {
 					now = append(now, core.TopWindow{ID: uint64(w.HWND), PID: w.PID, W: int(w.W), H: int(w.H)})
 				}
@@ -125,7 +125,7 @@ func (a *App) curtain(key, name string, gen int, seen map[uint64]bool) {
 			a.logf("%s: no window found in 25 s; Lootnest steps behind the other windows", name)
 			a.ui(func() {
 				if mine() {
-					win.SendToBack(a.hwnd)
+					plat.SendToBack(a.hwnd)
 				}
 			})
 			return
@@ -147,7 +147,7 @@ func (a *App) watchGone(key, name string, gen int, gw uintptr) {
 		a.conGame = key
 	}
 	a.mu.Unlock()
-	for win.IsWindow(gw) {
+	for plat.IsWindow(gw) {
 		time.Sleep(time.Second)
 		a.mu.Lock()
 		on := (a.tv || a.bigPicture) && a.conGen == gen
@@ -183,7 +183,7 @@ func (a *App) tvGameUp(key string) {
 		a.front(gw)
 		return
 	}
-	if win.IsWindow(known) {
+	if plat.IsWindow(known) {
 		a.front(known)
 		return
 	}
@@ -237,7 +237,7 @@ func (a *App) watchGuide() {
 		if !on {
 			return
 		}
-		down := win.XInputGuideDown()
+		down := plat.XInputGuideDown()
 		if down && !was {
 			a.ui(a.tvHome)
 		}
@@ -252,12 +252,12 @@ func (a *App) gameShot() string {
 	a.mu.Lock()
 	gw := a.conWin
 	a.mu.Unlock()
-	if !win.IsWindow(gw) {
+	if !plat.IsWindow(gw) {
 		return ""
 	}
-	img, err := win.CaptureWindow(gw)
+	img, err := plat.CaptureWindow(gw)
 	if err != nil || core.IsNearBlack(img) {
-		if s, serr := win.CaptureScreen(gw); serr == nil {
+		if s, serr := plat.CaptureScreen(gw); serr == nil {
 			img, err = s, nil
 		}
 	}
@@ -277,11 +277,11 @@ func (a *App) raise() {
 	a.mu.Lock()
 	tv := a.tv
 	a.mu.Unlock()
-	win.Present(a.hwnd)
+	plat.Present(a.hwnd)
 	if tv {
-		win.FullscreenPrimary(a.hwnd)
+		plat.FullscreenPrimary(a.hwnd)
 	}
-	win.ForceForeground(a.hwnd)
+	plat.ForceForeground(a.hwnd)
 }
 
 // tvHome is the controller's Home button in TV mode and Big Picture. Over
@@ -302,7 +302,7 @@ func (a *App) tvHome() {
 		a.tvResume()
 	default:
 		shot := ""
-		if win.Foreground() != a.hwnd {
+		if plat.Foreground() != a.hwnd {
 			shot = a.gameShot()
 		}
 		a.mu.Lock()
@@ -353,11 +353,11 @@ func (a *App) apiTVCloseGame() error {
 	closed := 0
 	switch {
 	case pid != 0:
-		closed = win.CloseWindowsOfPID(pid)
+		closed = plat.CloseWindowsOfPID(pid)
 	case proc != "":
-		closed = win.CloseProcessWindows(proc)
-	case win.IsWindow(gw):
-		win.PostMessage(gw, win.WM_CLOSE, 0, 0)
+		closed = plat.CloseProcessWindows(proc)
+	case plat.IsWindow(gw):
+		plat.PostMessage(gw, plat.WM_CLOSE, 0, 0)
 		closed = 1
 	}
 	if closed == 0 {

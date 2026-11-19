@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -12,7 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ErrSteamRunning means Steam must close before its launch options can be
@@ -20,7 +18,7 @@ import (
 var ErrSteamRunning = errors.New("steam-running")
 
 func steamRunning() bool {
-	procs, err := win.ProcessNames()
+	procs, err := plat.ProcessNames()
 	return err == nil && procs["steam"]
 }
 
@@ -28,7 +26,7 @@ func shutdownSteam(steamPath string) error {
 	if !steamRunning() {
 		return nil
 	}
-	_ = win.StartDetached(filepath.Join(steamPath, "steam.exe"), "-shutdown", steamPath)
+	_ = plat.StartDetached(filepath.Join(steamPath, "steam.exe"), "-shutdown", steamPath)
 	for i := 0; i < 90; i++ { // up to 45 s
 		time.Sleep(500 * time.Millisecond)
 		if !steamRunning() {
@@ -196,7 +194,7 @@ func syncSteamHooks(cfg *core.Config, env *core.Env, exe string, install, allowR
 	}
 	res.Changed = len(changes)
 	if wasRunning {
-		_ = win.StartDetached(filepath.Join(env.SteamPath, "steam.exe"), "", env.SteamPath)
+		_ = plat.StartDetached(filepath.Join(env.SteamPath, "steam.exe"), "", env.SteamPath)
 		res.Restarted = true
 	}
 	return res, nil
@@ -301,15 +299,15 @@ func restoreHooksForUninstall(quiet bool) {
 	}
 	env := newEnv(nil)
 	env.SteamUser = func() (string, error) {
-		_, active := win.SteamInfo()
+		_, active := plat.SteamInfo()
 		return core.SteamUserDir(env.SteamPath, cfg.Settings.SteamAccountID, active)
 	}
 	exe, _ := os.Executable()
 	logf := func(string, ...any) {}
 	_, err = syncSteamHooks(cfg, env, exe, false, false, logf)
 	if errors.Is(err, ErrSteamRunning) {
-		ok := quiet || win.MessageBox(0, "Lootnest needs to close Steam for a few seconds to take its launch options back out of your games. Steam reopens afterwards.\n\nClose Steam now?",
-			Name+" uninstall", win.MB_YESNO|win.MB_ICONQUESTION) == win.IDYES
+		ok := quiet || plat.MessageBox(0, "Lootnest needs to close Steam for a few seconds to take its launch options back out of your games. Steam reopens afterwards.\n\nClose Steam now?",
+			Name+" uninstall", plat.MB_YESNO|plat.MB_ICONQUESTION) == plat.IDYES
 		if ok {
 			_, err = syncSteamHooks(cfg, env, exe, false, true, logf)
 		}
@@ -321,7 +319,7 @@ func restoreHooksForUninstall(quiet bool) {
 				names = append(names, g.Name)
 			}
 		}
-		win.MessageBox(0, "Couldn't remove Lootnest from Steam's launch options automatically.\n\nIn Steam, open Properties for these games and clear their Launch options:\n"+strings.Join(names, "\n"),
-			Name+" uninstall", win.MB_ICONWARNING)
+		plat.MessageBox(0, "Couldn't remove Lootnest from Steam's launch options automatically.\n\nIn Steam, open Properties for these games and clear their Launch options:\n"+strings.Join(names, "\n"),
+			Name+" uninstall", plat.MB_ICONWARNING)
 	}
 }

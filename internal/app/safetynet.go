@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -13,7 +11,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -138,7 +136,7 @@ func withFiles(locs []core.SaveLocation) []core.SaveLocation {
 func (a *App) safetyNet() {
 	netMu.Lock()
 	defer netMu.Unlock()
-	procs, _ := win.ProcessNames()
+	procs, _ := plat.ProcessNames()
 	st := loadNet()
 	c := netStore()
 	changed := false
@@ -232,7 +230,7 @@ func (a *App) apiGameSaveRestoreLocal(key, id string) error {
 	if !ok {
 		return errFoundGone
 	}
-	if procs, _ := win.ProcessNames(); f.ProcessName != "" && procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
+	if procs, _ := plat.ProcessNames(); f.ProcessName != "" && procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
 		return fmt.Errorf("%s is running; close it first.", f.Name)
 	}
 	go func() {

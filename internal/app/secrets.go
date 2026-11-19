@@ -1,12 +1,10 @@
-//go:build windows
-
 package app
 
 import (
 	"encoding/base64"
 	"strings"
 
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // Keys the user saves in Settings are kept encrypted for their Windows
@@ -20,7 +18,7 @@ func protectSecret(s string) (string, error) {
 	if s == "" || strings.HasPrefix(s, secretPrefix) {
 		return s, nil
 	}
-	b, err := win.Protect([]byte(s))
+	b, err := plat.Protect([]byte(s))
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +37,7 @@ func revealSecret(s string) string {
 	if err != nil {
 		return ""
 	}
-	out, err := win.Unprotect(b)
+	out, err := plat.Unprotect(b)
 	if err != nil {
 		return ""
 	}

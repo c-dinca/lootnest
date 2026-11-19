@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -16,7 +14,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -266,7 +264,7 @@ func (a *App) backUpChangedGames() {
 	}
 	gameSaveMu.Lock()
 	defer gameSaveMu.Unlock()
-	procs, _ := win.ProcessNames()
+	procs, _ := plat.ProcessNames()
 	made := 0
 	for _, f := range a.visibleFound(a.libraryGames()) {
 		if !gameSavesOn(f) || f.ProcessName != "" && procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
@@ -388,7 +386,7 @@ func (a *App) apiGameSaveRestore(key, id string) error {
 	if !ok {
 		return errFoundGone
 	}
-	if procs, _ := win.ProcessNames(); f.ProcessName != "" && procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
+	if procs, _ := plat.ProcessNames(); f.ProcessName != "" && procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
 		return fmt.Errorf("%s is running; close it first.", f.Name)
 	}
 	c, err := a.gameCloud()
@@ -440,5 +438,5 @@ func (a *App) openGameSaves(key string) error {
 			t = dir
 		}
 	}
-	return win.ShellOpen(t)
+	return plat.ShellOpen(t)
 }

@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -12,7 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -65,7 +63,7 @@ func (a *App) downloadsLook() {
 	var tell []core.DownloadMatch
 	procs := map[string]bool{}
 	if len(found) > 0 {
-		procs, _ = win.ProcessNames()
+		procs, _ = plat.ProcessNames()
 	}
 	err := a.store.UpdateDownloadsSeen(func(d *core.DownloadsSeen) {
 		for _, m := range found {
@@ -124,7 +122,7 @@ func (a *App) apiRecycleDownload(path string) error {
 	if err != nil {
 		return err
 	}
-	if err := win.Recycle(a.hwnd, m.Files()...); errors.Is(err, win.ErrRecycleCancelled) {
+	if err := plat.Recycle(a.hwnd, m.Files()...); errors.Is(err, plat.ErrRecycleCancelled) {
 		return errors.New("It's still in your Downloads.")
 	} else if err != nil {
 		return errors.New("It's still in your Downloads: " + err.Error() + ".")
@@ -138,7 +136,7 @@ func (a *App) apiRecycleDownload(path string) error {
 // Hydra, Hydra's download folder.
 func downloadDirs() []string {
 	var out []string
-	if d := win.Downloads(); d != "" {
+	if d := plat.Downloads(); d != "" {
 		out = append(out, d)
 	}
 	if h := hydraDownloads(); h != "" && (len(out) == 0 || !strings.EqualFold(filepath.Clean(h), filepath.Clean(out[0]))) {
@@ -182,11 +180,11 @@ func (a *App) apiOpenHydra(name string) error {
 		return errors.New("Hydra isn't on this PC.")
 	}
 	if n := strings.TrimSpace(name); n != "" {
-		if err := win.SetClipboardText(a.hwnd, n); err != nil {
+		if err := plat.SetClipboardText(a.hwnd, n); err != nil {
 			a.logf("Couldn't copy %q for Hydra: %v", n, err)
 		}
 	}
-	if err := win.ShellOpen("hydralauncher://"); err != nil {
+	if err := plat.ShellOpen("hydralauncher://"); err != nil {
 		a.logf("Couldn't open Hydra: %v", err)
 		return errors.New("Couldn't open Hydra. Open it from the Start menu.")
 	}

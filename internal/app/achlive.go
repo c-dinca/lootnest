@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -12,7 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -55,10 +53,10 @@ func (a *App) nativeSound(b []byte) bool {
 	a.mu.Lock()
 	off := a.cfg.Settings.SoundsOff
 	a.mu.Unlock()
-	if off || win.IsVisible(a.hwnd) {
+	if off || plat.IsVisible(a.hwnd) {
 		return false
 	}
-	win.PlaySound(b)
+	plat.PlaySound(b)
 	return true
 }
 
@@ -226,7 +224,7 @@ func (a *App) achShow(r achRun, l *achLive, fresh []string) {
 	if len(fresh) > 4 {
 		// A whole file came in at once (restored saves, a tool set up):
 		// one toast, not a minute of them.
-		win.ShowToast(win.Toast{Kicker: kicker, Title: strconv.Itoa(len(fresh)) + " achievements unlocked", Line: l.name, Accent: color})
+		plat.ShowToast(plat.Toast{Kicker: kicker, Title: strconv.Itoa(len(fresh)) + " achievements unlocked", Line: l.name, Accent: color})
 	}
 	shown := []core.Achievement{}
 	if len(fresh) <= 4 {
@@ -255,7 +253,7 @@ func (a *App) achShow(r achRun, l *achLive, fresh []string) {
 			}
 			x.Name = name
 			shown = append(shown, x)
-			win.ShowToast(win.Toast{Kicker: kicker, Title: name, Line: line, Accent: color, Badge: core.RarityColor(x.Percent)})
+			plat.ShowToast(plat.Toast{Kicker: kicker, Title: name, Line: line, Accent: color, Badge: core.RarityColor(x.Percent)})
 		}
 	}
 	a.logf("%s: %d achievement(s) unlocked", l.name, len(fresh))
@@ -271,7 +269,7 @@ func (a *App) apiTestToast() {
 	}
 	a.mu.Unlock()
 	a.logf("Showing a test note at the bottom right of the screen")
-	win.ShowToast(win.Toast{Kicker: "Achievement unlocked", Title: "This is how an unlock looks", Line: "Rare, 4.2% of players have it", Accent: color, Badge: core.RarityColor(4.2)})
+	plat.ShowToast(plat.Toast{Kicker: "Achievement unlocked", Title: "This is how an unlock looks", Line: "Rare, 4.2% of players have it", Accent: color, Badge: core.RarityColor(4.2)})
 }
 
 // ------------------------------------------------------------- rarity ---
@@ -325,7 +323,7 @@ func (a *App) apiBigPicture(on bool) {
 	a.mu.Unlock()
 	if tv { // TV mode keeps Big Picture until it ends (leaveTV)
 		if on {
-			a.ui(func() { win.FullscreenPrimary(a.hwnd) })
+			a.ui(func() { plat.FullscreenPrimary(a.hwnd) })
 		}
 		return
 	}
@@ -339,9 +337,9 @@ func (a *App) apiBigPicture(on bool) {
 	}
 	a.ui(func() {
 		if on {
-			win.Present(a.hwnd)
+			plat.Present(a.hwnd)
 		}
-		win.SetFullscreen(a.hwnd, on)
-		win.WatchPadRawInput(a.hwnd, on) // a PlayStation pad's PS button is Big Picture's Home too
+		plat.SetFullscreen(a.hwnd, on)
+		plat.WatchPadRawInput(a.hwnd, on) // a PlayStation pad's PS button is Big Picture's Home too
 	})
 }

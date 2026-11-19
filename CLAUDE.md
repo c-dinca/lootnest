@@ -55,6 +55,16 @@ What makes it different, and the direction to keep pushing:
   `window`; Go sends events through `window.__ps({type, ...})`. Slow work
   runs in a goroutine and comes back as an event.
 - `internal/win`: Win32 helpers (DPAPI, window closing, tray and so on).
+- `internal/plat`: the only way `internal/app` reaches the system. On
+  Windows each name forwards to `internal/win` (`win_windows.go`); other
+  systems get do-nothing stubs answering `plat.ErrUnsupported`
+  (`stub_other.go`). Both are written by `go run ./tools/platgen`: run it
+  after adding to `internal/win`, and call `plat.X`, never `win.X`, from
+  app. A hand-written file in plat (say `trash_linux.go`) takes its names
+  out of the stubs. `internal/app` builds for Linux; what can only exist
+  on Windows (the WebView2 window, `RunWebApp`, process flags) is in its
+  `*_windows.go` files with a `*_other.go` twin. Linux is docs/ROADMAP.md,
+  section 9.
 - `internal/app/ui`: `index.html`, `system.css` (tokens and `ln-`
   components), `app.css`, and the script in `js/`: one closure cut into
   ordered parts (`00-head.js` to `99-boot.js`, about 5,600 lines) that
@@ -126,6 +136,8 @@ What makes it different, and the direction to keep pushing:
   - `gofmt -l internal`
   - `go test ./internal/core/`
   - `GOOS=windows go vet ./internal/app`
+  - `GOOS=linux go vet ./internal/app` (and `go run ./tools/platgen`
+    after changing `internal/win`; CI fails when plat is out of date)
   - `GOOS=windows go build ./cmd/lootnest`
   - `node tools/checkjs.mjs` (joins `ui/js` and checks the syntax)
 
@@ -1685,6 +1697,19 @@ These shipped recently, newest last:
   by hand, `tags`, `dry_run`), so they describe only script plugins. Git history still holds the
   plugin; rewriting it is the owner's call (GitHub keeps pull request
   refs, so only GitHub Support can purge them).
+
+- **Unreleased, Linux L0** (the owner, 19 Nov 2026: Lootnest for the
+  Linux desktop in general, a WebKitGTK window through cgo; the plan is
+  docs/ROADMAP.md, section 9, L0 to L5). `internal/plat` sits between
+  the app and the system (`tools/platgen` writes `win_windows.go`, the
+  forwards, and `stub_other.go`; a `Set<Name>` for a win variable app
+  assigns, `SetToastFailed`); `internal/app` lost its build tags and
+  compiles for Linux, with `view` (window.go) for the window,
+  `openWindow` in window_windows.go/window_other.go, `RunWebApp` in
+  webapp_windows.go/webapp_other.go, `noConsole` in proc_*.go. CI's
+  build job regenerates plat, vets the app for Linux and runs its tests.
+  Nothing changes on Windows. Next: L1, the Linux path model in core
+  (prefixes), when the owner says.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

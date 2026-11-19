@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -16,7 +14,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // Add a TV, for LG TVs (Lootnest Link M3, core/webos.go): Lootnest finds
@@ -506,7 +504,7 @@ func networkCategory(pc string) string {
 	if err != nil {
 		return ""
 	}
-	out, err := win.RunHiddenOutput(powershell(), "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "+core.EncodePowerShell(script), 20*time.Second)
+	out, err := plat.RunHiddenOutput(powershell(), "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "+core.EncodePowerShell(script), 20*time.Second)
 	if err != nil {
 		return ""
 	}
@@ -523,9 +521,9 @@ func (a *App) apiLinkMakePrivate(ip string) {
 			a.emit("linkPrivate", map[string]any{"error": "Lootnest couldn't tell which network reaches the TV."})
 			return
 		}
-		code, err := win.RunElevatedAndWait(a.hwnd, powershell(), "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(script))
+		code, err := plat.RunElevatedAndWait(a.hwnd, powershell(), "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(script))
 		switch {
-		case errors.Is(err, win.ErrCancelledByUser):
+		case errors.Is(err, plat.ErrCancelledByUser):
 			a.emit("linkPrivate", map[string]any{"error": "Nothing changed: Windows' prompt was cancelled."})
 		case err != nil || code != 0:
 			a.logf("TV streaming: the network with %s wasn't made private (code %d, %v)", pc, code, err)

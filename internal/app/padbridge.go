@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // A PlayStation controller as an Xbox one, for games that only know Xbox
@@ -76,7 +76,7 @@ func (a *App) padState() string {
 
 // psPadPath is the first PlayStation pad present.
 func psPadPath() (path string, dualsense, bluetooth, ok bool) {
-	for _, p := range win.HIDPaths() {
+	for _, p := range plat.HIDPaths() {
 		if pid, bt, is := core.PSPadPath(p); is {
 			ds, _ := core.PSPad(pid)
 			return p, ds, bt, true
@@ -90,7 +90,7 @@ func psPadPath() (path string, dualsense, bluetooth, ok bool) {
 // again every two seconds; the virtual pad rests in the meantime.
 func (a *App) runPad(b *padBridge) {
 	defer close(b.done)
-	x, err := win.NewViGEmPad()
+	x, err := plat.NewViGEmPad()
 	if err != nil {
 		a.padSay(sentence(err))
 		<-b.stop
@@ -115,7 +115,7 @@ func (a *App) runPad(b *padBridge) {
 			}
 			continue
 		}
-		r, err := win.OpenPad(path)
+		r, err := plat.OpenPad(path)
 		if err != nil {
 			a.padSay(sentence(err))
 			if !wait(2 * time.Second) {

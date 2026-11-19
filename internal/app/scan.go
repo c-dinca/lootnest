@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // scanPC finds games from Steam, Epic, GOG, common game folders on every
@@ -25,7 +23,7 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	// The other launchers: from Windows' installed programs, the Xbox app's
 	// folders, the itch app's and Hydra's library.
 	var entries []core.UninstallEntry
-	for _, e := range win.InstalledPrograms() {
+	for _, e := range plat.InstalledPrograms() {
 		entries = append(entries, core.UninstallEntry(e))
 	}
 	installed := core.InstalledLaunchers(entries)
@@ -38,13 +36,13 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	if env.SteamPath != "" {
 		installed["steam"] = env.SteamPath
 	}
-	if pd := win.ProgramData(); pd != "" {
+	if pd := plat.ProgramData(); pd != "" {
 		manifests := filepath.Join(pd, "Epic", "EpicGamesLauncher", "Data", "Manifests")
 		there("epic", manifests)
 		there("riot", filepath.Join(pd, "Riot Games"))
 		all = append(all, core.EpicGames(manifests)...)
 	}
-	for _, g := range win.GOGGames() {
+	for _, g := range plat.GOGGames() {
 		exe := g.Exe
 		if !filepath.IsAbs(exe) {
 			exe = filepath.Join(g.Path, exe)
@@ -55,7 +53,7 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	}
 
 	all = append(all, core.LauncherGames(entries)...)
-	xbox := win.XboxGameFolders()
+	xbox := plat.XboxGameFolders()
 	if len(xbox) > 0 {
 		installed["xbox"] = xbox[0]
 	}
@@ -78,8 +76,8 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	all = append(all, core.ScanFolders(roots, containers)...)
 
 	// Shortcuts the user made (common for games installed by hand).
-	windir := strings.ToLower(win.WindowsDir())
-	for lnk, target := range win.ResolveShortcuts(win.ShortcutFiles()) {
+	windir := strings.ToLower(plat.WindowsDir())
+	for lnk, target := range plat.ResolveShortcuts(plat.ShortcutFiles()) {
 		if !strings.EqualFold(filepath.Ext(target), ".exe") || (windir != "" && strings.HasPrefix(strings.ToLower(target), windir)) {
 			continue
 		}
@@ -113,10 +111,10 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 // folders that hold games but are not games themselves (containers).
 func gameFolders(env *core.Env) (roots, containers []string) {
 	home := os.Getenv("USERPROFILE")
-	containers = []string{home, win.Desktop(), win.Documents(), win.ProgramFiles(), win.ProgramFilesX86(), win.WindowsDir()}
+	containers = []string{home, plat.Desktop(), plat.Documents(), plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir()}
 	gameDirNames := []string{"Games", "Game", "Jocuri", "Gaming", "Juegos", "Jeux", "Spiele", "Epic Games", "GOG Games",
 		`GOG Galaxy\Games`, "PC Games"}
-	for _, d := range win.FixedDrives() {
+	for _, d := range plat.FixedDrives() {
 		containers = append(containers, d)
 		roots = append(roots, d)
 		for _, n := range gameDirNames {
@@ -127,7 +125,7 @@ func gameFolders(env *core.Env) (roots, containers []string) {
 			}
 		}
 	}
-	for _, pf := range []string{win.ProgramFiles(), win.ProgramFilesX86()} {
+	for _, pf := range []string{plat.ProgramFiles(), plat.ProgramFilesX86()} {
 		if pf == "" {
 			continue
 		}

@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -7,7 +5,7 @@ import (
 	"path/filepath"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // Controllers is what Settings, Controllers shows: the pads Windows lists,
@@ -27,7 +25,7 @@ type Controllers struct {
 // processes, two folders and two services. It changes nothing, so it runs
 // in safe mode too.
 func (a *App) apiControllers() Controllers {
-	procs, _ := win.ProcessNames()
+	procs, _ := plat.ProcessNames()
 	dirs, svcs := core.ControllerProbes()
 	appData := map[string]bool{}
 	for _, d := range dirs {
@@ -37,20 +35,20 @@ func (a *App) apiControllers() Controllers {
 	}
 	services := map[string]bool{}
 	for _, s := range svcs {
-		if ok, run := win.ServiceState(s); ok {
+		if ok, run := plat.ServiceState(s); ok {
 			services[s] = run
 		}
 	}
 	tools := core.FindControllerTools(procs, appData, services)
 	slots := []core.XInputSlot{}
-	for _, x := range win.XInputPads() {
+	for _, x := range plat.XInputPads() {
 		slots = append(slots, core.XInputSlot{Slot: x.Index + 1, Kind: core.XInputKind(x.SubType), Wireless: x.Wireless})
 	}
 	var devs []core.PadDevice
-	for _, d := range win.PadDevices() {
+	for _, d := range plat.PadDevices() {
 		devs = append(devs, core.PadDevice(d))
 	}
 	_, vigem := services["ViGEmBus"]
 	return Controllers{Pads: core.Pads(devs, slots, tools, vigem), XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools),
-		ViGEm: win.ViGEmPresent(), Bridge: a.padState()}
+		ViGEm: plat.ViGEmPresent(), Bridge: a.padState()}
 }

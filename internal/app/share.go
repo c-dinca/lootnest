@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -9,7 +7,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // apiShareImage takes a picture the window drew to share (achievements, for
@@ -23,7 +21,7 @@ func (a *App) apiShareImage(how, title, dataURL string) (string, error) {
 	}
 	switch how {
 	case "copy":
-		if err := win.SetClipboardImage(a.hwnd, b); err != nil {
+		if err := plat.SetClipboardImage(a.hwnd, b); err != nil {
 			return "", err
 		}
 		return "", nil
@@ -40,7 +38,7 @@ func (a *App) apiShareImage(how, title, dataURL string) (string, error) {
 			_ = os.Remove(p + ".tmp")
 			return "", err
 		}
-		_ = win.RevealInExplorer(p)
+		_ = plat.RevealInExplorer(p)
 		return p, nil
 	}
 	return "", errors.New("unknown way to share")

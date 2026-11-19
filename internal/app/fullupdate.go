@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -17,7 +15,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -287,7 +285,7 @@ func (a *App) pluginUpdate(id, op string, raw json.RawMessage) (any, error) {
 	_, delta := deltaOK(files)
 	// Room for the download, what it unpacks to, and a margin. An archive
 	// read in place needs room only for what changed, checked as it's known.
-	if need, free := total*22/10, win.DiskFree(filepath.Dir(t.Dir)); !delta && total > 0 && free >= 0 && free < need {
+	if need, free := total*22/10, plat.DiskFree(filepath.Dir(t.Dir)); !delta && total > 0 && free >= 0 && free < need {
 		return nil, fmt.Errorf("there isn't enough room on %s: this update needs about %s (the download, what it unpacks to and a margin) and %s is free",
 			strings.ToUpper(filepath.VolumeName(t.Dir)), gb(need), gb(free))
 	}
@@ -414,7 +412,7 @@ func (a *App) jobUnpack(j *updJob) {
 	if len(archives) == 1 {
 		build := filepath.Join(j.Staging, "build")
 		_ = os.RemoveAll(build)
-		limit := win.DiskFree(filepath.Dir(j.Staging))
+		limit := plat.DiskFree(filepath.Dir(j.Staging))
 		if limit < 0 {
 			limit = 1 << 50
 		}
@@ -784,7 +782,7 @@ func (a *App) jobApply(j *updJob, keep []string) {
 	a.jobLog(j, "Applying %s to %s", j.Title, u.Dir)
 	if err := core.RunFullUpdate(u, a.fullHooks(j, f)); err != nil {
 		if u.Aside != "" {
-			if rerr := win.Recycle(a.hwnd, u.Aside); rerr == nil {
+			if rerr := plat.Recycle(a.hwnd, u.Aside); rerr == nil {
 				a.jobLog(j, "The build that failed went to the Recycle Bin")
 			}
 		}
@@ -826,7 +824,7 @@ func (a *App) jobRollback(j *updJob) {
 		return
 	}
 	if u.Aside != "" {
-		if err := win.Recycle(a.hwnd, u.Aside); err != nil {
+		if err := plat.Recycle(a.hwnd, u.Aside); err != nil {
 			a.jobLog(j, "The new build stays at %s: %v", u.Aside, err)
 		}
 	}
@@ -855,7 +853,7 @@ func (a *App) jobFinish(j *updJob, why string) {
 		return
 	}
 	if old != "" {
-		if err := win.Recycle(a.hwnd, old); err != nil {
+		if err := plat.Recycle(a.hwnd, old); err != nil {
 			a.jobLog(j, "The old folder stays at %s: %v", old, err)
 		} else {
 			a.jobLog(j, "The old folder went to the Recycle Bin (%s)", why)
@@ -886,7 +884,7 @@ func (a *App) watchKept(j *updJob) {
 		if phase != "kept" {
 			return
 		}
-		procs, _ := win.ProcessNames()
+		procs, _ := plat.ProcessNames()
 		up := procs[name]
 		switch {
 		case up && started.IsZero():
@@ -949,7 +947,7 @@ func (a *App) recoverJobs() {
 				a.setPhase(j, "ready", "")
 			case changed:
 				if u.Aside != "" {
-					_ = win.Recycle(a.hwnd, u.Aside)
+					_ = plat.Recycle(a.hwnd, u.Aside)
 				}
 				a.setPhase(j, "failed", u.Error)
 				a.notify(j.Name+"'s update was cut short", "The game is back as it was. Start the update again from the Updates page.")

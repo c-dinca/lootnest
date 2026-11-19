@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -9,7 +7,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // Session tracks one game being played.
@@ -69,7 +67,7 @@ func procName(g *core.Game) string {
 }
 
 func isRunning(g *core.Game) bool {
-	procs, err := win.ProcessNames()
+	procs, err := plat.ProcessNames()
 	return err == nil && procs[procName(g)]
 }
 
@@ -261,7 +259,7 @@ func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error 
 		if args != "" {
 			line += " " + args
 		}
-		return win.StartDetached(a.env.SteamPath+`\steam.exe`, line, a.env.SteamPath)
+		return plat.StartDetached(a.env.SteamPath+`\steam.exe`, line, a.env.SteamPath)
 	case "exe":
 		exe, err := a.env.ResolveExe(g.Launch.Exe)
 		if err != nil {
@@ -272,7 +270,7 @@ func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error 
 		if !core.SafeLaunchURI(g.Launch.URI) {
 			return errors.New("Lootnest can't start this game through its launcher; choose its .exe in Edit game")
 		}
-		return win.ShellOpen(g.Launch.URI)
+		return plat.ShellOpen(g.Launch.URI)
 	}
 	return fmt.Errorf("unknown launch type %q", g.Launch.Type)
 }
@@ -287,7 +285,7 @@ func (a *App) watch() {
 		a.tick()
 		n++
 		if n%3 == 0 && !a.safe { // every ~6 s: achievements unlocked in a running game, and the hotkeys
-			if procs, err := win.ProcessNames(); err == nil {
+			if procs, err := plat.ProcessNames(); err == nil {
 				a.achTick(procs)
 			}
 		}
@@ -306,7 +304,7 @@ func (a *App) watch() {
 }
 
 func (a *App) tick() {
-	procs, err := win.ProcessNames()
+	procs, err := plat.ProcessNames()
 	if err != nil {
 		return
 	}
@@ -383,7 +381,7 @@ func (a *App) tick() {
 			if running {
 				s.missed = 0
 				if g.ID == a.hidFor || g.ID == a.conGame {
-					s.front = win.ForegroundIs(procName(g))
+					s.front = plat.ForegroundIs(procName(g))
 				}
 				continue
 			}
@@ -413,7 +411,7 @@ func (a *App) tick() {
 	if hide != "" {
 		a.ui(func() {
 			a.mu.Lock()
-			con := a.tv || a.bigPicture && win.IsVisible(a.hwnd)
+			con := a.tv || a.bigPicture && plat.IsVisible(a.hwnd)
 			if con {
 				a.hidFor, a.conGame = hide, hide
 			}
@@ -424,7 +422,7 @@ func (a *App) tick() {
 				a.tvGameUp(hide)
 				return
 			}
-			win.ShowWindow(a.hwnd, win.SW_HIDE)
+			plat.ShowWindow(a.hwnd, plat.SW_HIDE)
 		})
 	}
 	if back {
@@ -505,7 +503,7 @@ func (a *App) apiCloseGame(gameID string) error {
 	if !isRunning(g) {
 		return fmt.Errorf("%s isn't running. Lootnest finishes the session in a few seconds.", g.Name)
 	}
-	if win.CloseProcessWindows(procName(g)) == 0 {
+	if plat.CloseProcessWindows(procName(g)) == 0 {
 		return fmt.Errorf("Lootnest couldn't close %s. Quit it from the game's own menu; the progress is saved when it closes.", g.Name)
 	}
 	a.logf("Asked %s to close", g.Name)

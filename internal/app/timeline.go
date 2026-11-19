@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -10,7 +8,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -58,11 +56,11 @@ func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 		running := procs[r.proc]
 		switch {
 		case r.pid != 0:
-			running = win.ProcessAlive(r.pid) && win.WindowOfPID(r.pid) != 0
+			running = plat.ProcessAlive(r.pid) && plat.WindowOfPID(r.pid) != 0
 		case running && strings.HasPrefix(key, "app:"):
 			// An app that hides to the tray when closed (Spotify) is done
 			// once it has no window.
-			running = win.GameWindow(r.proc) != 0
+			running = plat.GameWindow(r.proc) != 0
 		}
 		switch {
 		case running:

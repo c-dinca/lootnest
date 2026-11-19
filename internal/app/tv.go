@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // TV mode (Lootnest Link, milestone M1): Lootnest as a console's screen on
@@ -43,14 +41,14 @@ func TVHolder() int {
 			return 1
 		}
 		// Started hidden: TV mode shows it, on the TV, a moment later.
-		if _, err := win.StartOutsideJob(exe, "--tray", filepath.Dir(exe)); err != nil {
+		if _, err := plat.StartOutsideJob(exe, "--tray", filepath.Dir(exe)); err != nil {
 			return 1
 		}
 		if h = findLootnest(30 * time.Second); h == 0 {
 			return 1
 		}
 	}
-	if !win.SendCommand(h, "tv:"+strconv.FormatUint(uint64(pid), 10)) {
+	if !plat.SendCommand(h, "tv:"+strconv.FormatUint(uint64(pid), 10)) {
 		return 1
 	}
 	ask := "tv?:" + strconv.FormatUint(uint64(pid), 10)
@@ -59,12 +57,12 @@ func TVHolder() int {
 	// files after a game) doesn't answer at once; that isn't an end.
 	for unsure := 0; unsure < tvPatience; {
 		time.Sleep(time.Second)
-		h = win.FindWindow(WindowClass)
+		h = plat.FindWindow(WindowClass)
 		if h == 0 {
 			unsure++
 			continue
 		}
-		switch win.AskCommand(h, ask) {
+		switch plat.AskCommand(h, ask) {
 		case tvAnswerOn:
 			unsure = 0
 		case tvAnswerOff:
@@ -78,7 +76,7 @@ func TVHolder() int {
 
 func findLootnest(wait time.Duration) uintptr {
 	for end := time.Now().Add(wait); ; time.Sleep(100 * time.Millisecond) {
-		if h := win.FindWindow(WindowClass); h != 0 || time.Now().After(end) {
+		if h := plat.FindWindow(WindowClass); h != 0 || time.Now().After(end) {
 			return h
 		}
 	}
@@ -114,7 +112,7 @@ func (a *App) enterTV(holder uint32) {
 	was := a.tv
 	a.tv, a.tvHolder, a.bigPicture = true, holder, true
 	if !was {
-		a.tvWasHidden = !win.IsVisible(a.hwnd)
+		a.tvWasHidden = !plat.IsVisible(a.hwnd)
 	}
 	ready := a.ready
 	if !ready {
@@ -122,15 +120,15 @@ func (a *App) enterTV(holder uint32) {
 	}
 	a.mu.Unlock()
 	a.logf("TV mode on (asked by process %d)", holder)
-	if win.InJob() {
+	if plat.InJob() {
 		a.logf("WARNING Lootnest runs inside another program's job: if that program ends it (a streaming host ending the stream), Lootnest closes with it")
 	}
 	a.show()
-	win.FullscreenPrimary(a.hwnd)
-	win.ForceForeground(a.hwnd)
+	plat.FullscreenPrimary(a.hwnd)
+	plat.ForceForeground(a.hwnd)
 	tvTaskbar(false)
-	win.WatchPadRawInput(a.hwnd, true)
-	held := win.RegisterHotKey(a.hwnd, hotkeyTV, win.ModControl|win.ModShift|win.ModNoRepeat, win.VK_F11)
+	plat.WatchPadRawInput(a.hwnd, true)
+	held := plat.RegisterHotKey(a.hwnd, hotkeyTV, plat.ModControl|plat.ModShift|plat.ModNoRepeat, plat.VK_F11)
 	if !held && !was {
 		a.logf("Ctrl+Shift+F11 is taken by another program; TV mode is left from the bar on the PC's screen")
 	}
@@ -145,7 +143,7 @@ func (a *App) enterTV(holder uint32) {
 		a.emit("tv", map[string]any{"on": true})
 	}
 	go func() {
-		win.WaitProcess(holder)
+		plat.WaitProcess(holder)
 		a.ui(func() {
 			a.mu.Lock()
 			mine := a.tv && a.tvHolder == holder
@@ -173,7 +171,7 @@ func (a *App) leaveTV() {
 	a.conGame, a.conWin = "", 0
 	a.conGen++
 	a.mu.Unlock()
-	win.UnregisterHotKey(a.hwnd, hotkeyTV)
+	plat.UnregisterHotKey(a.hwnd, hotkeyTV)
 	// A newer Lootnest for TV goes on the TV once the app there is closed.
 	go func() {
 		// The TV app writes a stream's numbers as it ends.
@@ -182,12 +180,12 @@ func (a *App) leaveTV() {
 		time.Sleep(2 * time.Minute)
 		a.updateTVApps()
 	}()
-	win.HideTVBar()
+	plat.HideTVBar()
 	tvTaskbar(true)
-	win.WatchPadRawInput(a.hwnd, false)
-	win.SetFullscreen(a.hwnd, false)
+	plat.WatchPadRawInput(a.hwnd, false)
+	plat.SetFullscreen(a.hwnd, false)
 	if hidden || playing {
-		win.ShowWindow(a.hwnd, win.SW_HIDE)
+		plat.ShowWindow(a.hwnd, plat.SW_HIDE)
 	}
 	a.emit("tv", map[string]any{"on": false})
 }
@@ -208,9 +206,9 @@ func (a *App) tvBack() {
 	tv := a.tv
 	a.mu.Unlock()
 	if tv {
-		win.FullscreenPrimary(a.hwnd)
+		plat.FullscreenPrimary(a.hwnd)
 	}
-	win.ForceForeground(a.hwnd)
+	plat.ForceForeground(a.hwnd)
 }
 
 // tvTaskbarMark is kept while TV mode has the taskbar hidden, so a
@@ -222,12 +220,12 @@ func tvTaskbarMark() string { return filepath.Join(DataDir(), "taskbar-hidden") 
 // display while a stream runs) and shows it again after.
 func tvTaskbar(show bool) {
 	if show {
-		win.ShowTaskbar(true)
+		plat.ShowTaskbar(true)
 		_ = os.Remove(tvTaskbarMark())
 		return
 	}
 	_ = os.WriteFile(tvTaskbarMark(), nil, 0o600)
-	win.ShowTaskbar(false)
+	plat.ShowTaskbar(false)
 }
 
 // tvTaskbarAtStart shows the taskbar a TV mode that didn't end left hidden.
@@ -280,18 +278,18 @@ func (a *App) keepCursor() {
 		a.mu.Unlock()
 		if !on {
 			if held {
-				win.ClipCursor(nil)
+				plat.ClipCursor(nil)
 			}
-			win.HideTVBar()
+			plat.HideTVBar()
 			return
 		}
 		if time.Since(looked) >= time.Second {
 			looked = time.Now()
 			var ds []core.Rect
-			for _, d := range win.Displays() {
+			for _, d := range plat.Displays() {
 				ds = append(ds, box(d))
 			}
-			tv = box(win.PrimaryDisplay())
+			tv = box(plat.PrimaryDisplay())
 			c, x, y, ok := core.CursorKeep(tv, ds)
 			if ok != keep {
 				if ok {
@@ -301,24 +299,24 @@ func (a *App) keepCursor() {
 				}
 			}
 			if !ok && held {
-				win.ClipCursor(nil)
+				plat.ClipCursor(nil)
 				held = false
 			}
 			keep, hx, hy, clip = ok, x, y, [4]int{c.L, c.T, c.R, c.B}
 			if pc, ok := core.PCDisplay(tv, ds); ok {
-				win.ShowTVBar([4]int{pc.L, pc.T, pc.R, pc.B}, a.tvBarShows(), a.tvLeaveFromPC)
+				plat.ShowTVBar([4]int{pc.L, pc.T, pc.R, pc.B}, a.tvBarShows(), a.tvLeaveFromPC)
 			} else {
-				win.HideTVBar()
+				plat.HideTVBar()
 			}
 		}
 		if !keep {
 			continue
 		}
-		if x, y, ok := win.CursorPos(); ok && tv.Has(x, y) {
-			win.MoveCursor(hx, hy)
+		if x, y, ok := plat.CursorPos(); ok && tv.Has(x, y) {
+			plat.MoveCursor(hx, hy)
 		}
-		if win.CursorClip() != clip {
-			win.ClipCursor(&clip)
+		if plat.CursorClip() != clip {
+			plat.ClipCursor(&clip)
 			held = true
 		}
 	}
@@ -329,7 +327,7 @@ func (a *App) keepCursor() {
 const hotkeyTV = 0x4C54 // "LT"
 
 // tvBarShows is what TV mode's bar on the PC says.
-func (a *App) tvBarShows() win.TVBar {
+func (a *App) tvBarShows() plat.TVBar {
 	a.mu.Lock()
 	playing, keys := a.tvPlaying, a.tvKeyHeld
 	a.mu.Unlock()
@@ -341,7 +339,7 @@ func (a *App) tvBarShows() win.TVBar {
 	if playing != "" {
 		title = playing + " is on the TV"
 	}
-	return win.TVBar{Title: title, Line: line, Key: "Leave TV mode", Busy: "Leaving"}
+	return plat.TVBar{Title: title, Line: line, Key: "Leave TV mode", Busy: "Leaving"}
 }
 
 // tvLeaveFromPC is the bar's key and Ctrl+Shift+F11: TV mode ends, the
@@ -392,23 +390,23 @@ func (a *App) apiLaunchApp(id string) error {
 	}
 	key := core.MediaAppKey(app.ID)
 	r := &foundRun{proc: app.Proc, until: time.Now().Add(2 * time.Minute)}
-	win.AllowAnyForeground()
+	plat.AllowAnyForeground()
 	if app.ByPID {
-		if old := a.pidOf(key); old != 0 && win.ProcessAlive(old) {
+		if old := a.pidOf(key); old != 0 && plat.ProcessAlive(old) {
 			r.pid = old
 		} else {
 			args := app.Args
 			if app.Own { // on the monitor Lootnest is on
 				args += " --on " + strconv.FormatUint(uint64(a.hwnd), 10)
 			}
-			pid, err := win.StartTracked(app.Exe, args, filepath.Dir(app.Exe))
+			pid, err := plat.StartTracked(app.Exe, args, filepath.Dir(app.Exe))
 			if err != nil {
 				return err
 			}
 			r.pid = pid
 		}
-	} else if procs, err := win.ProcessNames(); err != nil || !procs[app.Proc] {
-		if err := win.StartDetached(app.Exe, app.Args, filepath.Dir(app.Exe)); err != nil {
+	} else if procs, err := plat.ProcessNames(); err != nil || !procs[app.Proc] {
+		if err := plat.StartDetached(app.Exe, app.Args, filepath.Dir(app.Exe)); err != nil {
 			return err
 		}
 	}

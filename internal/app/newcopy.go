@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -148,7 +146,7 @@ func (a *App) apiCarryOver(oldKey, newKey string) error {
 		defer updMu.Unlock()
 		of, g := a.copyGame(old)
 		if f, ok := a.foundByKey(newKey); ok && f.ProcessName != "" {
-			if procs, _ := win.ProcessNames(); procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
+			if procs, _ := plat.ProcessNames(); procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))] {
 				out["error"] = f.Name + " is running; close it first."
 				return
 			}

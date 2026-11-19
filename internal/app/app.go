@@ -1,5 +1,3 @@
-//go:build windows
-
 // Package app is the Lootnest desktop application: window, tray, watcher
 // and the API the interface talks to.
 package app
@@ -9,7 +7,6 @@ import (
 	"embed"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,10 +15,8 @@ import (
 	"sync"
 	"time"
 
-	webview2 "github.com/jchv/go-webview2"
-
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 const (
@@ -126,7 +121,7 @@ func pageHTML() string {
 }
 
 type App struct {
-	w    webview2.WebView
+	w    view // the window and its page (window_windows.go)
 	hwnd uintptr
 
 	store *core.Store
@@ -176,7 +171,7 @@ type App struct {
 	dropped   int             // calls from any other since the last log line
 	droppedAt time.Time
 
-	tray           *win.Tray
+	tray           *plat.Tray
 	quitting       bool
 	trayHintShown  bool
 	taskbarCreated uint32
@@ -193,21 +188,21 @@ type Options struct {
 }
 
 func newEnv(a *App) *core.Env {
-	steamPath, _ := win.SteamInfo()
+	steamPath, _ := plat.SteamInfo()
 	home := os.Getenv("USERPROFILE")
-	extra := []string{win.ProgramFiles(), win.ProgramFilesX86(), win.WindowsDir(), win.Desktop()}
+	extra := []string{plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir(), plat.Desktop()}
 	if sd := os.Getenv("SystemDrive"); sd != "" {
 		extra = append(extra, sd+`\Users`, sd+`\ProgramData`)
 	}
 	return &core.Env{
 		Getenv:     os.Getenv,
 		Home:       home,
-		Documents:  win.Documents(),
-		SavedGames: win.SavedGames(),
-		LocalLow:   win.LocalLow(),
+		Documents:  plat.Documents(),
+		SavedGames: plat.SavedGames(),
+		LocalLow:   plat.LocalLow(),
 		SteamPath:  steamPath,
 		SteamUser: func() (string, error) {
-			_, active := win.SteamInfo()
+			_, active := plat.SteamInfo()
 			configured := ""
 			if a != nil {
 				a.mu.Lock()
@@ -327,56 +322,28 @@ func Run(opt Options) error {
 		}
 	}
 
-	win.EnableDPIAwareness()
-	win.AllowDarkMenus()
-	dpi := win.SystemDPI()
+	plat.EnableDPIAwareness()
+	plat.AllowDarkMenus()
+	dpi := plat.SystemDPI()
 	scale := func(v int) int { return v * dpi / 96 }
 
-	a.w = webview2.NewWithOptions(webview2.WebViewOptions{
-		AutoFocus: true,
-		DataPath:  filepath.Join(DataDir(), "WebView2"),
-		// The window only ever shows Lootnest's own page: nothing else can be
-		// loaded or navigated to, so the page's access to Lootnest can't leak.
-		AllowRequest: core.AllowedPageRequest,
-		AllowMessage: a.fromPage,
-		WindowOptions: webview2.WindowOptions{
-			Title:       Name,
-			Width:       uint(scale(1100)),
-			Height:      uint(scale(740)),
-			IconId:      1,
-			Center:      true,
-			ClassName:   WindowClass,
-			Hidden:      opt.StartHidden && opt.LaunchGame == "",
-			Background:  groundColor,
-			OnCreate:    func(hwnd uintptr) { win.StyleTitleBar(hwnd, bgColor, borderColor); win.SetWindowIcons(hwnd, dpi) },
-			MessageHook: a.hook,
-		},
-	})
-	if a.w == nil {
-		r := win.MessageBox(0, "Lootnest needs the Microsoft Edge WebView2 Runtime, which isn't installed on this PC.\n\nOpen the download page now?",
-			Name, win.MB_YESNO|win.MB_ICONWARNING)
-		if r == win.IDYES {
-			_ = win.ShellOpen("https://developer.microsoft.com/microsoft-edge/webview2/")
-		}
-		return errors.New("WebView2 runtime missing")
+	if err := a.openWindow(opt, dpi, scale); err != nil {
+		return err
 	}
-	a.hwnd = uintptr(a.w.Window())
-	a.w.SetSize(scale(860), scale(580), webview2.HintMin)
-	a.taskbarCreated = win.RegisterWindowMessage("TaskbarCreated")
 
 	cleanRestoreLeftovers()
 	a.bind()
 	a.w.SetHtml(pageHTML())
 
-	a.tray = win.NewTray(a.hwnd, dpi)
-	win.ToastFailed = func(t win.Toast, err error) {
+	a.tray = plat.NewTray(a.hwnd, dpi)
+	plat.SetToastFailed(func(t plat.Toast, err error) {
 		// The note over the game couldn't be made: say why in the log, and
 		// show it as a Windows notification instead.
 		a.logf("ERROR a note over the game couldn't be shown (%v); it went to Windows' notifications", err)
 		if a.tray != nil {
 			a.ui(func() { a.tray.Notify(t.Title, strings.TrimSpace(t.Kicker+". "+t.Line)) })
 		}
-	}
+	})
 	a.tray.Add(Name)
 	if len(recovered) > 0 {
 		names := make([]string, len(recovered))
@@ -426,7 +393,7 @@ func Run(opt Options) error {
 	a.tray.Remove()
 	a.logf("Lootnest quit")
 	if a.restartArgs != "" {
-		if err := win.StartDetached(a.exePath, a.restartArgs, dirOf(a.exePath)); err != nil {
+		if err := plat.StartDetached(a.exePath, a.restartArgs, dirOf(a.exePath)); err != nil {
 			a.logf("ERROR couldn't start Lootnest again: %v", err)
 		}
 	}
@@ -464,7 +431,7 @@ func (a *App) apiRestart(safe bool) { a.ui(func() { a.restart(safe) }) }
 
 func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 	switch {
-	case msg == win.WM_CLOSE:
+	case msg == plat.WM_CLOSE:
 		if a.quitting {
 			return 0, false
 		}
@@ -473,7 +440,7 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 		a.mu.Unlock()
 		if toTray {
 			a.cancelRequests()
-			win.ShowWindow(hwnd, win.SW_HIDE)
+			plat.ShowWindow(hwnd, plat.SW_HIDE)
 			if !a.trayHintShown && a.tray != nil {
 				a.trayHintShown = true
 				a.tray.Notify("Lootnest is still running", "It keeps watching your games from the tray. Right-click the icon to quit.")
@@ -482,17 +449,17 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 		}
 		a.quit(false)
 		return 0, true
-	case msg == win.WM_COPYDATA:
-		if cmd, ok := win.ReadCommand(lp); ok {
+	case msg == plat.WM_COPYDATA:
+		if cmd, ok := plat.ReadCommand(lp); ok {
 			if strings.HasPrefix(cmd, "tv:") || strings.HasPrefix(cmd, "tv?:") {
 				return a.tvCommand(cmd), true
 			}
 			a.handleCommand(cmd)
 			return 1, true
 		}
-	case msg == win.WM_INPUT:
+	case msg == plat.WM_INPUT:
 		// A PlayStation pad's PS button, in TV mode or Big Picture (tvHome).
-		if down, ok := win.RawPSButton(lp); ok {
+		if down, ok := plat.RawPSButton(lp); ok {
 			a.mu.Lock()
 			pressed := down && !a.tvPSDown
 			a.tvPSDown = down
@@ -501,35 +468,35 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 				a.tvHome()
 			}
 		}
-	case msg == win.WM_DISPLAYCHANGE:
+	case msg == plat.WM_DISPLAYCHANGE:
 		// A streaming host adds or removes its display: TV mode follows
 		// the primary one.
 		a.mu.Lock()
 		tv := a.tv
 		a.mu.Unlock()
-		if tv && win.IsVisible(hwnd) {
-			win.FullscreenPrimary(hwnd)
+		if tv && plat.IsVisible(hwnd) {
+			plat.FullscreenPrimary(hwnd)
 		}
-	case msg == win.WM_TRAY:
+	case msg == plat.WM_TRAY:
 		switch lp & 0xFFFF {
-		case win.NIN_SELECT, win.NIN_KEYSELECT, win.WM_LBUTTONUP, win.NIN_BALLOONUSERCLICK:
+		case plat.NIN_SELECT, plat.NIN_KEYSELECT, plat.WM_LBUTTONUP, plat.NIN_BALLOONUSERCLICK:
 			a.show()
-		case win.WM_CONTEXTMENU, win.WM_RBUTTONUP:
+		case plat.WM_CONTEXTMENU, plat.WM_RBUTTONUP:
 			a.trayMenu()
 		}
 		return 0, true
-	case msg == win.WM_HOTKEY && wp == hotkeyPoint:
+	case msg == plat.WM_HOTKEY && wp == hotkeyPoint:
 		a.quickPoint()
 		return 0, true
-	case msg == win.WM_HOTKEY && wp == hotkeyShot:
+	case msg == plat.WM_HOTKEY && wp == hotkeyShot:
 		a.quickShot()
 		return 0, true
-	case msg == win.WM_HOTKEY && wp == hotkeyTV:
+	case msg == plat.WM_HOTKEY && wp == hotkeyTV:
 		a.logf("TV mode off: Ctrl+Shift+F11 on the PC")
 		a.leaveTV()
 		return 0, true
-	case msg == win.WM_DPICHANGED:
-		win.ApplyDPIRect(hwnd, lp)
+	case msg == plat.WM_DPICHANGED:
+		plat.ApplyDPIRect(hwnd, lp)
 		return 0, true
 	case a.taskbarCreated != 0 && uint32(msg) == a.taskbarCreated:
 		if a.tray != nil {
@@ -543,38 +510,38 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 
 func (a *App) trayMenu() {
 	a.mu.Lock()
-	items := []win.MenuItem{}
+	items := []plat.MenuItem{}
 	for _, s := range a.sessions {
 		if s.Phase == "playing" {
-			items = append(items, win.MenuItem{Text: fmt.Sprintf("%s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID)), Disabled: true, ID: 9999})
+			items = append(items, plat.MenuItem{Text: fmt.Sprintf("%s is playing %s", a.cfg.PlayerName(s.PlayerID), a.gameName(s.GameID)), Disabled: true, ID: 9999})
 		}
 	}
 	if a.tv {
-		items = append(items, win.MenuItem{ID: 5, Text: "Leave TV mode"})
+		items = append(items, plat.MenuItem{ID: 5, Text: "Leave TV mode"})
 	}
-	items = append(items, win.MenuItem{ID: 1, Text: "Open Lootnest"}, win.MenuItem{ID: 3, Text: "Big Picture"}, win.MenuItem{Sep: true})
+	items = append(items, plat.MenuItem{ID: 1, Text: "Open Lootnest"}, plat.MenuItem{ID: 3, Text: "Big Picture"}, plat.MenuItem{Sep: true})
 	games := a.cfg.Games
 	for i, g := range games {
 		if i >= 15 {
 			break
 		}
-		items = append(items, win.MenuItem{ID: 100 + i, Text: "Play " + strings.ReplaceAll(g.Name, "&", "&&") + "…"})
+		items = append(items, plat.MenuItem{ID: 100 + i, Text: "Play " + strings.ReplaceAll(g.Name, "&", "&&") + "…"})
 	}
 	if len(games) > 0 {
-		items = append(items, win.MenuItem{Sep: true})
+		items = append(items, plat.MenuItem{Sep: true})
 	}
 	restart := "Restart in safe mode"
 	if a.safe {
 		restart = "Restart normally"
 	}
-	items = append(items, win.MenuItem{ID: 4, Text: restart}, win.MenuItem{ID: 2, Text: "Quit Lootnest"})
+	items = append(items, plat.MenuItem{ID: 4, Text: restart}, plat.MenuItem{ID: 2, Text: "Quit Lootnest"})
 	ids := make([]string, len(games))
 	for i, g := range games {
 		ids[i] = g.ID
 	}
 	a.mu.Unlock()
 
-	switch id := win.ShowMenu(a.hwnd, items); {
+	switch id := plat.ShowMenu(a.hwnd, items); {
 	case id == 1:
 		a.show()
 	case id == 2:
@@ -646,12 +613,12 @@ func (a *App) quit(force bool) {
 		}
 		a.mu.Unlock()
 		if name := movingName(); name != "" {
-			win.MessageBox(a.hwnd, "Lootnest is moving "+name+" to another drive. Quit once it's done; Lootnest tells you when.", Name, win.MB_OK|win.MB_ICONINFORMATION)
+			plat.MessageBox(a.hwnd, "Lootnest is moving "+name+" to another drive. Quit once it's done; Lootnest tells you when.", Name, plat.MB_OK|plat.MB_ICONINFORMATION)
 			return
 		}
 		if len(playing) > 0 {
 			msg := "Still playing: " + strings.Join(playing, ", ") + ".\n\nIf Lootnest quits now, that progress is saved the next time you pick a profile for the game in Lootnest. Quit anyway?"
-			if win.MessageBox(a.hwnd, msg, Name, win.MB_YESNO|win.MB_ICONQUESTION|win.MB_DEFBUTTON2) != win.IDYES {
+			if plat.MessageBox(a.hwnd, msg, Name, plat.MB_YESNO|plat.MB_ICONQUESTION|plat.MB_DEFBUTTON2) != plat.IDYES {
 				return
 			}
 		}
@@ -661,7 +628,7 @@ func (a *App) quit(force bool) {
 	if a.tray != nil {
 		a.tray.Remove()
 	}
-	win.PostMessage(a.hwnd, win.WM_CLOSE, 0, 0)
+	plat.PostMessage(a.hwnd, plat.WM_CLOSE, 0, 0)
 }
 
 // show brings the window up and makes sure the web view inside it is
@@ -672,7 +639,7 @@ func (a *App) show() {
 	a.hidFor = ""
 	a.mu.Unlock()
 	a.checkIfStale()
-	win.Present(a.hwnd)
+	plat.Present(a.hwnd)
 	if a.w != nil {
 		a.w.RefreshView()
 	}

@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -76,7 +74,7 @@ func (a *App) apiMoveInfo(appID int) {
 				continue // a drive that isn't connected
 			}
 			info.Libraries = append(info.Libraries, MoveLib{
-				Path: lib, Drive: strings.ToUpper(filepath.VolumeName(lib)), Free: win.DiskFree(lib),
+				Path: lib, Drive: strings.ToUpper(filepath.VolumeName(lib)), Free: plat.DiskFree(lib),
 				Current: strings.EqualFold(filepath.Clean(lib), filepath.Clean(in.Library)),
 			})
 		}
@@ -103,7 +101,7 @@ func (a *App) moveBlocker(appID int) string {
 			names = append(names, strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")))
 		}
 	}
-	if procs, err := win.ProcessNames(); err == nil {
+	if procs, err := plat.ProcessNames(); err == nil {
 		for _, n := range names {
 			if n != "" && procs[n] {
 				return "Close the game first, then move it."
@@ -182,7 +180,7 @@ func (a *App) moveGame(in core.SteamInstall, lib string) (core.MoveResult, error
 	if err != nil {
 		return core.MoveResult{}, fmt.Errorf("Lootnest can't move this game: %w", err)
 	}
-	if free := win.DiskFree(lib); free >= 0 && free < size+moveMargin {
+	if free := plat.DiskFree(lib); free >= 0 && free < size+moveMargin {
 		return core.MoveResult{}, fmt.Errorf("there isn't enough room on %s: %s needs %s and %s is free", strings.ToUpper(filepath.VolumeName(lib)), in.Name, gb(size), gb(free))
 	}
 
@@ -195,7 +193,7 @@ func (a *App) moveGame(in core.SteamInstall, lib string) (core.MoveResult, error
 		}
 	}
 	if wasRunning {
-		defer func() { _ = win.StartDetached(filepath.Join(a.env.SteamPath, "steam.exe"), "", a.env.SteamPath) }()
+		defer func() { _ = plat.StartDetached(filepath.Join(a.env.SteamPath, "steam.exe"), "", a.env.SteamPath) }()
 	}
 
 	a.logf("Moving %s (%s) from %s to %s", in.Name, gb(size), in.Dir(), lib)

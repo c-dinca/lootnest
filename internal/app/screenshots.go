@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -24,7 +22,7 @@ import (
 const hotkeyShot = 0x4C53 // "LS"
 
 func picturesDir() string {
-	if d := win.Pictures(); d != "" {
+	if d := plat.Pictures(); d != "" {
 		return d
 	}
 	home, _ := os.UserHomeDir()
@@ -38,13 +36,13 @@ var errBlack = errors.New("the picture came out black")
 // proc. A window that can't draw itself is copied from the screen when it's
 // in front.
 func captureGame(proc string) (*image.RGBA, error) {
-	hwnd := win.GameWindow(proc)
+	hwnd := plat.GameWindow(proc)
 	if hwnd == 0 {
 		return nil, errors.New("Lootnest couldn't find the game's window")
 	}
-	img, err := win.CaptureWindow(hwnd)
+	img, err := plat.CaptureWindow(hwnd)
 	if err != nil || core.IsNearBlack(img) {
-		if s, serr := win.CaptureScreen(hwnd); serr == nil {
+		if s, serr := plat.CaptureScreen(hwnd); serr == nil {
 			img, err = s, nil
 		}
 	}
@@ -121,7 +119,7 @@ func (a *App) quickShot() {
 	go func() {
 		img, err := captureGame(r.proc)
 		if errors.Is(err, errBlack) {
-			win.ShowToast(win.Toast{Kicker: "No screenshot", Title: "The picture came out black", Line: "Switch the game to borderless windowed.", Accent: color})
+			plat.ShowToast(plat.Toast{Kicker: "No screenshot", Title: "The picture came out black", Line: "Switch the game to borderless windowed.", Accent: color})
 			a.logf("Screenshot of %s came out black (exclusive fullscreen?)", r.name)
 			return
 		}
@@ -130,14 +128,14 @@ func (a *App) quickShot() {
 			p, err = core.SaveNewScreenshot(img, picturesDir(), r.name, time.Now())
 		}
 		if err != nil {
-			win.ShowToast(win.Toast{Kicker: "No screenshot", Title: r.name, Line: sentence(err), Accent: color})
+			plat.ShowToast(plat.Toast{Kicker: "No screenshot", Title: r.name, Line: sentence(err), Accent: color})
 			a.logf("Couldn't take a screenshot of %s: %v", r.name, err)
 			return
 		}
 		if err := core.SaveScreenshotPNG(core.Thumbnail(img, core.ThumbWidth), filepath.Join(a.store.ShotThumbsDir(r.key), filepath.Base(p))); err != nil {
 			a.logf("Couldn't keep a thumbnail of %s: %v", p, err)
 		}
-		win.ShowToast(win.Toast{Kicker: "Screenshot saved", Title: filepath.Base(p), Line: r.name, Accent: color})
+		plat.ShowToast(plat.Toast{Kicker: "Screenshot saved", Title: filepath.Base(p), Line: r.name, Accent: color})
 		a.logf("Screenshot of %s: %s", r.name, p)
 		a.apiGameTimeline(r.key)
 	}()
