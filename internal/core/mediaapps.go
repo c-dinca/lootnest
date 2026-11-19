@@ -54,7 +54,19 @@ type WebApp struct {
 	// Mic lets the site's own pages use the microphone without asking each
 	// time: a voice chat's site (Discord).
 	Mic bool
+	// Loopback is for a site whose page plays through a server on this PC
+	// (Stremio's streaming server on 127.0.0.1): the window lets the page
+	// reach it without asking (WebAppBrowserArgs).
+	Loopback bool
 }
+
+// WebAppBrowserArgs are the browser's arguments for a Loopback site's own
+// window. Chromium's Local Network Access asks before a site on the
+// internet may reach 127.0.0.1, in a prompt a controller can't answer, and
+// Stremio's page then says the streaming server isn't there. The checks
+// are turned off in that window only (its own process and data folder),
+// which shows nothing but that site.
+const WebAppBrowserArgs = "--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessSendPreflights,PrivateNetworkAccessRespectPreflightResults,BlockInsecurePrivateNetworkRequests"
 
 // WebAppZoom is how much a site is magnified to be width of its pixels
 // across a screen of screenPx real ones at this DPI (96 is 100%), which
@@ -94,7 +106,7 @@ var webApps = []WebApp{
 	// Stremio's own web version, which is laid out for a TV already, with
 	// the streaming server of the Stremio program on this PC behind it
 	// (StremioServer), so what the program plays, this plays.
-	{ID: "stremio", Name: "Stremio", URL: "https://web.stremio.com/", Host: "web.stremio.com", Nav: "spatial", Width: 1280},
+	{ID: "stremio", Name: "Stremio", URL: "https://web.stremio.com/", Host: "web.stremio.com", Nav: "spatial", Width: 1280, Loopback: true},
 }
 
 // StremioServerPort is where Stremio's streaming server listens, and where

@@ -348,6 +348,7 @@ func Run(opt Options) error {
 		a.show()
 	}
 	go a.watch()
+	a.watchEmergency()
 	go func() {
 		a.mu.Lock()
 		tv := a.tv

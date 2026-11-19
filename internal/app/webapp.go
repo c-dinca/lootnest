@@ -52,6 +52,14 @@ const padKeys = `(function () {
 // press, so sound may start), a click for the rest. B closes what's on
 // top, else goes back a page. X plays or pauses, LB and RB change track,
 // through the keyboard's media keys.
+//
+// A on a text field (a search box, a message box) opens a keyboard drawn
+// in the page, since a TV has no keyboard and Windows' own doesn't come
+// up for a controller (the owner, 19 Nov 2026, on Stremio's search): the
+// D-pad moves over its keys, A types, X deletes, Y is a space, B closes
+// it, and Start (or its Done key) closes it and presses Enter in the
+// field, which searches. Letters go in as typed text (insertText), so the
+// site sees them as it would a keyboard's.
 const padSpatial = `(function () {
   if (window.top !== window || window.__lnPad) return;
   window.__lnPad = true;
@@ -143,10 +151,179 @@ const padSpatial = `(function () {
     sc.scrollBy({ top: dir === "down" ? by : -by });
     setTimeout(function () { move(dir, true); }, 260); // and on to what came in
   }
+  // A field that takes typed words.
+  function textField(el) {
+    if (!el) return false;
+    if (el.isContentEditable || el.getAttribute("role") === "textbox") return true;
+    if (el.tagName === "TEXTAREA") return !el.readOnly;
+    if (el.tagName !== "INPUT" || el.readOnly) return false;
+    return /^(text|search|email|url|tel|password|number|)$/.test((el.getAttribute("type") || "").toLowerCase());
+  }
+  // The keyboard: in a shadow root, so the site's styles don't reach it.
+  var kb = (function () {
+    var ROWS = [
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+      ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+      ["a", "s", "d", "f", "g", "h", "j", "k", "l", "@"],
+      ["z", "x", "c", "v", "b", "n", "m", ",", ".", "-"],
+      ["shift", "space", "del", "done"]
+    ];
+    var WORDS = { shift: "Shift", space: "Space", del: "Delete", done: "Done" };
+    var host = null, keysEl = null, line = null, field = null, at = [1, 0], upper = false;
+    function build() {
+      host = document.createElement("div");
+      host.setAttribute("data-ln-keyboard", "");
+      host.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;";
+      var root = host.attachShadow({ mode: "open" });
+      var css = document.createElement("style");
+      css.textContent = [
+        ".pad{background:#181a21;border-top:1px solid rgba(255,255,255,.08);padding:22px 0 26px;display:flex;flex-direction:column;align-items:center;gap:14px;font:600 22px/1.2 system-ui,'Segoe UI',sans-serif;color:#dfe5eb;box-shadow:0 -20px 60px rgba(0,0,0,.5)}",
+        ".line{min-width:min(900px,90vw);max-width:90vw;box-sizing:border-box;padding:12px 18px;border-radius:10px;background:#111217;color:#dfe5eb;font-weight:500;white-space:pre;overflow:hidden;text-overflow:ellipsis}",
+        ".line:empty::before{content:'Type with the controller';color:#8c94a0}",
+        ".keys{display:flex;flex-direction:column;gap:10px}",
+        ".row{display:flex;gap:10px;justify-content:center}",
+        ".k{min-width:68px;height:62px;padding:0 14px;box-sizing:border-box;border:0;border-radius:10px;background:#1f222b;color:#dfe5eb;font:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);cursor:pointer}",
+        ".k.wide{min-width:150px}.k.space{min-width:330px}",
+        ".k.done{background:#ef233c;color:#111217}",
+        ".k.on{background:#dfe5eb;color:#111217;transform:scale(1.06)}",
+        ".k.done.on{outline:3px solid #dfe5eb;outline-offset:3px;background:#ef233c}",
+        ".k.lit{box-shadow:inset 0 0 0 2px #dfe5eb}",
+        ".hint{color:#8c94a0;font-weight:500;font-size:17px}"
+      ].join("");
+      var pad = document.createElement("div");
+      pad.className = "pad";
+      line = document.createElement("div");
+      line.className = "line";
+      keysEl = document.createElement("div");
+      keysEl.className = "keys";
+      var hint = document.createElement("div");
+      hint.className = "hint";
+      hint.textContent = "A types, X deletes, Y adds a space, B closes, Start searches";
+      pad.appendChild(line);
+      pad.appendChild(keysEl);
+      pad.appendChild(hint);
+      root.appendChild(css);
+      root.appendChild(pad);
+      // A mouse works too, without taking the focus from the field.
+      keysEl.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      keysEl.addEventListener("click", function (e) {
+        var b = e.target.closest(".k");
+        if (!b) return;
+        at = [+b.dataset.r, +b.dataset.c];
+        paint();
+        press();
+      });
+    }
+    function paint() {
+      keysEl.textContent = "";
+      ROWS.forEach(function (row, r) {
+        var d = document.createElement("div");
+        d.className = "row";
+        row.forEach(function (k, c) {
+          var b = document.createElement("button");
+          b.className = "k" + (WORDS[k] ? " wide " + k : "") + (r === at[0] && c === at[1] ? " on" : "") + (k === "shift" && upper ? " lit" : "");
+          b.dataset.r = r;
+          b.dataset.c = c;
+          b.textContent = WORDS[k] || (upper ? k.toUpperCase() : k);
+          d.appendChild(b);
+        });
+        keysEl.appendChild(d);
+      });
+      line.textContent = valueOf();
+    }
+    function valueOf() {
+      if (!field) return "";
+      var v = field.isContentEditable || field.getAttribute("role") === "textbox" ? field.innerText.replace(/\n$/, "") : field.value;
+      return field.type === "password" ? v.replace(/./g, "•") : v;
+    }
+    function focusField() {
+      try { field.focus({ preventScroll: true }); } catch (e) {}
+    }
+    function setValue(v) {
+      var proto = field.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      var d = Object.getOwnPropertyDescriptor(proto, "value");
+      d.set.call(field, v);
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function type(ch) {
+      focusField();
+      var before = valueOf();
+      if (!document.execCommand("insertText", false, ch) || valueOf() === before) {
+        if (field.value !== undefined && !field.isContentEditable) setValue(field.value + ch);
+      }
+    }
+    function erase() {
+      focusField();
+      var before = valueOf();
+      if (!document.execCommand("delete", false) || valueOf() === before) {
+        if (field.value !== undefined && !field.isContentEditable) setValue(field.value.slice(0, -1));
+      }
+    }
+    function press() {
+      var k = ROWS[at[0]][at[1]];
+      if (k === "shift") upper = !upper;
+      else if (k === "space") type(" ");
+      else if (k === "del") erase();
+      else if (k === "done") { done(); return; }
+      else { type(upper ? k.toUpperCase() : k); if (upper && /[a-z]/.test(k)) upper = false; }
+      paint();
+    }
+    function step(dir) {
+      var r = at[0], c = at[1];
+      if (dir === "left") c = Math.max(0, c - 1);
+      else if (dir === "right") c = Math.min(ROWS[r].length - 1, c + 1);
+      else {
+        var to = dir === "up" ? r - 1 : r + 1;
+        if (to < 0 || to >= ROWS.length) return;
+        // The key in the next row nearest across, by where they sit.
+        var rows = keysEl.children, from = rows[r].children[c].getBoundingClientRect(), x = from.left + from.width / 2, best = 0, bd = Infinity;
+        Array.prototype.forEach.call(rows[to].children, function (b, i) {
+          var q = b.getBoundingClientRect(), d = Math.abs(q.left + q.width / 2 - x);
+          if (d < bd) { bd = d; best = i; }
+        });
+        r = to;
+        c = best;
+      }
+      at = [r, c];
+      paint();
+    }
+    function close() {
+      if (host) host.remove();
+      if (field && field.isConnected) mark(field);
+      field = null;
+    }
+    function done() {
+      var f = field;
+      close();
+      if (f && f.isConnected) { try { f.focus({ preventScroll: true }); } catch (e) {} window.ln_key("ok"); }
+    }
+    return {
+      shown: function () { return !!(host && host.isConnected && field); },
+      open: function (el) {
+        if (!host) build();
+        field = el;
+        at = [1, 0];
+        upper = false;
+        focusField();
+        (document.body || document.documentElement).appendChild(host);
+        paint();
+      },
+      act: function (k) {
+        if (field && !field.isConnected) { close(); return; }
+        if (k === "up" || k === "down" || k === "left" || k === "right") step(k);
+        else if (k === "ok") press();
+        else if (k === "back") close();
+        else if (k === "play") { erase(); paint(); }
+        else if (k === "y") { type(" "); paint(); }
+        else if (k === "start") done();
+      }
+    };
+  })();
   function act(k) {
     if (k === "up" || k === "down" || k === "left" || k === "right") { move(k); return; }
     if (k === "ok") {
       if (!cur || !cur.isConnected) { move("down"); return; }
+      if (textField(cur)) { kb.open(cur); return; }
       // A real Enter for what takes one (it counts as the user's, so sound may start); a click for the rest.
       if (cur.matches("a[href], button, input, select, textarea")) window.ln_key("ok");
       else cur.click();
@@ -157,9 +334,9 @@ const padSpatial = `(function () {
       else if (!window.navigation || window.navigation.canGoBack) history.back();
       return;
     }
-    window.ln_key(k); // play, next, prev
+    if (k === "play" || k === "next" || k === "prev") window.ln_key(k);
   }
-  var MAP = { 12: "up", 13: "down", 14: "left", 15: "right", 0: "ok", 1: "back", 2: "play", 4: "prev", 5: "next" };
+  var MAP = { 12: "up", 13: "down", 14: "left", 15: "right", 0: "ok", 1: "back", 2: "play", 3: "y", 4: "prev", 5: "next", 9: "start" };
   var held = {}, next = {};
   function tick(t) {
     var now = {}, pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -172,8 +349,9 @@ const padSpatial = `(function () {
     }
     for (var k in now) {
       var dir = k === "up" || k === "down" || k === "left" || k === "right";
-      if (!held[k]) { act(k); next[k] = t + 400; }
-      else if (dir && t >= next[k]) { act(k); next[k] = t + 140; }
+      var go = kb.shown() ? kb.act : act;
+      if (!held[k]) { go(k); next[k] = t + 400; }
+      else if ((dir || (kb.shown() && k === "play")) && t >= next[k]) { go(k); next[k] = t + 140; }
     }
     held = now;
     requestAnimationFrame(tick);

@@ -24,6 +24,8 @@
     [["1 to 9"], "Choose a profile in Who's playing"],
     [["F11"], "Open or leave Big Picture"],
     [["Q", "E"], "Switch tabs in Big Picture"],
+    [["Ctrl+Shift+F11"], "Leave TV mode"],
+    [["Ctrl+Shift+Q"], "In TV mode or Big Picture, quit Lootnest when it's stuck"],
     ...(s.pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
     ...(s.screenshotsOff ? [] : [[["Ctrl+Shift+F12"], "Save a screenshot while a game runs"]]),
   ];

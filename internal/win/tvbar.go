@@ -73,7 +73,7 @@ func HideTVBar() {
 }
 
 const (
-	barW, barH       = 440, 72
+	barW, barH       = 560, 72
 	barMargin        = 24
 	barKeyW, barKeyH = 148, 40
 	timerBar         = 1

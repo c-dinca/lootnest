@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	EmergencyKey         = win.EmergencyKey
 	IDCANCEL             = win.IDCANCEL
 	IDNO                 = win.IDNO
 	IDOK                 = win.IDOK
@@ -40,6 +41,7 @@ const (
 	VK_F11               = win.VK_F11
 	VK_F12               = win.VK_F12
 	VK_F5                = win.VK_F5
+	VK_Q                 = win.VK_Q
 	WM_APP               = win.WM_APP
 	WM_CLOSE             = win.WM_CLOSE
 	WM_CONTEXTMENU       = win.WM_CONTEXTMENU
@@ -256,6 +258,10 @@ func IsVisible(hwnd uintptr) bool {
 
 func IsWindow(hwnd uintptr) bool {
 	return win.IsWindow(hwnd)
+}
+
+func KillPID(pid uint32) bool {
+	return win.KillPID(pid)
 }
 
 func KillProcesses(name string) int {
@@ -613,6 +619,10 @@ func Videos() string {
 
 func WaitProcess(pid uint32) {
 	win.WaitProcess(pid)
+}
+
+func WatchEmergencyKey(armed func() bool, fire func(), held func(bool)) {
+	win.WatchEmergencyKey(armed, fire, held)
 }
 
 func WatchPadRawInput(hwnd uintptr, on bool) bool {
