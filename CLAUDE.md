@@ -1872,6 +1872,26 @@ These shipped recently, newest last:
   `achSteamSteps` in 62-game-blocks.js lists the steps with lamps;
   Settings, Online's row says the same. Harness `?why=start|private|none|set`.
   Released as 2.15.1 at the owner's ask (19 Nov).
+- **Unreleased, story progress** (the owner, 19 Nov 2026: "how much of
+  the story I've done, beside Play"; of three ways offered they chose the
+  one from achievements, not an estimate by time or reading saves).
+  `core/story.go`: `StoryOf` reads achievements whose words mark a
+  numbered chapter, act, part, episode, mission or stage ("Complete
+  Chapter 3.", "Leave Act II - ...", "Clear Mission 03.", roman, words,
+  "the first chapter"; a rest only "of/in ..." or flavour after a dash,
+  never a challenge: `storyNotStep`), a prologue, an epilogue, and the end
+  ("Finish the game on ...", "Achieved the "X" ending": any one unlocked
+  finishes it). The kind with the most numbers wins; under two numbers
+  only a reached end shows (Finished). Percent is by chapter number to the
+  last step (the end, else the epilogue); a later step done marks those
+  before. Tuned on 36 games' real lists (RDR2, BG3, Celeste, DMC5,
+  Spider-Man 2, Tekken 8...). `AchievementSet.Story`, per player too.
+  `Settings.StoryAch` (off by default): `storyWords` reads
+  `IPlayerService/GetGameAchievements` (no key; hidden ones' words, which
+  GetSchemaForGame leaves out), kept 30 days as `<appid>.public.json`;
+  `StoryWords` fills only a copy. UI `storyChip` in 62-game-blocks.js
+  (ring and line in the play bar; on a page it opens the Achievements
+  tab), `.gpage-story`. English words only. Not in Big Picture yet.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

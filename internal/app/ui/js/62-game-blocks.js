@@ -141,6 +141,21 @@
     const row = (a) => achRow(a, key);
     return { key, who, A, pct, whoRow, note, toggle, bar, row };
   }
+  // How far the story is, beside Play: from the achievements that mark its
+  // chapters or its end (core.StoryOf), for whoever's achievements the page
+  // shows. On a game's page it opens the Achievements tab.
+  function storyChip(it, page) {
+    const X = achFor(it), st = X && X.A.story;
+    if (!st || !st.steps || !st.steps.length) return "";
+    const done = st.steps.filter((s) => s.done), last = done[done.length - 1];
+    const line = st.finished ? "Finished" : last ? `${last.label} done` : "Not started";
+    const said = st.steps.map((s) => `${s.label}: ${s.done ? "done" : "not yet"}`).join("\n");
+    const inner = `<span class="ach-gring">${ring(st.percent, 44)}</span><span class="gpage-state"><b>Story</b><span>${esc(line)}</span></span>`;
+    const label = `Story ${st.percent}%, ${line}`;
+    return page
+      ? `<button class="gpage-story" data-action="game-tab" data-tab="achievements" title="${esc(said)}" aria-label="${esc(label)}">${inner}</button>`
+      : `<div class="gpage-story" title="${esc(said)}" role="img" aria-label="${esc(label)}">${inner}</div>`;
+  }
   // Achievements by how rare they are, as gamers know them: ultra rare in
   // gold, rare in blue, uncommon in green, common in silver.
   const TIERS = { ultra: "Ultra rare", rare: "Rare", uncommon: "Uncommon", common: "Common" };

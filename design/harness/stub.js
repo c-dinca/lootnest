@@ -837,6 +837,11 @@
         : key.startsWith("steam:") ? { appId: 1091500, source: "steam", total: 12, unlocked: 12, list: mk(12, 12, names) }
         : key === "game:bg3" ? { appId: 1086940, source: "pc", total: 12, unlocked: 7, list: mk(12, 7, names),
           players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { source: "pc", total: 12, unlocked: [7, 2, 11, 4, 0, 9][i % 6], list: mk(12, [7, 2, 11, 4, 0, 9][i % 6], names) }])) } : null;
+      // How far the story is (core.StoryOf): Baldur's Gate 3 by acts per
+      // profile, a folder game by chapters.
+      const acts = (n) => ({ percent: [0, 33, 67, 100][n], finished: n === 3, steps: ["Act 1", "Act 2", "The end"].map((label, i) => ({ label, done: i < n })) });
+      if (set && key === "game:bg3") { set.story = acts(2); Object.values(set.players || {}).forEach((ps, i) => { ps.story = acts([2, 1, 3, 0, 1, 2][i % 6]); }); }
+      if (set && key.startsWith("dir:")) set.story = { percent: 50, steps: ["Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4", "Chapter 5", "Epilogue"].map((label, i) => ({ label, done: i < 3 })) };
       // ?why=start|private|none|set: what Steam's way still needs, for a game with none.
       const W = { start: { steam: true, key: false, on: false, said: "" }, private: { steam: true, key: true, on: true, said: "private" },
         none: { steam: true, key: true, on: true, said: "none" }, set: { steam: true, key: true, on: true, said: "" } }[q.get("why") || "start"];

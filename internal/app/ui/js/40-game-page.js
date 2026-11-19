@@ -373,11 +373,11 @@
       if (!page) bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
         <div class="gpage-state"><b>${rec ? esc(lastPlayed(it)) : "Not played yet"}</b>${t ? `<span>${esc(hours(t))} played</span>` : ""}</div>
-        <div class="gpage-others">${turnOn()}</div></section>`;
+        ${storyChip(it, false)}<div class="gpage-others">${turnOn()}</div></section>`;
       else bar = `<section class="gpage-bar" aria-label="Play">
         <button class="ln-button ln-button--primary ln-button--lg" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>
         <div class="gpage-state"><b>${solo() ? "One set of saves" : "Profiles off"}</b>${rec ? `<span>${esc(lastPlayed(it))}</span>` : t ? `<span>${esc(hours(t))} played</span>` : ""}</div>
-        <div class="gpage-others">${startWith}${turnOn()}</div>
+        ${storyChip(it, true)}<div class="gpage-others">${startWith}${turnOn()}</div>
         ${stats ? `<dl class="ln-meta gpage-stats">${stats}</dl>` : ""}</section>`;
       head = { play: `<button class="ln-button ln-button--primary" data-action="play-found" data-key="${esc(f.key)}">${GI.play}Play</button>`, state: solo() ? "One set of saves" : "Profiles off" };
       note = page ? also + (jobBanner(it) || offerBanner(it)) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) : "";
@@ -407,7 +407,7 @@
       // A run of whoever's playing: its own saves, from the start or a copy.
       const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
       const pill = page && !s ? profPill(true, `data-action="remove-game" data-game="${esc(g.id)}"`) : "";
-      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${other || newRun || pill ? `<div class="gpage-others">${other}${newRun}${pill}</div>` : ""}${details}</section>`;
+      bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${storyChip(it, page)}${other || newRun || pill ? `<div class="gpage-others">${other}${newRun}${pill}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
       head = { play: other + (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${possessive(pname(loaded))} files are loaded` : "Nobody's files yet" };
       note = page ? conflictBanner(g) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";

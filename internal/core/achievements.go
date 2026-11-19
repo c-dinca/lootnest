@@ -40,6 +40,9 @@ type AchievementSet struct {
 	// Players are each player's own, for a game whose achievements go with
 	// their profile (player id -> their set).
 	Players map[string]*AchievementSet `json:"players,omitempty"`
+	// Story is how far the game's story is, when its achievements mark
+	// its chapters or its end (StoryOf).
+	Story *Story `json:"story,omitempty"`
 }
 
 // achFile is a place a Steam-compatible tool keeps a game's achievements.
