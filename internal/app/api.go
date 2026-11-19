@@ -590,7 +590,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	if s.StartTimeoutSeconds < 30 || s.StartTimeoutSeconds > 1800 {
 		return errors.New("The start wait must be between 30 and 1800 seconds.")
 	}
-	if s.Motion != "" && s.Motion != "less" && s.Motion != "off" {
+	if s.Motion != "" && s.Motion != "full" && s.Motion != "less" && s.Motion != "off" {
 		s.Motion = ""
 	}
 	s.SteamAccountID = strings.TrimSpace(s.SteamAccountID)

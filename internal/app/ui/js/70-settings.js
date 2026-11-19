@@ -63,7 +63,7 @@
       ["appearance", SET_CATS.appearance, ph("palette"), () => sub("", "", `
           ${sw("glassOff", "See-through panels", "Off makes every panel solid", !s.glassOff, true)}
           ${sw("roomOff", "Art behind pages", "The game you're looking at fills the window", !s.roomOff, true)}
-          ${setRow("Motion", "", `<div class="ln-segmented" role="radiogroup" aria-label="Motion">${[["", "Full"], ["less", "Less"], ["off", "Off"]].map(([v, l]) => `<button type="button" role="radio" aria-checked="${(s.motion || "") === v}" data-action="set-motion" data-value="${v}">${l}</button>`).join("")}</div>`)}`)],
+          ${setRow("Motion", !s.motion && osStill() ? "Windows has animation effects off, so Lootnest barely moves. Full brings its animations back." : "", `<div class="ln-segmented" role="radiogroup" aria-label="Motion">${[["", "Like Windows"], ["full", "Full"], ["less", "Less"], ["off", "Off"]].map(([v, l]) => `<button type="button" role="radio" aria-checked="${(s.motion || "") === v}" data-action="set-motion" data-value="${v}">${l}</button>`).join("")}</div>`)}`)],
       ["games", SET_CATS.games, ph("arrows-left-right"), () => sub("Swaps", "", `
           ${setRow("Copies kept per game before each swap", "The oldest go once there are more.", num("s-backups", "backupsToKeep", 1, 100), "s-backups")}
           ${setRow("Seconds to wait for a game to start", "", num("s-timeout", "startTimeoutSeconds", 30, 1800), "s-timeout")}

@@ -835,12 +835,12 @@ select.ln-input option { background: var(--bg-surface); color: var(--fg-1); }
 :root.motion-less *:not(.ln-spinner), :root.motion-less *::before, :root.motion-less *::after { transition-property: opacity, background-color, color, border-color !important; animation-name: ln-fade-in !important; }
 :root.motion-off *, :root.motion-off *::before, :root.motion-off *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 @media (prefers-reduced-motion: reduce) {
-  .ln-button, .ln-chip, .ln-row, .ln-segmented button, .ln-tabs [role="tab"], .ln-tile__cover, .ln-tile__cover::after, .switch span, .switch span::after { transition-duration: 0.01ms; }
-  .ln-button:active, .ln-button[data-force~="active"], .ln-chip:active { transform: none; }
-  .ln-tile:hover .ln-tile__cover, .ln-tile[data-force~="hover"] .ln-tile__cover { transform: none; }
-  .ln-toast, .ln-drawer { animation-name: ln-fade-in; }
-  .ln-skeleton { animation: none; }
-  .ln-spinner { animation-duration: calc(var(--dur-spin) * 3); }
+  :root:not(.motion-full) .ln-button, :root:not(.motion-full) .ln-chip, :root:not(.motion-full) .ln-row, :root:not(.motion-full) .ln-segmented button, :root:not(.motion-full) .ln-tabs [role="tab"], :root:not(.motion-full) .ln-tile__cover, :root:not(.motion-full) .ln-tile__cover::after, :root:not(.motion-full) .switch span, :root:not(.motion-full) .switch span::after { transition-duration: 0.01ms; }
+  :root:not(.motion-full) .ln-button:active, :root:not(.motion-full) .ln-button[data-force~="active"], :root:not(.motion-full) .ln-chip:active { transform: none; }
+  :root:not(.motion-full) .ln-tile:hover .ln-tile__cover, :root:not(.motion-full) .ln-tile[data-force~="hover"] .ln-tile__cover { transform: none; }
+  :root:not(.motion-full) .ln-toast, :root:not(.motion-full) .ln-drawer { animation-name: ln-fade-in; }
+  :root:not(.motion-full) .ln-skeleton { animation: none; }
+  :root:not(.motion-full) .ln-spinner { animation-duration: calc(var(--dur-spin) * 3); }
 }
 @keyframes ln-fade-in { from { opacity: 0; } }
 

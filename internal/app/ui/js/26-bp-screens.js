@@ -203,7 +203,7 @@
   // right that OK changes, and a line under them saying what the row in
   // focus does. Only settings Lootnest already has.
   const BP_SIGNS = [["", "Automatic"], ["xbox", "Xbox"], ["playstation", "PlayStation"], ["nintendo", "Nintendo"]];
-  const BP_MOTION = [["", "Full"], ["less", "Less"], ["off", "Off"]];
+  const BP_MOTION = [["", "Like Windows"], ["full", "Full"], ["less", "Less"], ["off", "Off"]];
   function bpSettingsParts() {
     const s = cfg().settings, next = (list, v) => list[(list.findIndex((x) => x[0] === v) + 1) % list.length][0], label = (list, v) => (list.find((x) => x[0] === v) || list[0])[1];
     const flip = (key) => () => bpSet(key, !s[key]);
@@ -212,7 +212,7 @@
         { id: "move", name: "Sounds as you move", on: BP.sounds, say: "A click as the focus moves, and one for Select and Back.", run: () => { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); renderBP(); } },
         { id: "cues", name: "Sounds for unlocks, save points and swaps", on: !s.soundsOff, say: "Heard over a game too. Never for a game with an anti-cheat.", run: flip("soundsOff") }] },
       { id: "picture", name: "Picture and motion", opts: [
-        { id: "motion", name: "Motion", value: label(BP_MOTION, s.motion || ""), say: "Full moves and fades everything. Less keeps only the fades. Off changes screens at once.", run: () => bpSet("motion", next(BP_MOTION, s.motion || "")) },
+        { id: "motion", name: "Motion", value: label(BP_MOTION, s.motion || ""), say: "Like Windows follows Windows' animation effects. Full moves and fades everything. Less keeps only the fades. Off changes screens at once.", run: () => bpSet("motion", next(BP_MOTION, s.motion || "")) },
         { id: "trailers", name: "Trailers behind the game in focus", on: BP.trailers, say: s.gameDetails ? "A game's trailer plays behind it, without sound, once the focus has rested on it. A moving picture costs the stream to a TV more than a still one." : "Needs Game details, which is turned on in Lootnest's Settings on the PC, under Online.", run: () => { BP.trailers = !BP.trailers; setPref("bpTrailers", BP.trailers ? "1" : "0"); if (!BP.trailers) bpTrailerStop(); renderBP(); } },
         { id: "start", name: "Open in Big Picture when Lootnest starts", on: !!s.openBigPicture, say: "For a PC that is mostly used from the sofa.", run: flip("openBigPicture") }] },
       { id: "controller", name: "Controller", opts: [

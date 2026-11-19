@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **No more marking achievements by hand.** 2.14.0 let each profile mark a game's achievements as done when nothing on the PC records them. That's gone: achievements show only when the game or a tool on the PC records them. Marks made in 2.14.0 stay in `hand-achievements.json` and are no longer shown.
+- **Animations on PCs with Windows' animation effects off.** When Windows' animation effects are off, Lootnest used to drop almost all of its motion, so the achievement card didn't tilt or turn under the pointer. Settings, Appearance, Motion now has **Like Windows** (the default, as before) and **Full**, which keeps every animation whatever Windows says; the setting says when Windows has them off. The achievement card follows the pointer unless Motion is Off.
 
 ## 2.14.0
 
