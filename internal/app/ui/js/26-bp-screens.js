@@ -29,6 +29,11 @@
     return `<button class="bp-tile bp-tile--tag" data-bp data-bpid="c:${esc(t)}" data-go="tag" data-tag="${esc(t)}" data-hint="Open">
       <span class="bp-art">${covers}<span class="bp-tag-name"><b>${esc(t)}</b>${list.length} ${list.length === 1 ? "game" : "games"}</span></span></button>`;
   }
+  // The end of Home's Your games when the Library is longer than it: the
+  // whole Library's grid, with its count.
+  const BP_HOME_MAX = 120;
+  const bpAllTile = (n) => `<button class="bp-tile bp-tile--tag" data-bp data-bpid="all:library" data-go="tab" data-t="library" data-hint="Open">
+      <span class="bp-art"><span class="bp-tag-name"><b>All games</b>${n} games</span></span></button>`;
   const bpRowHTML = (id, title, inner, lead = "") => `<section class="bp-row" data-block>${lead}<h2>${esc(title)}</h2><div class="bp-track" data-zone="${esc(id)}" data-live>${inner}</div></section>`;
   const bpRow = (id, title, list) => (list.length ? bpRowHTML(id, title, list.map((it) => bpTile(it, id)).join("")) : "");
   const bpGhosts = (n) => Array.from({ length: n }, () => '<span class="bp-tile bp-tile--ghost" aria-hidden="true"><span class="bp-art is-waiting"></span></span>').join("");
@@ -146,12 +151,15 @@
     const names = allTags().filter((t) => tags[t]); // the sidebar's order
     const big = names.filter((t) => tags[t].length >= 5).slice(0, 3);
     const small = names.filter((t) => !big.includes(t));
-    const first = recent.length ? recent : all.slice(0, 12);
-    return `${bpRowHTML("recent", recent.length ? "Continue playing" : "Your games", first.map((it) => bpTile(it, "recent")).join("") + (S.found.scanning ? bpGhosts(5) : ""), '<div class="bp-hero" data-hero data-own></div>')}
+    // Every game is on Home: Your games holds them all (a long Library
+    // ends in a tile for Library's grid), first when nothing was played yet.
+    const yours = (row) => all.slice(0, BP_HOME_MAX).map((it) => bpTile(it, row)).join("") + (all.length > BP_HOME_MAX ? bpAllTile(all.length) : "");
+    const first = recent.length ? recent.map((it) => bpTile(it, "recent")).join("") : yours("recent");
+    return `${bpRowHTML("recent", recent.length ? "Continue playing" : "Your games", first + (S.found.scanning ? bpGhosts(5) : ""), '<div class="bp-hero" data-hero data-own></div>')}
       ${bpAppsRow()}
       ${big.map((t) => bpRow("tag:" + t, t, tags[t])).join("")}
       ${small.length ? bpRowHTML("tags", "Collections", small.map((t) => bpTagTile(t, tags[t])).join("")) : ""}
-      ${recent.length ? bpRow("all", "Your games", all.slice(0, 40)) : ""}`;
+      ${recent.length ? bpRowHTML("all", "Your games", yours("all")) : ""}`;
   }
   // An achievement as a line: its icon ringed in its tier's colour, its
   // name and what it asks, and how many players have it. One that's hidden

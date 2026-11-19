@@ -270,6 +270,8 @@
   playtime["dir:c:\\epic games\\cyberpunk 2077"] = { p1: 16 * 3600 };
   recent["dir:d:\\games\\onimusha"] = { at: iso(43 * 60e3) };
   recent["steam:413150"] = { at: iso(9 * d) };
+  // ?fresh=1: a PC where nothing was played with Lootnest yet (a friend's).
+  if (q.get("fresh")) Object.keys(recent).forEach((k) => delete recent[k]);
   if (ARTQ === "partial") recent["dir:d:\\games\\phantom blade zero"] = { at: iso(20 * 60e3) }; // on the shelves, wide art made from its cover
   steamTime["steam:1091500"] = 84 * 3600; steamTime["game:cs2"] = 412 * 3600; steamTime["steam:250900"] = 133 * 3600;
   shelf.p1 = { "game:cs2": { status: "playing", rating: 4, updated: iso(d) }, "steam:1091500": { status: "playing", updated: iso(2 * d) }, "game:ittakestwo": { status: "finished", rating: 5, note: "Best co-op game", updated: iso(20 * d) } };
