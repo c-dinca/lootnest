@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	EmergencyKey         = "Ctrl+Shift+Q"
 	IDCANCEL             = 2
 	IDNO                 = 7
 	IDOK                 = 1
@@ -39,6 +40,7 @@ const (
 	VK_F11               = 122
 	VK_F12               = 123
 	VK_F5                = 116
+	VK_Q                 = 81
 	WM_APP               = 32768
 	WM_CLOSE             = 16
 	WM_CONTEXTMENU       = 123
@@ -227,6 +229,10 @@ func IsVisible(hwnd uintptr) (r0 bool) {
 }
 
 func IsWindow(hwnd uintptr) (r0 bool) {
+	return
+}
+
+func KillPID(pid uint32) (r0 bool) {
 	return
 }
 
@@ -540,6 +546,8 @@ func ViGEmPresent() (r0 bool) {
 }
 
 func WaitProcess(pid uint32) {}
+
+func WatchEmergencyKey(armed func() bool, fire func(), held func(bool)) {}
 
 func WatchPadRawInput(hwnd uintptr, on bool) (r0 bool) {
 	return

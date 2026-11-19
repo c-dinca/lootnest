@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **An emergency key for TV mode.** When the TV or Lootnest stops answering while TV mode or Big Picture is on, press **Ctrl+Shift+Q** on the PC's keyboard: the mouse is let go, the taskbar comes back, the TV's stream ends (so the PC's screens come back as they were), and Lootnest quits, even when its window doesn't answer. The bar on the PC's screen in TV mode says so, and Ctrl+Shift+F11 still leaves TV mode without quitting.
+
 ## 2.16.1
 
 - **Every game on Big Picture's Home.** On a PC where nothing was played with Lootnest yet, Big Picture's Home showed only the first 12 games by name, so a game such as TEKKEN 8 was only in its Library tab. Home's **Your games** now holds every game (with a long Library, the first 120 and a tile for the whole Library), and after you play, it still follows Continue playing.

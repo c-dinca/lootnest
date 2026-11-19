@@ -319,6 +319,7 @@ func (a *App) apiBigPicture(on bool) {
 	tv := a.tv
 	if !tv {
 		a.bigPicture = on
+		armConsole(on, 0)
 	}
 	a.mu.Unlock()
 	if tv { // TV mode keeps Big Picture until it ends (leaveTV)

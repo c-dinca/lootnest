@@ -111,6 +111,7 @@ func (a *App) enterTV(holder uint32) {
 	a.mu.Lock()
 	was := a.tv
 	a.tv, a.tvHolder, a.bigPicture = true, holder, true
+	armConsole(true, holder)
 	if !was {
 		a.tvWasHidden = !plat.IsVisible(a.hwnd)
 	}
@@ -167,6 +168,7 @@ func (a *App) leaveTV() {
 	}
 	hidden, playing := a.tvWasHidden, a.hidFor != ""
 	a.tv, a.tvHolder, a.openTV, a.bigPicture = false, 0, false, false
+	armConsole(false, 0)
 	a.hidFor, a.tvMenuOn, a.tvPlaying, a.tvKeyHeld = "", false, "", false
 	a.conGame, a.conWin = "", 0
 	a.conGen++
@@ -334,6 +336,12 @@ func (a *App) tvBarShows() plat.TVBar {
 	line := "The TV's stream ends when you leave"
 	if keys {
 		line = "Ctrl+Shift+F11 leaves it too"
+	}
+	if emergencyKey.Load() {
+		line = plat.EmergencyKey + " quits Lootnest if it's stuck"
+		if keys {
+			line = "Ctrl+Shift+F11 leaves, " + plat.EmergencyKey + " quits Lootnest"
+		}
 	}
 	title := "Lootnest is on the TV"
 	if playing != "" {
