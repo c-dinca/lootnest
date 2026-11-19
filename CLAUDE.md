@@ -1730,8 +1730,31 @@ These shipped recently, newest last:
   prefix and finds its saves there; `SuggestPaths` looks in the XDG
   folders for native games; the manifest keeps Linux locations apart
   (`DBGame.Linux`, `<xdgData>`, `<xdgConfig>`), used when `OS` is
-  "linux". Tests in `core/prefix_test.go` (not run on Windows). Next:
-  L1b, Heroic, Lutris, Bottles and the itch app.
+  "linux". Tests in `core/prefix_test.go` (not run on Windows).
+- **Unreleased, Linux L1b, the other Linux launchers**
+  (`core/linuxlaunchers.go`, `Env.ScanLinuxLaunchers`, native and
+  Flatpak folders, prefixes stored with tokens). Formats read in each
+  launcher's source. Heroic (`HeroicGames`, ~/.config/heroic):
+  legendary's installed.json, `gog_store/installed.json` with titles from
+  `store_cache/gog_library.json` or the game's `goggame-<id>.info`,
+  nile's installed.json and library.json, `sideload_apps/library.json`;
+  a Windows game's prefix from `GamesConfig/<app>.json` (winePrefix),
+  config.json's defaults, then `~/Games/Heroic/Prefixes/default/<title>`,
+  with Proton's `pfx` inside (`prefixAt`); `heroic://launch?appName=&runner=`.
+  Lutris (`LutrisGames`): `pga.db` through `core/sqlite.go`, a read-only
+  SQLite 3 reader (`sqliteTable`: sqlite_master, table b-trees, overflow
+  pages, columns from the CREATE TABLE, the INTEGER PRIMARY KEY as rowid;
+  no -wal), installed `wine` and `linux` games only, `games/<configpath>.yml`
+  (config folder, else data) via `core/yamlmini.go` (`readYAMLMap`, the
+  block YAML PyYAML writes); `lutris:rungameid/<id>`. Bottles
+  (`BottlesGames`): each bottle is the prefix, `bottle.yml`
+  External_Programs (not `removed`), Windows paths through drive_c or
+  dosdevices (`bottlesPath`). itch on Linux finds native programs
+  (`MainLinuxExe`: the largest ELF, else .x86_64 or .sh). Sources
+  `heroic`, `lutris`, `bottles` (labels and filters in 35-library-home.js).
+  Fixture `testdata/lutris/pga.db` comes from Python's SQLite
+  (`make.py` there); `FuzzSQLite`. Next: L2, the WebKitGTK window, when
+  the owner says.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

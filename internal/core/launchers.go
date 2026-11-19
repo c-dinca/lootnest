@@ -284,7 +284,11 @@ func PublisherID(publisher string) string {
 
 // ItchGames lists games the itch app installed in appsDir
 // (%APPDATA%\itch\apps): each has .itch\receipt.json.gz with its title.
-func ItchGames(appsDir string) []FoundGame {
+func ItchGames(appsDir string) []FoundGame { return itchGames(appsDir, MainExe) }
+
+// itchGames reads the itch app's games, finding each one's program with
+// exeOf (MainExe on Windows; on Linux a native one too).
+func itchGames(appsDir string, exeOf func(string) (string, string)) []FoundGame {
 	ents, err := os.ReadDir(appsDir)
 	if err != nil {
 		return nil
@@ -299,7 +303,7 @@ func ItchGames(appsDir string) []FoundGame {
 		if name == "" {
 			continue
 		}
-		exe, process := MainExe(dir)
+		exe, process := exeOf(dir)
 		if exe == "" {
 			continue
 		}
@@ -339,6 +343,9 @@ var launchURIs = []*regexp.Regexp{
 	regexp.MustCompile(`^amazon-games://play/[A-Za-z0-9-]{1,80}$`),
 	regexp.MustCompile(`^shell:AppsFolder\\[A-Za-z0-9.-]{1,120}_[0-9a-hjkmnp-tv-z]{13}![A-Za-z0-9._-]{1,80}$`),
 	regexp.MustCompile(`^com\.epicgames\.launcher://apps/[A-Za-z0-9%._-]{1,300}\?action=launch&silent=true$`),
+	// Linux: Heroic (protocol.ts) and Lutris.
+	regexp.MustCompile(`^heroic://launch\?appName=[A-Za-z0-9%._~+-]{1,200}&runner=(legendary|gog|nile|sideload)$`),
+	regexp.MustCompile(`^lutris:rungameid/[0-9]{1,9}$`),
 }
 
 // SafeLaunchURI accepts only the launch links of the launchers Lootnest
