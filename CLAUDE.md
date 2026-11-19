@@ -206,7 +206,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.15.1, beta)
+## Where things stand (2.16.0, beta)
 
 These shipped recently, newest last:
 
@@ -1872,7 +1872,7 @@ These shipped recently, newest last:
   `achSteamSteps` in 62-game-blocks.js lists the steps with lamps;
   Settings, Online's row says the same. Harness `?why=start|private|none|set`.
   Released as 2.15.1 at the owner's ask (19 Nov).
-- **Unreleased, story progress** (the owner, 19 Nov 2026: "how much of
+- **2.16.0, story progress** (the owner, 19 Nov 2026: "how much of
   the story I've done, beside Play"; of three ways offered they chose the
   one from achievements, not an estimate by time or reading saves).
   `core/story.go`: `StoryOf` reads achievements whose words mark a
@@ -1892,7 +1892,7 @@ These shipped recently, newest last:
   `StoryWords` fills only a copy. UI `storyChip` in 62-game-blocks.js
   (ring and line in the play bar; on a page it opens the Achievements
   tab), `.gpage-story`. English words only. Not in Big Picture yet.
-- **Unreleased, games in folders of the user's own** (the owner, 19
+- **2.16.0, games in folders of the user's own** (the owner, 19
   Nov 2026: Tekken 8 didn't show on a friend's PC, in the Library or Big
   Picture). `ScanFolders` took a folder of games with its own name
   (`D:\Jocuri PC`) for one game, named after the folder (`LooksLikeGame`
@@ -1903,12 +1903,12 @@ These shipped recently, newest last:
   browse kind `gameDir`, `saveGameDirs` then a scan) are roots, set for
   `gameFolders` at each scan's start (`setUserGameDirs`), not containers:
   a chosen folder that is a game itself is added as one.
-- **Unreleased, Installed in the sidebar** (the owner, 19 Nov 2026:
+- **2.16.0, Installed in the sidebar** (the owner, 19 Nov 2026:
   every installed game on the left beside the collections).
   `renderSideGames`: after the folders, groups `installed` (every item
   but `owned`), `owned` (Not installed), then Not in a collection; the old
   `all` group is gone. Harness shot `side-installed`.
-- **Unreleased, Big Picture by controller** (the owner, 19 Nov 2026: no
+- **2.16.0, Big Picture by controller** (the owner, 19 Nov 2026: no
   CS2, Valorant or League of Legends on the TV, "with all games").
   `core/padplay.go`: `padOfCommon` reads appinfo.vdf's `controller_support`
   or store categories (28 full, 18 partial; categories but neither is
@@ -1925,6 +1925,7 @@ These shipped recently, newest last:
   / Show in Big Picture). Nothing goes online for it. Achievements in Big
   Picture still lists every game with some. Harness `ctx-pad`,
   `tv-library-kbm`.
+  The owner asked for 2.16.0 once these four were in (19 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
