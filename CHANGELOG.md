@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.16.0
 
 - **Big Picture shows the games you can play with a controller.** Games played only with a keyboard and a mouse, such as Counter-Strike 2, Dota 2 and Riot's games, no longer fill Big Picture's rows: they wait in Library, under **Keyboard and mouse**. Lootnest reads which games have controller support from Steam's own files on this PC, and from a game's store details when you already have them; a game nobody says anything about stays in. Right-click a game on the PC for **Leave out of Big Picture** or **Show in Big Picture**, and turn it all off in Big Picture's Settings, Controller.
 - **Your installed games in the sidebar.** Under the collections, the sidebar now has **Installed**, every game installed on this PC, so you don't need the Library to find one; with All games shown, the ones not installed follow under **Not installed**.
