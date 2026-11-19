@@ -45,6 +45,8 @@ const shots = [
   ["players-6", "players=6", [nav("players")]],
   ["player-profile", "", [nav("players"), click('[data-action="open-player"]')]],
   ["game-manage", "", [...game('data-game="cs2"'), click('[data-action="manage"]')]],
+  ["game-ach-why", "", [...game('data-key="dir:d:\\\\games\\\\onimusha"'), click('[data-action="game-tab"][data-tab="achievements"]')]],
+  ["game-ach-private", "why=private", [...game('data-key="dir:d:\\\\games\\\\onimusha"'), click('[data-action="game-tab"][data-tab="achievements"]')]],
   ["game-manage-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]')]],
   ["game-move-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]'), click('[data-action="movefolder-open"]')]],
   ["game-tab-ach", "", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="achievements"]')]],

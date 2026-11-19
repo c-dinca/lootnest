@@ -1861,6 +1861,16 @@ These shipped recently, newest last:
   `achievements/account-<sid>-<appid>.json`, made stale after a play
   (`accountStale`), pictures from the key's schema (`CompleteList`).
   The owner asked for 2.15.0 (19 Nov) once these were all in.
+- **Unreleased, why no achievements** (the owner, 19 Nov 2026, on
+  2.15.0: "I turned it on and it still doesn't work" for RDR2, which they
+  had moved). `MergeAdded` lost a moved Hydra game's Steam id: the scan
+  found the new folder under the same key and its details won; now an
+  added entry's `SteamID` and launcher `Source` fill a plain folder
+  scan's. `achWhy` (app/achauto.go) goes with an `achievements` event
+  whose set is null: the app id, Steam signed in, key, setting, and what
+  Steam last said (`accountSaid`: ok, private from a 403, none, error).
+  `achSteamSteps` in 62-game-blocks.js lists the steps with lamps;
+  Settings, Online's row says the same. Harness `?why=start|private|none|set`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

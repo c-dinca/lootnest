@@ -837,7 +837,11 @@
         : key.startsWith("steam:") ? { appId: 1091500, source: "steam", total: 12, unlocked: 12, list: mk(12, 12, names) }
         : key === "game:bg3" ? { appId: 1086940, source: "pc", total: 12, unlocked: 7, list: mk(12, 7, names),
           players: Object.fromEntries((profiles.bg3 || []).map((p, i) => [p, { source: "pc", total: 12, unlocked: [7, 2, 11, 4, 0, 9][i % 6], list: mk(12, [7, 2, 11, 4, 0, 9][i % 6], names) }])) } : null;
-      if (STATE !== "loading") emit({ type: "achievements", key, set });
+      // ?why=start|private|none|set: what Steam's way still needs, for a game with none.
+      const W = { start: { steam: true, key: false, on: false, said: "" }, private: { steam: true, key: true, on: true, said: "private" },
+        none: { steam: true, key: true, on: true, said: "none" }, set: { steam: true, key: true, on: true, said: "" } }[q.get("why") || "start"];
+      const why = set ? undefined : { appId: 1174180, ...W };
+      if (STATE !== "loading") emit({ type: "achievements", key, set, why });
       return ok();
     },
     ps_testToast: () => ok(),

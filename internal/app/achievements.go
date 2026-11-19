@@ -25,7 +25,11 @@ var (
 func (a *App) apiAchievements(key string, appID int, dir, name string) {
 	go func() {
 		set := a.achievements(key, appID, dir, name, true)
-		a.emit("achievements", map[string]any{"key": key, "set": set})
+		out := map[string]any{"key": key, "set": set}
+		if set == nil {
+			out["why"] = a.achWhy(key, appID, dir, name) // what Steam's way still needs
+		}
+		a.emit("achievements", out)
 	}()
 }
 
