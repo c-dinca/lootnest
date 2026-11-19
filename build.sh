@@ -7,17 +7,25 @@
 #   ./build.sh app      dist/Lootnest.exe only
 #   ./build.sh setup    dist/Lootnest-Setup.exe from the dist/Lootnest.exe already
 #                       there, so CI can sign the app before it goes into the setup
+#   ./build.sh linux    dist/lootnest for Linux x64, on Linux, with cgo and
+#                       WebKitGTK 4.1 (libwebkit2gtk-4.1-dev) installed
 set -euo pipefail
 cd "$(dirname "$0")"
 VERSION="${VERSION:-$(cat VERSION)}"
 STAGE="${1:-all}"
-export GOOS=windows GOARCH=amd64 CGO_ENABLED=0
-LDFLAGS="-H windowsgui -s -w"
 
 case "$STAGE" in
   all|app|setup) ;;
-  *) echo "usage: $0 [app|setup]" >&2; exit 2 ;;
+  linux)
+    mkdir -p dist
+    CGO_ENABLED=1 go build -trimpath -ldflags "-s -w -X lootnest/internal/app.Version=$VERSION" -o dist/lootnest ./cmd/lootnest
+    ls -la dist/lootnest
+    exit 0
+    ;;
+  *) echo "usage: $0 [app|setup|linux]" >&2; exit 2 ;;
 esac
+export GOOS=windows GOARCH=amd64 CGO_ENABLED=0
+LDFLAGS="-H windowsgui -s -w"
 
 if [[ "$STAGE" != setup ]]; then
   # Redraw the icon when Pillow is available; otherwise use the committed one.

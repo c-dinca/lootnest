@@ -47,6 +47,8 @@ What makes it different, and the direction to keep pushing:
 ## Stack and layout
 
 - Go (no cgo) plus a WebView2 window (`third_party/go-webview2`, modified).
+  On Linux, cgo with a WebKitGTK 4.1 window (`internal/webkit`); build it
+  with `./build.sh linux` (needs libwebkit2gtk-4.1-dev).
   The UI is plain HTML, CSS and JS with no build step, embedded with
   `go:embed` and inlined at start with a CSP nonce.
 - `internal/core`: platform-neutral logic, with tests. It covers config,
@@ -137,7 +139,9 @@ What makes it different, and the direction to keep pushing:
   - `go test ./internal/core/`
   - `GOOS=windows go vet ./internal/app`
   - `GOOS=linux go vet ./internal/app` (and `go run ./tools/platgen`
-    after changing `internal/win`; CI fails when plat is out of date)
+    after changing `internal/win`; CI fails when plat is out of date).
+    On Linux with WebKitGTK installed, also `go vet ./internal/webkit
+    ./cmd/lootnest` and `xvfb-run -a go test ./internal/webkit/`.
   - `GOOS=windows go build ./cmd/lootnest`
   - `node tools/checkjs.mjs` (joins `ui/js` and checks the syntax)
 
@@ -1753,8 +1757,35 @@ These shipped recently, newest last:
   (`MainLinuxExe`: the largest ELF, else .x86_64 or .sh). Sources
   `heroic`, `lutris`, `bottles` (labels and filters in 35-library-home.js).
   Fixture `testdata/lutris/pga.db` comes from Python's SQLite
-  (`make.py` there); `FuzzSQLite`. Next: L2, the WebKitGTK window, when
-  the owner says.
+  (`make.py` there); `FuzzSQLite`.
+- **Unreleased, Linux L2a, the window** (the owner, 19 Nov 2026: "go
+  ahead with L2"). `internal/webkit` (cgo, GTK 3 and WebKitGTK 4.1): the
+  page is loaded from a string under `lootnest://app/` (`BaseURI`, a
+  scheme registered to answer nothing and marked secure); `decide-policy`
+  refuses every navigation but that address and every new window;
+  permissions are denied (clipboard allowed); the page's own context menus
+  only (the inspector with `LOOTNEST_DEBUG`); calls reach Go only through
+  the `lootnest` message handler, with the address of the last committed
+  load (a refused navigation leaves `webkit_web_view_get_uri` on the
+  refused one) checked against `BaseURI` and `AllowMessage`; `Bind` works
+  as go-webview2's (JSON arguments, a promise). GTK must stay on the main
+  thread: `main_linux.go` locks it, and the test does its window work in
+  `TestMain` (tests run on other goroutines; GTK aborted now and then
+  before). App: `view` is met by both windows; `platWindow`, `present`,
+  `closeWindow` per system; `onClose` quits (the tray is L2b);
+  `systemEnv` (env_windows.go, env_linux.go: `core.NewLinuxEnv` with the
+  Settings Steam account), `systemDataDir` (~/.local/share/lootnest);
+  one Lootnest per user over the abstract socket `@lootnest-<uid>`
+  (`AcquireInstance`, `SendToRunning`, `serveInstance`: show, safe,
+  launch only); `cmd/lootnest/main_linux.go`; `AppState.Platform`, and on
+  Linux no updates of Lootnest (releases are Windows installers) and no
+  banner asking. plat on Linux: the XDG folders, `ShellOpen` (xdg-open),
+  `RevealInExplorer` (FileManager1, else the folder), `StartDetached`,
+  `DiskSpace`, `CPUName`, `TotalRAM`, `ProcessNames` (/proc, Wine's
+  `C:\...\x.exe` command lines too). CI builds `lootnest-linux`, runs
+  the webkit test under xvfb-run and starts the app once, failing when
+  its log lacks "Interface loaded". Next: L2b, the tray, keys in the
+  Secret Service, the Trash, file pickers, dialogs and notifications.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

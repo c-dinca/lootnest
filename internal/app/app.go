@@ -171,6 +171,7 @@ type App struct {
 	dropped   int             // calls from any other since the last log line
 	droppedAt time.Time
 
+	platWindow     // the system's own window, besides w (window_linux.go)
 	tray           *plat.Tray
 	quitting       bool
 	trayHintShown  bool
@@ -188,52 +189,39 @@ type Options struct {
 }
 
 func newEnv(a *App) *core.Env {
-	steamPath, _ := plat.SteamInfo()
-	home := os.Getenv("USERPROFILE")
-	extra := []string{plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir(), plat.Desktop()}
-	if sd := os.Getenv("SystemDrive"); sd != "" {
-		extra = append(extra, sd+`\Users`, sd+`\ProgramData`)
+	e := systemEnv(a)
+	e.SaveDB = func() *core.SaveDB {
+		if a == nil {
+			return nil
+		}
+		a.mu.Lock()
+		on := a.cfg != nil && a.cfg.Settings.SaveDB
+		a.mu.Unlock()
+		if !on {
+			return nil
+		}
+		return loadSaveDB()
 	}
-	return &core.Env{
-		Getenv:     os.Getenv,
-		Home:       home,
-		Documents:  plat.Documents(),
-		SavedGames: plat.SavedGames(),
-		LocalLow:   plat.LocalLow(),
-		SteamPath:  steamPath,
-		SteamUser: func() (string, error) {
-			_, active := plat.SteamInfo()
-			configured := ""
-			if a != nil {
-				a.mu.Lock()
-				if a.cfg != nil {
-					configured = a.cfg.Settings.SteamAccountID
-				}
-				a.mu.Unlock()
-			}
-			return core.SteamUserDir(steamPath, configured, active)
-		},
-		SaveDB: func() *core.SaveDB {
-			if a == nil {
-				return nil
-			}
-			a.mu.Lock()
-			on := a.cfg != nil && a.cfg.Settings.SaveDB
-			a.mu.Unlock()
-			if !on {
-				return nil
-			}
-			return loadSaveDB()
-		},
-		PluginSaves: func() []core.PluginSaveDB {
-			if a == nil {
-				return nil
-			}
-			return a.plugins().saves
-		},
-		DataDir:        DataDir(),
-		ExtraProtected: extra,
+	e.PluginSaves = func() []core.PluginSaveDB {
+		if a == nil {
+			return nil
+		}
+		return a.plugins().saves
 	}
+	return e
+}
+
+// steamAccount is the Steam account chosen in Settings, or "".
+func (a *App) steamAccount() string {
+	if a == nil {
+		return ""
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.cfg == nil {
+		return ""
+	}
+	return a.cfg.Settings.SteamAccountID
 }
 
 // Run starts the app and blocks until it quits.
@@ -628,7 +616,7 @@ func (a *App) quit(force bool) {
 	if a.tray != nil {
 		a.tray.Remove()
 	}
-	plat.PostMessage(a.hwnd, plat.WM_CLOSE, 0, 0)
+	a.closeWindow()
 }
 
 // show brings the window up and makes sure the web view inside it is
@@ -639,7 +627,7 @@ func (a *App) show() {
 	a.hidFor = ""
 	a.mu.Unlock()
 	a.checkIfStale()
-	plat.Present(a.hwnd)
+	a.present()
 	if a.w != nil {
 		a.w.RefreshView()
 	}
@@ -696,7 +684,10 @@ func dirOf(p string) string { return filepath.Dir(p) }
 // 24 characters, first letter capitalised ("cris" becomes "Cris").
 func windowsUserName() string {
 	n := strings.TrimSpace(os.Getenv("USERNAME"))
-	if n == "" || strings.EqualFold(n, "user") || strings.EqualFold(n, "admin") || strings.EqualFold(n, "administrator") {
+	if n == "" {
+		n = strings.TrimSpace(os.Getenv("USER")) // Linux
+	}
+	if n == "" || strings.EqualFold(n, "root") || strings.EqualFold(n, "user") || strings.EqualFold(n, "admin") || strings.EqualFold(n, "administrator") {
 		return ""
 	}
 	r := []rune(n)
