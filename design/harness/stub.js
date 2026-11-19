@@ -635,12 +635,16 @@
         { root: "C:\\", free: 31.4 * GB, size: 476 * GB, games: "C:\\Games" }, { root: "D:\\", free: 640 * GB, size: 1863 * GB, games: "D:\\Games" },
         { root: "E:\\", free: 812 * GB, size: 931 * GB, games: "E:\\Games" }] });
     },
-    // ?move=hold: the move stays at 35%, for its screenshot.
+    // ?move=hold: the move keeps going from 35% at about 160 MB/s, for its
+    // screenshots (the time left shows after 3 s); else it ends in 1.5 s.
     ps_moveFolderGame: (key, dst) => {
       const f = found.find((x) => x.key === key) || {}, total = 38.2 * 2 ** 30;
-      emit({ type: "folderMoveProgress", key, done: 0.35 * total, total }, 100);
       const to = dst + "\\" + (f.name || "Game"), newKey = "dir:" + to.toLowerCase();
-      if (q.get("move") !== "hold") setTimeout(() => { if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey, hydra: f.source === "hydra" }); }, 1500);
+      const say = (done) => window.__ps({ type: "folderMoveProgress", key, name: f.name || "The game", from: f.dir || "", to, done, total, step: "" });
+      let done = 0.35 * total;
+      setTimeout(() => say(done), 100);
+      const tick = setInterval(() => { done = Math.min(total, done + 40 * 2 ** 20 * (0.9 + Math.random() * 0.2)); say(done); }, 250);
+      if (q.get("move") !== "hold") setTimeout(() => { clearInterval(tick); if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey, hydra: f.source === "hydra" }); }, 1500);
       return ok();
     },
     ps_moveFolderCancel: () => ok(),

@@ -216,7 +216,8 @@
       }
       case "moveProgress":
         S.moving = Object.assign(S.moving || {}, ev);
-        if (S.dialog && S.dialog.kind === "move") renderOverlay();
+        moveTick("app:" + ev.appId, ev.done || 0);
+        paintMove();
         break;
       case "moveDone": {
         S.moving = null;
@@ -234,7 +235,8 @@
         break;
       case "folderMoveProgress":
         S.folderMove = ev;
-        if (S.dialog && S.dialog.kind === "movefolder") renderOverlay();
+        moveTick(ev.key, ev.done || 0);
+        paintMove();
         break;
       case "folderMoveDone": {
         S.folderMove = null;

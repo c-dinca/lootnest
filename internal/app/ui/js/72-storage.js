@@ -29,6 +29,88 @@
     : it.appId ? `<button data-action="move-open" data-app="${it.appId}" data-name="${esc(it.name)}">Move with Game Mover</button>`
     : LAUNCHERS.includes(it.source) ? `<button disabled>Installed by ${esc(sourceLabel(it.source, it.f))}, so move it there</button>` : "";
 
+  // ------------------------------------------------- a move in progress --
+  // Both kinds of move, a folder game's and a Steam game's through Game
+  // Mover, draw the same way: how far, how fast, the time left, from where
+  // to where. Minimise (or Escape) shrinks the dialog to a card in the
+  // corner that keeps counting; a click on it brings the dialog back.
+  const MV = { key: "", t0: 0, last: 0, at: 0, rate: 0 };
+  // The speed, as an average that settles over about the last 20 updates.
+  function moveTick(key, done) {
+    const now = performance.now();
+    if (MV.key !== key || done < MV.last) Object.assign(MV, { key, t0: now, last: done, at: now, rate: 0 });
+    const dt = (now - MV.at) / 1000;
+    if (dt < 0.2 || done <= MV.last) return;
+    const r = (done - MV.last) / dt;
+    MV.rate = MV.rate ? MV.rate * 0.9 + r * 0.1 : r;
+    MV.last = done; MV.at = now;
+  }
+  const leftText = (s) => s < 60 ? "Less than a minute left" : s < 3600 ? `About ${Math.round(s / 60)} min left`
+    : `About ${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min left`;
+  // What's moving now, whichever kind, or null.
+  function moveNow() {
+    const F = S.folderMove, G = S.moving;
+    const m = F ? { kind: "folder", key: F.key, name: F.name || "The game", done: F.done || 0, total: F.total || 0, step: F.step || "", from: F.from || "", to: F.to || "" }
+      : G ? { kind: "steam", key: "app:" + G.appId, appId: G.appId, name: G.name || "The game", done: G.done || 0, total: G.total || 0, step: G.step || "", from: G.from || "", to: G.lib || "" } : null;
+    if (!m) return null;
+    m.pct = m.total ? Math.min(100, Math.floor((m.done / m.total) * 100)) : 0;
+    m.ending = m.step === "check" || m.step === "firewall";
+    const steady = MV.key === m.key && MV.rate > 0 && performance.now() - MV.t0 > 3000;
+    m.speed = steady && !m.ending ? fmtBytes(MV.rate) + "/s" : "";
+    m.left = m.ending ? "Almost done" : m.step === "steam" ? "Closing Steam first" : !m.total ? "Counting its files" : steady ? leftText((m.total - m.done) / MV.rate) : "Working out the time left";
+    m.say = m.step === "firewall" ? "Keeping it offline in its new folder. Allow it in Windows' prompt."
+      : m.step === "check" ? "Checking the copy, then pointing the Library at it" : m.step === "steam" ? "Steam closes while the game moves" : "";
+    return m;
+  }
+  // The dialog's view of a move. The numbers carry data-mv names so a
+  // progress event changes only them (paintMove), and the bar glides.
+  function moveBody(m) {
+    const end = (k, p) => p ? `<div class="mv-end"><span class="mv-k">${k}</span><span class="mv-p selectable" title="${esc(p)}">${esc(p)}</span></div>` : "";
+    return `<div class="mv${m.ending ? " is-ending" : ""}" data-mv="${esc(m.key)}">
+      <div class="mv-head"><span class="mv-pct ln-num"><b data-mv="pct">${m.pct}</b><small>%</small></span>
+        <span class="mv-size ln-num" data-mv="size">${m.total ? `${fmtBytes(m.done)} of ${fmtBytes(m.total)}` : ""}</span></div>
+      <div class="mv-bar" role="progressbar" aria-label="Moved" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${m.pct}"><i data-mv="fill" style="width:${m.pct}%"></i></div>
+      <div class="mv-facts"><span data-mv="left">${esc(m.left)}</span><span class="ln-num" data-mv="speed">${esc(m.speed)}</span></div>
+      ${m.say ? `<p class="mv-say" role="status">${esc(m.say)}</p>` : ""}
+      ${m.from || m.to ? `<div class="mv-route">${end("From", m.from)}<span class="mv-flow" aria-hidden="true"><i></i><i></i><i></i>${ph("arrow-right")}</span>${end("To", m.to)}</div>` : ""}
+      <p class="hint">${m.kind === "steam" ? "Keep Steam closed until it's done." : "Don't start the game until it's done."}</p></div>`;
+  }
+  // The move's dialog is open.
+  const moveShown = (m) => !!(S.dialog && ((S.dialog.kind === "movefolder" && S.dialog.key === m.key) || (S.dialog.kind === "move" && S.dialog.appId === m.appId)));
+  // A progress event: the numbers in place when the dialog shows the move
+  // (a redraw only when its stage changes), and the corner card.
+  function paintMove() {
+    const m = moveNow(), box = m && $(`.mv[data-mv="${CSS.escape(m.key)}"]`);
+    if (m && moveShown(m)) {
+      if (!box || box.classList.contains("is-ending") !== m.ending) renderOverlay();
+      else {
+        const set = (n, v) => { const e = box.querySelector(`[data-mv="${n}"]`); if (e && e.textContent !== v) e.textContent = v; };
+        set("pct", String(m.pct)); set("size", m.total ? `${fmtBytes(m.done)} of ${fmtBytes(m.total)}` : ""); set("left", m.left); set("speed", m.speed);
+        const f = box.querySelector('[data-mv="fill"]'); if (f) f.style.width = m.pct + "%";
+        const b = box.querySelector(".mv-bar"); if (b) b.setAttribute("aria-valuenow", m.pct);
+      }
+    }
+    movePill();
+  }
+  // The corner card, while a move runs and its dialog isn't open.
+  function movePill() {
+    const m = moveNow(), show = !!m && !moveShown(m);
+    let el = document.getElementById("mv-pill");
+    if (!show) { if (el && !el.classList.contains("out")) { el.classList.add("out"); setTimeout(() => { if (el.classList.contains("out")) el.remove(); }, 260); } return; }
+    if (!el || el.classList.contains("out")) {
+      if (el) el.remove();
+      el = document.createElement("button");
+      el.id = "mv-pill"; el.className = "mv-pill ln-root"; el.type = "button"; el.dataset.action = "move-show";
+      el.innerHTML = `<span class="mv-pill-ic">${GI.drive}</span><span class="mv-pill-txt"><b></b><span></span></span><span class="mv-pill-pct ln-num"></span><span class="mv-pill-bar"><i></i></span>`;
+      document.body.appendChild(el);
+    }
+    el.querySelector("b").textContent = "Moving " + m.name;
+    el.querySelector(".mv-pill-txt span").textContent = m.speed ? `${m.left}, ${m.speed}` : m.left;
+    el.querySelector(".mv-pill-pct").textContent = m.pct + "%";
+    el.querySelector(".mv-pill-bar i").style.width = m.pct + "%";
+    el.setAttribute("aria-label", `Moving ${m.name}, ${m.pct}%. ${m.left}. Show it`);
+  }
+
   const ST_COLS = [["name", "Game"], ["install", "Installed"], ["saves", "Saves"], ["profiles", "Profiles"], ["copies", "Lootnest's copies"]];
   function viewStorage() {
     askSizes();
@@ -73,10 +155,9 @@
     const z = (it && sizeOf(it)) || {}, size = z.install || 0, dir = z.dir || (it && it.f && it.f.dir) || "";
     const wrap = (inner, sub) => moveWrap(D.name, inner, sub);
     if (M && M.key === D.key) {
-      const text = M.step === "firewall" ? "Keeping it offline in its new folder. Allow it in Windows' prompt."
-        : M.step === "check" ? "Checking the copy, then pointing the Library at it" : M.total ? `Copying ${fmtBytes(M.done)} of ${fmtBytes(M.total)}` : "Counting its files";
-      return wrap(`${moveProgress(M.done, M.total, text, "Don't start the game until it's done.")}
-        <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button>${M.step === "check" || M.step === "firewall" ? "" : `<button class="btn" data-action="movefolder-cancel">Stop the move</button>`}</div>`);
+      const m = moveNow();
+      return moveWrap(D.name, `${moveBody(m)}
+        <div class="dialog-foot"><button class="btn quiet" data-action="move-mini">Minimise</button>${M.step === "check" || M.step === "firewall" ? "" : `<button class="btn" data-action="movefolder-cancel">Stop the move</button>`}</div>`, "", true);
     }
     const only = (text) => wrap(`<p class="note" role="status">${text}</p><div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
     if (M || S.moving) return only("Another game is moving. Wait for it to finish.");

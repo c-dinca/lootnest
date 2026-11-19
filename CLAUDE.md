@@ -1830,6 +1830,22 @@ These shipped recently, newest last:
   `hand-achievements.json` files left on a PC are no longer read and
   never deleted. Don't offer marking achievements by hand again; a game
   shows achievements only from files on the PC.
+- **Unreleased, Motion Full** (the owner, 19 Nov 2026: the achievement
+  card's tilt worked on a friend's PC, not theirs). Windows' Animation
+  effects off sets `prefers-reduced-motion`, which cut nearly all motion.
+  `Settings.Motion` "" is Like Windows (default), "full" keeps every
+  animation: each rule in a `prefers-reduced-motion` block is scoped to
+  `:root:not(.motion-full)`, `reduced()` ignores Windows with Full, and
+  Motion's row says when Windows has them off. New reduce-only rules need
+  the same `:root:not(.motion-full)` scope.
+- **Unreleased, moving a game, its look** (the owner, 19 Nov 2026: time
+  left, nicer and animated, minimise it and keep using Lootnest).
+  `moveBody`, `moveNow`, `moveTick` (an averaged speed), `paintMove`
+  (numbers changed in place so the bar glides) and the corner card
+  `movePill` (#mv-pill, actions `move-mini`, `move-show`) in
+  72-storage.js, shared by a folder game's move and Game Mover's;
+  `moveSays` gives progress events the name and both folders. Harness
+  `?move=hold` keeps a move going at about 160 MB/s.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

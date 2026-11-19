@@ -1128,6 +1128,14 @@
         renderOverlay();
       } catch (e) { toast(errText(e), "error"); }
     },
+    // A move made small, and back.
+    "move-mini"() { S.dialog = null; renderOverlay(); },
+    "move-show"() {
+      const m = moveNow();
+      if (!m) return;
+      if (m.kind === "steam") openMove(m.appId, m.name);
+      else { S.dialog = { kind: "movefolder", key: m.key, name: m.name, pick: "", custom: "" }; renderOverlay(); focusOverlay(); }
+    },
     async "movefolder-cancel"() { try { await api.moveFolderCancel(); } catch (e) { toast(errText(e), "error"); } },
     "move-pick"(el) { if (S.dialog && S.dialog.kind === "move") { S.dialog.pick = el.dataset.lib; renderOverlay(); } },
     async "move-go"() {

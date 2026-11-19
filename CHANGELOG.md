@@ -4,6 +4,7 @@
 
 - **No more marking achievements by hand.** 2.14.0 let each profile mark a game's achievements as done when nothing on the PC records them. That's gone: achievements show only when the game or a tool on the PC records them. Marks made in 2.14.0 stay in `hand-achievements.json` and are no longer shown.
 - **Animations on PCs with Windows' animation effects off.** When Windows' animation effects are off, Lootnest used to drop almost all of its motion, so the achievement card didn't tilt or turn under the pointer. Settings, Appearance, Motion now has **Like Windows** (the default, as before) and **Full**, which keeps every animation whatever Windows says; the setting says when Windows has them off. The achievement card follows the pointer unless Motion is Off.
+- **Moving a game shows the time left, and can be made small.** While a game moves to another drive, the dialog shows how far it is in big numbers, the time left and the speed, and where it goes from and to, with a light running along the bar. **Minimise** (or Escape) turns it into a small card in the corner that keeps counting while you use Lootnest; click it to see the whole move again. The same goes for Steam games moved with Game Mover.
 
 ## 2.14.0
 
