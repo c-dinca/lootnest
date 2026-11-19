@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -10,7 +8,7 @@ import (
 	"strings"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -74,7 +72,7 @@ func (a *App) apiSetOffline(key string, on bool) error {
 			return errors.New("There's no program in the game's folder to keep offline.")
 		}
 		for i := range exes {
-			exes[i] = win.LongPath(exes[i]) // the firewall refuses short 8.3 names
+			exes[i] = plat.LongPath(exes[i]) // the firewall refuses short 8.3 names
 		}
 	}
 	go func() {
@@ -83,9 +81,9 @@ func (a *App) apiSetOffline(key string, on bool) error {
 		ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 		script := core.FirewallScript(core.OfflineTag(key), name, exes, on)
 		args := "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand " + core.EncodePowerShell(script)
-		code, err := win.RunElevatedAndWait(a.hwnd, ps, args)
+		code, err := plat.RunElevatedAndWait(a.hwnd, ps, args)
 		switch {
-		case errors.Is(err, win.ErrCancelledByUser):
+		case errors.Is(err, plat.ErrCancelledByUser):
 			out["error"] = "Nothing changed: Windows' prompt was cancelled."
 			return
 		case err != nil:

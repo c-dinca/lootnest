@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -16,7 +14,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // Lootnest Link M2 (docs/lootnest-link-spec.md): Lootnest installs the
@@ -72,7 +70,7 @@ func saveLink(r *linkRecord) error {
 	return os.Rename(tmp, linkPath())
 }
 
-func apolloDir() string { return filepath.Join(win.ProgramFiles(), "Apollo") }
+func apolloDir() string { return filepath.Join(plat.ProgramFiles(), "Apollo") }
 
 func apolloInstalled() bool {
 	_, err := os.Stat(filepath.Join(apolloDir(), "sunshine.exe"))
@@ -139,7 +137,7 @@ func (a *App) apiLinkStatus() {
 
 func (a *App) emitLink() {
 	st := LinkStatus{Pinned: len(core.ApolloPinned.SHA256) == 64, Version: core.ApolloPinned.Version, Installed: apolloInstalled(), Busy: linkStep(), TVs: []core.ApolloClient{}}
-	_, st.Running = win.ServiceState(core.ApolloService)
+	_, st.Running = plat.ServiceState(core.ApolloService)
 	r := loadLink()
 	st.Set = r != nil
 	st.Off = r != nil && r.Off
@@ -260,9 +258,9 @@ func (a *App) linkSetup() error {
 	a.linkProgress("install", 0, 0)
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	script := core.ApolloInstallScript(installer, apolloDir(), creds)
-	code, err := win.RunElevatedAndWait(a.hwnd, ps, "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(script))
+	code, err := plat.RunElevatedAndWait(a.hwnd, ps, "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(script))
 	switch {
-	case errors.Is(err, win.ErrCancelledByUser):
+	case errors.Is(err, plat.ErrCancelledByUser):
 		return errors.New("nothing was installed: Windows' prompt was cancelled")
 	case err != nil:
 		return fmt.Errorf("the streaming engine couldn't be installed: %w", err)
@@ -514,9 +512,9 @@ func (a *App) apiLinkPower(on bool) {
 				return errors.New("TV streaming isn't set up")
 			}
 			ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
-			code, err := win.RunElevatedAndWait(a.hwnd, ps, "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(core.ApolloServiceScript(on)))
+			code, err := plat.RunElevatedAndWait(a.hwnd, ps, "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand "+core.EncodePowerShell(core.ApolloServiceScript(on)))
 			switch {
-			case errors.Is(err, win.ErrCancelledByUser):
+			case errors.Is(err, plat.ErrCancelledByUser):
 				return errors.New("nothing changed: Windows' prompt was cancelled")
 			case err != nil:
 				return err
@@ -573,6 +571,6 @@ func (a *App) apiLinkLogs() {
 			a.emit("toast", map[string]any{"kind": "error", "text": sentence(err)})
 			return
 		}
-		_ = win.RevealInExplorer(dst)
+		_ = plat.RevealInExplorer(dst)
 	}()
 }

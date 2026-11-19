@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -13,7 +11,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -496,7 +494,7 @@ func (a *App) finishMods() {
 	}
 	updMu.Lock()
 	defer updMu.Unlock()
-	procs, _ := win.ProcessNames()
+	procs, _ := plat.ProcessNames()
 	finished := false
 	for _, root := range core.ModJournals(DataDir()) {
 		game := core.ModJournalGame(root)

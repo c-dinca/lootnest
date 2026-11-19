@@ -1,12 +1,10 @@
-//go:build windows
-
 package app
 
 import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // The controller as a mouse, in Big Picture and TV mode: for a program in
@@ -59,12 +57,12 @@ func (a *App) pointerSet(key string, on bool) {
 // pointerTell lets one of Lootnest's own site windows know.
 func (a *App) pointerTell(key string, on bool) {
 	if pid := a.pidOf(key); pid != 0 {
-		if h := win.WindowOfPID(pid); h != 0 {
+		if h := plat.WindowOfPID(pid); h != 0 {
 			var wp uintptr
 			if on {
 				wp = 1
 			}
-			win.PostMessage(h, wmPointer, wp, 0)
+			plat.PostMessage(h, wmPointer, wp, 0)
 		}
 	}
 }
@@ -91,10 +89,10 @@ func (a *App) pointerLoop(key string) {
 		dirAt   time.Time
 		dirHeld uint16
 		last    = time.Now()
-		arrows  = [4][2]uint16{{win.XUp, 0x26}, {win.XDown, 0x28}, {win.XLeft, 0x25}, {win.XRight, 0x27}}
+		arrows  = [4][2]uint16{{plat.XUp, 0x26}, {plat.XDown, 0x28}, {plat.XLeft, 0x25}, {plat.XRight, 0x27}}
 		letGo   = func() {
 			if held {
-				win.MouseButton(false, false)
+				plat.MouseButton(false, false)
 				held = false
 			}
 		}
@@ -126,43 +124,43 @@ func (a *App) pointerLoop(key string) {
 			a.mu.Unlock()
 			return
 		}
-		pad, ok := win.XInputRead()
-		if !ok || playing != key || menu || win.Foreground() == hwnd {
+		pad, ok := plat.XInputRead()
+		if !ok || playing != key || menu || plat.Foreground() == hwnd {
 			letGo()
 			prev = 0xFFFF
 			continue
 		}
 		if !said {
 			said = true
-			win.ShowToast(win.Toast{Kicker: "Controller", Title: "The controller is a mouse now",
+			plat.ShowToast(plat.Toast{Kicker: "Controller", Title: "The controller is a mouse now",
 				Line: "The left stick moves, A clicks, the right stick scrolls. The Home button's menu turns it off."})
 		}
-		_, _, screenH := win.ScreenOf(win.Foreground())
+		_, _, screenH := plat.ScreenOf(plat.Foreground())
 		dx, dy, wheel := p.Step(core.PadSticks{LX: core.StickUnit(pad.LX), LY: core.StickUnit(pad.LY), RY: core.StickUnit(pad.RY)}, dt, int(screenH))
-		win.MouseMove(dx, dy)
-		win.MouseWheel(wheel)
+		plat.MouseMove(dx, dy)
+		plat.MouseWheel(wheel)
 		pressed := pad.Buttons &^ prev
 		// A is the left button: down when it's newly pressed, up when let go.
-		if down := pad.Buttons&win.XA != 0; down != held && (!down || prev&win.XA == 0) {
-			win.MouseButton(false, down)
+		if down := pad.Buttons&plat.XA != 0; down != held && (!down || prev&plat.XA == 0) {
+			plat.MouseButton(false, down)
 			held = down
 		}
-		if pressed&win.XX != 0 {
-			win.MouseButton(true, true)
-			win.MouseButton(true, false)
+		if pressed&plat.XX != 0 {
+			plat.MouseButton(true, true)
+			plat.MouseButton(true, false)
 		}
-		if pressed&win.XB != 0 {
-			win.TapKey(0x1B) // Escape
+		if pressed&plat.XB != 0 {
+			plat.TapKey(0x1B) // Escape
 		}
-		if pressed&win.XY != 0 {
+		if pressed&plat.XY != 0 {
 			screenKeyboard()
 		}
 		// The D-pad is the arrows; held, it repeats.
-		dirs := pad.Buttons & (win.XUp | win.XDown | win.XLeft | win.XRight)
+		dirs := pad.Buttons & (plat.XUp | plat.XDown | plat.XLeft | plat.XRight)
 		if dirs != 0 && (dirs != dirHeld || now.After(dirAt)) {
 			for _, d := range arrows {
 				if dirs&d[0] != 0 {
-					win.TapKey(d[1])
+					plat.TapKey(d[1])
 				}
 			}
 			if dirs != dirHeld {
@@ -178,9 +176,9 @@ func (a *App) pointerLoop(key string) {
 
 // screenKeyboard opens Windows' on-screen keyboard, or closes it.
 func screenKeyboard() {
-	if procs, err := win.ProcessNames(); err == nil && procs["osk"] {
-		win.CloseProcessWindows("osk")
+	if procs, err := plat.ProcessNames(); err == nil && procs["osk"] {
+		plat.CloseProcessWindows("osk")
 		return
 	}
-	_ = win.ShellOpen("osk.exe")
+	_ = plat.ShellOpen("osk.exe")
 }

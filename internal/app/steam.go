@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -14,7 +12,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -108,7 +106,7 @@ func (a *App) apiCancelRequest(reqID string) {
 }
 
 func (a *App) apiCopy(text string) error {
-	return win.SetClipboardText(a.hwnd, text)
+	return plat.SetClipboardText(a.hwnd, text)
 }
 
 type SteamHook struct {
@@ -162,8 +160,8 @@ func (a *App) apiSteamSetup() SteamSetup {
 // options. It returns the exit code to use.
 func SteamWrapper(appID int, command []string) int {
 	if len(command) == 0 {
-		win.MessageBox(0, "Steam didn't pass the game's command to Lootnest.\n\nIn the game's launch options, make sure the Lootnest line ends with %command%.",
-			Name, win.MB_ICONWARNING)
+		plat.MessageBox(0, "Steam didn't pass the game's command to Lootnest.\n\nIn the game's launch options, make sure the Lootnest line ends with %command%.",
+			Name, plat.MB_ICONWARNING)
 		return 1
 	}
 	exe := AppExe()
@@ -183,26 +181,26 @@ func SteamWrapper(appID int, command []string) int {
 		if errors.Is(err, os.ErrPermission) {
 			// Anti-cheats such as FACEIT AC only let Steam start the game.
 			// The Lootnest window offers to fix that in one click.
-			if h := win.FindWindow(WindowClass); h != 0 && win.SendCommand(h, fmt.Sprintf("blocked:%d", appID)) {
+			if h := plat.FindWindow(WindowClass); h != 0 && plat.SendCommand(h, fmt.Sprintf("blocked:%d", appID)) {
 				return 1
 			}
-			win.MessageBox(0, "An anti-cheat, such as FACEIT AC, stopped Lootnest from starting the game. It only lets Steam start it.\n\n"+
-				"Open Lootnest, choose Edit game for this game and turn on \"Let Steam start this game\".", Name, win.MB_ICONWARNING)
+			plat.MessageBox(0, "An anti-cheat, such as FACEIT AC, stopped Lootnest from starting the game. It only lets Steam start it.\n\n"+
+				"Open Lootnest, choose Edit game for this game and turn on \"Let Steam start this game\".", Name, plat.MB_ICONWARNING)
 			return 1
 		}
-		win.MessageBox(0, "Couldn't start the game:\n"+err.Error(), Name, win.MB_ICONERROR)
+		plat.MessageBox(0, "Couldn't start the game:\n"+err.Error(), Name, plat.MB_ICONERROR)
 		return 1
 	}
 
-	h := win.FindWindow(WindowClass)
+	h := plat.FindWindow(WindowClass)
 	if h == 0 {
-		if err := win.StartDetached(exe, "--tray", filepath.Dir(exe)); err != nil {
+		if err := plat.StartDetached(exe, "--tray", filepath.Dir(exe)); err != nil {
 			logf("Steam wrapper: couldn't start Lootnest (%v); starting the game without asking", err)
 			return run()
 		}
 		for i := 0; i < 200 && h == 0; i++ {
 			time.Sleep(100 * time.Millisecond)
-			h = win.FindWindow(WindowClass)
+			h = plat.FindWindow(WindowClass)
 		}
 		if h == 0 {
 			logf("Steam wrapper: Lootnest didn't open; starting the game without asking")
@@ -212,7 +210,7 @@ func SteamWrapper(appID int, command []string) int {
 
 	reqID := core.NewID("r")
 	resPath := filepath.Join(requestsDir(), reqID+".json")
-	if !win.SendCommand(h, fmt.Sprintf("steam:%d:%s", appID, reqID)) {
+	if !plat.SendCommand(h, fmt.Sprintf("steam:%d:%s", appID, reqID)) {
 		logf("Steam wrapper: Lootnest didn't answer; starting the game without asking")
 		return run()
 	}
@@ -221,7 +219,7 @@ func SteamWrapper(appID int, command []string) int {
 		time.Sleep(150 * time.Millisecond)
 		b, err := os.ReadFile(resPath)
 		if err != nil {
-			if win.FindWindow(WindowClass) == 0 {
+			if plat.FindWindow(WindowClass) == 0 {
 				logf("Steam wrapper: Lootnest closed while waiting; starting the game without asking")
 				return run()
 			}
@@ -232,7 +230,7 @@ func SteamWrapper(appID int, command []string) int {
 		_ = json.Unmarshal(b, &res)
 		if res.Action == "cancel" {
 			if res.Message != "" {
-				win.MessageBox(0, res.Message, Name, win.MB_ICONWARNING)
+				plat.MessageBox(0, res.Message, Name, plat.MB_ICONWARNING)
 			}
 			return 0
 		}
@@ -266,7 +264,7 @@ func runSteamCommand(appID int, command []string, logf func(string, ...any)) (in
 			if g.Launch.Type == "steam" && g.Launch.AppID == appID && g.ProcessName != "" {
 				name := strings.ToLower(g.ProcessName)
 				for {
-					procs, err := win.ProcessNames()
+					procs, err := plat.ProcessNames()
 					if err != nil || !procs[name] {
 						break
 					}

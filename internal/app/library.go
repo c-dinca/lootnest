@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -20,7 +18,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -189,8 +187,8 @@ func (a *App) startFound(key string, f core.FoundGame) error {
 			return errors.New("Steam wasn't found on this PC")
 		}
 		a.logf("Starting %s through Steam", name)
-		win.AllowAnyForeground()
-		if err := win.StartDetached(a.env.SteamPath+`\steam.exe`, strings.TrimSpace(fmt.Sprintf("-applaunch %d %s", appID, args)), a.env.SteamPath); err != nil {
+		plat.AllowAnyForeground()
+		if err := plat.StartDetached(a.env.SteamPath+`\steam.exe`, strings.TrimSpace(fmt.Sprintf("-applaunch %d %s", appID, args)), a.env.SteamPath); err != nil {
 			return err
 		}
 		a.followFound(key, f)
@@ -199,8 +197,8 @@ func (a *App) startFound(key string, f core.FoundGame) error {
 	}
 	if f.URI != "" && core.SafeLaunchURI(f.URI) {
 		a.logf("Starting %s through its launcher", name)
-		win.AllowAnyForeground()
-		if err := win.ShellOpen(f.URI); err != nil {
+		plat.AllowAnyForeground()
+		if err := plat.ShellOpen(f.URI); err != nil {
 			return err
 		}
 		a.followFound(key, f)
@@ -212,7 +210,7 @@ func (a *App) startFound(key string, f core.FoundGame) error {
 		return err
 	}
 	a.logf("Starting %s", name)
-	win.AllowAnyForeground()
+	plat.AllowAnyForeground()
 	if err := a.startExe(key, path, args); err != nil {
 		return err
 	}
@@ -246,7 +244,7 @@ func (a *App) apiGameIcon(exe string) string {
 	file := filepath.Join(coversDir(), "icon-"+hex.EncodeToString(sum[:8])+".png")
 	if st, err := os.Stat(file); err != nil || st.ModTime().Before(modTime(path)) {
 		c = ""
-		if img, err := win.ExeIcon(path, 256); err == nil {
+		if img, err := plat.ExeIcon(path, 256); err == nil {
 			var buf bytes.Buffer
 			if png.Encode(&buf, img) == nil && os.MkdirAll(coversDir(), 0o755) == nil {
 				_ = os.WriteFile(file, buf.Bytes(), 0o644)

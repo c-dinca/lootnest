@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -8,7 +6,7 @@ import (
 	"strings"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -161,10 +159,10 @@ func steamUsesDir(steamPath, dir string) bool {
 // "Start with Windows" entry and Apps & features entry away (used by the
 // installer when it replaces PlaySwap).
 func removeLegacyInstall() {
-	_ = os.Remove(filepath.Join(win.StartMenuPrograms(), LegacyName+".lnk"))
-	_ = os.Remove(filepath.Join(win.Desktop(), LegacyName+".lnk"))
-	_ = win.SetAutostart(LegacyName, "", false)
-	win.UnregisterUninstall(LegacyUninstallID)
+	_ = os.Remove(filepath.Join(plat.StartMenuPrograms(), LegacyName+".lnk"))
+	_ = os.Remove(filepath.Join(plat.Desktop(), LegacyName+".lnk"))
+	_ = plat.SetAutostart(LegacyName, "", false)
+	plat.UnregisterUninstall(LegacyUninstallID)
 }
 
 // ReplaceLegacy is the installer's half of the move: it removes PlaySwap's
@@ -190,7 +188,7 @@ func ReplaceLegacy(payload []byte) error {
 
 // HasLegacyInstall reports whether PlaySwap is installed on this PC.
 func HasLegacyInstall() bool {
-	return win.InstalledLocation(LegacyUninstallID) != "" || dirExists(LegacyInstallDir())
+	return plat.InstalledLocation(LegacyUninstallID) != "" || dirExists(LegacyInstallDir())
 }
 
 func dirExists(p string) bool {

@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -13,7 +11,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -91,7 +89,7 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 	t.player = a.seat
 	a.mu.Unlock()
 	if t.proc != "" {
-		if procs, err := win.ProcessNames(); err == nil {
+		if procs, err := plat.ProcessNames(); err == nil {
 			t.running = procs[t.proc]
 		}
 	}
@@ -363,8 +361,8 @@ func (a *App) hotkeyTick(running []achRun) {
 	a.mu.Lock()
 	s := a.cfg.Settings
 	a.mu.Unlock()
-	a.holdHotkey(hotkeyPoint, win.VK_F5, len(running) > 0 && !s.PointHotkeyOff, "Ctrl+Shift+F5 is taken by another program; save points still work from the game's page")
-	a.holdHotkey(hotkeyShot, win.VK_F12, len(running) > 0 && !s.ScreenshotsOff, "Ctrl+Shift+F12 is taken by another program, so it doesn't take screenshots")
+	a.holdHotkey(hotkeyPoint, plat.VK_F5, len(running) > 0 && !s.PointHotkeyOff, "Ctrl+Shift+F5 is taken by another program; save points still work from the game's page")
+	a.holdHotkey(hotkeyShot, plat.VK_F12, len(running) > 0 && !s.ScreenshotsOff, "Ctrl+Shift+F12 is taken by another program, so it doesn't take screenshots")
 }
 
 func (a *App) holdHotkey(id int, vk uint32, want bool, taken string) {
@@ -374,18 +372,18 @@ func (a *App) holdHotkey(id int, vk uint32, want bool, taken string) {
 	hotkeysOn[id] = want
 	a.ui(func() {
 		if want {
-			if !win.RegisterHotKey(a.hwnd, id, win.ModControl|win.ModShift|win.ModNoRepeat, vk) {
+			if !plat.RegisterHotKey(a.hwnd, id, plat.ModControl|plat.ModShift|plat.ModNoRepeat, vk) {
 				a.logf("%s", taken)
 			}
 		} else {
-			win.UnregisterHotKey(a.hwnd, id)
+			plat.UnregisterHotKey(a.hwnd, id)
 		}
 	})
 }
 
 // runningNow is the first game running now, with its profile's colour.
 func (a *App) runningNow() (achRun, string, bool) {
-	procs, err := win.ProcessNames()
+	procs, err := plat.ProcessNames()
 	if err != nil {
 		return achRun{}, "", false
 	}
@@ -413,7 +411,7 @@ func (a *App) quickPoint() {
 		if err == nil {
 			var p core.SavePoint
 			if p, err = a.makePoint(t, core.SavePoint{Name: "Quick save point, " + time.Now().Format("15:04")}); err == nil {
-				win.ShowToast(win.Toast{Kicker: "Save point made", Title: p.Name, Line: r.name + ". Go back to it from the game's page.", Accent: color})
+				plat.ShowToast(plat.Toast{Kicker: "Save point made", Title: p.Name, Line: r.name + ". Go back to it from the game's page.", Accent: color})
 				a.logf("Save point %q for %s (hotkey)", p.Name, r.name)
 				native := core.AntiCheat(r.dir) == "" && a.nativeSound(pointWAV)
 				a.emit("savePointMade", map[string]any{"key": r.key, "point": p, "hotkey": true, "native": native})
@@ -421,6 +419,6 @@ func (a *App) quickPoint() {
 				return
 			}
 		}
-		win.ShowToast(win.Toast{Kicker: "No save point", Title: r.name, Line: sentence(err), Accent: color})
+		plat.ShowToast(plat.Toast{Kicker: "No save point", Title: r.name, Line: sentence(err), Accent: color})
 	}()
 }

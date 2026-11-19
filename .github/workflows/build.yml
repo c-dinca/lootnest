@@ -65,6 +65,15 @@ jobs:
           GOOS=windows "$(go env GOPATH)/bin/govulncheck" ./...
           "$(go env GOPATH)/bin/govulncheck" ./internal/core/...
 
+      # Linux (docs/ROADMAP.md, section 9): the app compiles there against
+      # internal/plat, whose generated files must match internal/win.
+      - name: Linux build of the app
+        run: |
+          go run ./tools/platgen
+          git diff --exit-code -- internal/plat || { echo "::error::internal/plat is out of date with internal/win: run go run ./tools/platgen"; exit 1; }
+          GOOS=linux go vet ./internal/app ./internal/plat ./tools/platgen
+          go test -count=1 ./internal/app/
+
       - name: Is VERSION a new release?
         id: newver
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

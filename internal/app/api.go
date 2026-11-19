@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -14,7 +12,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // bind exposes the API to the page as window.ps_<name>(...) promises.
@@ -238,7 +236,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_playnitePreview", a.apiPlaynitePreview))
 	must(a.w.Bind("ps_playniteApply", a.apiPlayniteApply))
 	must(a.w.Bind("ps_playniteUndo", a.apiPlayniteUndo))
-	must(a.w.Bind("ps_hide", func() { win.ShowWindow(a.hwnd, win.SW_HIDE) }))
+	must(a.w.Bind("ps_hide", func() { plat.ShowWindow(a.hwnd, plat.SW_HIDE) }))
 	must(a.w.Bind("ps_quit", func() { a.ui(func() { a.quit(false) }) }))
 }
 
@@ -370,7 +368,7 @@ func (a *App) apiState() AppState {
 			st.Steam.AccountError = err.Error()
 		}
 	}
-	_, st.Autostart = win.Autostart(Name)
+	_, st.Autostart = plat.Autostart(Name)
 	return st
 }
 
@@ -638,7 +636,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 			a.backUpChangedGames()
 		}()
 	}
-	if err := win.SetAutostart(Name, fmt.Sprintf(`"%s" --tray`, a.exePath), p.Autostart); err != nil {
+	if err := plat.SetAutostart(Name, fmt.Sprintf(`"%s" --tray`, a.exePath), p.Autostart); err != nil {
 		return fmt.Errorf("couldn't change the startup setting: %w", err)
 	}
 	if s.AutoSteamHooks {
@@ -751,7 +749,7 @@ func (a *App) apiCheckPath(raw string) PathCheck {
 // arrives as a "browse" event.
 func (a *App) apiBrowse(reqID, kind, start string) {
 	a.ui(func() {
-		opt := win.BrowseOptions{Owner: a.hwnd}
+		opt := plat.BrowseOptions{Owner: a.hwnd}
 		if start != "" {
 			if p, err := a.env.Resolve(start); err == nil {
 				for p != "" {
@@ -771,22 +769,22 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		switch kind {
 		case "program":
 			opt.Title = "Choose a program to start"
-			opt.Filters = []win.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
+			opt.Filters = []plat.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
 		case "workDir":
 			opt.Title = "Choose the folder the game starts in"
 			opt.Folder = true
 		case "exe":
 			opt.Title = "Choose the game's .exe"
-			opt.Filters = []win.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
+			opt.Filters = []plat.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
 		case "image":
 			opt.Title = "Choose a picture"
-			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.gif)", Spec: "*.png;*.jpg;*.jpeg;*.gif"}}
+			opt.Filters = []plat.FileFilter{{Name: "Pictures (*.png, *.jpg, *.gif)", Spec: "*.png;*.jpg;*.jpeg;*.gif"}}
 		case "art":
 			opt.Title = "Choose a picture"
-			opt.Filters = []win.FileFilter{{Name: "Pictures (*.png, *.jpg, *.webp)", Spec: "*.png;*.jpg;*.jpeg;*.webp"}}
+			opt.Filters = []plat.FileFilter{{Name: "Pictures (*.png, *.jpg, *.webp)", Spec: "*.png;*.jpg;*.jpeg;*.webp"}}
 		case "backup":
 			opt.Title = "Choose a Lootnest backup or profile"
-			opt.Filters = []win.FileFilter{{Name: "Lootnest backups (*.zip, *.lnbak)", Spec: "*.zip;*.lnbak"}}
+			opt.Filters = []plat.FileFilter{{Name: "Lootnest backups (*.zip, *.lnbak)", Spec: "*.zip;*.lnbak"}}
 		case "backupDir":
 			opt.Title = "Choose where backups go"
 			opt.Folder = true
@@ -807,19 +805,19 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Folder = true
 		case "update":
 			opt.Title = "Choose the update"
-			opt.Filters = []win.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
+			opt.Filters = []plat.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
 		case "installer":
 			opt.Title = "Choose the update's installer"
-			opt.Filters = []win.FileFilter{{Name: "Installers (*.exe)", Spec: "*.exe"}}
+			opt.Filters = []plat.FileFilter{{Name: "Installers (*.exe)", Spec: "*.exe"}}
 		case "updateDir":
 			opt.Title = "Choose the update's folder"
 			opt.Folder = true
 		case "plugin":
 			opt.Title = "Choose the plugin"
-			opt.Filters = []win.FileFilter{{Name: "Lootnest plugins (*.zip)", Spec: "*.zip"}}
+			opt.Filters = []plat.FileFilter{{Name: "Lootnest plugins (*.zip)", Spec: "*.zip"}}
 		case "mod":
 			opt.Title = "Choose the mod"
-			opt.Filters = []win.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
+			opt.Filters = []plat.FileFilter{{Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
 		case "modDir":
 			opt.Title = "Choose the mod's folder"
 			opt.Folder = true
@@ -828,18 +826,18 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 			opt.Folder = true
 		case "trySaveFile":
 			opt.Title = "Choose the save to try"
-			opt.Filters = []win.FileFilter{{Name: "Saves and archives", Spec: "*.*"}, {Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
+			opt.Filters = []plat.FileFilter{{Name: "Saves and archives", Spec: "*.*"}, {Name: "Archives (*.zip, *.7z, *.rar)", Spec: "*.zip;*.7z;*.rar"}}
 		case "file":
 			opt.Title = "Choose a settings or save file"
-			opt.Filters = []win.FileFilter{{Name: "All files", Spec: "*.*"}}
+			opt.Filters = []plat.FileFilter{{Name: "All files", Spec: "*.*"}}
 		default:
 			opt.Title = "Choose a settings or save folder"
 			opt.Folder = true
 		}
-		path, err := win.Browse(opt)
+		path, err := plat.Browse(opt)
 		res := map[string]any{"reqId": reqID}
 		switch {
-		case errors.Is(err, win.ErrCancelled):
+		case errors.Is(err, plat.ErrCancelled):
 			res["cancelled"] = true
 		case err != nil:
 			res["error"] = err.Error()
@@ -887,7 +885,7 @@ func (a *App) apiShortcut(gameID string) (string, error) {
 	if g == nil {
 		return "", errors.New("That game no longer exists.")
 	}
-	desktop := win.Desktop()
+	desktop := plat.Desktop()
 	if desktop == "" {
 		return "", errors.New("Couldn't find your Desktop folder.")
 	}
@@ -908,7 +906,7 @@ func (a *App) apiShortcut(gameID string) (string, error) {
 			}
 		}
 	}
-	err := win.CreateShortcut(win.Shortcut{
+	err := plat.CreateShortcut(plat.Shortcut{
 		Path: lnk, Target: a.exePath, Args: "--launch " + g.ID, WorkDir: filepath.Dir(a.exePath),
 		Icon: icon, IconIndex: iconIdx, Description: "Pick who's playing, then start " + g.Name,
 	})
@@ -960,13 +958,13 @@ func (a *App) apiOpen(kind, arg string) error {
 		target = p
 	case "pcgw":
 		target = "https://www.pcgamingwiki.com/w/index.php?search=" + url.QueryEscape(arg)
-		return win.ShellOpen(target)
+		return plat.ShellOpen(target)
 	case "link": // a link inside an announcement: web pages only, in the browser
 		u := core.SafeLink(arg)
 		if u == "" {
 			return errors.New("That link can't be opened.")
 		}
-		return win.ShellOpen(u)
+		return plat.ShellOpen(u)
 	case "store": // a game's page in a store, from Find games
 		return openStore(arg)
 	case "gogLogin": // GOG's sign-in page, in the browser
@@ -975,7 +973,7 @@ func (a *App) apiOpen(kind, arg string) error {
 		if !core.SafeNewsURL(arg) {
 			return errors.New("That isn't a Steam news page.")
 		}
-		return win.ShellOpen(arg)
+		return plat.ShellOpen(arg)
 	case "release": // the newer release's page ("What's new"); only Lootnest's own
 		updateMu.Lock()
 		page := updateFound.Page
@@ -983,7 +981,7 @@ func (a *App) apiOpen(kind, arg string) error {
 		if !strings.HasPrefix(page, "https://github.com/c-dinca/lootnest/releases/") {
 			return errors.New("Check for updates first.")
 		}
-		return win.ShellOpen(page)
+		return plat.ShellOpen(page)
 	case "log":
 		target = a.store.LogPath()
 	case "modsChanged": // files that changed while a game was modded, by its key
@@ -997,7 +995,7 @@ func (a *App) apiOpen(kind, arg string) error {
 		}
 		_ = os.MkdirAll(target, 0o755)
 	}
-	return win.ShellOpen(target)
+	return plat.ShellOpen(target)
 }
 
 func (a *App) apiLog() string {

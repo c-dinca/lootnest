@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -9,7 +7,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -42,7 +40,7 @@ func (a *App) findOn() bool {
 }
 
 // storeCountry is the country Windows is set to, for prices in its currency.
-func storeCountry() string { return core.StoreCountry(win.UserCountry()) }
+func storeCountry() string { return core.StoreCountry(plat.UserCountry()) }
 
 // ownedIndex maps the games on this PC by Steam app id and by name, to
 // "game:<id>" (with profiles) or "found:<key>" (in the Library).
@@ -216,14 +214,14 @@ func (a *App) pcSpecs() core.PCSpecs {
 	p := pcSpecs
 	findMu.Unlock()
 	if p == nil {
-		gpu, vram := win.GPU()
-		p = &core.PCSpecs{CPU: win.CPUName(), GPU: gpu, VRAM: vram, RAM: win.TotalRAM(), Windows: win.WindowsName()}
+		gpu, vram := plat.GPU()
+		p = &core.PCSpecs{CPU: plat.CPUName(), GPU: gpu, VRAM: vram, RAM: plat.TotalRAM(), Windows: plat.WindowsName()}
 		findMu.Lock()
 		pcSpecs = p
 		findMu.Unlock()
 	}
 	out := *p
-	out.FreeOn, out.Free = win.MostFree()
+	out.FreeOn, out.Free = plat.MostFree()
 	return out
 }
 
@@ -232,5 +230,5 @@ func openStore(u string) error {
 	if !core.SafeStoreLink(u) {
 		return errors.New("That store link can't be opened.")
 	}
-	return win.ShellOpen(strings.TrimSpace(u))
+	return plat.ShellOpen(strings.TrimSpace(u))
 }

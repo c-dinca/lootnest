@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -17,7 +15,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -91,8 +89,8 @@ func (a *App) captureSources(games []core.CaptureGame) []core.CaptureSource {
 	for i, g := range games {
 		names[i] = g.Name
 	}
-	gameBar, _ := win.GameBarCaptures()
-	return core.CaptureSources(core.CaptureEnv{Videos: win.Videos(), Pictures: picturesDir(), SteamPath: a.env.SteamPath, GameBar: gameBar, Games: names})
+	gameBar, _ := plat.GameBarCaptures()
+	return core.CaptureSources(core.CaptureEnv{Videos: plat.Videos(), Pictures: picturesDir(), SteamPath: a.env.SteamPath, GameBar: gameBar, Games: names})
 }
 
 func (a *App) scanCaptures() {
@@ -168,7 +166,7 @@ func (a *App) apiGameCaptures(key string) {
 				mine = append(mine, c)
 			}
 		}
-		_, gameBarOff := win.GameBarCaptures()
+		_, gameBarOff := plat.GameBarCaptures()
 		a.sendCaptures("captures", mine, map[string]any{"key": key, "counts": counts, "gameBarOff": gameBarOff})
 	}()
 }
@@ -239,7 +237,7 @@ func (a *App) apiOpenCapture(path string) error {
 	if _, err := os.Stat(c.Path); err != nil {
 		return errors.New("That file is gone from its folder.")
 	}
-	return win.ShellOpen(c.Path)
+	return plat.ShellOpen(c.Path)
 }
 
 // capturePicture is a capture at full size, for the lightbox.
@@ -266,7 +264,7 @@ func (a *App) captureThumb(c core.Capture, create bool) string {
 	}
 	img, err := decodeSmall(c)
 	if err != nil {
-		if img, err = win.ShellThumbnail(c.Path, core.ThumbWidth); err != nil {
+		if img, err = plat.ShellThumbnail(c.Path, core.ThumbWidth); err != nil {
 			return ""
 		}
 	}

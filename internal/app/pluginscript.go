@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -13,7 +11,7 @@ import (
 	"sync"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -158,7 +156,7 @@ func (a *App) scriptGames() []core.ScriptGame {
 			if updatableSource(f.Source) && f.AppID == 0 {
 				g.Version = core.LocalVersion(f.Dir)
 				if exe, err := a.env.ResolveExe(f.Exe); err == nil && exe != "" {
-					g.ExeVersion = win.FileVersion(exe)
+					g.ExeVersion = plat.FileVersion(exe)
 				}
 			}
 		}
@@ -271,7 +269,7 @@ func pluginSecret(id, name string) string {
 	if err != nil || len(enc) == 0 {
 		return ""
 	}
-	b, err := win.Unprotect(enc)
+	b, err := plat.Unprotect(enc)
 	if err != nil {
 		return ""
 	}
@@ -285,7 +283,7 @@ func setPluginSecret(id, name, value string) error {
 	if value = strings.TrimSpace(value); value == "" {
 		delete(all[id], name)
 	} else {
-		enc, err := win.Protect([]byte(value))
+		enc, err := plat.Protect([]byte(value))
 		if err != nil {
 			return err
 		}

@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -13,7 +11,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -108,7 +106,7 @@ func (a *App) watchUpdates() {
 		updateMu.Lock()
 		pending := updateFound.SetupURL != "" && !updateBusy
 		updateMu.Unlock()
-		if on && auto && pending && !win.IsVisible(a.hwnd) && a.gameRunning() == "" {
+		if on && auto && pending && !plat.IsVisible(a.hwnd) && a.gameRunning() == "" {
 			a.logf("Installing the update by itself (the window is in the tray, no game is running)")
 			if err := a.apiInstallUpdate(); err != nil {
 				a.logf("Couldn't install the update yet: %v", err)
@@ -174,7 +172,7 @@ func (a *App) apiInstallUpdate() error {
 		}
 		a.logf("Updating to Lootnest %s", rel.Version)
 		a.emit("updateStep", map[string]any{"step": "installing", "version": rel.Version})
-		if err := win.StartDetached(path, "--update", filepath.Dir(path)); err != nil {
+		if err := plat.StartDetached(path, "--update", filepath.Dir(path)); err != nil {
 			fail(err)
 			return
 		}

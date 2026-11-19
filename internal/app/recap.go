@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -8,7 +6,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // apiSaveRecap saves a profile's year in games (a PNG the window drew) in
@@ -34,6 +32,6 @@ func (a *App) apiSaveRecap(profile string, year int, dataURL string) (string, er
 		return "", err
 	}
 	a.logf("Saved %s's %d in games to %s", profile, year, p)
-	_ = win.RevealInExplorer(p)
+	_ = plat.RevealInExplorer(p)
 	return p, nil
 }

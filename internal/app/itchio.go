@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -14,7 +12,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -235,7 +233,7 @@ func (a *App) itchParent(p string) string {
 	return filepath.Clean(p)
 }
 
-func driveFree(dir string) int64 { return win.DiskFree(filepath.VolumeName(dir) + `\`) }
+func driveFree(dir string) int64 { return plat.DiskFree(filepath.VolumeName(dir) + `\`) }
 
 // apiItchUploads lists the files of a game the user owns that Lootnest can
 // install, best first, with the folder it would go in and the room there,
@@ -455,7 +453,7 @@ func (a *App) itchRunInstaller(evKey string, g core.ItchGame, path string) (stri
 	}
 	a.itchProgress(evKey, "install", 0, 0)
 	a.logf("Running %s, the installer of %s from itch.io", filepath.Base(path), g.Title)
-	if _, err := win.RunAndWait(a.hwnd, path, "", filepath.Dir(path)); err != nil {
+	if _, err := plat.RunAndWait(a.hwnd, path, "", filepath.Dir(path)); err != nil {
 		return "", err
 	}
 	a.itchProgress(evKey, "check", 0, 0)

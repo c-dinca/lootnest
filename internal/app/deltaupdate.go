@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -15,7 +13,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -176,7 +174,7 @@ func (a *App) deltaStage(ctx context.Context, j *updJob, run *deltaRun, t updTar
 	opts := core.DeltaOptions{
 		ExeRel: exeRel,
 		Room: func(need int64) error {
-			if free := win.DiskFree(filepath.Dir(t.Dir)); free >= 0 && free < need+(1<<30) {
+			if free := plat.DiskFree(filepath.Dir(t.Dir)); free >= 0 && free < need+(1<<30) {
 				return fmt.Errorf("there isn't enough room on %s: the changed files need about %s and %s is free", vol, gb(need+(1<<30)), gb(free))
 			}
 			return nil
@@ -560,7 +558,7 @@ func (a *App) deltaRollback(j *updJob) {
 		a.emit("toast", map[string]any{"kind": "error", "text": sentence(err)})
 		return
 	}
-	if err := win.Recycle(a.hwnd, j.Staging); err != nil {
+	if err := plat.Recycle(a.hwnd, j.Staging); err != nil {
 		a.jobLog(j, "The new files stay in %s: %v", j.Staging, err)
 	}
 	jobs.Lock()
@@ -580,7 +578,7 @@ func (a *App) deltaFinish(j *updJob, why string) {
 	updMu.Lock()
 	defer updMu.Unlock()
 	if _, err := os.Lstat(rec.Keep); err == nil {
-		if err := win.Recycle(a.hwnd, rec.Keep); err != nil {
+		if err := plat.Recycle(a.hwnd, rec.Keep); err != nil {
 			a.jobLog(j, "The old files stay in %s: %v", rec.Keep, err)
 		} else {
 			a.jobLog(j, "The old files went to the Recycle Bin (%s)", why)

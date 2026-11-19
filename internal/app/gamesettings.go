@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -11,7 +9,7 @@ import (
 	"strings"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -158,7 +156,7 @@ func (a *App) apiOpenGameFolder(kind, id string) error {
 	if st, err := os.Stat(dir); err != nil || !st.IsDir() {
 		return fmt.Errorf("%s isn't there anymore. Scan again from the Library.", dir)
 	}
-	return win.ShellOpen(dir)
+	return plat.ShellOpen(dir)
 }
 
 // apiFoundShortcut puts a shortcut on the desktop that starts a Library
@@ -168,7 +166,7 @@ func (a *App) apiFoundShortcut(key string) (string, error) {
 	if !ok {
 		return "", errFoundGone
 	}
-	desktop := win.Desktop()
+	desktop := plat.Desktop()
 	if desktop == "" {
 		return "", errors.New("Couldn't find your Desktop folder.")
 	}
@@ -185,7 +183,7 @@ func (a *App) apiFoundShortcut(key string) (string, error) {
 	if _, err := os.Stat(lnk); err == nil && !known {
 		return "", fmt.Errorf("There's already a shortcut named %s on your desktop.", filepath.Base(lnk))
 	}
-	sc := win.Shortcut{Path: lnk, Description: "Start " + f.Name}
+	sc := plat.Shortcut{Path: lnk, Description: "Start " + f.Name}
 	if f.AppID > 0 {
 		if a.env.SteamPath == "" {
 			return "", errors.New("Steam wasn't found on this PC")
@@ -204,7 +202,7 @@ func (a *App) apiFoundShortcut(key string) (string, error) {
 		}
 		sc.Target, sc.Args, sc.WorkDir, sc.Icon = exe, f.Args, filepath.Dir(exe), exe
 	}
-	if err := win.CreateShortcut(sc); err != nil {
+	if err := plat.CreateShortcut(sc); err != nil {
 		return "", fmt.Errorf("couldn't create the shortcut: %w", err)
 	}
 	if !known {
@@ -225,5 +223,5 @@ func (a *App) apiSteamVerify(appID int) error {
 		return errors.New("Steam wasn't found on this PC")
 	}
 	a.logf("Asked Steam to check the files of app %d", appID)
-	return win.ShellOpen("steam://validate/" + strconv.Itoa(appID))
+	return plat.ShellOpen("steam://validate/" + strconv.Itoa(appID))
 }

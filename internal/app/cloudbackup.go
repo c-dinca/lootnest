@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -15,7 +13,7 @@ import (
 	"unicode/utf8"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -597,7 +595,7 @@ func (a *App) openBackupFolder() error {
 	if _, err := os.Stat(t); err != nil {
 		t = dir
 	}
-	return win.ShellOpen(t)
+	return plat.ShellOpen(t)
 }
 
 // apiExportPlayer writes a player's profile to a file in dir (with a

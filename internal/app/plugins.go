@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -10,7 +8,7 @@ import (
 	"sync"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -124,7 +122,7 @@ func (a *App) pluginGames() []core.FoundGame {
 	var out []core.FoundGame
 	for _, p := range a.plugins().on {
 		if p.Has("sources") {
-			games := core.PluginGames(p, os.Getenv, win.ReadRegKey)
+			games := core.PluginGames(p, os.Getenv, plat.ReadRegKey)
 			a.logf("Plugin %s: %d games", p.Name, len(games))
 			out = append(out, games...)
 		}

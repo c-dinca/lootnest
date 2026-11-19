@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -7,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"lootnest/internal/core"
@@ -39,7 +36,7 @@ func startStremioServer() (stop func()) {
 	}
 	cmd := exec.Command(runtime, script)
 	cmd.Dir = filepath.Dir(runtime)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000 /*CREATE_NO_WINDOW*/}
+	noConsole(cmd)
 	if err := cmd.Start(); err != nil {
 		return nil
 	}

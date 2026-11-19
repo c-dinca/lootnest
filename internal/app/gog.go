@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -14,7 +12,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -337,7 +335,7 @@ func (a *App) apiGogInstallers(id int64, parent string) {
 			gogMu.Unlock()
 		}
 		dir := a.gogParent(parent)
-		out["installers"], out["pick"], out["dir"], out["target"] = ins, core.GogDefault(ins, core.GogLang(win.UILanguage())), dir, filepath.Join(dir, core.GameFolderName(g.Title))
+		out["installers"], out["pick"], out["dir"], out["target"] = ins, core.GogDefault(ins, core.GogLang(plat.UILanguage())), dir, filepath.Join(dir, core.GameFolderName(g.Title))
 		out["free"], out["dataDrive"], out["dataFree"], out["kept"] = driveFree(dir), strings.ToUpper(filepath.VolumeName(DataDir())), driveFree(DataDir()), gogKept(id)
 	}()
 }
@@ -548,7 +546,7 @@ func (a *App) gogRunInstaller(evKey string, g core.GogGame, setup, dir string) (
 	}
 	a.gogProgress(evKey, "install", 0, 0, 0, 0)
 	a.logf("Running %s, the installer of %s from GOG, into %s", filepath.Base(setup), g.Title, dir)
-	code, err := win.RunAndWait(a.hwnd, setup, core.GogInnoArgs(dir), filepath.Dir(setup))
+	code, err := plat.RunAndWait(a.hwnd, setup, core.GogInnoArgs(dir), filepath.Dir(setup))
 	if err != nil {
 		return "", fmt.Errorf("the installer didn't run (%w). The download is kept, so Install doesn't download it again", err)
 	}

@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -13,7 +11,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -180,8 +178,8 @@ func updKey(key string) string {
 
 func drives() []Drive {
 	out := []Drive{}
-	for _, d := range win.FixedDrives() {
-		free, size := win.DiskSpace(d)
+	for _, d := range plat.FixedDrives() {
+		free, size := plat.DiskSpace(d)
 		out = append(out, Drive{Root: d, Free: free, Size: size, Games: filepath.Join(d, "Games")})
 	}
 	return out
@@ -323,7 +321,7 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, erro
 		return "", "", fmt.Errorf("Windows Firewall keeps %s offline by its programs' places on this PC. Let it go online again first (Manage), move it, then keep it offline again.", t.Name)
 	}
 	vol := filepath.VolumeName(filepath.Clean(dst)) + `\`
-	m, err := a.env.MoveGamePlan(t.Name, t.Source, t.Dir, dst, a.inUse(t), win.DiskFree(vol))
+	m, err := a.env.MoveGamePlan(t.Name, t.Source, t.Dir, dst, a.inUse(t), plat.DiskFree(vol))
 	if err != nil {
 		return "", "", err
 	}
@@ -360,7 +358,7 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, erro
 	if err := a.retargetMoved(m, dst); err != nil {
 		return undo(fmt.Errorf("Lootnest couldn't point the Library at the new folder (%v)", err))
 	}
-	if err := win.Recycle(a.hwnd, m.From); err != nil {
+	if err := plat.Recycle(a.hwnd, m.From); err != nil {
 		a.logf("The old folder of %s stays in %s: %v", m.Name, m.From, err)
 		return m.To, m.From, nil
 	}

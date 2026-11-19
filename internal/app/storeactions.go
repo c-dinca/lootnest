@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -12,7 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -57,7 +55,7 @@ func (a *App) apiStoreAction(key, action string) error {
 	if u == "" || !core.SafeHandoff(u) {
 		return errors.New("Its store has no way to do that from Lootnest.")
 	}
-	if err := win.ShellOpen(u); err != nil {
+	if err := plat.ShellOpen(u); err != nil {
 		return fmt.Errorf("Windows couldn't open the launcher for %s: %w", name, err)
 	}
 	a.logf("Asked the %s launcher to %s %s (%s)", source, action, name, u)
@@ -87,7 +85,7 @@ func (a *App) apiOwnedGames() {
 		if ud, err := a.env.SteamUser(); err == nil {
 			all = core.SteamOwned(a.env.SteamPath, ud, steamIDs)
 		}
-		if pd := win.ProgramData(); pd != "" {
+		if pd := plat.ProgramData(); pd != "" {
 			all = append(all, core.EpicOwned(filepath.Join(pd, "Epic", "EpicGamesLauncher", "Data", "Catalog", "catcache.bin"), epicIDs)...)
 		}
 		itch, itchErr, itchReading := a.itchOwnedGames(keys)
@@ -121,7 +119,7 @@ func (a *App) apiRemoveGame(key string, goAhead bool) error {
 	go func() {
 		running := false
 		if f.ProcessName != "" {
-			procs, _ := win.ProcessNames()
+			procs, _ := plat.ProcessNames()
 			running = procs[strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))]
 		}
 		p, err := a.env.PlanRemove(f.Name, f.Dir, withFiles(a.vaultLocs(f)), a.store.BackupsDir(), running, time.Now())
@@ -143,9 +141,9 @@ func (a *App) apiRemoveGame(key string, goAhead bool) error {
 			out["error"] = "Nothing was removed: Lootnest couldn't copy its saves first (" + err.Error() + ")."
 			return
 		}
-		if err := win.Recycle(a.hwnd, p.Dir); err != nil {
+		if err := plat.Recycle(a.hwnd, p.Dir); err != nil {
 			out["error"] = "The folder wasn't removed (" + err.Error() + "). Its saves are copied in Lootnest's backups."
-			if errors.Is(err, win.ErrRecycleCancelled) {
+			if errors.Is(err, plat.ErrRecycleCancelled) {
 				out["error"] = "The folder stays where it is. Its saves are copied in Lootnest's backups too."
 			}
 			return

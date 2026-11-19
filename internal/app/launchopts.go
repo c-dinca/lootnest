@@ -1,5 +1,3 @@
-//go:build windows
-
 package app
 
 import (
@@ -12,7 +10,7 @@ import (
 	"time"
 
 	"lootnest/internal/core"
-	"lootnest/internal/win"
+	"lootnest/internal/plat"
 )
 
 // ---------------------------------------------------------------------------
@@ -91,16 +89,16 @@ func (a *App) startExe(key, exe, args string) error {
 	}
 	if o.RunAsAdmin {
 		a.logf("Starting %s as administrator, in %s", filepath.Base(exe), dir)
-		return win.StartElevated(a.hwnd, exe, args, dir)
+		return plat.StartElevated(a.hwnd, exe, args, dir)
 	}
-	return win.StartDetached(exe, args, dir)
+	return plat.StartDetached(exe, args, dir)
 }
 
 // apiRunningApps lists the programs with a window open, for the apps to
 // close before play. Windows' own aren't listed.
-func (a *App) apiRunningApps() []win.RunningApp {
-	apps := win.RunningApps()
-	slices.SortFunc(apps, func(x, y win.RunningApp) int {
+func (a *App) apiRunningApps() []plat.RunningApp {
+	apps := plat.RunningApps()
+	slices.SortFunc(apps, func(x, y plat.RunningApp) int {
 		return strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name))
 	})
 	return apps
@@ -115,7 +113,7 @@ func (a *App) apiSteamProperties(appID int) error {
 	if a.env.SteamPath == "" {
 		return errors.New("Steam wasn't found on this PC")
 	}
-	return win.ShellOpen("steam://gameproperties/" + strconv.Itoa(appID))
+	return plat.ShellOpen("steam://gameproperties/" + strconv.Itoa(appID))
 }
 
 // playRun is what the steps before a game's start did, for the steps after.
@@ -148,8 +146,8 @@ func (a *App) stepsBefore(key, name string) {
 	var waiting []closing
 	for _, c := range o.CloseApps {
 		proc := strings.ToLower(strings.TrimSuffix(c.Name, filepath.Ext(c.Name)))
-		if paths := win.ProcessPaths(proc); len(paths) > 0 {
-			win.CloseProcessWindows(proc)
+		if paths := plat.ProcessPaths(proc); len(paths) > 0 {
+			plat.CloseProcessWindows(proc)
 			waiting = append(waiting, closing{c, proc, paths})
 		}
 	}
@@ -168,7 +166,7 @@ func (a *App) stepsBefore(key, name string) {
 	until := time.Now().Add(closeWait)
 	for len(waiting) > 0 && time.Now().Before(until) {
 		time.Sleep(250 * time.Millisecond)
-		procs, err := win.ProcessNames()
+		procs, err := plat.ProcessNames()
 		if err != nil {
 			break
 		}
@@ -188,7 +186,7 @@ func (a *App) stepsBefore(key, name string) {
 			a.logf("%s didn't close before %s (it may stay in the tray), so it keeps running", w.app.Name, name)
 			continue
 		}
-		if win.KillProcesses(w.proc) == 0 {
+		if plat.KillProcesses(w.proc) == 0 {
 			a.logf("Couldn't end %s before %s (it may run as administrator), so it keeps running", w.app.Name, name)
 			continue
 		}
@@ -249,7 +247,7 @@ func (a *App) moveLaunchOpts(from string, g core.Game) {
 }
 
 func (a *App) startProgram(p core.Program, when string) {
-	if err := win.StartDetached(p.Path, p.Args, dirOf(p.Path)); err != nil {
+	if err := plat.StartDetached(p.Path, p.Args, dirOf(p.Path)); err != nil {
 		a.logf("Couldn't start %s %s: %v", p.Path, when, err)
 		return
 	}
