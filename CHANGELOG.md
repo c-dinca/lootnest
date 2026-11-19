@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Your installed games in the sidebar.** Under the collections, the sidebar now has **Installed**, every game installed on this PC, so you don't need the Library to find one; with All games shown, the ones not installed follow under **Not installed**.
 - **Games in a folder of your own are found.** A game in a folder of games with a name of your own, such as `D:\Jocuri PC\TEKKEN 8`, showed in the Library under the folder's name, or not at all. Lootnest now looks one level deeper into such folders. And in Library, Sources, **Folders with games** lets you add any folder Lootnest should look in, or a game's own folder.
 - **How far the story is, beside Play.** When a game's achievements mark its chapters ("Complete Chapter 3", "Leave Act II") or its end ("Finish the game"), a ring beside Play says how far the story is for the profile shown, such as "Story 50%, Chapter 3 done", or Finished; click it for the Achievements tab. Many games keep the words of their chapter achievements hidden: turn on **Story progress** in Settings, Online to read them from Steam's public list (only the game's Steam id is sent; off by default). A game whose achievements don't mark its story shows nothing, and one that marks only its endings shows Finished once one is reached.
 

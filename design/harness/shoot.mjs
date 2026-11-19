@@ -27,6 +27,7 @@ const shots = [
   ["library", "", [nav("library")]],
   ["library-400", "games=400", [nav("library")]],
   ["library-empty", "games=0", [nav("library")]],
+  ["side-installed", "", [nav("library"), `new Promise((r) => setTimeout(() => { const g = document.querySelector('#side-games [data-g="installed"]'); g.scrollIntoView({ block: "start" }); r(); }, 300))`]],
   ["library-sources", "", [nav("library"), click('[data-action="sources"]')]],
   ["library-sources-dir", "", [nav("library"), click('[data-action="sources"]'), click('[data-action="gamedir-add"]'), `new Promise((r) => setTimeout(() => { document.querySelectorAll(".ln-drawer *").forEach((e) => { if (e.scrollHeight > e.clientHeight + 4) e.scrollTop = e.scrollHeight; }); r(); }, 400))`]],
   ["library-scanning", "state=loading", [nav("library")]],
