@@ -60,9 +60,9 @@ var (
 )
 
 var TVAppPinned = TVAppRelease{
-	Version: "1.6.1",
-	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.6.1/com.lootnest.tv_1.6.1_arm.ipk",
-	SHA256:  "8db8519c38c0979befe19a0c23243086ac45cf3c004c483ba2d9d138fdebddb0",
+	Version: "1.6.2",
+	URL:     "https://github.com/c-dinca/lootnest-tv-webos/releases/download/v1.6.2/com.lootnest.tv_1.6.2_arm.ipk",
+	SHA256:  "e23d89d27abfae6d54507bd6f413bde6eb61e7ec8afd9d19672aa7050d7ee8fb",
 }
 
 // ErrTVAppNotPinned stops an install Lootnest has no checksum for.
