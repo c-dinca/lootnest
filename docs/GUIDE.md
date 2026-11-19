@@ -42,6 +42,10 @@ Data lives in `%LOCALAPPDATA%\Lootnest`:
 - `config.json`
 - `lootnest.log`
 
+## Achievements
+
+Lootnest reads a game's achievements from the PC: Steam's own files, or the ones a Steam-compatible tool writes beside the game. It reads them again by itself when a game closes and when you open its page again, so new unlocks show without a button. For a game you also own on Steam whose copy on this PC records none, **Achievements from my Steam account** (Settings, Online, off by default) shows your Steam account's: it needs your Steam Web API key, and your Steam profile's Game details must be public.
+
 ## Lootnest and Playnite
 
 Lootnest works alongside [Playnite](https://playnite.link); it doesn't replace it. **Import from Playnite**, in Settings, Data and activity, brings in what Playnite knows about the games on this PC: time played and when last played, statuses (Playing, Beaten, Completed, Abandoned, Plan to Play, On Hold), favourites, ratings (Playnite's score as 1 to 5 stars), notes, and, if you choose, categories and tags as collections. The import is one way: Lootnest reads Playnite's library (`%APPDATA%\Playnite\library`, or the `library` folder of a portable Playnite) and never writes to it. Close Playnite first, because it keeps its library to itself while it's open.

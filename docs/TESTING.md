@@ -994,3 +994,15 @@ the same network as the PC, with TV streaming set up.
 7. Settings, TV, Save a report: the report has the TV app's log (tag
    LootnestTV) for each Android TV.
 
+## 45. Achievements that come by themselves
+
+1. A folder game whose tool writes achievements at the first unlock:
+   open its page (None found), play until something unlocks, close the
+   game. Within about 10 seconds its Achievements show, with no button.
+2. Settings, Online: turn on **Achievements from my Steam account** with
+   a Steam Web API key. A game owned on Steam whose copy on the PC has no
+   achievements (Red Dead Redemption 2 from Hydra) shows the Steam
+   account's, with pictures, under "From Steam, for this PC's account".
+3. With the profile's Game details private on Steam: nothing shows, and
+   the log ("Show recent activity") says to make them public.
+4. Turn it off: the game shows None found again.

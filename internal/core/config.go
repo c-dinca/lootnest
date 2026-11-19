@@ -185,6 +185,11 @@ type Settings struct {
 	// Steam id is all that's sent.
 	AchToastsOff bool `json:"achToastsOff,omitempty"`
 	AchRarity    bool `json:"achRarity,omitempty"`
+	// SteamAccountAch shows a game's achievements from the user's own Steam
+	// account when nothing on this PC has them (a game they also own on
+	// Steam). Off by default; it needs the Steam Web API key, and sends it
+	// with the account's SteamID64 and the game's app id to Steam.
+	SteamAccountAch bool `json:"steamAccountAch,omitempty"`
 	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
 	// runs (on unless turned off).
 	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`

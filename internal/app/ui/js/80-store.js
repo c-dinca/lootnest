@@ -487,7 +487,7 @@
     try {
       await api.saveSettings({ settings: s, autostart });
       if (f === "downloadCovers" || f === "gridDbKey") { S.covers = artStore(); S.icons = artStore(); S.art = artStore(); artWanted.clear(); pendingCovers.clear(); }
-      if (f === "steamApiKey" || f === "achRarity") { S.ach = {}; achAsked.clear(); S.allAch = null; }
+      if (f === "steamApiKey" || f === "achRarity" || f === "steamAccountAch") { S.ach = {}; achAsked.clear(); S.allAch = null; }
       if (f === "downloadsOff") api.downloads().catch(() => {});
       await refresh();
     } catch (e) { toast(errText(e), "error"); await refresh(); }

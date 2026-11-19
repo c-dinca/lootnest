@@ -111,13 +111,16 @@
   // Achievements: read from this PC (Steam's library cache, or the file a
   // Steam-compatible tool keeps next to the game's saves). The latest
   // unlocked first; the whole list on request.
-  const achAsked = new Set();
+  // Library key -> when its achievements were last asked for. A page open
+  // again after a minute asks again, so a new file or unlock shows by itself.
+  const achAsked = new Map();
+  const ACH_AGAIN = 60000;
   // Whose achievements a game shows, and the pieces both the page and the
   // panel with the whole list are made of.
   function achFor(it) {
     const key = recentKey(it);
-    if (!achAsked.has(key)) {
-      achAsked.add(key);
+    if (!achAsked.has(key) || Date.now() - achAsked.get(key) > ACH_AGAIN) {
+      achAsked.set(key, Date.now());
       const dir = it.f ? it.f.dir : it.exe;
       if (it.appId || dir) api.achievements(key, it.appId, dir, it.name).catch(() => {});
     }
