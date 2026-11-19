@@ -71,6 +71,8 @@ const shots = [
   ["tv-home-menu", "tv=1&players=1", ['window.__ps({ type: "tvGame", key: "game:bg3", phase: "playing" })', 'window.__ps({ type: "tvMenu", on: true, key: "game:bg3" })']],
   ["tv-library", "tv=1&players=1", [key("e"), key("ArrowDown"), key("ArrowRight")]],
   ["ctx-pad", "", [nav("library"), `new Promise((r) => { const c = document.querySelector('#grid [data-key], #grid [data-game]'); const b = c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, clientX: b.x + 40, clientY: b.y + 40 })); setTimeout(r, 300); })`]],
+  ["tv-fresh", "tv=1&players=1&fresh=1", []],
+  ["tv-fresh-400", "tv=1&players=1&fresh=1&games=400", [key("End")]],
   ["tv-library-kbm", "tv=1&players=1", [key("e"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight")]],
   ["tv-library-400", "tv=1&players=1&games=400", [key("e"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],
   ["tv-achievements", "tv=1&players=1", [key("e"), key("e")]],

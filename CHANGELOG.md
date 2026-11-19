@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Every game on Big Picture's Home.** On a PC where nothing was played with Lootnest yet, Big Picture's Home showed only the first 12 games by name, so a game such as TEKKEN 8 was only in its Library tab. Home's **Your games** now holds every game (with a long Library, the first 120 and a tile for the whole Library), and after you play, it still follows Continue playing.
+
 ## 2.16.0
 
 - **Big Picture shows the games you can play with a controller.** Games played only with a keyboard and a mouse, such as Counter-Strike 2, Dota 2 and Riot's games, no longer fill Big Picture's rows: they wait in Library, under **Keyboard and mouse**. Lootnest reads which games have controller support from Steam's own files on this PC, and from a game's store details when you already have them; a game nobody says anything about stays in. Right-click a game on the PC for **Leave out of Big Picture** or **Show in Big Picture**, and turn it all off in Big Picture's Settings, Controller.

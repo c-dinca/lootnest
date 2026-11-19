@@ -1926,6 +1926,13 @@ These shipped recently, newest last:
   Picture still lists every game with some. Harness `ctx-pad`,
   `tv-library-kbm`.
   The owner asked for 2.16.0 once these four were in (19 Nov).
+- **Unreleased, every game on Big Picture's Home** (the owner, 19 Nov
+  2026: on a friend's PC, TEKKEN 8 was in the Library on the PC but not on
+  the TV). Home's first row with nothing played was `all.slice(0, 12)`,
+  and Your games `slice(0, 40)`, so most of a Library was only in the
+  Library tab. Now Your games holds every game up to `BP_HOME_MAX` (120),
+  then `bpAllTile` (opens the Library tab). Harness `?fresh=1` (no recent
+  plays), shots `tv-fresh`, `tv-fresh-400`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
