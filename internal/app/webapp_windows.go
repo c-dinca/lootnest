@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"path/filepath"
 	"time"
 
@@ -22,6 +23,10 @@ func RunWebApp(id string, on uintptr) int {
 		if stop := startStremioServer(); stop != nil {
 			defer stop()
 		}
+	}
+	if site.Loopback {
+		// Read by WebView2 when it starts this window's browser.
+		os.Setenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", core.WebAppBrowserArgs)
 	}
 	plat.EnableDPIAwareness()
 	dpi := plat.SystemDPI()

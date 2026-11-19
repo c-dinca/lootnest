@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **An emergency key for TV mode.** When the TV or Lootnest stops answering while TV mode or Big Picture is on, press **Ctrl+Shift+Q** on the PC's keyboard: the mouse is let go, the taskbar comes back, the TV's stream ends (so the PC's screens come back as they were), and Lootnest quits, even when its window doesn't answer. The bar on the PC's screen in TV mode says so, and Ctrl+Shift+F11 still leaves TV mode without quitting.
+- **A keyboard for the controller in Stremio, Spotify and Discord.** Press A on a search box or a message box and a keyboard comes up at the bottom of the screen: move over it with the D-pad, A types, X deletes, Y adds a space, B closes it, and Start (or Done) searches.
+- **Stremio plays videos again.** Its page couldn't reach Stremio's streaming server on your PC (the browser inside Lootnest now asks before a site reaches the PC itself, and nothing could answer that with a controller), so it said streaming wasn't working. Lootnest's Stremio window now lets it through, for that site only. Videos still need the Stremio program installed, which brings the server; Lootnest's log says whether it found and started it.
 
 ## 2.16.1
 
