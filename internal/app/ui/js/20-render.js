@@ -259,6 +259,7 @@
     const s = cfg().settings || {}, c = document.documentElement.classList;
     c.toggle("glass-off", !!s.glassOff);
     c.toggle("room-off", !!s.roomOff);
+    c.toggle("motion-full", s.motion === "full");
     c.toggle("motion-less", s.motion === "less");
     c.toggle("motion-off", s.motion === "off");
   }

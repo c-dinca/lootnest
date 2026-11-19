@@ -1,5 +1,8 @@
   // ------------------------------------------------------------ game page --
-  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Windows has animation effects off and Motion isn't Full: Motion "Like
+  // Windows" (the default) follows Windows, Full moves anyway.
+  const osStill = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduced = () => osStill() && !document.documentElement.classList.contains("motion-full");
   // Movement (not only fades) is on: no reduced motion, and Motion is Full.
   const moving = () => !reduced() && !document.documentElement.classList.contains("motion-less") && !document.documentElement.classList.contains("motion-off");
   const ms = (token) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(token)) || 0;

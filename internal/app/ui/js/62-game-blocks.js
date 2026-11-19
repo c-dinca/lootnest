@@ -206,7 +206,9 @@
       c.style.setProperty("--rx", rx.toFixed(2) + "deg");
       c.style.setProperty("--ry", (ry + spin + (flip ? 180 : 0)).toFixed(2) + "deg");
     };
-    const still = () => reduced();
+    // The card follows the pointer, so it moves unless Motion says not to
+    // (Off, or Like Windows while Windows has animation effects off).
+    const still = () => reduced() || document.documentElement.classList.contains("motion-off");
     document.addEventListener("pointermove", (ev) => {
       const c = card();
       if (!c || still()) return;

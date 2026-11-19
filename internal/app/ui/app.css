@@ -73,7 +73,7 @@ h2 { font: 700 var(--text-lead)/var(--lh-snug) var(--font-ui); margin: 0 0 4px; 
 @keyframes boot-draw { from { stroke-dashoffset: 1; opacity: 0; } 15% { opacity: 1; } to { stroke-dashoffset: 0; } }
 @keyframes boot-drop { from { opacity: 0; transform: translateY(calc(var(--rise) * -1)); } 70% { opacity: 1; transform: translateY(calc(var(--hairline) / 2)); } to { transform: none; } }
 @keyframes boot-name { from { opacity: 0; transform: translateY(var(--space-1)); } }
-@media (prefers-reduced-motion: reduce) { .boot-mark path, .boot-mark circle, .boot-name { animation: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .boot-mark path, :root:not(.motion-full) .boot-mark circle, :root:not(.motion-full) .boot-name { animation: none; } }
 
 .sep { display: inline-block; width: 1px; height: .9em; background: currentColor; opacity: .35; margin: 0 10px; vertical-align: -1px; }
 
@@ -273,7 +273,7 @@ h2 { font: 700 var(--text-lead)/var(--lh-snug) var(--font-ui); margin: 0 0 4px; 
 .wl-go { display: grid; justify-items: center; gap: var(--space-2); margin-top: var(--space-2); }
 .wl-note { margin: 0; font-size: var(--text-meta); color: var(--fg-3); }
 #overlay.still .welcome :is(.wl-in, .brand-mark path, .brand-mark circle) { animation: none; }
-@media (prefers-reduced-motion: reduce) { .wl-meter i { animation: none; } .wl-meter:not(.is-done) i { width: 0; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .wl-meter i { animation: none; } :root:not(.motion-full) .wl-meter:not(.is-done) i { width: 0; } }
 .picker-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-6) var(--page-gutter); }
 .picker-head .hint { margin-top: var(--space-2); font-size: var(--fs-14); color: var(--fg-2); }
 /* Each profile is a big key in its colour: it lights up under the pointer,
@@ -334,9 +334,9 @@ h2 { font: 700 var(--text-lead)/var(--lh-snug) var(--font-ui); margin: 0 0 4px; 
 .swap-text .swap-safe { font-size: var(--fs-13); color: var(--fg-2); }
 .swap-safe .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
 @media (prefers-reduced-motion: reduce) {
-  .swap-out { display: none; }
-  .swap-in { animation-name: fade; }
-  .slot, .slot:hover, .slot:focus-visible, .slot:active, .slot.picked { animation: none; transform: none; }
+  :root:not(.motion-full) .swap-out { display: none; }
+  :root:not(.motion-full) .swap-in { animation-name: fade; }
+  :root:not(.motion-full) .slot, :root:not(.motion-full) .slot:hover, :root:not(.motion-full) .slot:focus-visible, :root:not(.motion-full) .slot:active, :root:not(.motion-full) .slot.picked { animation: none; transform: none; }
 }
 
 .question { align-self: center; justify-self: center; width: min(640px, calc(100% - 48px)); display: grid; gap: 18px; padding-bottom: 6vh; animation: rise var(--dur-2) var(--ease-out); }
@@ -374,7 +374,7 @@ h2 { font: 700 var(--text-lead)/var(--lh-snug) var(--font-ui); margin: 0 0 4px; 
 
 /* Windows "Animation effects" off: no movement anywhere. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  :root:not(.motion-full) *, :root:not(.motion-full) *::before, :root:not(.motion-full) *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 @media (max-width: 760px) {
   .view { --view-pad-top: 22px; padding: var(--view-pad-top) 16px 56px; }
@@ -686,7 +686,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-sel-n { display: flex; align-items: baseline; gap: var(--space-2); font-size: var(--text-body); color: var(--fg-2); white-space: nowrap; }
 .lib-sel-n b { font: 400 var(--text-score)/1 var(--font-title); color: var(--fg-1); }
 .lib-sel-acts { display: flex; flex: 1; flex-wrap: wrap; gap: var(--space-2); }
-@media (prefers-reduced-motion: reduce) { .lib-sel.in, .lib-card.is-sel .lib-check { animation: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .lib-sel.in, :root:not(.motion-full) .lib-card.is-sel .lib-check { animation: none; } }
 /* Saved views, in the Views menu: each with Rename and Delete, and the
    name being typed in place. */
 .ctx-view { display: flex; align-items: center; }
@@ -745,7 +745,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .lib-cap-play .ln-icon { fill: currentColor; stroke: none; }
 .lib-cap:hover .lib-cap-play, .lib-cap:focus-within .lib-cap-play { opacity: 1; }
 .lib-cap-badge { position: absolute; top: var(--space-2); left: var(--space-2); z-index: 2; }
-@media (prefers-reduced-motion: reduce) { .lib-cap-open:hover .lib-cap-art img, .find-card:hover img, .find-card:hover .find-noimg { transform: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .lib-cap-open:hover .lib-cap-art img, :root:not(.motion-full) .find-card:hover img, :root:not(.motion-full) .find-card:hover .find-noimg { transform: none; } }
 
 /* Game page below the play bar: achievements, save points and news, with
    the profiles beside them in a 380 to 460 px column that stays in view. */
@@ -785,7 +785,7 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 @container (max-width: 1040px) { .gp-head-id span, .gp-head-play > [data-action="play-pick"] { display: none; } }
 @container (max-width: 880px) { .gp-head-id { display: none; } }
 @container (max-width: 680px) { .gp-head-art { display: none; } }
-@media (prefers-reduced-motion: reduce) { .gp-head, .gp-head-tabs { transform: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .gp-head, :root:not(.motion-full) .gp-head-tabs { transform: none; transition: none; } }
 /* The Manage panel: the groups one under another. */
 .gpage-manage-list { display: grid; gap: var(--space-6); }
 .gpage-group[data-g="Profiles"], .gpage-group[data-g="Game"], .gpage-group[data-g="Cover and art"] { order: 1; }
@@ -1229,7 +1229,7 @@ ul.pp-recent { display: grid; margin: 0; padding: 0; list-style: none; border-to
 .btn.small { height: var(--ctl-sm); padding: 0 var(--space-3); font-size: var(--fs-13); }
 .btn.big { height: var(--ctl-lg); padding: 0 var(--space-6); font-size: var(--fs-15); }
 .btn.icon { width: var(--ctl-md); padding: 0; }
-@media (prefers-reduced-motion: reduce) { .btn:active:not(:disabled) { transform: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .btn:active:not(:disabled) { transform: none; } }
 .btn svg { width: var(--icon-sm); height: var(--icon-sm); flex: none; }
 
 .field > label, .label { font-size: var(--fs-13); font-weight: 600; color: var(--fg-2); }
@@ -1813,9 +1813,9 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 @keyframes rows-in { from { opacity: 0; transform: translateY(-4px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .app, .sg-thumb img, .lib-cap-art, .bar-ind, .bar-search, .page-ghost, .sg-folder, .sg-newrow, .sg-more, .view, .topbar { transition: none; }
-  .ctx:not([hidden]), .gq-pop, .ln-toast, .sg-rows.opening, .sg-live, .bar-me .ln-avatar.sat, .dialog { animation: none; }
-  .lib-cap-open:hover .lib-cap-art, .bar-tab:active { transform: none; }
+  :root:not(.motion-full) .app, :root:not(.motion-full) .sg-thumb img, :root:not(.motion-full) .lib-cap-art, :root:not(.motion-full) .bar-ind, :root:not(.motion-full) .bar-search, :root:not(.motion-full) .page-ghost, :root:not(.motion-full) .sg-folder, :root:not(.motion-full) .sg-newrow, :root:not(.motion-full) .sg-more, :root:not(.motion-full) .view, :root:not(.motion-full) .topbar { transition: none; }
+  :root:not(.motion-full) .ctx:not([hidden]), :root:not(.motion-full) .gq-pop, :root:not(.motion-full) .ln-toast, :root:not(.motion-full) .sg-rows.opening, :root:not(.motion-full) .sg-live, :root:not(.motion-full) .bar-me .ln-avatar.sat, :root:not(.motion-full) .dialog { animation: none; }
+  :root:not(.motion-full) .lib-cap-open:hover .lib-cap-art, :root:not(.motion-full) .bar-tab:active { transform: none; }
 }
 
 /* =========================================================== library list
@@ -2120,7 +2120,7 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 @keyframes pop-badge { from { transform: scale(.4) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .ach-ring .fg, .arrive .ach-ring .fg, .arrive .ach-bar span, .ach-pop, .ach-pop .ach-ico, .ach-pop.out, .ach-ico::after { animation: none !important; transition: none; }
+  :root:not(.motion-full) .ach-ring .fg, :root:not(.motion-full) .arrive .ach-ring .fg, :root:not(.motion-full) .arrive .ach-bar span, :root:not(.motion-full) .ach-pop, :root:not(.motion-full) .ach-pop .ach-ico, :root:not(.motion-full) .ach-pop.out, :root:not(.motion-full) .ach-ico::after { animation: none !important; transition: none; }
 }
 
 
@@ -2303,7 +2303,7 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 .wr-off { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-3); color: var(--fg-2); font-size: var(--text-meta); }
 .wr-off .ln-icon { width: 32px; height: 32px; flex: none; color: var(--fg-3); }
 .wr-skel { height: 116px; }
-@media (prefers-reduced-motion: reduce) { .wr-fill, .wr-bar::before, .wr-bar .wr-you { animation: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .wr-fill, :root:not(.motion-full) .wr-bar::before, :root:not(.motion-full) .wr-bar .wr-you { animation: none; } }
 :root.motion-off .wr-fill, :root.motion-off .wr-bar::before, :root.motion-off .wr-bar .wr-you { animation: none; }
 
 /* An achievement as a card, held up in the middle of the screen. It tilts
@@ -2353,7 +2353,7 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 .ach[data-action="ach-card"] { cursor: pointer; border-radius: var(--radius-key); transition: background-color var(--dur-1) var(--ease-out); }
 .ach[data-action="ach-card"]:hover { background: var(--glass-ctl); }
 .ach[data-action="ach-card"]:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .achc, .achc-glow { animation: none; } .achc-card { transition: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .achc, :root:not(.motion-full) .achc-glow { animation: none; } :root:not(.motion-full) .achc-card { transition: none; } }
 :root.motion-off .achc, :root.motion-off .achc-glow { animation: none; }
 
 /* Saves: what each kind of copy is, then rows whose icon opens the files
@@ -2520,14 +2520,14 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 @media (max-width: 900px) { .sk-store-top { grid-template-columns: minmax(0, 1fr); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .ln-tile:hover .ln-tile__cover { transform: none; }
-  .ln-skeleton::after { animation: none; }
-  .enter .rise, .dialog, .ln-toast, .ctx:not([hidden]), .achc { animation: fade-in-soft var(--dur-2) var(--ease-out); }
+  :root:not(.motion-full) .ln-tile:hover .ln-tile__cover { transform: none; }
+  :root:not(.motion-full) .ln-skeleton::after { animation: none; }
+  :root:not(.motion-full) .enter .rise, :root:not(.motion-full) .dialog, :root:not(.motion-full) .ln-toast, :root:not(.motion-full) .ctx:not([hidden]), :root:not(.motion-full) .achc { animation: fade-in-soft var(--dur-2) var(--ease-out); }
 }
 :root.motion-off .ln-skeleton::after { animation: none; }
 .lib-cap-open:hover .lib-cap-art { transform: perspective(900px) translateY(calc(-1 * var(--lift))) rotateX(calc(var(--ty, 0deg) * 0.6)) rotateY(calc(var(--tx, 0deg) * 0.6)); }
 .reveal { animation: rise-in var(--spring-soft-dur) var(--spring-soft) calc(var(--i, 0) * var(--stagger-in)) both; }
-@media (prefers-reduced-motion: reduce) { .reveal { animation: fade-in-soft var(--dur-2) var(--ease-out); } }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .reveal { animation: fade-in-soft var(--dur-2) var(--ease-out); } }
 
 /* A game's trailers and screenshots: the one in focus on a 16:9 stage, the
    rest in a strip beside it that scrolls on its own (contain: size keeps
@@ -2676,7 +2676,7 @@ html.is-tv {
 @keyframes bp-launch-zoom { from { transform: scale(1.12); filter: brightness(.6); } }
 @keyframes bp-launch-run { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 @media (prefers-reduced-motion: reduce) {
-  .bp-launch, .bp-launch-art, .bp-launch-body, .bp-launch-bar::after { animation: none; }
+  :root:not(.motion-full) .bp-launch, :root:not(.motion-full) .bp-launch-art, :root:not(.motion-full) .bp-launch-body, :root:not(.motion-full) .bp-launch-bar::after { animation: none; }
 }
 
 /* TV mode's menu over a game (25-bigpicture.js tvMenu): the Home or PS
@@ -2721,8 +2721,8 @@ html.is-tv {
 :root.motion-off :is(.tv-menu, .tv-menu.out) { animation: none; }
 :root.motion-off :is(.tv-menu-ind, .tv-menu-item) { transition: none; }
 @media (prefers-reduced-motion: reduce) {
-  .tv-menu, .tv-menu.out, .tv-menu-shot, .tv-menu-side, .tv-ach, .tv-menu-item svg { animation: none; }
-  .tv-menu-ind, .tv-menu-item { transition: none; }
+  :root:not(.motion-full) .tv-menu, :root:not(.motion-full) .tv-menu.out, :root:not(.motion-full) .tv-menu-shot, :root:not(.motion-full) .tv-menu-side, :root:not(.motion-full) .tv-ach, :root:not(.motion-full) .tv-menu-item svg { animation: none; }
+  :root:not(.motion-full) .tv-menu-ind, :root:not(.motion-full) .tv-menu-item { transition: none; }
 }
 body:has(> #tv-menu) .bp-launch-body { opacity: 0; transition: opacity var(--dur-2) var(--ease-out); }
 
@@ -3090,9 +3090,9 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 :root.motion-less .bp-screen, :root.motion-less .bp-row, :root.motion-less .bp-hero.in > *, :root.motion-less .bp-dlg { animation-name: bp-in-fade; }
 :root.motion-off :is(.bp, .bp-screen, .bp-row, .bp-hero.in > *, .bp-over, .bp-dlg) { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .bp, .bp.out, .bp-screen, .bp-row, .bp-hero.in > *, .bp-over, .bp-dlg, .bp-bd-l, .is-waiting::after { animation: none; }
-  .bp-arows > .bp-arow, .bp-screen[data-enter] :is(.bp-keys, .bp-opts, .bp-people) > *, .bp-tile:focus .bp-art::before, .bp-ring .ach-ring .fg { animation: none; }
-  .bp :is(.bp-agame, .bp-arow):focus { transform: none; }
-  .bp *, .bp *::before, .bp *::after { transition: none; }
-  .bp :is(.bp-tile, .bp-key, .bp-person, .bp-card, .bp-tab, .bp-chip, .bp-round):focus { transform: none; }
+  :root:not(.motion-full) .bp, :root:not(.motion-full) .bp.out, :root:not(.motion-full) .bp-screen, :root:not(.motion-full) .bp-row, :root:not(.motion-full) .bp-hero.in > *, :root:not(.motion-full) .bp-over, :root:not(.motion-full) .bp-dlg, :root:not(.motion-full) .bp-bd-l, :root:not(.motion-full) .is-waiting::after { animation: none; }
+  :root:not(.motion-full) .bp-arows > .bp-arow, :root:not(.motion-full) .bp-screen[data-enter] :is(.bp-keys, .bp-opts, .bp-people) > *, :root:not(.motion-full) .bp-tile:focus .bp-art::before, :root:not(.motion-full) .bp-ring .ach-ring .fg { animation: none; }
+  :root:not(.motion-full) .bp :is(.bp-agame, .bp-arow):focus { transform: none; }
+  :root:not(.motion-full) .bp *, :root:not(.motion-full) .bp *::before, :root:not(.motion-full) .bp *::after { transition: none; }
+  :root:not(.motion-full) .bp :is(.bp-tile, .bp-key, .bp-person, .bp-card, .bp-tab, .bp-chip, .bp-round):focus { transform: none; }
 }

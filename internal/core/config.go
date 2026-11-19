@@ -200,7 +200,9 @@ type Settings struct {
 	SoundsOff bool `json:"soundsOff,omitempty"`
 	// Appearance. GlassOff makes every see-through panel solid; RoomOff
 	// keeps the game's art out from behind the pages (obsidian everywhere);
-	// Motion is "" (full), "less" (fades only) or "off".
+	// Motion is "" (like Windows: full unless Windows has animation
+	// effects off), "full" (always, whatever Windows says), "less" (fades
+	// only) or "off".
 	GlassOff bool   `json:"glassOff,omitempty"`
 	RoomOff  bool   `json:"roomOff,omitempty"`
 	Motion   string `json:"motion,omitempty"`

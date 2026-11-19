@@ -80,7 +80,7 @@
       uiSound("tab");
       render();
     },
-    // Settings, Appearance, Motion: Full, Less or Off.
+    // Settings, Appearance, Motion: Like Windows, Full, Less or Off.
     async "set-motion"(el) {
       const s = JSON.parse(JSON.stringify(cfg().settings));
       s.motion = el.dataset.value || "";
