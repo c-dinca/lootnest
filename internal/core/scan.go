@@ -587,7 +587,8 @@ func sourceRank(s string) int {
 	switch s {
 	case "steam":
 		return 0
-	case "epic", "gog", "xbox", "ubisoft", "ea", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra":
+	case "epic", "gog", "xbox", "ubisoft", "ea", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra",
+		"heroic", "lutris", "bottles":
 		return 1
 	case "shortcut":
 		return 2

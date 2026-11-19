@@ -6,11 +6,11 @@
 
   // A plugin's games carry their source's own name (f.sourceName).
   const sourceLabel = (src, f) => ({ steam: "Steam", epic: "Epic Games", gog: "GOG", xbox: "Xbox", ea: "EA app", ubisoft: "Ubisoft Connect", battlenet: "Battle.net",
-    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", hydra: "Hydra", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src]
+    riot: "Riot Games", amazon: "Amazon Games", rockstar: "Rockstar Games", itch: "itch.io", hydra: "Hydra", heroic: "Heroic", lutris: "Lutris", bottles: "Bottles", shortcut: "Shortcut", folder: "Game folder", added: "Added by you" }[src]
     || ((src || "").startsWith("plugin:") ? (f && f.sourceName) || "Plugin" : "Other"));
   // Each store and launcher is its own filter; folders, shortcuts and games
   // added by hand are "Other".
-  const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra"];
+  const LAUNCHERS = ["steam", "epic", "gog", "xbox", "ea", "ubisoft", "battlenet", "riot", "amazon", "rockstar", "itch", "hydra", "heroic", "lutris", "bottles"];
   const filterOf = (src) => (LAUNCHERS.includes(src) ? src : "other");
 
   // Every game on the PC: the ones with profiles, then everything the scan
