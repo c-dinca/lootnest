@@ -83,15 +83,6 @@ func AskCommand(hwnd uintptr, cmd string) (r0 uintptr) {
 	return
 }
 
-func Autostart(name string) (r0 string, r1 bool) {
-	return
-}
-
-func Browse(o BrowseOptions) (r0 string, err error) {
-	err = ErrUnsupported
-	return
-}
-
 type BrowseOptions struct {
 	Owner   uintptr
 	Title   string
@@ -258,10 +249,6 @@ type MenuItem struct {
 	Sep      bool
 }
 
-func MessageBox(hwnd uintptr, text string, caption string, flags uint32) (r0 int) {
-	return
-}
-
 func MostFree() (r0 string, r1 int64) {
 	return
 }
@@ -273,10 +260,6 @@ func MouseMove(dx int, dy int) {}
 func MouseWheel(delta int) {}
 
 func MoveCursor(x int, y int) {}
-
-func NewTray(hwnd uintptr, dpi int) (r0 *Tray) {
-	return
-}
 
 func NewViGEmPad() (r0 *ViGEmPad, err error) {
 	err = ErrUnsupported
@@ -346,11 +329,6 @@ func ProgramFilesX86() (r0 string) {
 	return
 }
 
-func Protect(b []byte) (r0 []byte, err error) {
-	err = ErrUnsupported
-	return
-}
-
 func RawPSButton(lp uintptr) (r0 bool, r1 bool) {
 	return
 }
@@ -360,11 +338,6 @@ func ReadCommand(lp uintptr) (r0 string, r1 bool) {
 }
 
 func ReadRegKey(key string) (r0 []string, r1 map[string]string, err error) {
-	err = ErrUnsupported
-	return
-}
-
-func Recycle(hwnd uintptr, paths ...string) (err error) {
 	err = ErrUnsupported
 	return
 }
@@ -424,21 +397,6 @@ func ServiceState(name string) (r0 bool, r1 bool) {
 	return
 }
 
-func SetAutostart(name string, command string, on bool) (err error) {
-	err = ErrUnsupported
-	return
-}
-
-func SetClipboardImage(hwnd uintptr, pngData []byte) (err error) {
-	err = ErrUnsupported
-	return
-}
-
-func SetClipboardText(hwnd uintptr, text string) (err error) {
-	err = ErrUnsupported
-	return
-}
-
 func SetForeground(hwnd uintptr) {}
 
 func SetFullscreen(hwnd uintptr, on bool) {}
@@ -475,8 +433,6 @@ func ShowMenu(hwnd uintptr, items []MenuItem) (r0 int) {
 func ShowTVBar(area [4]int, b TVBar, leave func()) {}
 
 func ShowTaskbar(show bool) {}
-
-func ShowToast(t Toast) {}
 
 func ShowWindow(hwnd uintptr, cmd int) {}
 
@@ -546,17 +502,6 @@ func TopWindows() (r0 []TopWindow) {
 	return
 }
 
-type Tray struct {
-}
-
-func (*Tray) Add(tip string) {}
-
-func (*Tray) SetTip(tip string) {}
-
-func (*Tray) Notify(title string, text string) {}
-
-func (*Tray) Remove() {}
-
 func UILanguage() (r0 string) {
 	return
 }
@@ -570,11 +515,6 @@ type UninstallEntry struct {
 	UninstallString      string
 	QuietUninstallString string
 	EstimatedSizeKB      uint32
-}
-
-func Unprotect(b []byte) (r0 []byte, err error) {
-	err = ErrUnsupported
-	return
 }
 
 func UnregisterHotKey(hwnd uintptr, id int) {}

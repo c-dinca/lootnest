@@ -7,8 +7,9 @@
 #   ./build.sh app      dist/Lootnest.exe only
 #   ./build.sh setup    dist/Lootnest-Setup.exe from the dist/Lootnest.exe already
 #                       there, so CI can sign the app before it goes into the setup
-#   ./build.sh linux    dist/lootnest for Linux x64, on Linux, with cgo and
-#                       WebKitGTK 4.1 (libwebkit2gtk-4.1-dev) installed
+#   ./build.sh linux    dist/lootnest for Linux x64, on Linux, with cgo,
+#                       WebKitGTK 4.1 and libsecret (libwebkit2gtk-4.1-dev,
+#                       libsecret-1-dev) installed
 set -euo pipefail
 cd "$(dirname "$0")"
 VERSION="${VERSION:-$(cat VERSION)}"

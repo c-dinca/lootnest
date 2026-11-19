@@ -13,3 +13,5 @@ func (a *App) present()     {}
 func (a *App) closeWindow() {}
 
 type platWindow struct{}
+
+func (a *App) trayReady() {}
