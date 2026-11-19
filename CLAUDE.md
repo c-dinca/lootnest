@@ -1903,6 +1903,11 @@ These shipped recently, newest last:
   browse kind `gameDir`, `saveGameDirs` then a scan) are roots, set for
   `gameFolders` at each scan's start (`setUserGameDirs`), not containers:
   a chosen folder that is a game itself is added as one.
+- **Unreleased, Installed in the sidebar** (the owner, 19 Nov 2026:
+  every installed game on the left beside the collections).
+  `renderSideGames`: after the folders, groups `installed` (every item
+  but `owned`), `owned` (Not installed), then Not in a collection; the old
+  `all` group is gone. Harness shot `side-installed`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

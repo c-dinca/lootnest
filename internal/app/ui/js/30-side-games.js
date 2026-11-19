@@ -89,8 +89,10 @@
         : `<div class="sg-newrow"><button class="sg-new" data-action="tag-new">${GI.plus}<span>New collection</span></button></div>`;
       html = group("playing", "Playing now", playing, { open: true }) + group("recent", "Recent", recent)
         + `<div class="sg-folders">${allTags().filter((t) => tags[t] || S.sideShow === "all" || !used.has(t)).map((t) => folder(t, sideSorted(tags[t] || []))).join("")}${add}</div>`
-        + group("loose", "Not in a collection", sideSorted(all.filter((it) => !tagsOf(it).length)))
-        + group("all", "All", sideSorted(all));
+        // Every installed game, then the ones that aren't (All games only).
+        + group("installed", "Installed", sideSorted(all.filter((it) => it.kind !== "owned")))
+        + group("owned", "Not installed", sideSorted(all.filter((it) => it.kind === "owned")))
+        + group("loose", "Not in a collection", sideSorted(all.filter((it) => !tagsOf(it).length)));
     }
     if (sideDrawn === html && box.firstChild) return; // nothing changed: keep it as it is
     const top = box.scrollTop;
