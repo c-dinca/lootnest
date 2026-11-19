@@ -190,6 +190,11 @@ type Settings struct {
 	// Steam). Off by default; it needs the Steam Web API key, and sends it
 	// with the account's SteamID64 and the game's app id to Steam.
 	SteamAccountAch bool `json:"steamAccountAch,omitempty"`
+	// StoryAch reads the words of a game's achievements from Steam's
+	// public list (hidden ones' included), so the chapters they mark show
+	// how far its story is (core.StoryOf). Off by default; the game's
+	// Steam id is all that's sent.
+	StoryAch bool `json:"storyAch,omitempty"`
 	// PointHotkeyOff stops Ctrl+Shift+F5 making a save point while a game
 	// runs (on unless turned off).
 	PointHotkeyOff bool `json:"pointHotkeyOff,omitempty"`

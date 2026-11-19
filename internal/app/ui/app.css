@@ -542,6 +542,11 @@ textarea { height: auto !important; padding: 10px 12px !important; resize: verti
 .gpage-state span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--fg-2); }
 .gpage-bar > .gpage-state { flex: 1 1 var(--bar-state-min); min-width: 0; }
 .gpage-others { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+/* How far the story is, beside Play: a ring and a line. */
+.gpage-story { display: flex; flex: none; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); border: 0; border-radius: var(--radius-key); background: none; color: inherit; font: inherit; text-align: left; }
+.gpage-story .gpage-state { padding-left: 0; }
+button.gpage-story { cursor: pointer; transition: background var(--dur-2) var(--ease-out); }
+button.gpage-story:hover { background: var(--glass-ctl-hover); }
 .gpage-stats { margin-left: auto; }
 /* Narrow windows: the other ways to play take their own row. */
 @media (max-width: 1100px) { .gpage-others { flex-basis: 100%; } }

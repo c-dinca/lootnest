@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **How far the story is, beside Play.** When a game's achievements mark its chapters ("Complete Chapter 3", "Leave Act II") or its end ("Finish the game"), a ring beside Play says how far the story is for the profile shown, such as "Story 50%, Chapter 3 done", or Finished; click it for the Achievements tab. Many games keep the words of their chapter achievements hidden: turn on **Story progress** in Settings, Online to read them from Steam's public list (only the game's Steam id is sent; off by default). A game whose achievements don't mark its story shows nothing, and one that marks only its endings shows Finished once one is reached.
+
 ## 2.15.1
 
 - **A game with no achievements says what's missing.** When a game's copy keeps no achievements on the PC but Lootnest knows its Steam id, its Achievements tab lists what showing your Steam account's achievements needs (Steam signed in, your Steam Web API key, the setting turned on, your Steam profile's Game details public), each lit once it's done, and says what Steam answered. Settings, Online explains the same.

@@ -150,6 +150,19 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 			}
 		}
 	}
+	// How far the story is, from the achievements that mark its chapters;
+	// Steam's public list fills in hidden ones' words when that's on.
+	a.mu.Lock()
+	story := a.cfg.Settings.StoryAch
+	a.mu.Unlock()
+	var words map[string]core.Achievement
+	if story {
+		words = a.storyWords(appID, online)
+	}
+	set.Story = core.StoryOf(core.StoryWords(set.List, words))
+	for _, ps := range set.Players {
+		ps.Story = core.StoryOf(core.StoryWords(ps.List, words))
+	}
 	achMu.Lock()
 	first := !achLogged[file+"|"+strconv.Itoa(appID)]
 	achLogged[file+"|"+strconv.Itoa(appID)] = true
@@ -333,6 +346,43 @@ func (a *App) steamSchema(appID int, online bool) []core.Achievement {
 		return nil
 	}
 	return core.ParseSteamSchema(b, appID)
+}
+
+var (
+	storyMu     sync.Mutex
+	storyFailed = map[int]bool{}
+)
+
+// storyWords is Steam's public list of a game's achievements, with the
+// words of hidden ones, kept on this PC for 30 days. Only with Story
+// progress on; online lets it ask Steam (no key: the game's id is all
+// that's sent).
+func (a *App) storyWords(appID int, online bool) map[string]core.Achievement {
+	file := filepath.Join(DataDir(), "achievements", strconv.Itoa(appID)+".public.json")
+	b, err := os.ReadFile(file)
+	fresh := err == nil && time.Since(modTime(file)) < 30*24*time.Hour
+	storyMu.Lock()
+	failed := storyFailed[appID]
+	storyMu.Unlock()
+	if !fresh && online && !failed {
+		u := "https://api.steampowered.com/IPlayerService/GetGameAchievements/v1/?language=english&appid=" + strconv.Itoa(appID)
+		if nb, ferr := fetchURL(u); ferr == nil && core.ParsePublicAchievements(nb) != nil {
+			_ = os.MkdirAll(filepath.Dir(file), 0o755)
+			_ = os.WriteFile(file, nb, 0o644)
+			b = nb
+		} else {
+			storyMu.Lock()
+			storyFailed[appID] = true // once per run
+			storyMu.Unlock()
+			if ferr != nil {
+				a.logf("Story progress for app %d: %v", appID, ferr)
+			}
+		}
+	}
+	if len(b) == 0 {
+		return nil
+	}
+	return core.ParsePublicAchievements(b)
 }
 
 // scrubKey keeps the user's key out of the log.
