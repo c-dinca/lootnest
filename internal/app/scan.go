@@ -403,9 +403,18 @@ type AddResult struct {
 	Steam  int      `json:"steam"`
 }
 
+// envFor is the Env a game's paths are read in: inside its Wine prefix on
+// Linux (core.Env.For), else a.env.
+func (a *App) envFor(prefix string) *core.Env {
+	if e, err := a.env.For(prefix); err == nil {
+		return e
+	}
+	return a.env
+}
+
 // gameFromFound turns a scan result into a game definition.
 func gameFromFound(f core.FoundGame) core.Game {
-	g := core.Game{Name: f.Name, ProcessName: f.ProcessName, PlayerArgs: map[string]string{}}
+	g := core.Game{Name: f.Name, ProcessName: f.ProcessName, PlayerArgs: map[string]string{}, Prefix: f.Prefix}
 	if f.Source == "steam" {
 		g.Launch = core.Launch{Type: "steam", AppID: f.AppID, Args: f.Args}
 	} else if f.URI != "" && core.SafeLaunchURI(f.URI) {

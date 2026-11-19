@@ -372,8 +372,9 @@ func (a *App) liveSources(cfg *core.Config) []core.LiveSource {
 		if owner == "" || cfg.Player(owner) == nil || a.activeSessionFor(g.ID) != nil {
 			continue
 		}
+		env := a.envFor(g.Prefix)
 		for _, p := range g.Paths {
-			live, err := a.env.Resolve(p.Path)
+			live, err := env.Resolve(p.Path)
 			if err != nil {
 				continue
 			}

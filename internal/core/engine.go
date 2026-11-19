@@ -67,9 +67,13 @@ type resolved struct {
 // resolveAll resolves every path of a game up front so a bad path aborts
 // before anything on disk is touched.
 func (e *Engine) resolveAll(g *Game) ([]resolved, error) {
+	env, err := e.envOf(g)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]resolved, 0, len(g.Paths))
 	for _, p := range g.Paths {
-		live, err := e.Env.Resolve(p.Path)
+		live, err := env.Resolve(p.Path)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", p.Path, err)
 		}
@@ -85,6 +89,15 @@ func (e *Engine) resolveAll(g *Game) ([]resolved, error) {
 		}
 	}
 	return out, nil
+}
+
+// envOf is the Env g's paths are read in: the Engine's, or inside the
+// game's Wine prefix on Linux (Game.Prefix).
+func (e *Engine) envOf(g *Game) (*Env, error) {
+	if e.Env == nil {
+		return nil, errors.New("no folders to read the game's paths in")
+	}
+	return e.Env.For(g.Prefix)
 }
 
 // CheckPaths validates a game's paths without touching anything.

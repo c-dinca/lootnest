@@ -91,6 +91,10 @@ type Game struct {
 	// before 1.20. Off (the default), the folder a Steam-compatible tool
 	// keeps them in is swapped with each player's profile.
 	SharedAchievements bool `json:"sharedAchievements,omitempty"`
+	// Prefix is the Wine prefix a Windows game runs in on Linux, with the
+	// Env's tokens (prefix.go); its paths are read inside it. Empty on
+	// Windows and for native games.
+	Prefix string `json:"prefix,omitempty"`
 }
 
 // UsesSteamWrapper reports whether Steam's Play button should go through

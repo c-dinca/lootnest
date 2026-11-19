@@ -86,6 +86,14 @@ func (e *Env) SuggestPaths(gameName, installDir string, appID int) []Suggestion 
 		add(e.Getenv("LOCALAPPDATA"), `AppData\Local`, 2)
 	}
 	add(e.LocalLow, `AppData\LocalLow`, 2)
+	if e.OS == "linux" {
+		// A native Linux game keeps its saves in the XDG folders.
+		data, conf := XDGDataHome(e.Home, e.Getenv), XDGConfigHome(e.Home, e.Getenv)
+		add(data, "~/.local/share", 2)
+		add(conf, "~/.config", 2)
+		add(filepath.Join(conf, "unity3d"), "~/.config/unity3d", 2)
+		add(filepath.Join(e.Home, ".local", "share", "godot", "app_userdata"), "Godot's folder", 1)
+	}
 
 	seen := map[string]bool{}
 	var out []Suggestion
