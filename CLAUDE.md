@@ -206,7 +206,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.13.0, beta)
+## Where things stand (2.14.0, beta)
 
 These shipped recently, newest last:
 
@@ -1812,7 +1812,7 @@ These shipped recently, newest last:
   Autostart: `~/.config/autostart/lootnest.desktop`. CI installs
   libsecret-1-dev and dbus and runs the desk test in `dbus-run-session`.
   Next: L3, games and the swap on Linux, when the owner says.
-- **Unreleased, moves for Hydra and offline games** (the owner, 19 Nov
+- **2.14.0, moves for Hydra and offline games** (the owner, 19 Nov
   2026: no way to move Red Dead Redemption 2, from Hydra and kept
   offline). `MoveGamePlan` takes source `hydra` (Hydra can't move a game;
   the user points Hydra at the new program, and the entry stays added with
@@ -1820,7 +1820,7 @@ These shipped recently, newest last:
   `FirewallMoveScript` takes away the old tag's rules and blocks the new
   folder's programs under the new key (`offlineMoved`, `runFirewall`).
   Harness `?kept=1`.
-- **Unreleased, achievements marked by hand** (the owner, 19 Nov 2026,
+- **2.14.0, achievements marked by hand** (the owner, 19 Nov 2026,
   variant A of two: RDR2 outside Steam keeps no achievements on the PC).
   `core/handach.go`: `hand-achievements.json` (Library key -> `HandGame`
   {AppID, Off, Marks profile -> id -> time}; in backups, moved by
@@ -1833,7 +1833,9 @@ These shipped recently, newest last:
   on; off keeps the marks), `ps_markAch`; `achievements()` uses it only
   when nothing on the PC has the game's (`achAppID` shared). UI: Mark them
   by hand under None found, `achRow(..., mark)` adds `.ach-mark`, Stop
-  marking by hand. Harness `?hand=1`.
+  marking by hand. Harness `?hand=1`. The owner asked for 2.14.0 as
+  their release (19 Nov) with both; the Linux work above ships in no
+  release yet (releases carry only the Windows installer and exe).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
