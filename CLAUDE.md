@@ -1812,6 +1812,28 @@ These shipped recently, newest last:
   Autostart: `~/.config/autostart/lootnest.desktop`. CI installs
   libsecret-1-dev and dbus and runs the desk test in `dbus-run-session`.
   Next: L3, games and the swap on Linux, when the owner says.
+- **Unreleased, moves for Hydra and offline games** (the owner, 19 Nov
+  2026: no way to move Red Dead Redemption 2, from Hydra and kept
+  offline). `MoveGamePlan` takes source `hydra` (Hydra can't move a game;
+  the user points Hydra at the new program, and the entry stays added with
+  its Steam id until then); a game kept offline moves, then one elevated
+  `FirewallMoveScript` takes away the old tag's rules and blocks the new
+  folder's programs under the new key (`offlineMoved`, `runFirewall`).
+  Harness `?kept=1`.
+- **Unreleased, achievements marked by hand** (the owner, 19 Nov 2026,
+  variant A of two: RDR2 outside Steam keeps no achievements on the PC).
+  `core/handach.go`: `hand-achievements.json` (Library key -> `HandGame`
+  {AppID, Off, Marks profile -> id -> time}; in backups, moved by
+  `RekeyGame`), `ParseGameAchievements` reads Steam's public
+  `IPlayerService/GetGameAchievements/v1` (no key: names, descriptions,
+  icons, hidden, percentages), `HandSet` gives every profile its own set
+  (`Achievement.Seq` keeps the game's order). `app/handach.go`:
+  `handList` (kept in `achievements/public-<appid>.json`, asked again
+  after 30 days only with the page open), `ps_handAch` (fetch first, then
+  on; off keeps the marks), `ps_markAch`; `achievements()` uses it only
+  when nothing on the PC has the game's (`achAppID` shared). UI: Mark them
+  by hand under None found, `achRow(..., mark)` adds `.ach-mark`, Stop
+  marking by hand. Harness `?hand=1`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
