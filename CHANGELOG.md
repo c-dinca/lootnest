@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Add an Android TV.** Settings, TV has **Add an Android TV**, for Android TV, Google TV and Fire TV (Sony, TCL, Philips, Chromecast with Google TV, Fire TV sticks and others). Turn on network debugging in the TV's Developer options (on a Fire TV, ADB debugging), and Lootnest finds the TV, installs Lootnest for TV on it, opens it and pairs it, with nothing to type on the TV: the TV only asks once to allow this computer. Lootnest for TV opens Lootnest's TV mode on your PC, wakes the PC if it sleeps, and comes back to its own screen after a stream with Play, Settings and Quit. Lootnest talks to the TV only on your network, with its own key, kept encrypted. Installing waits for the first release of the Android app.
+- **Add an Android TV.** Settings, TV has **Add an Android TV**, for Android TV, Google TV and Fire TV (Sony, TCL, Philips, Chromecast with Google TV, Fire TV sticks and others). Turn on network debugging in the TV's Developer options (on a Fire TV, ADB debugging), and Lootnest finds the TV, installs Lootnest for TV on it, opens it and pairs it, with nothing to type on the TV: the TV only asks once to allow this computer. Lootnest for TV opens Lootnest's TV mode on your PC, wakes the PC if it sleeps, and comes back to its own screen after a stream with Play, Settings and Quit. Lootnest talks to the TV only on your network, with its own key, kept encrypted. It installs Lootnest for TV 1.0.0.
 
 ## 2.12.0
 

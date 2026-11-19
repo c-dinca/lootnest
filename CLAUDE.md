@@ -1653,8 +1653,9 @@ These shipped recently, newest last:
   (`stream`, WRTE waits for OKAY), `Shell`, `Push` (sync SEND/DATA/DONE),
   `Device`. The TV asks once to allow the computer (`ErrADBNotAllowed`,
   `adbTimeToAllow` 90 s). `core/androidtv.go`: `AndroidAppPinned`
-  (empty until the fork's first release; `AndroidAppReady` gates the
-  button), `InstallAndroidApp` (push to /data/local/tmp, `pm install -r`,
+  (Lootnest for TV 1.0.0, c-dinca/lootnest-tv-android's first release,
+  signed in CI with the owner's key from two secrets;
+  `AndroidAppReady` gates the button), `InstallAndroidApp` (push to /data/local/tmp, `pm install -r`,
   `InstallAnswer`), `LaunchAndroidApp` (`am start -S -n
   com.lootnest.tv/com.limelight.LootnestActivity --es host --es pairPin`,
   both checked before the shell), `AndroidAppLog` (logcat tag
