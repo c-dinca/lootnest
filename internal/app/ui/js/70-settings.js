@@ -95,6 +95,7 @@
           ${sw("gameDetails", "Game details", "Sends a game's Steam id to Steam when you open its page.", s.gameDetails)}
           ${sw("hardwareReviews", "Reviews from players with your card", "Sends your graphics card's name and a close card's to Steam, for Will it run.", s.hardwareReviews)}
           ${sw("achRarity", "How rare achievements are", "Sends a game's Steam id to Steam.", s.achRarity)}
+          ${sw("steamAccountAch", "Achievements from my Steam account", s.steamApiKey ? "For games you also own on Steam, when nothing on this PC has them. Sends your Steam Web API key, account id and the game's Steam id to Steam; the profile's Game details must be public." : "Needs your Steam Web API key, below.", s.steamAccountAch)}
           ${sw("downloadCovers", "Download covers and artwork", "Sends a game's name or Steam id to Steam and SteamGridDB.", s.downloadCovers)}`)
         + sub("itch.io", "", itchRows())
         + sub("GOG", "", gogRows())

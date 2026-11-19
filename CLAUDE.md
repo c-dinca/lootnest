@@ -1846,6 +1846,20 @@ These shipped recently, newest last:
   72-storage.js, shared by a folder game's move and Game Mover's;
   `moveSays` gives progress events the name and both folders. Harness
   `?move=hold` keeps a move going at about 160 MB/s.
+- **Unreleased, achievements that come by themselves** (the owner, 19
+  Nov 2026, after marking by hand was taken out: "sync automatically, not
+  a button"; both of the two ways offered). `achAfterPlay`
+  (app/achauto.go) reads a game's achievements again 8 s after it closes
+  (`tick`'s `downFound` for Library games, `finishSession` for games with
+  profiles) and sends them with `after`; the page asks again when it's
+  opened after a minute (`achAsked` is a Map of times, `ACH_AGAIN`).
+  `Settings.SteamAccountAch` (off by default, needs the Steam Web API
+  key): when nothing on the PC has a game's achievements,
+  `accountAchievements` asks `ISteamUserStats/GetPlayerAchievements`
+  (`core.SteamID64` from the userdata folder, `ParsePlayerAchievements`,
+  `ErrSteamPrivate` when Game details aren't public), kept an hour in
+  `achievements/account-<sid>-<appid>.json`, made stale after a play
+  (`accountStale`), pictures from the key's schema (`CompleteList`).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

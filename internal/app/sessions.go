@@ -309,6 +309,9 @@ func (a *App) tick() {
 		return
 	}
 	upFound, downFound := a.foundTick(procs)
+	for _, k := range downFound {
+		go a.achAfterPlay(k) // its achievements, read again once it's closed
+	}
 	state := a.store.LoadState()
 	changed := false
 	type finish struct {
@@ -451,7 +454,8 @@ func (a *App) tick() {
 
 func (a *App) finishSession(cfg *core.Config, g *core.Game, playerID string) {
 	defer a.stepsAfter("game:"+g.ID, true)
-	time.Sleep(3 * time.Second) // let the game and Steam finish writing
+	defer func() { go a.achAfterPlay("game:" + g.ID) }() // after the files are saved back
+	time.Sleep(3 * time.Second)                          // let the game and Steam finish writing
 	// The build that ran, if it updated as it started, so the next start
 	// doesn't take it for a new update.
 	_, _ = a.store.NoteBuild("game:"+g.ID, a.profileBuild(g))

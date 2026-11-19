@@ -45,20 +45,7 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 	if strings.EqualFold(filepath.Ext(dir), ".exe") {
 		dir = filepath.Dir(dir) // the game's exe was given
 	}
-	if g != nil && appID <= 0 {
-		appID = core.GameAppID(g)
-	}
-	if appID <= 0 && g == nil {
-		if f, ok := a.foundByKey(key); ok {
-			appID = f.SteamID // the id another launcher (Hydra) knows
-		}
-	}
-	if appID <= 0 {
-		appID = core.FolderAppID(dir)
-	}
-	if appID <= 0 {
-		appID = knownStoreAppID(name)
-	}
+	appID = a.achAppID(key, g, appID, dir, name)
 	if appID <= 0 {
 		a.logAchOnce("none|"+key, "Achievements for %s: no Steam app id next to the game, so none to read", name)
 		return nil
@@ -74,6 +61,14 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 		list = core.LocalSchema(dir)
 	}
 	unlocks, file := a.env.PCUnlocks(appID)
+	// Nothing on this PC has them: the user's own Steam account, for a
+	// game they also own there (Settings, Online; off by default).
+	if len(list) == 0 && total == 0 && unlocks == nil {
+		if acc := a.accountAchievements(appID, online); len(acc) > 0 {
+			list, total = acc, len(acc)
+			a.logAchOnce("account|"+strconv.Itoa(appID), "Achievements for %s (app %d): from the Steam account", name, appID)
+		}
+	}
 	// Steam's library cache keeps only some of a game's achievements, and a
 	// game in a folder may have only their ids: Steam's schema fills in the
 	// rest, when the user gave a Steam Web API key.
@@ -166,6 +161,27 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 		a.logf("Achievements for %s (app %d): %d of %d, from %s", name, appID, set.Unlocked, set.Total, from)
 	}
 	return set
+}
+
+// achAppID is the Steam app id of a game's achievements: the one given,
+// else its launch's, the one another launcher (Hydra) knows, one beside
+// the game's files, or one looked up before by name for its cover.
+func (a *App) achAppID(key string, g *core.Game, appID int, dir, name string) int {
+	if g != nil && appID <= 0 {
+		appID = core.GameAppID(g)
+	}
+	if appID <= 0 && g == nil {
+		if f, ok := a.foundByKey(key); ok {
+			appID = f.SteamID
+		}
+	}
+	if appID <= 0 {
+		appID = core.FolderAppID(dir)
+	}
+	if appID <= 0 {
+		appID = knownStoreAppID(name)
+	}
+	return appID
 }
 
 // apiSetSharedAchievements chooses whether a game's achievements are each

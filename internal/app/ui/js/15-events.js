@@ -70,6 +70,7 @@
         break;
       case "achievements":
         S.ach[ev.key] = ev.set || null;
+        if (ev.after) { achAsked.set(ev.key, Date.now()); S.allAch = null; if (S.view === "achievements") render(); } // read again after the game closed
         if (S.view === "game") render();
         if (BP.on) bpSoon();
         if (BP.tvMenu) drawTVMenu(); // the Home screen over a game shows them too

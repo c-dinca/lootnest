@@ -1,0 +1,123 @@
+package app
+
+import (
+	"errors"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"lootnest/internal/core"
+)
+
+// ---------------------------------------------------------------------------
+// Achievements that find their own way to the page: read again by
+// themselves after a game closes (a tool writes its file at the first
+// unlock, Steam its cache when the game ends), and from the user's own
+// Steam account for games they also own there (Settings, Online).
+// ---------------------------------------------------------------------------
+
+// accountAge is how long the account's answer for a game is kept before
+// Steam is asked again (only when the game's page is open, or after it
+// was played).
+const accountAge = time.Hour
+
+var (
+	accountMu    sync.Mutex
+	accountStale = map[int]bool{} // played since it was asked
+	accountTried = map[int]time.Time{}
+)
+
+// accountAchievements is a game's achievements on the user's own Steam
+// account, unlocked ones with their time, or nil: when it's off, there's no
+// key or account, or Steam has none for this account. online lets it ask
+// Steam; otherwise only the answer kept on this PC is used.
+func (a *App) accountAchievements(appID int, online bool) []core.Achievement {
+	a.mu.Lock()
+	on, key := a.cfg.Settings.SteamAccountAch, strings.TrimSpace(revealSecret(a.cfg.Settings.SteamAPIKey))
+	a.mu.Unlock()
+	if !on || key == "" || appID <= 0 || a.env.SteamUser == nil {
+		return nil
+	}
+	u, err := a.env.SteamUser()
+	if err != nil {
+		return nil
+	}
+	sid := core.SteamID64(u)
+	if sid == "" {
+		return nil
+	}
+	file := filepath.Join(DataDir(), "achievements", "account-"+sid+"-"+strconv.Itoa(appID)+".json")
+	b, err := os.ReadFile(file)
+	accountMu.Lock()
+	stale := err != nil || time.Since(modTime(file)) > accountAge || accountStale[appID]
+	recent := time.Since(accountTried[appID]) < time.Minute
+	if stale && online && !recent {
+		accountTried[appID] = time.Now()
+		delete(accountStale, appID)
+	}
+	accountMu.Unlock()
+	if stale && online && !recent {
+		q := "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?l=english&appid=" + strconv.Itoa(appID) + "&steamid=" + sid + "&key=" + url.QueryEscape(key)
+		nb, ferr := fetchURL(q)
+		switch {
+		case ferr != nil:
+			a.logAchOnce("accountfail|"+strconv.Itoa(appID), "Achievements for app %d from the Steam account: %s (is the profile's Game details setting Public?)", appID, scrubKey(ferr.Error(), key))
+		case len(nb) > 0:
+			// Kept whatever Steam said, "none" included, so it isn't asked
+			// again for an hour.
+			_ = os.MkdirAll(filepath.Dir(file), 0o755)
+			_ = os.WriteFile(file, nb, 0o644)
+			b = nb
+			if _, perr := core.ParsePlayerAchievements(nb); perr != nil && !errors.Is(perr, core.ErrSteamNoStats) {
+				a.logAchOnce("accountfail|"+strconv.Itoa(appID), "Achievements for app %d from the Steam account: %v", appID, perr)
+			}
+		}
+	}
+	if len(b) == 0 {
+		return nil
+	}
+	list, err := core.ParsePlayerAchievements(b)
+	if err != nil {
+		return nil
+	}
+	// Pictures (and hidden flags) come from the game's list, which the same
+	// key fetches.
+	if schema := a.steamSchema(appID, online); len(schema) > 0 {
+		list = core.CompleteList(list, schema)
+	}
+	return list
+}
+
+// achAfterPlay reads a game's achievements again once it has closed, and
+// sends them, so new unlocks show without the page being opened again.
+func (a *App) achAfterPlay(key string) {
+	time.Sleep(8 * time.Second) // let the game, a tool or Steam finish writing
+	var g *core.Game
+	var appID int
+	var dir, name string
+	if id, ok := strings.CutPrefix(key, "game:"); ok {
+		a.mu.Lock()
+		if gg := a.cfg.Game(id); gg != nil {
+			c := *gg
+			g, appID, dir, name = &c, gg.Launch.AppID, gg.Launch.Exe, gg.Name
+		}
+		a.mu.Unlock()
+		if g == nil {
+			return
+		}
+	} else if f, ok := a.foundByKey(key); ok {
+		appID, dir, name = f.AppID, f.Dir, f.Name
+	} else {
+		return
+	}
+	if id := a.achAppID(key, g, appID, dir, name); id > 0 {
+		accountMu.Lock()
+		accountStale[id] = true
+		accountMu.Unlock()
+	}
+	a.emit("achievements", map[string]any{"key": key, "set": a.achievements(key, appID, dir, name, true), "after": true})
+}
