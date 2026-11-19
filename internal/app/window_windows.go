@@ -57,3 +57,6 @@ func (a *App) closeWindow() { plat.PostMessage(a.hwnd, plat.WM_CLOSE, 0, 0) }
 
 // platWindow: on Windows, a.hwnd is the window.
 type platWindow struct{}
+
+// trayReady: on Windows the tray's menu is made when it's clicked (hook).
+func (a *App) trayReady() {}

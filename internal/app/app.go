@@ -333,6 +333,7 @@ func Run(opt Options) error {
 		}
 	})
 	a.tray.Add(Name)
+	a.trayReady()
 	if len(recovered) > 0 {
 		names := make([]string, len(recovered))
 		a.mu.Lock()
@@ -497,7 +498,14 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 }
 
 func (a *App) trayMenu() {
+	items, ids := a.trayItems()
+	a.trayChoose(plat.ShowMenu(a.hwnd, items), ids)
+}
+
+// trayItems are the tray menu's lines, and the games its Play lines start.
+func (a *App) trayItems() ([]plat.MenuItem, []string) {
 	a.mu.Lock()
+	defer a.mu.Unlock()
 	items := []plat.MenuItem{}
 	for _, s := range a.sessions {
 		if s.Phase == "playing" {
@@ -527,9 +535,12 @@ func (a *App) trayMenu() {
 	for i, g := range games {
 		ids[i] = g.ID
 	}
-	a.mu.Unlock()
+	return items, ids
+}
 
-	switch id := plat.ShowMenu(a.hwnd, items); {
+// trayChoose does what the tray menu's line id says.
+func (a *App) trayChoose(id int, ids []string) {
+	switch {
 	case id == 1:
 		a.show()
 	case id == 2:

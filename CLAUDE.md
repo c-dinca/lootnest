@@ -47,8 +47,9 @@ What makes it different, and the direction to keep pushing:
 ## Stack and layout
 
 - Go (no cgo) plus a WebView2 window (`third_party/go-webview2`, modified).
-  On Linux, cgo with a WebKitGTK 4.1 window (`internal/webkit`); build it
-  with `./build.sh linux` (needs libwebkit2gtk-4.1-dev).
+  On Linux, cgo with a WebKitGTK 4.1 window (`internal/webkit`) and the
+  desktop's dialogs, keyring and tray (`internal/desk`); build it with
+  `./build.sh linux` (needs libwebkit2gtk-4.1-dev and libsecret-1-dev).
   The UI is plain HTML, CSS and JS with no build step, embedded with
   `go:embed` and inlined at start with a CSP nonce.
 - `internal/core`: platform-neutral logic, with tests. It covers config,
@@ -141,7 +142,8 @@ What makes it different, and the direction to keep pushing:
   - `GOOS=linux go vet ./internal/app` (and `go run ./tools/platgen`
     after changing `internal/win`; CI fails when plat is out of date).
     On Linux with WebKitGTK installed, also `go vet ./internal/webkit
-    ./cmd/lootnest` and `xvfb-run -a go test ./internal/webkit/`.
+    ./internal/desk ./cmd/lootnest`, `xvfb-run -a go test ./internal/webkit/`
+    and `xvfb-run -a dbus-run-session -- go test ./internal/desk/`.
   - `GOOS=windows go build ./cmd/lootnest`
   - `node tools/checkjs.mjs` (joins `ui/js` and checks the syntax)
 
@@ -1784,8 +1786,32 @@ These shipped recently, newest last:
   `DiskSpace`, `CPUName`, `TotalRAM`, `ProcessNames` (/proc, Wine's
   `C:\...\x.exe` command lines too). CI builds `lootnest-linux`, runs
   the webkit test under xvfb-run and starts the app once, failing when
-  its log lacks "Interface loaded". Next: L2b, the tray, keys in the
-  Secret Service, the Trash, file pickers, dialogs and notifications.
+  its log lacks "Interface loaded".
+- **Unreleased, Linux L2b, the desktop** (`internal/desk`, cgo over GTK
+  and libsecret, called from plat's Linux files). `OnMain` runs GTK work
+  on the main thread from any goroutine (the main goroutine's thread id
+  is noted at package init; others go through `g_idle_add` and wait).
+  Dialogs (`MessageBox` maps MB_ flags and answers with Windows' IDs,
+  `desk.Message`), the desktop's own picker (`Browse`,
+  GtkFileChooserNative, so the portal where there is one), notifications
+  over D-Bus (`org.freedesktop.Notifications`; a note over a game,
+  `ShowToast`, is a notification on Linux), the clipboard (text and PNG),
+  the window's icon (`SetParent`, `desk/icon.png` at 128 px, written to
+  `~/.local/share/lootnest/icons`). Keys (`Protect`/`Unprotect`,
+  secrets_linux.go): AES-256-GCM, "LNX1" + nonce + sealed, with a key kept
+  in the Secret Service (`lootnest-secrets`), else in `secret.key` (0600)
+  when there's no keyring; a key in that file keeps opening what it made.
+  The tray: Ayatana AppIndicator loaded with dlopen (no build or run
+  dependency; no tray without it), menu-only, made again when its lines
+  change (`trayReady`, every 2 s); `trayMenu` is now `trayItems` and
+  `trayChoose`, shared with Windows. Closing goes to the tray when Close
+  to tray is on and the tray shows (`onClose`). The Trash
+  (trash_linux.go): the freedesktop spec, the home Trash or the drive's
+  own (`.Trash/$uid` when sticky, else `.Trash-$uid`), the .trashinfo
+  written first with O_EXCL and taken back when the move fails.
+  Autostart: `~/.config/autostart/lootnest.desktop`. CI installs
+  libsecret-1-dev and dbus and runs the desk test in `dbus-run-session`.
+  Next: L3, games and the swap on Linux, when the owner says.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
