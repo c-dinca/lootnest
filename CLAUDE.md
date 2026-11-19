@@ -206,7 +206,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.16.1, beta)
+## Where things stand (2.16.2, beta)
 
 These shipped recently, newest last:
 
@@ -1934,7 +1934,7 @@ These shipped recently, newest last:
   then `bpAllTile` (opens the Library tab). Harness `?fresh=1` (no recent
   plays), shots `tv-fresh`, `tv-fresh-400`.
   Released as 2.16.1 at the owner's ask (19 Nov).
-- **Unreleased, TV fixes of 19 Nov** (the owner: the TV app's sound
+- **2.16.2, TV fixes of 19 Nov** (the owner: the TV app's sound
   late, its home screen stuck after too many presses left or right,
   words over its keys, no way out of TV mode on the PC when it stuck,
   no keyboard for Stremio's search, Stremio's "streaming not working").
@@ -1954,6 +1954,7 @@ These shipped recently, newest last:
   sound more than 60 ms ahead of its low (direct submit never dropped
   any). Android 1.0.1 (c-dinca/lootnest-tv-android#2): the same layout
   and focus (`row()`), the granted AudioTrack logged. docs/TESTING.md 46.
+  Both pinned; released as 2.16.2 without asking, as a TV fix (15 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
