@@ -100,10 +100,6 @@ type BrowseOptions struct {
 	Start   string
 }
 
-func CPUName() (r0 string) {
-	return
-}
-
 func CaptureScreen(hwnd uintptr) (r0 *image.RGBA, err error) {
 	err = ErrUnsupported
 	return
@@ -143,27 +139,7 @@ func DIBFromImage(img image.Image) (r0 []byte) {
 	return
 }
 
-func Desktop() (r0 string) {
-	return
-}
-
-func DiskFree(path string) (r0 int64) {
-	return
-}
-
-func DiskSpace(path string) (r0 int64, r1 int64) {
-	return
-}
-
 func Displays() (r0 [][4]int) {
-	return
-}
-
-func Documents() (r0 string) {
-	return
-}
-
-func Downloads() (r0 string) {
 	return
 }
 
@@ -271,10 +247,6 @@ func LoadAppIcon(size int) (r0 uintptr) {
 	return
 }
 
-func LocalLow() (r0 string) {
-	return
-}
-
 func LongPath(p string) (r0 string) {
 	return
 }
@@ -342,10 +314,6 @@ func (*PadReader) Read(buf []byte) (r0 int, err error) {
 
 func (*PadReader) Close() {}
 
-func Pictures() (r0 string) {
-	return
-}
-
 func PlaceBehind(hwnd uintptr, front uintptr) {}
 
 func PlaySound(b []byte) {}
@@ -359,11 +327,6 @@ func PrimaryDisplay() (r0 [4]int) {
 }
 
 func ProcessAlive(pid uint32) (r0 bool) {
-	return
-}
-
-func ProcessNames() (r0 map[string]bool, err error) {
-	err = ErrUnsupported
 	return
 }
 
@@ -423,11 +386,6 @@ func ResolveShortcuts(lnks []string) (r0 map[string]string) {
 	return
 }
 
-func RevealInExplorer(p string) (err error) {
-	err = ErrUnsupported
-	return
-}
-
 func RunAndWait(owner uintptr, exe string, args string, dir string) (r0 uint32, err error) {
 	err = ErrUnsupported
 	return
@@ -449,10 +407,6 @@ type RunningApp struct {
 }
 
 func RunningApps() (r0 []RunningApp) {
-	return
-}
-
-func SavedGames() (r0 string) {
 	return
 }
 
@@ -490,11 +444,6 @@ func SetForeground(hwnd uintptr) {}
 func SetFullscreen(hwnd uintptr, on bool) {}
 
 func SetWindowIcons(hwnd uintptr, dpi int) {}
-
-func ShellOpen(target string) (err error) {
-	err = ErrUnsupported
-	return
-}
 
 func ShellThumbnail(path string, size int) (r0 *image.RGBA, err error) {
 	err = ErrUnsupported
@@ -535,11 +484,6 @@ func SmallIconSize(dpi int) (r0 int) {
 	return
 }
 
-func StartDetached(exe string, args string, dir string) (err error) {
-	err = ErrUnsupported
-	return
-}
-
 func StartElevated(owner uintptr, exe string, args string, dir string) (err error) {
 	err = ErrUnsupported
 	return
@@ -561,10 +505,6 @@ func StartOutsideJob(exe string, args string, dir string) (r0 bool, err error) {
 
 func StartTracked(exe string, args string, dir string) (r0 uint32, err error) {
 	err = ErrUnsupported
-	return
-}
-
-func SteamInfo() (r0 string, r1 uint32) {
 	return
 }
 
@@ -603,10 +543,6 @@ type TopWindow struct {
 }
 
 func TopWindows() (r0 []TopWindow) {
-	return
-}
-
-func TotalRAM() (r0 int64) {
 	return
 }
 
@@ -660,10 +596,6 @@ func (*ViGEmPad) Submit(report [12]byte) (err error) {
 func (*ViGEmPad) Close() {}
 
 func ViGEmPresent() (r0 bool) {
-	return
-}
-
-func Videos() (r0 string) {
 	return
 }
 

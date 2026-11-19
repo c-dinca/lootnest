@@ -653,7 +653,7 @@
   // Asked once: keep Lootnest up to date by itself, or not.
   function updatesPrompt() {
     const s = cfg().settings;
-    if (s.updatesAsked || s.checkUpdates || S.update.available) return "";
+    if (s.updatesAsked || s.checkUpdates || S.update.available || S.d.platform === "linux") return "";
     return banner("Keep Lootnest up to date?", "Lootnest checks GitHub every few hours, tells you with a notification when a new version is out, and installs it while it's in the tray and no game is running. Nothing about you or your games is sent.",
       bBtn("ghost", 'data-action="updates-no"', "Not now") + bBtn("primary", 'data-action="updates-yes"', "Keep it up to date"));
   }

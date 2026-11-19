@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -36,6 +37,9 @@ func updatesDir() string { return filepath.Join(DataDir(), "updates") }
 // checkUpdate asks GitHub for the latest release and reports it to the UI
 // with an "update" event. manual is true for "Check now".
 func (a *App) checkUpdate(manual bool) {
+	if runtime.GOOS != "windows" {
+		return // a release is a Windows installer
+	}
 	updateMu.Lock()
 	lastCheck = time.Now()
 	updateMu.Unlock()
@@ -91,6 +95,9 @@ func (a *App) checkIfStale() {
 // automatically" is on, and with "Install updates by themselves" on,
 // installs a newer version once the window is in the tray and no game runs.
 func (a *App) watchUpdates() {
+	if runtime.GOOS != "windows" {
+		return // releases are Windows installers (docs/ROADMAP.md, section 9: Linux builds come in L3)
+	}
 	_ = os.RemoveAll(updatesDir()) // the installer of the last update, if any
 	time.Sleep(20 * time.Second)
 	for {
@@ -132,6 +139,9 @@ func (a *App) gameRunning() string {
 // quits so the installer can replace Lootnest. Progress and errors arrive as
 // "updateStep" events.
 func (a *App) apiInstallUpdate() error {
+	if runtime.GOOS != "windows" {
+		return errors.New("Lootnest for Linux doesn't update itself yet.")
+	}
 	updateMu.Lock()
 	rel, busy := updateFound, updateBusy
 	if rel.SetupURL != "" && !busy {

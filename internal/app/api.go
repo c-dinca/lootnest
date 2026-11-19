@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -262,9 +263,12 @@ type SteamStatus struct {
 }
 
 type AppState struct {
-	Version   string                                `json:"version"`
-	Stage     string                                `json:"stage,omitempty"` // "beta"
-	Safe      bool                                  `json:"safe,omitempty"`  // started in safe mode
+	Version string `json:"version"`
+	Stage   string `json:"stage,omitempty"` // "beta"
+	Safe    bool   `json:"safe,omitempty"`  // started in safe mode
+	// Platform is runtime.GOOS: "linux" hides what only Windows has yet
+	// (updates of Lootnest itself).
+	Platform  string                                `json:"platform"`
 	Config    *core.Config                          `json:"config"`
 	FirstRun  bool                                  `json:"firstRun"`
 	LoadError string                                `json:"loadError,omitempty"`
@@ -296,7 +300,7 @@ func (a *App) apiState() AppState {
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	cfg.Settings.ItchKey, cfg.Settings.GogToken = "", "" // the page needs only the user names, never a key or token
-	st := AppState{Version: Version, Stage: Stage, Safe: a.safe, Config: cfg, FirstRun: a.firstRun, LoadError: a.loadErr, DataDir: DataDir(), Colors: core.PlayerColors}
+	st := AppState{Version: Version, Stage: Stage, Safe: a.safe, Platform: runtime.GOOS, Config: cfg, FirstRun: a.firstRun, LoadError: a.loadErr, DataDir: DataDir(), Colors: core.PlayerColors}
 	a.mu.Unlock()
 	st.Active = a.store.LoadState()
 	st.Sessions = a.sessionsSnapshot()

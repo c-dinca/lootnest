@@ -69,10 +69,19 @@ jobs:
       # internal/plat, whose generated files must match internal/win.
       - name: Linux build of the app
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libwebkit2gtk-4.1-dev xvfb >/dev/null
           go run ./tools/platgen
           git diff --exit-code -- internal/plat || { echo "::error::internal/plat is out of date with internal/win: run go run ./tools/platgen"; exit 1; }
-          GOOS=linux go vet ./internal/app ./internal/plat ./tools/platgen
-          go test -count=1 ./internal/app/
+          go vet ./internal/app ./internal/plat ./internal/webkit ./cmd/lootnest ./tools/platgen
+          go test -count=1 ./internal/app/ ./internal/plat/
+          xvfb-run -a go test -count=1 ./internal/webkit/
+          go build -o lootnest-linux ./cmd/lootnest
+          # The real app once: its page must load and call back into Go.
+          home="$(mktemp -d)"
+          HOME="$home" timeout 30 xvfb-run -a ./lootnest-linux || true
+          cat "$home/.local/share/lootnest/lootnest.log"
+          grep -q "Interface loaded" "$home/.local/share/lootnest/lootnest.log" || { echo "::error::the Linux window didn't load its page"; exit 1; }
 
       - name: Is VERSION a new release?
         id: newver

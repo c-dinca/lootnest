@@ -40,6 +40,9 @@ func LegacyInstallDir() string { return filepath.Join(localAppData(), "Programs"
 // DataDir is %LOCALAPPDATA%\Lootnest. Until PlaySwap's folder has been moved
 // there (MigrateLegacyData), it is PlaySwap's folder.
 func DataDir() string {
+	if d := systemDataDir(); d != "" {
+		return d // Linux: env_linux.go
+	}
 	dir := filepath.Join(localAppData(), Name)
 	old := filepath.Join(localAppData(), LegacyName)
 	if !dirExists(dir) && dirExists(old) {

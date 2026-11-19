@@ -47,3 +47,13 @@ func (a *App) openWindow(opt Options, dpi int, scale func(int) int) error {
 	a.taskbarCreated = plat.RegisterWindowMessage("TaskbarCreated")
 	return nil
 }
+
+// present brings the window up, in front.
+func (a *App) present() { plat.Present(a.hwnd) }
+
+// closeWindow closes the window, which ends Run (hook lets it through once
+// a.quitting is set).
+func (a *App) closeWindow() { plat.PostMessage(a.hwnd, plat.WM_CLOSE, 0, 0) }
+
+// platWindow: on Windows, a.hwnd is the window.
+type platWindow struct{}
