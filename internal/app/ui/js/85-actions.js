@@ -1,4 +1,13 @@
   // --------------------------------------------------------------- actions --
+  // Folders with games (Library, Sources): saved, then looked in at once.
+  async function saveGameDirs(list) {
+    const s = JSON.parse(JSON.stringify(cfg().settings));
+    s.gameDirs = list;
+    try { await api.saveSettings({ settings: s, autostart: S.d.autostart }); } catch (e) { toast(errText(e), "error"); return; }
+    await refresh();
+    actions.rescan();
+    renderOverlay();
+  }
   const actions = {
     nav(el, ev) {
       if (S.view === "edit" && !confirmLeaveEdit()) return;
@@ -1318,6 +1327,12 @@
     },
     sources() { S.sources = null; S.dialog = { kind: "sources" }; renderOverlay(); focusOverlay(); loadSources(); },
     "sources-rescan"() { actions.rescan(); renderOverlay(); },
+    async "gamedir-add"() {
+      const r = await browse("gameDir", "");
+      if (r.error) toast(r.error, "error");
+      if (r.path) await saveGameDirs((cfg().settings.gameDirs || []).concat(r.path));
+    },
+    async "gamedir-remove"(el) { await saveGameDirs((cfg().settings.gameDirs || []).filter((d) => d !== el.dataset.path)); },
     rescan() { S.rescanning = new Set((S.found.games || []).map((f) => f.key)); S.found = { scanning: !(S.found.games || []).length, refreshing: true, games: S.found.games || [], groups: S.found.groups || [] }; render(); api.scan(); },
     async "add-all"() {
       const keys = (S.found.games || []).filter((f) => f.ready).map((f) => f.key);

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"lootnest/internal/core"
@@ -107,11 +108,52 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	return list, core.SourceChecks(list, installed, errs)
 }
 
+var (
+	userDirsMu   sync.Mutex
+	userGameDirs []string
+)
+
+// setUserGameDirs notes the folders the user said hold games
+// (Settings.GameDirs), for gameFolders; set at every scan's start.
+func setUserGameDirs(dirs []string) {
+	userDirsMu.Lock()
+	userGameDirs = append([]string{}, dirs...)
+	userDirsMu.Unlock()
+}
+
+// cleanGameDirs keeps the folders given that are whole paths, once each,
+// up to 20.
+func cleanGameDirs(dirs []string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, d := range dirs {
+		d = strings.TrimSpace(d)
+		if d == "" || !filepath.IsAbs(d) {
+			continue
+		}
+		d = filepath.Clean(d)
+		if k := strings.ToLower(d); !seen[k] && len(out) < 20 {
+			seen[k] = true
+			out = append(out, d)
+		}
+	}
+	return out
+}
+
 // gameFolders lists the folders the scan looks inside (roots) and the
 // folders that hold games but are not games themselves (containers).
 func gameFolders(env *core.Env) (roots, containers []string) {
+	// The user's own first: one may be a game itself (core.ScanFolders),
+	// so they aren't containers.
+	userDirsMu.Lock()
+	for _, d := range userGameDirs {
+		if st, err := os.Stat(d); err == nil && st.IsDir() {
+			roots = append(roots, d)
+		}
+	}
+	userDirsMu.Unlock()
 	home := os.Getenv("USERPROFILE")
-	containers = []string{home, plat.Desktop(), plat.Documents(), plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir()}
+	containers = append(containers, home, plat.Desktop(), plat.Documents(), plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir())
 	gameDirNames := []string{"Games", "Game", "Jocuri", "Gaming", "Juegos", "Jeux", "Spiele", "Epic Games", "GOG Games",
 		`GOG Galaxy\Games`, "PC Games"}
 	for _, d := range plat.FixedDrives() {
@@ -241,6 +283,7 @@ func (a *App) startScan() {
 		a.found = a.store.LoadLibrary()
 	}
 	saved := append([]core.FoundGame{}, a.found...)
+	setUserGameDirs(a.cfg.Settings.GameDirs)
 	a.mu.Unlock()
 	a.emit("found", map[string]any{"scanning": true})
 	go func() {

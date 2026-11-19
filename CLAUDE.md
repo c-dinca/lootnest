@@ -1892,6 +1892,17 @@ These shipped recently, newest last:
   `StoryWords` fills only a copy. UI `storyChip` in 62-game-blocks.js
   (ring and line in the play bar; on a page it opens the Achievements
   tab), `.gpage-story`. English words only. Not in Big Picture yet.
+- **Unreleased, games in folders of the user's own** (the owner, 19
+  Nov 2026: Tekken 8 didn't show on a friend's PC, in the Library or Big
+  Picture). `ScanFolders` took a folder of games with its own name
+  (`D:\Jocuri PC`) for one game, named after the folder (`LooksLikeGame`
+  walks two levels). `gamesFolder` tells them apart (nothing of a game at
+  its top, and two game-like folders, or one whose name isn't in
+  `gameInsides`); such a folder is looked into once more. `Settings.GameDirs`
+  (Library, Sources, Folders with games; `cleanGameDirs`, at most 20,
+  browse kind `gameDir`, `saveGameDirs` then a scan) are roots, set for
+  `gameFolders` at each scan's start (`setUserGameDirs`), not containers:
+  a chosen folder that is a game itself is added as one.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

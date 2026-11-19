@@ -478,14 +478,17 @@ func SkipShortcut(target, root string) bool {
 }
 
 // ScanFolders looks one level inside each root (and inside known game
-// folders like D:\Games) for folders that look like games.
+// folders like D:\Games) for folders that look like games. A folder of
+// games under a name of the user's own (D:\Jocuri PC\TEKKEN 8) is looked
+// into one level more (gamesFolder), rather than taken for one game.
 func ScanFolders(roots []string, containers []string) []FoundGame {
 	var out []FoundGame
 	seen := map[string]bool{}
-	for _, root := range roots {
+	var look func(root string, deeper bool)
+	look = func(root string, deeper bool) {
 		ents, err := os.ReadDir(root)
 		if err != nil {
-			continue
+			return
 		}
 		for _, e := range ents {
 			if !e.IsDir() {
@@ -502,6 +505,10 @@ func ScanFolders(roots []string, containers []string) []FoundGame {
 				continue
 			}
 			seen[strings.ToLower(dir)] = true
+			if deeper && gamesFolder(dir) {
+				look(dir, false)
+				continue
+			}
 			if !LooksLikeGame(dir) {
 				continue
 			}
@@ -513,7 +520,73 @@ func ScanFolders(roots []string, containers []string) []FoundGame {
 				Exe: launch, Dir: dir, ProcessName: proc})
 		}
 	}
+	for _, root := range roots {
+		// A folder the user chose may be a game itself (F:\TEKKEN 8).
+		if filepath.Dir(root) != root && !seen[strings.ToLower(root)] && !gamesFolder(root) && LooksLikeGame(root) {
+			if launch, proc := MainExe(root); launch != "" {
+				seen[strings.ToLower(root)] = true
+				out = append(out, FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(root)), Name: prettyName(filepath.Base(root)), Source: "folder",
+					Exe: launch, Dir: root, ProcessName: proc})
+				continue
+			}
+		}
+		look(root, true)
+	}
 	return out
+}
+
+// gameInsides are the names of folders found inside a game, which don't
+// make the game a folder of games.
+var gameInsides = map[string]bool{
+	"bin": true, "bin32": true, "bin64": true, "binaries": true, "bin_ship": true, "x64": true, "x86": true, "win64": true, "win32": true,
+	"game": true, "data": true, "content": true, "engine": true, "dlc": true, "mods": true, "plugins": true, "redist": true,
+	"_commonredist": true, "support": true, "tools": true, "launcher": true, "common": true, "base": true, "assets": true,
+	"resources": true, "paks": true, "movies": true, "sound": true, "audio": true, "localization": true, "shaders": true,
+	"system": true, "retail": true, "program": true, "app": true, "runtime": true, "update": true, "patch": true,
+}
+
+// gamesFolder tells a folder that holds games from a game: nothing of a
+// game's own at its top (no program, no engine's files, no Engine folder),
+// and either two folders inside that look like games, or one whose name
+// isn't one of a game's insides.
+func gamesFolder(dir string) bool {
+	ents, err := os.ReadDir(dir)
+	if err != nil || len(ents) > 400 {
+		return false
+	}
+	var subs []string
+	for _, e := range ents {
+		n := strings.ToLower(e.Name())
+		if !e.IsDir() {
+			if strings.HasSuffix(n, ".exe") || gameMarkerFiles[n] || gameMarkerExt[filepath.Ext(n)] {
+				return false
+			}
+			continue
+		}
+		if n == "engine" || strings.HasSuffix(n, "_data") {
+			return false
+		}
+		if !strings.HasPrefix(n, ".") && !strings.HasPrefix(n, "$") {
+			subs = append(subs, e.Name())
+		}
+	}
+	if len(subs) > 200 {
+		return false
+	}
+	games, named := 0, false
+	for _, sub := range subs {
+		if notGameDir(sub) || !LooksLikeGame(filepath.Join(dir, sub)) {
+			continue
+		}
+		games++
+		if !gameInsides[strings.ToLower(sub)] {
+			named = true
+		}
+		if games >= 2 {
+			return true
+		}
+	}
+	return games == 1 && named
 }
 
 // prettyName turns "Hollow.Knight.v1.5-GOG" style folder names into a title.
