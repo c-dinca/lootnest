@@ -283,3 +283,20 @@ func TestMergeAdded(t *testing.T) {
 		t.Fatal("the scan results must not change")
 	}
 }
+
+// A Hydra game moved to a folder the scan reads: the scan finds a plain
+// folder game under the same key, which keeps Hydra's Steam id and source.
+func TestMergeAddedKeepsMovedHydraGame(t *testing.T) {
+	found := []FoundGame{{Key: "dir:e:/games/rdr2", Name: "Red Dead Redemption 2", Source: "folder", Dir: "e:/games/rdr2"}}
+	added := []FoundGame{{Key: "dir:e:/games/rdr2", Name: "Red Dead Redemption 2", Source: "hydra", SteamID: 1174180, Dir: "e:/games/rdr2"}}
+	out := MergeAdded(found, added)
+	if len(out) != 1 || out[0].SteamID != 1174180 || out[0].Source != "hydra" || !out[0].Added {
+		t.Fatalf("%+v", out)
+	}
+	// A store's own id and source always win.
+	found = []FoundGame{{Key: "k", Source: "steam", AppID: 10}}
+	out = MergeAdded(found, []FoundGame{{Key: "k", Source: "hydra", SteamID: 20}})
+	if out[0].Source != "steam" || out[0].SteamID != 0 {
+		t.Fatalf("store wins: %+v", out[0])
+	}
+}

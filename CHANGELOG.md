@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A game with no achievements says what's missing.** When a game's copy keeps no achievements on the PC but Lootnest knows its Steam id, its Achievements tab lists what showing your Steam account's achievements needs (Steam signed in, your Steam Web API key, the setting turned on, your Steam profile's Game details public), each lit once it's done, and says what Steam answered. Settings, Online explains the same.
+- **A game from Hydra moved to another drive keeps its Steam id.** After a move into a folder Lootnest scans, the game showed as a plain game folder and lost the Steam id Hydra knew, so its achievements, save locations and Steam account achievements had nothing to go on. It keeps them now, and shows as from Hydra again.
+
 ## 2.15.0
 
 - **No more marking achievements by hand.** 2.14.0 let each profile mark a game's achievements as done when nothing on the PC records them. That's gone: achievements show only when the game or a tool on the PC records them. Marks made in 2.14.0 stay in `hand-achievements.json` and are no longer shown.

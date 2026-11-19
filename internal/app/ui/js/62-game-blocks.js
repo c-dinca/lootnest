@@ -288,10 +288,12 @@
   function achievementsBlock(it, few) {
     const X = achFor(it);
     if (!X) {
-      // Read and none found: for a game from outside the stores, say why.
-      if (few || S.ach[recentKey(it)] !== null || !docWorth(it)) return "";
-      return `<section class="gpage-block gp-ach">${gpHead("Achievements")}<p>None found on this PC</p>
-        <div class="gpage-actions"><button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button></div></section>`;
+      // Read and none found: say why, and what Steam's way still needs.
+      const W = S.achWhy[recentKey(it)];
+      if (few || S.ach[recentKey(it)] !== null || (!docWorth(it) && !(W && W.appId))) return "";
+      return `<section class="gpage-block gp-ach">${gpHead("Achievements")}<p>None found on this PC</p>${achSteamSteps(W)}
+        <div class="gpage-actions">${W && W.appId && (!W.key || !W.on) ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="set-open" data-tab="online">Open Settings, Online</button>` : ""}
+          ${docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check why</button>` : ""}</div></section>`;
     }
     const { key, who, A, pct } = X;
     const list = few ? A.list.filter((a) => a.unlocked).slice(0, 3) : A.list;
@@ -303,6 +305,26 @@
       ${X.whoRow}${X.bar}
       ${list.length ? `<ul class="ach-list${few ? "" : " ach-grid"}">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
       <div class="gp-ach-foot"><p class="gpage-hint">${X.note}</p>${acts ? `<div class="gpage-actions">${acts}</div>` : ""}</div></section>`;
+  }
+  // A game whose copy records no achievements but whose Steam id is known
+  // can show the user's Steam account's: what that needs, each step lit
+  // when it's done, and what Steam said last.
+  function achSteamSteps(W) {
+    if (!W || !W.appId) return "";
+    const said = W.said || "";
+    const steps = [
+      [W.steam, "Steam signed in on this PC", W.steam ? "" : "Lootnest reads which account is yours from Steam on this PC."],
+      [W.key, "Your Steam Web API key", W.key ? "" : "Free on steamcommunity.com/dev/apikey. Paste it in Settings, Online."],
+      [W.on, "Achievements from my Steam account turned on", W.on ? "" : "In Settings, Online."],
+      [said === "ok" || said === "none", "Your Steam profile's Game details are public",
+        said === "private" ? "Steam says they're private. In Steam: your profile, Edit Profile, Privacy Settings, Game details: Public." : said ? "" : "In Steam: your profile, Edit Profile, Privacy Settings, Game details: Public."],
+    ];
+    const end = said === "none" ? "Steam has no achievements for this game on your account. They show only if you own it there."
+      : said === "error" ? "Lootnest couldn't reach Steam. It asks again when you come back to this page."
+      : W.steam && W.key && W.on && !said ? "All set: Lootnest asks Steam when you open this page." : "";
+    return `<p class="gpage-hint">This copy doesn't keep its achievements on the PC. If you own the game on Steam, Lootnest can show your Steam account's.</p>
+      <ol class="ach-steps">${steps.map(([ok, t, line]) => `<li class="${ok ? "is-done" : ""}" aria-label="${esc(t)}: ${ok ? "done" : "not yet"}"><span class="ln-lamp${ok ? " ln-lamp--on" : ""}" aria-hidden="true"></span><div><b>${esc(t)}</b>${line ? `<span>${esc(line)}</span>` : ""}</div></li>`).join("")}</ol>
+      ${end ? `<p class="gpage-hint">${esc(end)}</p>` : ""}`;
   }
   // Save points: named copies of a game's saves, on a timeline.
   const pointsAsked = new Set();

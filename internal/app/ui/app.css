@@ -2130,6 +2130,15 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 .ach.locked .ach-tier em { color: var(--fg-3); }
 .ach-tier b { font: 650 var(--fs-12)/1.2 var(--font-ui); color: var(--fg-2); }
 .ach.is-hidden { cursor: pointer; border-radius: var(--radius-ctl); }
+/* What showing a game's achievements from the Steam account still needs:
+   one row per step, its lamp lit when it's done. */
+.ach-steps { display: grid; gap: var(--space-2); margin: var(--space-3) 0; padding: 0; list-style: none; }
+.ach-steps li { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-panel); background: var(--bg-raised); box-shadow: var(--key-light); }
+.ach-steps .ln-lamp { margin-top: calc(var(--space-1) + var(--hairline)); }
+.ach-steps div { display: grid; gap: var(--space-1); min-width: 0; }
+.ach-steps b { font-size: var(--fs-14); color: var(--fg-1); }
+.ach-steps li.is-done b { color: var(--fg-2); }
+.ach-steps span:not(.ln-lamp) { font-size: var(--fs-13); color: var(--fg-2); }
 .ach.is-hidden .ach-ico { background: repeating-linear-gradient(135deg, var(--bg-raised) 0 6px, var(--bg-active) 6px 12px); }
 .ach.is-hidden > div { filter: blur(0.3px); }
 .ach.is-hidden:hover > div b { text-decoration: underline; text-underline-offset: 3px; }

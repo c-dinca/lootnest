@@ -51,7 +51,9 @@ type FoundGame struct {
 
 // MergeAdded puts the games the user added by hand into the scan results.
 // A game the scan also found keeps the scan's details (such as its store),
-// but the exe the user picked.
+// but the exe the user picked, and what the added entry knew that a plain
+// folder scan can't: a Hydra game moved to another drive keeps its Steam
+// id and its source until Hydra is pointed at the new folder.
 func MergeAdded(found, added []FoundGame) []FoundGame {
 	out := append([]FoundGame{}, found...)
 	for _, a := range added {
@@ -60,6 +62,12 @@ func MergeAdded(found, added []FoundGame) []FoundGame {
 			if out[i].Key == a.Key {
 				if a.Exe != "" {
 					out[i].Exe, out[i].ProcessName = a.Exe, a.ProcessName
+				}
+				if out[i].SteamID == 0 && out[i].AppID == 0 {
+					out[i].SteamID = a.SteamID
+				}
+				if out[i].Source == "folder" && a.Source != "" && a.Source != "folder" && a.Source != "added" {
+					out[i].Source = a.Source
 				}
 				out[i].Added = true
 				matched = true
