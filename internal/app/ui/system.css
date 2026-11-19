@@ -227,6 +227,12 @@
   --welcome-w: 440px;     /* the first start's column */
   --switch-w: 44px; --switch-h: 24px; --knob: 16px;
   --boot-mark: 72px;      /* the mark on the splash while Lootnest opens */
+  --mv-bar-h: 10px;       /* a move's progress bar */
+  --mv-pill-w: 340px;     /* a move made small, in the corner */
+  --mv-pill-bar: 3px;     /* its own thin bar */
+  --mv-dialog-w: 560px;   /* the dialog while a game moves */
+  --mv-dot: 4px;          /* the dots flowing from one drive to the other */
+  --mv-sheen: rgb(255 255 255 / 0.5);  /* the light sweeping a progress bar */
 
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;

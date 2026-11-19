@@ -12,6 +12,7 @@
   let shownOverlay = null, shownStep = "";
   function renderOverlay() {
     const o = $("#overlay");
+    queueMicrotask(movePill); // a move's corner card shows while its dialog doesn't
     const P = S.picker;
     const now = P || S.dialog;
     const step = P ? (P.ask || "") + (P.working ? ":working" : "") : "";
@@ -159,17 +160,15 @@
 
   // The frame and the progress of both Move dialogs: Game Mover's and a
   // folder game's (viewMoveFolder).
-  const moveWrap = (name, inner, sub) => `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Move ${esc(name)}">
-    <div><h2>Move ${esc(name)} to another drive</h2>${sub ? `<p class="sub">${sub}</p>` : ""}</div>${inner}</div></div>`;
-  const moveProgress = (done, total, text, until) => `<div class="mover"><div class="meter"><i style="width:${total ? Math.min(100, Math.round((done / total) * 100)) : 0}%"></i></div><p class="hint" role="status">${esc(text)}</p></div>
-        <p class="hint">${until}</p>`;
+  // moving: the move runs, so the dialog shows it (moveBody) and says so.
+  const moveWrap = (name, inner, sub, moving) => `<div class="scrim" data-action="scrim"><div class="dialog ${moving ? "mv-dialog" : "narrow"}" role="dialog" aria-modal="true" aria-label="Move ${esc(name)}">
+    <div><h2>${moving ? `Moving ${esc(name)}` : `Move ${esc(name)} to another drive`}</h2>${sub ? `<p class="sub">${sub}</p>` : ""}</div>${inner}</div></div>`;
   function viewMove() {
     const D = S.dialog, M = S.moving, I = D.info;
     const wrap = (inner, sub) => moveWrap(D.name, inner, sub);
     if (M && M.appId === D.appId) {
-      const text = M.step === "steam" ? "Closing Steam" : M.total ? `Copying ${fmtSize(M.done)} of ${fmtSize(M.total)}` : "Starting";
-      return wrap(`${moveProgress(M.done, M.total, text, "Keep Steam closed until it's done.")}
-        <div class="dialog-foot"><button class="btn quiet" data-action="dialog-cancel">Close</button></div>`);
+      return moveWrap(D.name, `${moveBody(moveNow())}
+        <div class="dialog-foot"><button class="btn quiet" data-action="move-mini">Minimise</button></div>`, "", true);
     }
     if (M || S.folderMove) {
       return wrap(`<p class="note">Lootnest is moving ${esc((M && M.name) || "another game")}. Wait for it to finish.</p>

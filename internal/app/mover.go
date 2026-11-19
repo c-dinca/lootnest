@@ -187,7 +187,7 @@ func (a *App) moveGame(in core.SteamInstall, lib string) (core.MoveResult, error
 	wasRunning := steamRunning()
 	if wasRunning {
 		a.logf("Closing Steam to move %s", in.Name)
-		a.emit("moveProgress", map[string]any{"appId": in.AppID, "name": in.Name, "step": "steam"})
+		a.emit("moveProgress", map[string]any{"appId": in.AppID, "name": in.Name, "step": "steam", "from": in.Library, "lib": lib})
 		if err := shutdownSteam(a.env.SteamPath); err != nil {
 			return core.MoveResult{}, err
 		}
@@ -203,7 +203,7 @@ func (a *App) moveGame(in core.SteamInstall, lib string) (core.MoveResult, error
 			return
 		}
 		last = time.Now()
-		a.emit("moveProgress", map[string]any{"appId": in.AppID, "name": in.Name, "step": "copy", "done": min(n, size), "total": size})
+		a.emit("moveProgress", map[string]any{"appId": in.AppID, "name": in.Name, "step": "copy", "done": min(n, size), "total": size, "from": in.Library, "lib": lib})
 	}
 	check := func() error {
 		if steamRunning() {
