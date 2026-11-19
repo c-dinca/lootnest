@@ -1006,3 +1006,27 @@ the same network as the PC, with TV streaming set up.
 3. With the profile's Game details private on Steam: nothing shows, and
    the log ("Show recent activity") says to make them public.
 4. Turn it off: the game shows None found again.
+
+## 46. TV fixes of 19 Nov: the emergency key, a keyboard, Stremio, the TV apps
+
+1. In TV mode, press **Ctrl+Shift+Q** on the PC's keyboard: the mouse
+   moves freely over every display, the taskbar is back, the TV's stream
+   ends, the PC's displays are as before, and Lootnest is gone from the
+   tray. The log says "Ctrl+Shift+Q pressed". The bar on the PC's screen
+   names the key while TV mode is on.
+2. The same in Big Picture on the PC (no TV): Lootnest quits.
+3. Stremio from Big Picture's Apps: put the focus on the search box and
+   press A. A keyboard comes up at the bottom; type a title with the
+   D-pad and A, X deletes, Y adds a space, Start searches, B closes it.
+   The same in Spotify's search and in a Discord message box.
+4. Stremio, with the Stremio program installed: open a film and pick a
+   stream. It plays, with no "streaming server" warning. The log says
+   whether the server was already running or was started.
+5. LG TV app 1.6.2 (Install again or let Lootnest update it): on its
+   home screen, press Right many times and then Left: the focus walks
+   the keys and stops at the ends, never leaving them. Nothing is
+   drawn over the keys. After a stream, its log has a "Sound: ... ms
+   left out" line when it had to trim the sound.
+6. Android TV app 1.0.1: the same on its home screen; the TV app's log
+   in Save a report has a "Sound: ..." line saying whether the TV gave
+   low latency.

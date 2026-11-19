@@ -1934,6 +1934,26 @@ These shipped recently, newest last:
   then `bpAllTile` (opens the Library tab). Harness `?fresh=1` (no recent
   plays), shots `tv-fresh`, `tv-fresh-400`.
   Released as 2.16.1 at the owner's ask (19 Nov).
+- **Unreleased, TV fixes of 19 Nov** (the owner: the TV app's sound
+  late, its home screen stuck after too many presses left or right,
+  words over its keys, no way out of TV mode on the PC when it stuck,
+  no keyboard for Stremio's search, Stremio's "streaming not working").
+  Emergency key Ctrl+Shift+Q (`app/emergency.go`,
+  `win.WatchEmergencyKey`: a thread hotkey on its own thread while
+  `consoleArmed`; cursor, taskbar, TV bar, `win.KillPID` on the holder,
+  then leaveTV and quit, `os.Exit(3)` if the window doesn't close).
+  `padSpatial` has a keyboard (`textField`, `kb` in a shadow root;
+  A types, X deletes, Y space, B closes, Start presses Enter).
+  `WebApp.Loopback` (Stremio): `WebAppBrowserArgs` turn off Chromium's
+  Local Network Access in that window's process (seen in Chromium 157:
+  a public page's fetch to 127.0.0.1 fails without them);
+  `startStremioServer` logs through `appLog`. Lootnest for TV 1.6.2
+  (c-dinca/lootnest-tv-webos#13): `key_nav` stops at the ends and the
+  screen leaves the focus group while it has keys (it was a trap), the
+  home screen in three bands, `in_time()` in `session_audio.c` trims
+  sound more than 60 ms ahead of its low (direct submit never dropped
+  any). Android 1.0.1 (c-dinca/lootnest-tv-android#2): the same layout
+  and focus (`row()`), the granted AudioTrack logged. docs/TESTING.md 46.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
