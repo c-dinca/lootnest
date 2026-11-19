@@ -291,6 +291,10 @@
     items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, ...collectionItems(it, host), "<hr>");
     if (g) items.push(`<button data-action="edit-game" ${attr} ${s ? "disabled" : ""}>Edit game</button>`);
     else items.push(`<button data-action="game-settings" ${attr}>Game settings</button>`);
+    // Big Picture leaves out games without controller support (padOf).
+    if (!S.pads) api.padSupport().catch(() => {});
+    const kbm = S.pads && S.pads[recentKey(it)] === "none";
+    items.push(`<button data-action="pad-play" ${attr} data-pad="${kbm ? "full" : "none"}">${kbm ? "Show in Big Picture" : "Leave out of Big Picture"}</button>`);
     items.push(`<button data-action="open-game-folder" ${attr}>Open the game's folder</button>`,
       `<button data-action="${g ? "shortcut" : "found-shortcut"}" ${attr}>Create desktop shortcut</button>`);
     if (g && it.appId) items.push(`<button data-action="steam-verify" data-app="${it.appId}" ${s ? "disabled" : ""}>Verify files with Steam</button>`);

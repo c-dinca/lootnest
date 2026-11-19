@@ -85,7 +85,7 @@ func steamConfigApps(userDir string) map[int]bool {
 	return out
 }
 
-type steamApp struct{ name, kind string }
+type steamApp struct{ name, kind, pad string }
 
 // steamAppInfo reads the name and type of the apps in want from Steam's
 // binary appinfo.vdf (versions 27 to 29); the others are skipped unread.
@@ -154,7 +154,7 @@ func steamAppInfo(path string, want map[int]bool) map[int]steamApp {
 		p := &binVDF{b: b[skip:], strs: strs, v29: var29}
 		if m, ok := p.obj(0); ok {
 			common := vdfMap(vdfMap(m, "appinfo"), "common")
-			out[int(id)] = steamApp{vdfStr(common, "name"), vdfStr(common, "type")}
+			out[int(id)] = steamApp{vdfStr(common, "name"), vdfStr(common, "type"), padOfCommon(common)}
 		}
 	}
 }
@@ -243,7 +243,13 @@ func (p *binVDF) obj(depth int) (map[string]any, bool) {
 				return m, false
 			}
 			m[k] = s
-		case 2, 3, 4, 6: // int32, float, pointer, colour
+		case 2: // int32, kept as its digits
+			if p.i+4 > len(p.b) {
+				return m, false
+			}
+			m[k] = strconv.Itoa(int(int32(binary.LittleEndian.Uint32(p.b[p.i:]))))
+			p.i += 4
+		case 3, 4, 6: // float, pointer, colour
 			p.i += 4
 		case 7, 10: // uint64, int64
 			p.i += 8

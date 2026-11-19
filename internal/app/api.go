@@ -100,6 +100,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_closeGame", a.apiCloseGame))
 	must(a.w.Bind("ps_profileInfo", a.apiProfileInfo))
 	must(a.w.Bind("ps_achievements", a.apiAchievements))
+	must(a.w.Bind("ps_padSupport", a.apiPadSupport))
+	must(a.w.Bind("ps_setPadPlay", a.apiSetPadPlay))
 	must(a.w.Bind("ps_setSharedAchievements", a.apiSetSharedAchievements))
 	must(a.w.Bind("ps_allAchievements", a.apiAllAchievements))
 	must(a.w.Bind("ps_shortcut", a.apiShortcut))
