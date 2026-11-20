@@ -2281,7 +2281,8 @@ These shipped recently, newest last:
   same bytes every time (fixed object names, `-frandom-seed`,
   `--no-insert-timestamp`) into `internal/app/overlay/
   lootnest-overlay64.dll`, committed and embedded (`overlaydll_windows.go`);
-  CI's build job runs `--check`. `core/overlay.go`: `InGameAllowed`
+  CI's build job runs `--check` in an `ubuntu:24.04` container (GCC 13.2,
+  binutils 2.41.90; the runner's newer binutils makes other bytes). `core/overlay.go`: `InGameAllowed`
   (`AntiCheatDeep`, four levels, more names; `SteamOnline` from
   appinfo categories: 8 Valve Anti-Cheat, online categories without 2
   Single-player; `OnlineGame` by app id and name words; `AntiCheatRunning`
