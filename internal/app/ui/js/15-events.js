@@ -193,7 +193,7 @@
         const said = !ev.error && !ev.restored && tvMenuPoint(ev); // the Home screen over a game says so itself
         if (ev.error) { tvMenuPoint(ev); toast(ev.error, "error"); }
         else if (ev.restored) { toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`); if (ev.play) playAfterPoint(ev); }
-        else if (ev.point) { if (!ev.hotkey && !said) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
+        else if (ev.point && !ev.game) { if (!ev.hotkey && !said) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
         if (BP.on) bpSoon();
         if (S.view === "saves") askSaves();

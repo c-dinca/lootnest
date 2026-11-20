@@ -2131,8 +2131,23 @@ These shipped recently, newest last:
   `SavePoint.InGame`; step `saving`. UI: `quickSaveRow`, `savesFirst`,
   `qs-use`, `#pt-qs`, `ps_setQuickSave`; `savePoints` carries
   `quickSave`, `suggest`, `antiCheat`. Harness `?pointrun=1&qs=F5`.
-  docs/TESTING.md 50. Next in the rework, when the owner says: every save
-  the game makes kept by itself, and the injected save for story games.
+  docs/TESTING.md 50.
+- **Unreleased, every save the game makes** (the owner, 20 Nov 2026:
+  "hai sa incepem", the third part of the save engine's rework).
+  `app/gamepoints.go`: `gamePointsTick` from `achTick` (every ~6 s) over
+  `runningForSaves` (achTick's games plus Steam Library games without
+  profiles, by process); per running game `gameSaves` (the target, `seen`
+  stamps from the start or the last point, a candidate change); a change
+  still for `gamePointsStill` 5 s becomes a point (`keepGameSave`,
+  `SavePoint.Game`, "Saved by the game, hh:mm", event `savePointMade`
+  with `game`, no toast or sound). `makePoint` calls `savesSeen`, so a
+  point made by any path is never kept twice. Saves over 512 MB aren't
+  followed (logged). `core.PruneGamePoints` keeps the newest
+  `gamePointsKeep` 30 game points; `RenameSavePoint` clears `Game`.
+  `Settings.GamePointsOff`, never in safe mode. UI: `shownPoints`,
+  `moreGameSaves` (`GAME_SHOWN` 5, `pt-all-game`), `.pt-auto` line.
+  Harness `?gamesaves=0`. docs/TESTING.md 51. Next in the rework, when
+  the owner says: the injected save for story games (a plan first).
 
 - **Unreleased, the controller in TV mode while the PC is in use**
   (the owner, 20 Nov 2026: on the TV only the PS button worked). The
@@ -2150,7 +2165,7 @@ These shipped recently, newest last:
   marks the focused element `.pf` under `html.pad-away`, and copies every
   `:focus` rule to `.pf` (`:focus-within` to `:has(.pf)`) once. Tried in
   a headful Chromium with another window in front; not on a PC:
-  docs/TESTING.md 51.
+  docs/TESTING.md 52.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
@@ -2324,8 +2339,9 @@ makes kept on the timeline by itself, Go back that closes the game, puts
 the save in place as the newest and starts it again on that save, and
 points that show their files and say when nothing changed. Go back
 that closes the game, puts the save in as the newest and starts it again
-is done, and Save now with the game's quick save key (both Unreleased,
-above); ask before building the rest.
+is done, Save now with the game's quick save key, and every save the
+game makes kept by itself (all Unreleased, above); ask before building
+the rest.
 
 ## Ideas not started
 

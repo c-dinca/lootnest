@@ -1024,7 +1024,10 @@
       return ok();
     },
     ps_savePoints: (key) => {
+      // The game's own saves, kept by themselves (seven, so only five show).
+      const gameSaves = (n) => Array.from({ length: n }, (_, i) => ({ id: `20261107-22${String(50 - i).padStart(2, "0")}00`, name: `Saved by the game, ${22}:${String(50 - i * 6).padStart(2, "0")}`, created: iso((2 + i * 6) * 60e3), player: "p1", playtime: 313500 - i * 300, unlocked: 21, size: 9e7, locs: ["a"], game: true }));
       if (!POINTS[key]) POINTS[key] = key === "game:bg3" ? [
+        ...gameSaves(q.get("gamesaves") === "0" ? 0 : 7),
         { id: "20261107-214500", name: "Before the update", created: iso(10 * 60e3), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"], auto: true, update: true },
         { id: "20261107-201500", name: "Before the Netherbrain", created: iso(40 * 60e3), player: "p1", playtime: 312000, unlocked: 21, size: 9e7, locs: ["a"], thumb: art(1091500, "hero") },
         { id: "20261107-195000", name: "Before going back to Act 2 start", created: iso(70 * 60e3), player: "p1", playtime: 310000, unlocked: 20, size: 9e7, locs: ["a"], auto: true },
