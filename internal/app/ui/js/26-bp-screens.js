@@ -276,7 +276,7 @@
       { id: "play", name: "While you play", icon: "play", opts: [
         { id: "xbox", name: "PlayStation controller as an Xbox one in games", on: !!s.padAsXbox, say: "For games that only know Xbox controllers: while a game runs, it sees your DualSense or DualShock 4 as an Xbox controller. It needs the ViGEmBus driver, which the TV streaming set-up installs.", run: flip("padAsXbox") },
         { id: "toasts", name: "Show achievements as they unlock", on: !s.achToastsOff, say: "A small note over the game, in the profile's colour. Never over a game with an anti-cheat.", run: flip("achToastsOff") },
-        { id: "fps", name: "FPS counter", on: !!s.fpsCounter, say: "How many frames a second the game draws, in a corner of the screen. The Home button over a game turns it on and off too.", run: () => api.fpsSet(!s.fpsCounter).then((st) => { S.fps = st; return refresh(); }, (e) => { toast(errText(e), "error"); refresh(); }) },
+        { id: "fps", name: "FPS counter", on: !!s.fpsCounter, say: "How many frames a second the game draws, and a frame's time, in a corner of the screen: inside games without an anti-cheat, as Steam's is. The Home button over a game turns it on and off too.", run: () => api.fpsSet(!s.fpsCounter).then((st) => { S.fps = st; return refresh(); }, (e) => { toast(errText(e), "error"); refresh(); }) },
         { id: "modslink", name: "Put mods in as links", on: !s.modsLinkOff, say: "Mods go into a game's folder as links to Lootnest's own copy, which is quick and takes no room. Off copies them instead, for a game that changes its files.", run: flip("modsLinkOff") }] },
     ];
     if (BP.tv) parts.push({ id: "tv", name: "TV", icon: "television-simple", opts: [

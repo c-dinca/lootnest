@@ -75,6 +75,7 @@ var (
 	ErrCancelled        = errors.New("cancelled")
 	ErrCancelledByUser  = errors.New("it was cancelled at Windows' prompt")
 	ErrFramesNotAllowed = errors.New("Windows doesn't let this account read frame timings yet")
+	ErrNot64Bit         = errors.New("it's a 32-bit program")
 	ErrRecycleCancelled = errors.New("the move to the Recycle Bin was cancelled")
 )
 
@@ -233,6 +234,11 @@ func InJob() (r0 bool) {
 	return
 }
 
+func InjectDLL(pid uint32, path string) (err error) {
+	err = ErrUnsupported
+	return
+}
+
 func InstalledLocation(id string) (r0 string) {
 	return
 }
@@ -247,6 +253,10 @@ type InstalledProgram struct {
 }
 
 func InstalledPrograms() (r0 []InstalledProgram) {
+	return
+}
+
+func Is64BitProcess(pid uint32) (r0 bool) {
 	return
 }
 
@@ -299,6 +309,11 @@ func MoveCursor(x int, y int) {}
 
 func MoveWindowTo(hwnd uintptr, box [4]int) {}
 
+func NewOverlayShare(pid uint32, magic uint32, version uint32, size int) (r0 *OverlayShare, err error) {
+	err = ErrUnsupported
+	return
+}
+
 func NewViGEmPad() (r0 *ViGEmPad, err error) {
 	err = ErrUnsupported
 	return
@@ -308,6 +323,21 @@ func OpenPad(path string) (r0 *PadReader, err error) {
 	err = ErrUnsupported
 	return
 }
+
+type OverlayShare struct {
+}
+
+func (*OverlayShare) Int32(off int) (r0 int32) {
+	return
+}
+
+func (*OverlayShare) SetInt32(off int, v int32) {}
+
+func (*OverlayShare) Int64(off int) (r0 int64) {
+	return
+}
+
+func (*OverlayShare) Close() {}
 
 func PSButtonIn(product uint16, report []byte) (r0 bool) {
 	return
@@ -368,6 +398,10 @@ func ProcessAlive(pid uint32) (r0 bool) {
 }
 
 func ProcessName(pid uint32) (r0 string) {
+	return
+}
+
+func ProcessPath(pid uint32) (r0 string) {
 	return
 }
 

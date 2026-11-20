@@ -85,7 +85,10 @@ func steamConfigApps(userDir string) map[int]bool {
 	return out
 }
 
-type steamApp struct{ name, kind, pad string }
+type steamApp struct {
+	name, kind, pad string
+	cats            map[int]bool // the store's categories (category_N)
+}
 
 // steamAppInfo reads the name and type of the apps in want from Steam's
 // binary appinfo.vdf (versions 27 to 29); the others are skipped unread.
@@ -154,9 +157,24 @@ func steamAppInfo(path string, want map[int]bool) map[int]steamApp {
 		p := &binVDF{b: b[skip:], strs: strs, v29: var29}
 		if m, ok := p.obj(0); ok {
 			common := vdfMap(vdfMap(m, "appinfo"), "common")
-			out[int(id)] = steamApp{vdfStr(common, "name"), vdfStr(common, "type"), padOfCommon(common)}
+			out[int(id)] = steamApp{vdfStr(common, "name"), vdfStr(common, "type"), padOfCommon(common), categoriesOf(common)}
 		}
 	}
+}
+
+// categoriesOf is an app's store categories by number.
+func categoriesOf(common map[string]any) map[int]bool {
+	cats, ok := common["category"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	out := map[int]bool{}
+	for k := range cats {
+		if n, err := strconv.Atoi(strings.TrimPrefix(k, "category_")); err == nil {
+			out[n] = true
+		}
+	}
+	return out
 }
 
 // appInfoStrings reads appinfo.vdf 29's table of key names at off.

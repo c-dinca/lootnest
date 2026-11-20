@@ -62,7 +62,7 @@ stays out of them.
   fullscreen), read and write its memory, and call the game's own save
   and load code.
 
-Telling them apart (none of this exists yet):
+Telling them apart (`core.InGameAllowed`, since the in-game FPS counter):
 - An anti-cheat anywhere in the game's folder makes it online. So does a
   story mode that shares its exe with an online mode: GTA V (BattlEye),
   Red Dead Redemption 2 (Rockstar's own), Elden Ring (EAC).
@@ -2260,6 +2260,42 @@ These shipped recently, newest last:
   (`FrameHistory`), the event PresentMon always reads. CI's windows job
   registers and removes the task (`TestFrameTask`) and checks the pipe;
   the reader started by the task is docs/TESTING.md 47.
+- **Unreleased, the FPS counter inside story games** (the owner, 20
+  Nov 2026: "as Steam does, in the games we can, not those with an
+  anti-cheat"; Denuvo allowed; "FPS and a frame's time"). The first thing
+  Lootnest puts into a game's process (Story games and online games).
+  `native/overlay/overlay.c` (C, MinGW-w64; MinHook 8af6b4a vendored in
+  `third_party/minhook`, BSD 2-clause, in THIRD_PARTY_NOTICES): its
+  thread opens `Local\LootnestOverlay-<pid>` (`ln_share`, 64 bytes;
+  `core.Over*` offsets), finds Present through a throwaway swap chain or
+  device of its own (DXGI Present 8 and Present1 22, D3D9 Present 17 and
+  PresentEx 121, opengl32's wglSwapBuffers) for a minute as the game loads
+  them, counts frames (a ring of QPC times; shown values change 4 times
+  a second) and, while `on`, draws "N FPS N.N ms" from a 5x7 font as
+  rectangles on an Obsidian panel: D3D11 `ClearView` on the back buffer
+  (typeless formats made typed), D3D9 `Clear` with the back buffer as
+  target (viewport, scissor and target restored), OpenGL scissored
+  `glClear` on framebuffer 0 (state restored; GL functions found at run
+  time). D3D12 frames are only counted (`api` 2). A per-thread depth
+  counts nested Presents once. `tools/overlay/build.sh` builds it the
+  same bytes every time (fixed object names, `-frandom-seed`,
+  `--no-insert-timestamp`) into `internal/app/overlay/
+  lootnest-overlay64.dll`, committed and embedded (`overlaydll_windows.go`);
+  CI's build job runs `--check`. `core/overlay.go`: `InGameAllowed`
+  (`AntiCheatDeep`, four levels, more names; `SteamOnline` from
+  appinfo categories: 8 Valve Anti-Cheat, online categories without 2
+  Single-player; `OnlineGame` by app id and name words; `AntiCheatRunning`
+  by process). `win/inject.go`: `InjectDLL` (64-bit only,
+  CreateRemoteThread on LoadLibraryW), `OverlayShare`. `app/overlay.go`:
+  `overlayConsider` once per pid for the front window's game
+  (`runningOfPID`), `overlayIn` (log says why not), the DLL written once
+  per hash to `DataDir\overlay` (`OverlayDLLName`, older pruned),
+  `overlayTick` (corner, `on`, drawn within 1.5 s means inside, else the
+  DLL's count in Lootnest's box), `overlaysOff`. `fpsLoop` starts the
+  outside frames only when a game needs them; a refusal no longer turns
+  the counter off. `Settings.FPSInGameOff`. CI's windows job loads the
+  DLL into its own process and draws with D3D11 (WARP), D3D9 and OpenGL
+  (`TestOverlayDLLDraws`). Not on a real game: docs/TESTING.md 56.
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should

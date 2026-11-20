@@ -65,6 +65,14 @@ jobs:
           GOOS=windows "$(go env GOPATH)/bin/govulncheck" ./...
           "$(go env GOPATH)/bin/govulncheck" ./internal/core/...
 
+      # The in-game FPS counter's DLL (native/overlay) is committed so that
+      # a plain go build works; it must be exactly what its source builds.
+      - name: The in-game counter's DLL matches its source
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-mingw-w64-x86-64 >/dev/null
+          tools/overlay/build.sh --check
+
       # Linux (docs/ROADMAP.md, section 9): the app compiles there against
       # internal/plat, whose generated files must match internal/win.
       - name: Linux build of the app

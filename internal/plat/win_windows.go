@@ -76,6 +76,7 @@ var (
 	ErrCancelled        = win.ErrCancelled
 	ErrCancelledByUser  = win.ErrCancelledByUser
 	ErrFramesNotAllowed = win.ErrFramesNotAllowed
+	ErrNot64Bit         = win.ErrNot64Bit
 	ErrRecycleCancelled = win.ErrRecycleCancelled
 )
 
@@ -267,6 +268,10 @@ func InJob() bool {
 	return win.InJob()
 }
 
+func InjectDLL(pid uint32, path string) error {
+	return win.InjectDLL(pid, path)
+}
+
 func InstalledLocation(id string) string {
 	return win.InstalledLocation(id)
 }
@@ -275,6 +280,10 @@ type InstalledProgram = win.InstalledProgram
 
 func InstalledPrograms() []InstalledProgram {
 	return win.InstalledPrograms()
+}
+
+func Is64BitProcess(pid uint32) bool {
+	return win.Is64BitProcess(pid)
 }
 
 func IsVisible(hwnd uintptr) bool {
@@ -343,6 +352,10 @@ func MoveWindowTo(hwnd uintptr, box [4]int) {
 	win.MoveWindowTo(hwnd, box)
 }
 
+func NewOverlayShare(pid uint32, magic uint32, version uint32, size int) (*OverlayShare, error) {
+	return win.NewOverlayShare(pid, magic, version, size)
+}
+
 func NewTray(hwnd uintptr, dpi int) *Tray {
 	return win.NewTray(hwnd, dpi)
 }
@@ -354,6 +367,8 @@ func NewViGEmPad() (*ViGEmPad, error) {
 func OpenPad(path string) (*PadReader, error) {
 	return win.OpenPad(path)
 }
+
+type OverlayShare = win.OverlayShare
 
 func PSButtonIn(product uint16, report []byte) bool {
 	return win.PSButtonIn(product, report)
@@ -411,6 +426,10 @@ func ProcessName(pid uint32) string {
 
 func ProcessNames() (map[string]bool, error) {
 	return win.ProcessNames()
+}
+
+func ProcessPath(pid uint32) string {
+	return win.ProcessPath(pid)
 }
 
 func ProcessPaths(name string) []string {
