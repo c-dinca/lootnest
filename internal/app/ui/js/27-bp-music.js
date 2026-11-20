@@ -18,7 +18,7 @@
   ];
   const MUSIC_BAR = 8; // seconds a chord lasts
   const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
-  const M = { out: null, verb: null, echo: null, on: false, vol: 0, next: 0, chord: 0, bellAt: 0, timer: 0 };
+  const M = { out: null, verb: null, echo: null, on: false, vol: 0, shift: 0, next: 0, chord: 0, bellAt: 0, timer: 0 };
   // Every sound of the music goes through out (its volume, faded), part of
   // it through a long hall (verb) and an echo.
   function musicGraph() {
@@ -58,7 +58,18 @@
     });
   }
   // A chord from at: its pads overlap the next chord's by a few seconds.
+  // Each game in focus gives the piece its own key, a few steps up or down
+  // from D, so moving between games is heard as well as seen. It changes at
+  // the next chord, never in the middle of one.
+  function musicShift() {
+    const k = BP.artKey || "";
+    let h = 0;
+    for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) | 0;
+    return k ? (Math.abs(h) % 5) - 2 : 0;
+  }
   function musicChord(ctx, at, c) {
+    const sh = (M.shift = musicShift());
+    c = { root: c.root + sh, pad: c.pad.map((n) => n + sh), bells: c.bells };
     c.pad.forEach((n, i) => musicVoice(ctx, at + i * 0.12, hz(n), { type: i % 2 ? "triangle" : "sine", detune: 7, gain: 0.05, attack: 3, hold: MUSIC_BAR - 3, release: 4.5, cut: 1500 }));
     musicVoice(ctx, at, hz(c.root), { gain: 0.11, attack: 2.5, hold: MUSIC_BAR - 2.5, release: 3, cut: 400, to: [M.out] });
   }
@@ -103,7 +114,7 @@
     }
     while (M.bellAt < now + 1) {
       const c = MUSIC_CHORDS[(M.chord + MUSIC_CHORDS.length - 1) % MUSIC_CHORDS.length];
-      musicBell(ctx, M.bellAt, c.bells[Math.floor(Math.random() * c.bells.length)]);
+      musicBell(ctx, M.bellAt, c.bells[Math.floor(Math.random() * c.bells.length)] + (M.shift || 0));
       M.bellAt += 1.6 + Math.random() * 2.6;
     }
   }

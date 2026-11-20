@@ -2210,6 +2210,23 @@ These shipped recently, newest last:
   thread timer (`barSync`, `barWin` per window). Not seen on a PC:
   docs/TESTING.md 53.
 
+- **Unreleased, Big Picture's Home, part 2** (the owner, 20 Nov 2026:
+  what's best on a PS5's home, "but not a copy"; researched, they agreed
+  to the list in this order). Home's first block holds the hero, the
+  first row and `bpCards(it)` for `BP.homeKey` (set in `bpAmbient` when
+  the focus rests on a first-row cover; the cards rise in one by one):
+  `hc:play` (Play for the seat, `bpPlay`), `hc:points`, `hc:ach` (the
+  most common locked one), `hc:story` (`X.A.story`), `hc:mods`; go
+  `hc-points`/`hc-ach`/`hc-mods` open the game one step in, and Back
+  comes straight home (`BP.from` starts "hc:"). `bpPlace` moves the
+  screen only as far as the cards need to clear `.bp-fade`, so the name
+  stays. Collections follow, then Apps, the big collections, Your games.
+  The first row's cover in focus lifts (`--bp-lift`) with a glow in
+  `--seat` (set on `#bp` in `renderBP`) and the rest dims. Music:
+  `musicShift` moves the piece -2 to +2 semitones by `BP.artKey`, at the
+  next chord. Harness shots `tv-home-cards`, `tv-home-focus`.
+  docs/TESTING.md 55.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

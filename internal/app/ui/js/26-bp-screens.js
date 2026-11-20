@@ -157,11 +157,48 @@
     // ends in a tile for Library's grid), first when nothing was played yet.
     const yours = (row) => all.slice(0, BP_HOME_MAX).map((it) => bpTile(it, row)).join("") + (all.length > BP_HOME_MAX ? bpAllTile(all.length) : "");
     const first = recent.length ? recent.map((it) => bpTile(it, "recent")).join("") : yours("recent");
-    return `${bpRowHTML("recent", recent.length ? "Continue playing" : "Your games", first + (S.found.scanning ? bpGhosts(5) : ""), '<div class="bp-hero" data-hero data-own></div>')}
+    const lead = (recent.length ? recent : all)[0], focus = (BP.homeKey && bpItem(BP.homeKey)) || lead;
+    // Home: the games to pick up, then the cards for the one in focus, then
+    // the collections, the apps, the big collections and every game.
+    return `<section class="bp-row" data-block><div class="bp-hero" data-hero data-own></div><h2>${recent.length ? "Continue playing" : "Your games"}</h2>
+        <div class="bp-track" data-zone="recent" data-live>${first + (S.found.scanning ? bpGhosts(5) : "")}</div>${bpCards(focus)}</section>
+      ${small.length ? bpRowHTML("tags", "Collections", small.map((t) => bpTagTile(t, tags[t])).join("")) : ""}
       ${bpAppsRow()}
       ${big.map((t) => bpRow("tag:" + t, t, tags[t])).join("")}
-      ${small.length ? bpRowHTML("tags", "Collections", small.map((t) => bpTagTile(t, tags[t])).join("")) : ""}
       ${recent.length ? bpRowHTML("all", "Your games", yours("all")) : ""}`;
+  }
+  // Home's cards for the game in focus in the first row, from what only
+  // Lootnest knows about it: Play for whoever sits here, its save points,
+  // the next achievement (the most common one still locked), how far the
+  // story is, and its mods. They follow the focus along the row, and a
+  // card goes one step into the game: Down, then A plays.
+  function bpCards(it) {
+    if (!it) return "";
+    const k = esc(bpKey(it)), seat = seated(), as = it.g && seat, who = as ? seat.id : "";
+    const X = achFor(it), P = pointsFor(it), M = modsOf(it);
+    const card = (id, go, icon, title, line, cls = "", style = "") => `<button class="bp-hcard${cls}"${style} data-bp data-bpid="hc:${id}" data-go="${go}" data-k="${k}" data-hint="${go === "play" ? "Play" : "Open"}"><span class="bp-hcard-ico">${icon}</span><span class="bp-hcard-text"><b>${esc(title)}</b><span>${esc(line)}</span></span></button>`;
+    const out = [];
+    const when = playedAt(it);
+    out.push(card("play", "play", GI.play, bpBehind(it) ? "Go back to the game" : as ? `Play as ${seat.name}` : "Play",
+      bpBehind(it) ? "It's running" : when ? `Played ${ago(new Date(when))}` : "Not played yet", " bp-hcard--play" + (as ? " ln-player" : ""), as ? ` style="--player:${esc(seat.color)}"` : ""));
+    const pts = (P && P.points) || [];
+    if (P && P.loaded) out.push(card("points", "hc-points", ph("floppy-disk"), "Save points", pts.length ? `${pts.length}, last ${ago(new Date(pts[0].created))}` : "Make the first one"));
+    if (X) {
+      const left = X.A.list.filter((a) => !a.unlocked && !a.hidden).sort((a, b) => (b.percent || 0) - (a.percent || 0));
+      const next = left[0];
+      out.push(next ? card("ach", "hc-ach", achIcon(next), next.name, next.percent ? `Next up, ${pctText(next.percent)} have it` : `Next up, ${X.A.unlocked} of ${X.A.total} done`)
+        : card("ach", "hc-ach", GI.trophy, "Every achievement", `${X.A.unlocked} of ${X.A.total} unlocked`));
+      const st = X.A.story;
+      if (st && st.steps && st.steps.length) {
+        const done = st.steps.filter((x) => x.done), last = done[done.length - 1];
+        out.push(card("story", "hc-ach", `<span class="bp-hcard-ring">${ring(st.percent, 44)}</span>`, `Story ${st.percent}%`, st.finished ? "Finished" : last ? `${last.label} done` : "Not started"));
+      }
+    }
+    if (modsTabOn(M)) {
+      const on = setRows(M, who).filter((m) => m.on).length;
+      out.push(card("mods", "hc-mods", ph("puzzle-piece"), "Mods", M.refused ? "Not for this game" : on ? `${on} on when you play` : "None on"));
+    }
+    return `<div class="bp-track bp-hcards" data-zone="cards" data-live data-game="${k}">${out.join("")}</div>`;
   }
   // An achievement as a line: its icon ringed in its tier's colour, its
   // name and what it asks, and how many players have it. One that's hidden
@@ -378,6 +415,7 @@
     // The bar: who's at the PC, the time, the tab on show.
     const seat = seated(), sub = bpSub();
     const seatHTML = seat ? `<span class="ln-player" style="--player:${esc(seat.color)}">${lnAvatar(seat, "32")}</span>${esc(seat.name)}` : "";
+    el.style.setProperty("--seat", seat ? seat.color : "transparent"); // the focused cover's glow on Home
     const seatEl = el.querySelector(".bp-seat");
     if (seatEl.lnHTML !== seatHTML) {
       const was = seatEl.lnHTML;
@@ -477,6 +515,12 @@
     const padTop = parseFloat(getComputedStyle(sc).paddingTop) || 0;
     if (grid) y = bpTopIn(f, sc) - (scr.clientHeight - f.offsetHeight) / 2;
     else if (bi > 0) y = bpTopIn(blocks[bi], sc) - padTop;
+    // Home's cards sit in the first row's block: the screen moves only as
+    // far as they need to clear the prompts, so the game's name stays.
+    if (track && track.dataset.zone === "cards") {
+      const fade = $("#bp .bp-fade");
+      y = bpTopIn(f, sc) + f.offsetHeight - (scr.clientHeight - (fade ? fade.offsetHeight : 0));
+    }
     y = Math.max(0, Math.min(y, sc.scrollHeight - scr.clientHeight));
     bpShift(sc, 0, -y, jump); scr.bpY = y;
     // A row that has gone up under the bar fades out.
@@ -505,6 +549,13 @@
         else { next.src = url; (next.decode ? next.decode() : Promise.resolve()).then(show, show); }
       }
       bpTrailer(el.classList.contains("is-deep") || el.classList.contains("is-dim") || bpOver() || BP.settings || BP.points ? null : it);
+      // Home's cards follow the game in focus in the first row.
+      if (hero && f && f.isConnected && f.closest('[data-zone="recent"]') && BP.homeKey !== k) {
+        BP.homeKey = k;
+        renderBP();
+        const cs = el.querySelectorAll(".bp-screen:not(.leaving) .bp-hcard");
+        if (moving()) cs.forEach((c, i) => c.animate({ opacity: [0, 1], translate: ["0 calc(14 * var(--u))", "0 0"] }, { duration: 320, delay: 40 * i, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }));
+      }
       if (hero) {
         const html = bpHero(it, false);
         if (hero.bpHTML !== html) {
@@ -691,6 +742,10 @@
     }
     else if (go === "points") { BP.points = true; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "mods") { BP.mods = true; BP.focus = ""; sfx("go"); renderBP(); }
+    else if (go === "hc-points" || go === "hc-mods" || go === "hc-ach") { // a Home card: one step into its game
+      BP.detail = el.dataset.k; BP.from = el.dataset.bpid; BP.points = go === "hc-points"; BP.mods = go === "hc-mods";
+      BP.focus = go === "hc-ach" ? "play" : ""; BP.want = go === "hc-ach" ? "ach:0" : ""; sfx("go"); renderBP();
+    }
     else if (go === "mod") bpMod(el);
     else if (go === "pt-make") bpPoint(el.dataset.k, "");
     else if (go === "pt-restore") {
@@ -767,6 +822,7 @@
       else { BP.settings = false; BP.focus = BP.setFrom || ""; }
     }
     else if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
+    else if (BP.detail && (BP.points || BP.mods) && (BP.from || "").startsWith("hc:")) { BP.points = false; BP.mods = false; BP.focus = BP.from; BP.detail = null; }
     else if (BP.detail && BP.points) { BP.points = false; BP.focus = "points"; }
     else if (BP.detail && BP.mods) { BP.mods = false; BP.focus = "mods"; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
