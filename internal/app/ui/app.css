@@ -3244,27 +3244,34 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 /* Big Picture's Home, part 2 (the owner, 20 Nov 2026: console-like, but
    Lootnest's own, not a copy): the cover in focus in the first row rises
    with a glow in the seated profile's colour while the rest of the row
-   steps back, and the cards for that game sit right under it. */
+   steps back. */
 .bp-row:first-child .bp-tile:focus { transform: translate3d(0, var(--bp-lift), 0) scale(var(--bp-grow)); }
 .bp-row:first-child .bp-tile:focus .bp-art { box-shadow: 0 var(--bp-glow-y) var(--bp-glow-r) color-mix(in oklab, var(--seat, transparent) 55%, transparent); }
 .bp-row:first-child .bp-track:has(.bp-tile:focus) .bp-tile .bp-art { transition: filter var(--bp-dur-focus) var(--ease-out), box-shadow var(--bp-dur-focus) var(--ease-out); }
 .bp-row:first-child .bp-track:has(.bp-tile:focus) .bp-tile:not(:focus) .bp-art { filter: brightness(.7) saturate(.85); }
 :root.pad-away .bp-row:first-child .bp-track:has(.bp-tile.pf) .bp-tile:not(.pf) .bp-art { filter: brightness(.7) saturate(.85); }
-.bp-hcards { gap: var(--bp-4); margin-top: var(--bp-6); }
-.bp-hcard { position: relative; flex: 1 1 0; min-width: 0; max-width: var(--bp-hcard-w); display: flex; align-items: center; gap: var(--bp-4); height: var(--bp-hcard-h); padding: 0 var(--bp-5); border: 0; border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
-.bp-hcard-ico { flex: none; display: grid; place-items: center; width: var(--bp-hcard-ico); height: var(--bp-hcard-ico); border-radius: var(--bp-r-key); background: var(--bp-fill-on); overflow: hidden; }
-.bp-hcard-ico svg { width: var(--bp-icon); height: var(--bp-icon); }
-.bp-hcard-ico .ach-ico, .bp-hcard-ico .ach-ico img { width: 100%; height: 100%; }
-.bp-hcard-ring { display: grid; place-items: center; width: 100%; height: 100%; }
-.bp-hcard-text { display: grid; gap: var(--bp-1); min-width: 0; }
-.bp-hcard-text b { overflow: hidden; font: 700 var(--bp-text-key)/1.2 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
-.bp-hcard-text span { overflow: hidden; color: var(--fg-2); font: 500 var(--bp-text-say)/1.3 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
-.bp-hcard:focus { transform: scale(var(--bp-grow-key)); background: var(--fg-1); color: var(--bg-ground); }
-.bp-hcard:focus .bp-hcard-text span { color: var(--bg-active); }
-.bp-hcard:focus .bp-hcard-ico { background: var(--bg-active); color: var(--fg-1); }
-.bp-hcard--play .bp-hcard-ico { background: var(--player-fill, var(--accent)); color: var(--player-on, var(--fg-on-accent)); }
-.bp-hcard--play:focus { background: var(--player-fill, var(--accent)); color: var(--player-on, var(--fg-on-accent)); }
-.bp-hcard--play:focus .bp-hcard-text span { color: var(--player-on, var(--fg-on-accent)); }
-.bp-hcard--play:focus .bp-hcard-ico { background: transparent; color: inherit; }
 @media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .bp-row:first-child .bp-tile:focus { transform: scale(var(--bp-grow)); } }
 :root.motion-off .bp-row:first-child .bp-tile:focus { transform: scale(var(--bp-grow)); }
+
+/* Big Picture in the PC's glass (the owner, 20 Nov 2026: "liquid glass, as
+   on the PC version, the same theme"): every key, row, card and panel is
+   the window's glass over the game's art (--bp-fill is --glass-strong),
+   blurred and rimmed as the sidebar and the game's sheet are; the tabs sit
+   in one glass pill as the PC's sidebar; the menu and questions are the
+   PC's dialog glass over a blurred scrim. Glass off in Settings, Appearance
+   turns all of it solid, as on the PC (--blur-glass none). */
+:is(.bp-key, .bp-opt, .bp-round, .bp-person, .bp-agame, .bp-arow, .bp-ach, .tv-ach, .bp-tile--app .bp-art, .bp-tile--tag .bp-art) {
+  -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+}
+:is(.bp-key, .bp-opt, .bp-round, .bp-person, .bp-agame, .bp-arow, .bp-ach, .tv-ach):not(:focus):not(.pf) { box-shadow: var(--glass-light), inset 0 0 0 1px var(--glass-edge); }
+.bp-round { background: var(--glass); }
+.bp-tabs { padding: var(--bp-2); border-radius: var(--radius-round); background: var(--glass); box-shadow: var(--glass-light), inset 0 0 0 1px var(--glass-edge); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
+.bp-ind { top: var(--bp-2); bottom: var(--bp-2); background: var(--glass-ctl-on); }
+.bp-chip { -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); box-shadow: inset 0 0 0 1px var(--glass-edge); }
+.bp-set-side .bp-cats, .bp-set-main .bp-opts { border-radius: var(--bp-r-panel); }
+.bp-cat[aria-pressed="true"] { background: var(--glass-ctl-on); box-shadow: var(--glass-light); }
+.bp-cat:focus, :root.pad-away .bp-cat.pf { background: var(--fg-1); color: var(--bg-ground); box-shadow: none; }
+.bp-over { background: var(--bp-scrim-over); -webkit-backdrop-filter: var(--blur-scrim); backdrop-filter: var(--blur-scrim); }
+.bp-dlg { background: var(--glass-overlay); box-shadow: var(--glass-light), inset 0 0 0 1px var(--glass-edge), var(--bp-shadow-focus); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
+.bp-dlg-keys .bp-key { background: var(--glass-ctl); }
+body:has(> #bp) #overlay .scrim { -webkit-backdrop-filter: var(--blur-scrim); backdrop-filter: var(--blur-scrim); }

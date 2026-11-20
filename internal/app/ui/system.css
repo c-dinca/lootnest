@@ -325,20 +325,20 @@
   --bp-person-w: calc(260 * var(--u)); --bp-avatar: calc(120 * var(--u)); --bp-avatar-bar: calc(44 * var(--u)); --bp-card-w: calc(520 * var(--u));
   --bp-key-h: calc(76 * var(--u)); --bp-round: calc(56 * var(--u)); --bp-glyph: calc(34 * var(--u)); --bp-icon: calc(28 * var(--u));
   --bp-logo-h: calc(170 * var(--u)); --bp-logo-w: calc(560 * var(--u)); --bp-hero-w: calc(1100 * var(--u)); --bp-hero-h: calc(340 * var(--u));
-  --bp-dlg-w: calc(760 * var(--u)); --bp-cats-w: calc(440 * var(--u)); --bp-sw-w: calc(72 * var(--u)); --bp-sw-h: calc(40 * var(--u)); --bp-sw-dot: calc(30 * var(--u)); --bp-sw-go: calc(32 * var(--u)); --bp-card-art: calc(96 * var(--u)); --bp-toast-w: calc(640 * var(--u)); --bp-page-h: calc(540 * var(--u)); --bp-ach-w: calc(440 * var(--u)); --bp-ach-ico: calc(76 * var(--u)); --bp-list-w: calc(1100 * var(--u)); --bp-opt-h: calc(96 * var(--u)); --bp-text-say: calc(21 * var(--u)); --bp-hcard-w: calc(400 * var(--u)); --bp-hcard-h: calc(124 * var(--u)); --bp-hcard-ico: calc(60 * var(--u)); --bp-lift: calc(-12 * var(--u)); --bp-glow-y: calc(26 * var(--u)); --bp-glow-r: calc(70 * var(--u)); --bp-say-h: calc(130 * var(--u)); --bp-text-set-h: calc(40 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
+  --bp-dlg-w: calc(760 * var(--u)); --bp-cats-w: calc(440 * var(--u)); --bp-sw-w: calc(72 * var(--u)); --bp-sw-h: calc(40 * var(--u)); --bp-sw-dot: calc(30 * var(--u)); --bp-sw-go: calc(32 * var(--u)); --bp-card-art: calc(96 * var(--u)); --bp-toast-w: calc(640 * var(--u)); --bp-page-h: calc(540 * var(--u)); --bp-ach-w: calc(440 * var(--u)); --bp-ach-ico: calc(76 * var(--u)); --bp-list-w: calc(1100 * var(--u)); --bp-opt-h: calc(96 * var(--u)); --bp-text-say: calc(21 * var(--u)); --bp-lift: calc(-12 * var(--u)); --bp-glow-y: calc(26 * var(--u)); --bp-glow-r: calc(70 * var(--u)); --bp-say-h: calc(130 * var(--u)); --bp-text-set-h: calc(40 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
   --bp-r-tile: calc(12 * var(--u)); --bp-r-key: calc(16 * var(--u)); --bp-r-panel: calc(24 * var(--u));
   --bp-ring: calc(4 * var(--u)); --bp-ring-out: calc(-7 * var(--u)); --bp-r-ring: calc(19 * var(--u));  /* the focus ring, a dark gap inside it */
   --bp-grow: 1.08; --bp-grow-key: 1.05;                              /* what the focus does to a tile, to a key */
   --bp-dur-focus: 160ms; --bp-dur-slide: 220ms; --bp-dur-screen: 240ms; --bp-dur-leave: 160ms; --bp-dur-art: 320ms; --bp-dur-video: 600ms; --bp-drift: 40s; --bp-shimmer: 1.6s;
   --bp-shadow-focus: 0 calc(28 * var(--u)) calc(56 * var(--u)) rgb(0 0 0 / 0.6);
-  --bp-fill: rgb(31 34 43 / 0.88);       /* keys and cards over art: no blur, so a stream stays sharp */
+  --bp-fill: var(--glass-strong);        /* keys, rows and cards: the PC's glass over the game's art */
   --bp-fill-on: rgb(255 255 255 / 0.14);
   --bp-scrim:                            /* text on the left, the art free on the right */
     linear-gradient(90deg, rgb(17 18 23 / 0.94) 0%, rgb(17 18 23 / 0.72) 34%, rgb(17 18 23 / 0.12) 68%, rgb(17 18 23 / 0.2) 100%),
     linear-gradient(0deg, rgb(17 18 23 / 1) 0%, rgb(17 18 23 / 0.92) 22%, rgb(17 18 23 / 0) 58%),
     linear-gradient(180deg, rgb(17 18 23 / 0.7) 0%, rgb(17 18 23 / 0) 18%);
-  --bp-scrim-deep: rgb(17 18 23 / 0.86); /* over the art once the focus is past Home's first row */
-  --bp-scrim-over: rgb(11 12 16 / 0.8);  /* behind the menu */
+  --bp-scrim-deep: rgb(17 18 23 / 0.7);  /* over the art once the focus is past Home's first row; the glass still shows it */
+  --bp-scrim-over: rgb(11 12 16 / 0.55); /* behind the menu, blurred as the PC's dialogs */
   --bp-fade: linear-gradient(0deg, rgb(17 18 23 / 1) 46%, rgb(17 18 23 / 0));
   --bp-bar-veil: linear-gradient(180deg, rgb(17 18 23 / 1) 84%, rgb(17 18 23 / 0));
   --bp-shine: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.07) 50%, transparent 70%);
