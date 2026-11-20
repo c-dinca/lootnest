@@ -119,7 +119,7 @@
   function tvMenu(ev) {
     if (!ev.on) { BP.tvMenu = null; drawTVMenu(); return; }
     const it = everyItem().find((x) => sameGame(x, ev.key)) || null;
-    BP.tvMenu = { key: ev.key, it, name: it ? it.name : (BP.launch && BP.launch.name) || (BP.since && BP.since.key === ev.key && BP.since.name) || ev.name || "", at: "resume", sure: false, shot: ev.shot || "", point: "", pointer: !!ev.pointer };
+    BP.tvMenu = { key: ev.key, it, name: it ? it.name : (BP.launch && BP.launch.name) || (BP.since && BP.since.key === ev.key && BP.since.name) || ev.name || "", at: "resume", sure: false, shot: ev.shot || "", point: "", pointer: !!ev.pointer, fps: !!ev.fps };
     sfx("open");
     drawTVMenu();
   }
@@ -130,6 +130,8 @@
     if (X) list.push({ k: "ach", icon: "trophy", label: "Achievements" });
     // For a program that only knows a mouse: the stick moves the pointer (app/pointer.go).
     list.push({ k: "pointer", icon: "game-controller", label: "Controller as a mouse", value: M.pointer ? "On" : "Off" });
+    // How many frames a second the game draws, in a corner of its screen (app/fps.go).
+    if (!(S.fps && S.fps.access === "unsupported")) list.push({ k: "fps", icon: "gauge", label: "FPS counter", value: M.fps ? "On" : "Off" });
     list.push({ k: "home", icon: "house", label: "Go to Lootnest" });
     list.push({ k: "close", icon: "x-circle", label: M.sure ? "Press again to close it" : app && M.name ? `Close ${M.name}` : "Close the game" });
     return list;
@@ -218,6 +220,11 @@
     if (k === "pointer") {
       M.pointer = !M.pointer; sfx("toggle"); drawTVMenu();
       api.tvPointer(M.pointer).catch((e) => { M.pointer = !M.pointer; if (BP.tvMenu === M) drawTVMenu(); toast(errText(e), "error"); });
+      return;
+    }
+    if (k === "fps") {
+      M.fps = !M.fps; sfx("toggle"); drawTVMenu();
+      api.fpsSet(M.fps).then((st) => { S.fps = st; }, (e) => { M.fps = !M.fps; if (BP.tvMenu === M) drawTVMenu(); toast(errText(e), "error"); });
       return;
     }
     if (k === "point") {

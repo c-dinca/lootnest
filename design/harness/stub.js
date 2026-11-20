@@ -310,6 +310,11 @@
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
+  // ?fps=ask|signout|ok|exclusive|on: the FPS counter (app/fps.go).
+  let FPS_ACCESS = ({ ask: "ask", signout: "signout" })[q.get("fps")] || "ok";
+  if (q.get("fps") === "on") settings.fpsCounter = true;
+  const fpsStub = () => ({ on: !!settings.fpsCounter, corner: settings.fpsCorner || "tl", access: FPS_ACCESS, exclusive: q.get("fps") === "exclusive" ? "Elden Ring" : "" });
+
   // ?kept=1: Hollow Tale (from Hydra) is kept offline.
   const OFFLINE = q.get("kept") ? { "dir:d:\\games\\hydra\\hollow tale": ["D:\\Games\\Hydra\\Hollow Tale\\HollowTale.exe", "D:\\Games\\Hydra\\Hollow Tale\\Crash.exe"] } : {};
   // Saved Library views (core.LibraryView), as core/views.go keeps them.
@@ -965,6 +970,10 @@
     ps_tvStay: () => ok(),
     ps_tvCloseGame: () => ok(),
     ps_tvPointer: () => ok(),
+    // ?fps=ask|signout|ok|exclusive: what Windows allows the FPS counter.
+    ps_fpsState: () => ok(fpsStub()),
+    ps_fpsSet: (on) => { settings.fpsCounter = !!on; return ok(fpsStub()); },
+    ps_fpsAllow: () => { FPS_ACCESS = "signout"; return ok(fpsStub()); },
     ps_mediaApps: () => ok([{ id: "youtube", name: "YouTube" }, { id: "spotify", name: "Spotify" }, { id: "discord", name: "Discord" }, { id: "stremio", name: "Stremio" }]),
     ps_launchApp: () => ok(),
     ps_linkMakePrivate: () => { setTimeout(() => emit({ type: "linkPrivate", ok: true }), 400); return ok(); },

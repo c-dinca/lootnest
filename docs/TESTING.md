@@ -1031,7 +1031,36 @@ the same network as the PC, with TV streaming set up.
    in Save a report has a "Sound: ..." line saying whether the TV gave
    low latency.
 
-## 47. Mods from Nexus Mods
+## 47. The FPS counter
+
+1. Settings, Games and swaps: **Let Lootnest read frame timings** shows
+   with **Allow**. Press it: Windows asks for administrator once; the row
+   becomes "Sign out of Windows and in again". In an elevated PowerShell,
+   `Get-LocalGroupMember -SID S-1-5-32-559` lists your account.
+2. Sign out and in. The row is gone. Turn on **FPS counter**.
+3. Start a game (windowed or borderless): a small box with a number and
+   "FPS" sits in the top-left corner of its screen within about 6 seconds,
+   and the number follows the game (cap the game's frame rate at 60 and
+   it reads 59 to 61; compare with the game's own counter, Steam's or
+   Game Bar's). Clicks go through the box to the game.
+4. **Ctrl+Shift+F10** hides it; again shows "--" for a moment, then the
+   number. The log says "FPS counter on/off: Ctrl+Shift+F10".
+5. Change the corner in Settings: the box moves within a second.
+6. Alt+Tab to the desktop or a browser: the box goes within 3 seconds;
+   back to the game, it comes back.
+7. A Vulkan game (DOOM Eternal), an OpenGL one and a Direct3D 9 one: a
+   number shows for each.
+8. Big Picture or TV mode: the Home button over a game has **FPS
+   counter** On/Off; Resume, and the box shows or not as chosen. Big
+   Picture's Settings, While you play, has the same row.
+9. A game in exclusive fullscreen: no box; after it closes, Settings
+   says the game ran in exclusive fullscreen, and the log names it.
+10. Turn it on before step 1 is done: a toast says it needs permission
+    first, and the switch goes back off.
+11. With the counter on, look at Lootnest's CPU in Task Manager while a
+    game runs at a high frame rate: it stays near 0%.
+
+## 48. Mods from Nexus Mods
 
 1. A folder game with mods allowed (Red Dead Redemption 2 kept offline
    is the owner's case): its page, Mods tab, **Nexus Mods**. Off, it

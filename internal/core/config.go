@@ -208,6 +208,16 @@ type Settings struct {
 	// ScreenshotsOff stops Ctrl+Shift+F12 saving a picture of the game
 	// running to Pictures\Lootnest\Screenshots (on unless turned off).
 	ScreenshotsOff bool `json:"screenshotsOff,omitempty"`
+	// FPSCounter shows how many frames a second the game in front draws,
+	// in a corner of its screen, while a game runs (app/fps.go). Off by
+	// default; Ctrl+Shift+F10 and the Home menu over a game turn it on and
+	// off, so the app owns it: a page's saved settings don't change it.
+	FPSCounter bool `json:"fpsCounter,omitempty"`
+	// FPSCorner is where it sits: "tl" (default), "tr", "bl" or "br".
+	FPSCorner string `json:"fpsCorner,omitempty"`
+	// FPSGroupAdded: Lootnest put the account into Performance Log Users,
+	// which counts from the next sign-in to Windows.
+	FPSGroupAdded bool `json:"fpsGroupAdded,omitempty"`
 	// CapturesOff stops Lootnest reading the screenshots and clips other
 	// apps (Game Bar, Steam, NVIDIA, AMD, OBS) keep on this PC for the
 	// Timeline. On by default: it only reads folders on this PC.

@@ -28,7 +28,24 @@
     [["Ctrl+Shift+Q"], "In TV mode or Big Picture, quit Lootnest when it's stuck"],
     ...(s.pointHotkeyOff ? [] : [[["Ctrl+Shift+F5"], "Make a save point while a game runs"]]),
     ...(s.screenshotsOff ? [] : [[["Ctrl+Shift+F12"], "Save a screenshot while a game runs"]]),
+    ...(S.fps && S.fps.access === "unsupported" ? [] : [[["Ctrl+Shift+F10"], "Show or hide the FPS counter while a game runs"]]),
   ];
+  // The FPS counter (app/fps.go): the switch, its corner, and what Windows
+  // allows. Its on and off belong to the app (the hotkey changes it too),
+  // so the switch calls ps_fpsSet rather than saving every setting.
+  let fpsAsked = false;
+  const FPS_CORNERS = [["tl", "Top left"], ["tr", "Top right"], ["bl", "Bottom left"], ["br", "Bottom right"]];
+  function fpsRows(s) {
+    if (!fpsAsked) { fpsAsked = true; api.fpsState().then((st) => { S.fps = st; if (S.view === "settings" && !S.dialog) render(); }).catch(() => {}); }
+    const F = S.fps || {};
+    if (F.access === "unsupported") return "";
+    const corner = `<select id="s-fps-corner" class="ln-input set-input" data-setting="fpsCorner">${FPS_CORNERS.map(([v, l]) => `<option value="${v}"${(s.fpsCorner || "tl") === v ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+    const access = F.access === "ask"
+      ? setRow("Let Lootnest read frame timings", "Windows asks once to add your account to Performance Log Users, as Xbox Game Bar does. Then sign out of Windows and in again.", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="fps-allow"${F.busy ? ' aria-busy="true" disabled' : ""}>${F.busy ? '<span class="ln-spinner" aria-hidden="true"></span>Waiting for Windows' : "Allow"}</button>`)
+      : F.access === "signout" ? setRow("Sign out of Windows and in again", "Your account is in Performance Log Users from the next sign-in. Then the counter works.") : "";
+    const exclusive = F.exclusive ? setRow(`${esc(F.exclusive)} ran in exclusive fullscreen`, "No window shows over a game there. Borderless or windowed, in the game's settings, shows the counter.") : "";
+    return sw("fpsCounter", "FPS counter", "", !!s.fpsCounter) + access + setRow("Where the FPS counter sits", "", corner, "s-fps-corner") + exclusive;
+  }
   // Captures from other apps: the switch, the folders read, and the way to
   // the ones matched to no game.
   let unsortedAsked = false;
@@ -75,7 +92,8 @@
           ${s.achToastsOff ? "" : setRow("Preview an unlock", "", b("secondary", 'id="s-toast" data-action="test-toast"', "Show one"))}
           ${sw("soundsOff", "Sounds", "", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "", !s.pointHotkeyOff, true)}
-          ${sw("screenshotsOff", "Ctrl+Shift+F12 saves a screenshot", "Into Pictures\\Lootnest\\Screenshots.", !s.screenshotsOff, true)}`)
+          ${sw("screenshotsOff", "Ctrl+Shift+F12 saves a screenshot", "Into Pictures\\Lootnest\\Screenshots.", !s.screenshotsOff, true)}
+          ${fpsRows(s)}`)
         + sub("Updates for your games", "", `
           ${sw("updatePointOff", "Make a save point before a game updates", "", !s.updatePointOff, true)}
           ${sw("downloadsOff", "Look in Downloads for updates", "", !s.downloadsOff, true)}`)

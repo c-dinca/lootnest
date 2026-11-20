@@ -480,6 +480,11 @@
     const s = JSON.parse(JSON.stringify(cfg().settings));
     let autostart = S.d.autostart;
     const f = el.dataset.setting;
+    if (f === "fpsCounter") {
+      try { S.fps = await api.fpsSet(el.checked); } catch (e) { toast(errText(e), "error"); }
+      await refresh();
+      return;
+    }
     if (f === "autostart") autostart = el.checked;
     else if (el.type === "checkbox") s[f] = el.dataset.invert ? !el.checked : el.checked;
     else if (el.type === "number") s[f] = parseInt(el.value, 10) || 0;

@@ -399,6 +399,16 @@
       if (it) { S.gameTab[it.kind + ":" + it.id] = "achievements"; openSheet(it.kind, it.id, null); setTimeout(show, 380); return; }
       show();
     },
+    // Settings, Games and swaps: put this account into Performance Log Users
+    // (Windows asks), so the FPS counter may read frame timings.
+    async "fps-allow"() {
+      S.fps = { ...(S.fps || {}), busy: true }; render();
+      try {
+        S.fps = await api.fpsAllow();
+        toast("Sign out of Windows and in again, then the FPS counter works.");
+      } catch (e) { S.fps = { ...(S.fps || {}), busy: false }; toast(errText(e), "error"); }
+      render();
+    },
     "test-toast"() {
       const demo = [{ name: "This is how an unlock looks", percent: 4.2 }];
       achPop(demo, "", (seated() || {}).id); unlockSound(demo);
