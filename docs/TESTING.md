@@ -1242,3 +1242,26 @@ Two monitors on the PC, the TV app connected.
    stream) and moving between games stays as quick as before.
 4. With music on, move to another game and wait a few seconds: the piece
    moves to another key at its next chord.
+
+## 56. The FPS counter inside a game
+
+1. A Direct3D 11 story game with no anti-cheat (a folder game, or Steam
+   without Valve Anti-Cheat), counter on: within a few seconds the number
+   and a frame's time are drawn in the game's own picture, in the chosen
+   corner, and Lootnest's own box doesn't show. The log says "inside
+   <game> (no anti-cheat), drawn in the game" and "draws with Direct3D 11".
+2. The same game in exclusive fullscreen: the number still shows.
+3. Ctrl+Shift+F10 hides and shows it in the game; changing the corner in
+   Settings moves it within a second.
+4. A Direct3D 9 game and an OpenGL one: drawn inside the same way.
+5. A Direct3D 12 game: the log says it draws with Direct3D 12, and the
+   number shows in Lootnest's box (counted inside the game).
+6. A game with Easy Anti-Cheat or BattlEye (Elden Ring, a BattlEye game),
+   GTA V and CS2: the log says "not inside <game>, since ...", and the
+   counter shows outside as before (with the frame reader allowed).
+7. Turn off **Draw it inside games without an anti-cheat**, start a story
+   game: the log has no "inside", and the counter is outside.
+8. With Steam's overlay and Discord's on, a story game: both overlays and
+   the number work, and the game runs as before.
+9. A 32-bit game: the log says it's a 32-bit program; the counter is
+   outside.

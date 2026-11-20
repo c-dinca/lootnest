@@ -213,6 +213,9 @@ type Settings struct {
 	// default; Ctrl+Shift+F10 and the Home menu over a game turn it on and
 	// off, so the app owns it: a page's saved settings don't change it.
 	FPSCounter bool `json:"fpsCounter,omitempty"`
+	// FPSInGameOff keeps the counter outside every game, never drawn
+	// inside one without an anti-cheat (app/overlay.go).
+	FPSInGameOff bool `json:"fpsInGameOff,omitempty"`
 	// FPSCorner is where it sits: "tl" (default), "tr", "bl" or "br".
 	FPSCorner string `json:"fpsCorner,omitempty"`
 	// CapturesOff stops Lootnest reading the screenshots and clips other

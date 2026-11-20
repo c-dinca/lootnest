@@ -42,11 +42,12 @@
     const corner = `<select id="s-fps-corner" class="ln-input set-input" data-setting="fpsCorner">${FPS_CORNERS.map(([v, l]) => `<option value="${v}"${(s.fpsCorner || "tl") === v ? " selected" : ""}>${l}</option>`).join("")}</select>`;
     const key = (action, label) => `<button class="ln-button ln-button--secondary ln-button--sm" data-action="${action}"${F.busy ? ' aria-busy="true" disabled' : ""}>${F.busy ? '<span class="ln-spinner" aria-hidden="true"></span>Waiting for Windows' : label}</button>`;
     const access = F.access === "ask"
-      ? setRow("Let Lootnest read frame timings", "Windows asks once, as administrator, and the counter works right away. Lootnest puts a small frame reader in Program Files and a task in Task Scheduler that starts it while a game runs.", key("fps-allow", "Allow"))
+      ? setRow("Let Lootnest read frame timings", "For games with an anti-cheat, where the counter stays outside the game. Windows asks once, as administrator, and it works right away: Lootnest puts a small frame reader in Program Files and a task in Task Scheduler that starts it while a game runs.", key("fps-allow", "Allow"))
       : F.access === "update" ? setRow("Update the frame reader", "It's from another version of Lootnest. Windows asks once.", key("fps-allow", "Update"))
       : F.reader ? setRow("Lootnest's frame reader", "In Program Files, started by Task Scheduler while a game runs.", key("fps-remove", "Remove")) : "";
     const exclusive = F.exclusive ? setRow(`${esc(F.exclusive)} ran in exclusive fullscreen`, "No window shows over a game there. Borderless or windowed, in the game's settings, shows the counter.") : "";
-    return sw("fpsCounter", "FPS counter", "", !!s.fpsCounter) + access + setRow("Where the FPS counter sits", "", corner, "s-fps-corner") + exclusive;
+    const inGame = sw("fpsInGameOff", "Draw it inside games without an anti-cheat", "As Steam's overlay does, so it shows over exclusive fullscreen too. Never in a game with an anti-cheat, played online or with Valve Anti-Cheat.", !s.fpsInGameOff, true);
+    return sw("fpsCounter", "FPS counter", "", !!s.fpsCounter) + inGame + access + setRow("Where the FPS counter sits", "", corner, "s-fps-corner") + exclusive;
   }
   // Captures from other apps: the switch, the folders read, and the way to
   // the ones matched to no game.

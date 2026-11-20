@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The FPS counter inside the game, as Steam's.** In games without an anti-cheat, the counter is now drawn into the game's own picture, with a frame's time beside the number ("144 FPS 6.9 ms"), so it shows over exclusive fullscreen too and needs nothing allowed. Lootnest goes into such a game only while the counter is on, and only touches the part that shows each frame, as Steam's and Discord's overlays do. It never goes into a game with an anti-cheat anywhere in its folder, a Steam game with Valve Anti-Cheat, a game played online (GTA V, Red Dead Redemption 2, Call of Duty and the like), or any game while an anti-cheat runs: those keep the counter outside the game. Settings, Games and swaps, **Draw it inside games without an anti-cheat** turns it off. Direct3D 11, Direct3D 9 and OpenGL games get it inside; Direct3D 12 and Vulkan games show it outside, which works there since they have no exclusive fullscreen.
 - **The FPS counter works without signing out.** Allowing it used to add your account to a Windows group that only counted from your next sign-in, so the counter stayed blank until then. Now **Allow** (Settings, Games and swaps) puts a small frame reader of Lootnest's in Program Files and a task in Task Scheduler that starts it while a game runs: Windows asks once, as administrator, and the counter works right away, with no prompt after that. **Remove**, in the same place, takes both away. It also counts frames from one more of Windows' reports, so more games show a number.
 
 ## 2.18.1

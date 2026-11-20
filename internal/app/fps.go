@@ -21,7 +21,9 @@ import (
 // over a game and Settings turn it on and off. Listening takes an
 // administrator's full rights, so unless this sign-in has them, the frames
 // come from Lootnest's frame reader (app/framereader.go), which the user
-// allows once with Windows' prompt and which works at once.
+// allows once with Windows' prompt and which works at once. In games
+// without an anti-cheat the counter is drawn inside the game instead, as
+// Steam's is, and needs nothing allowed (app/overlay.go).
 // ---------------------------------------------------------------------------
 
 const hotkeyFPS = 0x4C46 // "LF"
@@ -221,8 +223,21 @@ func (a *App) fpsLoop() {
 		fpsRun.loop = false
 		fpsRun.mu.Unlock()
 	}()
-	src, err := a.startFrames()
-	if err != nil {
+	// Frames come from the DLL inside story games (app/overlay.go) and,
+	// for every other game, from what Windows reports, which is started the
+	// first time a game needs it.
+	var src frameSource
+	tried := false
+	outside := func() frameSource {
+		if tried {
+			return src
+		}
+		tried = true
+		var err error
+		if src, err = a.startFrames(); err == nil {
+			a.logf("FPS counter: listening to frames through %s", src.Kind())
+			return src
+		}
 		if errors.Is(err, plat.ErrFramesNotAllowed) {
 			fpsRun.mu.Lock()
 			told := fpsRun.denied
@@ -230,29 +245,23 @@ func (a *App) fpsLoop() {
 			fpsRun.mu.Unlock()
 			if !told {
 				st := a.fpsState()
-				a.logf("FPS counter: Windows doesn't let this account read frame timings (%s)", st.Access)
-				line := "Allow it once in Lootnest: Settings, Games and swaps."
-				plat.ShowToast(plat.Toast{Kicker: "FPS counter", Title: "Needs your permission first", Line: line})
+				a.logf("FPS counter: Windows doesn't let this account read frame timings (%s); only games without an anti-cheat show it", st.Access)
+				plat.ShowToast(plat.Toast{Kicker: "FPS counter", Title: "Needs your permission for this game",
+					Line: "Games with an anti-cheat need it allowed once: Lootnest's Settings, Games and swaps."})
 				a.emit("fps", map[string]any{"state": st})
 			}
 		} else {
 			a.logf("FPS counter couldn't listen to frames: %v", err)
 		}
-		// Off again, so the hotkey's next press tries afresh.
-		a.mu.Lock()
-		cfg := a.cfg.Clone()
-		a.mu.Unlock()
-		cfg.Settings.FPSCounter = false
-		if a.saveConfig(cfg) == nil {
-			a.emit("fps", map[string]any{"state": a.fpsState()})
-		}
-		return
+		return nil
 	}
-	a.logf("FPS counter: listening to frames through %s", src.Kind())
 	defer func() {
-		src.Stop()
+		overlaysOff()
+		if src != nil {
+			src.Stop()
+			a.logf("FPS counter: stopped listening")
+		}
 		plat.HideFPS()
-		a.logf("FPS counter: stopped listening")
 	}()
 	self := uint32(os.Getpid())
 	noted := false
@@ -269,14 +278,29 @@ func (a *App) fpsLoop() {
 		fresh := time.Since(fpsRun.since) < 3*time.Second
 		fpsRun.mu.Unlock()
 		pid := plat.ForegroundPID()
-		if pid == self { // Lootnest itself, its Home menu over a game included
+		a.overlayConsider(pid)
+		inGame, dllFPS, counted := a.overlayTick(pid, pid != self)
+		switch {
+		case pid == self: // Lootnest itself, its Home menu over a game included
 			plat.HideFPS()
 			continue
+		case inGame: // drawn inside the game
+			plat.HideFPS()
+			continue
+		case counted:
+			plat.ShowFPS(strconv.Itoa(dllFPS), corner)
+			continue
 		}
-		if rate, ok := src.Rate(pid); ok {
-			plat.ShowFPS(strconv.Itoa(rate), corner)
+		if s := outside(); s != nil {
+			if rate, ok := s.Rate(pid); ok {
+				plat.ShowFPS(strconv.Itoa(rate), corner)
+			} else if fresh {
+				plat.ShowFPS("", corner) // "--" for a moment, so the key is seen to work
+			} else {
+				plat.HideFPS()
+			}
 		} else if fresh {
-			plat.ShowFPS("", corner) // "--" for a moment, so the key is seen to work
+			plat.ShowFPS("", corner)
 		} else {
 			plat.HideFPS()
 		}
@@ -286,7 +310,7 @@ func (a *App) fpsLoop() {
 			if r, _, ok := a.runningNow(); ok {
 				name = r.name
 			}
-			a.logf("FPS counter: %s runs in exclusive fullscreen, where no other window shows; borderless or windowed shows the counter", name)
+			a.logf("FPS counter: %s runs in exclusive fullscreen and has the counter outside the game, where no other window shows; borderless or windowed shows it", name)
 			fpsRun.mu.Lock()
 			fpsRun.exclusive = name
 			fpsRun.mu.Unlock()
