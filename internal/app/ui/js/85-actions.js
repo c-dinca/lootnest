@@ -137,6 +137,7 @@
       P.busy = true; render();
       try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
+    "qs-use"(el) { const it = itemFor(el); if (it) api.setQuickSave(recentKey(it), el.dataset.k).catch((e) => toast(errText(e), "error")); },
     "tl-more"(el) { const k = el.dataset.key; S.tlMore[k] = (S.tlMore[k] || TL_SHOWN) + TL_SHOWN; render(); },
     async "pt-restore"(el) {
       const it = itemFor(el);
@@ -1558,6 +1559,7 @@
   document.addEventListener("change", (ev) => {
     const el = ev.target;
     if (el.dataset.setting) { saveSetting(el); return; }
+    if (el.dataset.qs !== undefined && el.id === "pt-qs") { api.setQuickSave(el.dataset.qs, el.value).catch((e) => toast(errText(e), "error")); return; }
     if (el.dataset.svf) { svF()[el.dataset.svf] = el.value; S.svMore = false; render(); return; }
     if (el.dataset.pluginOn) {
       const p = ((S.plugins || {}).plugins || []).find((x) => x.id === el.dataset.pluginOn), on = el.checked;

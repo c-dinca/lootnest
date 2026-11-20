@@ -171,7 +171,7 @@
         }
         break;
       case "savePoints":
-        S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, loaded: true });
+        S.points[ev.key] = Object.assign({}, S.points[ev.key] || {}, { points: ev.points || [], error: ev.error || "", player: ev.player || "", running: !!ev.running, profiles: !!ev.profiles, quickSave: ev.quickSave || "", suggest: ev.suggest || "", antiCheat: ev.antiCheat || "", loaded: true });
         if (S.view === "game") render();
         if (BP.on) bpSoon();
         renderGq(); // the box's Make a save point

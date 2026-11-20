@@ -367,7 +367,20 @@
     if (pid) actions["play-as"]({ dataset: { game: it.id, player: pid } });
     else actions["play-pick"]({ dataset: { game: it.id } });
   }
-  const POINT_STEPS = { closing: "Closing the game", copying: "Going back" };
+  const POINT_STEPS = { closing: "Closing the game", copying: "Copying", saving: "Saving in the game" };
+  // Save now: the game saves itself first when it runs and has a quick
+  // save key chosen (core/quicksave.go).
+  const savesFirst = (P) => !!(P.running && P.quickSave && !P.antiCheat);
+  function quickSaveRow(it, P) {
+    if (P.antiCheat) return `<p class="gpage-hint pt-qs">${esc(P.antiCheat)} is in this game, so Lootnest never presses keys in it. A save point has its last save: save in the game first.</p>`;
+    const opts = ["", ...QS_KEYS].map((k) => `<option value="${k}"${(P.quickSave || "") === k ? " selected" : ""}>${k || "None"}</option>`).join("");
+    const use = !P.quickSave && P.suggest ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="qs-use" ${itemAttr(it)} data-k="${esc(P.suggest)}">Use ${esc(P.suggest)}</button>` : "";
+    const say = P.quickSave ? `While the game runs, a save point presses ${esc(P.quickSave)} first and waits for the game to save.`
+      : P.suggest ? `This game's quick save is usually ${esc(P.suggest)}. With it chosen, a save point saves the game first.`
+      : "With the game's quick save key chosen, a save point saves the game first. Without one, it keeps the game's last save.";
+    return `<div class="pt-qs"><label for="pt-qs">Quick save key</label><select class="ln-input" id="pt-qs" data-qs="${esc(recentKey(it))}">${opts}</select>${use}<span class="gpage-hint">${say}</span></div>`;
+  }
+  const QS_KEYS = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"];
   function pointRow(it, p, full, P) {
     const when = new Date(p.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
     const facts = [esc(when)];
@@ -384,7 +397,7 @@
         + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
     const pic = p.thumb ? picButton(it, "point:" + p.id, p.thumb, `Picture of ${p.name}`) : "";
     return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}${pic ? " pt-row--pic" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
-      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : ""}</span></div>${pic}<div class="pt-actions">${actions}</div></li>`;
+      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : p.inGame ? "<span>Saved by the game first</span>" : ""}</span></div>${pic}<div class="pt-actions">${actions}</div></li>`;
   }
   const shotLabel = (e) => "Screenshot, " + new Date(e.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
   // A picture's thumbnail that opens it large (viewShots).
@@ -422,7 +435,7 @@
     const list = P.points || [];
     const hint = cfg().settings.pointHotkeyOff ? "" : '<span class="gpage-hint"><kbd>Ctrl+Shift+F5</kbd> in game</span>';
     const make = `<div class="pt-make"><input class="ln-input" id="pt-new" maxlength="60" placeholder="Name, such as Before the boss" aria-label="Save point name" ${P.busy ? "disabled" : ""}>
-      <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? `<span class="ln-spinner" aria-hidden="true"></span>${POINT_STEPS[P.step] || "Copying"}` : "Make a save point"}</button>${hint}</div>`;
+      <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? `<span class="ln-spinner" aria-hidden="true"></span>${POINT_STEPS[P.step] || "Copying"}` : savesFirst(P) ? "Save now" : "Make a save point"}</button>${hint}</div>${quickSaveRow(it, P)}`;
     return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
       ${make}
       ${list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : ""}</section>`;

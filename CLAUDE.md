@@ -85,6 +85,7 @@ and the ban is on the user's account. Then:
   in a way that skips it. If the game has its own way to play the story
   without it (a setting in its launcher), that's the user's to use.
 - The choice is per game, and can be taken back.
+The owner agreed to these conditions (20 Nov 2026). Not built yet.
 
 What still holds for story games:
 - No DRM bypass. Denuvo and other anti-tamper count as DRM, and going
@@ -2110,6 +2111,28 @@ These shipped recently, newest last:
   page starts the game as its Play key does (`playAfterPoint`; Big
   Picture's `bpPlay`). `goBackAsk` words the question by whether the game
   runs (`pointGameRuns`). docs/TESTING.md 49.
+- **Unreleased, Save now** (the owner, 20 Nov 2026: "mergem pe save
+  now"; the second part of the save engine's rework, without injection).
+  `LaunchOptions.QuickSave` is the game's own quick save key ("F1" to
+  "F12", the user's choice; `apiSaveLaunchOptions` keeps it, since the
+  launch drawer doesn't send it); `core/quicksave.go`: `QuickSaveVK`,
+  `CleanQuickSave`, `QuickSaveSuggestion` (a table by Steam app id and by
+  name: Bethesda, CD Projekt Red, Larian, Arkane, Owlcat, Obsidian F5;
+  Valve's Source games and Black Mesa F6; only offered, never pressed
+  until chosen), `StampSaves`, `WaitForGameSave` (a change, then still for
+  `settle`). `app/quicksave.go` `saveInGame`: only while the game runs,
+  with a key, no `AntiCheat(gameDir)`; the game's window to the front
+  (`tvResume` when it's behind Lootnest's Home menu, else
+  `ForceForeground`), waits for Ctrl/Shift/Alt to be let go
+  (`win.ModifiersDown`), presses only into the game in front
+  (`ForegroundIs`), `win.TapGameKey` (scan code, held 80 ms), then waits
+  12 s for the save; no save, no point. Used by `apiMakeSavePoint` (Save
+  now, the Home menu's point) and `quickPoint` (Ctrl+Shift+F5);
+  `SavePoint.InGame`; step `saving`. UI: `quickSaveRow`, `savesFirst`,
+  `qs-use`, `#pt-qs`, `ps_setQuickSave`; `savePoints` carries
+  `quickSave`, `suggest`, `antiCheat`. Harness `?pointrun=1&qs=F5`.
+  docs/TESTING.md 50. Next in the rework, when the owner says: every save
+  the game makes kept by itself, and the injected save for story games.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
@@ -2283,7 +2306,8 @@ makes kept on the timeline by itself, Go back that closes the game, puts
 the save in place as the newest and starts it again on that save, and
 points that show their files and say when nothing changed. Go back
 that closes the game, puts the save in as the newest and starts it again
-is done (Unreleased, above); ask before building the rest.
+is done, and Save now with the game's quick save key (both Unreleased,
+above); ask before building the rest.
 
 ## Ideas not started
 

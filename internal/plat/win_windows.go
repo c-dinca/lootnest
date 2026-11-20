@@ -313,6 +313,10 @@ func MessageBox(hwnd uintptr, text string, caption string, flags uint32) int {
 	return win.MessageBox(hwnd, text, caption, flags)
 }
 
+func ModifiersDown() bool {
+	return win.ModifiersDown()
+}
+
 func MostFree() (string, int64) {
 	return win.MostFree()
 }
@@ -602,6 +606,10 @@ func SystemDPI() int {
 }
 
 type TVBar = win.TVBar
+
+func TapGameKey(vk uint16) {
+	win.TapGameKey(vk)
+}
 
 func TapKey(vk uint16) {
 	win.TapKey(vk)
