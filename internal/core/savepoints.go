@@ -36,6 +36,7 @@ type SavePoint struct {
 	Auto     bool      `json:"auto,omitempty"`     // made by Lootnest: before going back to another point, or before an update
 	Update   bool      `json:"update,omitempty"`   // made before the first start after the game updated
 	InGame   bool      `json:"inGame,omitempty"`   // the game saved itself right before (its quick save key)
+	Game     bool      `json:"game,omitempty"`     // kept by itself when the game saved; the oldest go (PruneGamePoints)
 	Size     int64     `json:"size"`
 	Locs     []string  `json:"locs"` // location ids with files in the point
 	// Paths are the locations' paths as Lootnest writes them (with
@@ -309,6 +310,28 @@ func MakeNewest(paths []string, now time.Time) error {
 	return nil
 }
 
+// PruneGamePoints deletes the oldest points kept by themselves when the
+// game saved (Game), beyond the newest keep of them. Points the user made
+// and Lootnest's other points are never touched; a game point the user
+// renamed counts as theirs. It says how many went.
+func PruneGamePoints(root string, keep int) (int, error) {
+	n := 0
+	seen := 0
+	for _, p := range SavePoints(root) { // newest first
+		if !p.Game {
+			continue
+		}
+		if seen++; seen <= keep {
+			continue
+		}
+		if err := DeleteSavePoint(root, p.ID); err != nil {
+			return n, err
+		}
+		n++
+	}
+	return n, nil
+}
+
 // RenameSavePoint gives a point a new name.
 func RenameSavePoint(root, id, name string) error {
 	p, dir, err := loadPoint(root, id)
@@ -318,6 +341,7 @@ func RenameSavePoint(root, id, name string) error {
 	if p.Name = cleanPointName(name); p.Name == "" {
 		return errors.New("give it a name")
 	}
+	p.Game = false // named by the user: theirs, never pruned
 	b, _ := json.MarshalIndent(p, "", "  ")
 	return os.WriteFile(filepath.Join(dir, "point.json"), b, 0o644)
 }

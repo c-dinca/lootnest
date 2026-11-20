@@ -116,6 +116,9 @@ func StampSaves(locs []SaveLoc) (SaveStamps, error) {
 	return out, nil
 }
 
+// SameSaves says whether two readings of the saves are the same.
+func SameSaves(a, b SaveStamps) bool { return sameSaves(a, b) }
+
 func sameSaves(a, b SaveStamps) bool {
 	if len(a) != len(b) {
 		return false

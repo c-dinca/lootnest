@@ -1141,3 +1141,23 @@ the same network as the PC, with TV streaming set up.
 7. A game that reads keys by raw input or DirectInput (most newer ones):
    F5 from Lootnest works there too. If one ignores it, note which game.
 
+## 51. Every save the game makes
+
+1. Start a game whose saves Lootnest knows (its Saves tab has save
+   points). Save in the game's menu, or reach an autosave. Within about
+   15 s the Saves tab has a point "Saved by the game, <time>", with a
+   picture, and no toast or sound in Lootnest's window.
+   The game shouldn't hitch when it saves (the picture is taken then);
+   note any game that does.
+2. Save again without moving: no second point (the files didn't change).
+3. Press Ctrl+Shift+F5 (or Save now): one point, not two.
+4. Play long enough for over 30 game saves (or set the limit lower in a
+   debug build): the oldest "Saved by the game" points go, the others
+   stay. Rename one: it stays for good.
+5. Settings, Games and swaps, **Keep each save a game makes** off: no new
+   points while playing.
+6. A game whose saves are over 512 MB: the log says Lootnest doesn't keep
+   each save of it, and play is unaffected.
+7. A Steam game without profiles started from Steam: its saves are kept
+   too, when Lootnest knows the game's process.
+

@@ -397,7 +397,7 @@
         + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
     const pic = p.thumb ? picButton(it, "point:" + p.id, p.thumb, `Picture of ${p.name}`) : "";
     return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}${pic ? " pt-row--pic" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
-      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : p.inGame ? "<span>Saved by the game first</span>" : ""}</span></div>${pic}<div class="pt-actions">${actions}</div></li>`;
+      <span class="pt-facts">${who ? `<span>${who}</span>` : ""}${facts.map((x) => `<span>${x}</span>`).join("")}${p.update ? "<span>Made before the game updated</span>" : p.auto ? "<span>Kept before going back</span>" : p.inGame ? "<span>Saved by the game first</span>" : p.game ? "<span>Kept when the game saved</span>" : ""}</span></div>${pic}<div class="pt-actions">${actions}</div></li>`;
   }
   const shotLabel = (e) => "Screenshot, " + new Date(e.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
   // A picture's thumbnail that opens it large (viewShots).
@@ -438,7 +438,21 @@
       <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? `<span class="ln-spinner" aria-hidden="true"></span>${POINT_STEPS[P.step] || "Copying"}` : savesFirst(P) ? "Save now" : "Make a save point"}</button>${hint}</div>${quickSaveRow(it, P)}`;
     return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
       ${make}
-      ${list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : ""}</section>`;
+      ${cfg().settings.gamePointsOff ? "" : '<p class="gpage-hint pt-auto">Each save the game makes while it runs is kept here by itself, the newest 30.</p>'}
+      ${list.length ? `<ol class="pt-list pt-list--all">${shownPoints(it, list).map((p) => pointRow(it, p, true, P)).join("")}</ol>${moreGameSaves(it, list)}` : ""}</section>`;
+  }
+  // The game's own saves (kept by themselves) show the newest few until
+  // asked for all; points the user made always show.
+  const GAME_SHOWN = 5, ptAllGame = new Set();
+  function shownPoints(it, list) {
+    if (ptAllGame.has(recentKey(it))) return list;
+    let n = 0;
+    return list.filter((p) => !p.game || ++n <= GAME_SHOWN);
+  }
+  function moreGameSaves(it, list) {
+    const n = list.filter((p) => p.game).length;
+    if (n <= GAME_SHOWN || ptAllGame.has(recentKey(it))) return "";
+    return `<button class="ln-button ln-button--ghost ln-button--sm pt-more" data-action="pt-all-game" ${itemAttr(it)}>Show all ${n} saves the game made</button>`;
   }
   // Overview: the newest save point, and the way to the rest.
   function latestPoint(it) {

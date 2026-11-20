@@ -115,6 +115,7 @@ func (a *App) achTick(procs map[string]bool) {
 	running := a.achRunning(procs)
 	a.hotkeyTick(running)
 	a.padTick(running)
+	a.gamePointsTick(procs, running)
 	a.mu.Lock()
 	off := a.cfg.Settings.AchToastsOff
 	a.mu.Unlock()
