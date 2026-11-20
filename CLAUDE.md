@@ -44,6 +44,50 @@ What makes it different, and the direction to keep pushing:
   versions, encryption and per-profile sync;
 - nothing goes online unless the user turns it on (README, Privacy table).
 
+## Story games and online games (the owner, 20 Nov 2026)
+
+Lootnest treats two kinds of game differently. The owner: single-player
+story games have no anti-cheat, so there Lootnest can do what it needs
+without anyone being banned; multiplayer games have one, and Lootnest
+stays out of them.
+
+- **Online games** have an anti-cheat (`core.AntiCheat(dir)`: Easy
+  Anti-Cheat, BattlEye, Vanguard, FACEIT, EA AntiCheat), or are played
+  mainly online. Lootnest works around them only from the outside, as it
+  always has: its own windows, the game's files while it's closed, ETW.
+  It never goes into their process. A ban costs the user their account.
+- **Story games** are single-player with no anti-cheat. In these,
+  Lootnest may go into the game's process: load a DLL of its own, hook
+  its Present (the overlay and the FPS counter over exclusive
+  fullscreen), read and write its memory, and call the game's own save
+  and load code.
+
+Telling them apart (none of this exists yet):
+- An anti-cheat anywhere in the game's folder makes it online. So does a
+  story mode that shares its exe with an online mode: GTA V (BattlEye),
+  Red Dead Redemption 2 (Rockstar's own), Elden Ring (EAC).
+- Steam's categories (Single-player, Multi-player, Online PvP, MMO)
+  help; a game with only online categories is online.
+- When unsure, the game is online. The user may mark a game online, but
+  never mark one with an anti-cheat as a story game.
+
+What still holds for story games:
+- No DRM bypass. Denuvo and other anti-tamper count as DRM, and going
+  into such a process can crash it or look like tampering, so games with
+  anti-tamper stay out until there's a safe way to tell.
+- Nothing that makes a game start without its owner's copy (no cracks,
+  no emulators shipped).
+- A copy of the user's files before anything is written.
+
+What injection can't do: freeze a running PC game and resume it later,
+as an emulator's save state does. A game's state lives in GPU memory,
+driver and Windows handles, threads and open files, and a copy of its
+memory can't bring those back. Injection can make the game save itself
+(per engine: Bethesda's `save` console command, Unreal's
+`SaveGameToSlot`, Unity games' own save managers, or the quicksave key),
+load a chosen save, and read facts for a save point (chapter, place,
+level). That's the plan for the save engine's rework (below).
+
 ## Stack and layout
 
 - Go (no cgo) plus a WebView2 window (`third_party/go-webview2`, modified).
@@ -1958,7 +2002,9 @@ These shipped recently, newest last:
 - **Unreleased, the FPS counter** (the owner, 20 Nov 2026: on and off
   from the overlay or the keyboard; variant 1 for the permission,
   Ctrl+Shift+F10; and asked why not over exclusive fullscreen: only by
-  hooking the game's Present, which is injection, so no). `win/etw.go`: a
+  hooking the game's Present, which is injection, so no; since the
+  owner's decision of the same day, story games may get that, see Story
+  games and online games). `win/etw.go`: a
   real-time ETW session of Lootnest's own ("Lootnest frame counter",
   stopped and started again if a crashed Lootnest left it) with
   EVENT_FILTER_TYPE_EVENT_ID filters: DXGI Present_Start 42 and
@@ -2095,12 +2141,14 @@ for safety.
 These came after the research brief, in conversation with the owner. Build
 them one per PR, in this order unless the owner says otherwise.
 
-**The achievement overlay.** No injection, no reading game memory: a
-separate always-on-top window, as Xbox Game Bar or a desktop companion
+**The achievement overlay.** For online games, no injection and no
+reading game memory: a separate always-on-top window, as Xbox Game Bar or a desktop companion
 app does. It shows over windowed and borderless games, and over most
 "fullscreen" ones on Windows 10 and 11 (fullscreen optimizations); not
 over true exclusive fullscreen, where it says to switch to borderless.
 Off by default for games with an anti-cheat (EAC, BattlEye, Vanguard).
+Story games may get it inside the game instead, over exclusive
+fullscreen too (Story games and online games, above).
 WebView2 can do a transparent background (`PutDefaultBackgroundColor`
 with alpha 0 in `third_party/go-webview2`). Window behaviour over a real
 game can only be checked on the owner's PC.
@@ -2169,6 +2217,20 @@ Mods from Nexus Mods are the owner's choice of 20 Nov 2026: browsing
 through Nexus's public API, and the download on nexusmods.com itself, in
 Lootnest's window for that site, by the user; never mods from sites that
 copy other people's, and never CurseForge (its terms, docs/ROADMAP.md).
+
+**The save engine's rework** (the owner, 20 Nov 2026: save points
+"don't work", and Go back to it "doesn't really do anything"; rework it
+all and make it unique). What's wrong now: a point copies only what the
+game last wrote to disk, so one made mid-play holds an older save; Go
+back to it refuses while the game runs and never starts it again, so
+nothing seems to change; a game outside the stores may have its save
+folder guessed by name, and the point says nothing. Ideas put to the
+owner, not chosen yet: a save that makes the game save first (its own
+save code in story games, else its quicksave key), every save the game
+makes kept on the timeline by itself, Go back that closes the game, puts
+the save in place as the newest and starts it again on that save, and
+points that show their files and say when nothing changed. Ask before
+building.
 
 ## Ideas not started
 
