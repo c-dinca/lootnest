@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.18.0, beta)
+## Where things stand (2.18.1, beta)
 
 These shipped recently, newest last:
 
@@ -2236,7 +2236,7 @@ These shipped recently, newest last:
   in the desktop build under xvfb, not on a TV. The owner asked for
   2.18.0 with everything of 20 Nov in it.
 
-- **Unreleased, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
+- **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
   have the PC's "liquid glass", same theme). `bpCards` and the `hc-*`
   handlers are gone (Home is the hero, the first row, Collections...).
@@ -2246,6 +2246,7 @@ These shipped recently, newest last:
   overlay's scrim blur as the PC's dialogs (`--blur-scrim`), `.bp-dlg` is
   `--glass-overlay`; `--bp-scrim-deep` 0.7. This reverses 2.6.0's "no blur
   in Big Picture"; Glass off still makes it all solid. docs/TESTING.md 55.
+  Released as 2.18.1 at the owner's ask (20 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
