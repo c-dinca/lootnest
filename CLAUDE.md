@@ -2167,6 +2167,28 @@ These shipped recently, newest last:
   a headful Chromium with another window in front; not on a PC:
   docs/TESTING.md 52.
 
+- **Unreleased, the PC's monitors in TV mode** (the owner, 20 Nov 2026,
+  with two monitors: windows opened on the PC landed on the TV, the
+  taskbar and Lootnest's bar were on one monitor only; they asked for
+  both bars on both). `app/tvwindows.go` `tvWindows` (from `enterTV`,
+  every 300 ms, only when `core.CursorKeep` says the TV's display is the
+  isolated primary): a window judged once as it comes onto the TV
+  (`core.OnTV`) moves to the PC display under the cursor
+  (`core.PCDisplays`, `PlaceIn`, `win.WorkAreaOf`, `MoveWindowTo`, which
+  maximises again) unless it's Lootnest's, `conWin`, within
+  `tvLaunchGrace` of `conStart` (set by `tvGameStarting`), fills the TV,
+  is a shell class, its process is the TV's (`tvSide`: own exe,
+  `foundRuns`, the `conGame` process; `win.ProcessName`), or the TV's side
+  had the keyboard at the last look. `tvTaskbar` is a method now and keeps
+  `MMTaskbarEnabled`/`MMTaskbarMode` (`win.TaskbarSettings`,
+  `SetTaskbarSettings`, a WM_SETTINGCHANGE "TraySettings" broadcast) in
+  the `taskbar-hidden` mark as JSON, sets 1 and 0 (every app on every
+  taskbar) and puts them back at leave, the emergency key and the next
+  start; `keepCursor` hides the TV's taskbar again each second.
+  `win.ShowTVBar` takes every PC display: one bar each, one thread, a
+  thread timer (`barSync`, `barWin` per window). Not seen on a PC:
+  docs/TESTING.md 53.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

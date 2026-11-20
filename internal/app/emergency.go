@@ -50,7 +50,7 @@ func (a *App) emergency() {
 	}
 	a.logf("%s pressed: leaving TV mode and quitting", plat.EmergencyKey)
 	plat.ClipCursor(nil)
-	tvTaskbar(true)
+	a.tvTaskbar(true)
 	plat.HideTVBar()
 	if pid := tvHolderPID.Load(); pid != 0 {
 		if plat.KillPID(pid) {

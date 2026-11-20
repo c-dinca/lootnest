@@ -1,5 +1,7 @@
 package core
 
+import "slices"
+
 // Keeping the PC's mouse off the TV in TV mode. A streaming host's isolated
 // virtual display (Apollo's isolated_virtual_display_option) is made the
 // primary display at (0,0), with the PC's own displays moved up and left
@@ -75,4 +77,42 @@ func PCDisplay(tv Rect, displays []Rect) (Rect, bool) {
 		}
 	}
 	return best, best.area() > 0
+}
+
+// PCDisplays is every display of the PC's own while the TV shows tv,
+// the largest first: each gets TV mode's bar, and windows that open on the
+// TV go to one of them.
+func PCDisplays(tv Rect, displays []Rect) []Rect {
+	var out []Rect
+	for _, d := range displays {
+		if d == tv || d.area() <= 0 || overlap(d.L, d.R, tv.L, tv.R) > 0 && overlap(d.T, d.B, tv.T, tv.B) > 0 {
+			continue
+		}
+		out = append(out, d)
+	}
+	slices.SortStableFunc(out, func(a, b Rect) int { return b.area() - a.area() })
+	return out
+}
+
+// Centre is the middle of an area.
+func (r Rect) Centre() (x, y int) { return (r.L + r.R) / 2, (r.T + r.B) / 2 }
+
+// OnTV says whether a window is on the TV's display: its middle is there.
+func OnTV(win, tv Rect) bool {
+	x, y := win.Centre()
+	return win.area() > 0 && tv.Has(x, y)
+}
+
+// FillsTV says whether a window covers the whole of the TV's display, as a
+// game in fullscreen does.
+func FillsTV(win, tv Rect) bool {
+	return win.L <= tv.L && win.T <= tv.T && win.R >= tv.R && win.B >= tv.B
+}
+
+// PlaceIn is where a window of win's size goes in a display's work area:
+// in its middle, no larger than it.
+func PlaceIn(win, work Rect) Rect {
+	w, h := min(win.R-win.L, work.R-work.L), min(win.B-win.T, work.B-work.T)
+	l, t := work.L+(work.R-work.L-w)/2, work.T+(work.B-work.T-h)/2
+	return Rect{l, t, l + w, t + h}
 }

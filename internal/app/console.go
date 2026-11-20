@@ -45,6 +45,7 @@ func (a *App) tvGameStarting(key, name string) {
 	a.mu.Lock()
 	a.tvPlaying = name
 	a.conGen++
+	a.conStart = time.Now()
 	gen := a.conGen
 	a.mu.Unlock()
 	plat.AllowAnyForeground()

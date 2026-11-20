@@ -225,3 +225,33 @@ func TestPSButtonIn(t *testing.T) {
 		t.Fatal("an empty report read as PS")
 	}
 }
+
+func TestTaskbarSettingsRoundTrip(t *testing.T) {
+	all, mode := TaskbarSettings()
+	t.Cleanup(func() {
+		if err := SetTaskbarSettings(all, mode); err != nil {
+			t.Errorf("putting back %d, %d: %v", all, mode, err)
+		}
+		if a, m := TaskbarSettings(); a != all || m != mode {
+			t.Errorf("put back as %d, %d, want %d, %d", a, m, all, mode)
+		}
+	})
+	if err := SetTaskbarSettings(1, 0); err != nil {
+		t.Fatal(err)
+	}
+	if a, m := TaskbarSettings(); a != 1 || m != 0 {
+		t.Errorf("got %d, %d, want 1, 0", a, m)
+	}
+	if err := SetTaskbarSettings(-1, -1); err != nil {
+		t.Fatal(err)
+	}
+	if a, m := TaskbarSettings(); a != -1 || m != -1 {
+		t.Errorf("removed values read %d, %d", a, m)
+	}
+}
+
+func TestProcessNameOfSelf(t *testing.T) {
+	if got := ProcessName(uint32(os.Getpid())); got == "" || strings.HasSuffix(got, ".exe") || got != strings.ToLower(got) {
+		t.Errorf("ProcessName of this test: %q", got)
+	}
+}

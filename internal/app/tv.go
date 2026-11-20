@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -127,7 +128,7 @@ func (a *App) enterTV(holder uint32) {
 	a.show()
 	plat.FullscreenPrimary(a.hwnd)
 	plat.ForceForeground(a.hwnd)
-	tvTaskbar(false)
+	a.tvTaskbar(false)
 	plat.WatchPadRawInput(a.hwnd, true)
 	held := plat.RegisterHotKey(a.hwnd, hotkeyTV, plat.ModControl|plat.ModShift|plat.ModNoRepeat, plat.VK_F11)
 	if !held && !was {
@@ -139,6 +140,7 @@ func (a *App) enterTV(holder uint32) {
 	if !was {
 		a.startGuide()
 		go a.keepCursor()
+		go a.tvWindows()
 	}
 	if ready {
 		a.emit("tv", map[string]any{"on": true})
@@ -183,7 +185,7 @@ func (a *App) leaveTV() {
 		a.updateTVApps()
 	}()
 	plat.HideTVBar()
-	tvTaskbar(true)
+	a.tvTaskbar(true)
 	plat.WatchPadRawInput(a.hwnd, false)
 	plat.SetFullscreen(a.hwnd, false)
 	if hidden || playing {
@@ -215,25 +217,52 @@ func (a *App) tvBack() {
 
 // tvTaskbarMark is kept while TV mode has the taskbar hidden, so a
 // Lootnest that ended without leaving TV mode shows it again at its next
-// start (tvTaskbarAtStart).
+// start (tvTaskbarAtStart). It holds the user's own taskbar choices for
+// several displays, put back when TV mode ends.
 func tvTaskbarMark() string { return filepath.Join(DataDir(), "taskbar-hidden") }
 
+// tvTaskbarWas is what the mark holds: Windows' Show my taskbar on all
+// displays and Show my taskbar apps on, as they were (-1 not set).
+type tvTaskbarWas struct {
+	All  int `json:"all"`
+	Mode int `json:"mode"`
+}
+
 // tvTaskbar hides Windows' main taskbar for TV mode (it's on the TV's
-// display while a stream runs) and shows it again after.
-func tvTaskbar(show bool) {
+// display while a stream runs) and shows it again after. While it's
+// hidden, every display of the PC's has a taskbar with every app on it,
+// Lootnest included (its window is on the TV), so the PC's monitors stay
+// usable; the user's own choices come back after.
+func (a *App) tvTaskbar(show bool) {
+	mark := tvTaskbarMark()
 	if show {
 		plat.ShowTaskbar(true)
-		_ = os.Remove(tvTaskbarMark())
+		if b, err := os.ReadFile(mark); err == nil {
+			var was tvTaskbarWas
+			if len(b) > 0 && json.Unmarshal(b, &was) == nil {
+				if err := plat.SetTaskbarSettings(was.All, was.Mode); err != nil {
+					a.logf("TV mode: Windows' taskbar choices weren't put back: %v", err)
+				}
+			}
+		}
+		_ = os.Remove(mark)
 		return
 	}
-	_ = os.WriteFile(tvTaskbarMark(), nil, 0o600)
+	if _, err := os.Stat(mark); err != nil { // not over a TV mode already on: its mark holds the user's choices
+		all, mode := plat.TaskbarSettings()
+		b, _ := json.Marshal(tvTaskbarWas{All: all, Mode: mode})
+		_ = os.WriteFile(mark, b, 0o600)
+		if err := plat.SetTaskbarSettings(1, 0); err != nil {
+			a.logf("TV mode: Windows' taskbar couldn't be shown on every display: %v", err)
+		}
+	}
 	plat.ShowTaskbar(false)
 }
 
 // tvTaskbarAtStart shows the taskbar a TV mode that didn't end left hidden.
-func tvTaskbarAtStart() {
+func (a *App) tvTaskbarAtStart() {
 	if _, err := os.Stat(tvTaskbarMark()); err == nil {
-		tvTaskbar(true)
+		a.tvTaskbar(true)
 	}
 }
 
@@ -305,11 +334,15 @@ func (a *App) keepCursor() {
 				held = false
 			}
 			keep, hx, hy, clip = ok, x, y, [4]int{c.L, c.T, c.R, c.B}
-			if pc, ok := core.PCDisplay(tv, ds); ok {
-				plat.ShowTVBar([4]int{pc.L, pc.T, pc.R, pc.B}, a.tvBarShows(), a.tvLeaveFromPC)
-			} else {
-				plat.HideTVBar()
+			// A bar on each of the PC's displays (none when the TV's is the only one).
+			var areas [][4]int
+			for _, pc := range core.PCDisplays(tv, ds) {
+				areas = append(areas, [4]int{pc.L, pc.T, pc.R, pc.B})
 			}
+			plat.ShowTVBar(areas, a.tvBarShows(), a.tvLeaveFromPC)
+			// Explorer may show the TV's taskbar again as it lays out its
+			// taskbars for every display (tvTaskbar).
+			plat.ShowTaskbar(false)
 		}
 		if !keep {
 			continue

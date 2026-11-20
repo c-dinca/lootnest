@@ -158,6 +158,7 @@ type App struct {
 	conGame      string     // the game running over Big Picture or TV mode (console.go); show() doesn't forget it
 	conWin       uintptr    // that game's window, when Lootnest found it
 	conGen       int        // which launch the curtain is following
+	conStart     time.Time  // when the last game or app was started from Big Picture or TV mode
 	guideOn      bool       // the Home button is being watched
 	padFeedOn    bool       // the controller is read for the page (padfeed.go)
 	pointerFor   string     // the program over Lootnest the controller is a mouse for (pointer.go)
@@ -355,7 +356,7 @@ func Run(opt Options) error {
 		tv := a.tv
 		a.mu.Unlock()
 		if !tv {
-			tvTaskbarAtStart() // a TV mode that didn't end left it hidden
+			a.tvTaskbarAtStart() // a TV mode that didn't end left it hidden
 		}
 		time.Sleep(2 * time.Second)
 		a.startScan()
