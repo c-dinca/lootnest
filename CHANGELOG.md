@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Big Picture in the same glass as the PC window.** Keys, rows, cards, the bar at the top and the menu are now the see-through, blurred glass of Lootnest's window on the PC, over the game's art, instead of solid grey plates; the sections at the top sit in one glass pill, as the PC's sidebar does. Glass off in Settings, Appearance makes them solid, as on the PC.
+- **Home's cards are gone.** The row of cards under the games (Play, Save points, the next achievement, Mods) came out: A on a cover opens the game, as before.
+
 ## 2.18.0
 
 - **Lootnest for TV 1.6.3 (LG).** The TV app's Settings, which it shows before it's connected to your PC, no longer has words running into its keys: the whole app now uses Lootnest's own letters, as its home screen does, instead of the TV's, and the part in focus is lit as Lootnest's keys are. Lootnest updates the app on an LG TV by itself.
