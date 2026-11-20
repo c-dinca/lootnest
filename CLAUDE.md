@@ -1984,6 +1984,34 @@ These shipped recently, newest last:
   Settings row, event `fps`; harness `?fps=ask|signout|exclusive|on`.
   CI's windows job checks the structure layouts and starts and stops the
   session; frames over a real game are docs/TESTING.md 47.
+- **Unreleased, mods from Nexus Mods, step 1** (the owner, 20 Nov
+  2026: "a mod manager in the Mods tab where you search and install
+  mods without leaving Lootnest"; Nexus chosen; then: "a small page
+  embedded in Lootnest for the download, not the whole browser").
+  `core/nexus.go`: Nexus's public GraphQL API (v2), no key or account
+  (`NexusFindGame` by domain, name, then words; `NexusSearch`,
+  `NexusModInfo`, `NexusText` for BBCode; adult, hidden and removed mods
+  left out; `SafeNexusImage`; CSP and `AllowedPageRequest` allow
+  staticdelivery and images.nexusmods.com). `Settings.NexusMods`, off by
+  default. `68-nexus.js`: the Mods tab's Your mods / Nexus Mods switch
+  (`modsPane`, `S.modsPane`), the grid (`nxCard`), drawer `nexusmod`,
+  Not this game? (drawer `nexuspick`, `nexus.json` `picked`). Download
+  (`ps_nexusGet`) records a `NexusWait` in `nexus.json` and starts
+  `lootnest.exe --nexus <domain>/<mod>/<file>` (`RunNexusWindow`): a
+  WebView2 window with its own sign-in in `apps\nexus`; a go-webview2
+  patch adds NavigationStarting and NewWindowRequested
+  (`edge/navigation_lootnest.go`, `WebViewOptions.Navigate`/`NewWindow`;
+  `core.NexusWindowGo` says show, browser, nxm or refuse). The user
+  presses Manual download there; `nexusWatch` looks in Downloads every
+  3 s (`core.NexusArrivals`: "-<mod id>-" and the upload time in Nexus's
+  file name, else the one archive since when one ask is open), closes
+  the window, brings Lootnest up and opens the modplan drawer
+  (`ps_nexusAdd`, `core.NameMod` names it and keeps `Mod.Nexus`). Nexus
+  files aren't offered as game updates (`downloadsLook`). Lootnest still
+  downloads nothing itself. Step 2 (Sign in with Nexus, `nxm://`, mod
+  updates) waits on the owner registering Lootnest with Nexus
+  (docs/ROADMAP.md, Mods 5b). Harness `?mods=1&nexus=1|none|error`,
+  `&nxwait=hold`; shots `nexus*`. Not seen on a PC: docs/TESTING.md 48.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
@@ -2137,6 +2165,10 @@ no such plugin and no sources, suggests none, and never searches for
 games the user doesn't have. Opening Hydra for an
 update of a game that came from it is the owner's one other exception (14
 Nov 2026): Lootnest opens the app and copies the game's name, nothing more.
+Mods from Nexus Mods are the owner's choice of 20 Nov 2026: browsing
+through Nexus's public API, and the download on nexusmods.com itself, in
+Lootnest's window for that site, by the user; never mods from sites that
+copy other people's, and never CurseForge (its terms, docs/ROADMAP.md).
 
 ## Ideas not started
 

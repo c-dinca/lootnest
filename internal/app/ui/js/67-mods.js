@@ -120,7 +120,7 @@
         ${m.atRoot ? `<p class="find-low">None of its folders match the game's, so its files go at the top of the game's folder.</p>` : ""}</div>
       ${shown.length ? `<div class="gpage-sub">${gpHead("Game files it replaces")}<ul class="mod-files">${shown.map((r) => `<li class="selectable">${esc(r)}</li>`).join("")}</ul>
         ${P.replaces.length > shown.length ? `<p class="gpage-hint">And ${P.replaces.length - shown.length} more.</p>` : ""}</div>` : ""}`;
-    return shell(body, `${btn('data-action="mod-pick" data-kind="mod"', "Choose another", "ln-button--ghost")}<span class="grow"></span>
+    return shell(body, `${D.nexus ? "" : btn('data-action="mod-pick" data-kind="mod"', "Choose another", "ln-button--ghost")}<span class="grow"></span>
       ${btn('data-action="mod-cancel"', "Cancel", "ln-button--ghost")}${btn('data-action="mod-keep"', "Add to the list", "ln-button--primary")}`);
   }
 

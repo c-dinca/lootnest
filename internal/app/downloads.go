@@ -67,8 +67,8 @@ func (a *App) downloadsLook() {
 	}
 	err := a.store.UpdateDownloadsSeen(func(d *core.DownloadsSeen) {
 		for _, m := range found {
-			if d.Ignored[m.Stamp()] {
-				continue
+			if _, nexus := core.NexusFileName(m.Name); d.Ignored[m.Stamp()] || nexus {
+				continue // a mod from Nexus Mods (nexus.go), not an update
 			}
 			out = append(out, m)
 			if t := byKey[m.Key]; m.Newer && !d.Announced[m.Stamp()] && !t.runningIn(procs) {

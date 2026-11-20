@@ -53,6 +53,12 @@ const shots = [
   ["game-manage-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]')]],
   ["game-move-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]'), click('[data-action="movefolder-open"]')]],
   ["game-tab-ach", "", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="achievements"]')]],
+  // Mods from Nexus Mods (68-nexus.js), on Phantom Blade Zero's Mods tab.
+  ...[["nexus-off", "mods=1", []], ["nexus", "mods=1&nexus=1", []], ["nexus-none", "mods=1&nexus=none", []],
+    ["nexus-mod", "mods=1&nexus=1", [click('[data-action="nexus-open"][data-id="1"]')]],
+    ["nexus-waiting", "mods=1&nexus=1&nxwait=hold", [click('[data-action="nexus-open"][data-id="1"]'), click('[data-action="nexus-get"][data-file="11"]')]],
+    ["nexus-arrived", "mods=1&nexus=1", [click('[data-action="nexus-open"][data-id="1"]'), click('[data-action="nexus-get"][data-file="11"]'), "new Promise((r) => setTimeout(r, 2400))"]],
+  ].map(([n, qs, steps]) => [n, qs, [...game('data-key="dir:d:\\\\games\\\\phantom blade zero"'), click('.gp-tabs [data-tab="mods"]'), click('[data-action="mods-pane"][data-value="nexus"]'), ...steps]]),
   ["achievements", "", [nav("achievements")]],
   ["updates", "", [nav("updates")]],
   ["store", "", [nav("find")]],

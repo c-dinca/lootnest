@@ -221,6 +221,9 @@
   --ach-col-min: 340px;   /* a column of the Achievements tab's list */
   --tl-col-w: 420px;      /* a column of days on the Timeline tab */
   --pcard-w: 340px;       /* a person's card on Profiles, at least */
+  --nx-card-min: 248px;   /* a mod's card when browsing Nexus Mods, at least */
+  --nx-hero-w: 340px;     /* a mod's picture on its page */
+  --nx-search-w: 420px;   /* the search box over Nexus Mods, at most */
   --slot-w: clamp(184px, 14vw, 232px);      /* a profile's key in Who's playing */
   --slot-run-w: clamp(152px, 11vw, 184px);  /* a run's, beside its person's */
   --prun-h: 44px;         /* a run in its person's card on Profiles */

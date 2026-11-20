@@ -364,6 +364,7 @@ func Run(opt Options) error {
 		a.autoHooks()
 		go func() { a.recoverJobs(); a.syncScripts() }()
 		go a.linkAtStart()
+		a.nexusAtStart()
 		go a.watchUpdates()
 		go a.cleanupLegacy()
 		go a.watchGameSaves()

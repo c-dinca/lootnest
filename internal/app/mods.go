@@ -106,10 +106,17 @@ type ModRow struct {
 	// Changed says the game changed Lootnest's copy of it, so it must be
 	// added again.
 	Changed bool `json:"changed,omitempty"`
+	// Nexus is the mod's page on Nexus Mods, when it came from there.
+	Nexus string `json:"nexus,omitempty"`
+	// NexusID is its id there.
+	NexusID int `json:"nexusId,omitempty"`
 }
 
 func modRow(m *core.Mod, on bool) ModRow {
 	r := ModRow{ID: m.ID, Name: m.Name, Files: len(m.Files), Into: m.Into, AtRoot: m.AtRoot, On: on, Changed: len(m.Changed) > 0}
+	if n := m.Nexus; n != nil {
+		r.Nexus, r.NexusID = core.NexusModURL(n.Domain, n.ModID), n.ModID
+	}
 	for _, f := range m.Files {
 		r.Bytes += f.Size
 	}
@@ -176,7 +183,11 @@ func (a *App) apiMods(key string) (map[string]any, error) {
 // apiAddMod keeps a copy of the mod at path for the game and answers with a
 // "modPlan" event: what putting it in would do, or why it can't go in. The
 // game's folder doesn't change; the mod joins the list on ps_modToggle.
-func (a *App) apiAddMod(key, path string) error {
+func (a *App) apiAddMod(key, path string) error { return a.addMod(key, path, "", nil) }
+
+// addMod is apiAddMod for a mod with a name of its own and where on Nexus
+// it came from (app/nexus.go), or none.
+func (a *App) addMod(key, path, name string, from *core.ModNexus) error {
 	t, err := a.modTarget(key)
 	if err != nil {
 		return err
@@ -198,6 +209,13 @@ func (a *App) apiAddMod(key, path string) error {
 		if err != nil {
 			out["error"] = sentence(err)
 			return
+		}
+		if name != "" || from != nil {
+			if err := core.NameMod(root, m.ID, name, from); err != nil {
+				a.logf("Couldn't name the mod %s: %v", m.ID, err)
+			} else if kept, err := core.LoadMod(root, m.ID); err == nil {
+				m = kept
+			}
 		}
 		out["mod"] = modRow(m, false)
 		p, err := core.PlanMods(t.Dir, t.Exe, []*core.Mod{m}, core.LoadDeployed(root))

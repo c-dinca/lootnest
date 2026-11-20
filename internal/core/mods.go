@@ -62,6 +62,33 @@ type Mod struct {
 	// Changed are the files the game changed through a link, so Lootnest's
 	// copy of them isn't the mod's any more.
 	Changed []string `json:"changed,omitempty"`
+	// Nexus is the mod's page and file on Nexus Mods, when it was found
+	// there (core/nexus.go).
+	Nexus *ModNexus `json:"nexus,omitempty"`
+}
+
+// ModNexus is where on Nexus Mods a mod's file came from.
+type ModNexus struct {
+	Domain  string `json:"domain"`
+	ModID   int    `json:"modId"`
+	FileID  int    `json:"fileId,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
+// NameMod names a kept mod after its page, and notes where on Nexus it
+// came from when from is set.
+func NameMod(root, id, name string, from *ModNexus) error {
+	m, err := LoadMod(root, id)
+	if err != nil {
+		return err
+	}
+	if n := strings.Join(strings.Fields(name), " "); n != "" {
+		m.Name = n
+	}
+	if from != nil {
+		m.Nexus = from
+	}
+	return writeJSONSynced(filepath.Join(root, id, "mod.json"), m)
 }
 
 // CheckIntact says why a mod can't go in because the game changed
