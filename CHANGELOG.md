@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.18.1
 
 - **Big Picture in the same glass as the PC window.** Keys, rows, cards, the bar at the top and the menu are now the see-through, blurred glass of Lootnest's window on the PC, over the game's art, instead of solid grey plates; the sections at the top sit in one glass pill, as the PC's sidebar does. Glass off in Settings, Appearance makes them solid, as on the PC.
 - **Home's cards are gone.** The row of cards under the games (Play, Save points, the next achievement, Mods) came out: A on a cover opens the game, as before.
