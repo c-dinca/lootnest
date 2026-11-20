@@ -206,7 +206,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.16.2, beta)
+## Where things stand (2.17.0, beta)
 
 These shipped recently, newest last:
 
@@ -1955,7 +1955,7 @@ These shipped recently, newest last:
   any). Android 1.0.1 (c-dinca/lootnest-tv-android#2): the same layout
   and focus (`row()`), the granted AudioTrack logged. docs/TESTING.md 46.
   Both pinned; released as 2.16.2 without asking, as a TV fix (15 Nov).
-- **Unreleased, the FPS counter** (the owner, 20 Nov 2026: on and off
+- **2.17.0, the FPS counter** (the owner, 20 Nov 2026: on and off
   from the overlay or the keyboard; variant 1 for the permission,
   Ctrl+Shift+F10; and asked why not over exclusive fullscreen: only by
   hooking the game's Present, which is injection, so no). `win/etw.go`: a
@@ -1984,7 +1984,7 @@ These shipped recently, newest last:
   Settings row, event `fps`; harness `?fps=ask|signout|exclusive|on`.
   CI's windows job checks the structure layouts and starts and stops the
   session; frames over a real game are docs/TESTING.md 47.
-- **Unreleased, mods from Nexus Mods, step 1** (the owner, 20 Nov
+- **2.17.0, mods from Nexus Mods, step 1** (the owner, 20 Nov
   2026: "a mod manager in the Mods tab where you search and install
   mods without leaving Lootnest"; Nexus chosen; then: "a small page
   embedded in Lootnest for the download, not the whole browser").
@@ -2012,7 +2012,7 @@ These shipped recently, newest last:
   updates) waits on the owner registering Lootnest with Nexus
   (docs/ROADMAP.md, Mods 5b). Harness `?mods=1&nexus=1|none|error`,
   `&nxwait=hold`; shots `nexus*`. Not seen on a PC: docs/TESTING.md 48.
-- **Unreleased, mods from Nexus Mods, the download in Lootnest** (the
+- **2.17.0, mods from Nexus Mods, the download in Lootnest** (the
   owner, 20 Nov 2026: Nexus won't register Lootnest, so a workaround;
   they chose these two). The window takes the download: a go-webview2
   patch adds DownloadStarting (`edge/download_lootnest.go`,
@@ -2033,7 +2033,7 @@ These shipped recently, newest last:
   ones are copied into the game's mods). Won't do: pressing the site's
   buttons for the user, or users' personal API keys. Harness
   `&nxprog=1`, shots `nexus-progress*`. docs/TESTING.md 48, items 3 to 5
-  and 9 to 10.
+  and 9 to 10. The owner asked for 2.17.0 once this was in (20 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
