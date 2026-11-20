@@ -295,6 +295,8 @@ func MouseWheel(delta int) {}
 
 func MoveCursor(x int, y int) {}
 
+func MoveWindowTo(hwnd uintptr, box [4]int) {}
+
 func NewViGEmPad() (r0 *ViGEmPad, err error) {
 	err = ErrUnsupported
 	return
@@ -360,6 +362,10 @@ func PrimaryDisplay() (r0 [4]int) {
 }
 
 func ProcessAlive(pid uint32) (r0 bool) {
+	return
+}
+
+func ProcessName(pid uint32) (r0 string) {
 	return
 }
 
@@ -451,6 +457,11 @@ func SetForeground(hwnd uintptr) {}
 
 func SetFullscreen(hwnd uintptr, on bool) {}
 
+func SetTaskbarSettings(all int, mode int) (err error) {
+	err = ErrUnsupported
+	return
+}
+
 func SetWindowIcons(hwnd uintptr, dpi int) {}
 
 func ShellThumbnail(path string, size int) (r0 *image.RGBA, err error) {
@@ -482,7 +493,7 @@ func ShowMenu(hwnd uintptr, items []MenuItem) (r0 int) {
 	return
 }
 
-func ShowTVBar(area [4]int, b TVBar, leave func()) {}
+func ShowTVBar(areas [][4]int, b TVBar, leave func()) {}
 
 func ShowTaskbar(show bool) {}
 
@@ -537,6 +548,10 @@ type TVBar struct {
 func TapGameKey(vk uint16) {}
 
 func TapKey(vk uint16) {}
+
+func TaskbarSettings() (r0 int, r1 int) {
+	return
+}
 
 type Toast struct {
 	Kicker string
@@ -614,6 +629,14 @@ func WebView2Installed() (r0 bool) {
 	return
 }
 
+func WindowBox(hwnd uintptr) (r0 [4]int) {
+	return
+}
+
+func WindowClass(hwnd uintptr) (r0 string) {
+	return
+}
+
 func WindowDPI(hwnd uintptr) (r0 int) {
 	return
 }
@@ -627,6 +650,10 @@ func WindowsDir() (r0 string) {
 }
 
 func WindowsName() (r0 string) {
+	return
+}
+
+func WorkAreaOf(area [4]int) (r0 [4]int) {
 	return
 }
 

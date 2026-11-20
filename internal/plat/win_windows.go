@@ -337,6 +337,10 @@ func MoveCursor(x int, y int) {
 	win.MoveCursor(x, y)
 }
 
+func MoveWindowTo(hwnd uintptr, box [4]int) {
+	win.MoveWindowTo(hwnd, box)
+}
+
 func NewTray(hwnd uintptr, dpi int) *Tray {
 	return win.NewTray(hwnd, dpi)
 }
@@ -397,6 +401,10 @@ func PrimaryDisplay() [4]int {
 
 func ProcessAlive(pid uint32) bool {
 	return win.ProcessAlive(pid)
+}
+
+func ProcessName(pid uint32) string {
+	return win.ProcessName(pid)
 }
 
 func ProcessNames() (map[string]bool, error) {
@@ -517,6 +525,10 @@ func SetFullscreen(hwnd uintptr, on bool) {
 	win.SetFullscreen(hwnd, on)
 }
 
+func SetTaskbarSettings(all int, mode int) error {
+	return win.SetTaskbarSettings(all, mode)
+}
+
 func SetWindowIcons(hwnd uintptr, dpi int) {
 	win.SetWindowIcons(hwnd, dpi)
 }
@@ -547,8 +559,8 @@ func ShowMenu(hwnd uintptr, items []MenuItem) int {
 	return win.ShowMenu(hwnd, items)
 }
 
-func ShowTVBar(area [4]int, b TVBar, leave func()) {
-	win.ShowTVBar(area, b, leave)
+func ShowTVBar(areas [][4]int, b TVBar, leave func()) {
+	win.ShowTVBar(areas, b, leave)
 }
 
 func ShowTaskbar(show bool) {
@@ -615,6 +627,10 @@ func TapGameKey(vk uint16) {
 
 func TapKey(vk uint16) {
 	win.TapKey(vk)
+}
+
+func TaskbarSettings() (int, int) {
+	return win.TaskbarSettings()
 }
 
 type Toast = win.Toast
@@ -686,6 +702,14 @@ func WebView2Installed() bool {
 	return win.WebView2Installed()
 }
 
+func WindowBox(hwnd uintptr) [4]int {
+	return win.WindowBox(hwnd)
+}
+
+func WindowClass(hwnd uintptr) string {
+	return win.WindowClass(hwnd)
+}
+
 func WindowDPI(hwnd uintptr) int {
 	return win.WindowDPI(hwnd)
 }
@@ -700,6 +724,10 @@ func WindowsDir() string {
 
 func WindowsName() string {
 	return win.WindowsName()
+}
+
+func WorkAreaOf(area [4]int) [4]int {
+	return win.WorkAreaOf(area)
 }
 
 func XInputGuideDown() bool {

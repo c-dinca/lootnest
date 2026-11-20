@@ -1179,3 +1179,27 @@ a virtual DualShock 4 on the PC for it) or an Xbox pad.
    controller works as before, with no step taken twice.
 5. Lootnest's log says "Controller for Lootnest's page from Go: true" when
    the PC's window was clicked, and "false" when a game came in front.
+
+## 53. The PC's monitors in TV mode
+
+Two monitors on the PC, the TV app connected.
+
+1. Before TV mode, note Windows' Settings, Personalisation, Taskbar,
+   Taskbar behaviours: Show my taskbar on all displays, and Show my
+   taskbar apps on.
+2. TV mode on: both PC monitors have a taskbar, with Lootnest's button on
+   each, and each has Lootnest's bar (Leave TV mode) at its bottom right.
+   The TV shows no taskbar. Both bars' keys leave TV mode.
+3. Open a browser, a folder (Win+E from the PC's taskbar or Start) and
+   Settings on the PC: each opens on the monitor the mouse is on, never on
+   the TV. Lootnest's log says "moved to the PC's display" for each that
+   Windows had put on the TV.
+4. From the TV, start a game through a launcher (an EA or Ubisoft game):
+   the launcher and the game stay on the TV. YouTube, Spotify and Discord
+   from Big Picture stay on the TV.
+5. A game's own dialog while it plays on the TV stays on the TV.
+6. Leave TV mode: the taskbar settings are back as noted in step 1, and
+   the main taskbar is back on the PC's main monitor.
+7. With TV mode on, press Ctrl+Shift+Q: the same settings come back. And
+   if Lootnest is ended from Task Manager in TV mode, its next start puts
+   them back.
