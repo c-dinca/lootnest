@@ -1221,3 +1221,18 @@ Two monitors on the PC, the TV app connected.
 5. A game with mods (added on the PC): its page in Big Picture has Mods.
    Turn one off, press Play: the game starts without it, and the PC's Mods
    tab shows it off for the same profile.
+
+## 55. Big Picture's Home, part 2
+
+1. Big Picture, Home: move along Continue playing. The cover in focus
+   rises with a glow in the seated profile's colour and the others dim;
+   under the row, cards for that game come in one by one (Play, Save
+   points, the next achievement, Story when its achievements mark the
+   chapters, Mods when it has some).
+2. Down from a cover: the cards come up, the game's name stays on screen.
+   A on Play as ... starts the game for the seated profile.
+3. A on Save points, on the achievement and on Mods: each opens that
+   game's screen; B comes straight back to the card.
+4. Collections come right under the cards.
+5. With music on, move to another game and wait a few seconds: the piece
+   moves to another key at its next chord.

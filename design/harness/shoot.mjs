@@ -89,6 +89,8 @@ const shots = [
   ["tv-leave", "tv=1&players=1", [key("Escape"), key("Escape")]],
   ["tv-menu", "tv=1&players=1", [key("ArrowUp"), key("ArrowLeft"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter")]],
   ["tv-settings", "tv=1&players=1", [key("ArrowUp"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("ArrowRight"), key("Enter"), key("ArrowDown"), key("Enter"), key("ArrowDown"), key("ArrowRight")]],
+  ["tv-home-cards", "tv=1&players=1&mods=1", [key("ArrowRight"), key("ArrowRight"), "0", key("ArrowDown")]],
+  ["tv-home-focus", "tv=1&players=1&art=bright", [key("ArrowRight"), key("ArrowRight")]],
   ["tv-settings-y", "tv=1&players=1", [key("ArrowRight"), key("y")]],
   ["tv-settings-open", "tv=1&players=1", [key("y"), key("Enter"), key("ArrowRight")]],
   ["tv-settings-tv", "tv=1&players=1", [key("y"), key("Enter"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown"), key("ArrowRight")]],

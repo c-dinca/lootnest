@@ -3240,3 +3240,31 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 .bp-list .bp-note { max-width: var(--bp-list-w); }
 :root.motion-off .bp-opt-say { transition: none; }
 @media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .bp-opt-say { transition: none; } }
+
+/* Big Picture's Home, part 2 (the owner, 20 Nov 2026: console-like, but
+   Lootnest's own, not a copy): the cover in focus in the first row rises
+   with a glow in the seated profile's colour while the rest of the row
+   steps back, and the cards for that game sit right under it. */
+.bp-row:first-child .bp-tile:focus { transform: translate3d(0, var(--bp-lift), 0) scale(var(--bp-grow)); }
+.bp-row:first-child .bp-tile:focus .bp-art { box-shadow: 0 var(--bp-glow-y) var(--bp-glow-r) color-mix(in oklab, var(--seat, transparent) 55%, transparent); }
+.bp-row:first-child .bp-track:has(.bp-tile:focus) .bp-tile .bp-art { transition: filter var(--bp-dur-focus) var(--ease-out), box-shadow var(--bp-dur-focus) var(--ease-out); }
+.bp-row:first-child .bp-track:has(.bp-tile:focus) .bp-tile:not(:focus) .bp-art { filter: brightness(.7) saturate(.85); }
+:root.pad-away .bp-row:first-child .bp-track:has(.bp-tile.pf) .bp-tile:not(.pf) .bp-art { filter: brightness(.7) saturate(.85); }
+.bp-hcards { gap: var(--bp-4); margin-top: var(--bp-6); }
+.bp-hcard { position: relative; flex: 1 1 0; min-width: 0; max-width: var(--bp-hcard-w); display: flex; align-items: center; gap: var(--bp-4); height: var(--bp-hcard-h); padding: 0 var(--bp-5); border: 0; border-radius: var(--bp-r-key); background: var(--bp-fill); box-shadow: var(--key-light); color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; outline: none; transition: transform var(--bp-dur-focus) var(--ease-out), background-color var(--bp-dur-focus) var(--ease-out), color var(--bp-dur-focus) var(--ease-out); }
+.bp-hcard-ico { flex: none; display: grid; place-items: center; width: var(--bp-hcard-ico); height: var(--bp-hcard-ico); border-radius: var(--bp-r-key); background: var(--bp-fill-on); overflow: hidden; }
+.bp-hcard-ico svg { width: var(--bp-icon); height: var(--bp-icon); }
+.bp-hcard-ico .ach-ico, .bp-hcard-ico .ach-ico img { width: 100%; height: 100%; }
+.bp-hcard-ring { display: grid; place-items: center; width: 100%; height: 100%; }
+.bp-hcard-text { display: grid; gap: var(--bp-1); min-width: 0; }
+.bp-hcard-text b { overflow: hidden; font: 700 var(--bp-text-key)/1.2 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
+.bp-hcard-text span { overflow: hidden; color: var(--fg-2); font: 500 var(--bp-text-say)/1.3 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
+.bp-hcard:focus { transform: scale(var(--bp-grow-key)); background: var(--fg-1); color: var(--bg-ground); }
+.bp-hcard:focus .bp-hcard-text span { color: var(--bg-active); }
+.bp-hcard:focus .bp-hcard-ico { background: var(--bg-active); color: var(--fg-1); }
+.bp-hcard--play .bp-hcard-ico { background: var(--player-fill, var(--accent)); color: var(--player-on, var(--fg-on-accent)); }
+.bp-hcard--play:focus { background: var(--player-fill, var(--accent)); color: var(--player-on, var(--fg-on-accent)); }
+.bp-hcard--play:focus .bp-hcard-text span { color: var(--player-on, var(--fg-on-accent)); }
+.bp-hcard--play:focus .bp-hcard-ico { background: transparent; color: inherit; }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .bp-row:first-child .bp-tile:focus { transform: scale(var(--bp-grow)); } }
+:root.motion-off .bp-row:first-child .bp-tile:focus { transform: scale(var(--bp-grow)); }
