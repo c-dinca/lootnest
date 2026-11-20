@@ -2210,9 +2210,9 @@ These shipped recently, newest last:
   thread timer (`barSync`, `barWin` per window). Not seen on a PC:
   docs/TESTING.md 53. The owner asked for 2.18.0 with all of these
   (20 Nov): the save engine's three parts, the two TV fixes and Big
-  Picture's part 1.
+  Picture's parts 1 and 2.
 
-- **Unreleased, Big Picture's Home, part 2** (the owner, 20 Nov 2026:
+- **2.18.0, Big Picture's Home, part 2** (the owner, 20 Nov 2026:
   what's best on a PS5's home, "but not a copy"; researched, they agreed
   to the list in this order). Home's first block holds the hero, the
   first row and `bpCards(it)` for `BP.homeKey` (set in `bpAmbient` when
