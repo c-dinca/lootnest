@@ -159,6 +159,9 @@ func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error)
 	}
 	root := a.store.SavePointsDir(t.key)
 	p, err := core.MakeSavePoint(root, t.locs, p, time.Now(), tries, 1500*time.Millisecond)
+	if err == nil {
+		savesSeen(t.key, t.locs)
+	}
 	if err == nil && shot != nil {
 		if err := core.SavePointPictures(root, p.ID, shot); err != nil {
 			a.logf("Couldn't keep the picture of the save point %q: %v", p.Name, err)

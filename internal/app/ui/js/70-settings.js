@@ -92,6 +92,7 @@
           ${s.achToastsOff ? "" : setRow("Preview an unlock", "", b("secondary", 'id="s-toast" data-action="test-toast"', "Show one"))}
           ${sw("soundsOff", "Sounds", "", !s.soundsOff, true)}
           ${sw("pointHotkeyOff", "Ctrl+Shift+F5 makes a save point", "", !s.pointHotkeyOff, true)}
+          ${sw("gamePointsOff", "Keep each save a game makes as a save point", "While it runs; the newest 30 per game.", !s.gamePointsOff, true)}
           ${sw("screenshotsOff", "Ctrl+Shift+F12 saves a screenshot", "Into Pictures\\Lootnest\\Screenshots.", !s.screenshotsOff, true)}
           ${fpsRows(s)}`)
         + sub("Updates for your games", "", `

@@ -162,3 +162,47 @@ func TestRestoreMakesSavesNewest(t *testing.T) {
 		t.Fatal("a newer file must stay")
 	}
 }
+
+// Only the oldest of the points kept when the game saved go; the user's and
+// Lootnest's other points stay, and a renamed game point becomes the user's.
+func TestPruneGamePoints(t *testing.T) {
+	dir := t.TempDir()
+	live := filepath.Join(dir, "saves")
+	write(t, filepath.Join(live, "a.sav"), "x")
+	locs := []SaveLoc{{ID: "a", Live: live}}
+	root := filepath.Join(dir, "pts")
+	at := time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC)
+	mk := func(p SavePoint) SavePoint {
+		at = at.Add(time.Minute)
+		p, err := MakeSavePoint(root, locs, p, at, 1, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	mine := mk(SavePoint{Name: "Before the boss"})
+	g1 := mk(SavePoint{Game: true})
+	auto := mk(SavePoint{Name: "Before the update", Auto: true})
+	g2 := mk(SavePoint{Game: true})
+	g3 := mk(SavePoint{Game: true})
+	g4 := mk(SavePoint{Game: true})
+	if err := RenameSavePoint(root, g2.ID, "The good ending"); err != nil {
+		t.Fatal(err)
+	}
+	n, err := PruneGamePoints(root, 1)
+	if err != nil || n != 2 {
+		t.Fatalf("pruned %d %v", n, err)
+	}
+	left := map[string]bool{}
+	for _, p := range SavePoints(root) {
+		left[p.ID] = true
+	}
+	for _, keep := range []SavePoint{mine, auto, g2, g4} {
+		if !left[keep.ID] {
+			t.Fatalf("%q must stay", keep.Name)
+		}
+	}
+	if left[g1.ID] || left[g3.ID] {
+		t.Fatal("the oldest game saves go")
+	}
+}

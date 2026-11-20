@@ -137,6 +137,7 @@
       P.busy = true; render();
       try { await api.makeSavePoint(key, inp ? inp.value : ""); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
+    "pt-all-game"(el) { const it = itemFor(el); if (it) { ptAllGame.add(recentKey(it)); render(); } },
     "qs-use"(el) { const it = itemFor(el); if (it) api.setQuickSave(recentKey(it), el.dataset.k).catch((e) => toast(errText(e), "error")); },
     "tl-more"(el) { const k = el.dataset.key; S.tlMore[k] = (S.tlMore[k] || TL_SHOWN) + TL_SHOWN; render(); },
     async "pt-restore"(el) {
