@@ -101,6 +101,9 @@
         if (BP.on && BP.settings) renderBP(false);
         else if (S.view === "settings" && !S.dialog) render();
         break;
+      case "padFeed": // the controller as Go reads it, while the page may not (app/padfeed.go)
+        padFeed(ev);
+        break;
       case "tvHome": // the Home or PS button with no game: Big Picture's menu
         if (BP.on && !S.picker && !S.dialog) bpMenu(!BP.menu);
         break;

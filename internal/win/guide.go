@@ -3,6 +3,7 @@
 package win
 
 import (
+	"strings"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -85,40 +86,63 @@ func WatchPadRawInput(hwnd uintptr, on bool) bool {
 	return r != 0
 }
 
+// psDev is what Lootnest knows of a raw input device: vendor<<16 |
+// product, and whether it's connected by Bluetooth (its path).
+type psDev struct {
+	kind      uint32
+	bluetooth bool
+}
+
 var (
 	padKindsMu sync.Mutex
-	padKinds   = map[uintptr]uint32{} // device -> vendor<<16 | product
+	padKinds   = map[uintptr]psDev{}
 )
 
-// RawPSButton reads a WM_INPUT's lParam: whether it's a PlayStation pad's
-// report (ok) and whether its PS button is down in it.
-func RawPSButton(lp uintptr) (down, ok bool) {
+// PSReport is one input report a PlayStation pad sent, read from raw
+// input: the device it came from, its product id, whether it's connected
+// by Bluetooth, the report (from its report id on), and whether its PS
+// button is down in it.
+type PSReport struct {
+	Device    uintptr
+	Product   uint16
+	Bluetooth bool
+	Data      []byte
+	PS        bool
+}
+
+// RawPSReport reads a WM_INPUT's lParam: ok when it's a PlayStation pad's
+// report. Raw input with RIDEV_INPUTSINK arrives while another window has
+// the keyboard, so the pad can be read when the page can't (app/padfeed.go).
+func RawPSReport(lp uintptr) (PSReport, bool) {
 	const ridInput, rimTypeHID = 0x10000003, 2
 	hdr := unsafe.Sizeof(rawInputHeader{})
 	var size uint32
 	procGetRawInputData.Call(lp, ridInput, 0, uintptr(unsafe.Pointer(&size)), hdr)
 	if size == 0 || size > 4096 {
-		return false, false
+		return PSReport{}, false
 	}
 	buf := make([]byte, size)
 	if r, _, _ := procGetRawInputData.Call(lp, ridInput, uintptr(unsafe.Pointer(&buf[0])), uintptr(unsafe.Pointer(&size)), hdr); r == ^uintptr(0) || r == 0 {
-		return false, false
+		return PSReport{}, false
 	}
 	h := (*rawInputHeader)(unsafe.Pointer(&buf[0]))
 	if h.typ != rimTypeHID || uintptr(len(buf)) < hdr+8 {
-		return false, false
+		return PSReport{}, false
 	}
-	kind := padKind(h.device)
-	if kind>>16 != 0x054c { // Sony
-		return false, false
+	dev := padKind(h.device)
+	if dev.kind>>16 != 0x054c { // Sony
+		return PSReport{}, false
 	}
 	sizeHid := *(*uint32)(unsafe.Pointer(&buf[hdr]))
 	count := *(*uint32)(unsafe.Pointer(&buf[hdr+4]))
 	data := buf[hdr+8:]
 	if count == 0 || sizeHid == 0 || uint64(sizeHid)*uint64(count) > uint64(len(data)) {
-		return false, false
+		return PSReport{}, false
 	}
-	return PSButtonIn(uint16(kind), data[:sizeHid]), true
+	// With several reports in one message, the last is the newest.
+	last := data[uint64(sizeHid)*uint64(count-1) : uint64(sizeHid)*uint64(count)]
+	product := uint16(dev.kind)
+	return PSReport{Device: h.device, Product: product, Bluetooth: dev.bluetooth, Data: last, PS: PSButtonIn(product, last)}, true
 }
 
 type rawInputHeader struct {
@@ -127,13 +151,13 @@ type rawInputHeader struct {
 	wParam    uintptr
 }
 
-func padKind(dev uintptr) uint32 {
+func padKind(dev uintptr) psDev {
 	padKindsMu.Lock()
 	defer padKindsMu.Unlock()
 	if k, ok := padKinds[dev]; ok {
 		return k
 	}
-	const ridiDeviceInfo = 0x2000000b
+	const ridiDeviceInfo, ridiDeviceName = 0x2000000b, 0x20000007
 	var info struct {
 		cbSize, typ          uint32
 		vendor, product, ver uint32
@@ -142,9 +166,20 @@ func padKind(dev uintptr) uint32 {
 	}
 	info.cbSize = uint32(unsafe.Sizeof(info))
 	size := info.cbSize
-	k := uint32(0)
+	var k psDev
 	if r, _, _ := procGetRawInputDeviceInfoW.Call(dev, ridiDeviceInfo, uintptr(unsafe.Pointer(&info)), uintptr(unsafe.Pointer(&size))); int32(r) > 0 {
-		k = info.vendor<<16 | info.product&0xFFFF
+		k.kind = info.vendor<<16 | info.product&0xFFFF
+	}
+	// A Bluetooth pad's path names its vendor as "VID&0002054c" (see
+	// core.PSPadPath); a USB pad's, and a streaming host's virtual one,
+	// as "VID_054C".
+	var chars uint32
+	procGetRawInputDeviceInfoW.Call(dev, ridiDeviceName, 0, uintptr(unsafe.Pointer(&chars)))
+	if chars > 0 && chars < 1024 {
+		name := make([]uint16, chars)
+		if r, _, _ := procGetRawInputDeviceInfoW.Call(dev, ridiDeviceName, uintptr(unsafe.Pointer(&name[0])), uintptr(unsafe.Pointer(&chars))); int32(r) > 0 {
+			k.bluetooth = strings.Contains(strings.ToLower(windows.UTF16ToString(name)), "vid&0002054c")
+		}
 	}
 	padKinds[dev] = k
 	return k

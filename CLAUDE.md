@@ -2149,6 +2149,24 @@ These shipped recently, newest last:
   Harness `?gamesaves=0`. docs/TESTING.md 51. Next in the rework, when
   the owner says: the injected save for story games (a plan first).
 
+- **Unreleased, the controller in TV mode while the PC is in use**
+  (the owner, 20 Nov 2026: on the TV only the PS button worked). The
+  page skipped every pad while `document.hasFocus()` was false, WebView2
+  gives an unfocused page no pad input, and Chromium's `:focus` stops
+  matching then too (checked in Chromium). `app/padfeed.go`: `padFeed`
+  (started by `startGuide`) every 16 ms while `padOwned` (Lootnest's
+  window is the front one on its screen, `TopWindows`) sends `padFeed`
+  events on change: XInput (`XInputRead`) and PlayStation pads from raw
+  input (`win.RawPSReport`, replacing RawPSButton: product, Bluetooth from
+  the device path, the newest report; `notePSPad`, `core.PSToXbox`),
+  merged by `core.MergePads`, sticks by `core.PadAxis`. The page
+  (`padFeed`, `padAway`, `padAwayCSS` in 25-bigpicture.js) uses the feed
+  while it lacks focus or sees no pad, runs `padLoop` at once per event,
+  marks the focused element `.pf` under `html.pad-away`, and copies every
+  `:focus` rule to `.pf` (`:focus-within` to `:has(.pf)`) once. Tried in
+  a headful Chromium with another window in front; not on a PC:
+  docs/TESTING.md 52.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

@@ -353,6 +353,8 @@ func PSButtonIn(product uint16, report []byte) bool {
 	return win.PSButtonIn(product, report)
 }
 
+type PSReport = win.PSReport
+
 type PadDevice = win.PadDevice
 
 func PadDevices() []PadDevice {
@@ -421,8 +423,8 @@ func Protect(b []byte) ([]byte, error) {
 	return win.Protect(b)
 }
 
-func RawPSButton(lp uintptr) (bool, bool) {
-	return win.RawPSButton(lp)
+func RawPSReport(lp uintptr) (PSReport, bool) {
+	return win.RawPSReport(lp)
 }
 
 func ReadCommand(lp uintptr) (string, bool) {

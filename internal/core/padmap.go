@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"strconv"
 	"strings"
 )
@@ -176,4 +177,44 @@ func (s PadState) XUSBReport() [12]byte {
 	b[8], b[9] = le(uint16(s.RX))
 	b[10], b[11] = le(uint16(s.RY))
 	return b
+}
+
+// MergePads is several controllers as one, as the page reads them while
+// it can't read pads itself (app/padfeed.go): every button any of them
+// holds, and each stick and trigger from the one pushed furthest.
+func MergePads(pads ...PadState) PadState {
+	var out PadState
+	far := func(a, b int16) int16 {
+		if absPad(b) > absPad(a) {
+			return b
+		}
+		return a
+	}
+	for _, p := range pads {
+		out.Buttons |= p.Buttons
+		out.LX, out.LY = far(out.LX, p.LX), far(out.LY, p.LY)
+		out.RX, out.RY = far(out.RX, p.RX), far(out.RY, p.RY)
+		out.LT, out.RT = max(out.LT, p.LT), max(out.RT, p.RT)
+	}
+	return out
+}
+
+func absPad(v int16) int32 {
+	if v < 0 {
+		return -int32(v)
+	}
+	return int32(v)
+}
+
+// PadAxis is a stick's position as the Gamepad API gives it, from -1 to 1
+// in steps of 0.05, so a stick resting a little off centre doesn't send
+// the page a change every frame. down is for the vertical axis: XInput's
+// up is positive, the Gamepad API's is negative.
+func PadAxis(v int16, down bool) float64 {
+	f := float64(v) / 32767
+	if down {
+		f = -f
+	}
+	f = math.Round(f*20) / 20
+	return max(-1, min(1, f)) + 0 // + 0 turns -0 into 0
 }
