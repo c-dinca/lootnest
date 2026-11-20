@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.17.0, beta)
+## Where things stand (2.18.0, beta)
 
 These shipped recently, newest last:
 
@@ -2097,7 +2097,7 @@ These shipped recently, newest last:
   `&nxprog=1`, shots `nexus-progress*`. docs/TESTING.md 48, items 3 to 5
   and 9 to 10. The owner asked for 2.17.0 once this was in (20 Nov).
 
-- **Unreleased, Go back to a save point, all the way** (the owner, 20
+- **2.18.0, Go back to a save point, all the way** (the owner, 20
   Nov 2026: Go back to it "doesn't really do anything"; the first part of
   the save engine's rework). `apiRestoreSavePoint(key, id, play)`: a
   running game is asked to close (`closeForPoint`:
@@ -2111,7 +2111,7 @@ These shipped recently, newest last:
   page starts the game as its Play key does (`playAfterPoint`; Big
   Picture's `bpPlay`). `goBackAsk` words the question by whether the game
   runs (`pointGameRuns`). docs/TESTING.md 49.
-- **Unreleased, Save now** (the owner, 20 Nov 2026: "mergem pe save
+- **2.18.0, Save now** (the owner, 20 Nov 2026: "mergem pe save
   now"; the second part of the save engine's rework, without injection).
   `LaunchOptions.QuickSave` is the game's own quick save key ("F1" to
   "F12", the user's choice; `apiSaveLaunchOptions` keeps it, since the
@@ -2132,7 +2132,7 @@ These shipped recently, newest last:
   `qs-use`, `#pt-qs`, `ps_setQuickSave`; `savePoints` carries
   `quickSave`, `suggest`, `antiCheat`. Harness `?pointrun=1&qs=F5`.
   docs/TESTING.md 50.
-- **Unreleased, every save the game makes** (the owner, 20 Nov 2026:
+- **2.18.0, every save the game makes** (the owner, 20 Nov 2026:
   "hai sa incepem", the third part of the save engine's rework).
   `app/gamepoints.go`: `gamePointsTick` from `achTick` (every ~6 s) over
   `runningForSaves` (achTick's games plus Steam Library games without
@@ -2149,7 +2149,7 @@ These shipped recently, newest last:
   Harness `?gamesaves=0`. docs/TESTING.md 51. Next in the rework, when
   the owner says: the injected save for story games (a plan first).
 
-- **Unreleased, the controller in TV mode while the PC is in use**
+- **2.18.0, the controller in TV mode while the PC is in use**
   (the owner, 20 Nov 2026: on the TV only the PS button worked). The
   page skipped every pad while `document.hasFocus()` was false, WebView2
   gives an unfocused page no pad input, and Chromium's `:focus` stops
@@ -2167,7 +2167,7 @@ These shipped recently, newest last:
   a headful Chromium with another window in front; not on a PC:
   docs/TESTING.md 52.
 
-- **Unreleased, Big Picture towards a console's feel, part 1** (the
+- **2.18.0, Big Picture towards a console's feel, part 1** (the
   owner, 20 Nov 2026: "like PS5", music, animations, better settings, mods,
   Triangle for Settings, not too different from the PC). `27-bp-music.js`:
   a piece made with WebAudio as it plays (`MUSIC_CHORDS`, `musicChord`,
@@ -2188,7 +2188,7 @@ These shipped recently, newest last:
   game page's Mods key (`modsTabOn`). Harness shots `tv-settings-y`,
   `tv-settings-tv`, `tv-mods`. Next, when the owner says: Home's layout
   and motion. docs/TESTING.md 54.
-- **Unreleased, the PC's monitors in TV mode** (the owner, 20 Nov 2026,
+- **2.18.0, the PC's monitors in TV mode** (the owner, 20 Nov 2026,
   with two monitors: windows opened on the PC landed on the TV, the
   taskbar and Lootnest's bar were on one monitor only; they asked for
   both bars on both). `app/tvwindows.go` `tvWindows` (from `enterTV`,
@@ -2210,7 +2210,7 @@ These shipped recently, newest last:
   thread timer (`barSync`, `barWin` per window). Not seen on a PC:
   docs/TESTING.md 53.
 
-- **Unreleased, Big Picture's Home, part 2** (the owner, 20 Nov 2026:
+- **2.18.0, Big Picture's Home, part 2** (the owner, 20 Nov 2026:
   what's best on a PS5's home, "but not a copy"; researched, they agreed
   to the list in this order). Home's first block holds the hero, the
   first row and `bpCards(it)` for `BP.homeKey` (set in `bpAmbient` when
@@ -2226,6 +2226,15 @@ These shipped recently, newest last:
   `musicShift` moves the piece -2 to +2 semitones by `BP.artKey`, at the
   next chord. Harness shots `tv-home-cards`, `tv-home-focus`.
   docs/TESTING.md 55.
+
+- **2.18.0, Lootnest for TV 1.6.3** (c-dinca/lootnest-tv-webos#14;
+  the owner, 20 Nov 2026: the TV app's Settings before connecting "looks
+  broken", words over the keys). Moonlight TV's Settings used the TV's
+  font (`FONT_FAMILY` Museo Sans on webOS, by fontconfig); `app_font_init`
+  now loads the embedded Atkinson Hyperlegible Next first with the TV's
+  font as its fallback, and Settings' parts are Ice Grey in focus. Seen
+  in the desktop build under xvfb, not on a TV. The owner asked for
+  2.18.0 with everything of 20 Nov in it.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

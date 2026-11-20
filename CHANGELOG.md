@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.18.0
 
+- **Lootnest for TV 1.6.3 (LG).** The TV app's Settings, which it shows before it's connected to your PC, no longer has words running into its keys: the whole app now uses Lootnest's own letters, as its home screen does, instead of the TV's, and the part in focus is lit as Lootnest's keys are. Lootnest updates the app on an LG TV by itself.
 - **Big Picture's Home shows more about the game in focus.** Under the games to pick up, a row of cards follows the one you're on: Play for whoever sits at the PC (Down, then A, plays), its save points, the next achievement to unlock, how far the story is, and the mods that go in when you play; A on a card goes straight there. The cover in focus rises with a glow in your profile's colour while the others step back, your collections come right after, and the music changes key a little with each game.
 - **Big Picture has music, and Triangle takes you to Settings.** Big Picture plays a calm piece of its own while you look for a game, as a console's home screen does; it fades away while a game or an app runs, under a trailer and behind the Home menu over a game. The bar at the top has a Settings key: press **Triangle** (Y on an Xbox controller) anywhere in Big Picture to go to it, then the cross (A) to open Settings; Triangle again goes back to where you were. Settings has icons for each part, a new **Sound and music** part with the music's volume, a **TV** part in TV mode, and the setting in focus opens to say what it does.
 - **Mods in Big Picture.** A game with mods has a **Mods** key on its page in Big Picture and TV mode: turn each mod on or off for whoever is playing, and they go into the game when you press Play, as on the PC.
