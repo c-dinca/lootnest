@@ -1209,8 +1209,10 @@ Two monitors on the PC, the TV app connected.
    Start a game: it fades out within a second or two and stays silent
    while the game runs; back in Big Picture it fades in again. The same
    with a trailer playing behind a game, and over the Home menu.
-2. Press Triangle (Y): Settings opens over where you were; Triangle again,
-   or B from the parts on the left, comes back to the same place.
+2. Press Triangle (Y) on a game's cover: the Settings key in the bar (the
+   gear) is chosen; Triangle again goes back to the cover. Triangle, then
+   the cross (A): Settings opens; B from the parts on the left goes back to
+   the gear.
 3. Settings, Sound and music: Music off stops it at once; Music volume Low,
    Medium and High change it while it plays. Settings, Sounds for unlocks
    off silences the music too.

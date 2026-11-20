@@ -2176,9 +2176,11 @@ These shipped recently, newest last:
   on, no `BP.launch`/`BP.playing`/`BP.tvMenu`, no session playing, no
   trailer), `musicTick` every 500 ms fades in or out and schedules a bar
   ahead; prefs `bpMusic`, `bpMusicVol`. `audioCtx()` in 25-bigpicture.js
-  is the one context. Y (`bpY`) opens and closes Settings
-  (`BP.setFrom`); "Play as someone else" is only the key on a game's
-  page now. `bpSettingsParts` have `icon`s; rows are `.bp-opt--set` with
+  is the one context. The bar has a Settings key (`tab:settings`, go
+  `settings`, a gear beside the menu); Y (`bpY`) only takes the focus to
+  it, and back to `BP.yFrom` when pressed again (the owner: "not open
+  Settings, select the Settings key"); "Play as someone else" is only
+  the key on a game's page now. `bpSettingsParts` have `icon`s; rows are `.bp-opt--set` with
   the say text inside (`.bp-opt-say`, opens on focus; the old `.bp-say`
   line is gone); new rows Music, Music volume, Put mods in as links, and
   a TV part (tvQuick, Leave TV mode). `bpModsScreen` (`BP.mods`, screen

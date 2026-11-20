@@ -368,6 +368,7 @@
       <header class="bp-bar" data-zone="bar"><span class="bp-mark">${BRAND_MARK}</span>
         <nav class="bp-tabs"><span class="bp-ind" aria-hidden="true"></span><span class="bp-lb"></span>${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-bp data-bpid="tab:${k}" data-go="tab" data-t="${k}">${l}</button>`).join("")}<span class="bp-rb"></span></nav>
         <span class="bp-bar-end"><span class="bp-seat"></span><time class="bp-clock ln-num"></time>
+        <button class="bp-round" data-bp data-bpid="tab:settings" data-go="settings" aria-label="Settings" data-hint="Open">${ph("gear-six")}</button>
         <button class="bp-round" data-bp data-bpid="tab:menu" data-go="menu" aria-label="Menu" data-hint="Open">${ph("list")}</button></span></header>
       <main class="bp-main"></main>
       <div class="bp-fade" aria-hidden="true"></div><footer class="bp-foot"></footer><div class="bp-over" hidden></div>`;
@@ -388,7 +389,7 @@
     el.querySelector(".bp-clock").textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     el.querySelector(".bp-bar").classList.toggle("is-sub", sub);
     el.querySelectorAll(".bp-tab").forEach((t) => { t.setAttribute("aria-current", String(BP.tab === t.dataset.t)); t.tabIndex = sub ? -1 : 0; });
-    el.querySelector(".bp-round").tabIndex = sub ? -1 : 0;
+    el.querySelectorAll(".bp-round").forEach((r) => { r.tabIndex = sub ? -1 : 0; r.toggleAttribute("aria-pressed", r.dataset.go === "settings" && BP.settings); });
     slideInd(el.querySelector(".bp-ind"), el.querySelector('.bp-tab[aria-current="true"]'));
     el.classList.toggle("is-dim", BP.settings || (!sub && BP.tab !== "home"));
     // The screen: a new one arrives over the one that leaves; the same one
@@ -567,7 +568,7 @@
     const it = f && f.dataset.k && bpItem(f.dataset.k);
     const list = f && f.dataset.hint === "" ? [] : [["A", (f && f.dataset.hint) || "Select"]];
     if (it && bpRunning(it) && !BP.points && !BP.mods && !bpOver()) list.push(["X", "Close the game"]);
-    if (!bpOver()) list.push(["Y", BP.settings ? "Close settings" : "Settings"]);
+    if (!bpOver() && !(f && f.dataset.bpid === "tab:settings")) list.push(["Y", "Settings"]);
     list.push(["B", BP.ask ? "Cancel" : BP.menu ? "Close" : "Back"]);
     const html = list.map(([g, t]) => `<span>${glyph(g)}${esc(t)}</span>`).join("");
     if (html !== bpHintHTML) { bpHintHTML = html; const foot = $("#bp .bp-foot"); if (foot) foot.innerHTML = html; }
@@ -677,6 +678,7 @@
     // What's chosen answers: a cover and a card come forward as their page opens, a key dips.
     if (el.animate && moving()) el.animate({ scale: go === "open" ? ["1", "1.07", "1"] : ["1", "0.95", "1"] }, { duration: go === "open" ? 260 : 180, easing: "ease-out" });
     if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.mods = false; BP.from = el.dataset.bpid; BP.focus = "play"; BP.want = el.dataset.focus || ""; sfx("go"); renderBP(); }
+    else if (go === "settings") { if (BP.settings) { el.focus({ preventScroll: true }); bpMove("down"); return; } BP.settings = true; BP.setFrom = "tab:settings"; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "menu-settings") { BP.menu = false; BP.settings = true; BP.setFrom = BP.menuFrom; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "cat") { el.focus({ preventScroll: true }); bpMove("right"); }
     else if (go === "ach-in") { // into the game's achievements, or as soon as they've been read
@@ -776,12 +778,21 @@
     sfx("back");
     renderBP();
   }
-  // Y (Triangle) opens Settings from anywhere in Big Picture, and closes
-  // it again where it was.
+  // Y (Triangle) takes the focus to the Settings key in the bar, from
+  // anywhere in Big Picture, as a console's does; A there opens Settings.
+  // Y again, before choosing, goes back to where it was.
   function bpY() {
     if (bpOver() || BP.picking) return;
-    if (BP.settings) { BP.settings = false; BP.focus = BP.setFrom || ""; sfx("back"); renderBP(); return; }
-    BP.setFrom = BP.focus; BP.settings = true; BP.focus = ""; sfx("go"); renderBP();
+    const key = $('#bp [data-bpid="tab:settings"]'), a = document.activeElement;
+    if (!key) return;
+    if (a === key) {
+      const back = bpFind(BP.yFrom);
+      if (back) { back.focus({ preventScroll: true }); sfx("move"); }
+      return;
+    }
+    BP.yFrom = (a && a.dataset && a.dataset.bpid) || BP.focus;
+    key.focus({ preventScroll: true });
+    sfx("move");
   }
   document.addEventListener("click", (ev) => {
     const el = BP.on && ev.target.closest("#bp [data-go]");
