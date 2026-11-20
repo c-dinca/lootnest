@@ -22,17 +22,19 @@ import (
 // Mods tab can browse Nexus: search, a mod's page with what it needs and
 // its files. Get opens the file's page on nexusmods.com in a window of
 // Lootnest's own (nexuswin_windows.go; the browser where there's none),
-// where the user downloads it as on the site. Lootnest waits for the file
-// in Downloads, then closes that window and shows what adding it would do,
-// as for a mod the user brings. Lootnest itself downloads nothing; it only
-// reads Nexus's public API, and only with Settings, Online, Nexus Mods on.
+// where the user downloads it as on the site. The window puts the file in
+// Lootnest's folder for it (Downloads on an older WebView2); Lootnest shows
+// its progress, then closes that window and shows what adding it would
+// do, as for a mod the user brings. The download is the user's, on
+// Nexus's own page; Lootnest only reads Nexus's public API, and only with
+// Settings, Online, Nexus Mods on.
 // ---------------------------------------------------------------------------
 
 const (
-	nexusWaitFor   = 2 * time.Hour    // an ask is forgotten after this
-	nexusLook      = 3 * time.Second  // how often Downloads is looked at while an ask is open
-	nexusKeepPages = 10 * time.Minute // a mod's page is asked again after this
-	nexusKeepGame  = time.Hour        // a game found (or not) on Nexus
+	nexusWaitFor   = 2 * time.Hour           // an ask is forgotten after this
+	nexusLook      = 1500 * time.Millisecond // how often the folders are looked at while an ask is open
+	nexusKeepPages = 10 * time.Minute        // a mod's page is asked again after this
+	nexusKeepGame  = time.Hour               // a game found (or not) on Nexus
 )
 
 var nexusHTTP = &http.Client{Timeout: 20 * time.Second}
@@ -87,6 +89,7 @@ var nexus = struct {
 	pages    map[string]nexusPageKept // by "<game id>/<mod id>"
 	watching bool
 	window   uint32 // the Nexus window's process, while it's open
+	progress string // the last progress sent, as JSON
 }{games: map[string]nexusGameKept{}, pages: map[string]nexusPageKept{}}
 
 func nexusPath() string { return filepath.Join(DataDir(), "nexus.json") }
@@ -324,7 +327,7 @@ func (a *App) apiNexusMod(key string, modID int) {
 }
 
 // apiNexusGet opens a mod's file on nexusmods.com for the user to download,
-// and waits for it in Downloads (fileID 0 opens the mod's page and waits
+// and waits for it (fileID 0 opens the mod's page and waits
 // for nothing). The answer is a "nexusWaits" event.
 func (a *App) apiNexusGet(key string, modID, fileID int) error {
 	if !a.nexusOn() {
@@ -366,7 +369,7 @@ func (a *App) apiNexusGet(key string, modID, fileID int) error {
 	nexus.file.Waits = append(waits, w)
 	a.nexusSave()
 	nexus.Unlock()
-	a.logf("Waiting for %s (%s) from Nexus Mods in Downloads, for %s", w.Mod, w.File, name)
+	a.logf("Waiting for %s (%s) from Nexus Mods, for %s", w.Mod, w.File, name)
 	if err := a.nexusOpen(g.Domain, modID, fileID); err != nil {
 		return err
 	}
@@ -453,7 +456,7 @@ func (a *App) nexusWatch() {
 	}()
 }
 
-// nexusLook matches what arrived in Downloads to the asks open, and says
+// nexusLook matches what arrived in the window's folder or Downloads to the asks open, and says
 // whether any are still open.
 func (a *App) nexusLook() bool {
 	nexus.Lock()
@@ -470,7 +473,12 @@ func (a *App) nexusLook() bool {
 	if !a.nexusOn() {
 		waits = nil
 	}
-	for _, dir := range downloadDirs() {
+	// The window's own folder first: what it took, with a note of the mod.
+	incoming := core.NexusIncomingDir(DataDir())
+	if len(waits) > 0 {
+		a.nexusProgress(incoming, waits)
+	}
+	for _, dir := range append([]string{incoming}, downloadDirs()...) {
 		if len(waits) == 0 {
 			break
 		}
@@ -508,7 +516,7 @@ func (a *App) nexusLook() bool {
 	win := nexus.window
 	nexus.Unlock()
 	for _, arr := range got {
-		a.logf("%s from Nexus Mods arrived in Downloads: %s", arr.Mod, arr.Path)
+		a.logf("%s from Nexus Mods arrived: %s", arr.Mod, arr.Path)
 		if !left && win != 0 && plat.ProcessAlive(win) {
 			plat.CloseWindowsOfPID(win)
 		}
@@ -547,9 +555,37 @@ func (a *App) apiNexusAdd(key, path string, modID, fileID int) error {
 	return nil
 }
 
-// nexusAtStart picks up asks still open from before.
+// nexusProgress tells the page how far each download into the window's
+// folder has come, for the files awaited ("nexusProgress"), when that
+// changed.
+func (a *App) nexusProgress(dir string, waits []core.NexusWait) {
+	by := map[string]map[string]int64{}
+	for _, d := range core.NexusIncoming(dir) {
+		for _, w := range waits {
+			if w.ModID == d.ModID {
+				by[w.Key+"/"+strconv.Itoa(w.ModID)] = map[string]int64{"got": d.Got, "total": d.Total}
+			}
+		}
+	}
+	b, _ := json.Marshal(by)
+	nexus.Lock()
+	same := string(b) == nexus.progress
+	nexus.progress = string(b)
+	nexus.Unlock()
+	if !same {
+		a.emit("nexusProgress", map[string]any{"progress": by})
+	}
+}
+
+// nexusAtStart picks up asks still open from before, and lets go of
+// downloads in the window's folder that nobody added in a month (an
+// added mod is copied into the game's mods).
 func (a *App) nexusAtStart() {
-	if a.safe || !a.nexusOn() {
+	if a.safe {
+		return
+	}
+	go core.PruneNexusIncoming(core.NexusIncomingDir(DataDir()), 30*24*time.Hour)
+	if !a.nexusOn() {
 		return
 	}
 	a.nexusWatch()

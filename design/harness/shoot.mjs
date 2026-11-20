@@ -57,6 +57,8 @@ const shots = [
   ...[["nexus-off", "mods=1", []], ["nexus", "mods=1&nexus=1", []], ["nexus-none", "mods=1&nexus=none", []],
     ["nexus-mod", "mods=1&nexus=1", [click('[data-action="nexus-open"][data-id="1"]')]],
     ["nexus-waiting", "mods=1&nexus=1&nxwait=hold", [click('[data-action="nexus-open"][data-id="1"]'), click('[data-action="nexus-get"][data-file="11"]')]],
+    ["nexus-progress", "mods=1&nexus=1&nxwait=hold&nxprog=1", [click('[data-action="nexus-open"][data-id="1"]'), click('[data-action="nexus-get"][data-file="11"]')]],
+    ["nexus-progress-grid", "mods=1&nexus=1&nxwait=hold&nxprog=1", [click('[data-action="nexus-open"][data-id="1"]'), click('[data-action="nexus-get"][data-file="11"]'), click('[data-action="dialog-cancel"]')]],
     ["nexus-arrived", "mods=1&nexus=1", [click('[data-action="nexus-open"][data-id="1"]'), click('[data-action="nexus-get"][data-file="11"]'), "new Promise((r) => setTimeout(r, 2400))"]],
   ].map(([n, qs, steps]) => [n, qs, [...game('data-key="dir:d:\\\\games\\\\phantom blade zero"'), click('.gp-tabs [data-tab="mods"]'), click('[data-action="mods-pane"][data-value="nexus"]'), ...steps]]),
   ["achievements", "", [nav("achievements")]],

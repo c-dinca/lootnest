@@ -17,7 +17,8 @@
     modsPane: {},     // Library key -> its Mods tab's pane: "mine" (default) or "nexus"
     nx: {},           // Library key -> its Nexus Mods browsing: {game, q, sort, mods, total, seq, loading, error} (68-nexus.js)
     nxMods: {},       // "<key>/<mod id>" -> a mod's page on Nexus Mods (nexusMod event)
-    nxWaits: [],      // files the user went to download from Nexus, awaited in Downloads
+    nxWaits: [],      // files the user went to download from Nexus, awaited
+    nxProg: {},       // "<key>/<mod id>" -> {got, total} of its download into Lootnest's folder
     sideQ: "",        // the filter over the sidebar's games
     revealed: new Set(), // hidden achievements shown on request (key|id)
     sideSort: pref("sideSort", "name"), // name, recent or played

@@ -29,6 +29,7 @@ type Chromium struct {
 	navigationCompleted   *ICoreWebView2NavigationCompletedEventHandler
 	navigationStarting    *iCoreWebView2NavigationStartingEventHandler
 	newWindowRequested    *iCoreWebView2NewWindowRequestedEventHandler
+	downloadStarting      *iCoreWebView2DownloadStartingEventHandler
 
 	environment *ICoreWebView2Environment
 
@@ -47,6 +48,9 @@ type Chromium struct {
 	// NewWindowCallback (Lootnest patch), when set, gets the address of a
 	// link that wants a new window, and no window opens.
 	NewWindowCallback func(uri string)
+	// DownloadFilter (Lootnest patch), when set, says where a download
+	// goes, whether the browser's download list shows, or that it stops.
+	DownloadFilter func(d Download) (path string, hide, cancel bool)
 
 	// Callbacks
 	MessageCallback              func(message, source string)
@@ -77,6 +81,7 @@ func NewChromium() *Chromium {
 	e.navigationCompleted = newICoreWebView2NavigationCompletedEventHandler(e)
 	e.navigationStarting = newICoreWebView2NavigationStartingEventHandler(e)
 	e.newWindowRequested = newICoreWebView2NewWindowRequestedEventHandler(e)
+	e.downloadStarting = newICoreWebView2DownloadStartingEventHandler(e)
 	e.permissions = make(map[CoreWebView2PermissionKind]CoreWebView2PermissionState)
 
 	return e
@@ -240,6 +245,7 @@ func (e *Chromium) CreateCoreWebView2ControllerCompleted(res uintptr, controller
 
 	_ = e.controller.AddAcceleratorKeyPressed(e.acceleratorKeyPressed, &token)
 	e.addNavigationHandlers()
+	e.addDownloadHandler()
 
 	atomic.StoreUintptr(&e.inited, 1)
 

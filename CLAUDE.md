@@ -2012,6 +2012,28 @@ These shipped recently, newest last:
   updates) waits on the owner registering Lootnest with Nexus
   (docs/ROADMAP.md, Mods 5b). Harness `?mods=1&nexus=1|none|error`,
   `&nxwait=hold`; shots `nexus*`. Not seen on a PC: docs/TESTING.md 48.
+- **Unreleased, mods from Nexus Mods, the download in Lootnest** (the
+  owner, 20 Nov 2026: Nexus won't register Lootnest, so a workaround;
+  they chose these two). The window takes the download: a go-webview2
+  patch adds DownloadStarting (`edge/download_lootnest.go`,
+  `ICoreWebView2_4`, `WebViewOptions.Download`; the vtables were checked
+  against WebView2.h of SDK 1.0.2903.40, NavigationStarting's and
+  NewWindowRequested's too). A file from Nexus's servers goes into
+  `nexus-downloads` (`core.NexusIncomingDir`, `NexusIncomingPath`) with
+  a note beside it (`<file>.lootnest.json`: mod, file, size;
+  `WriteNexusNote`, `NexusNoteOf`), the download list stays hidden, and
+  a note in the page says Lootnest has it (`nexusNotes`, `__lnNote`).
+  `nexusLook` (every 1.5 s) looks there first; `NexusArrivals` trusts a
+  note over the name; `NexusIncoming` gives the progress (event
+  `nexusProgress`, `S.nxProg`, `nxWaitLine`/`nxProgress` change the row
+  in place). A runtime without `ICoreWebView2_4` leaves files in
+  Downloads as before. `nxm://` (`core.NexusNXM`) sends the window to
+  the file's page with `ln=manual`, which says to press Manual download.
+  `PruneNexusIncoming` at start lets go of files over 30 days (added
+  ones are copied into the game's mods). Won't do: pressing the site's
+  buttons for the user, or users' personal API keys. Harness
+  `&nxprog=1`, shots `nexus-progress*`. docs/TESTING.md 48, items 3 to 5
+  and 9 to 10.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

@@ -2,9 +2,10 @@
   // Mods from Nexus Mods (app/nexus.go), in a game's Mods tab: search, a
   // mod's page with what it needs and its files. Download opens the file's
   // page on nexusmods.com in a window of Lootnest's own, where the user
-  // downloads it as on the site; once it's in Downloads, Lootnest closes
-  // that window and shows what adding it would do (the modplan drawer), as
-  // for any mod the user brings. Lootnest downloads nothing itself.
+  // downloads it as on the site; the window puts it in Lootnest's folder
+  // and the mod's row shows how far it has come (nxProgress). Once it's
+  // there, Lootnest closes that window and shows what adding it would do
+  // (the modplan drawer), as for any mod the user brings.
   const NX_SORTS = [["endorsements", "Most endorsed"], ["downloads", "Most downloaded"], ["updated", "Recently updated"], ["new", "Newest"], ["name", "Name"]];
   const NX_CATS = [["MAIN", "Main files"], ["UPDATE", "Updates"], ["OPTIONAL", "Optional files"], ["MISCELLANEOUS", "Other files"], ["OLD_VERSION", "Older versions"]];
   const NX_PAGE = 24;
@@ -13,6 +14,22 @@
   const nxOn = () => !!cfg().settings.nexusMods;
   const nxNum = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n || 0));
   const nxWait = (key, id) => (S.nxWaits || []).find((w) => w.key === key && w.modId === id);
+  // What an awaited file is doing: how far its download into Lootnest's
+  // folder has come, else what to press. Its parts carry data-nxw, so
+  // progress changes them in place (nxProgress).
+  const nxProgOf = (w) => (S.nxProg || {})[w.key + "/" + w.modId];
+  const nxPct = (P) => (P && P.total ? Math.min(100, Math.round((P.got / P.total) * 100)) : 0);
+  const nxWaitSays = (P) => (P ? (P.total ? `Downloading, ${fmtBytes(P.got)} of ${fmtBytes(P.total)}` : `Downloading, ${fmtBytes(P.got)} so far`)
+    : "Press Manual download on the Nexus Mods page. Lootnest takes the file from there.");
+  const nxWaitLine = (w) => { const P = nxProgOf(w), k = esc(w.key + "/" + w.modId);
+    return `<span data-nxw="${k}">${esc(nxWaitSays(P))}</span><span class="nx-meter${P ? "" : " is-idle"}" data-nxm="${k}" aria-hidden="true"><i style="width:${nxPct(P)}%"></i></span>`; };
+  function nxProgress() {
+    (S.nxWaits || []).forEach((w) => {
+      const P = nxProgOf(w), k = w.key + "/" + w.modId;
+      document.querySelectorAll("[data-nxw]").forEach((el) => { if (el.dataset.nxw === k) el.textContent = nxWaitSays(P); });
+      document.querySelectorAll("[data-nxm]").forEach((el) => { if (el.dataset.nxm === k) { el.classList.toggle("is-idle", !P); el.firstElementChild.style.width = nxPct(P) + "%"; } });
+    });
+  }
   const nxAdded = (key, id) => Object.values((S.mods[key] || {}).sets || {}).some((rows) => rows.some((m) => m.nexusId === id));
 
   function nxGame(key) {
@@ -65,7 +82,7 @@
         <select class="ln-input nx-sort" id="nx-sort" data-key="${esc(key)}" aria-label="Order">${NX_SORTS.map(([v, l]) => `<option value="${v}" ${v === N.sort ? "selected" : ""}>${l}</option>`).join("")}</select>
         <span class="grow"></span><span class="nx-game">${esc(G.game.name)}, ${esc(nxNum(G.game.mods))} mods</span>${change}
       </div>
-      ${waits.length ? `<ul class="ln-rows nx-waits">${waits.map((w) => lookRow(`Waiting for ${esc(w.mod)}`, `${esc(w.file)}. Download it on the Nexus Mods page; Lootnest adds it when it's in your Downloads.`,
+      ${waits.length ? `<ul class="ln-rows nx-waits">${waits.map((w) => lookRow(`Waiting for ${esc(w.mod)}`, nxWaitLine(w),
         `<button class="ln-button ln-button--secondary ln-button--sm" data-action="nexus-get" data-key="${esc(key)}" data-id="${w.modId}" data-file="${w.fileId}">Open the page again</button><button class="ln-button ln-button--ghost ln-button--sm" data-action="nexus-forget" data-key="${esc(key)}" data-id="${w.modId}">Stop waiting</button>`, "warn")).join("")}</ul>` : ""}
       <div id="nx-results" data-key="${esc(key)}">${nxResults(key)}</div></section>`;
   }
@@ -115,7 +132,7 @@
           ${m.category ? `<div><dt>Category</dt><dd>${esc(m.category)}</dd></div>` : ""}
           <div><dt>Endorsements</dt><dd class="ln-num">${esc((m.endorsements || 0).toLocaleString())}</dd></div>
           <div><dt>Downloads</dt><dd class="ln-num">${esc((m.downloads || 0).toLocaleString())}</dd></div></dl></div></div>`;
-    const state = wait ? `<ul class="ln-rows">${lookRow(`Waiting for ${esc(wait.file)}`, "Download it on the Nexus Mods page with Manual download. Lootnest adds it when it's in your Downloads.",
+    const state = wait ? `<ul class="ln-rows">${lookRow(`Waiting for ${esc(wait.file)}`, nxWaitLine(wait),
         btn(`data-action="nexus-forget" data-key="${esc(D.key)}" data-id="${m.id}"`, "Stop waiting", "ln-button--ghost"), "warn")}</ul>`
       : added ? `<ul class="ln-rows">${lookRow("In your mods", "A file of this mod is on the game's list.", "", "on")}</ul>` : "";
     const needs = (m.needs || []).length ? `<div class="gpage-sub">${gpHead("It needs")}<ul class="ln-rows">${m.needs.map((n) => lookRow(esc(n.name), esc(n.notes || (n.external ? "From outside Nexus Mods" : "")),
@@ -182,6 +199,10 @@
       case "nexusMod":
         S.nxMods[ev.key + "/" + ev.modId] = ev.error ? { error: ev.error } : ev.none ? { none: true } : { mod: ev.mod, url: ev.url };
         if (S.dialog && S.dialog.kind === "nexusmod" && S.dialog.key === ev.key && S.dialog.id === ev.modId) renderOverlay();
+        break;
+      case "nexusProgress":
+        S.nxProg = ev.progress || {};
+        nxProgress();
         break;
       case "nexusWaits":
         S.nxWaits = ev.waits || [];

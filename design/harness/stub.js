@@ -713,6 +713,10 @@
       const w = { key, game: "The game", domain: "game", modId: id, fileId: file, mod: m.name, file: m.name + " " + m.version, date: 0, since: new Date().toISOString() };
       NX_WAITS = NX_WAITS.filter((x) => !(x.key === key && x.modId === id)).concat(w);
       emit({ type: "nexusWaits", waits: NX_WAITS });
+      // Its download into Lootnest's folder: &nxprog=1 holds it at 62%.
+      const prog = (f) => emit({ type: "nexusProgress", progress: { [key + "/" + id]: { got: Math.round(48.2e6 * f), total: 48.2e6 } } });
+      if (q.get("nxprog")) prog(0.62);
+      else if (q.get("nxwait") !== "hold") { setTimeout(() => prog(0.2), 400); setTimeout(() => prog(0.7), 900); }
       if (q.get("nxwait") !== "hold") setTimeout(() => {
         NX_WAITS = NX_WAITS.filter((x) => x !== w);
         emit({ type: "nexusWaits", waits: NX_WAITS });
