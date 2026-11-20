@@ -7,6 +7,7 @@ package plat
 import (
 	"errors"
 	"image"
+	"os"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const (
 	EmergencyKey         = "Ctrl+Shift+Q"
 	FrameD3D9            = 1
 	FrameDXGI            = 0
+	FrameHistory         = 3
 	FrameKernel          = 2
 	IDCANCEL             = 2
 	IDNO                 = 7
@@ -449,6 +451,11 @@ func SendCommand(hwnd uintptr, cmd string) (r0 bool) {
 
 func SendToBack(hwnd uintptr) {}
 
+func ServeOutboundPipe(name string) (r0 *os.File, err error) {
+	err = ErrUnsupported
+	return
+}
+
 func ServiceState(name string) (r0 bool, r1 bool) {
 	return
 }
@@ -614,6 +621,11 @@ func (*ViGEmPad) Submit(report [12]byte) (err error) {
 func (*ViGEmPad) Close() {}
 
 func ViGEmPresent() (r0 bool) {
+	return
+}
+
+func WaitPipeReader(f *os.File) (err error) {
+	err = ErrUnsupported
 	return
 }
 

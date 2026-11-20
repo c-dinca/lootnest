@@ -38,26 +38,34 @@ var (
 // member counts from the next sign-in).
 var ErrFramesNotAllowed = errors.New("Windows doesn't let this account read frame timings yet")
 
-// Frame sources, as core.FrameDXGI, FrameD3D9 and FrameKernel.
+// Frame sources, as core.FrameDXGI, FrameD3D9, FrameKernel, FrameHistory.
 const (
-	FrameDXGI   = 0
-	FrameD3D9   = 1
-	FrameKernel = 2
+	FrameDXGI    = 0
+	FrameD3D9    = 1
+	FrameKernel  = 2
+	FrameHistory = 3
 )
 
-// The providers and the one or two events of each that are a frame.
+type frameEvent struct {
+	id  uint16
+	src int
+}
+
+// The providers and the events of each that are a frame (ids as in
+// PresentMon's PresentData/ETW headers).
 var frameProviders = []struct {
-	guid windows.GUID
-	ids  []uint16
-	src  int
+	guid   windows.GUID
+	events []frameEvent
 }{
 	// Microsoft-Windows-DXGI: Present_Start, PresentMultiplaneOverlay_Start.
-	{windows.GUID{Data1: 0xCA11C036, Data2: 0x0102, Data3: 0x4A2D, Data4: [8]byte{0xA6, 0xAD, 0xF0, 0x3C, 0xFE, 0xD5, 0xD3, 0xC9}}, []uint16{42, 55}, FrameDXGI},
+	{windows.GUID{Data1: 0xCA11C036, Data2: 0x0102, Data3: 0x4A2D, Data4: [8]byte{0xA6, 0xAD, 0xF0, 0x3C, 0xFE, 0xD5, 0xD3, 0xC9}}, []frameEvent{{42, FrameDXGI}, {55, FrameDXGI}}},
 	// Microsoft-Windows-D3D9: Present_Start.
-	{windows.GUID{Data1: 0x783ACA0A, Data2: 0x790E, Data3: 0x4D7F, Data4: [8]byte{0x84, 0x51, 0xAA, 0x85, 0x05, 0x11, 0xC6, 0xB9}}, []uint16{1}, FrameD3D9},
-	// Microsoft-Windows-DxgKrnl: Present_Info (every present that reaches
-	// the kernel, Vulkan and OpenGL included).
-	{windows.GUID{Data1: 0x802EC45A, Data2: 0x1E99, Data3: 0x4B83, Data4: [8]byte{0x99, 0x20, 0x87, 0xC9, 0x82, 0x77, 0xBA, 0x9D}}, []uint16{184}, FrameKernel},
+	{windows.GUID{Data1: 0x783ACA0A, Data2: 0x790E, Data3: 0x4D7F, Data4: [8]byte{0x84, 0x51, 0xAA, 0x85, 0x05, 0x11, 0xC6, 0xB9}}, []frameEvent{{1, FrameD3D9}}},
+	// Microsoft-Windows-DxgKrnl: Present_Info (a present that reaches the
+	// kernel, Vulkan and OpenGL included) and PresentHistory_Start (one per
+	// present the compositor takes, which PresentMon always reads). Each is
+	// its own source, so a frame heard by both counts once.
+	{windows.GUID{Data1: 0x802EC45A, Data2: 0x1E99, Data3: 0x4B83, Data4: [8]byte{0x99, 0x20, 0x87, 0xC9, 0x82, 0x77, 0xBA, 0x9D}}, []frameEvent{{184, FrameKernel}, {171, FrameHistory}}},
 }
 
 // The session's name and an id of its own.
@@ -194,9 +202,9 @@ var (
 			if rec.ProviderID != p.guid {
 				continue
 			}
-			for _, id := range p.ids {
-				if rec.ID == id {
-					(*sink)(rec.ProcessID, p.src, rec.TimeStamp)
+			for _, e := range p.events {
+				if rec.ID == e.id {
+					(*sink)(rec.ProcessID, e.src, rec.TimeStamp)
 					return 0
 				}
 			}
@@ -256,7 +264,11 @@ func StartFrameTrace(sink func(pid uint32, src int, at int64)) (*FrameTrace, err
 	enabled := 0
 	var firstErr error
 	for _, p := range frameProviders {
-		if err := enableFrameProvider(session, p.guid, p.ids); err != nil {
+		ids := make([]uint16, len(p.events))
+		for i, e := range p.events {
+			ids[i] = e.id
+		}
+		if err := enableFrameProvider(session, p.guid, ids); err != nil {
 			if firstErr == nil {
 				firstErr = err
 			}

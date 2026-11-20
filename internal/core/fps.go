@@ -1,8 +1,11 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -21,7 +24,8 @@ import (
 const (
 	FrameDXGI = iota
 	FrameD3D9
-	FrameKernel
+	FrameKernel  // DxgKrnl Present_Info
+	FrameHistory // DxgKrnl PresentHistory_Start, which PresentMon always reads
 	frameSources
 )
 
@@ -115,6 +119,24 @@ func (c *FrameCounter) Rate(pid uint32, now int64) (fps int, ok bool) {
 	return fps, true
 }
 
+// Rates is the rate of every process that drew in the 3 seconds before
+// now, by pid.
+func (c *FrameCounter) Rates(now int64) map[uint32]int {
+	c.mu.Lock()
+	pids := make([]uint32, 0, len(c.procs))
+	for pid := range c.procs {
+		pids = append(pids, pid)
+	}
+	c.mu.Unlock()
+	out := map[uint32]int{}
+	for _, pid := range pids {
+		if fps, ok := c.Rate(pid, now); ok {
+			out[pid] = fps
+		}
+	}
+	return out
+}
+
 // Forget drops everything counted (the counter was turned off).
 func (c *FrameCounter) Forget() {
 	c.mu.Lock()
@@ -135,38 +157,115 @@ func CleanFPSCorner(c string) string {
 	return "tl"
 }
 
-// PerfLogUsersSID is the built-in Performance Log Users group, the same in
-// every language of Windows. Its members may listen to Windows' frame
-// events without being administrators, as Xbox Game Bar's counter does.
-const PerfLogUsersSID = "S-1-5-32-559"
+// ---------------------------------------------------------------------------
+// The frame reader: Windows lets only administrators and Performance Log
+// Users listen to frames, and a new member counts only from the next
+// sign-in. So the user allows, once with Windows' prompt, a task of
+// Task Scheduler that starts Lootnest's own frame reader with the highest
+// rights the account has. Lootnest starts it on demand (no further
+// prompt); the reader writes each process's rate twice a second to a pipe
+// and ends when nobody reads it. Its program is a copy of lootnest.exe in
+// Program Files, which only administrators can change, so the task can't
+// be used to run something else with those rights.
+// ---------------------------------------------------------------------------
+
+// FrameTaskPath and FrameTaskName name the task in Task Scheduler.
+const (
+	FrameTaskPath = `\Lootnest\`
+	FrameTaskName = "Frame counter"
+	FrameTaskArg  = "--frames"
+	// FrameReaderDir is under %ProgramFiles%.
+	FrameReaderDir = `Lootnest\Frame counter`
+	FrameReaderExe = "lootnest-frames.exe"
+	// FrameProtocol is what reader and app agree on; a reader saying
+	// another is from an older Lootnest, and Allow puts the new one in.
+	FrameProtocol = 1
+)
 
 var sidRe = regexp.MustCompile(`^S-1-[0-9]+(-[0-9]+)+$`)
 
-// PerfLogUsersScript is the PowerShell, run once as administrator, that
-// puts the user (by SID) into Performance Log Users. Being a member
-// already is not a failure. Add-LocalGroupMember first; the older ADSI way
-// where that module is missing, with the group's name in this Windows'
-// language.
-func PerfLogUsersScript(userSID string) (string, error) {
+// FramePipeName is the reader's pipe for one account.
+func FramePipeName(userSID string) string {
+	return `\\.\pipe\lootnest-frames-` + userSID
+}
+
+func psQuoted(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
+
+// FrameTaskScript is the PowerShell, run once as administrator, that puts
+// the reader in Program Files (a copy of exe) and registers the task for
+// the account userSID, run only while that account is signed in, with its
+// highest rights. Running it again replaces both.
+func FrameTaskScript(exe, userSID string) (string, error) {
 	if !sidRe.MatchString(userSID) {
 		return "", errors.New("Windows didn't say who you are, so nothing was changed.")
 	}
+	if exe == "" || strings.ContainsAny(exe, "\r\n") {
+		return "", errors.New("Lootnest couldn't find its own program, so nothing was changed.")
+	}
 	return `$ErrorActionPreference = 'Stop'
-$group = New-Object System.Security.Principal.SecurityIdentifier('` + PerfLogUsersSID + `')
-$user = '` + userSID + `'
-try {
-  Add-LocalGroupMember -SID $group -Member $user
-} catch {
-  if ($_.FullyQualifiedErrorId -like 'MemberExists*') { exit 0 }
-  try {
-    $name = $group.Translate([System.Security.Principal.NTAccount]).Value.Split('\')[-1]
-    ([ADSI]('WinNT://./' + $name + ',group')).Add('WinNT://' + $user)
-  } catch {
-    $inner = $_.Exception.InnerException
-    if ($inner -and $inner.ErrorCode -eq -2147023518) { exit 0 }
-    exit 2
-  }
-}
+$dir = Join-Path $env:ProgramFiles ` + psQuoted(FrameReaderDir) + `
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$reader = Join-Path $dir ` + psQuoted(FrameReaderExe) + `
+Copy-Item -LiteralPath ` + psQuoted(exe) + ` -Destination $reader -Force
+$user = (New-Object System.Security.Principal.SecurityIdentifier(` + psQuoted(userSID) + `)).Translate([System.Security.Principal.NTAccount]).Value
+$action = New-ScheduledTaskAction -Execute $reader -Argument ` + psQuoted(FrameTaskArg) + `
+$principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Highest
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+Register-ScheduledTask -TaskPath ` + psQuoted(FrameTaskPath) + ` -TaskName ` + psQuoted(FrameTaskName) + ` -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 exit 0
 `, nil
 }
+
+// FrameUntaskScript takes the task and the reader away again.
+func FrameUntaskScript() string {
+	return `$ErrorActionPreference = 'SilentlyContinue'
+Unregister-ScheduledTask -TaskPath ` + psQuoted(FrameTaskPath) + ` -TaskName ` + psQuoted(FrameTaskName) + ` -Confirm:$false
+$dir = Join-Path $env:ProgramFiles ` + psQuoted(FrameReaderDir) + `
+Remove-Item -LiteralPath $dir -Recurse -Force
+exit 0
+`
+}
+
+// FrameReport is one line the reader writes: each process's rate.
+type FrameReport struct {
+	V   int            `json:"v"`
+	FPS map[string]int `json:"fps,omitempty"`
+	Err string         `json:"err,omitempty"` // the reader couldn't listen
+}
+
+// EncodeFrameReport is one line of the pipe.
+func EncodeFrameReport(rates map[uint32]int, errText string) []byte {
+	r := FrameReport{V: FrameProtocol, Err: errText}
+	if len(rates) > 0 {
+		r.FPS = make(map[string]int, len(rates))
+		for pid, n := range rates {
+			r.FPS[strconv.FormatUint(uint64(pid), 10)] = n
+		}
+	}
+	b, _ := json.Marshal(r)
+	return append(b, '\n')
+}
+
+// DecodeFrameReport reads one line; a line from another protocol, or that
+// isn't one, is an error.
+func DecodeFrameReport(line []byte) (map[uint32]int, string, error) {
+	var r FrameReport
+	if err := json.Unmarshal(line, &r); err != nil {
+		return nil, "", errors.New("the frame reader said something Lootnest can't read")
+	}
+	if r.V != FrameProtocol {
+		return nil, "", ErrFrameReaderOld
+	}
+	out := make(map[uint32]int, len(r.FPS))
+	for k, n := range r.FPS {
+		pid, err := strconv.ParseUint(k, 10, 32)
+		if err != nil || n < 0 || n > 100000 {
+			continue
+		}
+		out[uint32(pid)] = n
+	}
+	return out, r.Err, nil
+}
+
+// ErrFrameReaderOld: the reader in Program Files is from another version.
+var ErrFrameReaderOld = errors.New("the frame reader is from another version of Lootnest")

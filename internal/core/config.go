@@ -215,9 +215,6 @@ type Settings struct {
 	FPSCounter bool `json:"fpsCounter,omitempty"`
 	// FPSCorner is where it sits: "tl" (default), "tr", "bl" or "br".
 	FPSCorner string `json:"fpsCorner,omitempty"`
-	// FPSGroupAdded: Lootnest put the account into Performance Log Users,
-	// which counts from the next sign-in to Windows.
-	FPSGroupAdded bool `json:"fpsGroupAdded,omitempty"`
 	// CapturesOff stops Lootnest reading the screenshots and clips other
 	// apps (Game Bar, Steam, NVIDIA, AMD, OBS) keep on this PC for the
 	// Timeline. On by default: it only reads folders on this PC.

@@ -1035,9 +1035,11 @@ the same network as the PC, with TV streaming set up.
 
 1. Settings, Games and swaps: **Let Lootnest read frame timings** shows
    with **Allow**. Press it: Windows asks for administrator once; the row
-   becomes "Sign out of Windows and in again". In an elevated PowerShell,
-   `Get-LocalGroupMember -SID S-1-5-32-559` lists your account.
-2. Sign out and in. The row is gone. Turn on **FPS counter**.
+   becomes "Lootnest's frame reader" with **Remove**. Task Scheduler has
+   `\Lootnest\Frame counter`, and `C:\Program Files\Lootnest\Frame
+   counter\lootnest-frames.exe` is there.
+2. Without signing out, turn on **FPS counter**. The log says "listening
+   to frames through the frame reader".
 3. Start a game (windowed or borderless): a small box with a number and
    "FPS" sits in the top-left corner of its screen within about 6 seconds,
    and the number follows the game (cap the game's frame rate at 60 and
@@ -1236,3 +1238,8 @@ Two monitors on the PC, the TV app connected.
 4. Collections come right under the cards.
 5. With music on, move to another game and wait a few seconds: the piece
    moves to another key at its next chord.
+12. While a game runs with the counter on, Task Manager shows
+    lootnest-frames.exe; it's gone a few seconds after the game closes or
+    the counter is turned off.
+13. **Remove**: Windows asks, the task and the Program Files folder are
+    gone, and the row is **Allow** again.

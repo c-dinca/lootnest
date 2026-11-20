@@ -9,6 +9,7 @@
 //	Lootnest.exe --tv            TV mode, for a streaming host: runs until TV mode ends
 //	Lootnest.exe --app <id>      a site as an app, full screen (YouTube's TV interface)
 //	Lootnest.exe --nexus <d/m/f> a mod's file on nexusmods.com, in a window of Lootnest's own
+//	Lootnest.exe --frames        the FPS counter's frame reader (started by its task)
 //	Lootnest.exe --uninstall     remove Lootnest
 package main
 
@@ -69,6 +70,12 @@ func main() {
 				i++
 			}
 		}
+	}
+
+	// Lootnest's frame reader, started by its task in Task Scheduler with
+	// the account's highest rights (app/framereader.go).
+	if len(args) == 1 && args[0] == "--frames" {
+		os.Exit(app.RunFrameReader())
 	}
 
 	// Started by Steam through the game's launch options.

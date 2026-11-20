@@ -77,6 +77,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_fpsState", a.apiFPSState))
 	must(a.w.Bind("ps_fpsSet", a.apiFPSSet))
 	must(a.w.Bind("ps_fpsAllow", a.apiFPSAllow))
+	must(a.w.Bind("ps_fpsRemove", a.apiFPSRemove))
 	must(a.w.Bind("ps_mediaApps", a.apiMediaApps))
 	must(a.w.Bind("ps_launchApp", a.apiLaunchApp))
 	must(a.w.Bind("ps_gameBackups", a.apiGameBackups))
@@ -629,7 +630,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	s.CloudSync = old.CloudSync
 	s.ItchKey, s.ItchUser, s.ItchDir = old.ItchKey, old.ItchUser, old.ItchDir // itchio.go keeps these
 	s.GogToken, s.GogUser, s.GogDir = old.GogToken, old.GogUser, old.GogDir   // and gog.go these
-	s.FPSCounter, s.FPSGroupAdded = old.FPSCounter, old.FPSGroupAdded         // and fps.go these
+	s.FPSCounter = old.FPSCounter                                             // and fps.go this
 	s.FPSCorner = core.CleanFPSCorner(s.FPSCorner)
 	saveDBOn := s.SaveDB && !old.SaveDB
 	capturesOn := !s.CapturesOff && old.CapturesOff

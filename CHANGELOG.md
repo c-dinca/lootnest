@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The FPS counter works without signing out.** Allowing it used to add your account to a Windows group that only counted from your next sign-in, so the counter stayed blank until then. Now **Allow** (Settings, Games and swaps) puts a small frame reader of Lootnest's in Program Files and a task in Task Scheduler that starts it while a game runs: Windows asks once, as administrator, and the counter works right away, with no prompt after that. **Remove**, in the same place, takes both away. It also counts frames from one more of Windows' reports, so more games show a number.
+
 ## 2.18.0
 
 - **Lootnest for TV 1.6.3 (LG).** The TV app's Settings, which it shows before it's connected to your PC, no longer has words running into its keys: the whole app now uses Lootnest's own letters, as its home screen does, instead of the TV's, and the part in focus is lit as Lootnest's keys are. Lootnest updates the app on an LG TV by itself.

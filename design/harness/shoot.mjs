@@ -107,6 +107,7 @@ const shots = [
   ["settings-online", "", [nav("settings"), click('[data-action="set-tab"][data-tab="online"]')]],
   ["settings-games", "", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]')]],
   ["settings-games-fps", "fps=ask", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]'), `new Promise((r) => setTimeout(() => { document.querySelector('[data-setting="fpsCounter"]').closest(".toggle").scrollIntoView({ block: "center" }); r(); }, 300))`]],
+  ["settings-games-fps-reader", "fps=reader", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]'), `new Promise((r) => setTimeout(() => { document.querySelector('[data-setting="fpsCounter"]').closest(".toggle").scrollIntoView({ block: "center" }); r(); }, 300))`]],
   ["settings-games-fps-on", "fps=exclusive", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]'), `new Promise((r) => { setTimeout(() => document.querySelector('[data-setting="fpsCounter"]').click(), 200); setTimeout(() => { document.querySelector('[data-setting="fpsCounter"]').closest(".toggle").scrollIntoView({ block: "center" }); r(); }, 700); })`]],
   ["tv-home-fps", "tv=1&players=1", [`new Promise((r) => setTimeout(() => { window.__ps({ type: "tvMenu", on: true, key: "game:cs2", fps: true }); r(); }, 400))`, key("ArrowDown"), key("ArrowDown"), key("ArrowDown"), key("ArrowDown")]],
   ["settings-plugins", "plugins=1", [nav("settings"), click('[data-action="set-tab"][data-tab="plugins"]')]],
