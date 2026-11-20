@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.17.0, beta)
+## Where things stand (2.18.0, beta)
 
 These shipped recently, newest last:
 
@@ -2097,7 +2097,7 @@ These shipped recently, newest last:
   `&nxprog=1`, shots `nexus-progress*`. docs/TESTING.md 48, items 3 to 5
   and 9 to 10. The owner asked for 2.17.0 once this was in (20 Nov).
 
-- **Unreleased, Go back to a save point, all the way** (the owner, 20
+- **2.18.0, Go back to a save point, all the way** (the owner, 20
   Nov 2026: Go back to it "doesn't really do anything"; the first part of
   the save engine's rework). `apiRestoreSavePoint(key, id, play)`: a
   running game is asked to close (`closeForPoint`:
@@ -2111,7 +2111,7 @@ These shipped recently, newest last:
   page starts the game as its Play key does (`playAfterPoint`; Big
   Picture's `bpPlay`). `goBackAsk` words the question by whether the game
   runs (`pointGameRuns`). docs/TESTING.md 49.
-- **Unreleased, Save now** (the owner, 20 Nov 2026: "mergem pe save
+- **2.18.0, Save now** (the owner, 20 Nov 2026: "mergem pe save
   now"; the second part of the save engine's rework, without injection).
   `LaunchOptions.QuickSave` is the game's own quick save key ("F1" to
   "F12", the user's choice; `apiSaveLaunchOptions` keeps it, since the
@@ -2133,6 +2133,7 @@ These shipped recently, newest last:
   `quickSave`, `suggest`, `antiCheat`. Harness `?pointrun=1&qs=F5`.
   docs/TESTING.md 50. Next in the rework, when the owner says: every save
   the game makes kept by itself, and the injected save for story games.
+  The owner asked for 2.18.0 once these two were in (20 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
