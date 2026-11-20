@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.18.0
 
 - **Big Picture has music, and Triangle takes you to Settings.** Big Picture plays a calm piece of its own while you look for a game, as a console's home screen does; it fades away while a game or an app runs, under a trailer and behind the Home menu over a game. The bar at the top has a Settings key: press **Triangle** (Y on an Xbox controller) anywhere in Big Picture to go to it, then the cross (A) to open Settings; Triangle again goes back to where you were. Settings has icons for each part, a new **Sound and music** part with the music's volume, a **TV** part in TV mode, and the setting in focus opens to say what it does.
 - **Mods in Big Picture.** A game with mods has a **Mods** key on its page in Big Picture and TV mode: turn each mod on or off for whoever is playing, and they go into the game when you press Play, as on the PC.
