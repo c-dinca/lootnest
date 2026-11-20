@@ -6,7 +6,11 @@
 #   tools/overlay/build.sh          build it
 #   tools/overlay/build.sh --check  build it elsewhere and compare (CI)
 #
-# Needs x86_64-w64-mingw32-gcc (Debian/Ubuntu: gcc-mingw-w64-x86-64).
+# Needs Ubuntu 24.04's MinGW-w64 (gcc-mingw-w64-x86-64: GCC 13.2, binutils
+# 2.41.90): another release's makes other bytes. Elsewhere, in Docker:
+#
+#   docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 sh -c \
+#     'apt-get update -qq && apt-get install -y -qq gcc-mingw-w64-x86-64 && tools/overlay/build.sh'
 set -eu
 root=$(cd "$(dirname "$0")/../.." && pwd)
 # The win32 threads flavour, as Debian and Ubuntu install by default.
