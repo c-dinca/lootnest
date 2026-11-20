@@ -13,6 +13,9 @@ import (
 
 const (
 	EmergencyKey         = win.EmergencyKey
+	FrameD3D9            = win.FrameD3D9
+	FrameDXGI            = win.FrameDXGI
+	FrameKernel          = win.FrameKernel
 	IDCANCEL             = win.IDCANCEL
 	IDNO                 = win.IDNO
 	IDOK                 = win.IDOK
@@ -38,6 +41,7 @@ const (
 	SW_HIDE              = win.SW_HIDE
 	SW_RESTORE           = win.SW_RESTORE
 	SW_SHOW              = win.SW_SHOW
+	VK_F10               = win.VK_F10
 	VK_F11               = win.VK_F11
 	VK_F12               = win.VK_F12
 	VK_F5                = win.VK_F5
@@ -69,6 +73,7 @@ const (
 var (
 	ErrCancelled        = win.ErrCancelled
 	ErrCancelledByUser  = win.ErrCancelledByUser
+	ErrFramesNotAllowed = win.ErrFramesNotAllowed
 	ErrRecycleCancelled = win.ErrRecycleCancelled
 )
 
@@ -174,6 +179,10 @@ func EnableDPIAwareness() {
 	win.EnableDPIAwareness()
 }
 
+func ExclusiveFullscreen() bool {
+	return win.ExclusiveFullscreen()
+}
+
 func ExeIcon(path string, size int) (image.Image, error) {
 	return win.ExeIcon(path, size)
 }
@@ -204,6 +213,16 @@ func ForegroundIs(name string) bool {
 	return win.ForegroundIs(name)
 }
 
+func ForegroundPID() uint32 {
+	return win.ForegroundPID()
+}
+
+type FrameTrace = win.FrameTrace
+
+func FramesAllowed() bool {
+	return win.FramesAllowed()
+}
+
 func FullscreenLike(hwnd uintptr, other uintptr) {
 	win.FullscreenLike(hwnd, other)
 }
@@ -232,6 +251,10 @@ func GameWindow(proc string) uintptr {
 
 func HIDPaths() []string {
 	return win.HIDPaths()
+}
+
+func HideFPS() {
+	win.HideFPS()
 }
 
 func HideTVBar() {
@@ -333,6 +356,14 @@ func PadDevices() []PadDevice {
 }
 
 type PadReader = win.PadReader
+
+func PerfFreq() int64 {
+	return win.PerfFreq()
+}
+
+func PerfNow() int64 {
+	return win.PerfNow()
+}
 
 func Pictures() string {
 	return win.Pictures()
@@ -502,6 +533,10 @@ func ShortcutFiles() []string {
 	return win.ShortcutFiles()
 }
 
+func ShowFPS(text string, corner string) {
+	win.ShowFPS(text, corner)
+}
+
 func ShowMenu(hwnd uintptr, items []MenuItem) int {
 	return win.ShowMenu(hwnd, items)
 }
@@ -532,6 +567,10 @@ func StartDetached(exe string, args string, dir string) error {
 
 func StartElevated(owner uintptr, exe string, args string, dir string) error {
 	return win.StartElevated(owner, exe, args, dir)
+}
+
+func StartFrameTrace(sink func(pid uint32, src int, at int64)) (*FrameTrace, error) {
+	return win.StartFrameTrace(sink)
 }
 
 func StartHidden(exe string, args string) error {
@@ -605,6 +644,10 @@ func UnregisterUninstall(id string) {
 
 func UserCountry() string {
 	return win.UserCountry()
+}
+
+func UserSID() string {
+	return win.UserSID()
 }
 
 type ViGEmPad = win.ViGEmPad

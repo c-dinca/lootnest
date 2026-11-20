@@ -12,6 +12,9 @@ import (
 
 const (
 	EmergencyKey         = "Ctrl+Shift+Q"
+	FrameD3D9            = 1
+	FrameDXGI            = 0
+	FrameKernel          = 2
 	IDCANCEL             = 2
 	IDNO                 = 7
 	IDOK                 = 1
@@ -37,6 +40,7 @@ const (
 	SW_HIDE              = 0
 	SW_RESTORE           = 9
 	SW_SHOW              = 5
+	VK_F10               = 121
 	VK_F11               = 122
 	VK_F12               = 123
 	VK_F5                = 116
@@ -68,6 +72,7 @@ const (
 var (
 	ErrCancelled        = errors.New("cancelled")
 	ErrCancelledByUser  = errors.New("it was cancelled at Windows' prompt")
+	ErrFramesNotAllowed = errors.New("Windows doesn't let this account read frame timings yet")
 	ErrRecycleCancelled = errors.New("the move to the Recycle Bin was cancelled")
 )
 
@@ -138,6 +143,10 @@ func Displays() (r0 [][4]int) {
 
 func EnableDPIAwareness() {}
 
+func ExclusiveFullscreen() (r0 bool) {
+	return
+}
+
 func ExeIcon(path string, size int) (r0 image.Image, err error) {
 	err = ErrUnsupported
 	return
@@ -167,6 +176,19 @@ func Foreground() (r0 uintptr) {
 }
 
 func ForegroundIs(name string) (r0 bool) {
+	return
+}
+
+func ForegroundPID() (r0 uint32) {
+	return
+}
+
+type FrameTrace struct {
+}
+
+func (*FrameTrace) Stop() {}
+
+func FramesAllowed() (r0 bool) {
 	return
 }
 
@@ -200,6 +222,8 @@ func GameWindow(proc string) (r0 uintptr) {
 func HIDPaths() (r0 []string) {
 	return
 }
+
+func HideFPS() {}
 
 func HideTVBar() {}
 
@@ -302,6 +326,14 @@ func (*PadReader) Read(buf []byte) (r0 int, err error) {
 }
 
 func (*PadReader) Close() {}
+
+func PerfFreq() (r0 int64) {
+	return
+}
+
+func PerfNow() (r0 int64) {
+	return
+}
 
 func PlaceBehind(hwnd uintptr, front uintptr) {}
 
@@ -432,6 +464,8 @@ func ShortcutFiles() (r0 []string) {
 	return
 }
 
+func ShowFPS(text string, corner string) {}
+
 func ShowMenu(hwnd uintptr, items []MenuItem) (r0 int) {
 	return
 }
@@ -447,6 +481,11 @@ func SmallIconSize(dpi int) (r0 int) {
 }
 
 func StartElevated(owner uintptr, exe string, args string, dir string) (err error) {
+	err = ErrUnsupported
+	return
+}
+
+func StartFrameTrace(sink func(pid uint32, src int, at int64)) (r0 *FrameTrace, err error) {
 	err = ErrUnsupported
 	return
 }
@@ -528,6 +567,10 @@ func UnregisterHotKey(hwnd uintptr, id int) {}
 func UnregisterUninstall(id string) {}
 
 func UserCountry() (r0 string) {
+	return
+}
+
+func UserSID() (r0 string) {
 	return
 }
 

@@ -94,6 +94,13 @@
       case "tvMenu": // the Home or PS button over a game in TV mode (app/tv.go tvHome)
         tvMenu(ev);
         break;
+      case "fps": // the FPS counter turned on or off, or what Windows allows changed (app/fps.go)
+        S.fps = ev.state;
+        cfg().settings.fpsCounter = !!ev.state.on;
+        if (BP.tvMenu && BP.tvMenu.fps !== !!ev.state.on) { BP.tvMenu.fps = !!ev.state.on; drawTVMenu(); }
+        if (BP.on && BP.settings) renderBP(false);
+        else if (S.view === "settings" && !S.dialog) render();
+        break;
       case "tvHome": // the Home or PS button with no game: Big Picture's menu
         if (BP.on && !S.picker && !S.dialog) bpMenu(!BP.menu);
         break;
