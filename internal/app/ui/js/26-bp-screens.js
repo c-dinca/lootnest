@@ -6,7 +6,7 @@
   // itself: rows and the screen slide (transform only) to keep the focus in
   // place. A redraw changes only what differs, so nothing blinks or loses
   // its place when art or a session arrives.
-  const bpScreenKey = () => (BP.settings ? "settings" : BP.choose ? "choose:" + BP.choose : BP.detail && BP.points ? "points:" + BP.detail : BP.detail ? "detail:" + BP.detail : "tab:" + BP.tab + (BP.tab === "library" ? ":" + BP.tag : ""));
+  const bpScreenKey = () => (BP.settings ? "settings" : BP.choose ? "choose:" + BP.choose : BP.detail && BP.points ? "points:" + BP.detail : BP.detail && BP.mods ? "mods:" + BP.detail : BP.detail ? "detail:" + BP.detail : "tab:" + BP.tab + (BP.tab === "library" ? ":" + BP.tag : ""));
   const bpMem = (k) => BP.mem[k] || (BP.mem[k] = { focus: "", rows: {} });
   const bpSub = () => !!(BP.detail || BP.choose || BP.settings);
   function bpArt(it, wide) {
@@ -100,6 +100,7 @@
       const it = bpItem(BP.detail);
       if (!it) { BP.detail = null; return bpScreen(); }
       if (BP.points) return bpPointsScreen(it);
+      if (BP.mods) return bpModsScreen(it);
       const X = achFor(it); // reads its achievements if it hasn't yet
       pointsFor(it);
       const seat = seated(), as = it.g && seat, k = esc(bpKey(it));
@@ -108,6 +109,7 @@
           <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="${bpBehind(it) ? "Go back to it" : "Play"}">${GI.play}${bpBehind(it) ? "Go back to the game" : as ? `Play as ${esc(seat.name)}` : "Play"}</button>
           ${it.g && cfg().players.length > 1 ? `<button class="bp-key" data-bp data-bpid="playas" data-go="choose" data-k="${k}">Play as someone else</button>` : ""}
           <button class="bp-key" data-bp data-bpid="points" data-go="points" data-k="${k}" data-hint="Open">Save points</button>
+          ${modsTabOn(modsOf(it)) ? `<button class="bp-key" data-bp data-bpid="mods" data-go="mods" data-k="${k}" data-hint="Open">${ph("puzzle-piece")}Mods</button>` : ""}
           ${bpRunning(it) ? `<button class="bp-key" data-bp data-bpid="close" data-go="close-game" data-k="${k}">Close the game</button>` : ""}</div></section>
         ${X ? bpRowHTML("ach", `Achievements, ${X.A.unlocked} of ${X.A.total}`, bpAchCards(X.A.list)) : ""}`;
     }
@@ -221,33 +223,64 @@
     return `<section class="bp-list" data-block>${head}${P.error ? `<p class="bp-note">${esc(P.error)}</p>` : !list.length ? '<p class="bp-note">None yet. A save point is a copy of this game\'s saves as they are now, to come back to.</p>' : ""}
       <div class="bp-opts" data-zone="points" data-col>${make}${rows}</div></section>`;
   }
+  // A game's mods, for whoever sits at the PC: each one on or off in the
+  // set they play with. Nothing changes in the game's folder here: the set
+  // goes in when they press Play (app/mods.go modsForPlay), as on the PC.
+  // Mods are added in Lootnest's window on the PC.
+  function bpModsScreen(it) {
+    const M = modsOf(it), k = esc(bpKey(it)), seat = seated();
+    const who = it.g && seat ? seat.id : "";
+    const head = `<p class="bp-kick">${esc(it.name)}</p><h1>Mods</h1>`;
+    if (!M) return `<section class="bp-list" data-block>${head}<div class="bp-opts">${'<span class="bp-opt bp-opt--ghost is-waiting" aria-hidden="true"></span>'.repeat(3)}</div></section>`;
+    const rows = setRows(M, who), own = who && modsOwner(M, who) === who;
+    const whose = who ? (own ? `${possessive(seat.name)} own set` : "the game's set, shared") : "";
+    const note = M.refused || M.safe || (M.pending ? "Putting mods in or taking them out didn't finish. Open Lootnest on the PC, the game's Mods tab." : "")
+      || (!rows.length ? "No mods yet. Add them in Lootnest's window on the PC, in the game's Mods tab, or from Nexus Mods there." : `They go into the game when you press Play${whose ? `, from ${whose}` : ""}. ${modsState(M, who, false)}.`);
+    const list = rows.map((m) => `<button class="bp-opt bp-opt--set" data-bp data-bpid="mod:${esc(m.id)}" data-go="mod" data-k="${k}" data-id="${esc(m.id)}" data-who="${esc(who)}" data-on="${m.on ? "1" : ""}"${M.refused || M.pending ? " disabled" : ""} data-hint="${m.on ? "Turn off" : "Turn on"}"><span class="bp-opt-line">${ph("puzzle-piece")}<b>${esc(m.name)}</b><span class="bp-val">${m.changed ? "Add it again" : m.on ? "On" : "Off"}</span><span class="bp-sw${m.on ? " on" : ""}"></span></span><span class="bp-opt-say">${esc(nFiles(m.files))}${m.into ? `, into ${esc(m.into)}` : ""}</span></button>`).join("");
+    return `<section class="bp-list" data-block>${head}<p class="bp-note">${esc(note)}</p>${list ? `<div class="bp-opts" data-zone="mods" data-col>${list}</div>` : ""}</section>`;
+  }
+  async function bpMod(el) {
+    const it = bpItem(el.dataset.k);
+    if (!it) return;
+    const key = recentKey(it), on = !el.dataset.on;
+    sfx("toggle");
+    try { await api.modToggle(key, el.dataset.who, el.dataset.id, on); } catch (e) { toast(errText(e), "error"); }
+    await loadMods(key);
+    renderBP();
+  }
   // Settings, made for a remote: the parts on the left, big rows on the
   // right that OK changes, and a line under them saying what the row in
   // focus does. Only settings Lootnest already has.
   const BP_SIGNS = [["", "Automatic"], ["xbox", "Xbox"], ["playstation", "PlayStation"], ["nintendo", "Nintendo"]];
   const BP_MOTION = [["", "Like Windows"], ["full", "Full"], ["less", "Less"], ["off", "Off"]];
+  const BP_MUSIC_VOL = [["1", "Low"], ["2", "Medium"], ["3", "High"]];
   function bpSettingsParts() {
     const s = cfg().settings, next = (list, v) => list[(list.findIndex((x) => x[0] === v) + 1) % list.length][0], label = (list, v) => (list.find((x) => x[0] === v) || list[0])[1];
     const flip = (key) => () => bpSet(key, !s[key]);
     const parts = [
-      { id: "sound", name: "Sound", opts: [
+      { id: "sound", name: "Sound and music", icon: "speaker-high", opts: [
+        { id: "music", name: "Music", on: BP.music, say: "A calm piece while you look for a game, as on a console. It stops while a game or an app runs and under a trailer.", run: () => { BP.music = !BP.music; setPref("bpMusic", BP.music ? "1" : "0"); musicTick(); renderBP(); } },
+        { id: "musicvol", name: "Music volume", value: label(BP_MUSIC_VOL, BP.musicVol), say: "How loud the music is under everything else.", run: () => { BP.musicVol = next(BP_MUSIC_VOL, BP.musicVol); setPref("bpMusicVol", BP.musicVol); musicTick(); renderBP(); } },
         { id: "move", name: "Sounds as you move", on: BP.sounds, say: "A click as the focus moves, and one for Select and Back.", run: () => { BP.sounds = !BP.sounds; setPref("bpSounds", BP.sounds ? "1" : "0"); renderBP(); } },
-        { id: "cues", name: "Sounds for unlocks, save points and swaps", on: !s.soundsOff, say: "Heard over a game too. Never for a game with an anti-cheat.", run: flip("soundsOff") }] },
-      { id: "picture", name: "Picture and motion", opts: [
+        { id: "cues", name: "Sounds for unlocks, save points and swaps", on: !s.soundsOff, say: "Heard over a game too. Never for a game with an anti-cheat. Off also silences the music.", run: flip("soundsOff") }] },
+      { id: "picture", name: "Picture and motion", icon: "monitor", opts: [
         { id: "motion", name: "Motion", value: label(BP_MOTION, s.motion || ""), say: "Like Windows follows Windows' animation effects. Full moves and fades everything. Less keeps only the fades. Off changes screens at once.", run: () => bpSet("motion", next(BP_MOTION, s.motion || "")) },
         { id: "trailers", name: "Trailers behind the game in focus", on: BP.trailers, say: s.gameDetails ? "A game's trailer plays behind it, without sound, once the focus has rested on it. A moving picture costs the stream to a TV more than a still one." : "Needs Game details, which is turned on in Lootnest's Settings on the PC, under Online.", run: () => { BP.trailers = !BP.trailers; setPref("bpTrailers", BP.trailers ? "1" : "0"); if (!BP.trailers) bpTrailerStop(); renderBP(); } },
         { id: "start", name: "Open in Big Picture when Lootnest starts", on: !!s.openBigPicture, say: "For a PC that is mostly used from the sofa.", run: flip("openBigPicture") }] },
-      { id: "controller", name: "Controller", opts: [
-        { id: "padonly", name: "Only games that play with a controller", on: BP.padOnly, say: "Games played only with a keyboard and a mouse, such as Counter-Strike 2 and Riot's games, stay in Library, Keyboard and mouse. Lootnest reads it from Steam's files on this PC. To change it for a game, right-click it in Lootnest's window on the PC.", run: () => { BP.padOnly = !BP.padOnly; setPref("bpPadOnly", BP.padOnly ? "1" : "0"); if (BP.tag === BP_KBM) BP.tag = ""; renderBP(); } },
-        { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV reaches the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
-      { id: "play", name: "While you play", opts: [
+      { id: "controller", name: "Controller", icon: "game-controller", opts: [
+        { id: "padonly", name: "Only games that play with a controller", on: BP.padOnly, say: "Games played only with a keyboard and a mouse, such as Counter-Strike 2 and Riot's games, stay in Library, Keyboard and mouse. To change it for a game, right-click it in Lootnest's window on the PC.", run: () => { BP.padOnly = !BP.padOnly; setPref("bpPadOnly", BP.padOnly ? "1" : "0"); if (BP.tag === BP_KBM) BP.tag = ""; renderBP(); } },
+        { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV can reach the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
+      { id: "play", name: "While you play", icon: "play", opts: [
         { id: "xbox", name: "PlayStation controller as an Xbox one in games", on: !!s.padAsXbox, say: "For games that only know Xbox controllers: while a game runs, it sees your DualSense or DualShock 4 as an Xbox controller. It needs the ViGEmBus driver, which the TV streaming set-up installs.", run: flip("padAsXbox") },
         { id: "toasts", name: "Show achievements as they unlock", on: !s.achToastsOff, say: "A small note over the game, in the profile's colour. Never over a game with an anti-cheat.", run: flip("achToastsOff") },
-        { id: "fps", name: "FPS counter", on: !!s.fpsCounter, say: "How many frames a second the game draws, in a corner of the screen. The Home button over a game turns it on and off too.", run: () => api.fpsSet(!s.fpsCounter).then((st) => { S.fps = st; return refresh(); }, (e) => { toast(errText(e), "error"); refresh(); }) }] },
-      { id: "about", name: "About", opts: [
-        { id: "version", name: "Lootnest", value: [S.d.version, S.d.stage].filter(Boolean).join(" "), say: "Everything else is in Settings in Lootnest's window on the PC.", run: null }] },
+        { id: "fps", name: "FPS counter", on: !!s.fpsCounter, say: "How many frames a second the game draws, in a corner of the screen. The Home button over a game turns it on and off too.", run: () => api.fpsSet(!s.fpsCounter).then((st) => { S.fps = st; return refresh(); }, (e) => { toast(errText(e), "error"); refresh(); }) },
+        { id: "modslink", name: "Put mods in as links", on: !s.modsLinkOff, say: "Mods go into a game's folder as links to Lootnest's own copy, which is quick and takes no room. Off copies them instead, for a game that changes its files.", run: flip("modsLinkOff") }] },
     ];
-    if (BP.tv) parts[4].opts.push({ id: "leave", name: "Leave TV mode", value: "", say: "Ends the stream to the TV. Lootnest stays open on the PC.", run: () => { api.tvExit().catch(() => {}); tvClose(); } });
+    if (BP.tv) parts.push({ id: "tv", name: "TV", icon: "television-simple", opts: [
+      { id: "quick", name: "Draw at twice the stream's rate", on: !!s.tvQuick, say: "The TV's display runs at twice the stream's frame rate, so a game's frame waits half as long. It takes effect at the next stream.", run: flip("tvQuick") },
+      { id: "leave", name: "Leave TV mode", value: "", say: "Ends the stream to the TV. Lootnest stays open on the PC.", run: () => { api.tvExit().catch(() => {}); tvClose(); } }] });
+    parts.push({ id: "about", name: "About", icon: "info", opts: [
+      { id: "version", name: "Lootnest", value: [S.d.version, S.d.stage].filter(Boolean).join(" "), say: "Everything else is in Settings in Lootnest's window on the PC.", run: null }] });
     return parts;
   }
   function bpSet(key, value) {
@@ -255,13 +288,15 @@
     s[key] = value;
     api.saveSettings({ settings: s, autostart: S.d.autostart }).then(refresh, (e) => { toast(errText(e), "error"); refresh(); });
   }
+  // Settings, for a remote: the parts on the left with their icons, the
+  // part's rows on the right. The row in focus opens to say what it does.
   function bpSettingsScreen() {
     const parts = bpSettingsParts(), cur = parts.find((x) => x.id === BP.setCat) || parts[0];
-    return `<section class="bp-set" data-block><div><h1>Settings</h1>
-      <div class="bp-cats" data-zone="cats" data-col data-right="opts">${parts.map((x) => `<button class="bp-cat" data-bp data-bpid="cat:${x.id}" data-cat="${x.id}" data-go="cat" aria-pressed="${x === cur}" data-hint="Open">${esc(x.name)}</button>`).join("")}</div></div>
-      <div class="bp-set-main"><div class="bp-opts" data-zone="opts" data-col data-left="cats">${cur.opts.map((o) =>
-        `<button class="bp-opt" data-bp data-bpid="opt:${cur.id}:${o.id}" data-go="set" data-opt="${cur.id}:${o.id}" data-say="${esc(o.say)}" data-hint="${o.run ? (o.on === undefined && o.value ? "Change" : o.on === undefined ? "Select" : o.on ? "Turn off" : "Turn on") : ""}"><b>${esc(o.name)}</b>${o.on === undefined ? `<span class="bp-val">${esc(o.value || "")}</span>` : `<span class="bp-val">${o.on ? "On" : "Off"}</span><span class="bp-sw${o.on ? " on" : ""}"></span>`}</button>`).join("")}</div>
-        <p class="bp-say" data-own></p></div></section>`;
+    const hint = (o) => (o.run ? (o.on === undefined && o.value ? "Change" : o.on === undefined ? "Select" : o.on ? "Turn off" : "Turn on") : "");
+    return `<section class="bp-set" data-block><div class="bp-set-side"><h1>Settings</h1>
+      <div class="bp-cats" data-zone="cats" data-col data-right="opts">${parts.map((x) => `<button class="bp-cat" data-bp data-bpid="cat:${x.id}" data-cat="${x.id}" data-go="cat" aria-pressed="${x === cur}" data-hint="Open">${ph(x.icon)}<span>${esc(x.name)}</span></button>`).join("")}</div></div>
+      <div class="bp-set-main"><h2 class="bp-set-h">${esc(cur.name)}</h2><div class="bp-opts" data-zone="opts" data-col data-left="cats">${cur.opts.map((o) =>
+        `<button class="bp-opt bp-opt--set" data-bp data-bpid="opt:${cur.id}:${o.id}" data-go="set" data-opt="${cur.id}:${o.id}" data-hint="${hint(o)}"><span class="bp-opt-line"><b>${esc(o.name)}</b>${o.on === undefined ? `<span class="bp-val">${esc(o.value || "")}</span>` : `<span class="bp-val">${o.on ? "On" : "Off"}</span><span class="bp-sw${o.on ? " on" : ""}"></span>`}</span><span class="bp-opt-say">${esc(o.say)}</span></button>`).join("")}</div></div></section>`;
   }
   // The menu over the screen: what Start opens, and what Back on Home asks.
   // A question (BP.ask) uses the same sheet, with the safe answer in focus.
@@ -403,8 +438,7 @@
     bpPlace(f, jump);
     bpAmbient(f, jump);
     bpHints(f);
-    const say = scr && scr.querySelector(".bp-say");
-    if (say && f.dataset.say !== undefined && say.textContent !== f.dataset.say) say.textContent = f.dataset.say;
+
   }
   const bpTopIn = (el, root) => { let y = 0; for (let n = el; n && n !== root; n = n.offsetParent) y += n.offsetTop; return y; };
   function bpShift(el, x, y, jump) {
@@ -532,8 +566,8 @@
   function bpHints(f) {
     const it = f && f.dataset.k && bpItem(f.dataset.k);
     const list = f && f.dataset.hint === "" ? [] : [["A", (f && f.dataset.hint) || "Select"]];
-    if (it && it.g && cfg().players.length > 1 && !BP.choose && !BP.points && !bpOver()) list.push(["Y", "Play as someone else"]);
-    if (it && bpRunning(it) && !BP.points && !bpOver()) list.push(["X", "Close the game"]);
+    if (it && bpRunning(it) && !BP.points && !BP.mods && !bpOver()) list.push(["X", "Close the game"]);
+    if (!bpOver()) list.push(["Y", BP.settings ? "Close settings" : "Settings"]);
     list.push(["B", BP.ask ? "Cancel" : BP.menu ? "Close" : "Back"]);
     const html = list.map(([g, t]) => `<span>${glyph(g)}${esc(t)}</span>`).join("");
     if (html !== bpHintHTML) { bpHintHTML = html; const foot = $("#bp .bp-foot"); if (foot) foot.innerHTML = html; }
@@ -603,7 +637,7 @@
   function bpTabTo(t) {
     if (t === BP.tab && !bpSub()) return;
     const a = document.activeElement, inBar = !!(a && a.closest && a.closest(".bp-bar"));
-    BP.tab = t; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.choose = null; BP.who = false; BP.settings = false;
+    BP.tab = t; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.mods = false; BP.choose = null; BP.who = false; BP.settings = false;
     BP.focus = inBar ? "tab:" + t : bpMem(bpScreenKey()).focus;
     sfx("tab");
     renderBP();
@@ -642,7 +676,7 @@
     if (BP.picking) return;
     // What's chosen answers: a cover and a card come forward as their page opens, a key dips.
     if (el.animate && moving()) el.animate({ scale: go === "open" ? ["1", "1.07", "1"] : ["1", "0.95", "1"] }, { duration: go === "open" ? 260 : 180, easing: "ease-out" });
-    if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.from = el.dataset.bpid; BP.focus = "play"; BP.want = el.dataset.focus || ""; sfx("go"); renderBP(); }
+    if (go === "open") { BP.detail = el.dataset.k; BP.points = false; BP.mods = false; BP.from = el.dataset.bpid; BP.focus = "play"; BP.want = el.dataset.focus || ""; sfx("go"); renderBP(); }
     else if (go === "menu-settings") { BP.menu = false; BP.settings = true; BP.setFrom = BP.menuFrom; BP.focus = ""; sfx("go"); renderBP(); }
     else if (go === "cat") { el.focus({ preventScroll: true }); bpMove("right"); }
     else if (go === "ach-in") { // into the game's achievements, or as soon as they've been read
@@ -654,6 +688,8 @@
       if (opt && opt.run) { sfx("toggle"); opt.run(); }
     }
     else if (go === "points") { BP.points = true; BP.focus = ""; sfx("go"); renderBP(); }
+    else if (go === "mods") { BP.mods = true; BP.focus = ""; sfx("go"); renderBP(); }
+    else if (go === "mod") bpMod(el);
     else if (go === "pt-make") bpPoint(el.dataset.k, "");
     else if (go === "pt-restore") {
       const it = bpItem(el.dataset.k), id = el.dataset.id;
@@ -730,6 +766,7 @@
     }
     else if (BP.choose) { BP.choose = null; BP.focus = BP.detail ? "play" : BP.from; }
     else if (BP.detail && BP.points) { BP.points = false; BP.focus = "points"; }
+    else if (BP.detail && BP.mods) { BP.mods = false; BP.focus = "mods"; }
     else if (BP.detail) { BP.focus = BP.from; BP.detail = null; }
     else if (BP.tab === "library" && BP.tagFrom) { BP.focus = BP.tagFrom; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; }
     else if (BP.tab === "achievements" && a && a.closest && a.closest('[data-zone="achlist"]')) BP.focus = "ag:" + BP.achKey;
@@ -739,11 +776,12 @@
     sfx("back");
     renderBP();
   }
+  // Y (Triangle) opens Settings from anywhere in Big Picture, and closes
+  // it again where it was.
   function bpY() {
-    const el = document.activeElement;
-    const k = (el && el.dataset && el.dataset.k) || BP.detail;
-    const it = k && bpItem(k);
-    if (it && it.g && cfg().players.length > 1 && !BP.choose && !BP.points && !bpOver()) { if (!BP.detail) BP.from = el.dataset.bpid || ""; BP.choose = k; BP.focus = ""; sfx("go"); renderBP(); }
+    if (bpOver() || BP.picking) return;
+    if (BP.settings) { BP.settings = false; BP.focus = BP.setFrom || ""; sfx("back"); renderBP(); return; }
+    BP.setFrom = BP.focus; BP.settings = true; BP.focus = ""; sfx("go"); renderBP();
   }
   document.addEventListener("click", (ev) => {
     const el = BP.on && ev.target.closest("#bp [data-go]");

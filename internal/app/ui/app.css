@@ -3220,3 +3220,23 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 .nx-meter { display: block; height: var(--space-1); margin-top: var(--space-2); border-radius: var(--radius-round); background: var(--bg-well); overflow: hidden; }
 .nx-meter i { display: block; height: 100%; background: var(--lamp); transition: width var(--dur-2) var(--ease-out); }
 .nx-meter.is-idle { display: none; }
+
+/* Big Picture, Settings and Mods (the owner, 20 Nov 2026: "like a PS5"):
+   the parts with their icons, the part's name over its rows, and the row in
+   focus opening to say what it does. Mods' rows are the same. */
+.bp-set { align-items: start; }
+.bp-cat { gap: var(--bp-4); }
+.bp-cat svg { flex: none; width: var(--bp-icon); height: var(--bp-icon); opacity: .8; }
+.bp-cat[aria-pressed="true"] svg, .bp-cat:focus svg, .bp-cat.pf svg { opacity: 1; }
+.bp-set-main { padding-top: calc(var(--bp-text-h1) + var(--bp-6) - var(--bp-text-set-h) - var(--bp-5)); }
+.bp-set-h { margin: 0 0 var(--bp-5); color: var(--fg-2); font: 400 var(--bp-text-set-h)/1 var(--font-title); }
+.bp-screen[data-enter] .bp-set-h { animation: bp-screen-in var(--bp-dur-screen) var(--ease-emph) both; }
+.bp-opt--set { flex-direction: column; align-items: stretch; justify-content: center; gap: 0; }
+.bp-opt-line { display: flex; align-items: center; gap: var(--bp-5); min-width: 0; }
+.bp-opt-say { display: block; max-height: 0; overflow: hidden; color: var(--fg-2); font: 500 var(--bp-text-say)/1.35 var(--font-ui); opacity: 0; transition: max-height var(--bp-dur-open) var(--ease-out), opacity var(--bp-dur-open) var(--ease-out), margin-top var(--bp-dur-open) var(--ease-out); }
+.bp-opt--set:focus .bp-opt-say { max-height: var(--bp-say-h); margin-top: var(--bp-3); opacity: 1; color: var(--bg-active); }
+.bp-opt--set:focus .bp-opt-line svg { color: var(--bg-ground); }
+.bp-opt--set[disabled] .bp-opt-say { display: none; }
+.bp-list .bp-note { max-width: var(--bp-list-w); }
+:root.motion-off .bp-opt-say { transition: none; }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .bp-opt-say { transition: none; } }

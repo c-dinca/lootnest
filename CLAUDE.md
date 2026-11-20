@@ -2167,6 +2167,25 @@ These shipped recently, newest last:
   a headful Chromium with another window in front; not on a PC:
   docs/TESTING.md 52.
 
+- **Unreleased, Big Picture towards a console's feel, part 1** (the
+  owner, 20 Nov 2026: "like PS5", music, animations, better settings, mods,
+  Triangle for Settings, not too different from the PC). `27-bp-music.js`:
+  a piece made with WebAudio as it plays (`MUSIC_CHORDS`, `musicChord`,
+  `musicBell`, a convolver hall and an echo; nothing recorded or
+  downloaded), `musicWanted` (Big Picture on, `BP.music`, visible, Sounds
+  on, no `BP.launch`/`BP.playing`/`BP.tvMenu`, no session playing, no
+  trailer), `musicTick` every 500 ms fades in or out and schedules a bar
+  ahead; prefs `bpMusic`, `bpMusicVol`. `audioCtx()` in 25-bigpicture.js
+  is the one context. Y (`bpY`) opens and closes Settings
+  (`BP.setFrom`); "Play as someone else" is only the key on a game's
+  page now. `bpSettingsParts` have `icon`s; rows are `.bp-opt--set` with
+  the say text inside (`.bp-opt-say`, opens on focus; the old `.bp-say`
+  line is gone); new rows Music, Music volume, Put mods in as links, and
+  a TV part (tvQuick, Leave TV mode). `bpModsScreen` (`BP.mods`, screen
+  key `mods:<key>`, `bpMod` through `api.modToggle` for the seat) from a
+  game page's Mods key (`modsTabOn`). Harness shots `tv-settings-y`,
+  `tv-settings-tv`, `tv-mods`. Next, when the owner says: Home's layout
+  and motion. docs/TESTING.md 54.
 - **Unreleased, the PC's monitors in TV mode** (the owner, 20 Nov 2026,
   with two monitors: windows opened on the PC landed on the TV, the
   taskbar and Lootnest's bar were on one monitor only; they asked for
