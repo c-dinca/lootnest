@@ -265,7 +265,7 @@
         loadFound().then(refresh); // the page's new key is in the Library first
         break;
       }
-      case "nexusGame": case "nexusGames": case "nexusMods": case "nexusMod": case "nexusWaits": case "nexusArrived":
+      case "nexusGame": case "nexusGames": case "nexusMods": case "nexusMod": case "nexusWaits": case "nexusArrived": case "nexusProgress":
         nexusEvent(ev);
         break;
       case "modPlan": {

@@ -1073,15 +1073,25 @@ the same network as the PC, with TV streaming set up.
 3. **Download**: a window titled Nexus Mods opens on the file, not the
    browser. Sign in to Nexus there (by e-mail, and once with Google or
    Steam: those pages must open in the same window). Press Manual
-   download, then Slow download: the file goes to Downloads.
-4. Within a few seconds the Nexus window closes, Lootnest comes to the
-   front and shows "Add a mod" with the plan. Add it: it's on the list
-   with the mod's name from Nexus, not the file's.
-5. In the Nexus window, **Mod Manager Download** shows a note at the
-   bottom and opens nothing (no Vortex prompt). A link to another site
-   (a mod's own page elsewhere) opens in the browser.
+   download, then Slow download: no download list appears, a note at
+   the bottom of the page says Lootnest is taking it, and the file goes
+   to `nexus-downloads` in Lootnest's data folder (with a
+   `.lootnest.json` beside it), not to Downloads.
+4. While it downloads, the mod's row in Lootnest says "Downloading, x
+   of y" with a bar that fills. When it's done the Nexus window closes,
+   Lootnest comes to the front and shows "Add a mod" with the plan. Add
+   it: it's on the list with the mod's name from Nexus, not the file's.
+5. In the Nexus window, **Mod Manager Download** (and its Slow download)
+   opens nothing outside (no Vortex prompt): the window goes to the same
+   file's page with a note to press Manual download, and that works as
+   in 3. A link to another site (a mod's own page elsewhere) opens in
+   the browser.
 6. Close Lootnest while a file is awaited, download it, start Lootnest:
    the file is still found (waits last two hours).
 7. Settings, Updates: a Nexus file in Downloads isn't offered as a
    game's update.
 8. Close the Nexus window and open it again: still signed in.
+9. Download a second mod's file in the same window while the first is
+   still awaited: each arrives for its own mod.
+10. A month later (or set a file's date back), Lootnest's start removes
+    downloads in `nexus-downloads` that were never added.

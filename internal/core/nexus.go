@@ -646,6 +646,14 @@ func NexusArrivals(dir string, waits []NexusWait) []NexusArrival {
 				}
 				stem := nexusStem(f.name)
 				mod := strings.Contains(stem, fmt.Sprintf("-%d-", w.ModID))
+				if n, ok := NexusNoteOf(filepath.Join(dir, f.name)); ok {
+					mod = n.ModID == w.ModID // the window said which mod it is
+					if pass == 0 && mod && (w.FileID == 0 || n.FileID == w.FileID) {
+						take(w, f, false)
+						matched[i] = true
+						break
+					}
+				}
 				if pass == 0 && mod && w.Date > 0 && strings.HasSuffix(stem, fmt.Sprintf("-%d", w.Date)) || pass == 1 && mod {
 					take(w, f, false)
 					matched[i] = true
@@ -720,4 +728,161 @@ func NexusWindowURL(arg string) string {
 		return NexusFileURL(parts[0], mod, file)
 	}
 	return NexusModURL(parts[0], mod)
+}
+
+// ---------------------------------------------------------------------------
+// Downloads taken in Lootnest's window for Nexus. The window puts a file
+// the user downloads from Nexus's servers into its own folder (not the
+// Downloads folder), with a note beside it saying which mod it's for and
+// how big it is, so Lootnest can show its progress and knows the file
+// without reading its name.
+// ---------------------------------------------------------------------------
+
+// NexusIncomingDir is the window's folder for downloads, in Lootnest's data.
+func NexusIncomingDir(data string) string { return filepath.Join(data, "nexus-downloads") }
+
+// NexusNote is written beside a download the window took.
+type NexusNote struct {
+	ModID  int       `json:"modId"`
+	FileID int       `json:"fileId"`
+	Total  int64     `json:"total,omitempty"`
+	At     time.Time `json:"at"`
+}
+
+const nexusNoteExt = ".lootnest.json"
+
+// NexusIncomingPath is a free place in dir for a download named name (only
+// its last part, without anything a name can't hold on Windows), with
+// " (2)" and so on when it's taken. The note goes beside it.
+func NexusIncomingPath(dir, name string) string {
+	if i := strings.LastIndexAny(name, `/\`); i >= 0 {
+		name = name[i+1:]
+	}
+	name = strings.Map(func(r rune) rune {
+		if r < 32 || strings.ContainsRune(`<>:"|?*`, r) {
+			return -1
+		}
+		return r
+	}, name)
+	name = strings.Trim(name, " .")
+	if name == "" {
+		name = "download"
+	}
+	ext := filepath.Ext(name)
+	stem := strings.TrimSuffix(name, ext)
+	for n := 1; ; n++ {
+		p := filepath.Join(dir, name)
+		if n > 1 {
+			p = filepath.Join(dir, fmt.Sprintf("%s (%d)%s", stem, n, ext))
+		}
+		if _, err := os.Lstat(p); os.IsNotExist(err) {
+			if _, err := os.Lstat(p + nexusNoteExt); os.IsNotExist(err) {
+				return p
+			}
+		}
+	}
+}
+
+// WriteNexusNote writes the note beside the download at path.
+func WriteNexusNote(path string, n NexusNote) error {
+	b, err := json.Marshal(n)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path+nexusNoteExt, b, 0o644)
+}
+
+// NexusDownloading is a download still coming into the window's folder.
+type NexusDownloading struct {
+	Name  string `json:"name"`
+	ModID int    `json:"modId"`
+	Got   int64  `json:"got"`
+	Total int64  `json:"total"`
+}
+
+// NexusIncoming lists the downloads the window's folder is still taking:
+// each note whose file isn't there yet, with what its partial file holds
+// (the browser's "<name>.crdownload", else its only partial file).
+func NexusIncoming(dir string) []NexusDownloading {
+	ents, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	names := map[string]int64{}
+	var partials []string
+	for _, e := range ents {
+		if e.IsDir() {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		names[e.Name()] = info.Size()
+		if downloading(e.Name()) {
+			partials = append(partials, e.Name())
+		}
+	}
+	out := []NexusDownloading{}
+	for _, e := range ents {
+		name, ok := strings.CutSuffix(e.Name(), nexusNoteExt)
+		if !ok {
+			continue
+		}
+		if _, done := names[name]; done {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		var n NexusNote
+		if err != nil || json.Unmarshal(b, &n) != nil || time.Since(n.At) > 6*time.Hour {
+			continue
+		}
+		d := NexusDownloading{Name: name, ModID: n.ModID, Total: n.Total}
+		if got, ok := names[name+".crdownload"]; ok {
+			d.Got = got
+		} else if len(partials) == 1 {
+			d.Got = names[partials[0]]
+		} else {
+			continue // finished elsewhere, or cancelled
+		}
+		out = append(out, d)
+	}
+	return out
+}
+
+// NexusNoteOf is the note beside a download the window took, if any.
+func NexusNoteOf(path string) (NexusNote, bool) {
+	var n NexusNote
+	b, err := os.ReadFile(path + nexusNoteExt)
+	return n, err == nil && json.Unmarshal(b, &n) == nil && n.ModID > 0
+}
+
+// PruneNexusIncoming deletes downloads in the window's folder (and their
+// notes) older than age: each was copied into the game's mods when it
+// was added, so what's left is only a download nobody added.
+func PruneNexusIncoming(dir string, age time.Duration) {
+	ents, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range ents {
+		if info, err := e.Info(); err == nil && !e.IsDir() && time.Since(info.ModTime()) > age {
+			_ = os.Remove(filepath.Join(dir, e.Name()))
+		}
+	}
+}
+
+var nxmRe = regexp.MustCompile(`^(?i)nxm://([a-z0-9]{1,64})/mods/(\d{1,9})/files/(\d{1,12})(?:[?#].*)?$`)
+
+// NexusNXM reads a Mod Manager Download link
+// (nxm://<domain>/mods/<mod>/files/<file>?key=...): the game's domain, the
+// mod and the file.
+func NexusNXM(u string) (domain string, mod, file int, ok bool) {
+	m := nxmRe.FindStringSubmatch(strings.TrimSpace(u))
+	if m == nil {
+		return "", 0, 0, false
+	}
+	mod, _ = strconv.Atoi(m[2])
+	file, _ = strconv.Atoi(m[3])
+	return strings.ToLower(m[1]), mod, file, mod > 0 && file > 0
 }

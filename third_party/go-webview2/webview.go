@@ -128,6 +128,12 @@ type WebViewOptions struct {
 	// Lootnest patch: NewWindow, when set, gets the address of a link that
 	// wants a new window, and no window opens.
 	NewWindow func(uri string)
+
+	// Lootnest patch: Download, when set, says where a download goes (""
+	// for where WebView2 would put it), whether the browser's download
+	// list shows, or that it stops. A WebView2 runtime without downloads
+	// to be told about keeps its own way.
+	Download func(d edge.Download) (path string, hide, cancel bool)
 }
 
 // New creates a new webview in a new window.
@@ -160,6 +166,7 @@ func NewWithOptions(options WebViewOptions) WebView {
 
 	chromium.NavigationFilter = options.Navigate
 	chromium.NewWindowCallback = options.NewWindow
+	chromium.DownloadFilter = options.Download
 
 	w.browser = chromium
 	w.mainthread, _, _ = w32.Kernel32GetCurrentThreadID.Call()

@@ -313,3 +313,77 @@ func TestNameMod(t *testing.T) {
 		t.Fatal("a mod that isn't kept")
 	}
 }
+
+func TestNexusNXM(t *testing.T) {
+	d, m, f, ok := NexusNXM("nxm://reddeadredemption2/mods/233/files/32359?key=abc&expires=1&user_id=2")
+	if !ok || d != "reddeadredemption2" || m != 233 || f != 32359 {
+		t.Fatal(d, m, f, ok)
+	}
+	for _, bad := range []string{"nxm://x/mods/0/files/1", "nxm://../mods/1/files/1", "https://www.nexusmods.com/x/mods/1", "nxm://x/collections/abc/revisions/1", ""} {
+		if _, _, _, ok := NexusNXM(bad); ok {
+			t.Errorf("%q read as a file", bad)
+		}
+	}
+}
+
+func TestNexusIncoming(t *testing.T) {
+	dir := t.TempDir()
+	p := NexusIncomingPath(dir, `C:\Users\Alex\Downloads\Rampage-233-1-6-9-1792931965.zip`)
+	if filepath.Base(p) != "Rampage-233-1-6-9-1792931965.zip" {
+		t.Fatal(p)
+	}
+	if err := WriteNexusNote(p, NexusNote{ModID: 233, FileID: 32359, Total: 1000, At: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+	// Taken: the next is numbered.
+	if q := NexusIncomingPath(dir, "Rampage-233-1-6-9-1792931965.zip"); filepath.Base(q) != "Rampage-233-1-6-9-1792931965 (2).zip" {
+		t.Fatal(q)
+	}
+	if q := NexusIncomingPath(dir, `..\..\a<b>?.7z`); filepath.Dir(q) != dir || filepath.Base(q) != "ab.7z" {
+		t.Fatal(q)
+	}
+	if q := NexusIncomingPath(dir, " . "); filepath.Base(q) != "download" {
+		t.Fatal(q)
+	}
+	if got := NexusIncoming(dir); len(got) != 0 {
+		t.Fatalf("nothing partial yet: %+v", got)
+	}
+	if err := os.WriteFile(p+".crdownload", make([]byte, 400), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := NexusIncoming(dir)
+	if len(got) != 1 || got[0].ModID != 233 || got[0].Got != 400 || got[0].Total != 1000 {
+		t.Fatalf("%+v", got)
+	}
+	// Done: the file is there, so it isn't coming any more, and its note names the mod.
+	if err := os.Rename(p+".crdownload", p); err != nil {
+		t.Fatal(err)
+	}
+	if got := NexusIncoming(dir); len(got) != 0 {
+		t.Fatalf("done: %+v", got)
+	}
+	if n, ok := NexusNoteOf(p); !ok || n.FileID != 32359 {
+		t.Fatal(n, ok)
+	}
+	// Its arrival is matched by the note's mod even with another name.
+	other := filepath.Join(dir, "renamed.zip")
+	if err := os.Rename(p, other); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(p+".lootnest.json", other+".lootnest.json"); err != nil {
+		t.Fatal(err)
+	}
+	waits := []NexusWait{{Key: "a", ModID: 233, Since: time.Now().Add(-time.Minute)}, {Key: "b", ModID: 9, Since: time.Now().Add(-time.Minute)}}
+	if arr := NexusArrivals(dir, waits); len(arr) != 1 || arr[0].Key != "a" || arr[0].Guess {
+		t.Fatalf("by note: %+v", arr)
+	}
+	old := time.Now().Add(-40 * 24 * time.Hour)
+	_ = os.Chtimes(other, old, old)
+	PruneNexusIncoming(dir, 30*24*time.Hour)
+	if _, err := os.Stat(other); !os.IsNotExist(err) {
+		t.Fatal("an old download stays")
+	}
+	if _, err := os.Stat(other + ".lootnest.json"); err != nil {
+		t.Fatal("a newer note went")
+	}
+}

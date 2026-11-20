@@ -3213,3 +3213,6 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 .nx-pick .nx-search { flex: 1; max-width: none; }
 @media (max-width: 760px) { .nx-hero { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .nx-card:hover { transform: none; } }
+.nx-meter { display: block; height: var(--space-1); margin-top: var(--space-2); border-radius: var(--radius-round); background: var(--bg-well); overflow: hidden; }
+.nx-meter i { display: block; height: 100%; background: var(--lamp); transition: width var(--dur-2) var(--ease-out); }
+.nx-meter.is-idle { display: none; }
