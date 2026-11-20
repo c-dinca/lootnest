@@ -182,40 +182,66 @@ func (a *App) apiMakeSavePoint(key, name string) error {
 	return nil
 }
 
-func (a *App) apiRestoreSavePoint(key, id string) error {
+// apiRestoreSavePoint takes a game back to a point: the game is in that
+// moment again when it next loads. A running game is asked to close first,
+// as closing its window would, and Lootnest waits until it and its session
+// are done. The saves as they are then are kept as a point, the point's
+// saves go in as the newest (core.RestoreSavePoint), and with play the page
+// starts the game again on them.
+func (a *App) apiRestoreSavePoint(key, id string, play bool) error {
 	t, err := a.pointTarget(key)
 	if err != nil {
 		return err
-	}
-	if t.running {
-		return errors.New(t.name + " is running. Close it first, so it doesn't write over the saves you go back to.")
 	}
 	root := a.store.SavePointsDir(key)
 	p, err := core.LoadSavePoint(root, id)
 	if err != nil {
 		return err
 	}
-	if t.game != nil && p.Player != "" && p.Player != t.player {
-		a.mu.Lock()
-		who := a.cfg.PlayerName(p.Player)
-		a.mu.Unlock()
-		return fmt.Errorf("This point has %s's saves, and someone else's are loaded now. Load %s's files first, from Manage.", who, who)
+	if err := a.pointOwner(t, p); err != nil {
+		return err
 	}
-	// Locations gone from the PC since, found again by their path.
-	have := map[string]bool{}
-	for _, l := range t.locs {
-		have[l.ID] = true
-	}
-	for lid, path := range p.Paths {
-		if !have[lid] {
-			if r, err := a.env.Resolve(path); err == nil {
-				t.locs = append(t.locs, core.SaveLoc{ID: lid, Live: r, Path: path})
-			}
-		}
+	if t.running && t.proc == "" {
+		return errors.New(t.name + " is running. Close it first, so it doesn't write over the saves you go back to.")
 	}
 	go func() {
 		out := map[string]any{"key": key, "restored": id}
 		defer func() { a.emit("savePointMade", out); a.apiSavePoints(key) }()
+		step := func(s string) { a.emit("pointStep", map[string]any{"key": key, "step": s}) }
+		if t.running {
+			step("closing")
+			if err := a.closeForPoint(t); err != nil {
+				out["error"] = err.Error()
+				return
+			}
+			// What the game wrote as it closed, and whose files are loaded
+			// now that its session is done.
+			if t, err = a.pointTarget(key); err != nil {
+				out["error"] = "Nothing changed: " + err.Error()
+				return
+			}
+			if t.running {
+				out["error"] = "Nothing changed: " + t.name + " started again before Lootnest could go back."
+				return
+			}
+			if err := a.pointOwner(t, p); err != nil {
+				out["error"] = "Nothing changed: " + err.Error()
+				return
+			}
+		}
+		step("copying")
+		// Locations gone from the PC since, found again by their path.
+		have := map[string]bool{}
+		for _, l := range t.locs {
+			have[l.ID] = true
+		}
+		for lid, path := range p.Paths {
+			if !have[lid] {
+				if r, err := a.env.Resolve(path); err == nil {
+					t.locs = append(t.locs, core.SaveLoc{ID: lid, Live: r, Path: path})
+				}
+			}
+		}
 		// The saves as they are now become a point first, so going back
 		// is never a loss.
 		if _, err := a.makePoint(t, core.SavePoint{Name: "Before going back to " + p.Name, Auto: true}); err != nil && !strings.Contains(err.Error(), "no saves") {
@@ -230,9 +256,79 @@ func (a *App) apiRestoreSavePoint(key, id string) error {
 			return
 		}
 		out["point"] = p
+		if play {
+			out["play"], out["player"] = true, t.player
+		}
 		a.logf("%s went back to the save point %q", t.name, p.Name)
 	}()
 	return nil
+}
+
+// pointOwner refuses a point of a game with profiles whose saves are
+// someone else's than the ones loaded now.
+func (a *App) pointOwner(t pointTarget, p core.SavePoint) error {
+	if t.game == nil || p.Player == "" || p.Player == t.player {
+		return nil
+	}
+	a.mu.Lock()
+	who := a.cfg.PlayerName(p.Player)
+	a.mu.Unlock()
+	return fmt.Errorf("This point has %s's saves, and someone else's are loaded now. Load %s's files first, from Manage.", who, who)
+}
+
+// How long a game has to close when going back to a point, and its session
+// to finish after (its files go back to the profile).
+var (
+	pointCloseWait   = 30 * time.Second
+	pointSessionWait = 60 * time.Second
+	pointCloudWait   = 3 * time.Second // Steam Cloud sends what the game wrote as it closed
+)
+
+// closeForPoint asks a running game to quit, as closing its window would,
+// and waits until it's gone. It never ends the game by force: a game that
+// asks something first (Quit? Save?) is answered by the player.
+func (a *App) closeForPoint(t pointTarget) error {
+	if plat.CloseProcessWindows(t.proc) == 0 {
+		return errors.New("Nothing changed: Lootnest couldn't close " + t.name + ". Quit it from its own menu, then go back again.")
+	}
+	a.logf("Asked %s to close, to go back to a save point", t.name)
+	gone := func() bool {
+		procs, err := plat.ProcessNames()
+		return err == nil && !procs[t.proc]
+	}
+	if !waitFor(pointCloseWait, gone) {
+		return errors.New("Nothing changed: " + t.name + " didn't close. It may be asking something on its screen; answer it, or quit from its menu, then go back again.")
+	}
+	if t.game != nil {
+		id := t.game.ID
+		done := func() bool {
+			a.mu.Lock()
+			_, on := a.sessions[id]
+			a.mu.Unlock()
+			return !on
+		}
+		if !waitFor(pointSessionWait, done) {
+			return errors.New("Nothing changed: " + t.name + " closed, but its saves are still going back to the profile. Try again in a moment.")
+		}
+	}
+	if t.appID > 0 {
+		time.Sleep(pointCloudWait)
+	}
+	return nil
+}
+
+// waitFor checks ok every half second until it's true or limit passes.
+func waitFor(limit time.Duration, ok func() bool) bool {
+	end := time.Now().Add(limit)
+	for {
+		if ok() {
+			return true
+		}
+		if time.Now().After(end) {
+			return false
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
 func (a *App) apiRenameSavePoint(key, id, name string) error {

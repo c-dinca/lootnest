@@ -349,6 +349,25 @@
     if (!pointsAsked.has(key)) { pointsAsked.add(key); api.savePoints(key).catch(() => {}); }
     return S.points[key];
   }
+  // Going back to a point takes the game there: closed if it runs, the
+  // point's saves in as the newest, then started on them.
+  const pointGameRuns = (it) => !!((S.points[recentKey(it)] || {}).running || (it.kind === "game" && session(it.id)));
+  function goBackAsk(it, name, runs) {
+    return runs
+      ? { title: `Go back to ${name}?`, body: `Lootnest asks ${it.name} to close, as closing its window would, puts that save in place and starts the game on it. Anything the game hasn't saved yet is lost. The saves as they are now are kept as a save point first.`, ok: "Close and go back" }
+      : { title: `Go back to ${name}?`, body: `${it.name} starts on that save: Lootnest puts it in place as the newest, then starts the game. The saves as they are now are kept as a save point first, so you can come back to them too.`, ok: "Go back and play" };
+  }
+  // The game a point went back to starts, the way its Play key starts it.
+  function playAfterPoint(ev) {
+    const it = everyItem().find((x) => recentKey(x) === ev.key);
+    if (!it) return;
+    if (BP.on) { bpPlay(it, ev.player || undefined); return; }
+    if (it.kind === "found") { actions["play-found"]({ dataset: { key: it.id } }); return; }
+    const pid = ev.player || (seated() || {}).id;
+    if (pid) actions["play-as"]({ dataset: { game: it.id, player: pid } });
+    else actions["play-pick"]({ dataset: { game: it.id } });
+  }
+  const POINT_STEPS = { closing: "Closing the game", copying: "Going back" };
   function pointRow(it, p, full, P) {
     const when = new Date(p.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
     const facts = [esc(when)];
@@ -403,7 +422,7 @@
     const list = P.points || [];
     const hint = cfg().settings.pointHotkeyOff ? "" : '<span class="gpage-hint"><kbd>Ctrl+Shift+F5</kbd> in game</span>';
     const make = `<div class="pt-make"><input class="ln-input" id="pt-new" maxlength="60" placeholder="Name, such as Before the boss" aria-label="Save point name" ${P.busy ? "disabled" : ""}>
-      <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? '<span class="ln-spinner" aria-hidden="true"></span>Copying' : "Make a save point"}</button>${hint}</div>`;
+      <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? `<span class="ln-spinner" aria-hidden="true"></span>${POINT_STEPS[P.step] || "Copying"}` : "Make a save point"}</button>${hint}</div>`;
     return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
       ${make}
       ${list.length ? `<ol class="pt-list pt-list--all">${list.map((p) => pointRow(it, p, true, P)).join("")}</ol>` : ""}</section>`;

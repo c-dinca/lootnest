@@ -1095,3 +1095,27 @@ the same network as the PC, with TV streaming set up.
    still awaited: each arrives for its own mod.
 10. A month later (or set a file's date back), Lootnest's start removes
     downloads in `nexus-downloads` that were never added.
+
+## 49. Go back to a save point, all the way
+
+1. A game outside Steam, not running: make a save point, play on and save
+   in the game, close it. On its page, Saves, **Go back to it**: the
+   dialog says the game starts on that save. Answer **Go back and play**:
+   the game starts, and its Continue (or newest save) is the point's.
+2. The same with the game running: the dialog says **Close and go back**.
+   The game closes as it would from its window (no force), the button
+   reads Closing the game, then Going back, and the game starts again on
+   the point.
+3. A game that asks "Quit?" when its window closes: leave the question
+   unanswered. After about 30 s Lootnest says the game didn't close and
+   nothing changed; the saves are as they were.
+4. A Steam game with Steam Cloud: go back, let it start. In Steam, the
+   game's page says Cloud is up to date (no conflict), and the point's
+   save is the one loaded. Look at the save files' times: the newest is
+   the moment of going back.
+5. A game with profiles, running as one profile: go back to a point of
+   that profile. The session ends as usual (Lootnest's log: the profile
+   saved), then the point goes in and Play starts as the same profile.
+6. Big Picture: a game's Save points, choose one, the question says the
+   same, and the game starts.
+
