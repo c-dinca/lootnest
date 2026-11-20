@@ -27,6 +27,10 @@ done
 if [ "${1:-}" = "--check" ]; then
 	if ! cmp -s lootnest-overlay64.dll "$out"; then
 		echo "internal/app/overlay/lootnest-overlay64.dll isn't what native/overlay builds: run tools/overlay/build.sh" >&2
+		"$cc" --version | head -1 >&2
+		x86_64-w64-mingw32-ld --version | head -1 >&2
+		sha256sum lootnest-overlay64.dll "$out" >&2
+		cmp -l lootnest-overlay64.dll "$out" | head -20 >&2 || true
 		exit 1
 	fi
 	echo "lootnest-overlay64.dll matches its source"
