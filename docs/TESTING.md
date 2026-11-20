@@ -1222,17 +1222,16 @@ Two monitors on the PC, the TV app connected.
    Turn one off, press Play: the game starts without it, and the PC's Mods
    tab shows it off for the same profile.
 
-## 55. Big Picture's Home, part 2
+## 55. Big Picture's Home and its glass
 
 1. Big Picture, Home: move along Continue playing. The cover in focus
-   rises with a glow in the seated profile's colour and the others dim;
-   under the row, cards for that game come in one by one (Play, Save
-   points, the next achievement, Story when its achievements mark the
-   chapters, Mods when it has some).
-2. Down from a cover: the cards come up, the game's name stays on screen.
-   A on Play as ... starts the game for the seated profile.
-3. A on Save points, on the achievement and on Mods: each opens that
-   game's screen; B comes straight back to the card.
-4. Collections come right under the cards.
-5. With music on, move to another game and wait a few seconds: the piece
+   rises with a glow in the seated profile's colour and the others dim.
+   Collections come right under the row.
+2. The bar's sections sit in one glass pill; keys, rows, the achievements
+   and the menu are see-through glass over the game's art, as Lootnest's
+   window on the PC. With Settings, Appearance, Glass off on the PC, they
+   are solid.
+3. On the TV, the glass looks smooth (no flicker or bands from the
+   stream) and moving between games stays as quick as before.
+4. With music on, move to another game and wait a few seconds: the piece
    moves to another key at its next chord.
