@@ -12,7 +12,7 @@
     return S.mods[key];
   }
   function loadMods(key) {
-    return api.mods(key).then((m) => { S.mods[key] = m; if (S.view === "game") render(); }).catch(() => { S.mods[key] = { none: true }; });
+    return api.mods(key).then((m) => { S.mods[key] = m; if (BP.on) bpSoon(); else if (S.view === "game") render(); }).catch(() => { S.mods[key] = { none: true }; });
   }
   // The Mods tab shows for a game with a folder that can have mods, or that
   // still has some in it; an anti-cheat game says why in its note.

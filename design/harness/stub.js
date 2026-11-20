@@ -23,12 +23,22 @@
       size: 2.1e9, modTime: iso(26 * h), check: { to: "1.0.3", state: "unknown" }, newer: false },
   ];
   // Sounds: a stand-in for WebAudio that counts what plays, as
-  // window.__sfx = [{ at, gain }], so a check can see one sound per action.
-  window.__sfx = [];
+  // window.__sfx = [{ at, gain }], so a check can see one sound per action,
+  // and Big Picture's music (27-bp-music.js) as window.__music, the notes
+  // started, and window.__musicGain, its volume now.
+  window.__sfx = []; window.__music = 0;
+  const param = (v) => ({ value: v, setValueAtTime(x) { this.value = x; }, linearRampToValueAtTime(x) { this.value = x; }, exponentialRampToValueAtTime() {}, setTargetAtTime(x) { this.value = x; }, cancelScheduledValues() {} });
+  const node = (extra) => Object.assign({ connect(n) { return n; } }, extra);
   window.AudioContext = class {
-    constructor() { this.state = "running"; this.destination = {}; }
+    constructor() { this.state = "running"; this.destination = {}; this.sampleRate = 8000; this.t0 = performance.now(); }
+    get currentTime() { return (performance.now() - this.t0) / 1000; }
     resume() { return Promise.resolve(); }
-    createGain() { return { gain: { value: 1 }, connect(n) { return n; } }; }
+    createGain() { return node({ gain: param(1) }); }
+    createOscillator() { return node({ type: "sine", frequency: param(440), detune: param(0), start() { window.__music++; }, stop() {} }); }
+    createBiquadFilter() { return node({ type: "lowpass", frequency: param(350), Q: param(1) }); }
+    createConvolver() { return node({ buffer: null }); }
+    createDelay() { return node({ delayTime: param(0) }); }
+    createBuffer(ch, len) { const d = Array.from({ length: ch }, () => new Float32Array(len)); return { getChannelData: (c) => d[c] }; }
     decodeAudioData() { return Promise.resolve({}); }
     createBufferSource() {
       const src = { playbackRate: { value: 1 }, g: null, connect(n) { src.g = n; return n; }, start() { window.__sfx.push({ at: Math.round(performance.now()), gain: src.g && src.g.gain.value }); } };

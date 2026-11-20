@@ -1203,3 +1203,21 @@ Two monitors on the PC, the TV app connected.
 7. With TV mode on, press Ctrl+Shift+Q: the same settings come back. And
    if Lootnest is ended from Task Manager in TV mode, its next start puts
    them back.
+## 54. Big Picture: music, Triangle for Settings, Mods
+
+1. Open Big Picture (or TV mode): after a moment a calm piece plays.
+   Start a game: it fades out within a second or two and stays silent
+   while the game runs; back in Big Picture it fades in again. The same
+   with a trailer playing behind a game, and over the Home menu.
+2. Press Triangle (Y) on a game's cover: the Settings key in the bar (the
+   gear) is chosen; Triangle again goes back to the cover. Triangle, then
+   the cross (A): Settings opens; B from the parts on the left goes back to
+   the gear.
+3. Settings, Sound and music: Music off stops it at once; Music volume Low,
+   Medium and High change it while it plays. Settings, Sounds for unlocks
+   off silences the music too.
+4. In TV mode, Settings has a TV part with Draw at twice the stream's rate
+   and Leave TV mode.
+5. A game with mods (added on the PC): its page in Big Picture has Mods.
+   Turn one off, press Play: the game starts without it, and the PC's Mods
+   tab shows it off for the same profile.

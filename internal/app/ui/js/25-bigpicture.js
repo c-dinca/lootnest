@@ -7,14 +7,14 @@
   // opens the menu (it leaves, outside TV mode). The keyboard works the
   // same: arrows, Enter, Escape, Q and E. Everything Y, X, LB, RB and Start
   // do can also be reached with the arrows alone.
-  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", signs: pref("bpSigns", ""), trailers: pref("bpTrailers", "0") === "1", padOnly: pref("bpPadOnly", "1") === "1", tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
+  const BP = { on: false, tab: "home", tag: "", tagFrom: "", detail: null, choose: null, focus: "", from: "", timer: 0, sounds: pref("bpSounds", "1") === "1", signs: pref("bpSigns", ""), trailers: pref("bpTrailers", "0") === "1", music: pref("bpMusic", "1") === "1", musicVol: pref("bpMusicVol", "2"), padOnly: pref("bpPadOnly", "1") === "1", tv: false, menu: false, menuWhy: "", menuFrom: "", who: false, mem: {}, sx: {} };
   const BP_TABS = [["home", "Home"], ["library", "Library"], ["achievements", "Achievements"], ["profiles", "Profiles"]];
   const BP_SEC = { home: "home", library: "library", achievements: "ach", profiles: "profiles" };
   const bpItem = (k) => libraryItems().find((x) => x.kind + ":" + x.id === k) || null;
   const bpKey = (it) => it.kind + ":" + it.id;
   function bpOpen() {
     if (BP.on) return;
-    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.settings = false; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.ask = null; BP.mem = {}; BP.sx = {};
+    BP.on = true; BP.tab = "home"; BP.tag = ""; BP.tagFrom = ""; BP.detail = null; BP.points = false; BP.mods = false; BP.settings = false; BP.choose = null; BP.focus = ""; BP.from = ""; BP.menu = false; BP.ask = null; BP.mem = {}; BP.sx = {};
     closeContext(); gqClose();
     if (!S.allAch) api.allAchievements().catch(() => {});
     if (!S.pads) api.padSupport().catch(() => {});
@@ -22,6 +22,7 @@
     if (!pad.raf && padsNow().length) pad.raf = requestAnimationFrame(padLoop); // a pad that was there before the page: its signs show at once
     renderBP(true);
     sfx("open");
+    musicStart();
   }
   function bpClose() {
     if (!BP.on) return;
@@ -213,7 +214,7 @@
     if (k === "home" || k === "ach") {
       sfx("go"); BP.tvMenu = null; drawTVMenu(); tvReturn(); api.tvStay().catch(() => {});
       // Its achievements: the game's page in Big Picture, at their row.
-      if (k === "ach" && M.it && BP.on) { BP.settings = false; BP.choose = null; BP.points = false; BP.menu = false; BP.detail = bpKey(M.it); BP.from = ""; BP.focus = "play"; BP.want = "ach:0"; }
+      if (k === "ach" && M.it && BP.on) { BP.settings = false; BP.choose = null; BP.points = false; BP.mods = false; BP.menu = false; BP.detail = bpKey(M.it); BP.from = ""; BP.focus = "play"; BP.want = "ach:0"; }
       if (BP.on) renderBP(false);
       return;
     }
@@ -507,6 +508,12 @@
     unlock: ["confirmation_002", 0.3], rare: ["glass_001", 0.25], point: ["drop_002", 0.3], swap: ["confirmation_001", 0.3],
   };
   let actx = null, master = null;
+  // The one audio context for sounds and Big Picture's music (27-bp-music.js).
+  function audioCtx() {
+    if (!actx) { actx = new AudioContext(); master = actx.createGain(); master.gain.value = 0.7; master.connect(actx.destination); }
+    if (actx.state === "suspended") actx.resume().catch(() => {});
+    return actx;
+  }
   const sfxBufs = {}, sfxAt = {};
   function playSound(kind, scale = 1) {
     const [name, gain, rate] = SFX[kind] || [], b64 = name && SOUNDS[name];
@@ -514,8 +521,7 @@
     if (!b64 || now - (sfxAt[kind] || -1e9) < 45) return;
     sfxAt[kind] = now;
     try {
-      if (!actx) { actx = new AudioContext(); master = actx.createGain(); master.gain.value = 0.7; master.connect(actx.destination); }
-      if (actx.state === "suspended") actx.resume().catch(() => {});
+      audioCtx();
       sfxBufs[name] = sfxBufs[name] || actx.decodeAudioData(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer);
       sfxBufs[name].then((buf) => {
         const src = actx.createBufferSource(), g = actx.createGain();

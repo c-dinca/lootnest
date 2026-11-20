@@ -325,7 +325,7 @@
   --bp-person-w: calc(260 * var(--u)); --bp-avatar: calc(120 * var(--u)); --bp-avatar-bar: calc(44 * var(--u)); --bp-card-w: calc(520 * var(--u));
   --bp-key-h: calc(76 * var(--u)); --bp-round: calc(56 * var(--u)); --bp-glyph: calc(34 * var(--u)); --bp-icon: calc(28 * var(--u));
   --bp-logo-h: calc(170 * var(--u)); --bp-logo-w: calc(560 * var(--u)); --bp-hero-w: calc(1100 * var(--u)); --bp-hero-h: calc(340 * var(--u));
-  --bp-dlg-w: calc(760 * var(--u)); --bp-cats-w: calc(440 * var(--u)); --bp-sw-w: calc(72 * var(--u)); --bp-sw-h: calc(40 * var(--u)); --bp-sw-dot: calc(30 * var(--u)); --bp-sw-go: calc(32 * var(--u)); --bp-card-art: calc(96 * var(--u)); --bp-toast-w: calc(640 * var(--u)); --bp-page-h: calc(540 * var(--u)); --bp-ach-w: calc(440 * var(--u)); --bp-ach-ico: calc(76 * var(--u)); --bp-list-w: calc(1100 * var(--u)); --bp-opt-h: calc(96 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
+  --bp-dlg-w: calc(760 * var(--u)); --bp-cats-w: calc(440 * var(--u)); --bp-sw-w: calc(72 * var(--u)); --bp-sw-h: calc(40 * var(--u)); --bp-sw-dot: calc(30 * var(--u)); --bp-sw-go: calc(32 * var(--u)); --bp-card-art: calc(96 * var(--u)); --bp-toast-w: calc(640 * var(--u)); --bp-page-h: calc(540 * var(--u)); --bp-ach-w: calc(440 * var(--u)); --bp-ach-ico: calc(76 * var(--u)); --bp-list-w: calc(1100 * var(--u)); --bp-opt-h: calc(96 * var(--u)); --bp-text-say: calc(21 * var(--u)); --bp-say-h: calc(130 * var(--u)); --bp-text-set-h: calc(40 * var(--u)); --bp-fade-h: calc(210 * var(--u)); --bp-slide: calc(60 * var(--u)); --bp-rise: calc(18 * var(--u));
   --bp-r-tile: calc(12 * var(--u)); --bp-r-key: calc(16 * var(--u)); --bp-r-panel: calc(24 * var(--u));
   --bp-ring: calc(4 * var(--u)); --bp-ring-out: calc(-7 * var(--u)); --bp-r-ring: calc(19 * var(--u));  /* the focus ring, a dark gap inside it */
   --bp-grow: 1.08; --bp-grow-key: 1.05;                              /* what the focus does to a tile, to a key */
@@ -345,7 +345,7 @@
   --bp-sheen: linear-gradient(105deg, transparent 36%, rgb(255 255 255 / 0.22) 50%, transparent 64%);  /* a light that crosses a cover as the focus lands on it */
   --bp-clip-fade: linear-gradient(0deg, rgb(17 18 23 / 0.96), rgb(17 18 23 / 0));                        /* where a list goes on under its frame */
   --bp-fill-in: rgb(255 255 255 / 0.06);  /* a row inside a panel that's already filled */
-  --bp-dur-pick: 460ms; --bp-dur-sheen: 650ms; --bp-dur-ring: 900ms; --bp-step: 30ms;
+  --bp-dur-open: 240ms; --bp-dur-pick: 460ms; --bp-dur-sheen: 650ms; --bp-dur-ring: 900ms; --bp-step: 30ms;
   --bp-achs-side: calc(600 * var(--u)); --bp-agame-h: calc(112 * var(--u)); --bp-agame-art: calc(60 * var(--u));
   --bp-arow-h: calc(104 * var(--u)); --bp-arow-ico: calc(72 * var(--u)); --bp-arow-h-s: calc(80 * var(--u)); --bp-arow-ico-s: calc(56 * var(--u));
   --bp-ring-w: calc(120 * var(--u)); --bp-text-ring: calc(30 * var(--u)); --bp-ring-thin: calc(3 * var(--u));
