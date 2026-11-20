@@ -1141,3 +1141,22 @@ the same network as the PC, with TV streaming set up.
 7. A game that reads keys by raw input or DirectInput (most newer ones):
    F5 from Lootnest works there too. If one ignores it, note which game.
 
+
+## 51. The controller in TV mode while the PC is in use
+
+The TV app connected, a DualSense or DualShock 4 on the TV (Apollo makes
+a virtual DualShock 4 on the PC for it) or an Xbox pad.
+
+1. TV mode on, then click on a window on one of the PC's own monitors, so
+   Lootnest no longer has the keyboard. On the TV, the D-pad and the stick
+   move in Big Picture, the one chosen is lit, A opens, B goes back, LB
+   and RB change section. Before this, only the PS button did anything.
+2. Type in the window on the PC at the same time: nothing typed goes to
+   Lootnest, and the TV keeps answering the controller.
+3. Start a game from the TV: while the game is in front on the TV, the
+   controller is the game's and Big Picture doesn't move behind it. The
+   PS button still opens the Home menu over it, and its choices move.
+4. Click Lootnest's window again (if the mouse can reach it): the
+   controller works as before, with no step taken twice.
+5. Lootnest's log says "Controller for Lootnest's page from Go: true" when
+   the PC's window was clicked, and "false" when a game came in front.

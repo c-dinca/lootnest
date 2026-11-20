@@ -1,6 +1,9 @@
 package core
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 // dsUSB is a DualSense's USB report with everything at rest.
 func dsUSB() []byte {
@@ -115,5 +118,44 @@ func TestPSPadPath(t *testing.T) {
 		if pid != c.pid || bt != c.bt || ok != c.ok {
 			t.Errorf("%s: got %04x %v %v, want %04x %v %v", c.path, pid, bt, ok, c.pid, c.bt, c.ok)
 		}
+	}
+}
+
+func TestMergePads(t *testing.T) {
+	a := PadState{Buttons: XA, LX: 1000, LY: -30000, LT: 10}
+	b := PadState{Buttons: XUp, LX: -20000, LY: 500, RT: 200}
+	got := MergePads(a, b)
+	want := PadState{Buttons: XA | XUp, LX: -20000, LY: -30000, LT: 10, RT: 200}
+	if got != want {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+	if MergePads() != (PadState{}) {
+		t.Error("no pads should be a pad at rest")
+	}
+	if got := MergePads(PadState{LX: -32768}); got.LX != -32768 {
+		t.Errorf("the far left was lost: %d", got.LX)
+	}
+}
+
+func TestPadAxis(t *testing.T) {
+	cases := []struct {
+		v    int16
+		down bool
+		want float64
+	}{
+		{0, false, 0}, {0, true, 0}, {32767, false, 1}, {-32768, false, -1},
+		{32767, true, -1}, // XInput's up is the Gamepad API's -1
+		{-32768, true, 1},
+		{800, false, 0}, // a stick resting a little off centre
+		{16384, false, 0.5},
+		{-22000, true, 0.65},
+	}
+	for _, c := range cases {
+		if got := PadAxis(c.v, c.down); got != c.want {
+			t.Errorf("PadAxis(%d, %v) = %v, want %v", c.v, c.down, got, c.want)
+		}
+	}
+	if s := fmt.Sprint(PadAxis(100, true)); s != "0" {
+		t.Errorf("a stick at rest reads %s, not 0", s)
 	}
 }

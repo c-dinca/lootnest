@@ -159,6 +159,7 @@ type App struct {
 	conWin       uintptr    // that game's window, when Lootnest found it
 	conGen       int        // which launch the curtain is following
 	guideOn      bool       // the Home button is being watched
+	padFeedOn    bool       // the controller is read for the page (padfeed.go)
 	pointerFor   string     // the program over Lootnest the controller is a mouse for (pointer.go)
 	pointerRun   bool       // its loop runs
 	pad          *padBridge // a PlayStation pad shown to games as an Xbox one (padbridge.go)
@@ -449,8 +450,11 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 			return 1, true
 		}
 	case msg == plat.WM_INPUT:
-		// A PlayStation pad's PS button, in TV mode or Big Picture (tvHome).
-		if down, ok := plat.RawPSButton(lp); ok {
+		// A PlayStation pad's PS button, in TV mode or Big Picture (tvHome),
+		// and the rest of it for the page when it can't read it (padfeed.go).
+		if r, ok := plat.RawPSReport(lp); ok {
+			notePSPad(r)
+			down := r.PS
 			a.mu.Lock()
 			pressed := down && !a.tvPSDown
 			a.tvPSDown = down

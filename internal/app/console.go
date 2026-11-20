@@ -216,8 +216,13 @@ func (a *App) startGuide() {
 		return
 	}
 	a.guideOn = true
+	feed := !a.padFeedOn
+	a.padFeedOn = true
 	a.mu.Unlock()
 	go a.watchGuide()
+	if feed {
+		go a.padFeed()
+	}
 }
 
 // watchGuide follows XInput pads' Guide button in TV mode and Big Picture:

@@ -284,7 +284,7 @@
     square: '<rect x="5.25" y="5.25" width="9.5" height="9.5" rx=".5"/>', triangle: '<path d="M10 4.75 15.5 14.5h-11z"/>',
     ...Object.fromEntries(["top", "right", "bottom", "left"].map((k) => [k, dot(10, 4.5, k === "top") + dot(15.5, 10, k === "right") + dot(10, 15.5, k === "bottom") + dot(4.5, 10, k === "left")])),
   };
-  const pad = { prev: [], held: "", next: 0, at: -1e9, raf: 0, fam: "", hello: 0, joined: [] };
+  const pad = { prev: [], held: "", next: 0, at: -1e9, raf: 0, fam: "", hello: 0, joined: [], feed: null, pf: null, css: false };
   const glyph = (b) => {
     const f = BP.signs || pad.fam || "xbox", v = PADS[f][b], face = b.length === 1; // the signs chosen in Big Picture's Settings, else the pad's own
     const cls = f === "xbox" || !face ? " bp-g--" + b.toLowerCase() : "";
@@ -356,9 +356,78 @@
     return b(12) || ay < -th("up") ? "up" : b(13) || ay > th("down") ? "down" : b(14) || ax < -th("left") ? "left" : b(15) || ax > th("right") ? "right" : "";
   };
   const padsNow = () => (navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : []);
+  // The controller from Go (app/padfeed.go), while Lootnest's window is
+  // the front one on its screen. Someone working on the PC's other screens
+  // has the keyboard there, and then the page reads no pad itself and its
+  // :focus no longer matches, so in TV mode only the Home button worked.
+  // The feed is used only while the window doesn't have the keyboard, or
+  // the page sees no pad at all; as one pad in the standard mapping.
+  const FEED_BITS = [0x1000, 0x2000, 0x4000, 0x8000, 0x0100, 0x0200, 0, 0, 0x0020, 0x0010, 0x0040, 0x0080, 0x0001, 0x0002, 0x0004, 0x0008];
+  function padFeed(ev) {
+    if (!ev.on) { pad.feed = null; padAway(false); return; }
+    const b = ev.b || 0;
+    pad.feed = {
+      id: ev.ps ? "Lootnest (vendor: 054c)" : "Lootnest (vendor: 045e)", index: 64,
+      buttons: FEED_BITS.map((m) => ({ pressed: !!(b & m), value: b & m ? 1 : 0 })), axes: [ev.x || 0, ev.y || 0, 0, 0],
+    };
+    // Each change acts at once: a window that isn't drawn (behind another,
+    // or between frames) would miss a short press. Held directions repeat
+    // on the frames that follow.
+    if (pad.raf) cancelAnimationFrame(pad.raf);
+    padLoop(performance.now());
+  }
+  // While the feed drives the page, the element in focus carries .pf, and
+  // a copy of every :focus rule matches it (padAwayCSS), so Big Picture
+  // still shows what's chosen.
+  function padAway(on) {
+    if (on && !pad.css) padAwayCSS();
+    document.documentElement.classList.toggle("pad-away", on);
+    const a = on && document.activeElement !== document.body ? document.activeElement : null;
+    if (pad.pf && pad.pf !== a) pad.pf.classList.remove("pf");
+    if (a && !a.classList.contains("pf")) a.classList.add("pf"); // a redraw may have taken it off
+    pad.pf = a;
+  }
+  // Splits a selector list at its top-level commas.
+  const selParts = (sel) => {
+    const out = [];
+    let depth = 0, from = 0;
+    for (let i = 0; i < sel.length; i++) {
+      const c = sel[i];
+      if (c === "(" || c === "[") depth++;
+      else if (c === ")" || c === "]") depth--;
+      else if (c === "," && !depth) { out.push(sel.slice(from, i).trim()); from = i + 1; }
+    }
+    out.push(sel.slice(from).trim());
+    return out;
+  };
+  // :focus becomes .pf, :focus-within :has(.pf), under :root.pad-away. A
+  // rule about what isn't focused (:not(:focus)) is left as it is.
+  const awaySel = (part) => {
+    if (!/:focus/.test(part) || /:not\([^)]*:focus/.test(part)) return "";
+    const p = part.replace(/:focus-within/g, ":has(.pf)").replace(/:focus(-visible)?/g, ".pf");
+    return /^(:root|html)/.test(p) ? p.replace(/^(:root|html)/, "$1.pad-away") : ":root.pad-away " + p;
+  };
+  function padAwayCSS() {
+    pad.css = true;
+    const adds = [];
+    const walk = (list, parent) => {
+      [...list].forEach((r, i) => {
+        if (r.cssRules && !r.selectorText) { walk(r.cssRules, r); return; } // @media, @supports, @layer
+        if (!r.selectorText || !/:focus/.test(r.selectorText)) return;
+        const sel = selParts(r.selectorText).map(awaySel).filter(Boolean);
+        if (sel.length) adds.push([parent, i + 1, sel.join(", ") + "{" + r.style.cssText + "}"]);
+      });
+    };
+    for (const sh of document.styleSheets) { try { walk(sh.cssRules, sh); } catch { /* another origin's sheet */ } }
+    // From the end, so each index still points after its own rule.
+    for (const [parent, i, text] of adds.reverse()) { try { parent.insertRule(text, i); } catch { /* a selector this browser won't take */ } }
+  }
   function padLoop(t) {
     pad.raf = 0;
-    const pads = padsNow();
+    const focused = document.hasFocus(), nav = padsNow();
+    const fed = pad.feed && (!focused || !nav.length) ? pad.feed : null;
+    padAway(!!fed && !focused);
+    const pads = fed ? [fed] : nav;
     if (!pads.length) return;
     // DS4Windows, Steam Input and x360ce add an Xbox twin of another pad.
     // While that pad holds a button, an Xbox pad's presses are its twin's echo
@@ -380,15 +449,15 @@
     // 100 ms, whatever the stick does.
     const step = !!dir && (dir !== pad.held ? t - pad.at >= 100 : t >= pad.next);
     if (step) { pad.next = t + (dir !== pad.held ? 400 : 120); pad.at = t; }
-    const focused = document.hasFocus();
-    if (focused && BP.tvMenu) {
+    const active = focused || !!fed;
+    if (active && BP.tvMenu) {
       if (roles.has("B")) tvMenuGo("resume");
       else if (roles.has("A")) tvMenuGo(BP.tvMenu.at);
       else if (step && (dir === "up" || dir === "down")) tvMenuMove(dir);
-    } else if (focused && BP.launch) {
+    } else if (active && BP.launch) {
       // While a game starts, B comes back to Big Picture; nothing else acts.
       if (roles.has("B") && BP.launch.phase === "starting") { sfx("back"); tvReturn(); }
-    } else if (focused) {
+    } else if (active) {
       if (fam !== pad.fam) { pad.fam = fam; if (BP.on) renderBP(false); }
       if (roles.has("Start") && !(BP.tv && (S.picker || S.dialog))) { if (BP.on) bpClose(); else bpOpen(); }
       if (BP.on && !S.picker && !S.dialog) {
@@ -426,7 +495,7 @@
       if (g) toast(`Controller connected. Press the ${PADS[padFamily(g.id)].Start} button for Big Picture.`);
     }, 300);
   });
-  window.addEventListener("focus", () => { if (!pad.raf && padsNow().length) pad.raf = requestAnimationFrame(padLoop); });
+  window.addEventListener("focus", () => { padAway(false); if (!pad.raf && padsNow().length) pad.raf = requestAnimationFrame(padLoop); });
 
   // Kenney's Interface Sounds (CC0), inlined at start as {name: base64}
   // like the fonts. Moving and choosing in Big Picture are off with the

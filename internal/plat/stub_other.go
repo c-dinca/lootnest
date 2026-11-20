@@ -309,6 +309,14 @@ func PSButtonIn(product uint16, report []byte) (r0 bool) {
 	return
 }
 
+type PSReport struct {
+	Device    uintptr
+	Product   uint16
+	Bluetooth bool
+	Data      []byte
+	PS        bool
+}
+
 type PadDevice struct {
 	Chain       []string
 	HardwareIDs []string
@@ -371,7 +379,7 @@ func ProgramFilesX86() (r0 string) {
 	return
 }
 
-func RawPSButton(lp uintptr) (r0 bool, r1 bool) {
+func RawPSReport(lp uintptr) (r0 PSReport, r1 bool) {
 	return
 }
 
