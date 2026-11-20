@@ -9,6 +9,7 @@
     renderOverlay();
   }
   const actions = {
+    ...nexusActions,
     nav(el, ev) {
       if (S.view === "edit" && !confirmLeaveEdit()) return;
       // Cloud saves is a section of Saves: its links land on it there.

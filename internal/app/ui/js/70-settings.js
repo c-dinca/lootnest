@@ -101,6 +101,7 @@
             ? "For games you also own on Steam whose copy on this PC keeps no achievements. Your Steam profile's Game details must be public (Steam: your profile, Edit Profile, Privacy Settings). Sends your key, account id and the game's Steam id to Steam."
             : "For games you also own on Steam whose copy on this PC keeps no achievements. It needs your Steam Web API key first: free on steamcommunity.com/dev/apikey, pasted below.", s.steamAccountAch)}
           ${sw("storyAch", "Story progress", "Reads which achievements mark a game's chapters from Steam's public list, to show how far its story is beside Play. Sends a game's Steam id to Steam.", s.storyAch)}
+          ${sw("nexusMods", "Nexus Mods", "Lets a game's Mods tab search Nexus Mods. Sends the game's name and what you search for to Nexus Mods.", s.nexusMods)}
           ${sw("downloadCovers", "Download covers and artwork", "Sends a game's name or Steam id to Steam and SteamGridDB.", s.downloadCovers)}`)
         + sub("itch.io", "", itchRows())
         + sub("GOG", "", gogRows())

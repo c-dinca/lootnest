@@ -450,7 +450,7 @@
       overview: cols(activityLine(it, !!tl) + detailsBlock(it) + achievementsBlock(it, true) + latestPoint(it) + latestCopy(it) + (newsOn ? "" : news) + communityBlock(it), side),
       achievements: ach && wide(ach),
       saves: points ? cols(points, saves + other) : (saves || other) && wide(saves + other),
-      mods: mods && wide(mods),
+      mods: mods && wide(modsPane(it, mods)),
       timeline: tl && wide(tl),
       news: newsOn && news && wide(news),
     };

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Mods from Nexus Mods, inside Lootnest.** A game's Mods tab has **Your mods** and **Nexus Mods**. Search the game's mods on Nexus Mods, sort them, and open one to see its pictures, what it needs (such as a script loader) and its files. **Download** opens the file's page on nexusmods.com in a small window of Lootnest's own, signed in with your Nexus account, without opening your browser: press Manual download there as on the site. When the file is in your Downloads, Lootnest closes that window and shows what adding the mod would do, then it's on the game's list like any mod you bring: per profile, with the game put back as it was in one click. Mod Manager Download needs Lootnest registered with Nexus first, so it isn't taken yet. Turn it on in the Mods tab or in Settings, Online (off by default): the game's name and what you search for go to Nexus Mods; adult mods aren't shown.
+
 ## 2.16.2
 
 - **An emergency key for TV mode.** When the TV or Lootnest stops answering while TV mode or Big Picture is on, press **Ctrl+Shift+Q** on the PC's keyboard: the mouse is let go, the taskbar comes back, the TV's stream ends (so the PC's screens come back as they were), and Lootnest quits, even when its window doesn't answer. The bar on the PC's screen in TV mode says so, and Ctrl+Shift+F11 still leaves TV mode without quitting.

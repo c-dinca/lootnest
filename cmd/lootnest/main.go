@@ -8,6 +8,7 @@
 //	Lootnest.exe --safe-mode     start with background work off (or hold Shift while it opens)
 //	Lootnest.exe --tv            TV mode, for a streaming host: runs until TV mode ends
 //	Lootnest.exe --app <id>      a site as an app, full screen (YouTube's TV interface)
+//	Lootnest.exe --nexus <d/m/f> a mod's file on nexusmods.com, in a window of Lootnest's own
 //	Lootnest.exe --uninstall     remove Lootnest
 package main
 
@@ -29,7 +30,7 @@ func init() {
 
 func main() {
 	var tray, uninstall, quiet, safe, restarted, tv bool
-	var launch, site string
+	var launch, site, nexus string
 	var on uintptr
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
@@ -49,6 +50,11 @@ func main() {
 		case "--app":
 			if i+1 < len(args) {
 				site = args[i+1]
+				i++
+			}
+		case "--nexus":
+			if i+1 < len(args) {
+				nexus = args[i+1]
 				i++
 			}
 		case "--on": // the window whose monitor --app fills
@@ -78,6 +84,11 @@ func main() {
 	// A site shown as an app is a program of its own (app/webapp.go).
 	if site != "" {
 		os.Exit(app.RunWebApp(site, on))
+	}
+
+	// Nexus Mods in a window of Lootnest's own, for downloading a mod (app/nexus.go).
+	if nexus != "" {
+		os.Exit(app.RunNexusWindow(nexus))
 	}
 
 	// A streaming host's app: this process only holds the stream, while

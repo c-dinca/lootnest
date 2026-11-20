@@ -286,6 +286,7 @@
     backupsToKeep: 10, startTimeoutSeconds: 180, steamAccountId: "", autoSteamHooks: true, downloadCovers: true, checkUpdates: true,
     gameNews: true, autoInstallUpdates: true, updatesAsked: true, gameSaves: CLOUD, saveDb: CLOUD, findGames: q.get("find") !== "0",
     gameDetails: q.get("details") !== "0", // ?details=0: Game details off
+    nexusMods: !!q.get("nexus"), // ?nexus=1: Nexus Mods on (68-nexus.js)
     hardwareReviews: q.has("peers"),
     backupDir: CLOUD ? "C:\\Users\\cris\\OneDrive" : "", backupAuto: CLOUD, backupKeep: 5, cloudSync: CLOUD,
     itchUser: ITCH && !ITCH_OUT ? "player1" : "",
@@ -478,6 +479,15 @@
   };
   const emit = (ev, delay) => setTimeout(() => window.__ps && window.__ps(ev), delay || 40);
   const ok = (v) => Promise.resolve(v);
+  // Made-up mods for the Nexus Mods pane, with drawn pictures.
+  const nxPic = (a, b) => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="160" height="90" fill="url(#g)"/><circle cx="118" cy="30" r="14" fill="#ffffff" opacity=".35"/><path d="M0 70 L40 48 L70 62 L110 40 L160 66 L160 90 L0 90Z" fill="#000" opacity=".3"/></svg>`);
+  const NX_NAMES = [["Better Lighting", "Visuals", "#3b4a6b", "#c2763a"], ["Script Loader", "Tools", "#2d3b3b", "#4f8f7a"], ["Quiet Camp", "Gameplay", "#4a3b2d", "#a88a5a"], ["Faster Horses", "Gameplay", "#5a2d2d", "#c25a3a"],
+    ["Clear Water", "Visuals", "#20405a", "#5aa0c2"], ["Weapon Wheel Plus", "User Interface", "#2d2d3b", "#7a6bb0"], ["Night Sky Rework", "Visuals", "#101828", "#3a4a8a"], ["No Intro Videos", "Utilities", "#333333", "#777777"],
+    ["Hunting Overhaul", "Gameplay", "#3b2d20", "#8a6a3a"], ["Map Markers", "User Interface", "#203b2d", "#3a8a5a"], ["Camera Tweaks", "Camera", "#2d3b4a", "#5a7aa0"], ["Winter Coats", "Models and Textures", "#40505a", "#c0d0e0"]];
+  const NX_MODS = NX_NAMES.map(([name, category, a, b], i) => ({ id: i + 1, name, author: ["Ash", "Rowan", "Kit", "Morgan"][i % 4], version: "1." + (i % 5), category,
+    summary: "A short summary of what " + name + " changes, as its author wrote it on its page.", endorsements: [62740, 8120, 3011, 940, 21500, 512, 7300, 18800, 4100, 260, 1200, 9800][i],
+    downloads: [3813745, 410200, 88000, 12000, 640000, 9100, 120400, 702000, 99000, 4300, 31000, 250000][i], thumb: i === 7 ? "" : nxPic(a, b), updated: new Date(Date.now() - (i + 1) * 86400e3 * 4).toISOString() }));
+  let NX_WAITS = q.get("nxwait") === "hold" ? [{ key: "dir:d:\\games\\phantom blade zero", game: "Phantom Blade Zero", domain: "game", modId: 1, fileId: 11, mod: "Better Lighting", file: "Better Lighting 1.0", date: 0, since: new Date().toISOString() }] : [];
   const never = () => new Promise(() => {});
   const offline = () => Promise.reject("Couldn't reach the internet. Check your connection, then try again.");
   const appOf = (appId, name) => {
@@ -665,6 +675,54 @@
         safe: q.get("safe") === "1" ? "Lootnest is in safe mode, which leaves the game's folder as it is. Restart it normally to change its mods." : "",
         refused: ac ? `This game ships with ${ac}, which can ban an account over changed game files, so Lootnest doesn't put mods into it.`
           : /Program Files/.test(dir) ? "Windows protects the games under Program Files and WindowsApps, so Lootnest doesn't put mods there. A game in a folder outside them can have mods." : "" });
+    },
+    // Nexus Mods (app/nexus.go): ?nexus=1 turns it on; &nexus=none has no
+    // game, &nexus=error can't reach Nexus. A Download arrives in
+    // Downloads 1.5 s later unless &nxwait=hold.
+    ps_nexusGame: (key) => {
+      const name = (found.find((x) => x.key === key) || games.find((x) => "game:" + x.id === key) || {}).name || "The game";
+      const v = q.get("nexus");
+      emit(v === "error" ? { type: "nexusGame", key, name, error: "Couldn't reach Nexus Mods. Check the connection and try again." }
+        : v === "none" ? { type: "nexusGame", key, name, none: true } : { type: "nexusGame", key, name, game: { id: 9001, name, domain: "game", mods: 6664 } }, 300);
+      return ok();
+    },
+    ps_nexusGames: (term) => { emit({ type: "nexusGames", q: term, games: [{ id: 9001, name: term, domain: "game", mods: 6664 }, { id: 9002, name: term + " Remastered", domain: "gamer", mods: 412 }] }, 300); return ok(); },
+    ps_nexusPick: () => ok(),
+    ps_nexusSearch: (key, term, sort, offset, seq) => {
+      const all = NX_MODS.filter((m) => !term || term.toLowerCase().split(/\s+/).every((w) => m.name.toLowerCase().includes(w)));
+      emit({ type: "nexusMods", key, q: term, sort, offset, seq, mods: all.slice(offset, offset + 24), total: term ? all.length : 6469, domain: "game" }, q.get("nxslow") ? 60000 : 400);
+      return ok();
+    },
+    ps_nexusMod: (key, id) => {
+      const m = NX_MODS.find((x) => x.id === id) || NX_MODS[0];
+      emit({ type: "nexusMod", key, modId: id, url: "", mod: { ...m, picture: m.thumb, description: "Better Lighting reworks the sky, fog and interiors for every hour of the day.\n\nInstall: put the files into the game's folder, where the game's program is.\n\nWorks with the current version of the game.",
+        needs: [{ modId: 2, name: "Script Loader", notes: "Needed for every script mod" }, { name: "Asset loader from its author's site", notes: "Latest version", url: "https://example.com/loader/", external: true }],
+        files: [{ id: 11, name: m.name, version: m.version, category: "MAIN", size: 48.2e6, date: Date.now() / 1000 - 86400 * 3, primary: true, description: "The whole mod." },
+          { id: 12, name: m.name + " Lite", version: m.version, category: "OPTIONAL", size: 12.1e6, date: Date.now() / 1000 - 86400 * 3, description: "Fewer changes, for older PCs." },
+          { id: 13, name: m.name, version: "1.0", category: "OLD_VERSION", size: 41e6, date: Date.now() / 1000 - 86400 * 200 }] } }, 300);
+      return ok();
+    },
+    ps_nexusGet: (key, id, file) => {
+      if (!file) return ok();
+      const m = NX_MODS.find((x) => x.id === id) || NX_MODS[0];
+      const w = { key, game: "The game", domain: "game", modId: id, fileId: file, mod: m.name, file: m.name + " " + m.version, date: 0, since: new Date().toISOString() };
+      NX_WAITS = NX_WAITS.filter((x) => !(x.key === key && x.modId === id)).concat(w);
+      emit({ type: "nexusWaits", waits: NX_WAITS });
+      if (q.get("nxwait") !== "hold") setTimeout(() => {
+        NX_WAITS = NX_WAITS.filter((x) => x !== w);
+        emit({ type: "nexusWaits", waits: NX_WAITS });
+        emit({ type: "nexusArrived", arrival: { ...w, path: "C:\\Users\\Alex\\Downloads\\" + m.name + "-" + id + "-1-2-1792931965.zip", name: m.name + "-" + id + "-1-2-1792931965.zip", size: 48.2e6 } });
+      }, 1500);
+      return ok();
+    },
+    ps_nexusForget: (key, id) => { NX_WAITS = NX_WAITS.filter((x) => !(x.key === key && x.modId === id)); emit({ type: "nexusWaits", waits: NX_WAITS }); return ok(); },
+    ps_nexusWaits: () => { emit({ type: "nexusWaits", waits: NX_WAITS }); return ok(); },
+    ps_nexusAdd: (key, path) => {
+      const name = path.split("\\").pop().replace(/-\d+-.*$/, "");
+      const mod = { id: "m" + Date.now(), name, files: 18, bytes: 48.2e6, into: "", on: false, nexus: "https://www.nexusmods.com/game/mods/1", nexusId: 1 };
+      MODS_PENDING[mod.id] = mod;
+      emit({ type: "modPlan", key, path, mod, plan: { added: 16, replaced: 2, bytes: 48.2e6, replaces: ["shaders/sky.fx", "shaders/fog.fx"] } }, 500);
+      return ok();
     },
     ps_addMod: (key, path) => {
       const refused = /\.zip$/i.test(path);

@@ -73,6 +73,8 @@ func TestAllowedPageRequest(t *testing.T) {
 		"http://clan.akamai.steamstatic.com/images/1/a.png":                         false,
 		"file:///C:/Windows/win.ini":                                                false,
 		"https://steamstatic.com.evil.example/a.png":                                false,
+		"https://staticdelivery.nexusmods.com/mods/3024/images/233/a.png":           true,
+		"https://www.nexusmods.com/reddeadredemption2/mods/233":                     false,
 	} {
 		if got := AllowedPageRequest(u); got != want {
 			t.Errorf("AllowedPageRequest(%q) = %v", u, got)

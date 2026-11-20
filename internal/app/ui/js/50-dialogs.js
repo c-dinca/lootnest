@@ -101,6 +101,12 @@
       o.innerHTML = viewLaunch();
     } else if (D.kind === "modplan") {
       o.innerHTML = viewModPlan();
+    } else if (D.kind === "nexusmod") {
+      o.innerHTML = viewNexusMod();
+    } else if (D.kind === "nexuspick") {
+      const q = $("#nx-game-q"), pos = q && document.activeElement === q ? q.selectionStart : -1;
+      o.innerHTML = viewNexusPick();
+      if (pos >= 0) { const q2 = $("#nx-game-q"); q2.focus(); q2.setSelectionRange(pos, pos); }
     } else if (D.kind === "modconf") {
       o.innerHTML = viewModConflicts();
     } else if (D.kind === "copies") {

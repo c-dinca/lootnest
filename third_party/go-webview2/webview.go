@@ -120,6 +120,14 @@ type WebViewOptions struct {
 	// Lootnest patch: Microphone, when set, lets the pages it says yes to
 	// use the microphone without asking each time (a voice chat's site).
 	Microphone func(uri string) bool
+
+	// Lootnest patch: Navigate, when set, is asked about every page the
+	// window would show; one it refuses isn't loaded.
+	Navigate func(uri string) bool
+
+	// Lootnest patch: NewWindow, when set, gets the address of a link that
+	// wants a new window, and no window opens.
+	NewWindow func(uri string)
 }
 
 // New creates a new webview in a new window.
@@ -149,6 +157,9 @@ func NewWithOptions(options WebViewOptions) WebView {
 	} else {
 		chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
 	}
+
+	chromium.NavigationFilter = options.Navigate
+	chromium.NewWindowCallback = options.NewWindow
 
 	w.browser = chromium
 	w.mainthread, _, _ = w32.Kernel32GetCurrentThreadID.Call()

@@ -134,6 +134,10 @@ type Settings struct {
 	// HardwareReviews: Will it run also reads Steam's reviews from players
 	// with this PC's graphics card or a close one (their names are sent).
 	HardwareReviews bool `json:"hardwareReviews,omitempty"`
+	// NexusMods lets a game's Mods tab browse Nexus Mods (nexus.go): the
+	// game's name and what's searched for go to Nexus's public API. Off by
+	// default.
+	NexusMods bool `json:"nexusMods,omitempty"`
 	// AutoInstallUpdates installs a newer Lootnest found by the automatic
 	// check by itself, while the window is closed to the tray and no game
 	// is running. UpdatesAsked: the user answered "Keep Lootnest up to date?".

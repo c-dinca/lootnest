@@ -282,7 +282,7 @@ func AllowedPageRequest(uri string) bool {
 	if strings.HasPrefix(l, "about:") || strings.HasPrefix(l, "data:") || strings.HasPrefix(l, "blob:") {
 		return true
 	}
-	return SafeNewsImage(uri)
+	return SafeNewsImage(uri) || SafeNexusImage(uri)
 }
 
 // PageSource is the one document allowed to call Lootnest from its window.

@@ -27,6 +27,8 @@ type Chromium struct {
 	webResourceRequested  *iCoreWebView2WebResourceRequestedEventHandler
 	acceleratorKeyPressed *ICoreWebView2AcceleratorKeyPressedEventHandler
 	navigationCompleted   *ICoreWebView2NavigationCompletedEventHandler
+	navigationStarting    *iCoreWebView2NavigationStartingEventHandler
+	newWindowRequested    *iCoreWebView2NewWindowRequestedEventHandler
 
 	environment *ICoreWebView2Environment
 
@@ -39,6 +41,12 @@ type Chromium struct {
 	// PermissionFilter (Lootnest patch) says whether the page at this
 	// address may have what's allowed.
 	PermissionFilter func(uri string) bool
+	// NavigationFilter (Lootnest patch), when set, is asked about every
+	// page the window would show; a page it refuses isn't loaded.
+	NavigationFilter func(uri string) bool
+	// NewWindowCallback (Lootnest patch), when set, gets the address of a
+	// link that wants a new window, and no window opens.
+	NewWindowCallback func(uri string)
 
 	// Callbacks
 	MessageCallback              func(message, source string)
@@ -67,6 +75,8 @@ func NewChromium() *Chromium {
 	e.webResourceRequested = newICoreWebView2WebResourceRequestedEventHandler(e)
 	e.acceleratorKeyPressed = newICoreWebView2AcceleratorKeyPressedEventHandler(e)
 	e.navigationCompleted = newICoreWebView2NavigationCompletedEventHandler(e)
+	e.navigationStarting = newICoreWebView2NavigationStartingEventHandler(e)
+	e.newWindowRequested = newICoreWebView2NewWindowRequestedEventHandler(e)
 	e.permissions = make(map[CoreWebView2PermissionKind]CoreWebView2PermissionState)
 
 	return e
@@ -229,6 +239,7 @@ func (e *Chromium) CreateCoreWebView2ControllerCompleted(res uintptr, controller
 	)
 
 	_ = e.controller.AddAcceleratorKeyPressed(e.acceleratorKeyPressed, &token)
+	e.addNavigationHandlers()
 
 	atomic.StoreUintptr(&e.inited, 1)
 

@@ -258,6 +258,9 @@
         loadFound().then(refresh); // the page's new key is in the Library first
         break;
       }
+      case "nexusGame": case "nexusGames": case "nexusMods": case "nexusMod": case "nexusWaits": case "nexusArrived":
+        nexusEvent(ev);
+        break;
       case "modPlan": {
         const D = S.dialog;
         if (D && D.kind === "modplan" && D.key === ev.key && D.path === ev.path) { Object.assign(D, { busy: false, mod: ev.mod || null, plan: ev.plan || null, refused: ev.refused || "", error: ev.error || "" }); renderOverlay(); }

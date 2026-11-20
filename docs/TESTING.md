@@ -1030,3 +1030,29 @@ the same network as the PC, with TV streaming set up.
 6. Android TV app 1.0.1: the same on its home screen; the TV app's log
    in Save a report has a "Sound: ..." line saying whether the TV gave
    low latency.
+
+## 47. Mods from Nexus Mods
+
+1. A folder game with mods allowed (Red Dead Redemption 2 kept offline
+   is the owner's case): its page, Mods tab, **Nexus Mods**. Off, it
+   offers **Turn on Nexus Mods**; on, it finds the game on Nexus and
+   shows its mods. Search "trainer", change the order: the grid follows.
+   **Not this game?** lists Nexus's games for its words; choose one.
+2. Open a mod: its picture, summary, facts, **It needs** (a Nexus mod
+   opens in the drawer; one from elsewhere opens in the browser) and
+   its files by kind, the first main file's Download lit.
+3. **Download**: a window titled Nexus Mods opens on the file, not the
+   browser. Sign in to Nexus there (by e-mail, and once with Google or
+   Steam: those pages must open in the same window). Press Manual
+   download, then Slow download: the file goes to Downloads.
+4. Within a few seconds the Nexus window closes, Lootnest comes to the
+   front and shows "Add a mod" with the plan. Add it: it's on the list
+   with the mod's name from Nexus, not the file's.
+5. In the Nexus window, **Mod Manager Download** shows a note at the
+   bottom and opens nothing (no Vortex prompt). A link to another site
+   (a mod's own page elsewhere) opens in the browser.
+6. Close Lootnest while a file is awaited, download it, start Lootnest:
+   the file is still found (waits last two hours).
+7. Settings, Updates: a Nexus file in Downloads isn't offered as a
+   game's update.
+8. Close the Nexus window and open it again: still signed in.
