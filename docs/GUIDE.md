@@ -52,6 +52,10 @@ A game missing from the Library? Lootnest finds stores' games from their launche
 
 When a game's achievements mark its chapters or its end, a ring beside Play says how far the story is for the profile shown ("Chapter 3 done", Finished). It's read only from those achievements: a game that doesn't mark its chapters shows nothing, and one that marks only its endings shows Finished once one is reached. Steam keeps many chapter achievements' words hidden; **Story progress** (Settings, Online, off by default) reads them from Steam's public list, sending only the game's Steam id.
 
+## FPS counter
+
+**Ctrl+Shift+F10** while a game runs shows how many frames a second the game in front draws, in a corner of its screen (choose which in Settings, Games and swaps), and hides it. The Home menu over a game and Big Picture's Settings turn it on and off too. Lootnest counts the frames Windows itself reports (Event Tracing for Windows, as PresentMon and Xbox Game Bar do), so nothing is put into the game. Windows gives those reports only to administrators and the Performance Log Users group: **Allow**, in Settings, adds your account to that group once (Windows asks), and it works from your next sign-in to Windows. A game in exclusive fullscreen draws over every other window, the counter included; borderless or windowed shows it.
+
 ## Lootnest and Playnite
 
 Lootnest works alongside [Playnite](https://playnite.link); it doesn't replace it. **Import from Playnite**, in Settings, Data and activity, brings in what Playnite knows about the games on this PC: time played and when last played, statuses (Playing, Beaten, Completed, Abandoned, Plan to Play, On Hold), favourites, ratings (Playnite's score as 1 to 5 stars), notes, and, if you choose, categories and tags as collections. The import is one way: Lootnest reads Playnite's library (`%APPDATA%\Playnite\library`, or the `library` folder of a portable Playnite) and never writes to it. Close Playnite first, because it keeps its library to itself while it's open.

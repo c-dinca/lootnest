@@ -363,6 +363,7 @@ func (a *App) hotkeyTick(running []achRun) {
 	a.mu.Unlock()
 	a.holdHotkey(hotkeyPoint, plat.VK_F5, len(running) > 0 && !s.PointHotkeyOff, "Ctrl+Shift+F5 is taken by another program; save points still work from the game's page")
 	a.holdHotkey(hotkeyShot, plat.VK_F12, len(running) > 0 && !s.ScreenshotsOff, "Ctrl+Shift+F12 is taken by another program, so it doesn't take screenshots")
+	a.fpsTick(running)
 }
 
 func (a *App) holdHotkey(id int, vk uint32, want bool, taken string) {

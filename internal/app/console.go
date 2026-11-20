@@ -310,9 +310,9 @@ func (a *App) tvHome() {
 		a.mu.Unlock()
 		a.raise()
 		a.mu.Lock()
-		pointer := a.pointerFor == playing
+		pointer, fps := a.pointerFor == playing, a.cfg.Settings.FPSCounter
 		a.mu.Unlock()
-		a.emit("tvMenu", map[string]any{"on": true, "key": playing, "shot": shot, "pointer": pointer})
+		a.emit("tvMenu", map[string]any{"on": true, "key": playing, "shot": shot, "pointer": pointer, "fps": fps})
 	}
 }
 

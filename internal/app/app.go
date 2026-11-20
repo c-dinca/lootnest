@@ -481,6 +481,9 @@ func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 	case msg == plat.WM_HOTKEY && wp == hotkeyShot:
 		a.quickShot()
 		return 0, true
+	case msg == plat.WM_HOTKEY && wp == hotkeyFPS:
+		go a.fpsToggle()
+		return 0, true
 	case msg == plat.WM_HOTKEY && wp == hotkeyTV:
 		a.logf("TV mode off: Ctrl+Shift+F11 on the PC")
 		a.leaveTV()

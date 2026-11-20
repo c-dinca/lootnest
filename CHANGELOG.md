@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **An FPS counter.** While a game runs, **Ctrl+Shift+F10** shows how many frames a second it draws, in a corner of its screen, and hides it again. It also turns on and off from the Home menu over a game (the controller's Home or PS button in Big Picture and TV mode), Big Picture's Settings and Settings, Games and swaps, where you choose its corner. Lootnest reads the frame timings Windows itself reports, as Xbox Game Bar does: nothing goes into the game, so anti-cheats have nothing to see. Windows lets an app read them only for administrators and the Performance Log Users group, so the first time, **Allow** in Settings adds your account to that group (Windows asks once), and it works from your next sign-in to Windows. It shows over windowed and borderless games and most fullscreen ones; a game in exclusive fullscreen draws over every window, so switch that one to borderless.
+
 ## 2.16.2
 
 - **An emergency key for TV mode.** When the TV or Lootnest stops answering while TV mode or Big Picture is on, press **Ctrl+Shift+Q** on the PC's keyboard: the mouse is let go, the taskbar comes back, the TV's stream ends (so the PC's screens come back as they were), and Lootnest quits, even when its window doesn't answer. The bar on the PC's screen in TV mode says so, and Ctrl+Shift+F11 still leaves TV mode without quitting.
