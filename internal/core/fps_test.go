@@ -70,19 +70,73 @@ func TestCleanFPSCorner(t *testing.T) {
 	}
 }
 
-func TestPerfLogUsersScript(t *testing.T) {
-	s, err := PerfLogUsersScript("S-1-5-21-1004336348-1177238915-682003330-1001")
+func TestFrameTaskScript(t *testing.T) {
+	sid := "S-1-5-21-1004336348-1177238915-682003330-1001"
+	s, err := FrameTaskScript(`C:\Users\Ana's PC\AppData\Local\Programs\Lootnest\Lootnest.exe`, sid)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"S-1-5-32-559", "'S-1-5-21-1004336348-1177238915-682003330-1001'", "Add-LocalGroupMember", "MemberExists", "exit 0"} {
+	for _, want := range []string{
+		"'" + sid + "'", "$env:ProgramFiles", "Copy-Item -LiteralPath 'C:\\Users\\Ana''s PC", // quotes doubled
+		"-RunLevel Highest", "-LogonType Interactive", "'--frames'", `'\Lootnest\'`, "'Frame counter'", "-Force", "exit 0",
+	} {
 		if !strings.Contains(s, want) {
-			t.Errorf("script lacks %q", want)
+			t.Errorf("script lacks %q:\n%s", want, s)
 		}
 	}
 	for _, bad := range []string{"", "S-1-5-21-1'; Remove-Item C:\\ -Recurse; '", "Administrator", "S-1-"} {
-		if _, err := PerfLogUsersScript(bad); err == nil {
-			t.Errorf("PerfLogUsersScript(%q) took it", bad)
+		if _, err := FrameTaskScript(`C:\x.exe`, bad); err == nil {
+			t.Errorf("FrameTaskScript took SID %q", bad)
 		}
+	}
+	if _, err := FrameTaskScript("C:\\x.exe\nRemove-Item", sid); err == nil {
+		t.Error("a program path with a line break was taken")
+	}
+	u := FrameUntaskScript()
+	if !strings.Contains(u, "Unregister-ScheduledTask") || !strings.Contains(u, "Remove-Item") {
+		t.Error(u)
+	}
+	if got := FramePipeName(sid); got != `\\.\pipe\lootnest-frames-`+sid {
+		t.Error(got)
+	}
+}
+
+func TestFrameReport(t *testing.T) {
+	line := EncodeFrameReport(map[uint32]int{1234: 144, 9: 0}, "")
+	if line[len(line)-1] != '\n' {
+		t.Fatal("no line end")
+	}
+	rates, e, err := DecodeFrameReport(line[:len(line)-1])
+	if err != nil || e != "" || rates[1234] != 144 || len(rates) != 2 {
+		t.Fatalf("%v %q %v", rates, e, err)
+	}
+	_, e, err = DecodeFrameReport(EncodeFrameReport(nil, "denied"))
+	if err != nil || e != "denied" {
+		t.Fatal(e, err)
+	}
+	if _, _, err := DecodeFrameReport([]byte(`{"v":2,"fps":{}}`)); err != ErrFrameReaderOld {
+		t.Fatal("another protocol was read", err)
+	}
+	if _, _, err := DecodeFrameReport([]byte("nonsense")); err == nil {
+		t.Fatal("nonsense was read")
+	}
+	r, _, _ := DecodeFrameReport([]byte(`{"v":1,"fps":{"x":3,"5":-1,"6":60}}`))
+	if len(r) != 1 || r[6] != 60 {
+		t.Fatal(r)
+	}
+}
+
+func TestFrameCounterRates(t *testing.T) {
+	c := NewFrameCounter(10)
+	for i := 0; i < 30; i++ {
+		c.Add(1, FrameHistory, int64(i))
+		c.Add(2, FrameDXGI, int64(i/2))
+	}
+	r := c.Rates(30)
+	if r[1] != 10 || len(r) != 2 {
+		t.Fatal(r)
+	}
+	if len(c.Rates(100)) != 0 {
+		t.Fatal("rates for processes quiet for long")
 	}
 }

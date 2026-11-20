@@ -19,8 +19,9 @@ import (
 // and shows how many the program in front draws a second, in a corner of
 // its screen. Ctrl+Shift+F10 (held only while a game runs), the Home menu
 // over a game and Settings turn it on and off. Listening takes an
-// administrator or a member of Performance Log Users; apiFPSAllow adds the
-// account once, with Windows' prompt, and it counts from the next sign-in.
+// administrator's full rights, so unless this sign-in has them, the frames
+// come from Lootnest's frame reader (app/framereader.go), which the user
+// allows once with Windows' prompt and which works at once.
 // ---------------------------------------------------------------------------
 
 const hotkeyFPS = 0x4C46 // "LF"
@@ -32,13 +33,17 @@ var fpsRun struct {
 	since     time.Time // when it was last turned on, to show "--" a moment
 	exclusive string    // the last game seen in exclusive fullscreen
 	denied    bool      // Windows refused the session since Lootnest started
+	task      bool      // the frame reader's task is there (frameTaskThere)
+	taskAt    time.Time // when that was asked
+	old       bool      // the reader in Program Files speaks another protocol
 }
 
 // FPSState is what the page shows about the counter.
 type FPSState struct {
 	On        bool   `json:"on"`
 	Corner    string `json:"corner"`
-	Access    string `json:"access"` // "ok", "ask", "signout" or "unsupported"
+	Access    string `json:"access"`           // "ok", "ask", "update" or "unsupported"
+	Reader    bool   `json:"reader,omitempty"` // the frame reader is allowed (it can be taken away)
 	Exclusive string `json:"exclusive,omitempty"`
 }
 
@@ -50,17 +55,22 @@ func (a *App) fpsState() FPSState {
 	switch {
 	case runtime.GOOS != "windows":
 		st.Access = "unsupported"
-	case plat.FramesAllowed():
-		st.Access = "ok"
-	case s.FPSGroupAdded:
-		st.Access = "signout"
 	default:
-		st.Access = "ask"
+		st.Reader = a.frameTaskThere(false)
+		switch {
+		case plat.FramesAllowed() || st.Reader:
+			st.Access = "ok"
+		default:
+			st.Access = "ask"
+		}
 	}
 	fpsRun.mu.Lock()
 	st.Exclusive = fpsRun.exclusive
-	if fpsRun.denied && st.Access == "ok" { // the token says yes, Windows said no
+	if fpsRun.denied && st.Access == "ok" && !st.Reader { // the token says yes, Windows said no
 		st.Access = "ask"
+	}
+	if fpsRun.old && st.Reader {
+		st.Access = "update"
 	}
 	fpsRun.mu.Unlock()
 	return st
@@ -104,39 +114,63 @@ func (a *App) fpsToggle() {
 	a.logf("FPS counter %s: Ctrl+Shift+F10", map[bool]string{true: "on", false: "off"}[on])
 }
 
-// apiFPSAllow puts this account into Performance Log Users, with Windows'
-// prompt. It counts from the next time the user signs in to Windows.
+// apiFPSAllow puts Lootnest's frame reader in place, with Windows' prompt
+// once: a copy of lootnest.exe in Program Files and a task that starts it
+// with the account's highest rights. It works at once, with no sign-out.
 func (a *App) apiFPSAllow() (FPSState, error) {
 	if runtime.GOOS != "windows" {
 		return a.fpsState(), errors.New("The FPS counter is only on Windows for now.")
 	}
-	script, err := core.PerfLogUsersScript(plat.UserSID())
+	script, err := core.FrameTaskScript(a.exePath, plat.UserSID())
 	if err != nil {
 		return a.fpsState(), err
 	}
+	if err := a.runFrameScript(script); err != nil {
+		return a.fpsState(), err
+	}
+	fpsRun.mu.Lock()
+	fpsRun.denied, fpsRun.old = false, false
+	fpsRun.mu.Unlock()
+	if !a.frameTaskThere(true) {
+		a.logf("FPS counter: the frame reader's task isn't in Task Scheduler after allowing it")
+		return a.fpsState(), errors.New("Windows didn't keep Lootnest's frame reader, so nothing changed.")
+	}
+	a.logf("FPS counter: the frame reader is allowed (Task Scheduler, %s)", frameReaderPath())
+	st := a.fpsState()
+	a.emit("fps", map[string]any{"state": st})
+	a.fpsFollow()
+	return st, nil
+}
+
+// apiFPSRemove takes the frame reader and its task away (Windows asks).
+func (a *App) apiFPSRemove() (FPSState, error) {
+	if runtime.GOOS != "windows" {
+		return a.fpsState(), nil
+	}
+	if err := a.runFrameScript(core.FrameUntaskScript()); err != nil {
+		return a.fpsState(), err
+	}
+	a.frameTaskThere(true)
+	a.logf("FPS counter: the frame reader was taken away")
+	st := a.fpsState()
+	a.emit("fps", map[string]any{"state": st})
+	return st, nil
+}
+
+func (a *App) runFrameScript(script string) error {
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	args := "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand " + core.EncodePowerShell(script)
 	code, err := plat.RunElevatedAndWait(a.hwnd, ps, args)
 	switch {
 	case errors.Is(err, plat.ErrCancelledByUser):
-		return a.fpsState(), errors.New("Nothing changed: Windows' prompt was cancelled.")
+		return errors.New("Nothing changed: Windows' prompt was cancelled.")
 	case err != nil:
-		return a.fpsState(), errors.New("Windows couldn't be asked: " + err.Error())
+		return errors.New("Windows couldn't be asked: " + err.Error())
 	case code != 0:
-		a.logf("FPS counter: adding this account to Performance Log Users ended with code %d", code)
-		return a.fpsState(), errors.New("Windows didn't add your account to Performance Log Users, so nothing changed.")
+		a.logf("FPS counter: the frame reader's script ended with code %d", code)
+		return errors.New("Windows didn't take the change, so nothing changed.")
 	}
-	a.mu.Lock()
-	cfg := a.cfg.Clone()
-	a.mu.Unlock()
-	cfg.Settings.FPSGroupAdded = true
-	if err := a.saveConfig(cfg); err != nil {
-		return a.fpsState(), err
-	}
-	a.logf("FPS counter: this account is in Performance Log Users; it counts from the next sign-in to Windows")
-	st := a.fpsState()
-	a.emit("fps", map[string]any{"state": st})
-	return st, nil
+	return nil
 }
 
 // fpsTick runs with the hotkeys, every few seconds: Ctrl+Shift+F10 is held
@@ -187,8 +221,7 @@ func (a *App) fpsLoop() {
 		fpsRun.loop = false
 		fpsRun.mu.Unlock()
 	}()
-	count := core.NewFrameCounter(plat.PerfFreq())
-	tr, err := plat.StartFrameTrace(count.Add)
+	src, err := a.startFrames()
 	if err != nil {
 		if errors.Is(err, plat.ErrFramesNotAllowed) {
 			fpsRun.mu.Lock()
@@ -199,9 +232,6 @@ func (a *App) fpsLoop() {
 				st := a.fpsState()
 				a.logf("FPS counter: Windows doesn't let this account read frame timings (%s)", st.Access)
 				line := "Allow it once in Lootnest: Settings, Games and swaps."
-				if st.Access == "signout" {
-					line = "Sign out of Windows and in again to finish allowing it."
-				}
 				plat.ShowToast(plat.Toast{Kicker: "FPS counter", Title: "Needs your permission first", Line: line})
 				a.emit("fps", map[string]any{"state": st})
 			}
@@ -218,9 +248,9 @@ func (a *App) fpsLoop() {
 		}
 		return
 	}
-	a.logf("FPS counter: listening to frames")
+	a.logf("FPS counter: listening to frames through %s", src.Kind())
 	defer func() {
-		tr.Stop()
+		src.Stop()
 		plat.HideFPS()
 		a.logf("FPS counter: stopped listening")
 	}()
@@ -243,7 +273,7 @@ func (a *App) fpsLoop() {
 			plat.HideFPS()
 			continue
 		}
-		if rate, ok := count.Rate(pid, plat.PerfNow()); ok {
+		if rate, ok := src.Rate(pid); ok {
 			plat.ShowFPS(strconv.Itoa(rate), corner)
 		} else if fresh {
 			plat.ShowFPS("", corner) // "--" for a moment, so the key is seen to work

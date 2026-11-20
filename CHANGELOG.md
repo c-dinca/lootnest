@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The FPS counter works without signing out.** Allowing it used to add your account to a Windows group that only counted from your next sign-in, so the counter stayed blank until then. Now **Allow** (Settings, Games and swaps) puts a small frame reader of Lootnest's in Program Files and a task in Task Scheduler that starts it while a game runs: Windows asks once, as administrator, and the counter works right away, with no prompt after that. **Remove**, in the same place, takes both away. It also counts frames from one more of Windows' reports, so more games show a number.
+
 ## 2.18.1
 
 - **Big Picture in the same glass as the PC window.** Keys, rows, cards, the bar at the top and the menu are now the see-through, blurred glass of Lootnest's window on the PC, over the game's art, instead of solid grey plates; the sections at the top sit in one glass pill, as the PC's sidebar does. Glass off in Settings, Appearance makes them solid, as on the PC.

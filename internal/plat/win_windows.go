@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sys/windows"
 	"image"
 	"lootnest/internal/win"
+	"os"
 	"time"
 )
 
@@ -15,6 +16,7 @@ const (
 	EmergencyKey         = win.EmergencyKey
 	FrameD3D9            = win.FrameD3D9
 	FrameDXGI            = win.FrameDXGI
+	FrameHistory         = win.FrameHistory
 	FrameKernel          = win.FrameKernel
 	IDCANCEL             = win.IDCANCEL
 	IDNO                 = win.IDNO
@@ -501,6 +503,10 @@ func SendToBack(hwnd uintptr) {
 	win.SendToBack(hwnd)
 }
 
+func ServeOutboundPipe(name string) (*os.File, error) {
+	return win.ServeOutboundPipe(name)
+}
+
 func ServiceState(name string) (bool, bool) {
 	return win.ServiceState(name)
 }
@@ -684,6 +690,10 @@ func ViGEmPresent() bool {
 
 func Videos() string {
 	return win.Videos()
+}
+
+func WaitPipeReader(f *os.File) error {
+	return win.WaitPipeReader(f)
 }
 
 func WaitProcess(pid uint32) {

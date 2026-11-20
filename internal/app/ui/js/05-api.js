@@ -144,6 +144,7 @@
     fpsState: () => call("ps_fpsState"),
     fpsSet: (on) => call("ps_fpsSet", on),
     fpsAllow: () => call("ps_fpsAllow"),
+    fpsRemove: () => call("ps_fpsRemove"),
     mediaApps: () => call("ps_mediaApps"),
     launchApp: (id) => call("ps_launchApp", id),
     newCopies: () => call("ps_newCopies"),

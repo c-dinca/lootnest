@@ -2235,6 +2235,31 @@ These shipped recently, newest last:
   font as its fallback, and Settings' parts are Ice Grey in focus. Seen
   in the desktop build under xvfb, not on a TV. The owner asked for
   2.18.0 with everything of 20 Nov in it.
+- **Unreleased, the FPS counter without signing out** (the owner, 20
+  Nov 2026: it didn't work, and "asking to sign in and out is awful";
+  they chose, for games with an anti-cheat, the outside counter with no
+  sign-out, and the in-game one, as Steam's, for the rest: the next PR).
+  Performance Log Users is gone (`PerfLogUsersScript`,
+  `Settings.FPSGroupAdded`). `core.FrameTaskScript` (one elevated
+  PowerShell from **Allow**, `apiFPSAllow`) copies lootnest.exe to
+  `%ProgramFiles%\Lootnest\Frame counter\lootnest-frames.exe` (only
+  administrators can change it, so the task can't run anything else with
+  those rights) and registers `\Lootnest\Frame counter` (the user's SID
+  turned into its account name, Interactive, RunLevel Highest,
+  `--frames`); `FrameUntaskScript` (**Remove**, `ps_fpsRemove`) takes
+  both away. `app/framereader.go`: `startFrames` listens itself when
+  `FramesAllowed`, else `frameTaskThere` (the program's stat, then
+  `schtasks /query`, kept 30 s) and `startReader` (`schtasks /run`, then
+  the pipe `core.FramePipeName(SID)` opened for 8 s);
+  `RunFrameReader` (`--frames`, before anything in main.go) is the pipe's
+  server (`win.ServeOutboundPipe`: outbound, first instance, no remote
+  clients; `WaitPipeReader`), exits after 20 s with no reader and when a
+  write fails, and writes `core.EncodeFrameReport` lines (protocol
+  `FrameProtocol` 1; another is `ErrFrameReaderOld`, access "update")
+  twice a second. DxgKrnl PresentHistory_Start (171) is a fourth source
+  (`FrameHistory`), the event PresentMon always reads. CI's windows job
+  registers and removes the task (`TestFrameTask`) and checks the pipe;
+  the reader started by the task is docs/TESTING.md 47.
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should

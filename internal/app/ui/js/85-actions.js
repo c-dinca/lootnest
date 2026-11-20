@@ -406,8 +406,13 @@
       S.fps = { ...(S.fps || {}), busy: true }; render();
       try {
         S.fps = await api.fpsAllow();
-        toast("Sign out of Windows and in again, then the FPS counter works.");
+        toast("The FPS counter can read frame timings now.");
       } catch (e) { S.fps = { ...(S.fps || {}), busy: false }; toast(errText(e), "error"); }
+      render();
+    },
+    async "fps-remove"() {
+      S.fps = { ...(S.fps || {}), busy: true }; render();
+      try { S.fps = await api.fpsRemove(); } catch (e) { S.fps = { ...(S.fps || {}), busy: false }; toast(errText(e), "error"); }
       render();
     },
     "test-toast"() {

@@ -4,10 +4,16 @@ package win
 
 import (
 	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 	"unsafe"
+
+	"lootnest/internal/core"
 )
 
 // The structures ETW reads and writes, as Windows' headers lay them out on
@@ -85,5 +91,96 @@ func TestFrameTraceStartsAndStops(t *testing.T) {
 	}
 	if sid := UserSID(); len(sid) < 8 {
 		t.Errorf("UserSID: %q", sid)
+	}
+}
+
+// The frame reader's pipe: one writer, one reader, a second server refused.
+func TestOutboundPipe(t *testing.T) {
+	name := `\\.\pipe\lootnest-test-` + time.Now().Format("150405.000000")
+	f, err := ServeOutboundPipe(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if g, err := ServeOutboundPipe(name); err == nil {
+		g.Close()
+		t.Fatal("a second server took the same name")
+	}
+	got := make(chan string, 1)
+	go func() {
+		var r *os.File
+		for i := 0; i < 50 && r == nil; i++ {
+			r, _ = os.OpenFile(name, os.O_RDONLY, 0)
+			if r == nil {
+				time.Sleep(20 * time.Millisecond)
+			}
+		}
+		if r == nil {
+			got <- "no reader"
+			return
+		}
+		defer r.Close()
+		b := make([]byte, 64)
+		n, _ := r.Read(b)
+		got <- string(b[:n])
+	}()
+	if err := WaitPipeReader(f); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.Write([]byte("{\"v\":1}\n")); err != nil {
+		t.Fatal(err)
+	}
+	if s := <-got; s != "{\"v\":1}\n" {
+		t.Fatalf("read %q", s)
+	}
+}
+
+// The frame reader's task: the script registers it for this account with
+// the highest rights, puts the program in Program Files, and the untask
+// script takes both away. CI's runner is an administrator, as Windows'
+// prompt makes the app.
+func TestFrameTask(t *testing.T) {
+	if !elevated() {
+		t.Skip("needs an administrator, as Windows' prompt gives the real app")
+	}
+	src := filepath.Join(t.TempDir(), "Lootnest.exe")
+	if err := os.WriteFile(src, []byte("MZ test"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	run := func(script string) {
+		c := exec.Command(ps, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", core.EncodePowerShell("$ProgressPreference = 'SilentlyContinue'\n"+script))
+		if out, err := c.CombinedOutput(); err != nil {
+			t.Fatalf("%v: %s", err, out)
+		}
+	}
+	script, err := core.FrameTaskScript(src, UserSID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer run(core.FrameUntaskScript())
+	run(script)
+	run(script) // twice: replaced, not refused
+	reader := filepath.Join(os.Getenv("ProgramFiles"), core.FrameReaderDir, core.FrameReaderExe)
+	if b, err := os.ReadFile(reader); err != nil || string(b) != "MZ test" {
+		t.Fatalf("reader in Program Files: %q %v", b, err)
+	}
+	schtasks := filepath.Join(os.Getenv("SystemRoot"), "System32", "schtasks.exe")
+	out, err := RunHiddenOutput(schtasks, `/query /xml /tn "`+core.FrameTaskPath+core.FrameTaskName+`"`, 20*time.Second)
+	if err != nil {
+		t.Fatalf("the task isn't there: %v %s", err, out)
+	}
+	out = strings.ReplaceAll(out, "\x00", "") // in case it answers in UTF-16
+	for _, want := range []string{"HighestAvailable", "InteractiveToken", "--frames", core.FrameReaderExe} {
+		if !strings.Contains(out, want) {
+			t.Errorf("task lacks %q:\n%s", want, out)
+		}
+	}
+	run(core.FrameUntaskScript())
+	if _, err := RunHiddenOutput(schtasks, `/query /tn "`+core.FrameTaskPath+core.FrameTaskName+`"`, 20*time.Second); err == nil {
+		t.Error("the task is still there after the untask script")
+	}
+	if _, err := os.Stat(reader); err == nil {
+		t.Error("the reader is still in Program Files")
 	}
 }

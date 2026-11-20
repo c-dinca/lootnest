@@ -1035,9 +1035,11 @@ the same network as the PC, with TV streaming set up.
 
 1. Settings, Games and swaps: **Let Lootnest read frame timings** shows
    with **Allow**. Press it: Windows asks for administrator once; the row
-   becomes "Sign out of Windows and in again". In an elevated PowerShell,
-   `Get-LocalGroupMember -SID S-1-5-32-559` lists your account.
-2. Sign out and in. The row is gone. Turn on **FPS counter**.
+   becomes "Lootnest's frame reader" with **Remove**. Task Scheduler has
+   `\Lootnest\Frame counter`, and `C:\Program Files\Lootnest\Frame
+   counter\lootnest-frames.exe` is there.
+2. Without signing out, turn on **FPS counter**. The log says "listening
+   to frames through the frame reader".
 3. Start a game (windowed or borderless): a small box with a number and
    "FPS" sits in the top-left corner of its screen within about 6 seconds,
    and the number follows the game (cap the game's frame rate at 60 and
@@ -1059,6 +1061,11 @@ the same network as the PC, with TV streaming set up.
     first, and the switch goes back off.
 11. With the counter on, look at Lootnest's CPU in Task Manager while a
     game runs at a high frame rate: it stays near 0%.
+12. While a game runs with the counter on, Task Manager shows
+    lootnest-frames.exe; it's gone a few seconds after the game closes or
+    the counter is turned off.
+13. **Remove**: Windows asks, the task and the Program Files folder are
+    gone, and the row is **Allow** again.
 
 ## 48. Mods from Nexus Mods
 
