@@ -68,8 +68,23 @@ Telling them apart (none of this exists yet):
   Red Dead Redemption 2 (Rockstar's own), Elden Ring (EAC).
 - Steam's categories (Single-player, Multi-player, Online PvP, MMO)
   help; a game with only online categories is online.
-- When unsure, the game is online. The user may mark a game online, but
-  never mark one with an anti-cheat as a story game.
+- When unsure, the game is online. The user may mark a game online.
+
+**Story games with an online mode** (the owner, same day: many people
+play only the story of such a game). On such a game's page, a key lets
+the user allow Lootnest inside it, after a warning: an anti-cheat that's
+running sees anything that goes into the game, in the story mode too,
+and the ban is on the user's account. Then:
+- Never for competitive games: games with no story (CS2, Deadlock,
+  Valorant, League of Legends, Dota 2...), and any game with a kernel
+  anti-cheat (Vanguard, FACEIT, EA AntiCheat).
+- Lootnest goes in only while none of the game's anti-cheat runs (its
+  processes and services checked right before, every time), and
+  otherwise refuses and says why.
+- Lootnest never turns an anti-cheat off itself, and never starts a game
+  in a way that skips it. If the game has its own way to play the story
+  without it (a setting in its launcher), that's the user's to use.
+- The choice is per game, and can be taken back.
 
 What still holds for story games:
 - No DRM bypass. Denuvo and other anti-tamper count as DRM, and going
