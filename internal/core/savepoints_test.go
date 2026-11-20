@@ -109,3 +109,56 @@ func TestSavePointBranchFails(t *testing.T) {
 		t.Fatalf("the run's folder was left behind: %v", err)
 	}
 }
+
+// Going back makes the point's saves the newest, keeping their order, so a
+// game's Continue and Steam Cloud take them.
+func TestRestoreMakesSavesNewest(t *testing.T) {
+	dir := t.TempDir()
+	live := filepath.Join(dir, "saves")
+	write(t, filepath.Join(live, "slot1.sav"), "old slot")
+	write(t, filepath.Join(live, "sub", "slot2.sav"), "the boss")
+	t1 := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	t2 := t1.Add(90 * time.Minute)
+	_ = os.Chtimes(filepath.Join(live, "slot1.sav"), t1, t1)
+	_ = os.Chtimes(filepath.Join(live, "sub", "slot2.sav"), t2, t2)
+	locs := []SaveLoc{{ID: "a", Live: live}}
+	root := filepath.Join(dir, "pts")
+	p, err := MakeSavePoint(root, locs, SavePoint{Name: "Boss"}, t2, 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Played on: a newer save, then going back.
+	write(t, filepath.Join(live, "sub", "slot2.sav"), "after the boss")
+	write(t, filepath.Join(live, "slot3.sav"), "later")
+	now := time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC)
+	if err := RestoreSavePointAt(root, p.ID, locs, now); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(live, "sub", "slot2.sav")) != "the boss" || exists(filepath.Join(live, "slot3.sav")) {
+		t.Fatal("the point's saves, and only those")
+	}
+	st1, _ := os.Stat(filepath.Join(live, "slot1.sav"))
+	st2, _ := os.Stat(filepath.Join(live, "sub", "slot2.sav"))
+	if !st2.ModTime().Equal(now) {
+		t.Fatalf("newest save is %v, want now", st2.ModTime())
+	}
+	if d := st2.ModTime().Sub(st1.ModTime()); d != 90*time.Minute {
+		t.Fatalf("order kept: %v apart", d)
+	}
+	// The point itself keeps its own times.
+	in, _ := os.Stat(filepath.Join(root, p.ID, "files", "a", "sub", "slot2.sav"))
+	if !in.ModTime().Equal(t2) {
+		t.Fatalf("point's copy changed: %v", in.ModTime())
+	}
+	// A single-file location, and nothing newer than now is moved back.
+	f := filepath.Join(dir, "one.sav")
+	write(t, f, "x")
+	future := now.Add(time.Hour)
+	_ = os.Chtimes(f, future, future)
+	if err := MakeNewest([]string{f, filepath.Join(dir, "gone")}, now); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := os.Stat(f); !st.ModTime().Equal(future) {
+		t.Fatal("a newer file must stay")
+	}
+}

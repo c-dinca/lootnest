@@ -110,7 +110,7 @@
     assignCapture: (path, key) => call("ps_assignCapture", path, key),
     openCapture: (path) => call("ps_openCapture", path),
     makeSavePoint: (key, name) => call("ps_makeSavePoint", key, name || ""),
-    restoreSavePoint: (key, id) => call("ps_restoreSavePoint", key, id),
+    restoreSavePoint: (key, id, play) => call("ps_restoreSavePoint", key, id, !!play),
     renameSavePoint: (key, id, name) => call("ps_renameSavePoint", key, id, name),
     deleteSavePoint: (key, id) => call("ps_deleteSavePoint", key, id),
     branchSavePoint: (key, id, name) => call("ps_branchSavePoint", key, id, name || ""),

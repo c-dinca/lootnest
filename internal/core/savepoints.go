@@ -224,7 +224,17 @@ func LoadSavePoint(root, id string) (SavePoint, error) {
 // RestoreSavePoint puts a point's saves back in place. Locations the point
 // has no files for are left as they are. The caller keeps the saves as they
 // are now first (an Auto point).
+//
+// The saves put back become the newest: their times move forward together
+// so the newest file is now and the order between them stays. A game's
+// Continue picks its newest save, and Steam Cloud sends the newer side, so
+// the save gone back to is the one the game loads, here and on other PCs.
 func RestoreSavePoint(root, id string, locs []SaveLoc) error {
+	return RestoreSavePointAt(root, id, locs, time.Now())
+}
+
+// RestoreSavePointAt is RestoreSavePoint with the time the saves become.
+func RestoreSavePointAt(root, id string, locs []SaveLoc, now time.Time) error {
 	p, dir, err := loadPoint(root, id)
 	if err != nil {
 		return err
@@ -241,6 +251,58 @@ func RestoreSavePoint(root, id string, locs []SaveLoc) error {
 	for _, lid := range p.Locs {
 		if err := Mirror(filepath.Join(dir, "files", lid), live[lid]); err != nil {
 			return err
+		}
+	}
+	var paths []string
+	for _, lid := range p.Locs {
+		paths = append(paths, live[lid])
+	}
+	return MakeNewest(paths, now)
+}
+
+// MakeNewest moves the times of every file under paths (folders or files)
+// forward by one amount, so the newest of them is now and their order
+// stays. Files already newer than now are left alone.
+func MakeNewest(paths []string, now time.Time) error {
+	type stamp struct {
+		path string
+		mod  time.Time
+	}
+	var files []stamp
+	var newest time.Time
+	for _, root := range paths {
+		err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					return nil
+				}
+				return err
+			}
+			if d.IsDir() || !d.Type().IsRegular() {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+			files = append(files, stamp{path, info.ModTime()})
+			if info.ModTime().After(newest) {
+				newest = info.ModTime()
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	shift := now.Sub(newest)
+	if len(files) == 0 || shift <= 0 {
+		return nil
+	}
+	for _, f := range files {
+		t := f.mod.Add(shift)
+		if err := os.Chtimes(f.path, t, t); err != nil {
+			return fmt.Errorf("making %s the newest save: %w", filepath.Base(f.path), err)
 		}
 	}
 	return nil

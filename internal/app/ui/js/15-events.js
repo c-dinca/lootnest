@@ -176,13 +176,20 @@
         if (BP.on) bpSoon();
         renderGq(); // the box's Make a save point
         break;
+      case "pointStep": {
+        const P = S.points[ev.key] || (S.points[ev.key] = {});
+        P.busy = true; P.step = ev.step;
+        if (S.view === "game") render();
+        if (BP.on) bpSoon();
+        break;
+      }
       case "savePointMade": {
         const P = S.points[ev.key] || (S.points[ev.key] = {});
-        P.busy = false;
+        P.busy = false; P.step = "";
         tlAsked.delete(ev.key);
         const said = !ev.error && !ev.restored && tvMenuPoint(ev); // the Home screen over a game says so itself
         if (ev.error) { tvMenuPoint(ev); toast(ev.error, "error"); }
-        else if (ev.restored) toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`);
+        else if (ev.restored) { toast(`Back to ${ev.point ? ev.point.name : "the save point"}. The saves from before are kept as a point.`); if (ev.play) playAfterPoint(ev); }
         else if (ev.point) { if (!ev.hotkey && !said) toast(`Save point made: ${ev.point.name}`); if (!ev.native) cue("point", ev.key); }
         if (S.view === "game") render();
         if (BP.on) bpSoon();

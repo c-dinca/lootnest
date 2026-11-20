@@ -1097,7 +1097,7 @@
       setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, 400);
       return ok();
     },
-    ps_restoreSavePoint: (key, id) => { setTimeout(() => emit({ type: "savePointMade", key, restored: id, point: (POINTS[key] || []).find((p) => p.id === id) }), 400); return ok(); },
+    ps_restoreSavePoint: (key, id, play) => { setTimeout(() => emit({ type: "pointStep", key, step: "copying" }), 100); setTimeout(() => emit({ type: "savePointMade", key, restored: id, point: (POINTS[key] || []).find((p) => p.id === id), play: !!play && !/[?&]noplay=1/.test(location.search) }), 1200); return ok(); },
     ps_deleteSavePoint: (key, id) => { POINTS[key] = (POINTS[key] || []).filter((p) => p.id !== id); api.ps_savePoints(key); return ok(); },
     ps_branchSavePoint: () => ok("p1"),
     ps_setOffline: (key, on) => {

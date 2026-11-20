@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Go back to a save point takes the game there.** Going back used to refuse while the game ran, and afterwards the game could still load a newer save, so it looked as if nothing happened. Now **Go back to it** closes a running game the way closing its window does (it never forces it), keeps the saves as they are now as a save point, puts the save point in place as the game's newest save, and starts the game on it, as the Play key would. It's the newest save afterwards, so a game's Continue loads it, and for Steam Cloud it's the newer copy. If a game asks something as it closes, answer it; Lootnest waits half a minute, then says so and changes nothing.
+
 ## 2.17.0
 
 - **An FPS counter.** While a game runs, **Ctrl+Shift+F10** shows how many frames a second it draws, in a corner of its screen, and hides it again. It also turns on and off from the Home menu over a game (the controller's Home or PS button in Big Picture and TV mode), Big Picture's Settings and Settings, Games and swaps, where you choose its corner. Lootnest reads the frame timings Windows itself reports, as Xbox Game Bar does: nothing goes into the game, so anti-cheats have nothing to see. Windows lets an app read them only for administrators and the Performance Log Users group, so the first time, **Allow** in Settings adds your account to that group (Windows asks once), and it works from your next sign-in to Windows. It shows over windowed and borderless games and most fullscreen ones; a game in exclusive fullscreen draws over every window, so switch that one to borderless.

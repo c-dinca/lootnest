@@ -2096,6 +2096,21 @@ These shipped recently, newest last:
   `&nxprog=1`, shots `nexus-progress*`. docs/TESTING.md 48, items 3 to 5
   and 9 to 10. The owner asked for 2.17.0 once this was in (20 Nov).
 
+- **Unreleased, Go back to a save point, all the way** (the owner, 20
+  Nov 2026: Go back to it "doesn't really do anything"; the first part of
+  the save engine's rework). `apiRestoreSavePoint(key, id, play)`: a
+  running game is asked to close (`closeForPoint`:
+  `CloseProcessWindows`, never forced; `pointCloseWait` 30 s, then for a
+  game with profiles its session's end, `pointSessionWait`, and 3 s for
+  Steam Cloud's upload), events `pointStep` (closing, copying), the Auto
+  point, then `core.RestoreSavePoint`, which now ends in `MakeNewest`:
+  every restored file's time moves forward by one amount so the newest is
+  now and their order stays (a game's Continue and Steam Cloud take
+  them). With play, `savePointMade` carries `play` and `player`, and the
+  page starts the game as its Play key does (`playAfterPoint`; Big
+  Picture's `bpPlay`). `goBackAsk` words the question by whether the game
+  runs (`pointGameRuns`). docs/TESTING.md 49.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
@@ -2266,8 +2281,9 @@ owner, not chosen yet: a save that makes the game save first (its own
 save code in story games, else its quicksave key), every save the game
 makes kept on the timeline by itself, Go back that closes the game, puts
 the save in place as the newest and starts it again on that save, and
-points that show their files and say when nothing changed. Ask before
-building.
+points that show their files and say when nothing changed. Go back
+that closes the game, puts the save in as the newest and starts it again
+is done (Unreleased, above); ask before building the rest.
 
 ## Ideas not started
 

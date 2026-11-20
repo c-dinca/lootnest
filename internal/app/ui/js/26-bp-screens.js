@@ -212,7 +212,7 @@
     const P = pointsFor(it), k = esc(bpKey(it)), list = (P && P.points) || [];
     const head = `<p class="bp-kick">${esc(it.name)}</p><h1>Save points</h1>`;
     if (!P || !P.loaded) return `<section class="bp-list" data-block>${head}<div class="bp-opts">${'<span class="bp-opt bp-opt--ghost is-waiting" aria-hidden="true"></span>'.repeat(4)}</div></section>`;
-    const make = `<button class="bp-opt" data-bp data-bpid="pt:make" data-go="pt-make" data-k="${k}"${P.busy ? " disabled" : ""} data-hint="Make">${ph("plus")}<b>${P.busy ? "Working on it" : "Make a save point now"}</b></button>`;
+    const make = `<button class="bp-opt" data-bp data-bpid="pt:make" data-go="pt-make" data-k="${k}"${P.busy ? " disabled" : ""} data-hint="Make">${ph("plus")}<b>${P.busy ? POINT_STEPS[P.step] || "Working on it" : "Make a save point now"}</b></button>`;
     const rows = list.map((p) => {
       const when = new Date(p.created).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
       const facts = [when, p.playtime ? hours(p.playtime) + " played" : "", p.player && player(p.player) ? pname(p.player) : ""].filter(Boolean).join(", ");
@@ -657,7 +657,7 @@
     else if (go === "pt-make") bpPoint(el.dataset.k, "");
     else if (go === "pt-restore") {
       const it = bpItem(el.dataset.k), id = el.dataset.id;
-      if (it) bpAsk({ title: `Go back to ${el.dataset.name}?`, body: `The saves of ${it.name} become what they were then. The saves as they are now are kept as a save point first, so you can come back to them too.`, ok: "Go back to it", run: () => bpPoint(el.dataset.k, id) });
+      if (it) bpAsk(Object.assign(goBackAsk(it, el.dataset.name, pointGameRuns(it)), { run: () => bpPoint(el.dataset.k, id) }));
     }
     else if (go === "ask-no") bpAnswer(false);
     else if (go === "ask-yes") bpAnswer(true);
@@ -712,7 +712,7 @@
     if (!it) return;
     const key = recentKey(it), P = S.points[key] || (S.points[key] = {});
     P.busy = true; renderBP();
-    try { if (id) await api.restoreSavePoint(key, id); else await api.makeSavePoint(key, ""); }
+    try { if (id) await api.restoreSavePoint(key, id, true); else await api.makeSavePoint(key, ""); }
     catch (e) { P.busy = false; toast(errText(e), "error"); renderBP(); }
   }
   // Back, one step at a time: what's on top closes, a game's page goes back

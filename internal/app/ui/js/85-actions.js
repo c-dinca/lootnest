@@ -141,12 +141,11 @@
     async "pt-restore"(el) {
       const it = itemFor(el);
       if (!it) return;
-      const key = recentKey(it);
-      const ok = await confirmDialog({ title: `Go back to ${el.dataset.name}?`, body: `The saves of ${it.name} become what they were then. The saves as they are now are kept as a save point first, so you can come back to them too.`, ok: "Go back to it" });
+      const key = recentKey(it), P = S.points[key] || (S.points[key] = {});
+      const ok = await confirmDialog(goBackAsk(it, el.dataset.name, pointGameRuns(it)));
       if (!ok) return;
-      const P = S.points[key] || (S.points[key] = {});
-      P.busy = true; render();
-      try { await api.restoreSavePoint(key, el.dataset.id); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
+      P.busy = true; P.step = ""; render();
+      try { await api.restoreSavePoint(key, el.dataset.id, true); } catch (e) { P.busy = false; toast(errText(e), "error"); render(); }
     },
     async "pt-branch"(el) {
       const it = itemFor(el);
