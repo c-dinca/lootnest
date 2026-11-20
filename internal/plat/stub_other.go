@@ -279,6 +279,10 @@ type MenuItem struct {
 	Sep      bool
 }
 
+func ModifiersDown() (r0 bool) {
+	return
+}
+
 func MostFree() (r0 string, r1 int64) {
 	return
 }
@@ -521,6 +525,8 @@ type TVBar struct {
 	Key   string
 	Busy  string
 }
+
+func TapGameKey(vk uint16) {}
 
 func TapKey(vk uint16) {}
 

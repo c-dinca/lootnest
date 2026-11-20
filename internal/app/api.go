@@ -86,6 +86,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_reportProblem", a.apiReportProblem))
 	must(a.w.Bind("ps_makeSavePoint", a.apiMakeSavePoint))
 	must(a.w.Bind("ps_restoreSavePoint", a.apiRestoreSavePoint))
+	must(a.w.Bind("ps_setQuickSave", a.apiSetQuickSave))
 	must(a.w.Bind("ps_renameSavePoint", a.apiRenameSavePoint))
 	must(a.w.Bind("ps_deleteSavePoint", a.apiDeleteSavePoint))
 	must(a.w.Bind("ps_branchSavePoint", a.apiBranchSavePoint))

@@ -35,6 +35,7 @@ type SavePoint struct {
 	Unlocked int       `json:"unlocked,omitempty"` // achievements unlocked by then
 	Auto     bool      `json:"auto,omitempty"`     // made by Lootnest: before going back to another point, or before an update
 	Update   bool      `json:"update,omitempty"`   // made before the first start after the game updated
+	InGame   bool      `json:"inGame,omitempty"`   // the game saved itself right before (its quick save key)
 	Size     int64     `json:"size"`
 	Locs     []string  `json:"locs"` // location ids with files in the point
 	// Paths are the locations' paths as Lootnest writes them (with

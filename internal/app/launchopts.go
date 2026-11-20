@@ -71,6 +71,7 @@ func (a *App) apiSaveLaunchOptions(key, args string, o core.LaunchOptions) error
 	if cfg.LaunchOpts == nil {
 		cfg.LaunchOpts = map[string]core.LaunchOptions{}
 	}
+	o.QuickSave = cfg.LaunchOpts[key].QuickSave // set from the Saves tab, not this drawer
 	if o.Empty() {
 		delete(cfg.LaunchOpts, key)
 	} else {

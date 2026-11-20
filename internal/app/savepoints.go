@@ -32,6 +32,7 @@ type pointTarget struct {
 	locs              []core.SaveLoc
 	running           bool
 	appID             int
+	dir               string // a Library game's folder
 }
 
 func (a *App) pointTarget(key string) (pointTarget, error) {
@@ -84,7 +85,7 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 	if len(t.locs) == 0 {
 		return t, errors.New("Lootnest doesn't know where this game keeps its saves yet. Choose them under Cloud save on its page.")
 	}
-	t.name, t.appID, t.proc = f.Name, f.SteamID, strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))
+	t.name, t.appID, t.proc, t.dir = f.Name, f.SteamID, strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")), f.Dir
 	a.mu.Lock()
 	t.player = a.seat
 	a.mu.Unlock()
@@ -111,6 +112,10 @@ func (a *App) apiSavePoints(key string) {
 			pts = append(pts, pointOut{p, dataURL(filepath.Join(root, p.ID, core.PointThumb))})
 		}
 		out["points"], out["player"], out["running"], out["profiles"] = pts, t.player, t.running, t.game != nil
+		out["quickSave"], out["suggest"] = a.quickSaveKey(key), core.QuickSaveSuggestion(t.appID, t.name)
+		if ac := core.AntiCheat(a.gameDir(t)); ac != "" {
+			out["antiCheat"] = ac
+		}
 	}()
 }
 
@@ -169,7 +174,16 @@ func (a *App) apiMakeSavePoint(key, name string) error {
 	}
 	go func() {
 		out := map[string]any{"key": key}
-		p, err := a.makePoint(t, core.SavePoint{Name: name})
+		step := func(s string) { a.emit("pointStep", map[string]any{"key": key, "step": s}) }
+		saved, err := a.saveInGame(t, step)
+		if err != nil {
+			out["error"] = sentence(err)
+			a.emit("savePointMade", out)
+			a.apiSavePoints(key)
+			return
+		}
+		step("copying")
+		p, err := a.makePoint(t, core.SavePoint{Name: name, InGame: saved})
 		if err != nil {
 			out["error"] = sentence(err)
 		} else {
@@ -507,8 +521,19 @@ func (a *App) quickPoint() {
 		t, err := a.pointTarget(r.key)
 		if err == nil {
 			var p core.SavePoint
-			if p, err = a.makePoint(t, core.SavePoint{Name: "Quick save point, " + time.Now().Format("15:04")}); err == nil {
-				plat.ShowToast(plat.Toast{Kicker: "Save point made", Title: p.Name, Line: r.name + ". Go back to it from the game's page.", Accent: color})
+			step := func(s string) { a.emit("pointStep", map[string]any{"key": r.key, "step": s}) }
+			var saved bool
+			if saved, err = a.saveInGame(t, step); err != nil {
+				plat.ShowToast(plat.Toast{Kicker: "No save point", Title: r.name, Line: sentence(err), Accent: color})
+				a.emit("savePointMade", map[string]any{"key": r.key, "error": sentence(err), "hotkey": true})
+				return
+			}
+			kicker := "Save point made"
+			if saved {
+				kicker = "Saved and kept"
+			}
+			if p, err = a.makePoint(t, core.SavePoint{Name: "Quick save point, " + time.Now().Format("15:04"), InGame: saved}); err == nil {
+				plat.ShowToast(plat.Toast{Kicker: kicker, Title: p.Name, Line: r.name + ". Go back to it from the game's page.", Accent: color})
 				a.logf("Save point %q for %s (hotkey)", p.Name, r.name)
 				native := core.AntiCheat(r.dir) == "" && a.nativeSound(pointWAV)
 				a.emit("savePointMade", map[string]any{"key": r.key, "point": p, "hotkey": true, "native": native})

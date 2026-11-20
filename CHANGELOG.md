@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Save now: a save point saves the game first.** A save point made while a game runs used to copy only what the game had last saved, so it could be minutes old. Choose the game's quick save key in its Saves tab (Lootnest suggests it for games it knows, such as F5 for Skyrim, Fallout, Cyberpunk 2077 and Baldur's Gate 3, or F6 for Half-Life 2), and **Save now**, Ctrl+Shift+F5 in the game and Make a save point in the Home menu over a game press it, wait until the game has written its save, then keep it. If the game doesn't save (some can't during a fight or a scene), nothing is made and Lootnest says so. Lootnest never presses keys in a game with an anti-cheat.
 - **Go back to a save point takes the game there.** Going back used to refuse while the game ran, and afterwards the game could still load a newer save, so it looked as if nothing happened. Now **Go back to it** closes a running game the way closing its window does (it never forces it), keeps the saves as they are now as a save point, puts the save point in place as the game's newest save, and starts the game on it, as the Play key would. It's the newest save afterwards, so a game's Continue loads it, and for Steam Cloud it's the newer copy. If a game asks something as it closes, answer it; Lootnest waits half a minute, then says so and changes nothing.
 
 ## 2.17.0

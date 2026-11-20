@@ -1119,3 +1119,25 @@ the same network as the PC, with TV streaming set up.
 6. Big Picture: a game's Save points, choose one, the question says the
    same, and the game starts.
 
+## 50. Save now (the game's quick save key)
+
+1. A game with a quick save key, such as Skyrim Special Edition: its page,
+   Saves. Quick save key says None with **Use F5**; press it. The line
+   says a save point presses F5 first.
+2. Play, then in the game press **Ctrl+Shift+F5**. The game shows its own
+   "Quick saving" (no Ctrl or Shift shortcut happens), the toast says
+   "Saved and kept", and the new point says "Saved by the game first".
+   Go back to it later: the game loads that exact moment.
+3. With the game running, Lootnest's window in front: **Save now** on the
+   game's page brings the game to the front, it saves, and the point is
+   made. The button reads Saving in the game, then Copying.
+4. During a fight or a scene where the game refuses to save: after about
+   12 s Lootnest says the game didn't save, and no point is made.
+5. Big Picture or TV mode, the Home menu over the game, Make a save point:
+   the menu closes, the game saves, the point is made.
+6. A game with Easy Anti-Cheat or BattlEye in its folder: the Saves tab
+   says Lootnest never presses keys in it, and a save point is a copy as
+   before (the log says why no key was pressed).
+7. A game that reads keys by raw input or DirectInput (most newer ones):
+   F5 from Lootnest works there too. If one ignores it, note which game.
+

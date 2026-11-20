@@ -29,6 +29,10 @@ type LaunchOptions struct {
 	// Settings.PadAsXbox is on: a game that knows the pad itself would see
 	// it twice.
 	KeepPad bool `json:"keepPad,omitempty"`
+	// QuickSave is the game's own quick save key ("F5"), chosen by the
+	// user. With it, a save point made while the game runs presses it
+	// first and waits for the game to save (core/quicksave.go).
+	QuickSave string `json:"quickSave,omitempty"`
 }
 
 // CloseApp is a program to close before play, by its process name
@@ -64,7 +68,7 @@ func (o LaunchOptions) Moved(from, to string) LaunchOptions {
 
 // Empty says whether the options change nothing.
 func (o LaunchOptions) Empty() bool {
-	return o.WorkDir == "" && !o.RunAsAdmin && !o.KeepPad && !o.HasSteps()
+	return o.WorkDir == "" && !o.RunAsAdmin && !o.KeepPad && o.QuickSave == "" && !o.HasSteps()
 }
 
 const (

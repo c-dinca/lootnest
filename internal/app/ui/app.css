@@ -1562,6 +1562,10 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .pt-make { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin: var(--space-3) 0; }
 .pt-make .gpage-hint { white-space: nowrap; }
 .pt-make .ln-input { flex: 1; min-width: 0; }
+.pt-qs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin: 0 0 var(--space-3); }
+.pt-qs label { font-weight: 600; color: var(--fg-2); }
+.pt-qs select.ln-input { width: auto; flex: 0 0 auto; }
+.pt-qs .gpage-hint { flex: 1 1 18rem; margin: 0; }
 .pt-list { position: relative; display: grid; gap: 0; margin: var(--space-2) 0 0; padding: 0; list-style: none; }
 .pt-list::before { content: ""; position: absolute; left: 4px; top: var(--space-4); bottom: var(--space-4); width: var(--hairline); background: var(--edge-2); }
 .pt-row { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: var(--hairline) solid var(--edge-1); }

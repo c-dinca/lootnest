@@ -381,7 +381,7 @@
       { part: "Storage", have: 0, min: 0, rec: 0, runs: "", known: false }] } };
     return { type: "details", key, details: det, edited: !!e, run };
   };
-  const POINTS = {};
+  const POINTS = {}, QS = {};
   // Captures from other apps (ps_gameCaptures): Baldur's Gate 3 from Steam,
   // Game Bar and NVIDIA, and two matched to no game. ?gamebar=off: Game Bar
   // captures are off in Windows.
@@ -1031,7 +1031,10 @@
         { id: "20261104-210000", name: "Act 2 start", created: iso(3 * d), player: "p1", playtime: 250000, unlocked: 14, size: 8e7, locs: ["a"], thumb: art(1086940, "hero") },
         { id: "20261101-180000", name: "Honour mode, gate", created: iso(6 * d), player: "p2", playtime: 90000, unlocked: 6, size: 6e7, locs: ["a"] },
       ] : [];
-      setTimeout(() => emit({ type: "savePoints", key, points: POINTS[key], player: "p1", running: false, profiles: key.startsWith("game:") }), 80);
+      // ?pointrun=1: the game runs (Save now); ?qs=F5 chooses its quick save key.
+      if (QS[key] === undefined) QS[key] = (q.get("qs") || "");
+      const runs = q.get("pointrun") === "1", ac = key === "game:cs2" ? "Valve Anti-Cheat" : "";
+      setTimeout(() => emit({ type: "savePoints", key, points: POINTS[key], player: "p1", running: runs, profiles: key.startsWith("game:"), quickSave: QS[key], suggest: key === "game:bg3" ? "F5" : "", antiCheat: ac }), 80);
       return ok();
     },
     // A week of Baldur's Gate 3: sessions, save points, unlocks, an update.
@@ -1093,10 +1096,14 @@
     // Full-size pictures for the lightbox: the harness has no larger art.
     ps_picture: (key, ref) => ok(ref.startsWith("capture:") ? (CAPTURES.find((c) => "capture:" + c.path === ref) || {}).thumb || "" : ref.startsWith("point:") ? ((POINTS[key] || []).find((p) => "point:" + p.id === ref) || {}).thumb || "" : art(1145350, "hero")),
     ps_makeSavePoint: (key, name) => {
-      const p = { id: "20261107-213000", name: name || "Save point, 7 Nov, 21:30", created: new Date().toISOString(), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"] };
-      setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, 400);
+      const first = q.get("pointrun") === "1" && QS[key];
+      const p = { id: "20261107-213000", name: name || "Save point, 7 Nov, 21:30", created: new Date().toISOString(), player: "p1", playtime: 313000, unlocked: 21, size: 9e7, locs: ["a"], inGame: !!first };
+      if (first) setTimeout(() => emit({ type: "pointStep", key, step: "saving" }), 50);
+      setTimeout(() => emit({ type: "pointStep", key, step: "copying" }), first ? 1500 : 50);
+      setTimeout(() => { POINTS[key] = [p, ...(POINTS[key] || [])]; emit({ type: "savePointMade", key, point: p }); api.ps_savePoints(key); }, first ? 1900 : 400);
       return ok();
     },
+    ps_setQuickSave: (key, name) => { QS[key] = name; api.ps_savePoints(key); return ok(); },
     ps_restoreSavePoint: (key, id, play) => { setTimeout(() => emit({ type: "pointStep", key, step: "copying" }), 100); setTimeout(() => emit({ type: "savePointMade", key, restored: id, point: (POINTS[key] || []).find((p) => p.id === id), play: !!play && !/[?&]noplay=1/.test(location.search) }), 1200); return ok(); },
     ps_deleteSavePoint: (key, id) => { POINTS[key] = (POINTS[key] || []).filter((p) => p.id !== id); api.ps_savePoints(key); return ok(); },
     ps_branchSavePoint: () => ok("p1"),
