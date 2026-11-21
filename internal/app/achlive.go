@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	_ "embed"
 	"os"
 	"path/filepath"
@@ -75,13 +76,16 @@ func (a *App) achRunning(procs map[string]bool) []achRun {
 	var out []achRun
 	a.mu.Lock()
 	seat := a.seat
+	opts := a.cfg.LaunchOpts
 	for id, s := range a.sessions {
 		if s.Phase != "playing" {
 			continue
 		}
 		if g := a.cfg.Game(id); g != nil {
 			c := *g
-			out = append(out, achRun{key: "game:" + id, name: g.Name, player: s.PlayerID, game: &c, proc: procName(&c)})
+			names := runNames(opts["game:"+id], procName(&c))
+			proc := cmp.Or(liveName(names, procs), procName(&c))
+			out = append(out, achRun{key: "game:" + id, name: g.Name, player: s.PlayerID, game: &c, proc: proc})
 		}
 	}
 	a.mu.Unlock()
@@ -102,8 +106,8 @@ func (a *App) achRunning(procs map[string]bool) []achRun {
 		}
 	}
 	for _, f := range found {
-		proc := strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))
-		if f.AppID > 0 || proc == "" || !procs[proc] {
+		proc := liveName(runNames(opts[f.Key], strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe"))), procs)
+		if f.AppID > 0 || proc == "" {
 			continue
 		}
 		out = append(out, achRun{key: f.Key, name: f.Name, dir: f.Dir, player: seat, appID: f.SteamID, proc: proc})

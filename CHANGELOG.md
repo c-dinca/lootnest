@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Start with: Lootnest sees the game running as that program too.** When the program chosen under Start with was the game itself under another name, Lootnest kept waiting for the game's usual .exe, so a game with profiles stayed on "Loading your files and starting" while you played, until Lootnest was restarted. Now the game counts as running whichever of the two programs is open: the screen closes once the game is up, and your saves go back to your profile when it closes. Lootnest also waits a little longer for a launcher to hand over to the game before it calls the session over.
+
 ## 2.19.0
 
 - **Mods added before profiles were on come along.** A game's mods are kept by the game's place in the Library, and turning its profiles on (or off) gives it another one, so mods added before seemed gone. The Mods tab now shows them under **Added before profiles were on** (or while they were on), and **Bring here** copies a mod into the list you're looking at and turns it on; **Bring all here** brings them all. Mods that are in the game's folder come together: Lootnest takes them out by the old list and puts them back in by the new one, so the game stays modded and Put the game back still works. The old copy stays. More, **Open Lootnest's copies of the mods** opens the folder where a game's mods are kept.

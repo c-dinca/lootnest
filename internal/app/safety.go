@@ -43,7 +43,7 @@ func (a *App) apiRestoreBackup(gameID, id string) (map[string]string, error) {
 	if g == nil {
 		return nil, errors.New("That game no longer exists.")
 	}
-	if active || isRunning(g) {
+	if active || a.isRunning(g) {
 		return nil, errors.New(g.Name + " is running. Close it first.")
 	}
 	owner, where, err := a.eng.RestoreBackup(cfg, gameID, id)

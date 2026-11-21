@@ -113,6 +113,49 @@ func (a *App) launcherWait(key string, wait time.Duration) time.Duration {
 
 const launcherWaitMin = 20 * time.Minute
 
+// runNames are the process names a game may run as: its own exe's and, when
+// its launch options start another program instead, that program's, since
+// that program may be the game itself under another name.
+func runNames(o core.LaunchOptions, own string) []string {
+	var names []string
+	if own != "" {
+		names = append(names, own)
+	}
+	if n := exeProcName(o.StartWith); n != "" && n != own {
+		names = append(names, n)
+	}
+	return names
+}
+
+// exeProcName is the process name of a program's path, lowercased without
+// .exe, as plat.ProcessNames gives them.
+func exeProcName(path string) string {
+	if i := strings.LastIndexAny(path, `\/`); i >= 0 {
+		path = path[i+1:]
+	}
+	return strings.TrimSuffix(strings.ToLower(path), ".exe")
+}
+
+// liveName is the first of names that's running, or "".
+func liveName(names []string, procs map[string]bool) string {
+	for _, n := range names {
+		if procs[n] {
+			return n
+		}
+	}
+	return ""
+}
+
+// startedGrace is how many looks (2 s apart) a game with profiles may be
+// missing before its session ends: a launcher started instead of the game
+// can take a while to hand over to it.
+func startedGrace(names []string) int {
+	if len(names) > 1 {
+		return 8
+	}
+	return 2
+}
+
 // apiRunningApps lists the programs with a window open, for the apps to
 // close before play. Windows' own aren't listed.
 func (a *App) apiRunningApps() []plat.RunningApp {

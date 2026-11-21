@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"image"
@@ -58,7 +59,10 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 		}
 		t.name, t.game, t.locs, t.appID, t.proc = c.Name, &c, locs, core.GameAppID(&c), procName(&c)
 		t.player = a.store.LoadState()[c.ID]
-		t.running = active || isRunning(&c)
+		t.running = active || a.isRunning(&c)
+		if procs, err := plat.ProcessNames(); err == nil {
+			t.proc = cmp.Or(liveName(a.gameNames(&c), procs), t.proc)
+		}
 		return t, nil
 	}
 	f, ok := a.foundByKey(key)
@@ -89,9 +93,12 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 	a.mu.Lock()
 	t.player = a.seat
 	a.mu.Unlock()
-	if t.proc != "" {
+	names := runNames(a.launchOpts(key), t.proc)
+	if len(names) > 0 {
 		if procs, err := plat.ProcessNames(); err == nil {
-			t.running = procs[t.proc]
+			if live := liveName(names, procs); live != "" {
+				t.proc, t.running = live, true
+			}
 		}
 	}
 	return t, nil

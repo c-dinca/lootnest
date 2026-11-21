@@ -272,9 +272,12 @@ func (a *App) procOf(key string) string {
 	a.mu.Lock()
 	if a.cfg != nil {
 		if g := a.cfg.Game(key); g != nil {
-			p := procName(g)
+			names := runNames(a.cfg.LaunchOpts["game:"+g.ID], procName(g))
 			a.mu.Unlock()
-			return p
+			if procs, err := plat.ProcessNames(); err == nil && liveName(names, procs) != "" {
+				return liveName(names, procs)
+			}
+			return procName(g)
 		}
 	}
 	a.mu.Unlock()

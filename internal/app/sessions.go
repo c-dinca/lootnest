@@ -66,9 +66,16 @@ func procName(g *core.Game) string {
 	return strings.ToLower(strings.TrimSuffix(g.ProcessName, ".exe"))
 }
 
-func isRunning(g *core.Game) bool {
+// gameNames are the processes a game with profiles runs as (runNames).
+func (a *App) gameNames(g *core.Game) []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return runNames(a.cfg.LaunchOpts["game:"+g.ID], procName(g))
+}
+
+func (a *App) isRunning(g *core.Game) bool {
 	procs, err := plat.ProcessNames()
-	return err == nil && procs[procName(g)]
+	return err == nil && liveName(a.gameNames(g), procs) != ""
 }
 
 // SessionMods is how far switching a game's mods is before it starts; Off
@@ -125,7 +132,7 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 			return Need{}, err
 		}
 	}
-	if isRunning(g) {
+	if a.isRunning(g) {
 		return Need{}, fmt.Errorf("%s is already running. Close it first, then pick who's playing.", g.Name)
 	}
 	if err := a.eng.CheckPaths(g); err != nil {
@@ -338,7 +345,9 @@ func (a *App) tick() {
 	}
 	for i := range cfg.Games {
 		g := &cfg.Games[i]
-		running := procs[procName(g)]
+		names := runNames(cfg.LaunchOpts["game:"+g.ID], procName(g))
+		live := liveName(names, procs)
+		running := live != ""
 		s := a.sessions[g.ID]
 		switch {
 		case s == nil && running:
@@ -384,12 +393,12 @@ func (a *App) tick() {
 			if running {
 				s.missed = 0
 				if g.ID == a.hidFor || g.ID == a.conGame {
-					s.front = plat.ForegroundIs(procName(g))
+					s.front = plat.ForegroundIs(live)
 				}
 				continue
 			}
 			s.missed++
-			if s.missed < 2 { // ignore quick restarts (launcher -> game)
+			if s.missed < startedGrace(names) { // ignore quick restarts (launcher -> game)
 				continue
 			}
 			if g.ID == a.hidFor || g.ID == a.conGame {
@@ -504,10 +513,14 @@ func (a *App) apiCloseGame(gameID string) error {
 	if g == nil {
 		return errors.New("That game no longer exists.")
 	}
-	if !isRunning(g) {
+	if !a.isRunning(g) {
 		return fmt.Errorf("%s isn't running. Lootnest finishes the session in a few seconds.", g.Name)
 	}
-	if plat.CloseProcessWindows(procName(g)) == 0 {
+	closed := 0
+	for _, n := range a.gameNames(g) {
+		closed += plat.CloseProcessWindows(n)
+	}
+	if closed == 0 {
 		return fmt.Errorf("Lootnest couldn't close %s. Quit it from the game's own menu; the progress is saved when it closes.", g.Name)
 	}
 	a.logf("Asked %s to close", g.Name)
