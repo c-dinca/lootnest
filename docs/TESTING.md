@@ -1265,3 +1265,20 @@ Two monitors on the PC, the TV app connected.
    the number work, and the game runs as before.
 9. A 32-bit game: the log says it's a 32-bit program; the counter is
    outside.
+
+## 57. Start with a launcher
+
+1. A folder game whose own launcher has to start it: Manage, Launch
+   options, **Start with**, choose the launcher's .exe, Save. Manage says
+   "Starts with <launcher>.exe"; the game's name, cover and icon are as
+   before.
+2. Play: the launcher opens (the log says "Starting <launcher> instead
+   of <game>.exe"), press its own Play: Lootnest sees the game run (Playing
+   in the sidebar, the session on its Timeline when it closes), even when
+   the game starts minutes later.
+3. The same for a game with profiles: the swap happens, the launcher
+   opens, and the profile's saves are kept when the game closes.
+4. **Use <game>.exe** goes back to starting the game's own exe.
+5. Create desktop shortcut: it starts the launcher, with the game's icon.
+6. Move the game to another drive: Start with follows to the launcher in
+   the new folder.

@@ -18,6 +18,11 @@ type LaunchOptions struct {
 	// administrator".
 	WorkDir    string `json:"workDir,omitempty"`
 	RunAsAdmin bool   `json:"runAsAdmin,omitempty"`
+	// StartWith is a program started instead of the game's own exe (a
+	// launcher, a mod loader), chosen by the user. The game stays the same
+	// in the Library: its exe still names it, gives its icon and is the
+	// process followed while it runs; only what's started changes.
+	StartWith string `json:"startWith,omitempty"`
 	// Before the game starts, CloseApps are asked to close and StartBefore
 	// start; once it closes, StartAfter start and, with ReopenClosed, the
 	// apps that were closed open again.
@@ -63,12 +68,18 @@ func (o LaunchOptions) Moved(from, to string) LaunchOptions {
 			o.WorkDir = ""
 		}
 	}
+	if rel, err := filepath.Rel(from, o.StartWith); o.StartWith != "" && err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		o.StartWith = filepath.Join(to, rel)
+		if st, err := os.Stat(o.StartWith); err != nil || !st.Mode().IsRegular() {
+			o.StartWith = "" // the new copy starts by its own exe
+		}
+	}
 	return o
 }
 
 // Empty says whether the options change nothing.
 func (o LaunchOptions) Empty() bool {
-	return o.WorkDir == "" && !o.RunAsAdmin && !o.KeepPad && o.QuickSave == "" && !o.HasSteps()
+	return o.WorkDir == "" && !o.RunAsAdmin && o.StartWith == "" && !o.KeepPad && o.QuickSave == "" && !o.HasSteps()
 }
 
 const (
@@ -97,6 +108,18 @@ func CleanLaunchOptions(o LaunchOptions) (LaunchOptions, error) {
 		}
 		if st, err := os.Stat(o.WorkDir); err != nil || !st.IsDir() {
 			return o, fmt.Errorf("Lootnest can't find the folder %s.", o.WorkDir)
+		}
+	}
+	o.StartWith = strings.TrimSpace(o.StartWith)
+	if o.StartWith != "" {
+		if !filepath.IsAbs(o.StartWith) || !strings.EqualFold(filepath.Ext(o.StartWith), ".exe") {
+			return o, errors.New("Choose the program (.exe) to start with Browse.")
+		}
+		if keepRunning[strings.ToLower(filepath.Base(o.StartWith))] {
+			return o, fmt.Errorf("%s is part of Windows or Lootnest, so Lootnest doesn't start it for a game.", filepath.Base(o.StartWith))
+		}
+		if st, err := os.Stat(o.StartWith); err != nil || !st.Mode().IsRegular() {
+			return o, fmt.Errorf("Lootnest can't find %s.", o.StartWith)
 		}
 	}
 	if len(o.CloseApps) > closeAppsMax {

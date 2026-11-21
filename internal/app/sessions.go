@@ -242,7 +242,7 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 	a.mu.Lock()
 	if s := a.sessions[g.ID]; s != nil {
 		s.Phase = "launching"
-		s.deadline = time.Now().Add(time.Duration(cfg.Settings.StartTimeoutSeconds) * time.Second)
+		s.deadline = time.Now().Add(a.launcherWait("game:"+g.ID, time.Duration(cfg.Settings.StartTimeoutSeconds)*time.Second))
 	}
 	a.mu.Unlock()
 	a.emitSessions()

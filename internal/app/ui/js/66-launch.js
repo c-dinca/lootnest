@@ -4,12 +4,13 @@
   // is put into the game.
   const launchHow = (it) => (it.kind === "found" ? (it.f.appId ? "steam" : it.f.uri ? "launcher" : "exe") : it.g.launch.type === "uri" ? "launcher" : it.g.launch.type);
   function launchRow(it) {
-    return gpRow(`data-action="launch-options" ${itemAttr(it)}`, GI.launch, "Launch options", "");
+    const via = ((cfg().launchOpts || {})[recentKey(it)] || {}).startWith;
+    return gpRow(`data-action="launch-options" ${itemAttr(it)}`, GI.launch, "Launch options", via ? `Starts with ${esc(via.split(/[\\/]/).pop())}` : "");
   }
   function openLaunch(it) {
     const o = (cfg().launchOpts || {})[recentKey(it)] || {}, copy = (l) => (l || []).map((x) => ({ ...x }));
     S.dialog = { kind: "launch", ik: it.kind, iid: it.id, args: (it.kind === "found" ? it.f.args : it.g.launch.args) || "", apps: null, picking: false, busy: false, error: "",
-      o: { workDir: o.workDir || "", runAsAdmin: !!o.runAsAdmin, closeApps: copy(o.closeApps), startBefore: copy(o.startBefore), startAfter: copy(o.startAfter), keepPad: !!o.keepPad,
+      o: { workDir: o.workDir || "", startWith: o.startWith || "", runAsAdmin: !!o.runAsAdmin, closeApps: copy(o.closeApps), startBefore: copy(o.startBefore), startAfter: copy(o.startAfter), keepPad: !!o.keepPad,
         reopenClosed: (o.closeApps || []).length ? !!o.reopenClosed : true } };
   }
   function viewLaunch() {
@@ -23,8 +24,12 @@
         <input class="ln-input" type="text" data-lo="args" data-list="${list}" data-i="${i}" value="${esc(p.args || "")}" placeholder="Options, if it needs any" spellcheck="false" aria-label="Options for ${esc(base(p.path))}"></div>${rm(list, i, base(p.path))}</li>`).join("")}</ul>` : ""}
       <div class="gpage-actions">${btn(`data-action="lo-prog" data-list="${list}"`, "Add a program to start")}</div>`;
     const args = `<div class="field"><label for="lo-args">Options</label><input id="lo-args" class="ln-input" type="text" data-lo="gameArgs" value="${esc(D.args)}" placeholder="${how === "steam" ? "-novid -high" : "-windowed"}" spellcheck="false">`;
-    const start = how === "exe" ? `${args}</div>
-        <div class="field"><span class="label">Start in</span><div class="lo-pick"><span class="${O.workDir ? "selectable" : "gpage-hint"}">${esc(O.workDir || "The game's own folder")}</span>
+    const gameExe = base(String((it.kind === "found" ? it.f.exe : it.g.launch.exe) || "")) || "its .exe";
+    const start = how === "exe" ? `<div class="field"><span class="label">Start with</span><div class="lo-pick"><span class="${O.startWith ? "selectable" : "gpage-hint"}">${esc(O.startWith || `The game's own ${gameExe}`)}</span>
+          ${btn('data-action="lo-exe"', O.startWith ? "Change" : "Choose a program", "ln-button--ghost")}${O.startWith ? btn('data-action="lo-exe-clear"', `Use ${esc(gameExe)}`, "ln-button--ghost") : ""}</div>
+          <p class="gpage-hint">For a game that starts from its own launcher. Lootnest still follows ${esc(gameExe)}, with the same name, art and saves.</p></div>
+        ${args}</div>
+        <div class="field"><span class="label">Start in</span><div class="lo-pick"><span class="${O.workDir ? "selectable" : "gpage-hint"}">${esc(O.workDir || (O.startWith ? "The program's own folder" : "The game's own folder"))}</span>
           ${btn('data-action="lo-dir"', O.workDir ? "Change" : "Choose a folder", "ln-button--ghost")}${O.workDir ? btn('data-action="lo-dir-clear"', "Use the game's folder", "ln-button--ghost") : ""}</div></div>
         <label class="toggle"><span><b>Run as administrator</b><p>Gives the game full rights over this PC.</p></span>
           <span class="switch"><input type="checkbox" data-lo="admin" ${O.runAsAdmin ? "checked" : ""}><span></span></span></label>`

@@ -51,6 +51,9 @@ const shots = [
   ["game-ach-why", "", [...game('data-key="dir:d:\\\\games\\\\onimusha"'), click('[data-action="game-tab"][data-tab="achievements"]')]],
   ["game-ach-private", "why=private", [...game('data-key="dir:d:\\\\games\\\\onimusha"'), click('[data-action="game-tab"][data-tab="achievements"]')]],
   ["game-manage-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]')]],
+  ["game-launch", "", [...game('data-key="dir:d:\\\\games\\\\phantom blade zero"'), click('[data-action="manage"]'), click('[data-action="launch-options"]')]],
+  ["game-launch-with", "", [...game('data-key="dir:d:\\\\games\\\\phantom blade zero"'), click('[data-action="manage"]'), click('[data-action="launch-options"]'), click('[data-action="lo-exe"]')]],
+  ["game-launch-saved", "", [...game('data-key="dir:d:\\\\games\\\\phantom blade zero"'), click('[data-action="manage"]'), click('[data-action="launch-options"]'), click('[data-action="lo-exe"]'), click('[data-action="lo-save"]'), "new Promise((r) => setTimeout(r, 600))", click('[data-action="manage"]')]],
   ["game-move-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]'), click('[data-action="movefolder-open"]')]],
   ["game-tab-ach", "", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="achievements"]')]],
   // Mods from Nexus Mods (68-nexus.js), on Phantom Blade Zero's Mods tab.

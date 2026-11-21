@@ -1161,6 +1161,7 @@
       if (kind === "installer") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\setup-pbz-update-1.0.3.exe" });
       else if (kind === "trySaveFile" || kind === "trySaveDir") emit({ type: "browse", reqId: id, path: kind === "trySaveFile" ? "C:\\Users\\cris\\Downloads\\BG3 Act 3 save from Mihnea.zip" : "C:\\Users\\cris\\Downloads\\BG3 save" });
       else if (kind === "program") emit({ type: "browse", reqId: id, path: "C:\\Program Files\\MSI Afterburner\\MSIAfterburner.exe" });
+      else if (kind === "startWith") emit({ type: "browse", reqId: id, path: "D:\\Games\\Phantom Blade Zero\\Launcher.exe" });
       else if (kind === "workDir") emit({ type: "browse", reqId: id, path: "D:\\Games\\Phantom Blade Zero\\Binaries\\Win64" });
       else if (kind === "gameDir") emit({ type: "browse", reqId: id, path: "E:\\Jocuri PC" });
       else if (kind === "playniteDir") emit({ type: "browse", reqId: id, path: "D:\\Apps\\Playnite" });

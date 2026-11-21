@@ -26,6 +26,9 @@ func TestCleanLaunchOptions(t *testing.T) {
 		o.StartBefore[0].Args != "--startreplaybuffer" || !o.HasSteps() || o.Empty() {
 		t.Fatalf("cleaned = %+v", o)
 	}
+	if o, err := CleanLaunchOptions(LaunchOptions{StartWith: " " + exe + " "}); err != nil || o.StartWith != exe || o.Empty() || o.HasSteps() {
+		t.Fatalf("start with: %+v %v", o, err)
+	}
 	if !(LaunchOptions{}).Empty() || (LaunchOptions{RunAsAdmin: true}).HasSteps() {
 		t.Fatal("Empty and HasSteps")
 	}
@@ -41,6 +44,10 @@ func TestCleanLaunchOptions(t *testing.T) {
 		"can't find":             {StartBefore: []Program{{Path: filepath.Join(dir, "Gone.exe")}}},
 		"fit on one line":        {StartBefore: []Program{{Path: exe, Args: "a\nb"}}},
 		"up to 5":                {StartAfter: make([]Program, 6)},
+		"to start with Browse":   {StartWith: "Launcher.exe"},
+		"to start with Browse ":  {StartWith: filepath.Join(dir, "notes.txt")},
+		"can't find  ":           {StartWith: filepath.Join(dir, "Launcher.exe")},
+		"doesn't start it":       {StartWith: filepath.Join(dir, "Lootnest.exe")},
 	}
 	for want, in := range bad {
 		if _, err := CleanLaunchOptions(in); err == nil || !strings.Contains(err.Error(), strings.TrimSpace(want)) {
@@ -68,10 +75,29 @@ func TestLaunchOptionsMoved(t *testing.T) {
 	}
 }
 
+func TestLaunchOptionsMovedStartWith(t *testing.T) {
+	old, nw := t.TempDir(), t.TempDir()
+	for _, d := range []string{old, nw} {
+		if err := os.WriteFile(filepath.Join(d, "Launcher.exe"), []byte("MZ"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	other := filepath.Join(t.TempDir(), "Tool.exe")
+	for in, want := range map[string]string{
+		filepath.Join(old, "Launcher.exe"):   filepath.Join(nw, "Launcher.exe"),
+		filepath.Join(old, "bin", "Mod.exe"): "", // not in the new copy: the game's own exe
+		other:                                other,
+	} {
+		if got := (LaunchOptions{StartWith: in}).Moved(old, nw); got.StartWith != want {
+			t.Errorf("Moved(%q) = %q, want %q", in, got.StartWith, want)
+		}
+	}
+}
+
 func TestLaunchOptionsInConfig(t *testing.T) {
 	s := &Store{Dir: t.TempDir()}
 	cfg, _, _ := s.LoadConfig()
-	o := LaunchOptions{WorkDir: `D:\Games\X\bin`, RunAsAdmin: true, CloseApps: []CloseApp{{Name: "Discord.exe", Force: true}},
+	o := LaunchOptions{WorkDir: `D:\Games\X\bin`, RunAsAdmin: true, StartWith: `D:\Games\X\Launcher.exe`, CloseApps: []CloseApp{{Name: "Discord.exe", Force: true}},
 		StartBefore: []Program{{Path: `C:\OBS\obs64.exe`, Args: "--minimize-to-tray"}}, StartAfter: []Program{{Path: `C:\Tools\backup.exe`}}, ReopenClosed: true}
 	cfg.LaunchOpts = map[string]LaunchOptions{"dir:d:\\games\\x": o}
 	if err := s.SaveConfig(cfg); err != nil {
