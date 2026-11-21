@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.19.0, beta)
+## Where things stand (2.19.1, beta)
 
 These shipped recently, newest last:
 
@@ -2310,7 +2310,7 @@ These shipped recently, newest last:
   shortcuts target it, with the game's icon. UI: Start with in
   66-launch.js (`lo-exe`, `lo-exe-clear`, browse kind `startWith`), the
   Manage row says "Starts with X". docs/TESTING.md 57.
-- **Unreleased, Start with, followed as either program** (the owner,
+- **2.19.1, Start with, followed as either program** (the owner,
   21 Nov 2026, on 2.19.0: RDR2 with profiles stayed on "Loading ... and
   starting" while they played; their Start with program is the game
   itself under another name). `runNames(o, own)` (launchopts.go) is the
@@ -2321,6 +2321,7 @@ These shipped recently, newest last:
   (`foundRun.names`, `proc` set to the live name each `foundTick`).
   `startedGrace`: 8 looks instead of 2 before a session with two names
   ends, for a launcher handing over. docs/TESTING.md 57, item 7.
+  Released as 2.19.1 at the owner's ask (21 Nov).
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
