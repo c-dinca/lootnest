@@ -332,6 +332,25 @@ func PruneGamePoints(root string, keep int) (int, error) {
 	return n, nil
 }
 
+// SpaceGamePoints keeps a player's game points at least gap apart, with the
+// newest always kept: when the newest but one is within gap of the one
+// before it, it goes. Games that save every minute leave one point per gap
+// and their latest save. It says whether one went.
+func SpaceGamePoints(root, player string, gap time.Duration) (bool, error) {
+	var g []SavePoint
+	for _, p := range SavePoints(root) { // newest first
+		if p.Game && p.Player == player {
+			if g = append(g, p); len(g) == 3 {
+				break
+			}
+		}
+	}
+	if len(g) < 3 || g[1].Created.Sub(g[2].Created) >= gap {
+		return false, nil
+	}
+	return true, DeleteSavePoint(root, g[1].ID)
+}
+
 // RenameSavePoint gives a point a new name.
 func RenameSavePoint(root, id, name string) error {
 	p, dir, err := loadPoint(root, id)

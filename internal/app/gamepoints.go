@@ -12,14 +12,16 @@ import (
 // Every save the game makes: while a game runs, its save locations are
 // looked at on each watch tick (about every 6 s). When they changed since
 // the last point and have stayed the same for a tick, the game has saved,
-// and that save is kept as a point ("Saved by the game"). The newest
-// gamePointsKeep of those are kept per game; points the user made, and
+// and that save is kept as a point ("Saved by the game"). They're kept
+// gamePointsGap apart, with the latest always there (SpaceGamePoints), and
+// the newest gamePointsKeep of those per game; points the user made, and
 // Lootnest's own before an update or going back, are never pruned.
 // Settings.GamePointsOff turns it off.
 // ---------------------------------------------------------------------------
 
 const (
 	gamePointsKeep  = 30
+	gamePointsGap   = 5 * time.Minute   // at most one kept per this, besides the newest
 	gamePointsStill = 5 * time.Second   // unchanged this long: the game is done writing
 	gamePointsMax   = 512 * 1024 * 1024 // saves larger than this aren't copied on every save
 )
@@ -158,6 +160,9 @@ func (a *App) keepGameSave(key string, t pointTarget) {
 			a.logf("Couldn't keep %s's new save as a point: %v", t.name, err)
 		}
 		return
+	}
+	if _, err := core.SpaceGamePoints(a.store.SavePointsDir(key), p.Player, gamePointsGap); err != nil {
+		a.logf("Couldn't let go of %s's game save from a few minutes before: %v", t.name, err)
 	}
 	if n, err := core.PruneGamePoints(a.store.SavePointsDir(key), gamePointsKeep); err != nil {
 		a.logf("Couldn't let go of %s's oldest game saves: %v", t.name, err)
