@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.19.1
 
 - **Start with: Lootnest sees the game running as that program too.** When the program chosen under Start with was the game itself under another name, Lootnest kept waiting for the game's usual .exe, so a game with profiles stayed on "Loading your files and starting" while you played, until Lootnest was restarted. Now the game counts as running whichever of the two programs is open: the screen closes once the game is up, and your saves go back to your profile when it closes. Lootnest also waits a little longer for a launcher to hand over to the game before it calls the session over.
 
