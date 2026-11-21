@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -204,5 +205,51 @@ func TestPruneGamePoints(t *testing.T) {
 	}
 	if left[g1.ID] || left[g3.ID] {
 		t.Fatal("the oldest game saves go")
+	}
+}
+
+// A game that saves every minute keeps one point per gap and its latest.
+func TestSpaceGamePoints(t *testing.T) {
+	dir := t.TempDir()
+	live := filepath.Join(dir, "saves")
+	write(t, filepath.Join(live, "a.sav"), "x")
+	locs := []SaveLoc{{ID: "a", Live: live}}
+	root := filepath.Join(dir, "pts")
+	at := time.Date(2026, 11, 21, 4, 0, 0, 0, time.UTC)
+	mine := ""
+	for i := 0; i <= 12; i++ { // 04:00 to 04:12, one a minute
+		p, err := MakeSavePoint(root, locs, SavePoint{Game: true, Player: "p1"}, at.Add(time.Duration(i)*time.Minute), 1, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if i == 6 { // the user's own, between them
+			u, err := MakeSavePoint(root, locs, SavePoint{Name: "Before the bridge", Player: "p1"}, at.Add(6*time.Minute+time.Second), 1, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			mine = u.ID
+		}
+		if _, err := SpaceGamePoints(root, p.Player, 5*time.Minute); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Another profile's saves are spaced on their own.
+	if _, err := MakeSavePoint(root, locs, SavePoint{Game: true, Player: "p2"}, at.Add(12*time.Minute+time.Second), 1, 0); err != nil {
+		t.Fatal(err)
+	}
+	if gone, _ := SpaceGamePoints(root, "p2", 5*time.Minute); gone {
+		t.Fatal("p2's only save went")
+	}
+	var got []string
+	have := false
+	for _, p := range SavePoints(root) {
+		if p.ID == mine {
+			have = true
+		} else if p.Player == "p1" {
+			got = append(got, p.Created.Format("15:04"))
+		}
+	}
+	if want := []string{"04:12", "04:10", "04:05", "04:00"}; !have || strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("kept %v (the user's: %v), want %v", got, have, want)
 	}
 }

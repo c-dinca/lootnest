@@ -132,6 +132,25 @@ type pointOut struct {
 	Thumb string `json:"thumb,omitempty"`
 }
 
+// playingFor is how long the game has run in this sitting, for player,
+// which the playtime kept adds only when it closes.
+func (a *App) playingFor(key, player string) time.Duration {
+	if id, ok := strings.CutPrefix(key, "game:"); ok {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		if s := a.sessions[id]; s != nil && s.Phase == "playing" && !s.Since.IsZero() && (player == "" || s.PlayerID == player) {
+			return time.Since(s.Since)
+		}
+		return 0
+	}
+	foundRunsMu.Lock()
+	defer foundRunsMu.Unlock()
+	if r := foundRuns[key]; r != nil && !r.since.IsZero() {
+		return time.Since(r.since)
+	}
+	return 0
+}
+
 // makePoint makes a point now, with the playtime and achievements by then,
 // and a picture of the game when it's running.
 func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error) {
@@ -155,6 +174,7 @@ func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error)
 			}
 		}
 	}
+	p.Playtime += int64(a.playingFor(t.key, t.player) / time.Second)
 	if t.appID > 0 {
 		if u, _ := a.env.PCUnlocks(t.appID); u != nil {
 			p.Unlocked = len(u)

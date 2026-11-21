@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Fewer saves kept from a game that saves all the time.** Games such as Red Dead Redemption 2 save every minute or so, and each of those became a point on the Saves tab, with a picture taken every time. Lootnest now keeps one of the game's own saves every 5 minutes, plus always its latest, so an hour of play leaves about a dozen; the pictures are taken as often. Save points you make or rename, and those Lootnest makes before an update or going back, are never let go.
+- **The time played on a save point counts this sitting.** A point made while a game ran showed the time played up to the start of the sitting, so all of them read the same; it now adds the time since the game started.
+
 ## 2.20.0
 
 - **A save brought as a mod goes to Try a save.** Some downloads on mod sites are someone's saved game (a 100% save, a prologue skip). Added on the Mods tab, such a save landed in the game's own folder, where the game never looks, so nothing changed. Lootnest now tells a save from a mod by its file names (Red Dead Redemption 2's SRDR3 files, GTA V's, .sav, .sl2, .ess and the like, or names shaped like the game's own saves) and by Nexus Mods' Saved Games category, and offers **Try it as a save**: a new run with that save in place, while everyone else's saves stay as they are. A save already on a game's Mods tab says so, with the same key.

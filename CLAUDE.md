@@ -2339,6 +2339,15 @@ These shipped recently, newest last:
   name, shape, then extension, three folders down). Harness
   `?mods=1&modsave=1`, shots `mods-save-*`. docs/TESTING.md 59.
   Released as 2.20.0 at the owner's ask (21 Nov).
+- **Unreleased, game saves spaced out** (the owner, 21 Nov 2026: RDR2
+  left a "Saved by the game" point every minute; "does it cost
+  performance?"). `core.SpaceGamePoints(root, player, gap)`: after each
+  game point, the newest but one goes when it's within `gamePointsGap`
+  (5 min) of the one before it, so kept ones are a gap apart plus the
+  latest; per player, only `Game` points. `makePoint` adds
+  `playingFor(key, player)` (the session's `Since`, or the found run's
+  `since`) to the playtime, which is only added when a game closes.
+  docs/TESTING.md 51, item 6.
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
