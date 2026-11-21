@@ -2297,6 +2297,19 @@ These shipped recently, newest last:
   the counter off. `Settings.FPSInGameOff`. CI's windows job loads the
   DLL into its own process and draws with D3D11 (WARP), D3D9 and OpenGL
   (`TestOverlayDLLDraws`). Not on a real game: docs/TESTING.md 56.
+- **Unreleased, Start with** (the owner, 21 Nov 2026: folder games
+  whose launcher must start them, "the game stays the same, only what
+  starts changes"). `LaunchOptions.StartWith` (an absolute .exe, checked
+  in `CleanLaunchOptions`, moved by `Moved` with the folder, cleared for
+  games not started by their exe or when it's the game's own exe);
+  `startExe` starts it instead, in its folder unless Start in says
+  otherwise, so both Library games and games with profiles get it.
+  `Exe`, `ProcessName`, the icon, the key and the art are untouched, so
+  the game is still followed by its own process; `launcherWait` gives
+  `followFound` and the session's `deadline` 20 minutes. Desktop
+  shortcuts target it, with the game's icon. UI: Start with in
+  66-launch.js (`lo-exe`, `lo-exe-clear`, browse kind `startWith`), the
+  Manage row says "Starts with X". docs/TESTING.md 58.
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
@@ -2325,7 +2338,7 @@ These shipped recently, newest last:
   `modsForPlay` starts as is, and `modsOffFor` takes those out before an
   update. UI `modsAway` in 67-mods.js; More has **Open Lootnest's copies
   of the mods** (`ps_open("mods", key)`). Harness `&away=1|in`, shots
-  `mods-away*`. docs/TESTING.md 57.
+  `mods-away*`. docs/TESTING.md 58.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

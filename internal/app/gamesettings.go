@@ -202,6 +202,9 @@ func (a *App) apiFoundShortcut(key string) (string, error) {
 			return "", err
 		}
 		sc.Target, sc.Args, sc.WorkDir, sc.Icon = exe, f.Args, filepath.Dir(exe), exe
+		if o := cfg.LaunchOpts[key]; o.StartWith != "" { // the launcher starts it; the icon stays the game's
+			sc.Target, sc.WorkDir = o.StartWith, filepath.Dir(o.StartWith)
+		}
 	}
 	if err := plat.CreateShortcut(sc); err != nil {
 		return "", fmt.Errorf("couldn't create the shortcut: %w", err)

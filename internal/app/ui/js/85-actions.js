@@ -1029,6 +1029,12 @@
       else if (r.error) toast(r.error, "error");
     },
     "lo-dir-clear"() { S.dialog.o.workDir = ""; renderOverlay(); },
+    async "lo-exe"() {
+      const D = S.dialog, it = dialogItem(D), r = await browse("startWith", D.o.startWith || (it ? (it.f ? it.f.dir || it.f.exe : it.g.launch.exe) : ""));
+      if (r.path && S.dialog === D) { D.o.startWith = r.path; renderOverlay(); }
+      else if (r.error) toast(r.error, "error");
+    },
+    "lo-exe-clear"() { S.dialog.o.startWith = ""; renderOverlay(); },
     async "lo-steam"(el) { try { await api.steamProperties(+el.dataset.app); } catch (e) { toast(errText(e), "error"); } },
     async "lo-save"() {
       const D = S.dialog, it = dialogItem(D);

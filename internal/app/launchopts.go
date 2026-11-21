@@ -41,13 +41,13 @@ func (a *App) apiSaveLaunchOptions(key, args string, o core.LaunchOptions) error
 	a.mu.Lock()
 	cfg := a.cfg.Clone()
 	a.mu.Unlock()
-	exe := false
+	exe, ownExe := false, ""
 	if id, ok := strings.CutPrefix(key, "game:"); ok {
 		g := cfg.Game(id)
 		if g == nil {
 			return errors.New("That game no longer exists.")
 		}
-		g.Launch.Args, exe = p.Args, g.Launch.Type == "exe"
+		g.Launch.Args, exe, ownExe = p.Args, g.Launch.Type == "exe", g.Launch.Exe
 	} else {
 		f, ok := a.foundByKey(key)
 		if !ok {
@@ -63,10 +63,12 @@ func (a *App) apiSaveLaunchOptions(key, args string, o core.LaunchOptions) error
 		} else {
 			cfg.LibraryPrefs[key] = lp
 		}
-		exe = f.AppID == 0 && f.URI == ""
+		exe, ownExe = f.AppID == 0 && f.URI == "", f.Exe
 	}
 	if !exe {
-		o.WorkDir, o.RunAsAdmin = "", false
+		o.WorkDir, o.RunAsAdmin, o.StartWith = "", false, ""
+	} else if own, err := a.env.ResolveExe(ownExe); err == nil && strings.EqualFold(filepath.Clean(own), filepath.Clean(o.StartWith)) {
+		o.StartWith = "" // the game's own exe is what starts anyway
 	}
 	if cfg.LaunchOpts == nil {
 		cfg.LaunchOpts = map[string]core.LaunchOptions{}
@@ -80,10 +82,14 @@ func (a *App) apiSaveLaunchOptions(key, args string, o core.LaunchOptions) error
 	return a.saveConfig(cfg)
 }
 
-// startExe starts a game by its exe, in the folder and with the rights its
-// launch options ask for.
+// startExe starts a game by its exe, or by the program its launch options
+// name instead (a launcher), in the folder and with the rights they ask for.
 func (a *App) startExe(key, exe, args string) error {
 	o := a.launchOpts(key)
+	if o.StartWith != "" {
+		a.logf("Starting %s instead of %s, as the game's launch options say", o.StartWith, filepath.Base(exe))
+		exe = o.StartWith
+	}
 	dir := dirOf(exe)
 	if o.WorkDir != "" {
 		dir = o.WorkDir
@@ -94,6 +100,18 @@ func (a *App) startExe(key, exe, args string) error {
 	}
 	return plat.StartDetached(exe, args, dir)
 }
+
+// launcherWait is how long Lootnest waits for a game to show up after
+// starting it: longer when a launcher starts it, since the game's process
+// comes only once the user presses Play there.
+func (a *App) launcherWait(key string, wait time.Duration) time.Duration {
+	if a.launchOpts(key).StartWith != "" && wait < launcherWaitMin {
+		return launcherWaitMin
+	}
+	return wait
+}
+
+const launcherWaitMin = 20 * time.Minute
 
 // apiRunningApps lists the programs with a window open, for the apps to
 // close before play. Windows' own aren't listed.

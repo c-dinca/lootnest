@@ -35,7 +35,7 @@ func (a *App) followFound(key string, f core.FoundGame) {
 	if f.ProcessName == "" {
 		return
 	}
-	r := &foundRun{proc: strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")), build: a.gameBuild(f.AppID, f.Exe), until: time.Now().Add(3 * time.Minute)}
+	r := &foundRun{proc: strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")), build: a.gameBuild(f.AppID, f.Exe), until: time.Now().Add(a.launcherWait(key, 3*time.Minute))}
 	foundRunsMu.Lock()
 	defer foundRunsMu.Unlock()
 	if old := foundRuns[key]; old == nil {
