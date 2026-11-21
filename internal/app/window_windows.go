@@ -21,15 +21,19 @@ func (a *App) openWindow(opt Options, dpi int, scale func(int) int) error {
 		AllowRequest: core.AllowedPageRequest,
 		AllowMessage: a.fromPage,
 		WindowOptions: webview2.WindowOptions{
-			Title:       Name,
-			Width:       uint(scale(1100)),
-			Height:      uint(scale(740)),
-			IconId:      1,
-			Center:      true,
-			ClassName:   WindowClass,
-			Hidden:      opt.StartHidden && opt.LaunchGame == "",
-			Background:  groundColor,
-			OnCreate:    func(hwnd uintptr) { plat.StyleTitleBar(hwnd, bgColor, borderColor); plat.SetWindowIcons(hwnd, dpi) },
+			Title:      Name,
+			Width:      uint(scale(1100)),
+			Height:     uint(scale(740)),
+			IconId:     1,
+			Center:     true,
+			ClassName:  WindowClass,
+			Hidden:     opt.StartHidden && opt.LaunchGame == "",
+			Background: groundColor,
+			OnCreate: func(hwnd uintptr) {
+				plat.StyleTitleBar(hwnd, bgColor, borderColor)
+				plat.SetWindowIcons(hwnd, dpi)
+				plat.RefreshFrame(hwnd) // no caption: the page draws its own bar (winframe.go)
+			},
 			MessageHook: a.hook,
 		},
 	})

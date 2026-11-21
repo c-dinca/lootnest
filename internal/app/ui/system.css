@@ -198,6 +198,12 @@
   --bar-search-min: 120px;   /* and the least it takes on a narrow window */
   --screen-r: 14px;       /* the screen's corner where it meets the shell */
   --page-gutter: clamp(32px, 3vw, 64px);  /* pages use the whole window, with room at the edges */
+  /* The window's own bar, drawn in the page on Windows (#winbar): the
+     strip the window is dragged by, and the caption's three keys. */
+  --winbar-h: 32px; --winbar-key-w: 46px; --winbar-edge: 5px;
+  --win-close: #c42b1c;      /* Close under the pointer, as Windows draws it */
+  --win-close-fg: #ffffff;   /* 5.9:1 on it */
+  --winbar-glyph-shadow: drop-shadow(0 1px 2px rgb(0 0 0 / 0.55));  /* keeps the glyphs clear over bright art */
   --overlap-bar: 64px;    /* how far the play bar sits up into the game's art */
   --bar-state-min: 192px; /* the play bar's state line before the bar wraps */
   --drawer-w: 480px;      /* a panel from the right */

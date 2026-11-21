@@ -1664,6 +1664,33 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .brand-stage { padding: 3px 7px; border-radius: var(--radius-round); background: var(--glass-ctl-hover); color: var(--fg-2); font: 750 11px/1 var(--font-ui); }
 .bar-hist { display: flex; flex: none; gap: 2px; }
 
+/* The window's bar (Windows only, html.win-chrome; 16-winbar.js): no
+   caption from the system, so the page holds the strip the window is
+   dragged by and the caption's keys, as Steam does. The art runs up under
+   it; pages start below it. The sidebar's top is part of the strip. */
+.winbar { position: fixed; inset: 0 0 auto; z-index: 95; height: var(--winbar-h); pointer-events: none; }
+.winbar[hidden], body:has(#bp) .winbar { display: none; }
+.wb-keys { position: absolute; top: 0; right: 0; display: flex; height: 100%; pointer-events: auto; }
+.wb-key { display: grid; place-items: center; width: var(--winbar-key-w); height: 100%; padding: 0; border: 0; border-radius: 0; background: none; color: var(--fg-2); cursor: default;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+.wb-key svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1; filter: var(--winbar-glyph-shadow); shape-rendering: geometricPrecision; }
+.wb-key:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
+.wb-key:active { background: var(--glass-ctl-active); }
+.wb-close:hover, .wb-close:active { background: var(--win-close); color: var(--win-close-fg); }
+.wb-close:active { opacity: 0.86; }
+.wb-restore, .win-max .wb-max { display: none; }
+.win-max .wb-restore { display: block; }
+.win-blur .wb-key:not(:hover) { color: var(--fg-3); }
+/* The top edge resizes, as the system's frame does at the sides. */
+.wb-edge { position: absolute; top: 0; left: var(--winbar-edge); right: var(--winbar-edge); height: var(--winbar-edge); z-index: 1; cursor: ns-resize; pointer-events: auto; }
+.wb-edge--l { left: 0; right: auto; width: calc(var(--winbar-edge) * 2); cursor: nwse-resize; }
+.wb-edge--r { left: auto; right: 0; width: calc(var(--winbar-edge) * 2); cursor: nesw-resize; }
+.win-max .wb-edge { display: none; }
+.win-chrome .view { margin-top: var(--winbar-h); }
+.win-chrome .gq-pop { top: var(--winbar-h); }
+.win-chrome .ln-drawer { height: calc(100% - var(--winbar-h) - var(--space-3)); margin-top: var(--winbar-h); }
+.win-chrome .ach-pops { top: calc(var(--winbar-h) + var(--space-2)); }
+
 /* Icon keys in the sidebar: no cap until the pointer is on one. */
 .bar-btn, .side-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); flex: none; padding: 0; border: 0; border-radius: var(--radius-key-sm); background: none; color: var(--fg-2); font: 600 var(--fs-13)/1 var(--font-ui); cursor: pointer;
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }

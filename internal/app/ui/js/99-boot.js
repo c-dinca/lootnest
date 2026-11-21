@@ -19,6 +19,7 @@
     }
     if (S.d.loadError) toast(S.d.loadError, "error");
     applyFold(false); applySideWidth();
+    winbarStart();
     if (S.seat) api.setSeat(S.seat).catch(() => {});
     if (S.d.firstRun) { S.players = JSON.parse(JSON.stringify(cfg().players)); S.dialog = { kind: "welcome" }; }
     render();
