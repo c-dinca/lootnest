@@ -19,7 +19,8 @@ import (
 
 // foundRun is a Library game Lootnest started, followed until it closes.
 type foundRun struct {
-	proc, build string
+	proc, build string    // proc is the name it runs as, one of names
+	names       []string  // what it may run as (runNames)
 	pid         uint32    // followed by this process instead of its name (an app in a browser)
 	since       time.Time // when its process was first seen
 	until       time.Time // given up on if it hasn't shown by then
@@ -32,10 +33,11 @@ var (
 )
 
 func (a *App) followFound(key string, f core.FoundGame) {
-	if f.ProcessName == "" {
+	names := runNames(a.launchOpts(key), strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")))
+	if len(names) == 0 {
 		return
 	}
-	r := &foundRun{proc: strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")), build: a.gameBuild(f.AppID, f.Exe), until: time.Now().Add(a.launcherWait(key, 3*time.Minute))}
+	r := &foundRun{proc: names[0], names: names, build: a.gameBuild(f.AppID, f.Exe), until: time.Now().Add(a.launcherWait(key, 3*time.Minute))}
 	foundRunsMu.Lock()
 	defer foundRunsMu.Unlock()
 	if old := foundRuns[key]; old == nil {
@@ -53,6 +55,9 @@ func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 	foundRunsMu.Lock()
 	defer foundRunsMu.Unlock()
 	for key, r := range foundRuns {
+		if live := liveName(r.names, procs); live != "" {
+			r.proc = live // the program started instead may be the game
+		}
 		running := procs[r.proc]
 		switch {
 		case r.pid != 0:
@@ -75,7 +80,7 @@ func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 				go a.stepsAfter(key, false)
 			}
 		default:
-			if r.missed++; r.missed < 2 { // ignore quick restarts (launcher -> game)
+			if r.missed++; r.missed < startedGrace(r.names) { // ignore quick restarts (launcher -> game)
 				continue
 			}
 			delete(foundRuns, key)

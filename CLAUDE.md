@@ -2309,7 +2309,18 @@ These shipped recently, newest last:
   `followFound` and the session's `deadline` 20 minutes. Desktop
   shortcuts target it, with the game's icon. UI: Start with in
   66-launch.js (`lo-exe`, `lo-exe-clear`, browse kind `startWith`), the
-  Manage row says "Starts with X". docs/TESTING.md 58.
+  Manage row says "Starts with X". docs/TESTING.md 57.
+- **Unreleased, Start with, followed as either program** (the owner,
+  21 Nov 2026, on 2.19.0: RDR2 with profiles stayed on "Loading ... and
+  starting" while they played; their Start with program is the game
+  itself under another name). `runNames(o, own)` (launchopts.go) is the
+  game's own process name plus `exeProcName(StartWith)`; `liveName`
+  picks the one running. Used by `tick` (sessions; `s.front`), the
+  method `a.isRunning`/`a.gameNames`, `apiCloseGame` (closes each),
+  `achRunning`, `procOf`, `pointTarget`, and found runs
+  (`foundRun.names`, `proc` set to the live name each `foundTick`).
+  `startedGrace`: 8 looks instead of 2 before a session with two names
+  ends, for a launcher handing over. docs/TESTING.md 57, item 7.
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should

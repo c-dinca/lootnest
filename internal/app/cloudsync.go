@@ -398,7 +398,7 @@ func (a *App) apiSyncNow() error {
 		up, down := 0, 0
 		for i := range cfg.Games {
 			g := &cfg.Games[i]
-			if busy[g.ID] || isRunning(g) {
+			if busy[g.ID] || a.isRunning(g) {
 				continue
 			}
 			for _, pl := range cfg.Players {
@@ -445,7 +445,7 @@ func (a *App) apiSyncResolve(gameID, pid, answer string) error {
 	if g == nil || cfg.Player(pid) == nil {
 		return errors.New("That game or profile no longer exists.")
 	}
-	if busy || isRunning(g) {
+	if busy || a.isRunning(g) {
 		return fmt.Errorf("%s is running; choose after it closes.", g.Name)
 	}
 	c, err := a.cloud(cfg.Settings)

@@ -1282,6 +1282,11 @@ Two monitors on the PC, the TV app connected.
 5. Create desktop shortcut: it starts the launcher, with the game's icon.
 6. Move the game to another drive: Start with follows to the launcher in
    the new folder.
+7. Start with set to the game itself under another name (a game with
+   profiles, Red Dead Redemption 2 with its own exe): Play, close any
+   other launcher that opens. "Loading <profile>'s files and starting"
+   goes away once the game runs, Close the game works, and the profile's
+   saves are kept when the game closes.
 
 ## 58. Mods added before profiles were turned on
 

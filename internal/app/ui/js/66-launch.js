@@ -27,7 +27,7 @@
     const gameExe = base(String((it.kind === "found" ? it.f.exe : it.g.launch.exe) || "")) || "its .exe";
     const start = how === "exe" ? `<div class="field"><span class="label">Start with</span><div class="lo-pick"><span class="${O.startWith ? "selectable" : "gpage-hint"}">${esc(O.startWith || `The game's own ${gameExe}`)}</span>
           ${btn('data-action="lo-exe"', O.startWith ? "Change" : "Choose a program", "ln-button--ghost")}${O.startWith ? btn('data-action="lo-exe-clear"', `Use ${esc(gameExe)}`, "ln-button--ghost") : ""}</div>
-          <p class="gpage-hint">For a game that starts from its own launcher. Lootnest still follows ${esc(gameExe)}, with the same name, art and saves.</p></div>
+          <p class="gpage-hint">For a game that starts from its own launcher, or runs under another name. It keeps its name, art and saves, and Lootnest sees it running as either program.</p></div>
         ${args}</div>
         <div class="field"><span class="label">Start in</span><div class="lo-pick"><span class="${O.workDir ? "selectable" : "gpage-hint"}">${esc(O.workDir || (O.startWith ? "The program's own folder" : "The game's own folder"))}</span>
           ${btn('data-action="lo-dir"', O.workDir ? "Change" : "Choose a folder", "ln-button--ghost")}${O.workDir ? btn('data-action="lo-dir-clear"', "Use the game's folder", "ln-button--ghost") : ""}</div></div>
