@@ -536,11 +536,11 @@ func (a *App) apiNexusAdd(key, path string, modID, fileID int) error {
 		return errors.New("That file isn't in your Downloads any more.")
 	}
 	go func() {
-		name, from := "", (*core.ModNexus)(nil)
+		name, category, from := "", "", (*core.ModNexus)(nil)
 		if g, _, err := a.nexusGameOf(key); err == nil && g != nil {
 			from = &core.ModNexus{Domain: g.Domain, ModID: modID, FileID: fileID}
 			if p, err := a.nexusPage(g, modID, false); err == nil && p != nil {
-				name = p.Name
+				name, category = p.Name, p.Category
 				for _, f := range p.Files {
 					if f.ID == fileID {
 						from.Version = f.Version
@@ -548,7 +548,7 @@ func (a *App) apiNexusAdd(key, path string, modID, fileID int) error {
 				}
 			}
 		}
-		if err := a.addMod(key, path, name, from); err != nil {
+		if err := a.addMod(key, path, name, from, category); err != nil {
 			a.emit("modPlan", map[string]any{"key": key, "path": path, "refused": err.Error()})
 		}
 	}()

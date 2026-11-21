@@ -107,7 +107,7 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 			if err := os.MkdirAll(out, 0o755); err != nil {
 				return fail(err)
 			}
-			if err := Mirror(src, filepath.Join(out, filepath.Base(src))); err != nil {
+			if err := Mirror(src, filepath.Join(saveHome(out, filepath.Base(src)), filepath.Base(src))); err != nil {
 				return fail(err)
 			}
 		}
@@ -117,6 +117,41 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 	}
 	e.logf("Started %s's files for %s from %s, with %s in %s", e.name(playerID), g.Name, e.name(from), filepath.Base(src), target.entry.Path)
 	return nil
+}
+
+// saveHome is the folder in dir, at most three folders down, that holds
+// saves like name: one with the same name, else the same shape
+// (SRDR30005 beside SRDR30000 in Red Dead Redemption 2's Profiles\<id>),
+// else the same extension. With none, dir itself.
+func saveHome(dir, name string) string {
+	want, shape, ext := strings.ToLower(name), saveShape(name), strings.ToLower(filepath.Ext(name))
+	best, rank := dir, 0
+	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			if rel, _ := filepath.Rel(dir, p); strings.Count(rel, string(filepath.Separator)) >= 3 {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		n := strings.ToLower(d.Name())
+		r := 0
+		switch {
+		case n == want:
+			r = 3
+		case strings.Contains(shape, "#") && saveShape(n) == shape:
+			r = 2
+		case ext != "" && filepath.Ext(n) == ext:
+			r = 1
+		}
+		if r > rank {
+			best, rank = filepath.Dir(p), r
+		}
+		return nil
+	})
+	return best
 }
 
 // looksLikeFile says whether a save path names a file (a name with an

@@ -1304,3 +1304,20 @@ Two monitors on the PC, the TV app connected.
    log says the set waits.
 4. Turn profiles off again: the Library game's Mods tab shows **Added
    while profiles were on** for mods added with profiles.
+
+## 59. A save brought as a mod
+
+1. Red Dead Redemption 2 with profiles: on the Mods tab, Add a mod and
+   choose a save download (a "Prologue Skip" or 100% save: one SRDR3 file,
+   or a .zip with one). The drawer says **This is a saved game, not a
+   mod** and nothing is added to the list.
+2. **Try it as a save**: Try a save opens with that file; Start the run.
+   Play the new run: the save is in Story, Load Game, and it sits in the
+   run's `Profiles\<id>` folder beside the other SRDR3 files. The other
+   profiles' saves are as they were.
+3. The same file downloaded from Nexus Mods inside Lootnest: the same
+   drawer.
+4. A save added before this version: its row on the Mods tab says it's a
+   saved game, with **Try it as a save**; remove the row afterwards.
+5. A real mod at the game folder's top (a .dll, ScriptHook): added as
+   before.

@@ -71,7 +71,8 @@
       return `<li class="mod-row${m.on ? "" : " is-off"}" data-id="${esc(m.id)}">${drag ? `<span class="mod-grip" title="Drag to change the order">${MI.grip}</span>` : ""}<div class="pt-main"><b>${esc(m.name)}</b>
         <span class="pt-facts"><span>${nFiles(m.files)}</span><span>${esc(fmtBytes(m.bytes))}</span><span>${esc(modWhere(m))}</span></span>
         ${vs ? `<p class="mod-vs"><span>${esc(vs)}</span><button class="ln-button ln-button--ghost ln-button--sm" data-action="mod-conflicts" ${attrs(m)}>See the files</button></p>` : ""}
-        ${m.changed ? `<p class="mod-vs">${GI.alert}<span>The game changed this mod's files. Play starts without mods until you turn it off or add it again.</span></p>` : ""}</div>
+        ${m.changed ? `<p class="mod-vs">${GI.alert}<span>The game changed this mod's files. Play starts without mods until you turn it off or add it again.</span></p>` : ""}
+        ${m.save ? `<p class="mod-vs">${GI.alert}<span>This is a saved game, not a mod. The game reads saves from its save folder, so here it does nothing.</span>${saveKey(key, m.saveFrom, o, m.name, busy)}</p>` : ""}</div>
       <div class="mod-actions">${icon(`data-action="mod-move" data-by="-1" ${attrs(m)}`, MI.up, `Move ${m.name} up`, ro || i === 0)}${icon(`data-action="mod-move" data-by="1" ${attrs(m)}`, MI.down, `Move ${m.name} down`, ro || i === list.length - 1)}
         ${icon(`data-action="mod-remove" ${attrs(m)}`, GI.trash, `Remove ${m.name}`)}
         <span class="switch"><input type="checkbox" data-action="mod-toggle" ${attrs(m)} ${m.on ? "checked" : ""} ${busy || ro ? "disabled" : ""} aria-label="Use ${esc(m.name)}"><span></span></span></div></li>`;
@@ -118,6 +119,18 @@
     }).join("");
   }
 
+  // A saved game brought as a mod goes to Try a save, which puts it in a new
+  // run; only games with profiles have runs.
+  function saveKey(key, from, owner, name, off) {
+    if (!key.startsWith("game:")) return "";
+    return `<button class="ln-button ln-button--secondary ln-button--sm" data-action="mod-try-save" data-mods="${esc(key)}" data-from="${esc(from)}" data-owner="${esc(owner)}" data-name="${esc(name)}" ${off ? "disabled" : ""}>Try it as a save</button>`;
+  }
+  function trySaveFrom(key, src, owner, name) {
+    const id = key.replace(/^game:/, ""), sp = player(owner) || seated();
+    S.dialog = { kind: "trysave", gameId: id, from: sp && hasProfile(id, sp.id) ? sp.id : "", src };
+    renderOverlay(); focusOverlay();
+  }
+
   // Adding a mod: choose it, see what it would do, then add it to the list.
   function openAddMod(el) {
     S.dialog = { kind: "modplan", key: el.dataset.mods, owner: el.dataset.owner || "", name: el.dataset.name };
@@ -131,6 +144,14 @@
     if (D.busy) return shell(lnInline("", "Opening the mod"));
     if (D.error) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     if (D.refused) return shell(`${lnInline("error", "Lootnest won't put this mod in", esc(D.refused))}${choose}`);
+    if (D.save) {
+      const runs = D.key.startsWith("game:");
+      const said = `<div class="gpage-sub">${gpHead("This is a saved game, not a mod")}
+        <p class="gpage-hint">${esc((D.mod && D.mod.name) || "It")} is someone's save. The game reads saves from its save folder, never from its own folder, so as a mod it would do nothing.</p>
+        <p class="gpage-hint">${runs ? "Try it as a save: Lootnest makes a new run with it, and nobody's saves change." : "Turn on profiles for this game to try it in a run of its own, without touching your saves."}</p></div>`;
+      return shell(said, `${D.nexus ? "" : btn('data-action="mod-pick" data-kind="mod"', "Choose another", "ln-button--ghost")}<span class="grow"></span>
+        ${btn('data-action="mod-cancel"', "Cancel", "ln-button--ghost")}${runs ? btn(`data-action="mod-try-save" data-mods="${esc(D.key)}" data-from="${esc(D.path)}" data-owner="${esc(D.owner)}" data-name="${esc((D.mod && D.mod.name) || "")}"`, "Try it as a save", "ln-button--primary") : ""}`);
+    }
     const P = D.plan, m = D.mod;
     if (!P || !m) return shell(choose);
     const shown = P.replaces.slice(0, 8);

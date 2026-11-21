@@ -475,6 +475,13 @@
     SETS[BG3] = { "": [{ id: "m4", on: true }], p1: [{ id: "m3", on: true }, { id: "m5", on: true }, { id: "m4", on: false }], ...(ids[1] ? { [ids[1]]: [{ id: "m4", on: true }, { id: "m3", on: false }] } : {}) };
     DEPLOYED[BG3] = { mods: ["m3", "m5"], owner: "p1" };
   }
+  // &modsave=1: a saved game brought as a mod (a prologue skip), in Baldur's
+  // Gate 3's list and when one is added.
+  if (q.get("modsave")) {
+    MODS[BG3] = { ...(MODS[BG3] || {}), m9: { id: "m9", name: "Prologue Skip with Gold Medals", files: 1, bytes: 657e3, atRoot: true, save: true, saveFrom: "C:\\Users\\Alex\\AppData\\Local\\Lootnest\\mods\\bg3\\m9\\files" } };
+    SETS[BG3] = SETS[BG3] || { "": [] };
+    SETS[BG3][""] = [...(SETS[BG3][""] || []), { id: "m9", on: true }];
+  }
   // &away=1 gives Baldur's Gate 3 two mods kept from before its profiles
   // were on (under its Steam key); &away=in has them in its folder.
   const AWAY = {};
@@ -751,6 +758,10 @@
       return ok();
     },
     ps_addMod: (key, path) => {
+      if (/skip|save/i.test(path)) {
+        emit({ type: "modPlan", key, path, save: true, mod: { id: "m" + Date.now(), name: "Prologue Skip with Gold Medals", files: 1, bytes: 657e3, atRoot: true, on: false } }, 400);
+        return ok();
+      }
       const refused = /\.zip$/i.test(path);
       const mod = { id: "m" + Date.now(), name: path.split("\\").pop().replace(/\.(zip|7z|rar)$/i, ""), files: refused ? 3 : 212, bytes: refused ? 4.1e6 : 1.9e9, into: refused ? "" : "ProjectPBZ", on: false };
       if (!refused) MODS_PENDING[mod.id] = mod;
@@ -1188,7 +1199,7 @@
       else if (kind === "playniteDir") emit({ type: "browse", reqId: id, path: "D:\\Apps\\Playnite" });
       else if (kind === "art") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Pictures\\My cover.png" });
       else if (kind === "plugin") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\handy-tools.zip" });
-      else if (kind === "mod" || kind === "modDir") emit({ type: "browse", reqId: id, path: kind === "mod" ? "C:\\Users\\cris\\Downloads\\PBZ Reshade and Steam fix.zip" : "C:\\Users\\cris\\Downloads\\PBZ HD Textures" });
+      else if (kind === "mod" || kind === "modDir") emit({ type: "browse", reqId: id, path: kind === "mod" ? (q.get("modsave") ? "C:\\Users\\cris\\Downloads\\Prologue Skip with Gold Medals.zip" : "C:\\Users\\cris\\Downloads\\PBZ Reshade and Steam fix.zip") : "C:\\Users\\cris\\Downloads\\PBZ HD Textures" });
       else if (kind === "update" || kind === "updateDir") emit({ type: "browse", reqId: id, path: kind === "update" ? "C:\\Users\\cris\\Downloads\\PBZ.Update.v1.0.2.to.v1.0.3.rar" : "C:\\Users\\cris\\Downloads\\PBZ Update" });
       else emit({ type: "browse", reqId: id, cancelled: true });
       return ok();
