@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.20.1
 
 - **Fewer saves kept from a game that saves all the time.** Games such as Red Dead Redemption 2 save every minute or so, and each of those became a point on the Saves tab, with a picture taken every time. Lootnest now keeps one of the game's own saves every 5 minutes, plus always its latest, so an hour of play leaves about a dozen; the pictures are taken as often. Save points you make or rename, and those Lootnest makes before an update or going back, are never let go.
 - **The time played on a save point counts this sitting.** A point made while a game ran showed the time played up to the start of the sitting, so all of them read the same; it now adds the time since the game started.
