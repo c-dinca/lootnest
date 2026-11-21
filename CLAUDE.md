@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.18.1, beta)
+## Where things stand (2.19.0, beta)
 
 These shipped recently, newest last:
 
@@ -2235,7 +2235,7 @@ These shipped recently, newest last:
   font as its fallback, and Settings' parts are Ice Grey in focus. Seen
   in the desktop build under xvfb, not on a TV. The owner asked for
   2.18.0 with everything of 20 Nov in it.
-- **Unreleased, the FPS counter without signing out** (the owner, 20
+- **2.19.0, the FPS counter without signing out** (the owner, 20
   Nov 2026: it didn't work, and "asking to sign in and out is awful";
   they chose, for games with an anti-cheat, the outside counter with no
   sign-out, and the in-game one, as Steam's, for the rest: the next PR).
@@ -2260,7 +2260,7 @@ These shipped recently, newest last:
   (`FrameHistory`), the event PresentMon always reads. CI's windows job
   registers and removes the task (`TestFrameTask`) and checks the pipe;
   the reader started by the task is docs/TESTING.md 47.
-- **Unreleased, the FPS counter inside story games** (the owner, 20
+- **2.19.0, the FPS counter inside story games** (the owner, 20
   Nov 2026: "as Steam does, in the games we can, not those with an
   anti-cheat"; Denuvo allowed; "FPS and a frame's time"). The first thing
   Lootnest puts into a game's process (Story games and online games).
@@ -2297,7 +2297,7 @@ These shipped recently, newest last:
   the counter off. `Settings.FPSInGameOff`. CI's windows job loads the
   DLL into its own process and draws with D3D11 (WARP), D3D9 and OpenGL
   (`TestOverlayDLLDraws`). Not on a real game: docs/TESTING.md 56.
-- **Unreleased, Start with** (the owner, 21 Nov 2026: folder games
+- **2.19.0, Start with** (the owner, 21 Nov 2026: folder games
   whose launcher must start them, "the game stays the same, only what
   starts changes"). `LaunchOptions.StartWith` (an absolute .exe, checked
   in `CleanLaunchOptions`, moved by `Moved` with the folder, cleared for
@@ -2323,7 +2323,7 @@ These shipped recently, newest last:
   in Big Picture"; Glass off still makes it all solid. docs/TESTING.md 55.
   Released as 2.18.1 at the owner's ask (20 Nov).
 
-- **Unreleased, mods from before profiles** (the owner, 21 Nov 2026:
+- **2.19.0, mods from before profiles** (the owner, 21 Nov 2026:
   a mod added with profiles off was gone once they were on; "a button to
   port it"). Mods are kept by Library key (`core.ModsDir`), and turning
   profiles on makes the key `game:<id>`. `modsElsewhere` (app/mods.go)
@@ -2339,6 +2339,8 @@ These shipped recently, newest last:
   update. UI `modsAway` in 67-mods.js; More has **Open Lootnest's copies
   of the mods** (`ps_open("mods", key)`). Harness `&away=1|in`, shots
   `mods-away*`. docs/TESTING.md 58.
+  The owner asked for 2.19.0 once this was in (21 Nov), with the FPS
+  counter's two entries and Start with a launcher.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
