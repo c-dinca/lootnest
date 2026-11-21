@@ -292,10 +292,12 @@
         break;
       }
       case "modsDone": {
+        const was = S.modsRun[ev.key] || {};
         delete S.modsRun[ev.key];
         const r = ev.result || {};
         if (ev.error) toast(ev.error, "error");
-        else toast((ev.what === "apply" ? "The mods are in the game's folder." : ev.what === "remove" ? "The mod is out of the game's folder and removed." : "The game is back as it was.")
+        else toast((ev.what === "apply" ? "The mods are in the game's folder." : ev.what === "remove" ? "The mod is out of the game's folder and removed."
+          : ev.what === "bring" ? (was.inFolder ? "The mods are here, on, and in the game's folder." : `The mods are here and on. ${ev.key.startsWith("game:") ? "Apply, or Play," : "Apply"} puts them into the game's folder.`) : "The game is back as it was.")
           + (r.changed ? ` ${r.changed} file${r.changed === 1 ? "" : "s"} had changed since the mods went in; Lootnest kept ${r.changed === 1 ? "it" : "them"}.` : ""),
           "", r.changed ? { label: "Show", run: () => api.open("modsChanged", ev.key).catch((e) => toast(errText(e), "error")) } : undefined);
         loadMods(ev.key);

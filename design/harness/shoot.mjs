@@ -56,6 +56,9 @@ const shots = [
   ["game-launch-saved", "", [...game('data-key="dir:d:\\\\games\\\\phantom blade zero"'), click('[data-action="manage"]'), click('[data-action="launch-options"]'), click('[data-action="lo-exe"]'), click('[data-action="lo-save"]'), "new Promise((r) => setTimeout(r, 600))", click('[data-action="manage"]')]],
   ["game-move-hydra", "kept=1", [...game('data-key="dir:d:\\\\games\\\\hydra\\\\hollow tale"'), click('[data-action="manage"]'), click('[data-action="movefolder-open"]')]],
   ["game-tab-ach", "", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="achievements"]')]],
+  ["mods-away", "mods=1&away=1", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="mods"]'), "new Promise((r) => setTimeout(r, 300))", "document.querySelector('.mods-away').scrollIntoView()"]],
+  ["mods-away-in", "mods=1&away=in", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="mods"]'), "new Promise((r) => setTimeout(r, 300))", "document.querySelector('.mods-away').scrollIntoView()"]],
+  ["mods-away-brought", "mods=1&away=1", [...game('data-game="bg3"'), click('.gp-tabs [data-tab="mods"]'), "new Promise((r) => setTimeout(r, 300))", click('[data-action="mods-bring"][data-ids="m7,m8"]'), "new Promise((r) => setTimeout(r, 1800))"]],
   // Mods from Nexus Mods (68-nexus.js), on Phantom Blade Zero's Mods tab.
   ...[["nexus-off", "mods=1", []], ["nexus", "mods=1&nexus=1", []], ["nexus-none", "mods=1&nexus=none", []],
     ["nexus-mod", "mods=1&nexus=1", [click('[data-action="nexus-open"][data-id="1"]')]],

@@ -177,7 +177,165 @@ func (a *App) apiMods(key string) (map[string]any, error) {
 	if err := core.ModsRefused(t.Dir); err != nil {
 		out["refused"] = sentence(err)
 	}
+	out["elsewhere"] = a.modsElsewhereRows(key, root)
 	return out, nil
+}
+
+// modsElsewhere are the other Library keys the same game's mods may be kept
+// under: turning profiles on makes a Library game "game:<id>", and turning
+// them off makes it its scan result again, and mods are kept by key
+// (core.ModsDir). Only keys with mods kept are listed.
+func (a *App) modsElsewhere(key string) []string {
+	var out []string
+	add := func(k string) {
+		if k != key && !slices.Contains(out, k) && dirExists(a.modsRoot(k)) {
+			out = append(out, k)
+		}
+	}
+	a.mu.Lock()
+	cfg := a.cfg.Clone()
+	a.mu.Unlock()
+	if id, ok := strings.CutPrefix(key, "game:"); ok {
+		g := cfg.Game(id)
+		if g == nil {
+			return nil
+		}
+		for _, f := range a.libraryGames() {
+			if a.isFoundGame(g, f) {
+				add(f.Key)
+			}
+		}
+		return out
+	}
+	f, ok := a.foundByKey(key)
+	if !ok {
+		return nil
+	}
+	for i := range cfg.Games {
+		if a.isFoundGame(&cfg.Games[i], f) {
+			add("game:" + cfg.Games[i].ID)
+		}
+	}
+	return out
+}
+
+// ModsElsewhere is one other key's mods on a game's Mods tab: those not
+// kept under this key yet, whether that key has profiles, and whether its
+// mods are in the game's folder now.
+type ModsElsewhere struct {
+	Key      string   `json:"key"`
+	Profiles bool     `json:"profiles"`
+	InFolder bool     `json:"inFolder"`
+	Mods     []ModRow `json:"mods"`
+}
+
+func (a *App) modsElsewhereRows(key, root string) []ModsElsewhere {
+	out := []ModsElsewhere{}
+	for _, k := range a.modsElsewhere(key) {
+		from := a.modsRoot(k)
+		_, set := core.ModSetIn(core.LoadModSets(from), "", "")
+		e := ModsElsewhere{Key: k, Profiles: strings.HasPrefix(k, "game:"), Mods: []ModRow{},
+			InFolder: core.LoadDeployed(from) != nil || core.ModJournalPending(from)}
+		for _, x := range set {
+			if _, err := core.LoadMod(root, x.ID); err == nil {
+				continue // brought here already
+			}
+			if m, err := core.LoadMod(from, x.ID); err == nil {
+				e.Mods = append(e.Mods, modRow(m, x.On))
+			}
+		}
+		if len(e.Mods) > 0 || e.InFolder {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// modsInElsewhere is another key of the game whose mods are in its folder
+// now, or "". This key's record doesn't know those files, so it must not
+// put mods in over them.
+func (a *App) modsInElsewhere(key string) string {
+	for _, k := range a.modsElsewhere(key) {
+		r := a.modsRoot(k)
+		if core.LoadDeployed(r) != nil || core.ModJournalPending(r) {
+			return k
+		}
+	}
+	return ""
+}
+
+var errModsElsewhere = errors.New("Mods added while this game's profiles were turned the other way are in its folder. Bring them here first, from the Mods tab.")
+
+// apiModsBring copies the mods ids kept under the game's other key (from)
+// into this key's mods and turns them on in the set owner plays with. When
+// that key's mods are in the game's folder, they come out by its record
+// first and the set goes back in by this key's, so the folder ends modded
+// as it was. Lootnest's copies under from stay as they are. The answer is a
+// "modsDone" event with what "bring".
+func (a *App) apiModsBring(key, from, owner string, ids []string) error {
+	if !slices.Contains(a.modsElsewhere(key), from) {
+		return errors.New("Those mods aren't kept for this game any more.")
+	}
+	if len(ids) == 0 {
+		return errors.New("Choose a mod to bring.")
+	}
+	fromRoot, root := a.modsRoot(from), a.modsRoot(key)
+	if d := core.LoadDeployed(fromRoot); d != nil {
+		// they come out of the folder together, so they come here together
+		for _, id := range d.Mods {
+			if !slices.Contains(ids, id) {
+				ids = append(ids, id)
+			}
+		}
+	}
+	for _, id := range ids {
+		if _, err := core.LoadMod(fromRoot, id); err != nil {
+			return errors.New("That mod isn't kept any more.")
+		}
+	}
+	return a.modsRun(key, "bring", func(t updTarget, step func(int, int)) (core.ModsResult, error) {
+		var res core.ModsResult
+		took := core.LoadDeployed(fromRoot) != nil || core.ModJournalPending(fromRoot)
+		if took {
+			if ft, err := a.modTarget(from); err == nil && !strings.EqualFold(filepath.Clean(ft.Dir), filepath.Clean(t.Dir)) {
+				return res, fmt.Errorf("those mods are in %s, not in this game's folder, so Lootnest leaves them there", ft.Dir)
+			}
+			r, err := core.ApplyMods(fromRoot, t.Dir, t.Exe, "", nil, false, time.Now(), step)
+			res.Changed, res.ChangedDir = r.Changed, r.ChangedDir
+			if err != nil {
+				return res, fmt.Errorf("nothing was brought: Lootnest couldn't take the mods that are in the game's folder out first (%v)", err)
+			}
+		}
+		if err := os.MkdirAll(root, 0o755); err != nil {
+			return res, err
+		}
+		o, set := a.modSet(root, owner)
+		for _, id := range ids {
+			if _, err := core.LoadMod(root, id); err != nil {
+				if _, err := core.CopyMod(fromRoot, root, id); err != nil {
+					return res, err
+				}
+			}
+			if i := slices.IndexFunc(set, func(e core.ModEntry) bool { return e.ID == id }); i >= 0 {
+				set[i].On = true
+			} else {
+				set = append(set, core.ModEntry{ID: id, On: true})
+			}
+		}
+		if err := core.SaveModSet(root, o, set); err != nil {
+			return res, err
+		}
+		a.logf("Brought %d mod(s) for %s from %s", len(ids), t.Name, fromRoot)
+		if !took {
+			return res, nil
+		}
+		r, err := a.applyModSet(t, owner, "", step)
+		res.Changed += r.Changed
+		if r.ChangedDir != "" {
+			res.ChangedDir = r.ChangedDir
+		}
+		return res, err
+	})
 }
 
 // apiAddMod keeps a copy of the mod at path for the game and answers with a
@@ -327,6 +485,9 @@ func modsOffMark(root string) string { return filepath.Join(root, "off-after-upd
 // but skip, into the game's folder, copying the saves first.
 func (a *App) applyModSet(t updTarget, owner, skip string, step func(int, int)) (core.ModsResult, error) {
 	root := a.modsRoot(t.Key)
+	if a.modsInElsewhere(t.Key) != "" {
+		return core.ModsResult{}, errModsElsewhere
+	}
 	o, set := a.modSet(root, owner)
 	var ids []string
 	for _, e := range set {
@@ -407,6 +568,10 @@ func (a *App) modsForPlay(g *core.Game, playerID, who string) error {
 	if core.ModJournalPending(root) {
 		return errors.New("the last change to its mods didn't finish")
 	}
+	if a.modsInElsewhere(key) != "" {
+		a.logf("%s starts with the mods that are in its folder: they were added while its profiles were off, so %s's set waits until they're brought to the Mods tab", g.Name, who)
+		return nil
+	}
 	o, set := a.modSet(root, playerID)
 	var on, in []string
 	for _, e := range set {
@@ -484,7 +649,11 @@ func (a *App) modsForPlay(g *core.Game, playerID, who string) error {
 // update changes it (journaled, as Put the game back), and says whether it
 // did. The caller holds updMu.
 func (a *App) modsOffFor(t updTarget) (bool, error) {
-	root := a.modsRoot(strings.TrimPrefix(t.Key, "found:"))
+	key := strings.TrimPrefix(t.Key, "found:")
+	root := a.modsRoot(key)
+	if other := a.modsInElsewhere(key); other != "" && core.LoadDeployed(root) == nil && !core.ModJournalPending(root) {
+		root = a.modsRoot(other) // added while its profiles were the other way
+	}
 	if core.LoadDeployed(root) == nil && !core.ModJournalPending(root) {
 		return false, nil
 	}

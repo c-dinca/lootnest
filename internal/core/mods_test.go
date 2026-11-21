@@ -681,3 +681,62 @@ func TestModConflicts(t *testing.T) {
 		t.Fatalf("one mod has no conflicts: %+v", got)
 	}
 }
+
+// A game's mods kept under its old Library key (profiles off) are brought
+// under the new one (profiles on): out of the folder by the old record,
+// copied, then in by the new one, and the game is vanilla after Put back.
+func TestCopyModToAnotherKey(t *testing.T) {
+	game, old := modGame(t)
+	vanilla := folderHashes(t, game)
+	now := filepath.Join(filepath.Dir(old), "profiles")
+	a := addMod(t, old, game, map[string]string{"Data/textures/rock.dds": "rock A", "Data/new/a.esp": "a"}, "a.zip")
+	if _, err := ApplyMods(old, game, "", "", []*Mod{a}, false, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyMods(old, game, "", "", nil, false, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	m, err := CopyMod(old, now, a.ID)
+	if err != nil || m.ID != a.ID {
+		t.Fatal(m, err)
+	}
+	if _, err := CopyMod(old, now, a.ID); err == nil {
+		t.Fatal("copied twice")
+	}
+	if _, err := LoadMod(old, a.ID); err != nil {
+		t.Fatal("the old copy went", err)
+	}
+	if es, _ := os.ReadDir(now); len(es) != 1 {
+		t.Fatalf("left behind: %v", es)
+	}
+	kept, err := LoadMods(now, []string{a.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyMods(now, game, "", "p1", kept, false, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(game, "Data", "textures", "rock.dds")) != "rock A" {
+		t.Fatal("the brought mod isn't in")
+	}
+	if _, err := ApplyMods(now, game, "", "", nil, false, time.Now(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := folderHashes(t, game); !reflect.DeepEqual(got, vanilla) {
+		t.Fatalf("not back to vanilla:\n%v\n%v", got, vanilla)
+	}
+}
+
+// A kept file that isn't the mod's any more is never copied as the mod.
+func TestCopyModRefusesADamagedCopy(t *testing.T) {
+	game, old := modGame(t)
+	now := filepath.Join(filepath.Dir(old), "profiles")
+	a := addMod(t, old, game, map[string]string{"Data/new/a.esp": "a"}, "a.zip")
+	write(t, filepath.Join(old, a.ID, "files", "Data", "new", "a.esp"), "not a")
+	if _, err := CopyMod(old, now, a.ID); err == nil {
+		t.Fatal("a damaged mod was copied")
+	}
+	if exists(filepath.Join(now, a.ID)) || exists(filepath.Join(now, ".copy-"+a.ID)) {
+		t.Fatal("half a mod left")
+	}
+}

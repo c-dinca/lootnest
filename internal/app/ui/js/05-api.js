@@ -223,6 +223,7 @@
     modRemove: (key, id) => call("ps_modRemove", key, id),
     modsApply: (key, owner) => call("ps_modsApply", key, owner),
     modsRestore: (key) => call("ps_modsRestore", key),
+    modsBring: (key, from, owner, ids) => call("ps_modsBring", key, from, owner, ids),
     saveLaunchOptions: (key, args, o) => call("ps_saveLaunchOptions", key, args, o),
     runningApps: () => call("ps_runningApps"),
     controllers: () => call("ps_controllers"),

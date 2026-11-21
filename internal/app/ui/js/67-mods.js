@@ -32,7 +32,8 @@
     const n = M.deployed ? M.deployed.mods.length : 0;
     return n ? `Modded: ${n} mod${n === 1 ? "" : "s"}` : "Vanilla";
   }
-  const modsRunText = (R) => `${R.what === "apply" ? "Putting the mods in" : "Putting the game back as it was"}${R.total ? `, ${R.done} of ${R.total} files` : ""}. Don't start the game until it's done.`;
+  const MODS_RUN_SAYS = { apply: "Putting the mods in", bring: "Bringing the mods here", remove: "Taking the mod out" };
+  const modsRunText = (R) => `${MODS_RUN_SAYS[R.what] || "Putting the game back as it was"}${R.total ? `, ${R.done} of ${R.total} files` : ""}. Don't start the game until it's done.`;
   const nFiles = (n) => `${n} file${n === 1 ? "" : "s"}`;
   // What a mod that's on overrides and loses, from its set's conflicts (the
   // last mod with a file wins it): by the other mod, the files.
@@ -85,15 +86,36 @@
         <p class="gpage-hint" role="status">${esc(modsRunText(R))}</p></div>` : "";
     const why = M.refused || M.safe || "", back = M.deployed || M.pending;
     const actions = M.refused ? (back ? `<div class="gpage-actions">${btn('data-action="mods-restore"', "Put the game back as it was")}</div>` : "")
-      : `<div class="gpage-actions">${btn('data-action="mod-add"', `${GI.plus}Add a mod`)}${icon('data-action="mods-more" aria-haspopup="menu" aria-expanded="false"', GI.more, "More mod options")}<span class="grow"></span>
+      : `<div class="gpage-actions">${btn('data-action="mod-add"', `${GI.plus}Add a mod`)}${icon(`data-action="mods-more" data-mods="${esc(key)}" aria-haspopup="menu" aria-expanded="false"`, GI.more, "More mod options")}<span class="grow"></span>
         ${back ? btn('data-action="mods-restore"', "Put the game back as it was", "ln-button--ghost", M.safe) : ""}
         ${list.length || M.deployed ? btn('data-action="mods-apply"', "Apply", "ln-button--secondary", M.safe || !modsDirty(M, o) && !M.pending) : ""}</div>`;
+    const away = modsAway(M, key, o, busy, M.safe || M.refused);
     return `<section class="gpage-block gp-mods" data-key="${esc(key)}"><div class="ln-section-head"><div><h2>Mods</h2></div><span class="ln-tag${M.deployed && !modsDirty(M, o) ? " ln-tag--strong" : ""}">${esc(modsState(M, o, sets))}</span></div>
       <p class="gpage-hint">Replaced game files are kept and saves copied first. A later mod wins over an earlier one.</p>
       ${pick}${why ? `<p class="gpage-note">${GI.alert}<span>${esc(why)}</span></p>` : ""}
       ${M.pending ? `<p class="gpage-note">${GI.history}<span>The last change didn't finish. It finishes at the next start or Apply.</span></p>` : ""}
       ${inherit}${rows ? `<ol class="mod-list${drag ? " can-drag" : ""}" data-mods="${esc(key)}" data-owner="${esc(o)}">${rows}</ol>` : M.refused ? "" : `<p class="gpage-hint">No mods yet</p>`}
-      ${run}${actions}</section>`;
+      ${away}${run}${actions}</section>`;
+  }
+
+  // Mods kept under the game's other Library key: turning profiles on or
+  // off gives a game another key, and its mods are kept by key. Each can be
+  // brought here and turned on in the set shown; those in the game's folder
+  // come out by the old record and go back in by this one.
+  function modsAway(M, key, o, busy, off) {
+    return (M.elsewhere || []).map((E) => {
+      const ids = E.mods.map((m) => m.id);
+      const bring = (list, label, cls) => `<button class="ln-button ${cls} ln-button--sm" data-action="mods-bring" data-mods="${esc(key)}" data-owner="${esc(o)}" data-from="${esc(E.key)}" data-ids="${esc(list.join(","))}" data-in="${E.inFolder ? 1 : ""}" ${busy || off || !list.length ? "disabled" : ""}>${label}</button>`;
+      const rows = E.mods.map((m) => `<li class="mod-row is-off" data-id="${esc(m.id)}"><div class="pt-main"><b>${esc(m.name)}</b>
+        <span class="pt-facts"><span>${nFiles(m.files)}</span><span>${esc(fmtBytes(m.bytes))}</span><span>${esc(modWhere(m))}</span></span></div>
+        ${E.inFolder ? "" : `<div class="mod-actions">${bring([m.id], "Bring here", "ln-button--ghost")}</div>`}</li>`).join("");
+      const where = o ? ` in ${esc(setName(modsOwner(M, o)))}` : "";
+      return `<div class="gpage-sub mods-away">${gpHead(E.profiles ? "Added while profiles were on" : "Added before profiles were on")}
+        <p class="gpage-hint">${E.inFolder ? `They're in the game's folder now, so they come together: Bring all here takes them out by the old list and puts them back in by this one${where}.`
+          : `Bring here copies a mod into this list and turns it on${where}.`} Lootnest's old copy stays.</p>
+        ${rows ? `<ol class="mod-list">${rows}</ol>` : ""}
+        ${ids.length > 1 || E.inFolder ? `<div class="gpage-actions">${bring(ids, "Bring all here", "ln-button--secondary")}</div>` : ""}</div>`;
+    }).join("");
   }
 
   // Adding a mod: choose it, see what it would do, then add it to the list.
@@ -127,9 +149,10 @@
   // The Mods tab's More menu: how mods go in. A link takes no space and is
   // made only on the drive Lootnest keeps the mod on; settings files are
   // always copied.
-  function modsMoreHTML() {
+  function modsMoreHTML(key) {
     const on = !cfg().settings.modsLinkOff;
-    return `<div class="ctx-title">For every game</div><button role="menuitemcheckbox" aria-checked="${on}" data-action="mods-link" title="On the drive Lootnest keeps your mods on, a mod's file goes in as a link to Lootnest's copy and takes no space. Settings files, and anything on another drive, are copied. This applies to every game."><span class="grow">Install mods by linking when possible</span>${on ? GI.tick : ""}</button>`;
+    return `<button role="menuitem" data-action="mods-folder" data-mods="${esc(key)}"><span class="grow">Open Lootnest's copies of the mods</span></button>
+      <div class="ctx-title">For every game</div><button role="menuitemcheckbox" aria-checked="${on}" data-action="mods-link" title="On the drive Lootnest keeps your mods on, a mod's file goes in as a link to Lootnest's copy and takes no space. Settings files, and anything on another drive, are copied. This applies to every game."><span class="grow">Install mods by linking when possible</span>${on ? GI.tick : ""}</button>`;
   }
 
   // The files a mod overrides and loses, by the other mod.
