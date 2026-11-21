@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.19.1, beta)
+## Where things stand (2.20.0, beta)
 
 These shipped recently, newest last:
 
@@ -2322,7 +2322,7 @@ These shipped recently, newest last:
   `startedGrace`: 8 looks instead of 2 before a session with two names
   ends, for a launcher handing over. docs/TESTING.md 57, item 7.
   Released as 2.19.1 at the owner's ask (21 Nov).
-- **Unreleased, a save brought as a mod** (the owner, 21 Nov 2026: a
+- **2.20.0, a save brought as a mod** (the owner, 21 Nov 2026: a
   "Prologue Skip with Gold Medals" for RDR2 added as a mod went into the
   game's folder and did nothing; "make it detect a save by itself").
   `core/modsave.go`: `ModLooksLikeSave(m, category, saves)` (only
@@ -2338,6 +2338,7 @@ These shipped recently, newest last:
   Try a save: `saveHome` puts one file beside the saves like it (same
   name, shape, then extension, three folders down). Harness
   `?mods=1&modsave=1`, shots `mods-save-*`. docs/TESTING.md 59.
+  Released as 2.20.0 at the owner's ask (21 Nov).
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
