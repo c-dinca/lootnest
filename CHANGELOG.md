@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.19.0
 
 - **Mods added before profiles were on come along.** A game's mods are kept by the game's place in the Library, and turning its profiles on (or off) gives it another one, so mods added before seemed gone. The Mods tab now shows them under **Added before profiles were on** (or while they were on), and **Bring here** copies a mod into the list you're looking at and turns it on; **Bring all here** brings them all. Mods that are in the game's folder come together: Lootnest takes them out by the old list and puts them back in by the new one, so the game stays modded and Put the game back still works. The old copy stays. More, **Open Lootnest's copies of the mods** opens the folder where a game's mods are kept.
 - **Start a game with its launcher.** Some games in a folder have to start from a launcher of their own rather than the .exe Lootnest found. Manage, Launch options, **Start with** lets you choose that program: Play starts it instead, while the game stays the same in Lootnest, with its name, cover, icon, saves and achievements, and Lootnest still sees when the game itself runs and closes (it waits up to 20 minutes for you to press Play in the launcher). Desktop shortcuts start the launcher too. **Use** the game's own .exe goes back.
