@@ -1163,6 +1163,10 @@ the same network as the PC, with TV streaming set up.
    stay. Rename one: it stays for good.
 5. Settings, Games and swaps, **Keep each save a game makes** off: no new
    points while playing.
+6. A game that saves every minute (Red Dead Redemption 2): after 15
+   minutes the Saves tab has a game save about every 5 minutes plus the
+   latest one, not 15, and each point's time played grows with the
+   sitting.
 6. A game whose saves are over 512 MB: the log says Lootnest doesn't keep
    each save of it, and play is unaffected.
 7. A Steam game without profiles started from Steam: its saves are kept
