@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A save brought as a mod goes to Try a save.** Some downloads on mod sites are someone's saved game (a 100% save, a prologue skip). Added on the Mods tab, such a save landed in the game's own folder, where the game never looks, so nothing changed. Lootnest now tells a save from a mod by its file names (Red Dead Redemption 2's SRDR3 files, GTA V's, .sav, .sl2, .ess and the like, or names shaped like the game's own saves) and by Nexus Mods' Saved Games category, and offers **Try it as a save**: a new run with that save in place, while everyone else's saves stay as they are. A save already on a game's Mods tab says so, with the same key.
+- **Try a save puts one save beside the saves like it.** A single save file used to go at the top of the game's save folder; games such as Red Dead Redemption 2 keep saves one folder down (Profiles, then your profile's folder), so it now goes next to the files named like it.
+
 ## 2.19.1
 
 - **Start with: Lootnest sees the game running as that program too.** When the program chosen under Start with was the game itself under another name, Lootnest kept waiting for the game's usual .exe, so a game with profiles stayed on "Loading your files and starting" while you played, until Lootnest was restarted. Now the game counts as running whichever of the two programs is open: the screen closes once the game is up, and your saves go back to your profile when it closes. Lootnest also waits a little longer for a launcher to hand over to the game before it calls the session over.

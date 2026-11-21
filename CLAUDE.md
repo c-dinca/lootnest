@@ -2322,6 +2322,22 @@ These shipped recently, newest last:
   `startedGrace`: 8 looks instead of 2 before a session with two names
   ends, for a launcher handing over. docs/TESTING.md 57, item 7.
   Released as 2.19.1 at the owner's ask (21 Nov).
+- **Unreleased, a save brought as a mod** (the owner, 21 Nov 2026: a
+  "Prologue Skip with Gold Medals" for RDR2 added as a mod went into the
+  game's folder and did nothing; "make it detect a save by itself").
+  `core/modsave.go`: `ModLooksLikeSave(m, category, saves)` (only
+  `AtRoot` mods; Nexus's "Saved Games" category, else every file but
+  pictures a save: `saveExts`, `saveNameRe` (SRDR3, SGTA5, savegame,
+  slot...), or `saveShape` (digits as #) of a numbered file in the
+  game's save folders, `SaveNames`). `addMod` takes Nexus's category
+  (`apiNexusAdd`), removes such a mod and answers `modPlan` with `save`;
+  `apiMods` marks old rows (`ModRow.Save`, `SaveFrom` = the kept
+  `files` folder); `gameSaveNames` reads `pointTarget`'s locations. UI:
+  the modplan drawer's save screen and the row's note, `saveKey`,
+  `trySaveFrom`, action `mod-try-save` (games with profiles only).
+  Try a save: `saveHome` puts one file beside the saves like it (same
+  name, shape, then extension, three folders down). Harness
+  `?mods=1&modsave=1`, shots `mods-save-*`. docs/TESTING.md 59.
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should

@@ -1286,6 +1286,7 @@
       tick();
     },
     "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); focusOverlay(); },
+    "mod-try-save"(el) { trySaveFrom(el.dataset.mods, el.dataset.from, el.dataset.owner, el.dataset.name); },
     "try-save"(el) { const sp = seated(); S.dialog = { kind: "trysave", gameId: el.dataset.game, from: sp && hasProfile(el.dataset.game, sp.id) ? sp.id : "" }; renderOverlay(); focusOverlay(); },
     async "try-browse"(el) {
       const D = S.dialog;

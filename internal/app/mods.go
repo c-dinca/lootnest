@@ -110,6 +110,27 @@ type ModRow struct {
 	Nexus string `json:"nexus,omitempty"`
 	// NexusID is its id there.
 	NexusID int `json:"nexusId,omitempty"`
+	// Save says it's a saved game rather than a mod, and SaveFrom is
+	// Lootnest's copy of it, for Try a save.
+	Save     bool   `json:"save,omitempty"`
+	SaveFrom string `json:"saveFrom,omitempty"`
+}
+
+// gameSaveNames are the file names in a game's save folders, to tell a
+// saved game from a mod (core.ModLooksLikeSave); none when Lootnest doesn't
+// know where its saves are.
+func (a *App) gameSaveNames(key string) []string {
+	t, err := a.pointTarget(key)
+	if err != nil {
+		return nil
+	}
+	var dirs []string
+	for _, l := range t.locs {
+		if l.Live != "" {
+			dirs = append(dirs, l.Live)
+		}
+	}
+	return core.SaveNames(dirs)
 }
 
 func modRow(m *core.Mod, on bool) ModRow {
@@ -140,6 +161,7 @@ func (a *App) apiMods(key string) (map[string]any, error) {
 		sets[o] = nil
 	}
 	conflicts := map[string][]core.ModConflict{}
+	var saves []string // the game's save file names, read once a mod could be a save
 	for o := range sets {
 		_, set := core.ModSetIn(all, o, "")
 		rows := []ModRow{}
@@ -149,7 +171,16 @@ func (a *App) apiMods(key string) (map[string]any, error) {
 				kept[e.ID], _ = core.LoadMod(root, e.ID)
 			}
 			if m := kept[e.ID]; m != nil {
-				rows = append(rows, modRow(m, e.On))
+				r := modRow(m, e.On)
+				if m.AtRoot {
+					if saves == nil {
+						saves = append(a.gameSaveNames(key), "")
+					}
+					if core.ModLooksLikeSave(m, "", saves) {
+						r.Save, r.SaveFrom = true, filepath.Join(root, m.ID, "files")
+					}
+				}
+				rows = append(rows, r)
 				if e.On {
 					on = append(on, m)
 				}
@@ -341,11 +372,12 @@ func (a *App) apiModsBring(key, from, owner string, ids []string) error {
 // apiAddMod keeps a copy of the mod at path for the game and answers with a
 // "modPlan" event: what putting it in would do, or why it can't go in. The
 // game's folder doesn't change; the mod joins the list on ps_modToggle.
-func (a *App) apiAddMod(key, path string) error { return a.addMod(key, path, "", nil) }
+func (a *App) apiAddMod(key, path string) error { return a.addMod(key, path, "", nil, "") }
 
-// addMod is apiAddMod for a mod with a name of its own and where on Nexus
-// it came from (app/nexus.go), or none.
-func (a *App) addMod(key, path, name string, from *core.ModNexus) error {
+// addMod is apiAddMod for a mod with a name of its own, where on Nexus it
+// came from and its category there (app/nexus.go), or none. A saved game
+// isn't kept as a mod: the answer says "save", for Try a save.
+func (a *App) addMod(key, path, name string, from *core.ModNexus, category string) error {
 	t, err := a.modTarget(key)
 	if err != nil {
 		return err
@@ -376,6 +408,12 @@ func (a *App) addMod(key, path, name string, from *core.ModNexus) error {
 			}
 		}
 		out["mod"] = modRow(m, false)
+		if core.ModLooksLikeSave(m, category, a.gameSaveNames(key)) {
+			_ = core.RemoveMod(root, m.ID)
+			out["save"] = true
+			a.logf("%s looks like a saved game, not a mod; offered Try a save", m.Name)
+			return
+		}
 		p, err := core.PlanMods(t.Dir, t.Exe, []*core.Mod{m}, core.LoadDeployed(root))
 		if err != nil {
 			_ = core.RemoveMod(root, m.ID)

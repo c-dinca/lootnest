@@ -280,7 +280,7 @@
         break;
       case "modPlan": {
         const D = S.dialog;
-        if (D && D.kind === "modplan" && D.key === ev.key && D.path === ev.path) { Object.assign(D, { busy: false, mod: ev.mod || null, plan: ev.plan || null, refused: ev.refused || "", error: ev.error || "" }); renderOverlay(); }
+        if (D && D.kind === "modplan" && D.key === ev.key && D.path === ev.path) { Object.assign(D, { busy: false, mod: ev.mod || null, plan: ev.plan || null, refused: ev.refused || "", error: ev.error || "", save: !!ev.save }); renderOverlay(); }
         break;
       }
       case "modsProgress": {
