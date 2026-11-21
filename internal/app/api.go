@@ -793,6 +793,9 @@ func (a *App) apiBrowse(reqID, kind, start string) {
 		case "program":
 			opt.Title = "Choose a program to start"
 			opt.Filters = []plat.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
+		case "startWith":
+			opt.Title = "Choose the program that starts the game"
+			opt.Filters = []plat.FileFilter{{Name: "Programs (*.exe)", Spec: "*.exe"}}
 		case "workDir":
 			opt.Title = "Choose the folder the game starts in"
 			opt.Folder = true
