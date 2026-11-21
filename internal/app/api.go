@@ -238,6 +238,7 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_modRemove", a.apiModRemove))
 	must(a.w.Bind("ps_modsApply", a.apiModsApply))
 	must(a.w.Bind("ps_modsRestore", a.apiModsRestore))
+	must(a.w.Bind("ps_modsBring", a.apiModsBring))
 	must(a.w.Bind("ps_setGameSaves", a.apiSetGameSaves))
 	must(a.w.Bind("ps_gameNews", a.apiGameNews))
 	must(a.w.Bind("ps_gameDetails", a.apiGameDetails))
@@ -1012,6 +1013,8 @@ func (a *App) apiOpen(kind, arg string) error {
 		target = a.store.LogPath()
 	case "modsChanged": // files that changed while a game was modded, by its key
 		target = filepath.Join(a.modsRoot(arg), "changed")
+	case "mods": // Lootnest's copies of a game's mods, by its key
+		target = a.modsRoot(arg)
 	default:
 		return errors.New("unknown location")
 	}

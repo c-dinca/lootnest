@@ -970,7 +970,13 @@
       S.dialog = { kind: "modconf", key: el.dataset.mods, owner: el.dataset.owner || "", id: el.dataset.id };
       renderOverlay(); focusOverlay();
     },
-    "mods-more"(el) { toggleMenu(el, modsMoreHTML()); },
+    "mods-more"(el) { toggleMenu(el, modsMoreHTML(el.dataset.mods)); },
+    "mods-folder"(el) { closeContext(); api.open("mods", el.dataset.mods).catch((e) => toast(errText(e), "error")); },
+    async "mods-bring"(el) {
+      const key = el.dataset.mods, ids = (el.dataset.ids || "").split(",").filter(Boolean);
+      S.modsRun[key] = { what: "bring", done: 0, total: 0, inFolder: !!el.dataset.in }; render();
+      try { await api.modsBring(key, el.dataset.from, el.dataset.owner || "", ids); } catch (e) { delete S.modsRun[key]; render(); toast(errText(e), "error"); }
+    },
     "mods-link"() { saveSetting({ dataset: { setting: "modsLinkOff" }, type: "checkbox", checked: !cfg().settings.modsLinkOff }); },
     async "mod-remove"(el) {
       const key = el.dataset.mods, M = S.mods[key] || {}, inGame = ((M.deployed || {}).mods || []).includes(el.dataset.id);

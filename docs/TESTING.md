@@ -1265,3 +1265,20 @@ Two monitors on the PC, the TV app connected.
    the number work, and the game runs as before.
 9. A 32-bit game: the log says it's a 32-bit program; the counter is
    outside.
+
+## 57. Mods added before profiles were turned on
+
+1. A folder game without profiles: add a mod on its Mods tab, but don't
+   apply. Turn its profiles on. The Mods tab shows **Added before profiles
+   were on** with the mod. **Bring here**: it moves to the list above, on,
+   and the section goes. Lootnest's data folder, `mods`, still has the old
+   copy (More, **Open Lootnest's copies of the mods** opens the new one).
+2. The same with the mod applied before turning profiles on: the section
+   says they're in the game's folder and offers only **Bring all here**.
+   After it, the game's files are the mod's, the Mods tab says Modded, and
+   **Put the game back as it was** brings back the game's own files.
+3. Before bringing them (case 2), Apply on the new list refuses and says
+   to bring them first; Play starts the game with the old mods in, and the
+   log says the set waits.
+4. Turn profiles off again: the Library game's Mods tab shows **Added
+   while profiles were on** for mods added with profiles.

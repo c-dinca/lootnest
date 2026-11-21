@@ -475,6 +475,11 @@
     SETS[BG3] = { "": [{ id: "m4", on: true }], p1: [{ id: "m3", on: true }, { id: "m5", on: true }, { id: "m4", on: false }], ...(ids[1] ? { [ids[1]]: [{ id: "m4", on: true }, { id: "m3", on: false }] } : {}) };
     DEPLOYED[BG3] = { mods: ["m3", "m5"], owner: "p1" };
   }
+  // &away=1 gives Baldur's Gate 3 two mods kept from before its profiles
+  // were on (under its Steam key); &away=in has them in its folder.
+  const AWAY = {};
+  if (q.get("away")) AWAY[BG3] = [{ key: "steam:1086940", profiles: false, inFolder: q.get("away") === "in",
+    mods: [{ id: "m7", name: "Better Inventory", files: 3, bytes: 1.4e6, into: "Data", on: true }, { id: "m8", name: "Camp Clothes", files: 12, bytes: 38e6, into: "Data", on: true }] }];
   const modOwner = (key, o) => {
     const sets = SETS[key] || {}, p = PLAYERS.find((x) => x.id === o);
     return o && sets[o] ? o : p && p.of && sets[p.of] ? p.of : "";
@@ -688,6 +693,7 @@
       };
       ["", ...Object.keys(SETS[key] || {})].forEach((o) => { const set = modSet(key, o)[1]; sets[o] = rows(set); conflicts[o] = clash(set); });
       return ok({ dir, sets, conflicts, uses: key.startsWith("game:") ? Object.fromEntries(PLAYERS.map((p) => [p.id, modOwner(key, p.id)])) : {}, deployed: DEPLOYED[key] || null, pending: false,
+        elsewhere: (AWAY[key] || []).filter((E) => E.mods.length || E.inFolder),
         safe: q.get("safe") === "1" ? "Lootnest is in safe mode, which leaves the game's folder as it is. Restart it normally to change its mods." : "",
         refused: ac ? `This game ships with ${ac}, which can ban an account over changed game files, so Lootnest doesn't put mods into it.`
           : /Program Files/.test(dir) ? "Windows protects the games under Program Files and WindowsApps, so Lootnest doesn't put mods there. A game in a folder outside them can have mods." : "" });
@@ -780,6 +786,21 @@
       if (on.length) DEPLOYED[key] = { mods: on.map((m) => m.id), owner: o }; else delete DEPLOYED[key];
     }),
     ps_modsRestore: (key) => modsRun(key, "restore", () => { delete DEPLOYED[key]; }),
+    ps_modsBring: (key, from, owner, ids) => {
+      const E = (AWAY[key] || []).find((x) => x.key === from);
+      if (!E) return Promise.reject("Those mods aren't kept for this game any more.");
+      return modsRun(key, "bring", () => {
+        const [o, set] = modSet(key, owner);
+        E.mods.filter((m) => ids.includes(m.id)).forEach((m) => {
+          (MODS[key] = MODS[key] || {})[m.id] = { ...m };
+          const e = set.find((x) => x.id === m.id);
+          if (e) e.on = true; else set.push({ id: m.id, on: true });
+        });
+        (SETS[key] = SETS[key] || {})[o] = set;
+        E.mods = E.mods.filter((m) => !ids.includes(m.id));
+        if (E.inFolder) { E.inFolder = false; DEPLOYED[key] = { mods: set.filter((m) => m.on).map((m) => m.id), owner: o }; }
+      });
+    },
     ps_setPrimaryCopy: (group, key) => { GROUPS.forEach((g) => { if (g.key === group) g.primary = key; }); return ok(); },
     ps_separateCopies: (group, apart) => { if (apart) SEPARATE.add(group); else SEPARATE.delete(group); return ok(); },
     ps_cover: (appId, name) => (STATE === "offline" ? offline() : ok(gameArt(appId, name, "cover"))),

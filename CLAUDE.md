@@ -2310,6 +2310,23 @@ These shipped recently, newest last:
   in Big Picture"; Glass off still makes it all solid. docs/TESTING.md 55.
   Released as 2.18.1 at the owner's ask (20 Nov).
 
+- **Unreleased, mods from before profiles** (the owner, 21 Nov 2026:
+  a mod added with profiles off was gone once they were on; "a button to
+  port it"). Mods are kept by Library key (`core.ModsDir`), and turning
+  profiles on makes the key `game:<id>`. `modsElsewhere` (app/mods.go)
+  finds the game's other key with mods kept (`isFoundGame` both ways);
+  `apiMods` sends `elsewhere` (`ModsElsewhere`: mods not kept here yet,
+  `InFolder`); `apiModsBring` (`ps_modsBring`, run "bring") takes the old
+  key's mods out of the folder by its record first when they're in (all
+  of them come together), `core.CopyMod` (same id, hash-checked, temp
+  folder then rename; the old copy stays), turns them on in the owner's
+  set, then applies it when it took some out. While the other key's mods
+  are in the folder, `applyModSet` refuses (`errModsElsewhere`),
+  `modsForPlay` starts as is, and `modsOffFor` takes those out before an
+  update. UI `modsAway` in 67-mods.js; More has **Open Lootnest's copies
+  of the mods** (`ps_open("mods", key)`). Harness `&away=1|in`, shots
+  `mods-away*`. docs/TESTING.md 57.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

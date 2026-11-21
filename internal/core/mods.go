@@ -1139,3 +1139,54 @@ func pruneMods(root string) {
 		}
 	}
 }
+
+// CopyMod copies the mod id kept in from into to, the same mod under the
+// same id, for a game whose mods were kept under another Library key (its
+// profiles turned on or off). Each file is checked against the hash
+// mod.json keeps, and the copy is made under a temporary name first, so to
+// never holds half a mod. from is left as it is. A mod the game changed
+// through a link (Mod.Changed) is refused: Lootnest's copy isn't the mod.
+func CopyMod(from, to, id string) (*Mod, error) {
+	m, err := LoadMod(from, id)
+	if err != nil {
+		return nil, err
+	}
+	if err := m.CheckIntact(); err != nil {
+		return nil, err
+	}
+	dst := filepath.Join(to, id)
+	if exists(dst) {
+		return nil, fmt.Errorf("%s is already in this game's mods", m.Name)
+	}
+	tmp := filepath.Join(to, ".copy-"+id)
+	_ = removeAll(tmp)
+	fail := func(err error) (*Mod, error) {
+		_ = removeAll(tmp)
+		return nil, err
+	}
+	for _, f := range m.Files {
+		rel := filepath.FromSlash(f.Rel)
+		if !filepath.IsLocal(rel) {
+			return fail(fmt.Errorf("%s: not a path inside the mod", f.Rel))
+		}
+		src := filepath.Join(from, id, "files", rel)
+		info, err := os.Lstat(src)
+		if err != nil || !info.Mode().IsRegular() {
+			return fail(fmt.Errorf("%s isn't in Lootnest's copy of %s any more", f.Rel, m.Name))
+		}
+		out := filepath.Join(tmp, "files", rel)
+		if err := copyFile(src, out, info); err != nil {
+			return fail(fmt.Errorf("%s: %w", f.Rel, err))
+		}
+		if sum, err := fileSHA256(out); err != nil || sum != f.SHA256 {
+			return fail(fmt.Errorf("%s in Lootnest's copy of %s isn't the file it kept", f.Rel, m.Name))
+		}
+	}
+	if err := writeJSONSynced(filepath.Join(tmp, "mod.json"), m); err != nil {
+		return fail(err)
+	}
+	if err := os.Rename(tmp, dst); err != nil {
+		return fail(err)
+	}
+	return m, nil
+}
