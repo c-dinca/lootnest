@@ -505,6 +505,7 @@
     setTimeout(() => { after(); emit({ type: "modsDone", key, what, result: { changed: 0 } }); }, 1200);
     return ok();
   };
+  const WIN = { max: q.get("winmax") === "1" }; // the window's bar (16-winbar.js)
   const emit = (ev, delay) => setTimeout(() => window.__ps && window.__ps(ev), delay || 40);
   const ok = (v) => Promise.resolve(v);
   // Made-up mods for the Nexus Mods pane, with drawn pictures.
@@ -976,6 +977,7 @@
     ps_dismissConflict: () => ok(),
     ps_gameFacts: (dir) => ok({ antiCheat: /onimusha/i.test(dir) ? "Easy Anti-Cheat" : "" }),
     ps_bigPicture: () => ok(),
+    ps_win: (op) => { if (op === "max") WIN.max = !WIN.max; return ok({ frame: true, max: WIN.max }); },
     ps_tvExit: () => ok(),
     // Settings, TV: ?link=none|set|busy|off (default none).
     ps_linkStatus: () => {

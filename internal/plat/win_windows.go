@@ -58,9 +58,11 @@ const (
 	WM_INPUT             = win.WM_INPUT
 	WM_LBUTTONDBLCLK     = win.WM_LBUTTONDBLCLK
 	WM_LBUTTONUP         = win.WM_LBUTTONUP
+	WM_NCCALCSIZE        = win.WM_NCCALCSIZE
 	WM_NULL              = win.WM_NULL
 	WM_RBUTTONUP         = win.WM_RBUTTONUP
 	WM_SETICON           = win.WM_SETICON
+	WM_SIZE              = win.WM_SIZE
 	WM_TRAY              = win.WM_TRAY
 	XA                   = win.XA
 	XB                   = win.XB
@@ -178,6 +180,10 @@ func Downloads() string {
 	return win.Downloads()
 }
 
+func DragWindow(hwnd uintptr, part string) {
+	win.DragWindow(hwnd, part)
+}
+
 func EnableDPIAwareness() {
 	win.EnableDPIAwareness()
 }
@@ -220,6 +226,10 @@ func ForegroundPID() uint32 {
 	return win.ForegroundPID()
 }
 
+func FrameSize(hwnd uintptr, wp uintptr, lp uintptr) (uintptr, bool) {
+	return win.FrameSize(hwnd, wp, lp)
+}
+
 type FrameTrace = win.FrameTrace
 
 func FramesAllowed() bool {
@@ -254,6 +264,10 @@ func GameWindow(proc string) uintptr {
 
 func HIDPaths() []string {
 	return win.HIDPaths()
+}
+
+func HasCaption(hwnd uintptr) bool {
+	return win.HasCaption(hwnd)
 }
 
 func HideFPS() {
@@ -292,6 +306,10 @@ func IsVisible(hwnd uintptr) bool {
 
 func IsWindow(hwnd uintptr) bool {
 	return win.IsWindow(hwnd)
+}
+
+func IsZoomed(hwnd uintptr) bool {
+	return win.IsZoomed(hwnd)
 }
 
 func KillPID(pid uint32) bool {
@@ -466,6 +484,10 @@ func ReadRegKey(key string) ([]string, map[string]string, error) {
 
 func Recycle(hwnd uintptr, paths ...string) error {
 	return win.Recycle(hwnd, paths...)
+}
+
+func RefreshFrame(hwnd uintptr) {
+	win.RefreshFrame(hwnd)
 }
 
 func RegisterHotKey(hwnd uintptr, id int, mods uint32, vk uint32) bool {
@@ -741,6 +763,10 @@ func WindowClass(hwnd uintptr) string {
 
 func WindowDPI(hwnd uintptr) int {
 	return win.WindowDPI(hwnd)
+}
+
+func WindowKey(hwnd uintptr, key string) {
+	win.WindowKey(hwnd, key)
 }
 
 func WindowOfPID(pid uint32) uintptr {

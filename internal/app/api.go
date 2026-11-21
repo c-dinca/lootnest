@@ -55,6 +55,7 @@ func (a *App) bind() {
 	}))
 	must(a.w.Bind("ps_nameCopy", a.apiNameCopy))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))
+	must(a.w.Bind("ps_win", a.apiWin))
 	must(a.w.Bind("ps_tvExit", a.apiTVExit))
 	must(a.w.Bind("ps_linkStatus", a.apiLinkStatus))
 	must(a.w.Bind("ps_linkSetup", a.apiLinkSetup))

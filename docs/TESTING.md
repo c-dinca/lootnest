@@ -1321,3 +1321,25 @@ Two monitors on the PC, the TV app connected.
    saved game, with **Try it as a save**; remove the row afterwards.
 5. A real mod at the game folder's top (a .dll, ScriptHook): added as
    before.
+
+## 60. The window's own bar
+
+1. Lootnest opens with no Windows title bar: the game's art runs to the
+   top edge, and the top right has Minimize, Maximize and Close drawn by
+   Lootnest. No logo or "Lootnest" caption anywhere at the top.
+2. Drag the window by its top strip (over the art, or the sidebar's
+   "Lootnest" line): it moves; dragged to a screen's edge it snaps, to the
+   top it maximizes. Double-click the strip: maximizes, again restores.
+3. The left, right and bottom edges and the corners resize as before; the
+   top edge (the cursor turns into arrows there) resizes too.
+4. Maximized: nothing is cut off at the top or the sides, the Maximize key
+   shows the restore glyph, and a maximized window dragged down by its
+   strip comes back to its size.
+5. Close follows Close to tray (Settings) as the old X did. Minimize goes
+   to the taskbar; the taskbar's click brings it back.
+6. Windows 11: the window keeps its rounded corners, border and shadow.
+   Windows 10: no white line at the top.
+7. Big Picture (F11) and TV mode: no bar and no gap at the top; leaving
+   Big Picture brings the bar back. Win+Up, Win+Down and Win+Left work.
+8. A second monitor with another scale (150%): drag the window across; the
+   bar and keys keep their size and nothing is cut off at the top.

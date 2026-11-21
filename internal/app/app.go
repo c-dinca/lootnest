@@ -178,6 +178,8 @@ type App struct {
 	quitting       bool
 	trayHintShown  bool
 	taskbarCreated uint32
+	winShape       [2]bool // the window's frame and maximized, as last told to the page (winframe.go)
+	winShapeSent   bool
 	exePath        string
 
 	logMu sync.Mutex
@@ -424,6 +426,10 @@ func (a *App) apiRestart(safe bool) { a.ui(func() { a.restart(safe) }) }
 
 func (a *App) hook(hwnd, msg, wp, lp uintptr) (uintptr, bool) {
 	switch {
+	case msg == plat.WM_NCCALCSIZE:
+		return plat.FrameSize(hwnd, wp, lp) // the caption is the page's (winframe.go)
+	case msg == plat.WM_SIZE:
+		a.noteWinSize()
 	case msg == plat.WM_CLOSE:
 		if a.quitting {
 			return 0, false

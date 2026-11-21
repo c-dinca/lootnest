@@ -57,9 +57,11 @@ const (
 	WM_INPUT             = 255
 	WM_LBUTTONDBLCLK     = 515
 	WM_LBUTTONUP         = 514
+	WM_NCCALCSIZE        = 131
 	WM_NULL              = 0
 	WM_RBUTTONUP         = 517
 	WM_SETICON           = 128
+	WM_SIZE              = 5
 	WM_TRAY              = 32769
 	XA                   = 4096
 	XB                   = 8192
@@ -144,6 +146,8 @@ func Displays() (r0 [][4]int) {
 	return
 }
 
+func DragWindow(hwnd uintptr, part string) {}
+
 func EnableDPIAwareness() {}
 
 func ExclusiveFullscreen() (r0 bool) {
@@ -183,6 +187,10 @@ func ForegroundIs(name string) (r0 bool) {
 }
 
 func ForegroundPID() (r0 uint32) {
+	return
+}
+
+func FrameSize(hwnd uintptr, wp uintptr, lp uintptr) (r0 uintptr, r1 bool) {
 	return
 }
 
@@ -226,6 +234,10 @@ func HIDPaths() (r0 []string) {
 	return
 }
 
+func HasCaption(hwnd uintptr) (r0 bool) {
+	return
+}
+
 func HideFPS() {}
 
 func HideTVBar() {}
@@ -265,6 +277,10 @@ func IsVisible(hwnd uintptr) (r0 bool) {
 }
 
 func IsWindow(hwnd uintptr) (r0 bool) {
+	return
+}
+
+func IsZoomed(hwnd uintptr) (r0 bool) {
 	return
 }
 
@@ -433,6 +449,8 @@ func ReadRegKey(key string) (r0 []string, r1 map[string]string, err error) {
 	err = ErrUnsupported
 	return
 }
+
+func RefreshFrame(hwnd uintptr) {}
 
 func RegisterHotKey(hwnd uintptr, id int, mods uint32, vk uint32) (r0 bool) {
 	return
@@ -686,6 +704,8 @@ func WindowClass(hwnd uintptr) (r0 string) {
 func WindowDPI(hwnd uintptr) (r0 int) {
 	return
 }
+
+func WindowKey(hwnd uintptr, key string) {}
 
 func WindowOfPID(pid uint32) (r0 uintptr) {
 	return

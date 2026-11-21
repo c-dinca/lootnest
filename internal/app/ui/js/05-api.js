@@ -37,6 +37,7 @@
     open: (kind, arg) => call("ps_open", kind, arg || ""),
     log: () => call("ps_log"),
     quit: () => call("ps_quit"),
+    win: (op) => call("ps_win", op || "state"),
     steamSetup: () => call("ps_steamSetup"),
     copy: (t) => call("ps_copy", t),
     steamPick: (r) => call("ps_steamPick", r),

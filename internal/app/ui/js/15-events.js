@@ -1,6 +1,9 @@
   // ---------------------------------------------------------------- events --
   window.__ps = function (ev) {
     switch (ev.type) {
+      case "winState": // maximized, restored, full screen (app/winframe.go)
+        paintWinbar(ev);
+        break;
       case "sessions":
         if (!S.d) return;
         S.d.sessions = ev.sessions || [];

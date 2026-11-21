@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The window's bar is inside Lootnest.** Windows' own title bar, with its logo and caption, is gone: the game's art now runs to the top of the window, and Minimize, Maximize and Close sit at the top right, drawn in Lootnest's look, as in Steam. Drag the window by its top strip or the sidebar's top, double-click there to maximize, and resize from any edge as before; snapping to a screen's side still works. The logo beside "Lootnest" in the sidebar is gone too.
 - **A save brought as a mod goes to Try a save.** Some downloads on mod sites are someone's saved game (a 100% save, a prologue skip). Added on the Mods tab, such a save landed in the game's own folder, where the game never looks, so nothing changed. Lootnest now tells a save from a mod by its file names (Red Dead Redemption 2's SRDR3 files, GTA V's, .sav, .sl2, .ess and the like, or names shaped like the game's own saves) and by Nexus Mods' Saved Games category, and offers **Try it as a save**: a new run with that save in place, while everyone else's saves stay as they are. A save already on a game's Mods tab says so, with the same key.
 - **Try a save puts one save beside the saves like it.** A single save file used to go at the top of the game's save folder; games such as Red Dead Redemption 2 keep saves one folder down (Profiles, then your profile's folder), so it now goes next to the files named like it.
 

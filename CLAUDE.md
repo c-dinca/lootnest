@@ -2370,6 +2370,27 @@ These shipped recently, newest last:
   The owner asked for 2.19.0 once this was in (21 Nov), with the FPS
   counter's two entries and Start with a launcher.
 
+- **Unreleased, the window's bar inside the page** (the owner, 21 Nov
+  2026: the Windows title bar "not like this, inside Lootnest, as Steam
+  and Claude do", and the logo gone). The window keeps
+  WS_OVERLAPPEDWINDOW (snap, shadow, Windows 11 corners and border) but no
+  caption: `win.FrameSize` answers WM_NCCALCSIZE (the system's frame at
+  the sides and bottom, none at the top; maximized, the top kept in by as
+  much as the left), `RefreshFrame` in `OnCreate`; full screen (no
+  WS_CAPTION) is left alone. `app/winframe.go`: `ps_win` ("drag", "top",
+  "topleft", "topright" through `win.DragWindow`: ReleaseCapture, then
+  WM_NCLBUTTONDOWN with the hit code; "min", "max", "close" through
+  `WindowKey`, close is WM_CLOSE so Close to tray holds), `noteWinSize`
+  sends `winState` {frame, max} on WM_SIZE. Page: `#winbar` (keys, the top
+  edge `.wb-edge`), `16-winbar.js` (`paintWinbar`, `winbarStart`: a press
+  on the top `--winbar-h` 32px or `.side-top` that isn't on `WB_OWN`
+  drags; a second within 500 ms maximizes); `html.win-chrome` moves
+  `.view`, drawers, Ctrl+K and unlock pops below it; hidden under Big
+  Picture and on Linux. The sidebar's brand mark is gone (Big Picture,
+  the boot splash and the first run keep `BRAND_MARK`). Win11's snap
+  layouts flyout on Maximize needs HTMAXBUTTON, so it isn't there
+  (Win+Z is). docs/TESTING.md 60.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
