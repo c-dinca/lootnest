@@ -2473,8 +2473,10 @@ These shipped recently, newest last:
   two lines in the taskbar and the tray instead of the gem in a nest).
   `tools/mkicon.py` draws `BRAND_MARK`'s shapes on the obsidian tile,
   heavier strokes at 16 to 48 px; `assets/lootnest.ico`, `lootnest.png`,
-  `internal/desk/icon.png`. The site's favicon and the TV apps' icons
-  still have the gem. Released as 2.22.0 with the run line above, at the
+  `internal/desk/icon.png`. `mkicon.mark(size, fill)` is the mark on a
+  clear ground; with it the site's favicon (`site/img/icon.png`) and the
+  TV apps' icons, logo, splash and banner moved to the mark the same day
+  (lootnest-tv-webos 1.6.4, lootnest-tv-android 1.0.2). Released as 2.22.0 with the run line above, at the
   owner's ask (22 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
