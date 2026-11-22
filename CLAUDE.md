@@ -268,7 +268,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
   (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
-## Where things stand (2.21.0, beta)
+## Where things stand (2.22.0, beta)
 
 These shipped recently, newest last:
 
@@ -2458,7 +2458,7 @@ These shipped recently, newest last:
   Community is rows (`reviewRow`, `.gp-rev`, `--rev-hours-w`, `rev-all`).
   docs/TESTING.md 62. Released as 2.21.0 at the owner's ask (22 Nov).
 
-- **Unreleased, a run reads as its person's** (the owner, 22 Nov 2026:
+- **2.22.0, a run reads as its person's** (the owner, 22 Nov 2026:
   "Play as Skip Prologue" read like another profile; a run is a sub-save,
   the profile is still Cristian). 10-state.js: `pperson(id)` (the person's
   name), `whoseOf(id)` ("Cristian’s Skip Prologue"), `runName(p)`
@@ -2468,6 +2468,14 @@ These shipped recently, newest last:
   save points headings, the picker's swap screen use `whoseOf`/`pperson`;
   `heroCard` says "In the X run"; `whoMenu` and `playersPanel` list runs
   under their person (`grouped`, `.gp-person--run`). docs/TESTING.md 63.
+- **2.22.0, the brand mark as the app icon** (the owner, 22 Nov 2026:
+  the mark back beside the name in the sidebar, and the same ring over
+  two lines in the taskbar and the tray instead of the gem in a nest).
+  `tools/mkicon.py` draws `BRAND_MARK`'s shapes on the obsidian tile,
+  heavier strokes at 16 to 48 px; `assets/lootnest.ico`, `lootnest.png`,
+  `internal/desk/icon.png`. The site's favicon and the TV apps' icons
+  still have the gem. Released as 2.22.0 with the run line above, at the
+  owner's ask (22 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
