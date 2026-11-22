@@ -161,6 +161,13 @@
   const session = (gid) => (S.d.sessions || []).find((s) => s.gameId === gid);
   const hasProfile = (gid, pid) => ((S.d.profiles || {})[gid] || []).includes(pid);
   const possessive = (n) => (/s$/i.test(n) ? n + "’" : n + "’s");
+  // A run is its person's save of its own, so it's said as theirs: Cristian
+  // plays, and the files are "Cristian’s Skip Prologue" ones. pperson is
+  // whose profile it is; whoseOf says whose files; runTag marks a run.
+  const pperson = (id) => { const p = player(id); return p ? personOf(p).name : "Someone"; };
+  const whoseOf = (id) => { const p = player(id); return p && parentOf(p) ? `${possessive(parentOf(p).name)} ${runLabel(p)}` : possessive(pname(id)); };
+  const runName = (p) => (parentOf(p) ? `${parentOf(p).name}, ${runLabel(p)} run` : p.name);
+  const runTag = (p) => (parentOf(p) ? `<span class="ln-tag gp-run-tag" title="A run of ${esc(parentOf(p).name)}: saves of its own">${esc(runLabel(p))} run</span>` : "");
   const fmtSize = (b) => (b < 1024 ? b + " B" : b < 1048576 ? (b / 1024).toFixed(0) + " KB" : b < 1073741824 ? (b / 1048576).toFixed(1) + " MB" : (b / 1073741824).toFixed(2) + " GB");
   const short = (name) => (name.length > 22 ? name.slice(0, 20).trim() + "…" : name);
 

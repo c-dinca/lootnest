@@ -49,11 +49,11 @@
     if (P.working) {
       const to = player(P.playerId), from = P.from && P.from !== P.playerId && player(P.from);
       const s = session(g.id);
-      const m = s && s.phase === "mods" && s.mods, line = m ? `${esc(sessionText(s))}${m.total ? `, ${m.done} of ${m.total} files` : ""}` : s && s.phase === "launching" ? `Starting ${esc(g.name)}` : P.mode !== "load" ? `Loading ${esc(possessive(pname(P.playerId)))} files and starting ${esc(g.name)}` : `Loading ${esc(possessive(pname(P.playerId)))} files`;
+      const m = s && s.phase === "mods" && s.mods, line = m ? `${esc(sessionText(s))}${m.total ? `, ${m.done} of ${m.total} files` : ""}` : s && s.phase === "launching" ? `Starting ${esc(g.name)}` : P.mode !== "load" ? `Loading ${esc(whoseOf(P.playerId))} files and starting ${esc(g.name)}` : `Loading ${esc(whoseOf(P.playerId))} files`;
       return `<div class="picker ln-root" role="dialog" aria-label="${esc(line)}"><div class="picker-head"><div></div></div>
         <div class="swap" aria-live="polite">
           <div class="swap-bay">${from ? `<div class="swap-out" aria-hidden="true">${lnAvatar(from, "120")}</div>` : ""}<div class="swap-in">${to ? lnAvatar(to, "120") : ""}</div></div>
-          <div class="swap-text"><b>${esc(pname(P.playerId))}</b><p><span class="ln-spinner" aria-hidden="true"></span>${line}</p>
+          <div class="swap-text"><b>${esc(pperson(P.playerId))}</b>${player(P.playerId) ? runTag(player(P.playerId)) : ""}<p><span class="ln-spinner" aria-hidden="true"></span>${line}</p>
             ${from ? `<p class="swap-safe">${GI.copy}A copy of ${esc(possessive(from.name))} files was made first.</p>` : `<p class="swap-safe">${GI.copy}A copy is made before every swap.</p>`}</div>
         </div><div></div></div>`;
     }
