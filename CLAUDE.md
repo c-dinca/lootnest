@@ -2476,7 +2476,8 @@ These shipped recently, newest last:
   `internal/desk/icon.png`. `mkicon.mark(size, fill)` is the mark on a
   clear ground; with it the site's favicon (`site/img/icon.png`) and the
   TV apps' icons, logo, splash and banner moved to the mark the same day
-  (lootnest-tv-webos 1.6.4, lootnest-tv-android 1.0.2). Released as 2.22.0 with the run line above, at the
+  (lootnest-tv-webos 1.6.4, lootnest-tv-android 1.0.2, pinned in
+  `TVAppPinned`/`AndroidAppPinned` after 2.22.0). Released as 2.22.0 with the run line above, at the
   owner's ask (22 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one

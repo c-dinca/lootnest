@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The TV apps carry the new sign too.** Lootnest for TV on LG TVs (1.6.4) and on Android TV (1.0.2) show the red ring over two arcs as their icon, and on LG TVs on the screen they open with and their home screen, instead of the gem in a nest. Lootnest brings an LG TV's app up to date by itself when the TV is on and the app isn't open; on Android TV, **Update to 1.0.2** in Settings, TV puts the new version on (with network debugging on, as when it was added).
+
 ## 2.22.0
 
 - **A run reads as its person's.** A run (Skip Prologue of Cristian) is a save of Cristian's own, not another profile, and the game page now says so: Play says **Play as Cristian**, the profile beside it shows Cristian with a **Skip Prologue run** label, the files are "Cristian's Skip Prologue files", the card on the art says "In the Skip Prologue run", and the Profiles list shows each run under its person. The swap screen, the profile list and the right-click menu say it the same way.

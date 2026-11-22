@@ -32,9 +32,9 @@ const AndroidTVLogTag = "LootnestTV"
 // release of c-dinca/lootnest-tv-android is tried with Lootnest first,
 // then its address and SHA-256 change here.
 var AndroidAppPinned = TVAppRelease{
-	Version: "1.0.1",
-	URL:     androidAppReleases + "v1.0.1/com.lootnest.tv_1.0.1.apk",
-	SHA256:  "171f5d1ec78b07900e6ab55079faf60fcb5a2181d9fbfc06bc495ce73024c4fb",
+	Version: "1.0.2",
+	URL:     androidAppReleases + "v1.0.2/com.lootnest.tv_1.0.2.apk",
+	SHA256:  "0862033029cc6ba7b56c06a7846569d472f4c4bc521668ecff38454485ba6818",
 }
 
 const androidAppReleases = "https://github.com/c-dinca/lootnest-tv-android/releases/download/"
