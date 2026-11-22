@@ -3,6 +3,9 @@ package app
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -22,6 +25,12 @@ type Session struct {
 	missed   int
 	viaPlay  bool // started from Lootnest's own Play button
 	front    bool // the game's window was in front at the last look
+	// alt is the program from the game's folder this session follows when
+	// the game runs under a name Lootnest doesn't know (a launcher hands
+	// over to it): see inGameFolder.
+	alt     string
+	seenOwn bool // the game ran under one of its known names this session
+	altGame bool // alt was a program other than the launch options' helpers
 }
 
 func (a *App) sessionsSnapshot() []Session {
@@ -70,7 +79,11 @@ func procName(g *core.Game) string {
 func (a *App) gameNames(g *core.Game) []string {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return runNames(a.cfg.LaunchOpts["game:"+g.ID], procName(g))
+	names := runNames(a.cfg.LaunchOpts["game:"+g.ID], procName(g))
+	if s := a.sessions[g.ID]; s != nil && s.alt != "" && !slices.Contains(names, s.alt) {
+		names = append(names, s.alt)
+	}
+	return names
 }
 
 func (a *App) isRunning(g *core.Game) bool {
@@ -315,6 +328,7 @@ func (a *App) tick() {
 	if err != nil {
 		return
 	}
+	folders, apps := a.sessionFolders()
 	upFound, downFound := a.foundTick(procs)
 	for _, k := range downFound {
 		go a.achAfterPlay(k) // its achievements, read again once it's closed
@@ -347,8 +361,33 @@ func (a *App) tick() {
 		g := &cfg.Games[i]
 		names := runNames(cfg.LaunchOpts["game:"+g.ID], procName(g))
 		live := liveName(names, procs)
-		running := live != ""
 		s := a.sessions[g.ID]
+		if live != "" && s != nil {
+			s.seenOwn = true
+		}
+		if live == "" && s != nil && !s.seenOwn && (s.Phase == "launching" || s.Phase == "playing") {
+			// The game may run under another name than its exe's: a
+			// launcher started first hands over to the real program.
+			// Whatever has a window in the game's folder is the game.
+			helpers := helperNames(cfg.LaunchOpts["game:"+g.ID])
+			n, helper := inGameFolder(apps, folders[g.ID], helpers)
+			follow := func(n string) {
+				if n != s.alt {
+					a.logf("%s runs as %s.exe, not under the names Lootnest knew (%s); Lootnest follows it", g.Name, n, strings.Join(names, ", "))
+				}
+				s.alt, live = n, n
+			}
+			switch {
+			case n != "" && !helper: // the game itself
+				follow(n)
+				s.altGame = true
+			case s.alt != "" && procs[s.alt] && !helpers[s.alt]: // its window hidden for a moment
+				live = s.alt
+			case n != "" && !s.altGame: // only a helper so far, which may be the game under another name
+				follow(n)
+			}
+		}
+		running := live != ""
 		switch {
 		case s == nil && running:
 			if !cfg.Settings.WatchOutsideLaunches {
@@ -383,6 +422,7 @@ func (a *App) tick() {
 				c := cfg.Clone()
 				go a.checkCloudWatch(c, c.Game(g.ID), s.PlayerID)
 			} else if time.Now().After(s.deadline) {
+				a.logf("%s didn't start for %s: Lootnest looked for %s, and for a program with a window in %s, and saw neither", g.Name, cfg.PlayerName(s.PlayerID), strings.Join(names, ", "), orNone(folders[g.ID]))
 				delete(a.sessions, g.ID)
 				changed = true
 				go a.stepsAfter("game:"+g.ID, false)
@@ -543,4 +583,80 @@ func (a *App) apiProfileInfo(gameID string) {
 		}
 		a.emit("profileInfo", map[string]any{"gameId": gameID, "info": out})
 	}()
+}
+
+// sessionFolders are the folders of the games whose sessions are starting
+// or running and are started by their exe, with the programs that have a
+// window now (only looked up when there's such a session).
+func (a *App) sessionFolders() (map[string]string, []plat.RunningApp) {
+	exes := map[string]string{}
+	a.mu.Lock()
+	for id, s := range a.sessions {
+		if s.Phase != "launching" && s.Phase != "playing" {
+			continue
+		}
+		if g := a.cfg.Game(id); g != nil && g.Launch.Type == "exe" && g.Launch.Exe != "" {
+			exes[id] = g.Launch.Exe
+		}
+	}
+	a.mu.Unlock()
+	if len(exes) == 0 {
+		return nil, nil
+	}
+	dirs := map[string]string{}
+	for id, exe := range exes {
+		if r, err := a.env.ResolveExe(exe); err == nil {
+			dirs[id] = filepath.Dir(r)
+		}
+	}
+	return dirs, plat.RunningApps()
+}
+
+// inGameFolder is the process name (lower case, without .exe) of a program
+// with a window whose file is inside dir, or "". Lootnest itself never
+// counts; a helper (a program the launch options start before or after
+// the game) only when nothing else there has a window, and helper says so.
+// A session that followed the real game never goes back to a helper, so a
+// launcher left open doesn't keep the session going.
+func inGameFolder(apps []plat.RunningApp, dir string, helpers map[string]bool) (name string, helper bool) {
+	if dir == "" {
+		return "", false
+	}
+	self, _ := os.Executable()
+	for _, app := range apps {
+		if app.Path == "" || strings.EqualFold(app.Path, self) || !underDir(app.Path, dir) {
+			continue
+		}
+		n := exeProcName(app.Name)
+		if !helpers[n] {
+			return n, false
+		}
+		if name == "" {
+			name, helper = n, true
+		}
+	}
+	return name, helper
+}
+
+// underDir says whether path is inside dir, ignoring letter case.
+func underDir(path, dir string) bool {
+	rel, err := filepath.Rel(strings.ToLower(filepath.Clean(dir)), strings.ToLower(filepath.Clean(path)))
+	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
+}
+
+// helperNames are the programs a game's launch options start before or
+// after it: a launcher left open isn't the game.
+func helperNames(o core.LaunchOptions) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range append(append([]core.Program{}, o.StartBefore...), o.StartAfter...) {
+		out[exeProcName(p.Path)] = true
+	}
+	return out
+}
+
+func orNone(s string) string {
+	if s == "" {
+		return "(no folder known)"
+	}
+	return s
 }

@@ -1347,3 +1347,20 @@ Two monitors on the PC, the TV app connected.
    Big Picture brings the bar back. Win+Up, Win+Down and Win+Left work.
 8. A second monitor with another scale (150%): drag the window across; the
    bar and keys keep their size and nothing is cut off at the top.
+
+## 61. A game followed under another program's name
+
+1. Red Dead Redemption 2 with profiles, with Launcher.exe under Start
+   before (the owner's set-up): Play as a profile. Within a few seconds
+   of the game's window, the log says "Red Dead Redemption 2 runs as
+   rdr2.exe, not under the names Lootnest knew (...); Lootnest follows
+   it", the page shows the game playing, and the FPS counter (if on)
+   listens.
+2. Save in the game: a "Saved by the game" point comes (spaced 5 min).
+3. Quit the game, leave its launcher open: within about 20 s the session
+   ends, the log says the profile's files were saved, and the time played
+   and the Timeline grow.
+4. A game that really doesn't start (cancel in its launcher): after the
+   wait the log says "... didn't start for <profile>: Lootnest looked for
+   ..., and for a program with a window in <folder>".
+
