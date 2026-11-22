@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **A run reads as its person's.** A run (Skip Prologue of Cristian) is a save of Cristian's own, not another profile, and the game page now says so: Play says **Play as Cristian**, the profile beside it shows Cristian with a **Skip Prologue run** label, the files are "Cristian's Skip Prologue files", the card on the art says "In the Skip Prologue run", and the Profiles list shows each run under its person. The swap screen, the profile list and the right-click menu say it the same way.
+- **One Lootnest sign everywhere.** The taskbar, the tray, the window and the installer now show the same mark as the sidebar: a red ring over two light arcs, on the dark tile. The red gem in a nest is gone. The mark is back beside "Lootnest" in the sidebar too.
 
 ## 2.21.0
 
