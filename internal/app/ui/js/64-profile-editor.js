@@ -25,11 +25,13 @@
     if (!ps.length) return "";
     const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0), st = g && steamTime(it);
     const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
-    return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Profiles</h2></div></div>${split}<div class="gp-people">${ps.map((p) => {
+    return `<section class="gpage-block gp-players"><div class="ln-section-head"><div><h2>Profiles</h2></div></div>${split}<div class="gp-people">${grouped(ps).map((p) => {
       const last = lastBy(it, p.id);
       const sub = last ? `Played ${ago(last)}` : g && hasProfile(g.id, p.id) ? "Has saves here" : pt[p.id] ? "" : "Not played yet";
-      return `<div class="gp-person ln-player" style="--player:${esc(p.color)}">
-        <div class="gp-person-top">${lnAvatar(p, "32")}<div class="gp-person-name"><b>${esc(p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${saved(g, p.id)}</div>
+      // A run sits under its person, named by what makes it a run.
+      const run = !!parentOf(p);
+      return `<div class="gp-person ln-player${run ? " gp-person--run" : ""}" style="--player:${esc(p.color)}">
+        <div class="gp-person-top">${lnAvatar(p, run ? "24" : "32")}<div class="gp-person-name"><b>${esc(run ? runLabel(p) + " run" : p.name)}${owner === p.id ? ' <span class="ln-tag">Files loaded</span>' : ""}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${saved(g, p.id)}</div>
         <button class="gp-person-time ln-num${pt[p.id] ? "" : " is-zero"}" data-action="hours-edit" data-key="${esc(key)}" data-player="${esc(p.id)}" aria-label="${esc(possessive(p.name))} hours played: ${pt[p.id] ? esc(hours(pt[p.id])) : "none"}. Correct them" title="Correct the hours" aria-expanded="${editing(p)}">${pt[p.id] ? esc(hours(pt[p.id])) : "0 h"}</button></div>
         ${editing(p) ? hoursEditor(key, p, pt[p.id] || 0) : ""}</div>`;
     }).join("")}</div>${st ? `<dl class="ln-facts gp-facts"><div><dt>Steam account</dt><dd class="ln-num">${esc(hours(st))}</dd></div></dl>` : ""}</section>`;

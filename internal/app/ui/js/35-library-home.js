@@ -1,7 +1,7 @@
   // --------------------------------------------------------------- library --
   function sessionText(s) {
-    const n = pname(s.playerId);
-    return { loading: `Loading ${possessive(n)} files`, mods: s.mods && s.mods.off ? "Putting the game back as it was" : `Putting ${possessive(n)} mods in`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${possessive(n)} progress` }[s.phase] || "";
+    const n = pperson(s.playerId), whose = whoseOf(s.playerId);
+    return { loading: `Loading ${whose} files`, mods: s.mods && s.mods.off ? "Putting the game back as it was" : `Putting ${whose} mods in`, launching: "Starting", playing: `${n} is playing`, saving: `Saving ${whose} progress` }[s.phase] || "";
   }
 
   // A plugin's games carry their source's own name (f.sourceName).

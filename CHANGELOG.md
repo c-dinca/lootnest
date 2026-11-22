@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A run reads as its person's.** A run (Skip Prologue of Cristian) is a save of Cristian's own, not another profile, and the game page now says so: Play says **Play as Cristian**, the profile beside it shows Cristian with a **Skip Prologue run** label, the files are "Cristian's Skip Prologue files", the card on the art says "In the Skip Prologue run", and the Profiles list shows each run under its person. The swap screen, the profile list and the right-click menu say it the same way.
+
 ## 2.21.0
 
 - **Hours played for games without profiles.** A game you play with profiles off (a game in a folder, from Hydra) now shows how long you played it: Lootnest adds up every session it already kept for the Timeline, so time played before this version counts too. The Profiles list, which showed everyone at 0 h on such a game, is gone from its page.

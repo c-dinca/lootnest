@@ -106,7 +106,7 @@
       const seat = seated(), as = it.g && seat, k = esc(bpKey(it));
       return `<section class="bp-page" data-block><div class="bp-hero in">${bpHero(it, true)}</div>
         <div class="bp-keys" data-zone="keys">
-          <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="${bpBehind(it) ? "Go back to it" : "Play"}">${GI.play}${bpBehind(it) ? "Go back to the game" : as ? `Play as ${esc(seat.name)}` : "Play"}</button>
+          <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="${bpBehind(it) ? "Go back to it" : "Play"}">${GI.play}${bpBehind(it) ? "Go back to the game" : as ? `Play as ${esc(personOf(seat).name)}` : "Play"}</button>
           ${it.g && cfg().players.length > 1 ? `<button class="bp-key" data-bp data-bpid="playas" data-go="choose" data-k="${k}">Play as someone else</button>` : ""}
           <button class="bp-key" data-bp data-bpid="points" data-go="points" data-k="${k}" data-hint="Open">Save points</button>
           ${modsTabOn(modsOf(it)) ? `<button class="bp-key" data-bp data-bpid="mods" data-go="mods" data-k="${k}" data-hint="Open">${ph("puzzle-piece")}Mods</button>` : ""}
