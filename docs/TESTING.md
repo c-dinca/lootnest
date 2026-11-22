@@ -1387,3 +1387,11 @@ Two monitors on the PC, the TV app connected.
 7. Overview, Community (Game details on): reviews as rows, Read all of it
    opens one, More reviews shows the rest.
 
+## 63. A run reads as its person's
+
+1. A game with a run of Cristian (Skip Prologue) loaded: Play says Play
+   as Cristian, the profile beside it shows Cristian and a Skip Prologue
+   run label, the card on the art says In the Skip Prologue run.
+2. The Profiles list on the page shows Skip Prologue run under Cristian.
+3. Play: the swap screen shows Cristian with the run's label, and
+   "Loading Cristian's Skip Prologue files".

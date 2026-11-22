@@ -285,7 +285,7 @@
     const s = g && session(g.id);
     const items = [];
     if (!s) {
-      if (g) cfg().players.forEach((p) => items.push(`<button data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>Play as ${esc(p.name)}</button>`));
+      if (g) cfg().players.forEach((p) => items.push(`<button data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>Play as ${esc(runName(p))}</button>`));
       else items.push(`<button data-action="play-found" ${attr}>${icon.play}Play</button>`);
     }
     items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, ...collectionItems(it, host), "<hr>");

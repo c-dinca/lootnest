@@ -3377,3 +3377,12 @@ button.gp-who:focus-visible { outline: var(--focus-width) solid var(--focus-ring
 .cmp-cell.is-lead .cmp-time b { color: var(--player-fill); }
 @media (max-width: 900px) { .cmp-line, .cmp-game { grid-template-columns: minmax(0, 1fr) repeat(var(--cols), minmax(0, 1fr)); padding: 0 var(--space-3); } }
 .gp-points .ach-count .gpage-link { margin-left: var(--space-3); }
+/* A run's name beside its person's (runTag): a save of their own, not
+   another profile. In the person's colour where there is one. */
+.gp-run-tag { margin-left: var(--space-2); vertical-align: 0.12em; }
+.ln-player .gp-run-tag { border-color: transparent; background: var(--player-wash); color: var(--fg-1); }
+.swap-text .gp-run-tag { margin: 0; height: 24px; padding: 0 var(--space-2); font-size: var(--fs-13); }
+/* A run on a game page's Profiles list: under its person, a step in, with
+   a line in their colour joining them. */
+.gp-person--run { padding-left: var(--space-6); border-left: 2px solid var(--player-wash); margin-left: var(--space-3); }
+.gp-person--run .gp-person-name b { font-weight: 600; }

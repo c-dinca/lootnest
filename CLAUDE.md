@@ -2455,6 +2455,17 @@ These shipped recently, newest last:
   Community is rows (`reviewRow`, `.gp-rev`, `--rev-hours-w`, `rev-all`).
   docs/TESTING.md 62. Released as 2.21.0 at the owner's ask (22 Nov).
 
+- **Unreleased, a run reads as its person's** (the owner, 22 Nov 2026:
+  "Play as Skip Prologue" read like another profile; a run is a sub-save,
+  the profile is still Cristian). 10-state.js: `pperson(id)` (the person's
+  name), `whoseOf(id)` ("Cristian’s Skip Prologue"), `runName(p)`
+  ("Cristian, Skip Prologue run"), `runTag(p)` (`.gp-run-tag`). Play keys
+  say the person (game page, Big Picture); `whoSwitch` shows the person
+  with the run's tag; `sessionText`, the docked head, the achievements and
+  save points headings, the picker's swap screen use `whoseOf`/`pperson`;
+  `heroCard` says "In the X run"; `whoMenu` and `playersPanel` list runs
+  under their person (`grouped`, `.gp-person--run`). docs/TESTING.md 63.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

@@ -172,7 +172,7 @@
     const r = (S.d.recent || {})[recentKey(it)];
     if (!r) return "";
     const when = ago(r.at);
-    return r.player && player(r.player) ? `${pname(r.player)} played ${when}` : `Played ${when}`;
+    return r.player && player(r.player) ? `${pperson(r.player)} played ${when}` : `Played ${when}`;
   }
 
   // Wide art and logos: from Steam's cache on this PC, or downloaded when
@@ -341,15 +341,15 @@
     return player(S.gameWho[g.id]) || seated() || player(S.d.active[g.id]) || (rec && player(rec.player))
       || ps.find((p) => hasProfile(g.id, p.id)) || ps[0];
   }
-  const whoName = (p) => (parentOf(p) ? `${parentOf(p).name}, ${runLabel(p)}` : p.name);
+  const whoName = runName;
   // Beside Play: whose the page is, and whether their files are in. It
   // opens the list of profiles; picking one loads their files without
   // starting the game.
   function whoSwitch(it, p, page) {
     const g = it.g, owner = S.d.active[g.id], pt = playtimeOf(it);
-    const sub = owner === p.id ? "Files loaded" : owner && player(owner) ? `${possessive(pname(owner))} files are in` : lastBy(it, p.id) ? `Played ${ago(lastBy(it, p.id))}` : pt[p.id] ? `${hours(pt[p.id])} played` : "Not played yet";
+    const sub = owner === p.id ? "Files loaded" : owner && player(owner) ? `${whoseOf(owner)} files are in` : lastBy(it, p.id) ? `Played ${ago(lastBy(it, p.id))}` : pt[p.id] ? `${hours(pt[p.id])} played` : "Not played yet";
     const many = cfg().players.length > 1;
-    const inner = `${lnAvatar(p, "32")}<span class="gpage-state"><b>${esc(whoName(p))}</b><span>${esc(sub)}</span></span>`;
+    const inner = `${lnAvatar(p, "32")}<span class="gpage-state"><b>${esc(personOf(p).name)}${runTag(p)}</b><span>${esc(sub)}</span></span>`;
     if (!many) return `<div class="gp-who">${inner}</div>`;
     return `<button class="gp-who ln-player" style="--player:${esc(p.color)}" data-action="who-menu" data-game="${esc(g.id)}" aria-haspopup="menu" aria-label="${esc(whoName(p))}, ${esc(sub)}. Change profile" title="Change profile">${inner}<span class="gp-who-caret" aria-hidden="true">${ph("caret-up-down")}</span></button>`;
   }
@@ -358,7 +358,7 @@
     const it = { kind: "game", id: gid, g: game(gid) }, cur = pageWho(it), owner = S.d.active[gid], pt = playtimeOf(it);
     return `<div class="ctx-title">Whose ${esc(it.g.name)}</div>${grouped(cfg().players).map((p) => {
       const sub = owner === p.id ? "Files loaded" : pt[p.id] ? `${hours(pt[p.id])} played` : hasProfile(gid, p.id) ? "Has saves here" : "First time";
-      return `<button class="gp-who-item ln-player${parentOf(p) ? " is-run" : ""}" style="--player:${esc(p.color)}" data-action="who-pick" data-game="${esc(gid)}" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${p.id === cur.id}">${lnAvatar(p, "24")}<span class="grow"><b>${esc(parentOf(p) ? runLabel(p) : p.name)}</b><span>${esc(sub)}</span></span>${p.id === cur.id ? GI.tick : ""}</button>`;
+      return `<button class="gp-who-item ln-player${parentOf(p) ? " is-run" : ""}" style="--player:${esc(p.color)}" data-action="who-pick" data-game="${esc(gid)}" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${p.id === cur.id}">${lnAvatar(p, "24")}<span class="grow"><b>${esc(parentOf(p) ? runLabel(p) + " run" : p.name)}</b><span>${esc(sub)}</span></span>${p.id === cur.id ? GI.tick : ""}</button>`;
     }).join("")}`;
   }
   // On the art, at the right: the time played (Steam's when it counts the
@@ -369,7 +369,7 @@
     const X = achFor(it), P = pointsFor(it), cells = [];
     const st = steamTime(it), mine = who ? playtimeOf(it)[who.id] || 0 : totalPlayed(it);
     if (st) cells.push(timeRow(st, "On Steam", true));
-    else if (mine) cells.push(timeRow(mine, who && cfg().players.length > 1 ? `Played by ${who.name}` : "Played on this PC"));
+    else if (mine) cells.push(timeRow(mine, who && parentOf(who) ? `In the ${runLabel(who)} run` : who && cfg().players.length > 1 ? `Played by ${who.name}` : "Played on this PC"));
     if (X) cells.push(`<div class="home-card-row"><span class="home-ring" style="--p:${X.pct}"><b class="ln-num">${X.pct}%</b></span><div><b class="ln-num">${X.A.unlocked} of ${X.A.total}</b><span>Achievements</span></div></div>`);
     const list = P && P.points ? pointsOf(it, P.points) : [], n = list.length;
     if (n) cells.push(`<div class="home-card-row"><span class="home-card-ico">${ph("flag-pennant")}</span><div><b class="ln-num">${n === 1 ? "1 save point" : n + " save points"}</b><span>${esc(ago(list[0].created))}</span></div></div>`);
@@ -434,10 +434,10 @@
       // whose files are loaded or who played last (pageWho).
       const lead = pageWho(it);
       let play, state;
-      const playAs = (size) => `<button class="ln-button ln-button--play${size} ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}">${GI.play}Play as ${esc(lead.name)}</button>`;
+      const playAs = (size) => `<button class="ln-button ln-button--play${size} ln-player" style="--player:${esc(lead.color)}" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(lead.id)}" title="${esc(runName(lead))}">${GI.play}Play as ${esc(personOf(lead).name)}</button>`;
       if (s) {
         play = `<span class="gpage-session ln-player" style="--player:${esc(color(s.playerId))}" role="status">${s.phase === "playing" ? '<span class="ln-mark ln-player" style="--player:' + esc(color(s.playerId)) + '"></span>' : '<span class="ln-spinner" aria-hidden="true"></span>'}${esc(sessionText(s))}</span>`;
-        state = `<div class="gpage-state"><b>${esc(possessive(pname(s.playerId)))} files are loaded</b></div>`
+        state = `<div class="gpage-state"><b>${esc(whoseOf(s.playerId))} files are loaded</b></div>`
           + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
         play = lead ? playAs(" ln-button--lg") : "";
@@ -449,7 +449,7 @@
       const pill = page && !s ? profPill(true, `data-action="remove-game" data-game="${esc(g.id)}"`) : "";
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${storyChip(it, page)}${other || newRun || pill ? `<div class="gpage-others">${other}${newRun}${pill}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
-      head = { play: (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${possessive(pname(loaded))} files are loaded` : "Nobody's files yet" };
+      head = { play: (s ? play.replace(' role="status"', "") : lead ? playAs("") : ""), state: loaded ? `${whoseOf(loaded)} files are loaded` : "Nobody's files yet" };
       note = page ? conflictBanner(g) + dlNote(it) + storeNote(ITCH, it) + storeNote(GOG, it) + antiCheatNote(it) + oneDriveNote(it, "gpage-note") : "";
       const cloud = P.cloud && {
         none: "Doesn't sync the files profiles swap.",

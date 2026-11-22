@@ -321,7 +321,7 @@
     const acts = few ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="game-tab" data-tab="achievements">Show all ${A.total}</button>`
       : `<button class="ln-button ln-button--secondary ln-button--sm" data-action="ach-share" data-who="${esc(who || "")}" data-scope="${esc(key)}" aria-haspopup="dialog">${ph("share-network")}Share</button>`
         + (docWorth(it) ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="ach-doctor" ${itemAttr(it)} aria-haspopup="dialog">Check</button>` : "") + X.toggle;
-    return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(possessive(pname(who))) + " achievements" : "Achievements"}</h2></div>
+    return `<section class="gpage-block gp-ach"><div class="ln-section-head"><div><h2>${who ? esc(whoseOf(who)) + " achievements" : "Achievements"}</h2></div>
         <span class="ach-count"><b class="ln-num">${A.unlocked}</b> of <span class="ln-num">${A.total}</span>, ${pct}%</span></div>
       ${X.whoRow}${X.bar}
       ${list.length ? `<ul class="ach-list${few ? "" : " ach-grid"}">${list.map(X.row).join("")}</ul>` : `<p>None unlocked yet.</p>`}
@@ -448,12 +448,12 @@
     if (!P || !P.loaded || P.error) return "";
     const all = P.points || [], list = pointsOf(it, all), hidden = all.length - list.length;
     const whose = it.kind === "game" && cfg().players.length > 1 ? (ptEveryone.has(recentKey(it))
-      ? `<button class="gpage-link" data-action="pt-everyone" ${itemAttr(it)}>Only ${esc(possessive(pageWho(it).name))}</button>`
+      ? `<button class="gpage-link" data-action="pt-everyone" ${itemAttr(it)}>Only ${esc(whoseOf(pageWho(it).id))}</button>`
       : hidden ? `<button class="gpage-link" data-action="pt-everyone" ${itemAttr(it)}>Everyone's, ${all.length}</button>` : "") : "";
     const hint = cfg().settings.pointHotkeyOff ? "" : '<span class="gpage-hint"><kbd>Ctrl+Shift+F5</kbd> in game</span>';
     const make = `<div class="pt-make"><input class="ln-input" id="pt-new" maxlength="60" placeholder="Name, such as Before the boss" aria-label="Save point name" ${P.busy ? "disabled" : ""}>
       <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? `<span class="ln-spinner" aria-hidden="true"></span>${POINT_STEPS[P.step] || "Copying"}` : savesFirst(P) ? "Save now" : "Make a save point"}</button>${hint}</div>${quickSaveRow(it, P)}`;
-    const title = it.kind === "game" && cfg().players.length > 1 && !ptEveryone.has(recentKey(it)) ? `${esc(possessive(pageWho(it).name))} save points` : "Save points";
+    const title = it.kind === "game" && cfg().players.length > 1 && !ptEveryone.has(recentKey(it)) ? `${esc(whoseOf(pageWho(it).id))} save points` : "Save points";
     return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>${title}</h2></div>${list.length || whose ? `<span class="ach-count">${list.length ? `<b class="ln-num">${list.length}</b> kept` : ""}${whose}</span>` : ""}</div>
       ${make}
       ${cfg().settings.gamePointsOff ? "" : '<p class="gpage-hint pt-auto">Each save the game makes while it runs is kept here by itself, the newest 30.</p>'}
