@@ -2363,7 +2363,14 @@ These shipped recently, newest last:
   `inGameFolder`, `underDir`; `Session.alt`, logged once); a Start
   before/after program (`helperNames`) only when nothing else is there,
   and never again once the real game was followed (`altGame`), so a
-  launcher left open doesn't hold the session. `gameNames` includes
+  launcher left open doesn't hold the session. Only for games whose
+  launch options have Start with or Start before (the owner, same day:
+  "only if the launch options say so; other games, no checks"), and only
+  until a known name runs (`sessionFolders`). The owner's RDR2: RDR2.exe
+  opens only Rockstar's launcher and Launcher.exe is the game, so the set-up
+  meant is Start with Launcher.exe (followed as the game since 2.19.1,
+  RDR2.exe never started), not Launcher.exe under Before you play.
+  `gameNames` includes
   `alt` (Close the game, save points). A launch that runs out logs what
   was looked for. Lootnest also had no "quit" line on 21 Nov 22:47 to
   01:30 and 22 Nov 01:30 to 12:04 (closed with the PC); sessions live
