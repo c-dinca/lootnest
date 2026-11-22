@@ -312,6 +312,9 @@ type AppState struct {
 	PluginMeta bool `json:"pluginMeta,omitempty"`
 	// PluginPages: the Settings categories running script plugins draw.
 	PluginPages []PluginPageInfo `json:"pluginPages"`
+	// LibraryTime: how long each game without profiles was played (Library
+	// key -> seconds), from the session log.
+	LibraryTime map[string]int64 `json:"libraryTime"`
 }
 
 func (a *App) apiState() AppState {
@@ -333,6 +336,7 @@ func (a *App) apiState() AppState {
 	st.Themes, st.PluginMeta = pd.themes, len(pd.meta) > 0
 	st.PluginPages = a.pluginPages()
 	st.Playtime = core.WithOffsets(a.store.LoadPlaytime(), st.Shelf)
+	st.LibraryTime = a.store.LibraryTime()
 	st.Avatars, st.Banners = map[string]string{}, map[string]string{}
 	for _, p := range cfg.Players {
 		if p.Avatar {

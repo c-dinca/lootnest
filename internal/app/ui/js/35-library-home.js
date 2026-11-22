@@ -150,10 +150,16 @@
   // For a game from more than one store, across its copies (display only).
   const playedAt = (it) => Math.max(...copiesOf(it).map((c) => { const r = (S.d.recent || {})[recentKey(c)]; return r ? new Date(r.at).getTime() : 0; }));
   const playtimeOf = (it) => (S.d.playtime || {})[recentKey(it)] || {};
-  const totalPlayed = (it) => copiesOf(it).reduce((n, c) => n + Object.values(playtimeOf(c)).reduce((a, b) => a + b, 0), 0);
+  // Lootnest's own count: each profile's time, and for a game without
+  // profiles the sessions the log kept (libraryTime).
+  const libTime = (it) => (S.d.libraryTime || {})[recentKey(it)] || 0;
+  const totalPlayed = (it) => copiesOf(it).reduce((n, c) => n + Object.values(playtimeOf(c)).reduce((a, b) => a + b, 0) + libTime(c), 0);
   const steamTime = (it) => copiesOf(it).reduce((n, c) => n + ((S.d.steamTime || {})[recentKey(c)] || 0), 0);
   const timeOf = (it) => Math.max(totalPlayed(it), steamTime(it));
   // How much a game has been played: Lootnest's own count, or Steam's.
+  // The time a game's card and page show: Steam's for the account when it
+  // counts the game (it holds this PC's sessions too), else Lootnest's.
+  const shownTime = (it) => { const st = steamTime(it); return st ? { sec: st, label: "On Steam" } : { sec: totalPlayed(it), label: "Played on this PC" }; };
   const playedText = (it) => totalPlayed(it) ? hours(totalPlayed(it)) + " played in all" : steamTime(it) ? hours(steamTime(it)) + " on Steam" : "";
   function hours(sec) {
     if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + " min";
@@ -446,6 +452,8 @@
       </div></div>`;
   }
   const pickKey = (it) => it.kind + ":" + it.id;
+  // A row of Home's card (and the game page's): the time played.
+  const timeRow = (sec, label, steam) => `<div class="home-card-row"><span class="home-card-ico">${ph(steam ? "steam-logo" : "clock-counter-clockwise")}</span><div><b class="ln-num">${esc(hours(sec))}</b><span>${esc(label)}</span></div></div>`;
   // Beside Play, on glass: the game's achievements, the rarest one
   // unlocked, the time played and its save points. Only what's known.
   function homeCard(it) {
@@ -455,8 +463,8 @@
       const rare = (X.A.list || []).filter((a) => a.unlocked && a.percent > 0).sort((a, b) => a.percent - b.percent)[0];
       if (rare) rows.push(`<div class="home-card-row"><span class="home-card-ico is-rare">${ph("trophy", "fill")}</span><div><b>${esc(rare.name)}</b><span>Rarest, ${esc(rare.percent < 10 ? rare.percent.toFixed(1) : Math.round(rare.percent))}% of players</span></div></div>`);
     }
-    const t = totalPlayed(it);
-    if (t) rows.push(`<div class="home-card-row"><span class="home-card-ico">${ph("clock-counter-clockwise")}</span><div><b class="ln-num">${esc(hours(t))}</b><span>Played on this PC</span></div></div>`);
+    const T = shownTime(it);
+    if (T.sec) rows.push(timeRow(T.sec, T.label, T.label === "On Steam"));
     const n = P && P.points ? P.points.length : 0;
     if (n) rows.push(`<div class="home-card-row"><span class="home-card-ico">${ph("flag-pennant")}</span><div><b class="ln-num">${n === 1 ? "1 save point" : n + " save points"}</b><span>${esc(ago(P.points[0].created))}</span></div></div>`);
     return rows.length ? `<aside class="home-card" aria-label="${esc(it.name)}">${rows.join("")}</aside>` : "<span></span>";

@@ -34,6 +34,10 @@
     sideClosed: (() => { try { return new Set(JSON.parse(pref("sideClosed", "[]"))); } catch (e) { return new Set(); } })(),
     folded: pref("folded", "") === "1", // the sidebar folded to a rail
     achWho: {},       // Library key -> whose achievements are shown
+    gameWho: {},      // game id -> the profile picked on its page (pageWho)
+    playersTab: "cards", // the Profiles page: "cards" or "compare" (Side by side)
+    cmpWho: null,     // Side by side: the profile ids compared, null for everyone
+    cmpShow: "all",   // Side by side: every game, "shared" or "alone"
     achWhy: {},       // Library key -> what Steam's way still needs, when none are found
     setTab: pref("setTab", "general"), // the Settings category open
     allAch: null,     // the Achievements page: every game's, null until read
@@ -78,6 +82,7 @@
     reviews: {},       // "key|kind" -> {loading} or the "reviews" event from ps_gameReviews
     revKind: {},       // Library key -> "all", "positive" or "negative"
     revOpen: new Set(), // review ids shown in full
+    revAll: new Set(),  // Library keys whose every review shows
     peers: {},         // Library key -> {loading} or the "peers" event from ps_gamePeers
     peersOpen: new Set(), // Library keys whose players' quotes are all shown
     media: {},         // Library key -> { i, hold, list } for the trailers and screenshots on its page

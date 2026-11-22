@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -105,4 +107,43 @@ func (s *Store) ReadSessions(game string, since time.Time) ([]SessionRecord, int
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].End.After(out[j].End) })
 	return out, bad, nil
+}
+
+// libraryTimeKept is the last LibraryTime read, with the log's size and
+// time then, so the log is read again only once it changes.
+var libraryTimeKept struct {
+	sync.Mutex
+	path string
+	size int64
+	mod  time.Time
+	out  map[string]int64
+}
+
+// LibraryTime is how long each game without profiles was played, by
+// Library key: the sum of the sessions the log keeps for it (Profile "").
+// A game with profiles counts its time in playtime.json instead.
+func (s *Store) LibraryTime() map[string]int64 {
+	p := s.SessionLogPath()
+	st, err := os.Stat(p)
+	if err != nil {
+		return map[string]int64{}
+	}
+	k := &libraryTimeKept
+	k.Lock()
+	defer k.Unlock()
+	if k.out != nil && k.path == p && k.size == st.Size() && k.mod.Equal(st.ModTime()) {
+		return maps.Clone(k.out)
+	}
+	list, _, err := s.ReadSessions("", time.Time{})
+	if err != nil {
+		return map[string]int64{}
+	}
+	out := map[string]int64{}
+	for _, r := range list {
+		if r.Profile == "" && r.Seconds > 0 {
+			out[r.Game] += r.Seconds
+		}
+	}
+	k.path, k.size, k.mod, k.out = p, st.Size(), st.ModTime(), out
+	return maps.Clone(out)
 }

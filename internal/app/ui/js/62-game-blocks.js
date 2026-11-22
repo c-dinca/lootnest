@@ -17,17 +17,23 @@
   // and each part against the minimum and the recommended.
   const RUN_TONE = (n) => (n >= 70 ? "ok" : n >= 35 ? "mid" : "low");
   function willRunBlock(it) {
-    if (!it.appId) return "";
+    // The Steam id may be known only to Lootnest (a folder game's, by its
+    // name or a file beside it): the details say which they were read by.
+    const key = recentKey(it), outside = it.kind === "found" ? !storeKept(it.source) : it.g && it.g.launch.type !== "steam";
+    const known = it.appId || (it.f && it.f.steamId) || (S.details[key] && S.details[key].appId);
     const head = `<div class="ln-section-head"><div><h2>Will it run</h2></div></div>`;
     if (!cfg().settings.gameDetails) {
+      if (!known && !outside) return "";
       return `<section class="gpage-block wr wr--off">${head}<p class="wr-off">${ph("gauge", "duotone")}<span>Lootnest can compare this PC with the game's requirements on Steam.</span></p>
         <button class="ln-button ln-button--secondary ln-button--sm" data-action="details-on">Turn on Game details</button></section>`;
     }
-    const R = S.details[recentKey(it)];
-    if (!R || R.loading) return `<section class="gpage-block wr">${head}<div class="ln-skeleton wr-skel"></div></section>`;
+    if (!S.details[key]) { S.details[key] = { loading: true }; api.gameDetails(key).catch(() => {}); }
+    const R = S.details[key];
+    if (R.loading) return known || outside ? `<section class="gpage-block wr">${head}<div class="ln-skeleton wr-skel"></div></section>` : "";
+    if (!R.appId && !it.appId) return ""; // no Steam page found for it
     const run = R.run;
     if (!run || !run.plan || !run.plan.score) {
-      const why = !run ? "Steam lists no requirements for this game." : "Lootnest doesn't know this PC's parts or the game's well enough.";
+      const why = !run ? (R.error ? R.error : "Steam lists no requirements for this game.") : "Lootnest doesn't know this PC's parts or the game's well enough.";
       return `<section class="gpage-block wr">${head}<p class="gpage-hint">${why}</p></section>`;
     }
     const P = run.plan, V = run.verdict, pc = run.pc || {}, tone = RUN_TONE(P.score);
@@ -129,7 +135,7 @@
     // Each player's own (they go with their profile): whose to show is the
     // one picked here, else whoever's at the PC, else whose files are in.
     const ids = top.players ? cfg().players.map((p) => p.id).filter((id) => top.players[id]) : [];
-    const seat = seated(), owner = it.g && S.d.active[it.g.id];
+    const seat = it.g ? pageWho(it) : seated(), owner = it.g && S.d.active[it.g.id];
     const who = ids.includes(S.achWho[key]) ? S.achWho[key] : seat && ids.includes(seat.id) ? seat.id : ids.includes(owner) ? owner : ids[0];
     const A = who ? top.players[who] : top;
     const pct = A.total ? Math.round((A.unlocked / A.total) * 100) : 0;
@@ -429,14 +435,26 @@
     if (it && capInBox(c)) return `<button class="gp-shot pic-thumb" data-action="pic-open" ${itemAttr(it)} data-ref="${esc("capture:" + c.path)}" aria-label="${esc(capLabel(c))}" aria-haspopup="dialog">${inner}</button>`;
     return `<button class="gp-shot pic-thumb cap-open" data-action="capture-open" data-path="${esc(c.path)}" aria-label="Open ${esc(capLabel(c))}">${inner}</button>`;
   }
+  // A game with profiles shows the page's profile's save points (and
+  // those kept for no one), until everyone's are asked for.
+  const ptEveryone = new Set();
+  function pointsOf(it, list) {
+    if (it.kind !== "game" || ptEveryone.has(recentKey(it)) || cfg().players.length < 2) return list;
+    const who = pageWho(it).id;
+    return list.filter((p) => !p.player || p.player === who);
+  }
   function savePointsBlock(it) {
     const P = pointsFor(it);
     if (!P || !P.loaded || P.error) return "";
-    const list = P.points || [];
+    const all = P.points || [], list = pointsOf(it, all), hidden = all.length - list.length;
+    const whose = it.kind === "game" && cfg().players.length > 1 ? (ptEveryone.has(recentKey(it))
+      ? `<button class="gpage-link" data-action="pt-everyone" ${itemAttr(it)}>Only ${esc(possessive(pageWho(it).name))}</button>`
+      : hidden ? `<button class="gpage-link" data-action="pt-everyone" ${itemAttr(it)}>Everyone's, ${all.length}</button>` : "") : "";
     const hint = cfg().settings.pointHotkeyOff ? "" : '<span class="gpage-hint"><kbd>Ctrl+Shift+F5</kbd> in game</span>';
     const make = `<div class="pt-make"><input class="ln-input" id="pt-new" maxlength="60" placeholder="Name, such as Before the boss" aria-label="Save point name" ${P.busy ? "disabled" : ""}>
       <button class="ln-button ln-button--secondary ln-button--sm" data-action="pt-make" ${itemAttr(it)} ${P.busy ? "disabled" : ""}>${P.busy ? `<span class="ln-spinner" aria-hidden="true"></span>${POINT_STEPS[P.step] || "Copying"}` : savesFirst(P) ? "Save now" : "Make a save point"}</button>${hint}</div>${quickSaveRow(it, P)}`;
-    return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Save points</h2></div>${list.length ? `<span class="ach-count"><b class="ln-num">${list.length}</b> kept</span>` : ""}</div>
+    const title = it.kind === "game" && cfg().players.length > 1 && !ptEveryone.has(recentKey(it)) ? `${esc(possessive(pageWho(it).name))} save points` : "Save points";
+    return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>${title}</h2></div>${list.length || whose ? `<span class="ach-count">${list.length ? `<b class="ln-num">${list.length}</b> kept` : ""}${whose}</span>` : ""}</div>
       ${make}
       ${cfg().settings.gamePointsOff ? "" : '<p class="gpage-hint pt-auto">Each save the game makes while it runs is kept here by itself, the newest 30.</p>'}
       ${list.length ? `<ol class="pt-list pt-list--all">${shownPoints(it, list).map((p) => pointRow(it, p, true, P)).join("")}</ol>${moreGameSaves(it, list)}` : ""}</section>`;
@@ -456,7 +474,7 @@
   }
   // Overview: the newest save point, and the way to the rest.
   function latestPoint(it) {
-    const P = S.points[recentKey(it)] || {}, list = P.points || [];
+    const P = S.points[recentKey(it)] || {}, list = pointsOf(it, P.points || []);
     if (!list.length) return "";
     return `<section class="gpage-block gp-points"><div class="ln-section-head"><div><h2>Latest save point</h2></div>
         <button class="ln-button ln-button--ghost ln-button--sm" data-action="game-tab" data-tab="saves">${list.length > 1 ? `All ${list.length} save points` : "Go to Saves"}</button></div>
@@ -635,43 +653,53 @@
   }
   // Community, at the end of Overview: what players say on Steam, the most
   // helpful reviews of the past year. Read only once the block scrolls into
-  // view (watchCommunity), and only with Game details on.
+  // view (watchCommunity), and only with Game details on. Laid out as the
+  // page's other lists: a head with the share that recommends it and a
+  // bar, then reviews as rows, each led by how long its writer had played.
   const REV_KINDS = [["all", "Most helpful"], ["positive", "Recommended"], ["negative", "Not recommended"]];
+  const REV_SHOWN = 4;
   function communityBlock(it) {
     const key = recentKey(it), steam = cfg().settings.gameDetails;
-    if (!it.appId && !(S.details[key] && S.details[key].details && S.details[key].details.storeUrl)) return "";
-    const head = (extra) => `<div class="ln-section-head gp-com-head"><div><h2>Community</h2></div>${extra || ""}</div>`;
+    const D = S.details[key] || {}, known = it.appId || D.appId || (D.details && D.details.storeUrl);
+    if (!known) return "";
+    const head = (right) => `<div class="ln-section-head"><div><h2>Community</h2></div>${right || ""}</div>`;
     if (!steam) return `<section class="gpage-block gp-com">${head()}<p class="gp-det-off"><button class="gpage-link" data-action="details-on">Show what players say on Steam</button></p></section>`;
     const kind = S.revKind[key] || "all", R = S.reviews[key + "|" + kind];
-    const d = (S.details[key] && S.details[key].details) || {};
+    const d = D.details || {};
     // Steam's words and share: from the details, else from the reviews themselves.
     const sum = d.reviewCount ? { score: d.reviewScore, percent: d.reviewPercent, count: d.reviewCount } : (S.reviews[key + "|all"] || {}).summary;
     const pct = sum ? sum.percent : null;
-    const score = pct == null ? "" : `<div class="gp-com-score"><span class="gp-com-pct ln-num" style="--p:${pct}">${pct}<small>%</small></span>
-      <span><b>${esc(sum.score || "")}</b><span class="gp-com-n">${sum.count.toLocaleString("en-US")} reviews on Steam</span></span>
-      <span class="gp-com-bar" aria-hidden="true"><span style="width:${pct}%"></span></span></div>`;
+    const count = pct == null ? "" : `<span class="ach-count"><b class="ln-num">${pct}%</b> ${esc(sum.score || "recommend it")}</span>`;
+    const bar = pct == null ? "" : `<div class="gp-com-bar" role="img" aria-label="${pct}% of ${sum.count.toLocaleString("en-US")} reviews recommend it"><span style="width:${pct}%"></span></div>`;
     const seg = `<div class="ln-segmented gp-com-seg" role="group" aria-label="Show">${REV_KINDS.map(([k, l]) => `<button data-action="rev-kind" data-k="${esc(key)}" data-kind="${k}" aria-pressed="${k === kind}">${l}</button>`).join("")}</div>`;
-    const store = R && R.appId ? R.appId : it.appId;
-    const write = store ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="open-link" data-url="https://store.steampowered.com/app/${store}/#app_reviews_hash">${ph("steam-logo")}Read more on Steam</button>` : "";
-    let body;
-    if (!R || R.loading) body = `<div class="gp-com-list" data-want="${esc(key)}" data-kind="${kind}">${[0, 1, 2, 3].map(() => '<div class="ln-skeleton gp-com-skel"></div>').join("")}</div>`;
+    const tools = `<div class="gp-com-tools">${seg}${sum ? `<span class="gpage-hint">${sum.count.toLocaleString("en-US")} reviews on Steam</span>` : ""}</div>`;
+    const store = (R && R.appId) || it.appId || D.appId;
+    const steamLink = store ? `<button class="ln-button ln-button--ghost ln-button--sm" data-action="open-link" data-url="https://store.steampowered.com/app/${store}/#app_reviews_hash">${ph("arrow-square-out")}Read more on Steam</button>` : "";
+    let body, more = "";
+    if (!R || R.loading) body = `<ol class="gp-com-list" data-want="${esc(key)}" data-kind="${kind}">${[0, 1, 2].map(() => '<li class="gp-rev gp-rev--skel"><span class="ln-skeleton gp-rev-skel-h"></span><span class="ln-skeleton gp-rev-skel-t"></span></li>').join("")}</ol>`;
     else if (R.error) body = `${lnInline("error", esc(R.error))}<button class="gpage-link" data-action="rev-again" data-k="${esc(key)}" data-kind="${kind}">Try again</button>`;
     else if (R.none) return "";
-    else if (!(R.items || []).length) body = `<p class="gpage-hint">No ${kind === "positive" ? "recommending " : kind === "negative" ? "negative " : ""}reviews with text from the past year.</p>`;
-    else body = `<ol class="gp-com-list">${R.items.map(reviewCard).join("")}</ol>`;
-    return `<section class="gpage-block gp-com" id="gp-community">${head(seg)}${score}${body}<div class="gp-com-foot">${write}</div></section>`;
+    else if (!(R.items || []).length) body = `<p class="gpage-hint gp-com-none">No ${kind === "positive" ? "recommending " : kind === "negative" ? "negative " : ""}reviews with text from the past year.</p>`;
+    else {
+      const all = S.revAll.has(key), list = all ? R.items : R.items.slice(0, REV_SHOWN);
+      body = `<ol class="gp-com-list">${list.map(reviewRow).join("")}</ol>`;
+      if (R.items.length > REV_SHOWN) more = `<button class="ln-button ln-button--secondary ln-button--sm" data-action="rev-all" data-k="${esc(key)}">${all ? "Fewer reviews" : `${R.items.length - REV_SHOWN} more reviews`}</button>`;
+    }
+    return `<section class="gpage-block gp-com" id="gp-community">${head(count)}${bar}${tools}${body}${more || steamLink ? `<div class="gp-com-foot">${more}<span class="grow"></span>${steamLink}</div>` : ""}</section>`;
   }
-  function reviewCard(r) {
-    const open = S.revOpen.has(r.id), long = r.cut || r.text.length > 420 || (r.text.match(/\n/g) || []).length > 5;
-    const h = (n) => (n >= 100 ? Math.round(n).toLocaleString("en-US") : String(n)) + " h";
-    const facts = [`${h(r.hours)} when written`, r.total > r.hours ? `${h(r.total)} now` : "", r.early ? "Early Access" : "", r.free ? "Got it free" : ""].filter(Boolean);
+  // One review: its writer's hours when they wrote it, large, then the
+  // words (cut at a few lines until opened) and what Steam says about it.
+  function reviewRow(r) {
+    const open = S.revOpen.has(r.id), long = r.cut || r.text.length > 360 || (r.text.match(/\n/g) || []).length > 4;
+    const h = (n) => (n >= 10 ? Math.round(n).toLocaleString("en-US") : String(n));
+    const facts = [r.total > r.hours ? `${h(r.total)} h now` : "", r.early ? "Early Access" : "", r.free ? "Got it free" : ""].filter(Boolean);
     return `<li class="gp-rev gp-rev--${r.up ? "up" : "down"}${open ? " open" : ""}">
-      <div class="gp-rev-head"><span class="gp-rev-thumb" aria-hidden="true">${ph(r.up ? "thumbs-up" : "thumbs-down")}</span>
-        <div><b>${r.up ? "Recommended" : "Not recommended"}</b><span class="gp-rev-facts">${facts.map(esc).join(", ")}</span></div>
-        <time datetime="${esc(r.at)}">${esc(day(r.at))}</time></div>
-      <p class="gp-rev-text" id="rev-${esc(r.id)}">${esc(r.text)}</p>
-      <div class="gp-rev-foot">${long ? `<button class="gpage-link" data-action="rev-more" data-id="${esc(r.id)}" aria-expanded="${open}" aria-controls="rev-${esc(r.id)}">${open ? "Show less" : "Read all of it"}</button>` : ""}
-        <span class="grow"></span>${r.helpful ? `<span class="gp-rev-help">${ph("thumbs-up")}<span class="ln-num">${r.helpful.toLocaleString("en-US")}</span> found it helpful</span>` : ""}</div></li>`;
+      <span class="gp-rev-hours"><b class="ln-num">${esc(h(r.hours))}<small>h</small></b><span>when written</span></span>
+      <div class="gp-rev-main">
+        <span class="gp-rev-say">${ph(r.up ? "thumbs-up" : "thumbs-down")}<b>${r.up ? "Recommended" : "Not recommended"}</b><time datetime="${esc(r.at)}">${esc(day(r.at))}</time></span>
+        <p class="gp-rev-text" id="rev-${esc(r.id)}">${esc(r.text)}</p>
+        <span class="gp-rev-facts">${facts.map((f) => `<span>${esc(f)}</span>`).join("")}${r.helpful ? `<span><b class="ln-num">${r.helpful.toLocaleString("en-US")}</b> found it helpful</span>` : ""}${long ? `<button class="gpage-link" data-action="rev-more" data-id="${esc(r.id)}" aria-expanded="${open}" aria-controls="rev-${esc(r.id)}">${open ? "Show less" : "Read all of it"}</button>` : ""}</span>
+      </div></li>`;
   }
   // Asks for the reviews once the Community block comes into view.
   let comSeen = null;

@@ -33,14 +33,14 @@ func TestAchievementFiles(t *testing.T) {
 		}
 		return ""
 	}}
-	looked, there := e.AchievementFiles(42)
+	looked, there := e.AchievementFiles(42, "")
 	if len(looked) == 0 || len(there) != 0 {
 		t.Fatalf("looked %d, there %d", len(looked), len(there))
 	}
 	p := filepath.Join(appdata, "GSE Saves", "42", "achievements.json")
 	_ = os.MkdirAll(filepath.Dir(p), 0o755)
 	_ = os.WriteFile(p, []byte(`{"A":{"earned":true,"earned_time":100},"B":{"earned":false}}`), 0o644)
-	_, there = e.AchievementFiles(42)
+	_, there = e.AchievementFiles(42, "")
 	if len(there) != 1 || there[0].Unlocked != 1 {
 		t.Fatalf("got %+v", there)
 	}

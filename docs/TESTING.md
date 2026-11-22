@@ -1364,3 +1364,26 @@ Two monitors on the PC, the TV app connected.
    wait the log says "... didn't start for <profile>: Lootnest looked for
    ..., and for a program with a window in <folder>".
 
+## 62. Game page retouches
+
+1. A game in a folder (profiles off) that was played: its page shows no
+   Profiles list, and the card on the art says the hours "Played on this
+   PC", the same as the sessions on its Timeline added up. Play it for a
+   few minutes and close it: the hours grow without reopening Lootnest.
+2. A game Steam counts (a Steam game, or one with Steam hours): the card
+   and Home's card say "On Steam" with Steam's hours.
+3. A game in a folder whose Steam id isn't in the scan (Hydra or a plain
+   folder), with Game details on: Will it run shows.
+4. A game with profiles: the profile beside Play opens the list; pick
+   another profile. The swap screen says "Loading <name>'s files", the
+   game doesn't start, then Play, the card's hours, the achievements and
+   the Saves tab are that profile's. Everyone's beside the count shows
+   all the points.
+5. A Goldberg game with local_save.txt beside steam_api64.dll (or
+   local_save_path in steam_settings\configs.user.ini): its achievements
+   show, and Check why lists the folder.
+6. Profiles, Side by side: with two or more profiles, the board and the
+   games list match what each profile's page says.
+7. Overview, Community (Game details on): reviews as rows, Read all of it
+   opens one, More reviews shows the rest.
+

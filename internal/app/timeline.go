@@ -91,6 +91,7 @@ func (a *App) foundTick(procs map[string]bool) (up, down []string) {
 			go func(key string, rec core.SessionRecord) {
 				a.stepsAfter(key, true)
 				a.logSession(rec)
+				a.emit("libraryTime", map[string]any{"time": a.store.LibraryTime()})
 				a.apiGameTimeline(key)
 			}(key, core.SessionRecord{Game: key, Start: r.since, End: now, Source: "library", Build: r.build})
 		}

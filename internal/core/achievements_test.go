@@ -240,3 +240,49 @@ func TestAchievementsCloudSync(t *testing.T) {
 		t.Fatalf("on PC B: %q", got)
 	}
 }
+
+// A Goldberg-style tool whose settings move its saves: local_save.txt
+// beside the dll, configs.user.ini's local_save_path and saves_folder_name.
+func TestToolAchFiles(t *testing.T) {
+	root, appdata := t.TempDir(), t.TempDir()
+	env := &Env{Getenv: func(k string) string {
+		if k == "APPDATA" {
+			return appdata
+		}
+		return ""
+	}}
+	write := func(p, s string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	bin := filepath.Join(root, "Game", "Binaries", "Win64")
+	write(filepath.Join(bin, "steam_api64.dll"), "x")
+	write(filepath.Join(bin, "local_save.txt"), "SAVES\r\n")
+	write(filepath.Join(bin, "steam_settings", "configs.user.ini"), "[user::saves]\r\n# local_save_path=./nope\r\nlocal_save_path = ./portable \r\nsaves_folder_name=My Saves\r\n")
+	got := env.ToolAchFiles(root, 480)
+	want := []string{filepath.Join(bin, "SAVES", "480", "achievements.json"), filepath.Join(bin, "portable", "480", "achievements.json"), filepath.Join(appdata, "My Saves", "480", "achievements.json")}
+	if len(got) != len(want) {
+		t.Fatalf("got %v", got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+	if u, _ := env.PCUnlocksIn(480, root); u != nil {
+		t.Fatalf("no file yet: %v", u)
+	}
+	write(want[1], `{"ACH_WIN":{"earned":true,"earned_time":1700000000}}`)
+	u, file := env.PCUnlocksIn(480, root)
+	if len(u) != 1 || file != want[1] {
+		t.Fatalf("unlocks %v from %q", u, file)
+	}
+	if u, _ := env.PCUnlocks(480); u != nil {
+		t.Fatalf("without the game's folder: %v", u)
+	}
+}
