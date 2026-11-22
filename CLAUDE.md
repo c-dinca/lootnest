@@ -266,7 +266,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   digits (plain zero). All OFL, embedded.
 - The app icon is a red gem in an ice-grey nest on an obsidian tile.
 
-## Where things stand (2.20.1, beta)
+## Where things stand (2.21.0, beta)
 
 These shipped recently, newest last:
 
@@ -2350,7 +2350,7 @@ These shipped recently, newest last:
   docs/TESTING.md 51, item 6. Released as 2.20.1 at the owner's ask
   (21 Nov).
 
-- **Unreleased, a game followed under another program's name** (the
+- **2.21.0, a game followed under another program's name** (the
   owner, 22 Nov 2026: Mihai's RDR2 sessions on the nights of 21 and 22
   left no time, points or Timeline). The log showed every RDR2 launch
   from 21 Nov 10:55 (2.19.0) on as "Launched ..." (most after "Started
@@ -2375,7 +2375,8 @@ These shipped recently, newest last:
   was looked for. Lootnest also had no "quit" line on 21 Nov 22:47 to
   01:30 and 22 Nov 01:30 to 12:04 (closed with the PC); sessions live
   only in memory, so one cut that way isn't counted (open item: keep
-  them on disk). docs/TESTING.md 61.
+  them on disk). docs/TESTING.md 61. Released as 2.21.0 at the owner's
+  ask (22 Nov).
 
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
@@ -2408,7 +2409,7 @@ These shipped recently, newest last:
   The owner asked for 2.19.0 once this was in (21 Nov), with the FPS
   counter's two entries and Start with a launcher.
 
-- **Unreleased, the window's bar inside the page** (the owner, 21 Nov
+- **2.21.0, the window's bar inside the page** (the owner, 21 Nov
   2026: the Windows title bar "not like this, inside Lootnest, as Steam
   and Claude do", and the logo gone). The window keeps
   WS_OVERLAPPEDWINDOW (snap, shadow, Windows 11 corners and border) but no
@@ -2427,9 +2428,10 @@ These shipped recently, newest last:
   Picture and on Linux. The sidebar's brand mark is gone (Big Picture,
   the boot splash and the first run keep `BRAND_MARK`). Win11's snap
   layouts flyout on Maximize needs HTMAXBUTTON, so it isn't there
-  (Win+Z is). docs/TESTING.md 60.
+  (Win+Z is). docs/TESTING.md 60. Released as 2.21.0 at the owner's ask
+  (22 Nov).
 
-- **Unreleased, game page retouches** (the owner, 22 Nov 2026).
+- **2.21.0, game page retouches** (the owner, 22 Nov 2026).
   Games without profiles get their time from the session log
   (`Store.LibraryTime`, sessions with no profile summed by key, cached by
   the log's size and time; `AppState.LibraryTime`, event `libraryTime`
@@ -2451,7 +2453,7 @@ These shipped recently, newest last:
   `S.cmpWho`, `S.cmpShow`): a board with each line's leader crowned, then
   every game with each one's time, status and achievements (`S.allAch`).
   Community is rows (`reviewRow`, `.gp-rev`, `--rev-hours-w`, `rev-all`).
-  docs/TESTING.md 62.
+  docs/TESTING.md 62. Released as 2.21.0 at the owner's ask (22 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
