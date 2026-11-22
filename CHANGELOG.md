@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A game started through a launcher is followed again.** When a game with profiles started from Lootnest ran under another program's name than its own (Red Dead Redemption 2 started with its launcher before it), Lootnest never saw it running: the time played wasn't counted, no save the game made was kept, nothing went into the Timeline, and the profile's files weren't saved back when it closed. Now a program with a window in the game's folder counts as the game while Lootnest waits for it, the launcher itself only when nothing else is there, and the log says which program it follows. When a game really doesn't start, the log says what Lootnest looked for.
 - **The window's bar is inside Lootnest.** Windows' own title bar, with its logo and caption, is gone: the game's art now runs to the top of the window, and Minimize, Maximize and Close sit at the top right, drawn in Lootnest's look, as in Steam. Drag the window by its top strip or the sidebar's top, double-click there to maximize, and resize from any edge as before; snapping to a screen's side still works. The logo beside "Lootnest" in the sidebar is gone too.
 
 ## 2.20.1

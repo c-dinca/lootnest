@@ -2350,6 +2350,26 @@ These shipped recently, newest last:
   docs/TESTING.md 51, item 6. Released as 2.20.1 at the owner's ask
   (21 Nov).
 
+- **Unreleased, a game followed under another program's name** (the
+  owner, 22 Nov 2026: Mihai's RDR2 sessions on the nights of 21 and 22
+  left no time, points or Timeline). The log showed every RDR2 launch
+  from 21 Nov 10:55 (2.19.0) on as "Launched ..." (most after "Started
+  Launcher.exe before Red Dead Redemption 2"), and nothing after: no "FPS counter: listening", no
+  save back, the session waiting until its 20 minutes ran out. The game
+  ran under a name not in `runNames` (Launcher.exe is a Start before
+  program, not Start with). `tick`: while a session launches or plays
+  and its known names never ran (`Session.seenOwn`), a program with a
+  window inside the game's folder is the game (`sessionFolders`,
+  `inGameFolder`, `underDir`; `Session.alt`, logged once); a Start
+  before/after program (`helperNames`) only when nothing else is there,
+  and never again once the real game was followed (`altGame`), so a
+  launcher left open doesn't hold the session. `gameNames` includes
+  `alt` (Close the game, save points). A launch that runs out logs what
+  was looked for. Lootnest also had no "quit" line on 21 Nov 22:47 to
+  01:30 and 22 Nov 01:30 to 12:04 (closed with the PC); sessions live
+  only in memory, so one cut that way isn't counted (open item: keep
+  them on disk). docs/TESTING.md 61.
+
 - **2.18.1, Big Picture in the PC's glass** (the owner, 20 Nov 2026,
   on 2.18.0: Home's cards made no sense to them, and Big Picture should
   have the PC's "liquid glass", same theme). `bpCards` and the `hc-*`
