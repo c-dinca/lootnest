@@ -586,16 +586,22 @@ func (a *App) apiProfileInfo(gameID string) {
 }
 
 // sessionFolders are the folders of the games whose sessions are starting
-// or running and are started by their exe, with the programs that have a
-// window now (only looked up when there's such a session).
+// or running, are started by their exe and have a launcher in their launch
+// options (Start with, or a program started before), with the programs that
+// have a window now. Only those games are looked for in their folder, and
+// only until one of their known names runs; any other game costs nothing.
 func (a *App) sessionFolders() (map[string]string, []plat.RunningApp) {
 	exes := map[string]string{}
 	a.mu.Lock()
 	for id, s := range a.sessions {
-		if s.Phase != "launching" && s.Phase != "playing" {
+		if s.seenOwn || (s.Phase != "launching" && s.Phase != "playing") {
 			continue
 		}
-		if g := a.cfg.Game(id); g != nil && g.Launch.Type == "exe" && g.Launch.Exe != "" {
+		g := a.cfg.Game(id)
+		if g == nil || g.Launch.Type != "exe" || g.Launch.Exe == "" {
+			continue
+		}
+		if o := a.cfg.LaunchOpts["game:"+id]; o.StartWith != "" || len(o.StartBefore) > 0 {
 			exes[id] = g.Launch.Exe
 		}
 	}
