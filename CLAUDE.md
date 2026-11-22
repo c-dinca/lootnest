@@ -264,7 +264,9 @@ website's: obsidian, glass over the game's art, premium and quiet.
 - Type: Tilt Warp for titles, a game's name, the Play key and big
   numbers; Atkinson Hyperlegible Next for everything else, with Figtree's
   digits (plain zero). All OFL, embedded.
-- The app icon is a red gem in an ice-grey nest on an obsidian tile.
+- The app icon is the brand mark (`BRAND_MARK`: a Racing Red ring over
+  two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
+  (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
 ## Where things stand (2.21.0, beta)
 
@@ -2425,8 +2427,9 @@ These shipped recently, newest last:
   on the top `--winbar-h` 32px or `.side-top` that isn't on `WB_OWN`
   drags; a second within 500 ms maximizes); `html.win-chrome` moves
   `.view`, drawers, Ctrl+K and unlock pops below it; hidden under Big
-  Picture and on Linux. The sidebar's brand mark is gone (Big Picture,
-  the boot splash and the first run keep `BRAND_MARK`). Win11's snap
+  Picture and on Linux. The sidebar's brand mark went with it and came
+  back the next day, when the owner asked for that mark as the app icon
+  too (`tools/mkicon.py` draws it; `assets/lootnest.ico`, `desk/icon.png`). Win11's snap
   layouts flyout on Maximize needs HTMAXBUTTON, so it isn't there
   (Win+Z is). docs/TESTING.md 60. Released as 2.21.0 at the owner's ask
   (22 Nov).

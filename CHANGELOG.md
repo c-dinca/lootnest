@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **One Lootnest sign everywhere.** The taskbar, the tray, the window and the installer now show the same mark as the sidebar: a red ring over two light arcs, on the dark tile. The red gem in a nest is gone. The mark is back beside "Lootnest" in the sidebar too.
+
 ## 2.21.0
 
 - **Hours played for games without profiles.** A game you play with profiles off (a game in a folder, from Hydra) now shows how long you played it: Lootnest adds up every session it already kept for the Timeline, so time played before this version counts too. The Profiles list, which showed everyone at 0 h on such a game, is gone from its page.
