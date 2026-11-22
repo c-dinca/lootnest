@@ -23,10 +23,6 @@ UNIT = 46          # pixels per SVG unit at 1024
 CX, CY = S / 2, S / 2 + 10
 
 
-def at(x, y):
-    return CX + (x - 10) * UNIT, CY + (y - 10.1) * UNIT
-
-
 def stroke(d, pts, width, fill):
     """A polyline with round joins and caps: discs along it."""
     r = width / 2
@@ -38,28 +34,45 @@ def stroke(d, pts, width, fill):
             d.ellipse((x - r, y - r, x + r, y + r), fill=fill)
 
 
-def lower_arc(rx, ry, n=200):
-    """The SVG's arcs: from (10-rx, 10.25) down through (10, 10.25+ry) and
-    up to (10+rx, 10.25), a half ellipse."""
-    return [at(10 - rx * math.cos(math.pi * i / n), 10.25 + ry * math.sin(math.pi * i / n)) for i in range(n + 1)]
+def paint(d, size, unit, cx, cy):
+    """The mark at unit pixels per SVG unit around (cx, cy), its strokes
+    heavier when it will be shown small (size, the final pixels across)."""
+    def at(x, y):
+        return cx + (x - 10) * unit, cy + (y - 10.1) * unit
+
+    def lower_arc(rx, ry, n=200):
+        return [at(10 - rx * math.cos(math.pi * i / n), 10.25 + ry * math.sin(math.pi * i / n)) for i in range(n + 1)]
+
+    w = (2.6 if size <= 24 else 2.2 if size <= 48 else 1.9) * unit
+    stroke(d, lower_arc(7.25, 6.25), w, NEST)   # the outer arc
+    stroke(d, lower_arc(4.25, 3.5), w, NEST)    # the inner arc
+    gx, gy = at(10, 6.25)                       # the ring: r 2.5 around (10, 6.25)
+    r = 2.5 * unit
+    d.ellipse((gx - r - w / 2, gy - r - w / 2, gx + r + w / 2, gy + r + w / 2), outline=GEM, width=round(w))
 
 
 def draw(size):
+    """The app icon: the mark on the obsidian tile."""
     out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(out)
     d.rounded_rectangle((32, 32, S - 32, S - 32), radius=232, fill=TILE)
+    paint(d, size, UNIT, CX, CY)
+    return out.resize((size, size), Image.LANCZOS)
 
-    # Heavier strokes as the icon gets smaller (the SVG's is 1.6 units).
-    w = (2.6 if size <= 24 else 2.2 if size <= 48 else 1.9) * UNIT
-    stroke(d, lower_arc(7.25, 6.25), w, NEST)   # the outer arc
-    stroke(d, lower_arc(4.25, 3.5), w, NEST)    # the inner arc
 
-    # The ring: r 2.5 around (10, 6.25), as wide as the arcs' strokes.
-    gx, gy = at(10, 6.25)
-    ro, ri = 2.5 * UNIT + w / 2, max(0.0, 2.5 * UNIT - w / 2)
-    d.ellipse((gx - ro, gy - ro, gx + ro, gy + ro), fill=GEM)
-    if ri > 0:
-        d.ellipse((gx - ri, gy - ri, gx + ri, gy + ri), fill=TILE)
+def mark(size, fill=1.0):
+    """The mark alone on a clear ground, filling fill of the square (for
+    places that draw their own ground: the TV apps' screens, Android's
+    adaptive icon)."""
+    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(out)
+    unit = S * fill / 17.2   # the mark is about 17.2 units across with its strokes
+    paint(d, size, unit, S / 2, S / 2)
+    box = out.getbbox()
+    if box:  # centre what was drawn
+        dx = (S - (box[0] + box[2])) / 2
+        dy = (S - (box[1] + box[3])) / 2
+        out = out.transform(out.size, Image.AFFINE, (1, 0, -dx, 0, 1, -dy), resample=Image.BICUBIC)
     return out.resize((size, size), Image.LANCZOS)
 
 
