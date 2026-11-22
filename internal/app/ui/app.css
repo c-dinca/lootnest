@@ -2504,38 +2504,40 @@ button.upd-name:hover { text-decoration: underline; text-underline-offset: 3px; 
 .ug-act { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .ug-act .gpage-actions { margin: 0; }
 
-/* Community: Steam's word on the game and its most helpful reviews. */
-.gp-com-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
-.gp-com-seg { flex-wrap: wrap; }
-.gp-com-score { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: var(--space-4); row-gap: var(--space-2); margin-bottom: var(--gap-group); }
-.gp-com-pct { font-family: var(--font-display); font-size: var(--text-board); line-height: 1; color: var(--fg-1); }
-.gp-com-pct small { font-size: 0.45em; margin-left: 2px; color: var(--fg-2); }
-.gp-com-score > span:nth-child(2) { display: grid; gap: 2px; }
-.gp-com-score b { font-size: var(--fs-15); color: var(--fg-1); }
-.gp-com-n { font-size: var(--fs-13); color: var(--fg-2); }
-.gp-com-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--danger) 55%, transparent); overflow: hidden; }
-.gp-com-bar > span { display: block; height: 100%; background: var(--lamp); border-radius: inherit; transform-origin: left; }
+/* Community (communityBlock): the head says the share that recommends the
+   game, a bar under it as achievements have, then the reviews as rows on
+   the page: the hours their writer had played, large, beside the words. */
+.gp-com-bar { height: 6px; border-radius: var(--radius-tag); background: color-mix(in srgb, var(--danger) 45%, var(--glass-ctl-active)); overflow: hidden; }
+.gp-com-bar > span { display: block; height: 100%; background: var(--lamp); transform-origin: left; }
 .arrive .gp-com-bar > span { animation: gp-com-fill 900ms var(--ease-emph) both; }
 @keyframes gp-com-fill { from { transform: scaleX(0); } }
-.gp-com-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--space-3); align-items: start; }
-.gp-com-skel { height: 168px; border-radius: var(--radius-panel); }
-.gp-rev { display: grid; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: inset 0 1px 0 var(--key-light); border: var(--hairline) solid var(--edge-1); }
-.gp-rev-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); }
-.gp-rev-head b { display: block; font-size: var(--fs-14); color: var(--fg-1); }
-.gp-rev-facts { display: block; font-size: var(--fs-12); color: var(--fg-2); }
-.gp-rev-head time { font-size: var(--fs-12); color: var(--fg-3); align-self: start; }
-.gp-rev-thumb { width: 34px; height: 34px; display: grid; place-items: center; border-radius: var(--radius-ctl); }
-.gp-rev-thumb .ln-icon { width: 18px; height: 18px; }
-.gp-rev--up .gp-rev-thumb { background: color-mix(in srgb, var(--lamp) 16%, transparent); color: var(--lamp); }
-.gp-rev--down .gp-rev-thumb { background: var(--danger-wash); color: var(--danger); }
-.gp-rev-text { margin: 0; white-space: pre-line; font-size: var(--fs-14); line-height: 1.55; color: var(--fg-1); overflow-wrap: anywhere;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.gp-com-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin: var(--space-4) 0 var(--space-1); }
+.gp-com-seg { flex-wrap: wrap; }
+.gp-com-list { list-style: none; margin: 0; padding: 0; }
+.gp-com-none { margin-top: var(--space-3); }
+.gp-rev { display: grid; grid-template-columns: var(--rev-hours-w) minmax(0, 1fr); gap: var(--space-5); padding: var(--space-5) 0; border-bottom: var(--hairline) solid var(--edge-1); }
+.gp-rev:last-child { border-bottom: 0; }
+.gp-rev-hours { display: grid; align-content: start; gap: 2px; }
+.gp-rev-hours b { font: 400 var(--fs-24)/1 var(--font-title); color: var(--fg-1); }
+.gp-rev-hours small { margin-left: 2px; font-size: 0.6em; color: var(--fg-2); }
+.gp-rev-hours > span { font-size: var(--fs-12); color: var(--fg-3); }
+.gp-rev-main { display: grid; gap: var(--space-2); min-width: 0; }
+.gp-rev-say { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-13); }
+.gp-rev-say .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.gp-rev-say b { font-weight: 700; }
+.gp-rev--up .gp-rev-say { color: var(--lamp); }
+.gp-rev--down .gp-rev-say { color: var(--danger); }
+.gp-rev-say time { margin-left: auto; font-size: var(--fs-12); color: var(--fg-3); }
+.gp-rev-text { margin: 0; white-space: pre-line; font-size: var(--fs-14); line-height: 1.6; color: var(--fg-1); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
 .gp-rev.open .gp-rev-text { display: block; -webkit-line-clamp: unset; }
-.gp-rev-foot { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
-.gp-rev-help { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--fs-12); color: var(--fg-2); }
-.gp-rev-help .ln-icon { width: 13px; height: 13px; }
-.gp-com-foot { display: flex; justify-content: flex-end; margin-top: var(--space-3); }
-.gp-com-foot:empty { display: none; }
+.gp-rev-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); font-size: var(--fs-12); color: var(--fg-2); }
+.gp-rev-facts b { font-weight: 700; color: var(--fg-1); }
+.gp-rev-facts .gpage-link { margin-left: auto; font-size: var(--fs-13); }
+.gp-rev--skel { align-items: start; }
+.gp-rev-skel-h { width: 56px; height: 28px; border-radius: var(--radius-tag); }
+.gp-rev-skel-t { height: 72px; border-radius: var(--radius-tag); }
+.gp-com-foot { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); }
 
 /* Motion: a cover opening into its game, and the lit pill gliding. */
 .cover-fly { position: fixed; z-index: 30; object-fit: cover; pointer-events: none; transform-origin: center; will-change: transform, opacity, filter; }
@@ -3302,3 +3304,76 @@ body:has(> #bp) .ln-toast svg { width: var(--bp-icon); height: var(--bp-icon); }
 .bp-dlg { background: var(--glass-overlay); box-shadow: var(--glass-light), inset 0 0 0 1px var(--glass-edge), var(--bp-shadow-focus); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); }
 .bp-dlg-keys .bp-key { background: var(--glass-ctl); }
 body:has(> #bp) #overlay .scrim { -webkit-backdrop-filter: var(--blur-scrim); backdrop-filter: var(--blur-scrim); }
+
+/* ------------------------------------------------- the game page's card */
+/* On the art, at its lower right (heroCard in 40-game-page.js): Home's
+   glass card laid out as one row, with the time played (Steam's when it
+   counts the game), achievements and save points of the page's profile. */
+.gpage-hero > .gp-hero-card { position: absolute; z-index: 1; right: var(--page-gutter); bottom: var(--space-6); display: flex; align-items: stretch; max-width: 58%; padding: 0 var(--space-1); }
+.gp-hero-card .home-card-row { padding: var(--space-3) var(--space-4); }
+.gp-hero-card .home-card-row + .home-card-row { border-top: 0; border-left: var(--hairline) solid var(--edge-1); }
+.gpage-hero.has-card .gpage-title { padding-right: 44%; }
+@media (max-width: 1100px) { .gpage-hero > .gp-hero-card { display: none; } .gpage-hero.has-card .gpage-title { padding-right: var(--page-gutter); } }
+
+/* Whose the page is, beside Play (whoSwitch): a key that opens the list
+   of profiles (whoMenu); picking one loads their files. */
+.gp-who { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); border: 0; border-radius: var(--radius-key); background: none; color: inherit; font: inherit; text-align: left; }
+button.gp-who { cursor: pointer; background: var(--glass-ctl); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), inset 0 1px 0 var(--key-light); transition: background var(--dur-2) var(--ease-out), transform var(--spring-press-dur) var(--spring-press); }
+button.gp-who:hover, button.gp-who[aria-expanded="true"] { background: var(--glass-ctl-hover); }
+button.gp-who:active { transform: translateY(1px); }
+button.gp-who:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.gp-who .gpage-state { padding-left: 0; }
+.gp-who-caret { display: grid; place-items: center; color: var(--fg-2); }
+.gp-who-caret .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.ctx .gp-who-item { height: auto; min-height: 44px; padding: var(--space-2) var(--space-3); gap: var(--space-3); }
+.gp-who-item .grow { display: grid; gap: 2px; }
+.gp-who-item .grow b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+.gp-who-item .grow span { font-size: var(--fs-12); color: var(--fg-2); }
+.ctx .gp-who-item.is-run { padding-left: var(--space-8); }
+
+/* ---------------------------------------------------------- side by side */
+/* The Profiles page's second tab (56-compare.js): chips of who's compared,
+   a board of their numbers with each line's leader lit and crowned in
+   their colour, then every game as a row with each one's time, status and
+   achievements. */
+.players-tabs { margin-left: var(--space-5); align-self: center; }
+.cmp { display: grid; gap: var(--gap-group); margin-top: var(--gap-group); }
+.cmp-who { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.cmp-board, .cmp-list { border-radius: var(--radius-panel); background: var(--bg-surface); box-shadow: var(--lip-panel); overflow: hidden; }
+.cmp-line, .cmp-game { display: grid; grid-template-columns: minmax(0, var(--cmp-what-w)) repeat(var(--cols), minmax(0, 1fr)); align-items: center; column-gap: var(--space-4); padding: 0 var(--space-5); }
+.cmp-line + .cmp-line, .cmp-game + .cmp-game { border-top: var(--hairline) solid var(--edge-1); }
+.cmp-line { min-height: var(--row-h); }
+.cmp-line--head { padding-top: var(--space-5); padding-bottom: var(--space-4); }
+.cmp-head { display: grid; justify-items: center; gap: var(--space-1); text-align: center; }
+.cmp-head b { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-15); font-weight: 750; }
+.cmp-head span:not([class]) { font-size: var(--fs-12); color: var(--fg-2); }
+.cmp-what { font-size: var(--fs-13); color: var(--fg-2); }
+.cmp-val { display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+.cmp-val b { font: 400 var(--fs-18)/1 var(--font-title); color: var(--fg-2); }
+.cmp-val.is-lead b { color: var(--fg-1); }
+.cmp-crown { display: grid; color: var(--player-fill); }
+.cmp-crown .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.cmp-games .ln-section-head { margin-bottom: var(--space-3); }
+.cmp-game { padding-top: var(--space-3); padding-bottom: var(--space-3); align-items: start; }
+.cmp-title { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: 0; border: 0; background: none; color: var(--fg-1); font: inherit; text-align: left; cursor: pointer; }
+.cmp-title:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-tag); }
+.cmp-title img, .cmp-plate { flex: none; width: 36px; aspect-ratio: 2 / 3; border-radius: var(--radius-tag); object-fit: cover; background: var(--bg-active); }
+.cmp-plate { display: grid; place-items: center; font: 400 var(--fs-14)/1 var(--font-title); color: var(--fg-2); }
+.cmp-title > span { display: grid; gap: 2px; min-width: 0; }
+.cmp-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-14); font-weight: 700; }
+.cmp-title:hover b { text-decoration: underline; text-decoration-color: var(--edge-3); text-underline-offset: 0.15em; }
+.cmp-leader { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--fs-12); color: var(--fg-2); }
+.cmp-leader .ln-icon { width: var(--icon-xs); height: var(--icon-xs); color: var(--player-fill); }
+.cmp-cell { display: grid; gap: var(--space-1); min-width: 0; }
+.cmp-cell.is-none { align-self: center; }
+.cmp-time { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+.cmp-time b { font-size: var(--fs-14); font-weight: 750; }
+.cmp-time span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-12); color: var(--fg-3); }
+.cmp-bar { height: 4px; border-radius: var(--radius-tag); background: var(--glass-ctl-active); overflow: hidden; }
+.cmp-bar i { display: block; height: 100%; border-radius: inherit; background: var(--player-fill); }
+.cmp-said { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); font-size: var(--fs-12); color: var(--fg-2); }
+.cmp-st--finished, .cmp-st--complete { color: var(--lamp); }
+.cmp-st--stopped { color: var(--fg-3); }
+.cmp-cell.is-lead .cmp-time b { color: var(--player-fill); }
+@media (max-width: 900px) { .cmp-line, .cmp-game { grid-template-columns: minmax(0, 1fr) repeat(var(--cols), minmax(0, 1fr)); padding: 0 var(--space-3); } }
+.gp-points .ach-count .gpage-link { margin-left: var(--space-3); }

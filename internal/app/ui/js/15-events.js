@@ -121,6 +121,9 @@
         S.svo = { recent: ev.recent || [], games: ev.games || [] };
         if (S.view === "saves") render();
         break;
+      case "libraryTime": // a game without profiles closed (app/timeline.go)
+        if (S.d) { S.d.libraryTime = ev.time || {}; if (S.view === "home" || S.view === "game" || S.view === "library") render(); }
+        break;
       case "timeline":
         S.timeline[ev.key] = ev.items || [];
         if (S.view === "game") render();
@@ -224,6 +227,7 @@
         S.allAch = { games: ev.games || [] };
         if (BP.on) bpSoon();
         if (S.view === "achievements") { S.animateView = "kids"; render(); }
+        if (S.view === "players" && S.playersTab === "compare") render();
         if (S.dialog && S.dialog.kind === "achshare") { S.dialog.drawnFor = ""; S.dialog.canvas = null; renderOverlay(); }
         break;
       case "profileInfo":

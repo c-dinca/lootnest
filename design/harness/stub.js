@@ -283,6 +283,8 @@
   // ?fresh=1: a PC where nothing was played with Lootnest yet (a friend's).
   if (q.get("fresh")) Object.keys(recent).forEach((k) => delete recent[k]);
   if (ARTQ === "partial") recent["dir:d:\\games\\phantom blade zero"] = { at: iso(20 * 60e3) }; // on the shelves, wide art made from its cover
+  // Games without profiles: their time from the session log (libraryTime).
+  const libraryTime = { "dir:d:\\games\\onimusha": 67 * 60 + 4 * 60, "dir:d:\\games\\phantom blade zero": 9 * 3600 };
   steamTime["steam:1091500"] = 84 * 3600; steamTime["game:cs2"] = 412 * 3600; steamTime["steam:250900"] = 133 * 3600;
   shelf.p1 = { "game:cs2": { status: "playing", rating: 4, updated: iso(d) }, "steam:1091500": { status: "playing", updated: iso(2 * d) }, "game:ittakestwo": { status: "finished", rating: 5, note: "Best co-op game", updated: iso(20 * d) } };
   const sessions = STATE === "playing" && games[0] ? [{ gameId: "cs2", playerId: ids[ids.length > 1 ? 1 : 0], phase: "playing", since: iso(40 * 60e3) }] : [];
@@ -315,7 +317,7 @@
     conflicts: CALM ? {} : { cs2: { at: iso(2 * h), player: "p1", files: ["{STEAMUSER}/730/local/cfg/config.cfg"] } },
     active, sessions, profiles, steam: { found: true, path: "C:\\Program Files (x86)\\Steam", accounts: ["cristian_d"], accountInUse: "cristian_d" },
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
-    sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, avatars: {}, banners: {}, shelf,
+    sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, libraryTime, avatars: {}, banners: {}, shelf,
     customArt: customIndex(), themes: THEMES, pluginPages: PLUGIN_PAGES(), pluginMeta: PLUGIN_LIST.some((x) => x.on && x.provides.includes("metadata")),
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
@@ -350,7 +352,9 @@
   const DETEDITS = {};
   const COPYNAMES = {};
   const detailsEv = (key) => {
-    const appId = key === "game:bg3" ? 1086940 : key === "game:cs2" ? 730 : key === "game:ittakestwo" ? 1426210 : ((found.find((f) => f.key === key) || {}).appId || 0);
+    // A folder game's Steam id is known only to Lootnest (found by name):
+    // Phantom Blade Zero's stands in with It Takes Two's requirements.
+    const appId = key === "game:bg3" ? 1086940 : key === "game:cs2" ? 730 : key === "game:ittakestwo" ? 1426210 : key === "dir:d:\\games\\phantom blade zero" ? 1426210 : ((found.find((f) => f.key === key) || {}).appId || 0);
     const e = DETEDITS[key];
     let det = null;
     if (appId === 1086940) det = {
@@ -390,7 +394,7 @@
       { part: "Processor", have: RUN.c[0], min: RUN.c[1], rec: RUN.c[2], runs: "high", known: true },
       { part: "Memory", have: 16 * 2 ** 30, min: 8 * 2 ** 30, rec: 16 * 2 ** 30, runs: RUN.mem, known: true },
       { part: "Storage", have: 0, min: 0, rec: 0, runs: "", known: false }] } };
-    return { type: "details", key, details: det, edited: !!e, run };
+    return { type: "details", key, appId, details: det, edited: !!e, run };
   };
   const POINTS = {}, QS = {};
   // Captures from other apps (ps_gameCaptures): Baldur's Gate 3 from Steam,
@@ -938,6 +942,12 @@
     // Saving profiles gives new ones an id, as Go does.
     ps_savePlayers: (list) => { FIRSTP = null; PLAYERS.splice(0, PLAYERS.length, ...list.map((p, i) => ({ ...p, id: p.id || "p" + (Date.now() % 100000) + i }))); return ok(); },
     // A first-timer is asked how to start, as in Go.
+    // Load someone's files (the page's profile switch): they're in after a moment.
+    ps_load: (req) => {
+      if (!req.newProfile && !(profiles[req.gameId] || []).includes(req.playerId) && req.gameId in profiles) return ok({ need: "newMode" });
+      setTimeout(() => { active[req.gameId] = req.playerId; emit({ type: "sessions", sessions: [], active: Object.assign({}, active) }); }, 900);
+      return ok({});
+    },
     ps_play: (req) => ok(!req.newProfile && !(profiles[req.gameId] || []).includes(req.playerId) && req.gameId in profiles ? { need: "newMode" } : {}),
     // Each player's profile: saved a while ago, a few MB.
     ps_profileInfo: (gid) => { if (STATE !== "loading") emit({ type: "profileInfo", gameId: gid, info: Object.fromEntries((profiles[gid] || []).map((p, j) => [p, { saved: iso((j + 1) * 22 * h), size: (j + 1) * 7.3 * 1048576 }])) }); return ok(); },

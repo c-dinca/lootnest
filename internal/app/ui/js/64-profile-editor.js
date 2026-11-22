@@ -113,13 +113,14 @@
       const runs = cfg().players.filter((r) => parentOf(r) === p);
       return `<div class="pgroup ln-player" style="--player:${esc(p.color)}">${card(p)}${runs.length ? `<ul class="pruns" aria-label="${esc(possessive(p.name))} runs">${runs.map((r) => { const st = playerStats(r); return `<li><button class="prun" data-action="open-player" data-player="${esc(r.id)}">${lnAvatar(r, "32")}<b>${esc(runLabel(r))}</b><span class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</span></button></li>`; }).join("")}</ul>` : ""}</div>`;
     }).join("");
-    const n = cfg().players.length;
+    const n = cfg().players.length, side = n >= 2 && S.playersTab === "compare";
+    const tabs = n >= 2 ? `<div class="ln-segmented players-tabs" role="group" aria-label="Show">${[["cards", "Profiles"], ["compare", "Side by side"]].map(([k, l]) => `<button data-action="players-tab" data-k="${k}" aria-pressed="${(side ? "compare" : "cards") === k}">${l}</button>`).join("")}</div>` : "";
     return `<div class="players-page ln-root">
-      <header class="lib-head"><div class="lib-title"><h1>Profiles</h1><span class="lib-meta ln-num">${n} of ${MAX_PROFILES}</span></div>
+      <header class="lib-head"><div class="lib-title"><h1>Profiles</h1><span class="lib-meta ln-num">${n} of ${MAX_PROFILES}</span>${tabs}</div>
         <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile exported from Lootnest on another PC">Import a profile</button>
           <button class="ln-button ln-button--ghost" data-action="edit-profiles" aria-haspopup="dialog">${GI.edit}Names and colours${dirty ? '<span class="ln-tag">Not saved</span>' : ""}</button>
           ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="new-profile" aria-haspopup="dialog">${GI.plus}New profile</button>` : ""}</div></header>
-      <div class="pcards">${cards}</div></div>`;
+      ${side ? viewCompare() : `<div class="pcards">${cards}</div>`}</div>`;
   }
   // Names and colours, in a panel: every profile at once, saved together.
   function viewProfilesDrawer() {

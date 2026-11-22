@@ -23,6 +23,7 @@ import (
 
 type achLive struct {
 	appID  int
+	dir    string // the game's folder, for a tool that keeps its saves beside it
 	known  map[string]time.Time
 	list   []core.Achievement
 	name   string
@@ -138,7 +139,7 @@ func (a *App) achTick(procs map[string]bool) {
 		if l.off {
 			continue
 		}
-		now, _ := a.env.PCUnlocks(l.appID)
+		now, _ := a.env.PCUnlocksIn(l.appID, l.dir)
 		if now == nil {
 			continue
 		}
@@ -176,8 +177,8 @@ func (a *App) achStart(r achRun) *achLive {
 		l.off = true
 		return l
 	}
-	l.appID = appID
-	if u, _ := a.env.PCUnlocks(appID); u != nil {
+	l.appID, l.dir = appID, r.dir
+	if u, _ := a.env.PCUnlocksIn(appID, r.dir); u != nil {
 		l.known = u
 	}
 	if set := a.achievements(r.key, appID, r.dir, r.name, false); set != nil {

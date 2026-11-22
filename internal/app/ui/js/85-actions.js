@@ -625,6 +625,7 @@
     // Game details: the quiet link opens Settings, Online, where the switch is.
     "details-on"() { S.setTab = "online"; setPref("setTab", S.setTab); actions.nav({ dataset: { view: "settings" } }); },
     "rev-kind"(el) { S.revKind[el.dataset.k] = el.dataset.kind; render(); },
+    "rev-all"(el) { const k = el.dataset.k; if (S.revAll.has(k)) S.revAll.delete(k); else S.revAll.add(k); render(); },
     "rev-again"(el) { delete S.reviews[el.dataset.k + "|" + el.dataset.kind]; render(); },
     "rev-more"(el) {
       const id = el.dataset.id, open = !S.revOpen.has(id), li = el.closest(".gp-rev");
@@ -862,6 +863,34 @@
     },
     "update-notes"() { api.open("release").catch((e) => toast(errText(e), "error")); },
     "load-only": (el) => openPicker(el.dataset.game, "load"),
+    // The profile beside Play: the page becomes theirs, and their files
+    // are loaded without starting the game (as Load someone's files does).
+    "who-menu": (el) => toggleMenu(el, whoMenu(el.dataset.game)),
+    "who-pick"(el) {
+      const gid = el.dataset.game, pid = el.dataset.player;
+      closeContext();
+      if (session(gid)) { toast("Close the game first: its files can't change while it runs.", "error"); return; }
+      S.gameWho[gid] = pid;
+      delete S.achWho["game:" + gid];
+      if (S.d.active[gid] === pid) { uiSound("tab"); render(); return; }
+      openPicker(gid, "load");
+      S.picker.playerId = pid;
+      S.picker.from = S.d.active[gid] || "";
+      runPick();
+    },
+    "players-tab"(el) { S.playersTab = el.dataset.k; uiSound("tab"); render(); },
+    "cmp-show"(el) { S.cmpShow = el.dataset.k; render(); },
+    "cmp-who"(el) {
+      const id = el.dataset.player, ids = cmpWho().map((p) => p.id);
+      if (ids.includes(id) && ids.length <= 2) { toast("Side by side needs two profiles at least."); return; }
+      S.cmpWho = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+      render();
+    },
+    "pt-everyone"(el) {
+      const k = el.dataset.kind === "game" ? "game:" + el.dataset.game : el.dataset.key;
+      if (ptEveryone.has(k)) ptEveryone.delete(k); else ptEveryone.add(k);
+      render();
+    },
     "play-pick": (el) => openPicker(el.dataset.game, "play"),
     menu(el) { S.menuFor = S.menuFor === el.dataset.game ? null : el.dataset.game; render(); const m = $(".menu button"); if (m) m.focus(); },
     "edit-game": (el) => { if (S.dialog && S.dialog.kind === "sheet") S.dialog = null; editGame(el.dataset.game); },

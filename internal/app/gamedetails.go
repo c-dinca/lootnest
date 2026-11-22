@@ -64,7 +64,9 @@ func (a *App) detailsOn() bool {
 // emitDetails sends what the page shows: Steam's details with the user's
 // edits over them, or nothing when there's neither.
 func (a *App) emitDetails(key string, fetched *core.GameDetails, extra map[string]any) {
-	out := map[string]any{"key": key}
+	// The Steam id the details are read by, which the page may not know
+	// for a game in a folder (found by its name or a file beside it).
+	out := map[string]any{"key": key, "appId": a.detailsAppID(key)}
 	for k, v := range extra {
 		out[k] = v
 	}

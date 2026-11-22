@@ -93,3 +93,33 @@ func TestSessionLogMissing(t *testing.T) {
 		t.Fatalf("no file: %+v, %d, %v", got, bad, err)
 	}
 }
+
+// Games without profiles have their time from the log: only sessions
+// without a profile, summed by key, and read again once the log grows.
+func TestLibraryTime(t *testing.T) {
+	s := &Store{Dir: t.TempDir()}
+	if got := s.LibraryTime(); len(got) != 0 {
+		t.Fatalf("no log: %v", got)
+	}
+	at := time.Date(2026, 11, 18, 0, 47, 0, 0, time.UTC)
+	add := func(game, profile string, start time.Time, d time.Duration) {
+		t.Helper()
+		if err := s.AppendSession(SessionRecord{Game: game, Profile: profile, Start: start, End: start.Add(d), Source: "library"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("dir:d:\\games\\onimusha", "", at, 63*time.Minute)
+	add("dir:d:\\games\\onimusha", "", at.Add(48*time.Hour), 4*time.Minute)
+	add("game:g1", "p1", at, time.Hour) // counted in playtime.json
+	got := s.LibraryTime()
+	if got["dir:d:\\games\\onimusha"] != 67*60 || len(got) != 1 {
+		t.Fatalf("got %v", got)
+	}
+	got["dir:d:\\games\\onimusha"] = 1 // a copy: the kept sums don't change
+	time.Sleep(10 * time.Millisecond)
+	add("steam:1", "", at.Add(72*time.Hour), 10*time.Minute)
+	got = s.LibraryTime()
+	if got["dir:d:\\games\\onimusha"] != 67*60 || got["steam:1"] != 600 {
+		t.Fatalf("after another session: %v", got)
+	}
+}

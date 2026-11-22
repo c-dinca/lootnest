@@ -2429,6 +2429,30 @@ These shipped recently, newest last:
   layouts flyout on Maximize needs HTMAXBUTTON, so it isn't there
   (Win+Z is). docs/TESTING.md 60.
 
+- **Unreleased, game page retouches** (the owner, 22 Nov 2026).
+  Games without profiles get their time from the session log
+  (`Store.LibraryTime`, sessions with no profile summed by key, cached by
+  the log's size and time; `AppState.LibraryTime`, event `libraryTime`
+  after `foundTick` logs one; `libTime` in `totalPlayed`); their page has
+  no Profiles panel. `heroCard` (40-game-page.js) is Home's glass card as
+  one row at the art's lower right (`.gp-hero-card`): time (`shownTime`:
+  Steam's when there is some, else Lootnest's; `timeRow`), achievements,
+  save points. Games with profiles: `pageWho(it)` is whose the page is
+  (`S.gameWho[gid]`, else seat, files in, last player); `whoSwitch` beside
+  Play opens `whoMenu`, and `who-pick` loads the files through the picker
+  in "load" mode without starting the game; Play, `achFor`, `heroCard`
+  and `pointsOf` (save points of that profile; `pt-everyone`) follow it.
+  "Someone else" is "Play as someone else". Will it run no longer needs
+  `it.appId`: the details event carries `appId` (`detailsAppID`).
+  `Env.ToolAchFiles(dir, appID)` (local_save.txt beside steam_api(64).dll,
+  configs.user.ini `local_save_path` and `saves_folder_name`), read by
+  `PCUnlocksIn` and `AchievementFiles(appID, dir)`; not swapped per
+  profile. Profiles, **Side by side** (`56-compare.js`, `S.playersTab`,
+  `S.cmpWho`, `S.cmpShow`): a board with each line's leader crowned, then
+  every game with each one's time, status and achievements (`S.allAch`).
+  Community is rows (`reviewRow`, `.gp-rev`, `--rev-hours-w`, `rev-all`).
+  docs/TESTING.md 62.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

@@ -117,17 +117,24 @@ type AchFileInfo struct {
 }
 
 // AchievementFiles lists every place a tool keeps a game's achievements,
-// and which of them are there.
-func (e *Env) AchievementFiles(appID int) (looked []string, there []AchFileInfo) {
+// and which of them are there: the tools' usual folders, then those a tool
+// next to the game in dir moves its saves to (ToolAchFiles).
+func (e *Env) AchievementFiles(appID int, dir string) (looked []string, there []AchFileInfo) {
 	if appID <= 0 {
 		return nil, nil
 	}
+	type place struct{ path, format string }
+	var places []place
 	for _, f := range achFiles {
-		b := e.achBase(f.base)
-		if b == "" {
-			continue
+		if b := e.achBase(f.base); b != "" {
+			places = append(places, place{filepath.Join(b, achPath(f.path, appID)), f.format})
 		}
-		p := filepath.Join(b, achPath(f.path, appID))
+	}
+	for _, p := range e.ToolAchFiles(dir, appID) {
+		places = append(places, place{p, "json"})
+	}
+	for _, f := range places {
+		p := f.path
 		looked = append(looked, p)
 		if st, err := os.Stat(p); err == nil && !st.IsDir() {
 			info := AchFileInfo{Path: p, Size: st.Size(), Modified: st.ModTime()}

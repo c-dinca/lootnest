@@ -102,6 +102,13 @@ func achPath(p string, appID int) string {
 // for a game: achievement id -> when it was unlocked (zero if unknown). It
 // takes the most recently written file when there are several.
 func (e *Env) PCUnlocks(appID int) (map[string]time.Time, string) {
+	return e.PCUnlocksIn(appID, "")
+}
+
+// PCUnlocksIn is PCUnlocks, also looking where a Goldberg-style tool next
+// to the game in dir keeps its saves when its settings move them
+// (ToolAchFiles).
+func (e *Env) PCUnlocksIn(appID int, dir string) (map[string]time.Time, string) {
 	if appID <= 0 {
 		return nil, ""
 	}
@@ -116,6 +123,11 @@ func (e *Env) PCUnlocks(appID int) (map[string]time.Time, string) {
 		p := filepath.Join(b, achPath(f.path, appID))
 		if st, err := os.Stat(p); err == nil && !st.IsDir() && st.ModTime().After(bestT) {
 			best, bestFmt, bestT = p, f.format, st.ModTime()
+		}
+	}
+	for _, p := range e.ToolAchFiles(dir, appID) {
+		if st, err := os.Stat(p); err == nil && !st.IsDir() && st.ModTime().After(bestT) {
+			best, bestFmt, bestT = p, "json", st.ModTime()
 		}
 	}
 	if best == "" {
@@ -792,4 +804,102 @@ func (e *Engine) AchLive(g *Game, id string) string {
 		}
 	}
 	return ""
+}
+
+// ToolAchFiles are the achievements.json files a Goldberg-style tool next
+// to the game in dir keeps when its own settings move its saves, whether
+// or not they exist yet: local_save.txt beside steam_api(64).dll (the
+// original Goldberg: the name of a folder beside the dll), or
+// steam_settings\configs.user.ini's local_save_path (gbe_fork: a folder,
+// absolute or relative to the dll) and saves_folder_name (a folder under
+// %APPDATA% instead of "GSE Saves"). Each keeps <appid>\achievements.json.
+// Nothing is written; only files named achievements.json are read.
+func (e *Env) ToolAchFiles(dir string, appID int) []string {
+	if dir == "" || appID <= 0 {
+		return nil
+	}
+	id := strconv.Itoa(appID)
+	var out []string
+	seen := map[string]bool{}
+	add := func(folder string) {
+		p := filepath.Clean(filepath.Join(folder, id, "achievements.json"))
+		if !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			out = append(out, p)
+		}
+	}
+	under := func(dll, v string) string {
+		v = strings.TrimSpace(strings.Trim(strings.TrimSpace(v), `"`))
+		if v == "" {
+			return ""
+		}
+		v = filepath.FromSlash(strings.ReplaceAll(v, `\`, "/"))
+		if filepath.IsAbs(v) {
+			return v
+		}
+		return filepath.Join(dll, v)
+	}
+	for _, dll := range steamAPIDirs(dir) {
+		if b, err := os.ReadFile(filepath.Join(dll, "local_save.txt")); err == nil && len(b) < 4096 {
+			if line, _, _ := strings.Cut(strings.TrimPrefix(string(b), "\ufeff"), "\n"); under(dll, line) != "" {
+				add(under(dll, line))
+			}
+		}
+		b, err := os.ReadFile(filepath.Join(dll, "steam_settings", "configs.user.ini"))
+		if err != nil || len(b) > 1<<20 {
+			continue
+		}
+		if m := localSaveRe.FindSubmatch(b); m != nil && under(dll, string(m[1])) != "" {
+			add(under(dll, string(m[1])))
+		}
+		if m := savesFolderRe.FindSubmatch(b); m != nil {
+			name := strings.TrimSpace(string(m[1]))
+			if b := e.achBase("APPDATA"); b != "" && name != "" && !strings.EqualFold(name, "GSE Saves") && !strings.ContainsAny(name, `/\:`) && name != ".." {
+				add(filepath.Join(b, name))
+			}
+		}
+	}
+	return out
+}
+
+var (
+	localSaveRe   = regexp.MustCompile(`(?im)^[ \t]*local_save_path[ \t]*=[ \t]*(\S[^\r\n]*?)[ \t]*\r?$`)
+	savesFolderRe = regexp.MustCompile(`(?im)^[ \t]*saves_folder_name[ \t]*=[ \t]*(\S[^\r\n]*?)[ \t]*\r?$`)
+)
+
+// steamAPIDirs are the folders in dir, and a few levels down, that hold
+// steam_api.dll or steam_api64.dll (Unreal games keep theirs in
+// <Game>\Binaries\Win64).
+func steamAPIDirs(dir string) []string {
+	root := filepath.Clean(dir)
+	var out []string
+	seen := 0
+	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if seen++; seen > 20000 || len(out) >= 4 {
+			return filepath.SkipAll
+		}
+		if err != nil {
+			return filepath.SkipDir
+		}
+		name := strings.ToLower(d.Name())
+		if d.IsDir() {
+			if p == root {
+				return nil
+			}
+			if skipForAppID[name] {
+				return filepath.SkipDir
+			}
+			if rel, _ := filepath.Rel(root, p); strings.Count(rel, string(filepath.Separator)) >= 3 {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if name == "steam_api64.dll" || name == "steam_api.dll" {
+			if d := filepath.Dir(p); len(out) == 0 || out[len(out)-1] != d {
+				out = append(out, d)
+			}
+		}
+		return nil
+	})
+	return out
 }

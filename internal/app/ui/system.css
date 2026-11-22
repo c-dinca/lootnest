@@ -214,6 +214,8 @@
   --shots-w: 1280px;      /* the screenshot viewer */
   --pic-thumb-w: 96px;    /* a save point's or screenshot's picture in a list */
   --pic-thumb-w-sm: 40px; /* a screenshot's on a Timeline row */
+  --rev-hours-w: 76px; /* the hours column of a Steam review (Community) */
+  --cmp-what-w: 200px; /* Side by side: the column naming each line and game */
   --set-nav-w: 232px;     /* the list of categories in Settings */
   --set-w: 880px;         /* a Settings category's rows, at most */
   --row-h: 56px;          /* a row on a panel of rows (.ln-rows) and in Settings */
