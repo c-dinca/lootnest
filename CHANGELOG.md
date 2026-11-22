@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.21.0
 
 - **Hours played for games without profiles.** A game you play with profiles off (a game in a folder, from Hydra) now shows how long you played it: Lootnest adds up every session it already kept for the Timeline, so time played before this version counts too. The Profiles list, which showed everyone at 0 h on such a game, is gone from its page.
 - **The time, achievements and save points on the game's art.** A game's page has Home's glass card at the lower right of its art: the hours (Steam's, for a game Steam counts, else Lootnest's), the achievements and the save points. Home's card shows Steam's hours too when Steam counts the game.
