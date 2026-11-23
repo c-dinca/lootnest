@@ -399,7 +399,7 @@
     const name = editing ? `<input class="ln-input pt-name-in" id="pt-rename" maxlength="60" value="${esc(p.name)}" aria-label="Name">` : `<b>${esc(p.name)}</b>`;
     const actions = editing ? b("ln-button--secondary", `data-action="pt-rename-save" ${attrs}`, "Save") + b("ln-button--ghost", 'data-action="pt-rename-cancel"', "Cancel")
       : b("ln-button--secondary", `data-action="pt-restore" ${attrs}`, "Go back to it")
-        + (full && P.profiles ? b("ln-button--ghost", `data-action="pt-branch" ${attrs} data-player="${esc(p.player || "")}"`, "New run from it") : "")
+        + (full && P.profiles && (!it.g || runsOk(it.g.id)) ? b("ln-button--ghost", `data-action="pt-branch" ${attrs} data-player="${esc(p.player || "")}"`, "New run from it") : "")
         + (full ? b("ln-button--ghost", `data-action="pt-rename" ${attrs}`, "Rename") + b("ln-button--ghost", `data-action="pt-delete" ${attrs}`, "Delete") : "");
     const pic = p.thumb ? picButton(it, "point:" + p.id, p.thumb, `Picture of ${p.name}`) : "";
     return `<li class="pt-row${p.auto ? " pt-row--auto" : ""}${pic ? " pt-row--pic" : ""}"><span class="pt-dot" aria-hidden="true"></span><div class="pt-main">${name}
@@ -504,9 +504,9 @@
     const g = it.g;
     if (!g) return "";
     const s = session(g.id);
-    return `<section class="gpage-block"><div class="ln-section-head"><div><h2>Copies and runs</h2></div></div><div class="ln-list">
+    return `<section class="gpage-block"><div class="ln-section-head"><div><h2>${runsOk(g.id) ? "Copies and runs" : "Copies"}</h2></div></div><div class="ln-list">
       ${gpRow(`data-action="copies" data-game="${esc(g.id)}" aria-haspopup="dialog"`, GI.history, "Copies before swaps", "")}
-      ${gpRow(`data-action="try-save" data-game="${esc(g.id)}" aria-haspopup="dialog"`, GI.flask, "Try a save", "", { disabled: s || cfg().players.length >= MAX_PROFILES })}</div></section>`;
+      ${runsOk(g.id) ? gpRow(`data-action="try-save" data-game="${esc(g.id)}" aria-haspopup="dialog"`, GI.flask, "Try a save", "", { disabled: s || !canNewRun(g.id) }) : ""}</div></section>`;
   }
   // The game's timeline (ps_gameTimeline): sessions, save points, unlocks
   // and updates, by day, the latest first.

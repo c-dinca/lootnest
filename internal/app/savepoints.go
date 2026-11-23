@@ -414,6 +414,9 @@ func (a *App) apiBranchSavePoint(key, id, name string) (string, error) {
 			person = up
 		}
 	}
+	if err := a.errNewRun(t.game); err != nil {
+		return "", err
+	}
 	name = trimRunes(name, 24)
 	if name == "" {
 		head := person.Name + " from "
@@ -424,7 +427,7 @@ func (a *App) apiBranchSavePoint(key, id, name string) (string, error) {
 		}
 		name = freeName(name, cfg.Players)
 	}
-	run := core.Player{ID: core.NewID("p"), Name: name, Color: person.Color, Of: person.ID}
+	run := core.Player{ID: core.NewID("p"), Name: name, Color: person.Color, Of: person.ID, Game: t.game.ID}
 	players := append(append([]core.Player{}, cfg.Players...), run)
 	if err := core.ValidatePlayers(players); err != nil {
 		return "", err

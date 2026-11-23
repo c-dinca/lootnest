@@ -25,22 +25,45 @@
     return S.d.active[gid] === pid ? "Files loaded now" : hasProfile(gid, pid) ? "Has saves here" : "First time";
   }
 
-  // A new profile from the picker: a new person, or another run of this
-  // game ("Cristian, hardcore"). It starts fresh or from a copy of whose
-  // files are in, as any first-timer does.
+  // A new person from the picker. It starts fresh or from a copy of whose
+  // files are in, as any first-timer does. Runs are made in their person's
+  // column (newRunRow).
   function newProfileSlot(P) {
-    if (!P.creating) return `<button class="slot slot-new" data-action="np-open">
+    if (P.creating !== "person") return `<button class="slot slot-new" data-action="np-open">
         <span class="slot-new-plus" aria-hidden="true">${GI.plus}</span>
-        <span class="name">New profile</span><span class="state">Someone new, or a run</span></button>`;
+        <span class="name">New profile</span><span class="state">Someone new</span></button>`;
     return `<div class="slot slot-new editing" role="group" aria-label="New profile">
         <span class="slot-new-plus" aria-hidden="true">${GI.plus}</span>
         <label class="name" for="np-name">New profile</label>
-        <input id="np-name" class="ln-input" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Name, such as Cristian hardcore" value="${esc(P.newName || "")}">
-        <select id="np-of" class="ln-input" aria-label="Whose profile">
-          <option value="">Someone new</option>
-          ${cfg().players.filter((p) => !parentOf(p)).map((p) => `<option value="${esc(p.id)}" ${P.newOf === p.id ? "selected" : ""}>A run for ${esc(p.name)}</option>`).join("")}</select>
+        <input id="np-name" class="ln-input" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Their name" value="${esc(P.newName || "")}">
         <span class="error-text" id="np-error" role="alert">${esc(P.newError || "")}</span>
         <div class="slot-new-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="np-cancel">Cancel</button><button class="ln-button ln-button--primary ln-button--sm" data-action="np-create">${P.mode === "load" ? "Make it" : "Make it and play"}</button></div></div>`;
+  }
+  // Naming a new run, in its person's column.
+  function newRunRow(P, per) {
+    return `<div class="pk-run pk-run--edit" role="group" aria-label="New run for ${esc(per.name)}">
+        <input id="np-name" class="ln-input" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Its name" value="${esc(P.newName || "")}" aria-label="The run's name">
+        <span class="error-text" id="np-error" role="alert">${esc(P.newError || "")}</span>
+        <div class="slot-new-actions"><button class="ln-button ln-button--ghost ln-button--sm" data-action="np-cancel">Cancel</button><button class="ln-button ln-button--primary ln-button--sm" data-action="np-create">${P.mode === "load" ? "Make it" : "Make it and play"}</button></div></div>`;
+  }
+  // A person's column: their own profile as the big key, then their runs of
+  // this game under it, a list that scrolls when it's long, and New run.
+  // The numbers 1 to 9 follow pickOrder: people first, then runs.
+  function pickCol(P, g, per, order, i) {
+    const runs = runsOf(per, g.id), at = (p) => order.indexOf(p);
+    const kbd = (p, cls) => at(p) >= 0 && at(p) < 9 ? `<kbd class="${cls}" aria-hidden="true">${at(p) + 1}</kbd>` : "";
+    const state = (p) => S.d.active[g.id] === p.id ? `<span class="slot-in">In the game now</span>` : esc(slotState(g.id, p.id));
+    const inn = (p) => (S.d.active[g.id] === p.id ? " in" : "");
+    const head = `<button class="slot ln-player${inn(per)}" style="--player:${esc(per.color)}" data-action="pick" data-player="${esc(per.id)}">
+          ${kbd(per, "slot-kbd")}${lnAvatar(per, "120")}<span class="name">${esc(per.name)}</span><span class="state">${state(per)}</span></button>`;
+    const row = (r) => `<button class="pk-run${inn(r)}" data-action="pick" data-player="${esc(r.id)}" aria-label="${esc(runName(r))}">
+          <span class="pk-run-mark" aria-hidden="true"></span><span class="pk-run-text"><b>${esc(runLabel(r))}</b><span>${state(r)}</span></span>${kbd(r, "pk-kbd")}</button>`;
+    const add = P.creating === per.id ? newRunRow(P, per)
+      : canNewRun(g.id) ? `<button class="pk-run pk-run--new" data-action="np-run" data-person="${esc(per.id)}">${GI.plus}<span class="pk-run-text"><b>New run</b></span></button>` : "";
+    const list = runs.length || add ? `<div class="pk-runs" role="group" aria-label="${esc(possessive(per.name))} runs">
+          <span class="pk-runs-head">${runs.length === 1 ? "1 run" : runs.length ? runs.length + " runs" : "Runs"}</span>
+          <div class="pk-runs-list${runs.length + (add ? 1 : 0) > 5 ? " is-long" : ""}">${runs.map(row).join("")}${add}</div></div>` : "";
+    return `<div class="pk-col ln-player" style="--player:${esc(per.color)};--i:${i}">${head}${list}</div>`;
   }
 
   function viewPicker() {
@@ -54,7 +77,7 @@
         <div class="swap" aria-live="polite">
           <div class="swap-bay">${from ? `<div class="swap-out" aria-hidden="true">${lnAvatar(from, "120")}</div>` : ""}<div class="swap-in">${to ? lnAvatar(to, "120") : ""}</div></div>
           <div class="swap-text"><b>${esc(pperson(P.playerId))}</b>${player(P.playerId) ? runTag(player(P.playerId)) : ""}<p><span class="ln-spinner" aria-hidden="true"></span>${line}</p>
-            ${from ? `<p class="swap-safe">${GI.copy}A copy of ${esc(possessive(from.name))} files was made first.</p>` : `<p class="swap-safe">${GI.copy}A copy is made before every swap.</p>`}</div>
+            ${from ? `<p class="swap-safe">${GI.copy}A copy of ${esc(whoseOf(from.id))} files was made first.</p>` : `<p class="swap-safe">${GI.copy}A copy is made before every swap.</p>`}</div>
         </div><div></div></div>`;
     }
     if (P.ask === "owner") {
@@ -62,7 +85,7 @@
         <div class="question"><div><h2>Whose files are in ${esc(g.name)} right now?</h2>
         <p>The settings and saves on this PC become theirs.</p></div>
         <div class="choices">
-          ${cfg().players.map((p) => `<button class="choice" data-action="answer-owner" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>${esc(possessive(p.name))}</b></span></button>`).join("")}
+          ${playersFor(g.id).map((p) => `<button class="choice" data-action="answer-owner" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>${esc(whoseOf(p.id))}</b></span></button>`).join("")}
           <button class="choice" data-action="answer-owner" data-player="none"><span class="dot"></span><span><b>Nobody's, or not sure</b><span>Kept as a backup</span></span></button>
         </div></div><div></div></div>`;
     }
@@ -78,28 +101,28 @@
     }
     if (P.ask === "newMode") {
       const owner = P.owner && P.owner !== "none" ? P.owner : S.d.active[g.id];
-      const ownerName = owner && player(owner) ? possessive(pname(owner)) + " files" : "the current files";
-      const n = pname(P.playerId);
+      const ownerName = owner && player(owner) ? whoseOf(owner) + " files" : "the current files";
+      const me = player(P.playerId), run = me && parentOf(me);
+      const ask = run ? `${whoseOf(P.playerId)} run starts here` : `${pname(P.playerId)} hasn't played ${g.name} yet`;
       return `<div class="picker"><div class="picker-head"><div></div><button class="ln-button ln-button--ghost" data-action="picker-back">${GI.back}Back</button></div>
-        <div class="question"><div><h2>${esc(n)} hasn't played ${esc(g.name)} yet</h2>
+        <div class="question"><div><h2>${esc(ask)}</h2>
         <p>The files on this PC now are kept.</p></div>
         <div class="choices">
           <button class="choice" data-action="answer-new" data-mode="fresh"><span class="dot" style="background:${esc(color(P.playerId))}"></span><span><b>Start fresh</b><span>Game defaults, no saves</span></span></button>
           <button class="choice" data-action="answer-new" data-mode="copy"><span class="dot"${owner && player(owner) ? ` style="background:${esc(color(owner))}"` : ""}></span><span><b>Start from a copy of ${esc(ownerName)}</b></span></button>
-          ${cfg().players.filter((p) => p.id !== owner && p.id !== P.playerId && hasProfile(g.id, p.id)).map((p) => `<button class="choice" data-action="answer-new" data-mode="copy" data-from="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>Start from a copy of ${esc(possessive(p.name))} files</b></span></button>`).join("")}
+          ${playersFor(g.id).filter((p) => p.id !== owner && p.id !== P.playerId && hasProfile(g.id, p.id)).map((p) => `<button class="choice" data-action="answer-new" data-mode="copy" data-from="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span><span><b>Start from a copy of ${esc(whoseOf(p.id))} files</b></span></button>`).join("")}
         </div></div><div></div></div>`;
     }
-    const ps = cfg().players;
+    const order = pickOrder(g.id), folks = order.filter((p) => !parentOf(p));
+    const many = order.length > 1 ? "1 to " + Math.min(order.length, 9) : "1";
     return `<div class="picker ln-root" role="dialog" tabindex="-1" aria-label="Who's playing ${esc(g.name)}?">
       <div class="picker-head"><div><h1>Who's playing ${esc(g.name)}?</h1>${P.mode === "steam" ? `<p class="hint">Steam is starting the game.</p>` : P.mode === "load" ? `<p class="hint">Loads their files without starting the game.</p>` : ""}</div>
         <button class="ln-button ln-button--ghost" data-action="picker-close">${P.mode === "steam" ? "Don't start" : "Cancel"}</button></div>
-      <div class="slots">
-        ${grouped(ps).map((p, i) => `<button class="slot ln-player${S.d.active[g.id] === p.id ? " in" : ""}${parentOf(p) ? " slot-run" : ""}" style="--player:${esc(p.color)}" data-action="pick" data-player="${esc(p.id)}">
-          ${i < 9 ? `<kbd class="slot-kbd" aria-hidden="true">${i + 1}</kbd>` : ""}${lnAvatar(p, parentOf(p) ? "72" : "120")}
-          ${parentOf(p) ? `<span class="slot-of">${esc(possessive(parentOf(p).name))} run</span>` : ""}<span class="name">${esc(parentOf(p) ? runLabel(p) : p.name)}</span><span class="state">${S.d.active[g.id] === p.id ? `<span class="slot-in">In the game now</span>` : esc(slotState(g.id, p.id))}</span></button>`).join("")}
-        ${ps.length < MAX_PROFILES ? newProfileSlot(P) : ""}
+      <div class="slots pk-people">
+        ${folks.map((per, i) => pickCol(P, g, per, order, i)).join("")}
+        ${canNewPerson() ? newProfileSlot(P) : ""}
       </div>
-      <div class="picker-foot"><span>Press ${ps.length > 1 ? "1 to " + Math.min(ps.length, 9) : "1"}, or Esc ${P.mode === "steam" ? "to not start the game" : "to cancel"}</span><span>${esc(g.name)}</span></div>
+      <div class="picker-foot"><span>Press ${many}, or Esc ${P.mode === "steam" ? "to not start the game" : "to cancel"}</span><span>${esc(g.name)}</span></div>
     </div>`;
   }
 

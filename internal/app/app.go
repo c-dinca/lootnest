@@ -307,6 +307,12 @@ func Run(opt Options) error {
 				a.cfg.Settings.ItchKey, fixed = enc, true
 			}
 		}
+		// Runs made before they had a game: tied to the one game they have
+		// files in.
+		if core.AssignRunGames(a.cfg, a.hasFiles(a.store.LoadState())) {
+			a.logf("Runs are per game now: older runs were tied to the game they have files in")
+			fixed = true
+		}
 		if fixed {
 			if serr := a.store.SaveConfig(a.cfg); serr != nil {
 				a.logf("ERROR %v", serr)

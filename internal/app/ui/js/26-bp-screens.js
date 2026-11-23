@@ -73,7 +73,7 @@
     BP.launch = { key, name, art: null, phase: "starting", at: Date.now() }; drawLaunch(); launchWatch();
     api.launchApp(id).catch((e) => { tvReturn(); toast(errText(e), "error"); });
   }
-  const bpPerson = (p, id, go, line, on) => `<button class="bp-person ln-player${on ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="${id}:${esc(p.id)}" data-go="${go}" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(p.name)}</b><span>${esc(line)}</span></button>`;
+  const bpPerson = (p, id, go, line, on) => `<button class="bp-person ln-player${on ? " is-seated" : ""}" style="--player:${esc(p.color)}" data-bp data-bpid="${id}:${esc(p.id)}" data-go="${go}" data-p="${esc(p.id)}">${lnAvatar(p, "96")}<b>${esc(parentOf(p) ? runLabel(p) : p.name)}</b><span>${esc(parentOf(p) ? `${possessive(parentOf(p).name)} run` : line)}</span></button>`;
   // Whether a game plays with a controller (S.pads, app/padplay.go): a game
   // in several stores does when one of its copies does.
   function padOf(it) {
@@ -94,7 +94,7 @@
     if (BP.choose) {
       const it = bpItem(BP.choose);
       return `<div class="bp-center" data-block><p class="bp-kick">${esc(it ? it.name : "")}</p><h1>Who's playing?</h1>
-        <div class="bp-people" data-zone="people" data-grid>${cfg().players.map((p) => bpPerson(p, "who", "play-as", it && it.g && S.d.active[it.g.id] === p.id ? "Files loaded" : it && it.g && hasProfile(it.g.id, p.id) ? "Has a profile" : "New profile")).join("")}</div></div>`;
+        <div class="bp-people" data-zone="people" data-grid>${(it && it.g ? playersFor(it.g.id) : people()).map((p) => bpPerson(p, "who", "play-as", it && it.g && S.d.active[it.g.id] === p.id ? "Files loaded" : it && it.g && hasProfile(it.g.id, p.id) ? "Has a profile" : "New profile")).join("")}</div></div>`;
     }
     if (BP.detail) {
       const it = bpItem(BP.detail);
@@ -107,7 +107,7 @@
       return `<section class="bp-page" data-block><div class="bp-hero in">${bpHero(it, true)}</div>
         <div class="bp-keys" data-zone="keys">
           <button class="bp-key ${as ? `bp-key--play ln-player" style="--player:${esc(seat.color)}"` : 'bp-key--primary"'} data-bp data-bpid="play" data-go="play" data-k="${k}" data-hint="${bpBehind(it) ? "Go back to it" : "Play"}">${GI.play}${bpBehind(it) ? "Go back to the game" : as ? `Play as ${esc(personOf(seat).name)}` : "Play"}</button>
-          ${it.g && cfg().players.length > 1 ? `<button class="bp-key" data-bp data-bpid="playas" data-go="choose" data-k="${k}">Play as someone else</button>` : ""}
+          ${it.g && playersFor(it.g.id).length > 1 ? `<button class="bp-key" data-bp data-bpid="playas" data-go="choose" data-k="${k}">${solo() ? "Play another run" : "Play as someone else"}</button>` : ""}
           <button class="bp-key" data-bp data-bpid="points" data-go="points" data-k="${k}" data-hint="Open">Save points</button>
           ${modsTabOn(modsOf(it)) ? `<button class="bp-key" data-bp data-bpid="mods" data-go="mods" data-k="${k}" data-hint="Open">${ph("puzzle-piece")}Mods</button>` : ""}
           ${bpRunning(it) ? `<button class="bp-key" data-bp data-bpid="close" data-go="close-game" data-k="${k}">Close the game</button>` : ""}</div></section>
@@ -128,7 +128,7 @@
     if (BP.tab === "profiles") {
       const seat = seated(), alone = solo();
       return `<div class="bp-center" data-block><h1>${BP.who ? "Who's playing?" : alone ? "Playing as" : "Who's here?"}</h1>
-        <div class="bp-people" data-zone="people" data-grid>${cfg().players.map((p) => bpPerson(p, "seat", "seat", seat && seat.id === p.id ? (alone ? "Playing" : "Sitting here") : alone ? "Play as this" : "Sit down", seat && seat.id === p.id)).join("")}</div></div>`;
+        <div class="bp-people" data-zone="people" data-grid>${people().map((p) => bpPerson(p, "seat", "seat", seat && seat.id === p.id ? (alone ? "Playing" : "Sitting here") : alone ? "Play as this" : "Sit down", seat && seat.id === p.id)).join("")}</div></div>`;
     }
     if (BP.tab === "achievements") {
       const rows = (S.allAch ? S.allAch.games : []).map((g) => ({ g, it: itemByKey(g.key) })).filter((r) => r.it);
@@ -315,7 +315,7 @@
       ${BP.tv && leave ? "<p>Leaving ends the stream to the TV. Lootnest stays open on the PC.</p>" : ""}
       <div class="bp-dlg-keys" data-zone="menu" data-col>
         <button class="bp-key" data-bp data-bpid="menu:back" data-go="menu-close">${leave ? "Stay" : "Back to games"}</button>
-        ${cfg().players.length > 1 && !leave ? `<button class="bp-key" data-bp data-bpid="menu:who" data-go="menu-who">${seat ? lnAvatar(seat, "32") : ""}${solo() ? "Switch profile" : "Who's playing"}</button>` : ""}
+        ${people().length > 1 && !leave ? `<button class="bp-key" data-bp data-bpid="menu:who" data-go="menu-who">${seat ? lnAvatar(seat, "32") : ""}${solo() ? "Switch profile" : "Who's playing"}</button>` : ""}
         ${leave ? "" : `<button class="bp-key" data-bp data-bpid="menu:settings" data-go="menu-settings">${ph("gear-six")}Settings</button>`}
         <button class="bp-key" data-bp data-bpid="menu:exit" data-go="${BP.tv ? "tv-exit" : "shut"}">${BP.tv ? "Leave TV mode" : "Leave Big Picture"}</button></div></div>`;
   }

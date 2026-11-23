@@ -43,19 +43,16 @@
   }
 
   function playerRow(p, i, total) {
-    // While editing, a row can be a run of a person in the list (not of
-    // itself, not of a run, and not while it has runs of its own).
+    // A run stays its person's, in its game; it's made on the game's page.
     const list = S.players || [];
     const par = p.of && list.find((x) => x.id === p.of && x.id !== p.id && !x.of);
-    const hasRuns = p.id && list.some((x) => x.of === p.id);
-    const people = list.filter((x) => x !== p && !x.of && x.id && x.name.trim());
-    const of = `<select class="ln-input player-of" data-field="pof" data-i="${i}" aria-label="Whose profile" ${hasRuns ? "disabled title=\"It has runs of its own\"" : ""}>
-        <option value="">A person</option>${people.map((x) => `<option value="${esc(x.id)}" ${par && par.id === x.id ? "selected" : ""}>A run for ${esc(x.name)}</option>`).join("")}</select>`;
+    const g = par && p.game && game(p.game);
+    const of = par ? `<span class="player-same player-of">${g ? `${esc(possessive(par.name))} run in ${esc(g.name)}` : `${esc(possessive(par.name))} run`}</span>` : "";
     return `<div class="player ln-player${par ? " player-run" : ""}" style="--player:${esc(p.color || "#6c9bd2")}">
       ${lnAvatar({ ...p, name: p.name || "?" }, "32")}
-      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${esc(p.name)}" placeholder="${par ? par.name + " hardcore" : "Name"}" maxlength="24" aria-label="Name">
+      <input type="text" class="ln-input" data-field="pname" data-i="${i}" value="${esc(p.name)}" placeholder="${par ? "Hardcore" : "Name"}" maxlength="24" aria-label="Name">
       ${of}
-      ${par ? `<span class="player-same">${esc(possessive(par.name))} colour</span>` : SWATCHES(p, i)}
+      ${par ? "" : SWATCHES(p, i)}
       <button class="ln-button ln-button--ghost ln-button--icon ln-button--sm" data-action="remove-player" data-i="${i}" aria-label="Remove ${esc(p.name)}" title="Remove" ${total <= 1 ? "disabled" : ""}>${GI.x}</button>
     </div>`;
   }

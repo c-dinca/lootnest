@@ -27,6 +27,11 @@ type Player struct {
 	// hardcore" of Cristian. It shows under them, in their colour and with
 	// their picture. Runs have no runs of their own.
 	Of string `json:"of,omitempty"`
+	// Game is the game a run is for (a Config.Games id): a run is a save
+	// of its own in one game, so it shows only there. Empty for people,
+	// and for runs made before 2.23 that have files in more than one game
+	// or none (AssignRunGames); those show in the games they have files in.
+	Game string `json:"game,omitempty"`
 	// Profile page (see ValidatePlayers for the limits):
 	// - Tagline: a line under the name; Bio: a few lines about them.
 	// - Avatar: a picture is saved as avatars/<id>.png; without one,
@@ -512,8 +517,23 @@ func ValidateGame(g *Game) error {
 	return nil
 }
 
-// MaxPlayers is how many profiles Lootnest keeps: people and their runs.
-const MaxPlayers = 16
+// MaxPeople is how many people Lootnest keeps, MaxRunsPerGame how many
+// runs one game has (everyone's together), and MaxPlayers the whole list.
+const (
+	MaxPeople      = 16
+	MaxRunsPerGame = 16
+	MaxPlayers     = 400
+)
+
+// runNameKey is what has to differ between profiles: a person's name, or a
+// run's name among the runs of the same person in the same game.
+func runNameKey(p *Player) string {
+	n := strings.ToLower(p.Name)
+	if p.Of == "" {
+		return n
+	}
+	return p.Of + "\x00" + p.Game + "\x00" + n
+}
 
 func ValidatePlayers(ps []Player) error {
 	if len(ps) < 1 {
@@ -521,6 +541,22 @@ func ValidatePlayers(ps []Player) error {
 	}
 	if len(ps) > MaxPlayers {
 		return fmt.Errorf("Lootnest supports up to %d profiles.", MaxPlayers)
+	}
+	people, runs := 0, map[string]int{}
+	for i := range ps {
+		if ps[i].Of == "" {
+			people++
+		} else if ps[i].Game != "" {
+			runs[ps[i].Game]++
+		}
+	}
+	if people > MaxPeople {
+		return fmt.Errorf("Lootnest supports up to %d people.", MaxPeople)
+	}
+	for _, n := range runs {
+		if n > MaxRunsPerGame {
+			return fmt.Errorf("A game can have up to %d runs.", MaxRunsPerGame)
+		}
 	}
 	names := map[string]bool{}
 	ids := map[string]bool{}
@@ -533,10 +569,21 @@ func ValidatePlayers(ps []Player) error {
 		if len([]rune(p.Name)) > 24 {
 			return fmt.Errorf("%q is too long; keep names under 24 characters.", p.Name)
 		}
-		if names[strings.ToLower(p.Name)] {
+		p.Game = strings.TrimSpace(p.Game)
+		if p.Of == "" {
+			p.Game = ""
+		}
+		if p.Game != "" && !idRe.MatchString(p.Game) {
+			return fmt.Errorf("invalid game id %q", p.Game)
+		}
+		k := runNameKey(p)
+		if names[k] && p.Of != "" {
+			return fmt.Errorf("There's already a run called %s.", p.Name)
+		}
+		if names[k] {
 			return fmt.Errorf("Two profiles are called %s.", p.Name)
 		}
-		names[strings.ToLower(p.Name)] = true
+		names[k] = true
 		if p.ID == "" {
 			p.ID = NewID("p")
 		}
@@ -594,7 +641,7 @@ func ValidatePlayers(ps []Player) error {
 		}
 		parent := byID[p.Of]
 		if parent == nil || parent.ID == p.ID || parent.Of != "" {
-			p.Of = ""
+			p.Of, p.Game = "", ""
 			continue
 		}
 		p.Color = parent.Color
@@ -603,13 +650,53 @@ func ValidatePlayers(ps []Player) error {
 		if ps[i].Of != "" {
 			for j := range ps {
 				if ps[j].Of == ps[i].ID {
-					ps[i].Of = ""
+					ps[i].Of, ps[i].Game = "", ""
 					break
 				}
 			}
 		}
 	}
 	return nil
+}
+
+// AssignRunGames ties each run made before runs had a game (Player.Game)
+// to the one game it has files in; has says whether a profile has files in
+// a game. Runs with files in several games, or none, are left as they are.
+// It reports whether anything changed.
+func AssignRunGames(c *Config, has func(player, game string) bool) bool {
+	changed := false
+	for i := range c.Players {
+		p := &c.Players[i]
+		if p.Of == "" || p.Game != "" {
+			continue
+		}
+		in := ""
+		for _, g := range c.Games {
+			if has(p.ID, g.ID) {
+				if in != "" {
+					in = ""
+					break
+				}
+				in = g.ID
+			}
+		}
+		if in != "" {
+			p.Game, changed = in, true
+		}
+	}
+	return changed
+}
+
+// RunFor says whether a profile is offered in a game: every person, and the
+// runs for that game (an older run without one, where it has files).
+func RunFor(p *Player, gameID string, has func(player, game string) bool) bool {
+	if p.Of == "" {
+		return true
+	}
+	if p.Game != "" {
+		return p.Game == gameID
+	}
+	return has(p.ID, gameID)
 }
 
 // ---------------------------------------------------------------- storage ---
