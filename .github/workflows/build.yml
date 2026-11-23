@@ -68,10 +68,17 @@ jobs:
       # The in-game FPS counter's DLL (native/overlay) is committed so that
       # a plain go build works; it must be exactly what its source builds
       # with Ubuntu 24.04's MinGW-w64 (another release's makes other bytes).
+      # Packages from Azure's copy of Ubuntu's archive, as the runner's own
+      # apt uses: on 23 Nov 2026 archive.ubuntu.com took minutes to answer
+      # and security.ubuntu.com answered 504, and apt waited for an hour.
       - name: The in-game counter's DLL matches its source
+        timeout-minutes: 10
         run: |
-          docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 sh -c \
-            'apt-get update -qq && apt-get install -y -qq gcc-mingw-w64-x86-64 >/dev/null && tools/overlay/build.sh --check'
+          docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 sh -c '
+            sed -i "s#http://\(archive\|security\).ubuntu.com#http://azure.archive.ubuntu.com#" /etc/apt/sources.list.d/ubuntu.sources &&
+            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq &&
+            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq gcc-mingw-w64-x86-64 >/dev/null &&
+            tools/overlay/build.sh --check'
 
       # Linux (docs/ROADMAP.md, section 9): the app compiles there against
       # internal/plat, whose generated files must match internal/win.
