@@ -2479,6 +2479,13 @@ These shipped recently, newest last:
   (lootnest-tv-webos 1.6.4, lootnest-tv-android 1.0.2, pinned in
   `TVAppPinned`/`AndroidAppPinned` after 2.22.0). Released as 2.22.0 with the run line above, at the
   owner's ask (22 Nov).
+- **Unreleased, the icon at small sizes** (the owner, 23 Nov 2026: the
+  ring sat in the lines and leaned left in some icons). `mkicon.geometry(up)`
+  keeps strokes 1.5 px, 1.1 px between the arcs and 1.8 px between the
+  ring and the inner arc's ends (the inner arc narrows, the ring rises);
+  `fit` sizes the mark to the tile; `render` mirrors the left half so
+  both sides are the same pixels; the .ico has 16 to 256 with 30, 36, 60,
+  72, 80 and 96. The TV apps keep their 1.6.4 and 1.0.2 icons.
 
 - **Unreleased, PlayStation pads per player and per game** (the owner,
   23 Nov 2026: "Controller connected" over and over on Bluetooth; two
