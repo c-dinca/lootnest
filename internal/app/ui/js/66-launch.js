@@ -7,10 +7,14 @@
     const via = ((cfg().launchOpts || {})[recentKey(it)] || {}).startWith;
     return gpRow(`data-action="launch-options" ${itemAttr(it)}`, GI.launch, "Launch options", via ? `Starts with ${esc(via.split(/[\\/]/).pop())}` : "");
   }
+  // A PlayStation controller for this game while Settings.PadAsXbox is on
+  // (app/padbridge.go): Lootnest decides, as it is, or always as Xbox.
+  const LO_PAD = [["", "Automatic"], ["keep", "Leave them as they are"], ["xbox", "Show them as Xbox controllers"]];
+  const padMode = (o) => (o.keepPad ? "keep" : o.xboxPad ? "xbox" : "");
   function openLaunch(it) {
     const o = (cfg().launchOpts || {})[recentKey(it)] || {}, copy = (l) => (l || []).map((x) => ({ ...x }));
     S.dialog = { kind: "launch", ik: it.kind, iid: it.id, args: (it.kind === "found" ? it.f.args : it.g.launch.args) || "", apps: null, picking: false, busy: false, error: "",
-      o: { workDir: o.workDir || "", startWith: o.startWith || "", runAsAdmin: !!o.runAsAdmin, closeApps: copy(o.closeApps), startBefore: copy(o.startBefore), startAfter: copy(o.startAfter), keepPad: !!o.keepPad,
+      o: { workDir: o.workDir || "", startWith: o.startWith || "", runAsAdmin: !!o.runAsAdmin, closeApps: copy(o.closeApps), startBefore: copy(o.startBefore), startAfter: copy(o.startAfter), keepPad: !!o.keepPad, xboxPad: !!o.xboxPad,
         reopenClosed: (o.closeApps || []).length ? !!o.reopenClosed : true } };
   }
   function viewLaunch() {
@@ -56,8 +60,9 @@
     const body = `${S.d.safe ? `<p class="gpage-hint">Safe mode: nothing runs before or after play.</p>` : ""}
       <div class="gpage-sub lo-sec">${gpHead("How it starts")}${start}</div>
       ${around}
-      ${cfg().settings.padAsXbox ? `<div class="gpage-sub lo-sec">${gpHead("Controller")}<label class="toggle"><span><b>Leave a PlayStation controller as it is</b><p>For a game that knows it itself, which would see two controllers.</p></span>
-          <span class="switch"><input type="checkbox" data-lo="keepPad" ${O.keepPad ? "checked" : ""}><span></span></span></label></div>` : ""}
+      ${cfg().settings.padAsXbox ? `<div class="gpage-sub lo-sec">${gpHead("Controller")}<div class="field"><label for="lo-pad">PlayStation controllers</label>
+          <select id="lo-pad" class="ln-input" data-lo="padMode">${LO_PAD.map(([v, l]) => `<option value="${v}"${padMode(O) === v ? " selected" : ""}>${l}</option>`).join("")}</select>
+          <p class="gpage-hint">Automatic shows them as Xbox controllers only when nothing on this PC says the game knows them itself.</p></div></div>` : ""}
       ${D.error ? lnInline("error", esc(D.error)) : ""}`;
     return drawer({ label: `Launch options for ${esc(it.name)}`, title: "Launch options", sub: esc(it.name), body,
       foot: `<span class="grow"></span><button class="ln-button ln-button--ghost ln-button--sm" data-action="dialog-cancel" ${D.busy ? "disabled" : ""}>Cancel</button>

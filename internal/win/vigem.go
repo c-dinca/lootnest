@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/sys/windows"
 )
@@ -26,6 +27,7 @@ const (
 	ioctlVigemPlug    = 0x2AA004 // n = 0x000, VIGEM_PLUGIN_TARGET
 	ioctlVigemUnplug  = 0x2AA008 // n = 0x001, VIGEM_UNPLUG_TARGET
 	ioctlVigemVersion = 0x2AA00C // n = 0x002, VIGEM_CHECK_VERSION
+	ioctlVigemReady   = 0x2AA010 // n = 0x003, VIGEM_WAIT_DEVICE_READY (ViGEmBus 1.17 and later)
 	ioctlXusbSubmit   = 0x2AA808 // n = 0x201, XUSB_SUBMIT_REPORT
 
 	vigemVersion    = 0x0001 // VIGEM_COMMON_VERSION
@@ -89,6 +91,13 @@ func NewViGEmPad() (*ViGEmPad, error) {
 			binary.LittleEndian.PutUint16(plug[12:], 0x045E) // Microsoft
 			binary.LittleEndian.PutUint16(plug[14:], 0x028E) // Xbox 360 Controller
 			if err := ioctl(h, ioctlVigemPlug, plug); err == nil {
+				// As ViGEmClient does: wait until Windows has the new pad
+				// set up, else the first reports are refused as busy. An
+				// older bus doesn't know the call; Submit tries again then.
+				ready := make([]byte, 8)
+				binary.LittleEndian.PutUint32(ready[0:], 8)
+				binary.LittleEndian.PutUint32(ready[4:], serial)
+				_ = ioctl(h, ioctlVigemReady, ready)
 				return &ViGEmPad{bus: h, serial: serial}, nil
 			} else {
 				last = fmt.Errorf("ViGEmBus wouldn't add a controller: %w", err)
@@ -108,7 +117,15 @@ func (p *ViGEmPad) Submit(report [12]byte) error {
 	binary.LittleEndian.PutUint32(buf[0:], 20)
 	binary.LittleEndian.PutUint32(buf[4:], p.serial)
 	copy(buf[8:], report[:])
-	return ioctl(p.bus, ioctlXusbSubmit, buf)
+	var err error
+	for try := 0; try < 10; try++ {
+		// A pad just plugged in answers ERROR_BUSY until it's ready.
+		if err = ioctl(p.bus, ioctlXusbSubmit, buf); !errors.Is(err, windows.ERROR_BUSY) {
+			return err
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return err
 }
 
 // Close unplugs the pad.

@@ -60,7 +60,7 @@
     // app/padbridge.go): only with the ViGEmBus driver already on the PC.
     const on = !!cfg().settings.padAsXbox;
     const xbox = setSub("In games", "", card(sw("padAsXbox", "Show a PlayStation controller to games as an Xbox one",
-      C.vigem ? "While a game runs, for games that only know Xbox controllers. Lootnest reads your DualSense or DualShock 4 and games see an Xbox 360 controller. A game that knows your controller itself may then see two: leave it as it is for that game in its Launch options."
+      C.vigem ? "While a game runs, for games that only know Xbox controllers: each DualSense or DualShock 4 becomes an Xbox controller of its own. A game Steam says knows PlayStation controllers gets them as they are; a game's Launch options can say otherwise."
         : "Needs the ViGEmBus driver, which isn't on this PC. DS4Windows and Lootnest's TV streaming set-up install it.", on)
       + (on && C.bridge ? setRow("Now", esc(C.bridge.charAt(0).toUpperCase() + C.bridge.slice(1))) : "")));
     const det = cfg().settings.gameDetails ? "" : setSub("Games", "", card(setRow("Controller support on game pages", "", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="details-on">Turn on Game details</button>`)));

@@ -1534,7 +1534,7 @@
       else if (l === "force") O.closeApps[+el.dataset.i].force = el.checked;
       else if (l === "admin") O.runAsAdmin = el.checked;
       else if (l === "reopen") O.reopenClosed = el.checked;
-      else if (l === "keepPad") O.keepPad = el.checked;
+      else if (l === "padMode") { O.keepPad = el.value === "keep"; O.xboxPad = el.value === "xbox"; }
       return;
     }
     if (S.dialog && S.dialog.kind === "details-edit" && el.id.startsWith("de-")) { (S.dialog.vals ||= {})[el.id] = el.value; return; }

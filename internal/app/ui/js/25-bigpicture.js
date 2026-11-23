@@ -285,7 +285,7 @@
     square: '<rect x="5.25" y="5.25" width="9.5" height="9.5" rx=".5"/>', triangle: '<path d="M10 4.75 15.5 14.5h-11z"/>',
     ...Object.fromEntries(["top", "right", "bottom", "left"].map((k) => [k, dot(10, 4.5, k === "top") + dot(15.5, 10, k === "right") + dot(10, 15.5, k === "bottom") + dot(4.5, 10, k === "left")])),
   };
-  const pad = { prev: [], held: "", next: 0, at: -1e9, raf: 0, fam: "", hello: 0, joined: [], feed: null, pf: null, css: false };
+  const pad = { prev: [], held: "", next: 0, at: -1e9, raf: 0, fam: "", hello: 0, joined: [], met: new Map(), feed: null, pf: null, css: false };
   const glyph = (b) => {
     const f = BP.signs || pad.fam || "xbox", v = PADS[f][b], face = b.length === 1; // the signs chosen in Big Picture's Settings, else the pad's own
     const cls = f === "xbox" || !face ? " bp-g--" + b.toLowerCase() : "";
@@ -483,6 +483,15 @@
     if (step || !dir) pad.held = dir; // a press held back by the pace counts on a later frame
     pad.raf = requestAnimationFrame(padLoop);
   }
+  // A pad is greeted once: by its name and how many of that name are
+  // there (two DualSenses are two pads). A Bluetooth pad that drops and
+  // comes back, a window that was hidden, or an Xbox pad made of a
+  // PlayStation one (Lootnest's own while a game runs, DS4Windows, Steam)
+  // says nothing again (the owner, 23 Nov 2026: "Controller connected"
+  // over and over with a DualSense on Bluetooth).
+  const PAD_MET_FOR = 30 * 60 * 1000;
+  const padKeys = (id, n) => Array.from({ length: n }, (_, i) => `${id}#${i + 1}`);
+  const padCount = (id) => padsNow().filter((g) => g.id === id).length;
   window.addEventListener("gamepadconnected", (ev) => {
     if (!pad.raf) pad.raf = requestAnimationFrame(padLoop);
     // The next frame picks the glyphs again. A twin connects with its pad:
@@ -491,10 +500,20 @@
     if (ev.gamepad) pad.joined.push(ev.gamepad);
     clearTimeout(pad.hello);
     pad.hello = setTimeout(() => {
-      const js = pad.joined, g = js.find(realPad) || js[js.length - 1];
+      const js = pad.joined, now = Date.now();
       pad.joined = [];
+      const fresh = js.filter((g) => {
+        const key = `${g.id}#${Math.max(1, padCount(g.id))}`, met = pad.met.get(key);
+        pad.met.set(key, now);
+        return !(met && now - met < PAD_MET_FOR);
+      });
+      const ps = padsNow().some(realPad), g = fresh.find(realPad) || (!ps && fresh[fresh.length - 1]);
       if (g) toast(`Controller connected. Press the ${PADS[padFamily(g.id)].Start} button for Big Picture.`);
     }, 300);
+  });
+  window.addEventListener("gamepaddisconnected", (ev) => {
+    const id = ev.gamepad && ev.gamepad.id;
+    if (id) for (const k of padKeys(id, padCount(id) + 1)) pad.met.set(k, Date.now());
   });
   window.addEventListener("focus", () => { padAway(false); if (!pad.raf && padsNow().length) pad.raf = requestAnimationFrame(padLoop); });
 

@@ -32,8 +32,10 @@ type LaunchOptions struct {
 	ReopenClosed bool       `json:"reopenClosed,omitempty"`
 	// KeepPad leaves a PlayStation controller as it is for this game when
 	// Settings.PadAsXbox is on: a game that knows the pad itself would see
-	// it twice.
+	// it twice. XboxPad shows it as an Xbox one even when Lootnest reads
+	// that the game knows it (core/padknows.go). Neither: Lootnest decides.
 	KeepPad bool `json:"keepPad,omitempty"`
+	XboxPad bool `json:"xboxPad,omitempty"`
 	// QuickSave is the game's own quick save key ("F5"), chosen by the
 	// user. With it, a save point made while the game runs presses it
 	// first and waits for the game to save (core/quicksave.go).
@@ -79,7 +81,7 @@ func (o LaunchOptions) Moved(from, to string) LaunchOptions {
 
 // Empty says whether the options change nothing.
 func (o LaunchOptions) Empty() bool {
-	return o.WorkDir == "" && !o.RunAsAdmin && o.StartWith == "" && !o.KeepPad && o.QuickSave == "" && !o.HasSteps()
+	return o.WorkDir == "" && !o.RunAsAdmin && o.StartWith == "" && !o.KeepPad && !o.XboxPad && o.QuickSave == "" && !o.HasSteps()
 }
 
 const (
@@ -145,6 +147,9 @@ func CleanLaunchOptions(o LaunchOptions) (LaunchOptions, error) {
 		}
 	}
 	o.CloseApps = apps
+	if o.KeepPad {
+		o.XboxPad = false // one or the other
+	}
 	var err error
 	if o.StartBefore, err = cleanPrograms(o.StartBefore); err != nil {
 		return o, err

@@ -804,8 +804,8 @@ On the LG TV, with section 27 done on the PC.
    within a few seconds.
 5. Close the game: Settings, Controllers no longer lists Lootnest's Xbox
    360 controller under On this PC.
-6. A game that knows the DualSense itself, with **Leave a PlayStation
-   controller as it is** on in its Launch options: only its own pad.
+6. A game that knows the DualSense itself, with Launch options,
+   PlayStation controllers, **Leave them as they are**: only its own pad.
 7. Without ViGEmBus: the switch says the driver isn't on this PC, and
    nothing else changes.
 8. The PS button in Big Picture still opens Lootnest's menu over the
@@ -1395,3 +1395,30 @@ Two monitors on the PC, the TV app connected.
 2. The Profiles list on the page shows Skip Prologue run under Cristian.
 3. Play: the swap screen shows Cristian with the run's label, and
    "Loading Cristian's Skip Prologue files".
+
+## 64. Several PlayStation controllers, and games that know them
+
+With **Show a PlayStation controller to games as an Xbox one** on and
+ViGEmBus on the PC (section 34).
+
+1. Two DualSenses (USB or Bluetooth) and a game outside Steam that only
+   knows Xbox controllers, started from Lootnest: Settings, Controllers,
+   Now says "games see your 2 DualSenses as Xbox controllers, one each";
+   in the game each pad moves its own player. Windows' Game Controllers
+   (joy.cpl) lists two Xbox 360 controllers.
+2. TEKKEN 8 (Steam lists DualSense support) started from Lootnest with
+   two DualSenses: no Xbox 360 controller appears in joy.cpl, Show recent
+   activity says "TEKKEN 8 knows PlayStation controllers itself (Steam
+   says so)", and each pad is its own player with PlayStation signs.
+3. The same game with Launch options, PlayStation controllers, **Show
+   them as Xbox controllers**: two Xbox 360 controllers again.
+4. A Bluetooth pad turned off and on while a game runs: it gets the same
+   player back (its Xbox controller stays 30 seconds for it).
+5. A game closed and another started within 20 seconds: the Xbox
+   controllers aren't unplugged and plugged in between.
+6. A DualSense on Bluetooth with Lootnest's window open: "Controller
+   connected" shows once. Turning the pad off and on, hiding and showing
+   the window, or starting and closing a game doesn't show it again. A
+   second pad shows it once more.
+7. The log has no "The requested resource is in use" after a pad is
+   plugged in (Lootnest waits for ViGEmBus to have the pad ready).
