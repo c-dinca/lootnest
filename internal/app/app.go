@@ -106,19 +106,50 @@ func inlineFonts(css string) string {
 // for the installer's page.
 func SystemCSS() string { return inlineFonts(uiSystemCSS) }
 
-// pageHTML is the UI with its stylesheet, script, fonts and sounds inlined. Its
-// Content-Security-Policy allows only this one script (by a nonce made for
-// each start), images and fonts from data: URLs, Steam's image servers and
-// itch.io's and GOG's covers, and nothing else: no other scripts, no inline handlers,
-// no fetches.
+// pageHTML is the UI with its stylesheet and fonts inlined, and a small
+// loader in place of its script. Its Content-Security-Policy allows only
+// scripts with a nonce made for each start, images and fonts from data:
+// URLs, Steam's image servers and itch.io's and GOG's covers, and nothing
+// else: no inline handlers, no fetches.
+//
+// The script and the sounds aren't in the page itself: WebView2's
+// NavigateToString takes at most 2 MB once it has made the page a base64
+// data: URL, so about 1.5 MB of HTML, and a page over that shows nothing at
+// all (2.23.0's was 1.58 MB: an empty window, "the interface hasn't
+// loaded"). The loader asks for the script (ps_vendor "app", appScript) and
+// runs it with the page's nonce, as the trailers' hls.js is run.
 func pageHTML() string {
 	nonce := make([]byte, 18)
 	_, _ = rand.Read(nonce)
 	n := base64.RawStdEncoding.EncodeToString(nonce)
 	h := strings.Replace(uiHTML, "/*@CSS*/", inlineFonts(uiSystemCSS+"\n"+uiCSS), 1)
 	h = strings.ReplaceAll(h, "@NONCE@", n)
-	return strings.Replace(h, "/*@JS*/", strings.Replace(uiJS(), "/*@SOUNDS*/{}", soundsJSON(), 1), 1)
+	return strings.Replace(h, "/*@JS*/", pageLoader, 1)
 }
+
+// maxPageHTML is how big pageHTML may be: NavigateToString's 2 MB as base64,
+// less room to spare (page_test.go).
+const maxPageHTML = 1_200_000
+
+// pageLoader waits for the bindings (they're made as the page is created,
+// but ask again if not yet), gets the script and runs it with this
+// script's nonce. A failed ask is tried again for ten seconds.
+const pageLoader = `(function () {
+  var nonce = document.currentScript.nonce, tries = 0;
+  function go() {
+    if (typeof window.ps_vendor !== "function") { setTimeout(go, 25); return; }
+    window.ps_vendor("app").then(function (src) {
+      var s = document.createElement("script");
+      s.nonce = nonce; s.textContent = src; document.body.append(s);
+    }, function () { if (++tries < 40) setTimeout(go, 250); });
+  }
+  go();
+})();`
+
+// appScript is the page's script with the sounds in it, made once.
+var appScript = sync.OnceValue(func() string {
+	return strings.Replace(uiJS(), "/*@SOUNDS*/{}", soundsJSON(), 1)
+})
 
 type App struct {
 	w    view // the window and its page (window_windows.go)
