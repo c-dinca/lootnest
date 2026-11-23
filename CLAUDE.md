@@ -268,7 +268,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
   (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
-## Where things stand (2.23.0, beta)
+## Where things stand (2.23.1, beta)
 
 These shipped recently, newest last:
 
@@ -2568,7 +2568,7 @@ These shipped recently, newest last:
   `?batt=1|saver`, shots `settings-controllers-battery`, `-saver`,
   `tv-battery`. docs/TESTING.md 67.
   The owner asked for 2.23.0 with these five (23 Nov).
-- **Unreleased, an empty window on 2.23.0** (the owner, 23 Nov 2026:
+- **2.23.1, an empty window on 2.23.0** (the owner, 23 Nov 2026:
   the window showed nothing, the log "the interface hasn't loaded after
   20s"). WebView2's NavigateToString takes 2 MB once it has made the page a
   base64 data: URL, about 1.5 MB of HTML; 2.22.0's page was 1.55 MB,
@@ -2578,6 +2578,7 @@ These shipped recently, newest last:
   sounds) and runs it with the page's nonce, as `loadHls` does. The page is
   0.5 MB; `page_test.go` fails above `maxPageHTML` (1.2 MB). The harness
   still inlines the script; Linux's window loads it the same way.
+  Released as 2.23.1 without asking, since 2.23.0 showed nothing.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

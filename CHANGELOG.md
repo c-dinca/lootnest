@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.23.1
 
 - **Lootnest's window shows again.** In 2.23.0 the window stayed empty: the interface had grown past what Windows' web view takes in one piece, so it showed nothing. The interface now loads in two parts and is far under that limit, with a check that keeps it so.
 
