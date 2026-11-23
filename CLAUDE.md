@@ -2568,6 +2568,16 @@ These shipped recently, newest last:
   `?batt=1|saver`, shots `settings-controllers-battery`, `-saver`,
   `tv-battery`. docs/TESTING.md 67.
   The owner asked for 2.23.0 with these five (23 Nov).
+- **Unreleased, an empty window on 2.23.0** (the owner, 23 Nov 2026:
+  the window showed nothing, the log "the interface hasn't loaded after
+  20s"). WebView2's NavigateToString takes 2 MB once it has made the page a
+  base64 data: URL, about 1.5 MB of HTML; 2.22.0's page was 1.55 MB,
+  2.23.0's 1.58 MB, and a page over the limit shows nothing at all, not
+  even the splash. `pageHTML` now holds a loader (`pageLoader`) in place of
+  the script: it asks `ps_vendor("app")` (`appScript`, the script with the
+  sounds) and runs it with the page's nonce, as `loadHls` does. The page is
+  0.5 MB; `page_test.go` fails above `maxPageHTML` (1.2 MB). The harness
+  still inlines the script; Linux's window loads it the same way.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

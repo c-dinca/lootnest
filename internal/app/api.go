@@ -48,10 +48,13 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_gamePeers", a.apiGamePeers))
 	must(a.w.Bind("ps_shareImage", a.apiShareImage))
 	must(a.w.Bind("ps_vendor", func(name string) (string, error) {
-		if name != "hls" {
-			return "", errors.New("unknown script")
+		switch name {
+		case "app": // the page's own script (pageHTML)
+			return appScript(), nil
+		case "hls":
+			return uiHLS, nil
 		}
-		return uiHLS, nil
+		return "", errors.New("unknown script")
 	}))
 	must(a.w.Bind("ps_nameCopy", a.apiNameCopy))
 	must(a.w.Bind("ps_bigPicture", a.apiBigPicture))

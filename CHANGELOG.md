@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Lootnest's window shows again.** In 2.23.0 the window stayed empty: the interface had grown past what Windows' web view takes in one piece, so it showed nothing. The interface now loads in two parts and is far under that limit, with a check that keeps it so.
+
 ## 2.23.0
 
 - **Runs belong to their game.** A run (Skip Prologue) is a save of its own in one game, so it now shows only in that game: Counter-Strike 2's Who's playing no longer offers Cristian's Skip Prologue made for Red Dead Redemption 2. Runs made before this version are tied to the one game they have saves in. Competitive games (Counter-Strike 2, Valorant, League of Legends, Dota 2 and the like, and any game with a kernel anti-cheat) get no runs at all; each person keeps their own profile there as before.
