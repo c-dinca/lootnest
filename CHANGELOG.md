@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A tidier play bar on a game's page.** Play and the profile it plays as are one key in that profile's colour: the left part starts the game, the right part changes the profile. Beside it, one line says whose files are in and whether the game is ready to play. Someone else, New run, Profiles and the other keys beside Play are all the same height. The long folder path under the title is now two small chips: the folder's name (hover for the whole path, click to open it) and the game's size, with a small meter of how full that drive is and the space left.
+
 ## 2.23.1
 
 - **Lootnest's window shows again.** In 2.23.0 the window stayed empty: the interface had grown past what Windows' web view takes in one piece, so it showed nothing. The interface now loads in two parts and is far under that limit, with a check that keeps it so.

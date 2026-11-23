@@ -20,13 +20,6 @@
   // What a Library entry's install takes, every copy of it together.
   const installOf = (it) => copiesOf(it).reduce((n, c) => n + ((sizeOf(c) || {}).install || 0), 0);
   const about = (n) => "About " + fmtBytes(n);
-  // A folder said short: its drive, then its last two folders
-  // (C:\…\common\Counter-Strike 2); the whole path is in its title.
-  function shortDir(dir) {
-    const sep = dir.includes("\\") ? "\\" : "/", parts = dir.split(/[\\/]+/).filter(Boolean);
-    const lead = dir.startsWith("/") ? "/" : "";
-    return midTrunc(parts.length > 3 ? lead + [parts[0], "…", ...parts.slice(-2)].join(sep) : dir, 48);
-  }
   // Where a game is installed, and the drive it's on with that drive's free
   // space, or null while its sizes aren't counted.
   function installWhere(it) {

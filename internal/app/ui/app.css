@@ -1603,18 +1603,23 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .src-dir { display: flex; align-items: center; gap: var(--space-3); justify-content: space-between; }
 .src-n { flex: none; font: 650 var(--fs-18)/var(--lh-tight) var(--font-ui); color: var(--fg-1); }
 .gpage-meta svg { width: var(--fs-14); height: var(--fs-14); margin-right: var(--space-1); vertical-align: -2px; }
-/* Where the game is installed: its folder, which opens on a click. */
-.gpage-meta-link { display: inline-flex; align-items: center; max-width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
-.gpage-meta-link b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: inherit; }
-.gpage-meta-link:hover b { text-decoration: underline; text-underline-offset: 3px; }
-.gpage-meta-link:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-tag); }
-.gpage-meta-low { color: var(--warning); }
-/* Its separators sit before every item, the first of each line's clipped
-   off the left edge, so a wrapped line doesn't start with one. */
-.gpage-meta.gpage-where { --sep: calc(2 * var(--space-3) + var(--hairline)); margin: var(--space-1) 0 0 calc(-1 * var(--sep)); overflow: hidden; font-weight: 500; color: var(--fg-2); }
-.gpage-where > span::before { content: ""; display: inline-block; width: var(--hairline); height: var(--fs-12); margin: 0 var(--space-3); background: var(--edge-2); vertical-align: -1px; }
-.gpage-where b { font-weight: 650; color: var(--fg-1); }
-.gpage-where .gpage-meta-low { color: var(--warning); }
+/* Where the game is installed, as chips under the title: its folder (a
+   click opens it, the path is its title), then what it takes, the drive,
+   how full that drive is and what's free. */
+.gp-where { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.gp-chip { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; max-width: 100%; height: var(--ctl-sm); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-round);
+  background: var(--glass-ctl); box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  color: var(--fg-2); font: 500 var(--fs-13)/1 var(--font-ui); white-space: nowrap; }
+.gp-chip b { overflow: hidden; text-overflow: ellipsis; color: var(--fg-1); font-weight: 650; }
+.gp-chip .ln-icon { flex: none; width: var(--icon-xs); height: var(--icon-xs); }
+button.gp-chip { cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+button.gp-chip:hover { background: var(--glass-ctl-hover); color: var(--fg-1); }
+button.gp-chip:active { transform: translateY(1px); }
+button.gp-chip:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.gp-meter { position: relative; flex: none; width: var(--meter-w); height: var(--meter-h); overflow: hidden; border-radius: var(--radius-round); background: var(--glass-ctl-active); }
+.gp-meter i { position: absolute; inset: 0 auto 0 0; width: calc(var(--used, 0) * 100%); border-radius: inherit; background: var(--fg-2); }
+.gp-chip.is-low .gp-meter i { background: var(--warning); }
+.gp-chip.is-low .gp-free, .gp-chip.is-low .gp-free b { color: var(--warning); }
 
 /* Save points: a timeline, newest first, a dot per point on a line. */
 .pt-make { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin: var(--space-3) 0; }
@@ -3451,3 +3456,35 @@ button.gp-who:focus-visible { outline: var(--focus-width) solid var(--focus-ring
    a line in their colour joining them. */
 .gp-person--run { padding-left: var(--space-6); border-left: 2px solid var(--player-wash); margin-left: var(--space-3); }
 .gp-person--run .gp-person-name b { font-weight: 600; }
+
+/* ---- A game's play bar, one height (the owner, 23 Nov 2026) ----
+   Play and whose the page is are one key in the profile's colour
+   (.gp-play): Play on the left, the profile on the right opens the list.
+   Every other key in the bar is as tall, at --ctl-bar. */
+.gp-play { position: relative; display: inline-flex; flex: none; align-items: stretch; height: var(--ctl-bar); overflow: hidden; border-radius: var(--radius-play);
+  background: linear-gradient(180deg, var(--player-fill-hover), var(--player-fill)); color: var(--player-on);
+  box-shadow: 0 12px 30px -12px color-mix(in oklch, var(--player-fill) 80%, transparent), 0 1px 0 rgb(0 0 0 / 0.35); }
+.gp-play::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: var(--key-light-strong); pointer-events: none; }
+.gp-play > button, .gp-play > span { display: flex; align-items: center; margin: 0; border: 0; background: none; color: inherit; font: inherit; }
+.gp-play > button { cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.gp-play > button:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: -4px; border-radius: var(--radius-play); }
+.gp-play > .gp-play-go { gap: var(--space-2); padding: 0 var(--space-6) 0 var(--space-5); font: 400 var(--text-play)/1 var(--font-title); letter-spacing: 0.005em; }
+.gp-play-go .ln-icon { width: var(--icon-sm); height: var(--icon-sm); fill: currentColor; stroke: none; }
+.gp-play > .gp-play-go:hover { background: var(--on-player-lift); }
+.gp-play > .gp-play-go:active { background: var(--on-player-press); }
+.gp-play > .gp-play-who { gap: var(--space-2); padding: 0 var(--space-3); border-left: var(--hairline) solid var(--on-player-line); background: var(--on-player-wash); text-align: left; }
+.gp-play > button.gp-play-who:hover, .gp-play > button.gp-play-who[aria-expanded="true"] { background: var(--on-player-hover); }
+.gp-play > button.gp-play-who:active { background: var(--on-player-press); }
+.gp-play-who .ln-avatar { --size: var(--bar-avatar); background: var(--on-player-press); color: var(--player-on); }
+.gp-play-who > .ln-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.gp-play-name { display: grid; gap: 1px; font: 700 var(--fs-14)/1.15 var(--font-ui); }
+.gp-play-name b { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: inherit; }
+.gp-play-name small { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-12); font-weight: 600; opacity: 0.8; }
+.gp-ready .gp-lamp { display: inline-flex; align-items: center; gap: var(--space-2); }
+.gp-ready .gp-lamp.is-on { color: var(--lamp); }
+.gp-ready .gp-lamp.is-on::before { content: ""; flex: none; width: calc(var(--space-1) * 1.5); height: calc(var(--space-1) * 1.5); border-radius: var(--radius-round); background: var(--lamp); box-shadow: var(--lamp-glow); }
+.gpage-bar .ln-button--lg, .gpage-bar .gp-key, .gpage-bar .prof-pill { height: var(--ctl-bar); }
+.gpage-bar .gp-key, .gpage-bar .prof-pill { gap: var(--space-2); padding: 0 var(--space-4); border-radius: var(--radius-play); font: 650 var(--fs-14)/1 var(--font-ui); }
+.gpage-bar .gp-key .ln-icon, .gpage-bar .prof-pill .ln-icon { width: var(--icon-md); height: var(--icon-md); }
+.gpage-bar .prof-pill { padding-right: var(--space-3); color: var(--fg-1); }
+.gpage-others { margin-left: auto; }
