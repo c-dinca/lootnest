@@ -19,6 +19,7 @@ type Controllers struct {
 	Copiers     []string              `json:"copiers"` // core.PadCopiers, for the game page's note
 	ViGEm       bool                  `json:"vigem"`   // the ViGEmBus driver is on this PC, for Settings.PadAsXbox
 	Bridge      string                `json:"bridge"`  // what the pad Lootnest makes is doing now, or why it can't
+	Batteries   []PadPowerView        `json:"batteries"`
 }
 
 // apiControllers only reads: the device list, XInput's slots, the running
@@ -49,10 +50,11 @@ func (a *App) apiControllers() Controllers {
 		devs = append(devs, core.PadDevice(d))
 	}
 	_, vigem := services["ViGEmBus"]
+	batteryAsk() // read again for the page; a "padBattery" event follows when it changed
 	pads, names := core.Pads(devs, slots, tools, vigem), a.padNames()
 	for i := range pads {
 		pads[i].Given = names[pads[i].ID]
 	}
 	return Controllers{Pads: pads, XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools),
-		ViGEm: plat.ViGEmPresent(), Bridge: a.padState()}
+		ViGEm: plat.ViGEmPresent(), Bridge: a.padState(), Batteries: batteries()}
 }

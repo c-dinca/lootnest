@@ -257,6 +257,7 @@
   const BP_SIGNS = [["", "Automatic"], ["xbox", "Xbox"], ["playstation", "PlayStation"], ["nintendo", "Nintendo"]];
   const BP_MOTION = [["", "Like Windows"], ["full", "Full"], ["less", "Less"], ["off", "Off"]];
   const BP_MUSIC_VOL = [["1", "Low"], ["2", "Medium"], ["3", "High"]];
+  const BP_SAVER = [["", "Off"], ["low", "When it runs low"], ["on", "Always"]];
   function bpSettingsParts() {
     const s = cfg().settings, next = (list, v) => list[(list.findIndex((x) => x[0] === v) + 1) % list.length][0], label = (list, v) => (list.find((x) => x[0] === v) || list[0])[1];
     const flip = (key) => () => bpSet(key, !s[key]);
@@ -272,7 +273,8 @@
         { id: "start", name: "Open in Big Picture when Lootnest starts", on: !!s.openBigPicture, say: "For a PC that is mostly used from the sofa.", run: flip("openBigPicture") }] },
       { id: "controller", name: "Controller", icon: "game-controller", opts: [
         { id: "padonly", name: "Only games that play with a controller", on: BP.padOnly, say: "Games played only with a keyboard and a mouse, such as Counter-Strike 2 and Riot's games, stay in Library, Keyboard and mouse. To change it for a game, right-click it in Lootnest's window on the PC.", run: () => { BP.padOnly = !BP.padOnly; setPref("bpPadOnly", BP.padOnly ? "1" : "0"); if (BP.tag === BP_KBM) BP.tag = ""; renderBP(); } },
-        { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV can reach the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } }] },
+        { id: "signs", name: "Button signs", value: label(BP_SIGNS, BP.signs), say: "Automatic follows the controller in your hands. A controller plugged into the TV can reach the PC as an Xbox one, so choose yours here if the signs are wrong.", run: () => { BP.signs = next(BP_SIGNS, BP.signs); setPref("bpSigns", BP.signs); renderBP(); } },
+        { id: "saver", name: "Battery saver", value: label(BP_SAVER, s.padSaver || ""), say: "Turns off a PlayStation controller's light, and a DualSense's vibration, until it's switched off. When it runs low turns it on only then.", run: () => bpSet("padSaver", next(BP_SAVER, s.padSaver || "")) }] },
       { id: "play", name: "While you play", icon: "play", opts: [
         { id: "xbox", name: "PlayStation controller as an Xbox one in games", on: !!s.padAsXbox, say: "For games that only know Xbox controllers: while a game runs, each DualSense or DualShock 4 is an Xbox controller of its own. Games that know PlayStation controllers get them as they are. It needs the ViGEmBus driver, which the TV streaming set-up installs.", run: flip("padAsXbox") },
         { id: "toasts", name: "Show achievements as they unlock", on: !s.achToastsOff, say: "A small note over the game, in the profile's colour. Never over a game with an anti-cheat.", run: flip("achToastsOff") },
@@ -362,6 +364,18 @@
   }
   const bpFind = (id) => { const sc = bpScope(); return id && sc ? [...sc.querySelectorAll("[data-bp]")].find((e) => e.dataset.bpid === id && !e.closest(".leaving")) : null; };
   let bpShown = "", bpFam = null, bpHintHTML = "";
+  // Each controller's battery beside who's seated, as a console's bar
+  // shows it (app/padbattery.go): an icon, and the charge while it's low or
+  // charging.
+  function bpBattery() {
+    const el = $("#bp .bp-batt");
+    if (!el) return;
+    const html = (S.batt || []).map((b) => {
+      const words = battWords(b), say = battLow(b) || b.charging;
+      return `<span class="bp-batt-one${battLow(b) ? " is-low" : ""}" title="${esc(b.name + ": " + words)}">${battIcon(b)}${say ? `<span class="ln-num">${esc(b.level ? "" : b.charging && !b.full ? `${b.percent}%` : words)}</span>` : ""}</span>`;
+    }).join("");
+    if (el.lnHTML !== html) { el.lnHTML = html; el.innerHTML = html; }
+  }
   function renderBP() {
     let el = $("#bp");
     if (!el) { el = document.createElement("div"); el.id = "bp"; el.className = "bp ln-root"; el.setAttribute("role", "application"); el.setAttribute("aria-label", "Big Picture"); document.body.appendChild(el); }
@@ -370,7 +384,7 @@
       el.innerHTML = `<div class="bp-bd" aria-hidden="true"><img class="bp-bd-l" alt=""><img class="bp-bd-l" alt=""><div class="bp-bd-scrim"></div><div class="bp-bd-deep"></div></div>
       <header class="bp-bar" data-zone="bar"><span class="bp-mark">${BRAND_MARK}</span>
         <nav class="bp-tabs"><span class="bp-ind" aria-hidden="true"></span><span class="bp-lb"></span>${BP_TABS.map(([k, l]) => `<button class="bp-tab" data-bp data-bpid="tab:${k}" data-go="tab" data-t="${k}">${l}</button>`).join("")}<span class="bp-rb"></span></nav>
-        <span class="bp-bar-end"><span class="bp-seat"></span><time class="bp-clock ln-num"></time>
+        <span class="bp-bar-end"><span class="bp-batt" aria-label="Controller batteries"></span><span class="bp-seat"></span><time class="bp-clock ln-num"></time>
         <button class="bp-round" data-bp data-bpid="tab:settings" data-go="settings" aria-label="Settings" data-hint="Open">${ph("gear-six")}</button>
         <button class="bp-round" data-bp data-bpid="tab:menu" data-go="menu" aria-label="Menu" data-hint="Open">${ph("list")}</button></span></header>
       <main class="bp-main"></main>
@@ -391,6 +405,7 @@
     const fam = pad.fam + "|" + BP.signs;
     if (bpFam !== fam) { bpFam = fam; el.querySelector(".bp-lb").innerHTML = pad.fam ? glyph("LB") : ""; el.querySelector(".bp-rb").innerHTML = pad.fam ? glyph("RB") : ""; bpHintHTML = ""; }
     el.querySelector(".bp-clock").textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    bpBattery();
     el.querySelector(".bp-bar").classList.toggle("is-sub", sub);
     el.querySelectorAll(".bp-tab").forEach((t) => { t.setAttribute("aria-current", String(BP.tab === t.dataset.t)); t.tabIndex = sub ? -1 : 0; });
     el.querySelectorAll(".bp-round").forEach((r) => { r.tabIndex = sub ? -1 : 0; r.toggleAttribute("aria-pressed", r.dataset.go === "settings" && BP.settings); });

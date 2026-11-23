@@ -19,7 +19,7 @@
     const v = PADS[fam][b];
     return `<span class="ctl-g ctl-g--${b.toLowerCase()}">${PAD_SHAPES[v] ? gsvg(PAD_SHAPES[v]) : esc(v)}</span>`;
   }).join("")}</span>`;
-  const ctlRow = (fam, name, meta, note, keys = "", title = "") => `<div class="bk-row ctl-pad">${padFaces(fam)}<div>${title || `<b>${esc(name)}</b>`}${meta.length ? `<p>${meta.map(esc).join(", ")}</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}</div>${keys ? `<span class="ctl-keys">${keys}</span>` : ""}</div>`;
+  const ctlRow = (fam, name, meta, note, keys = "", title = "", after = "") => `<div class="bk-row ctl-pad">${padFaces(fam)}<div>${title || `<b>${esc(name)}</b>`}${meta.length ? `<p>${meta.map(esc).join(", ")}</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}${after}</div>${keys ? `<span class="ctl-keys">${keys}</span>` : ""}</div>`;
   // A real pad's own name (Config.PadNames by Pad.ID), and a key that makes
   // it vibrate so it's clear which one is being named (app/padbuzz.go).
   // S.padNaming is the pad whose name is being typed, S.padBuzz the one
@@ -27,14 +27,35 @@
   function ctlKeys(p) {
     if (p.virtual || !p.id) return "";
     const id = esc(p.id), buzzing = S.padBuzz === p.id;
-    const buzz = p.buzz ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="pad-buzz" data-id="${id}"${buzzing ? " disabled" : ""}>${ph("vibrate")}<span>${buzzing ? "Vibrating" : "Vibrate"}</span></button>` : "";
+    const saving = (battOf(p.id) || {}).saver;
+    const buzz = p.buzz && !saving ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="pad-buzz" data-id="${id}"${buzzing ? " disabled" : ""}>${ph("vibrate")}<span>${buzzing ? "Vibrating" : "Vibrate"}</span></button>` : "";
     if (S.padNaming === p.id) return `${buzz}<button class="ln-button ln-button--primary ln-button--sm" data-action="pad-name-save" data-id="${id}">Save</button>`;
     return `${buzz}<button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="pad-name" data-id="${id}" aria-label="Name this controller" title="Name this controller">${ph("pencil-simple")}</button>`;
   }
+  // A controller's battery (app/padbattery.go): the latest reading, from
+  // ps_controllers and the "padBattery" event. An Xbox pad says only a
+  // rough level.
+  const battOf = (id) => (S.batt || (S.ctl && S.ctl.batteries) || []).find((b) => b.id === id);
+  function battIcon(b) {
+    if (b.charging) return ph("battery-charging");
+    if (b.full) return ph("battery-full");
+    const p = b.percent;
+    return ph(p <= 10 ? "battery-warning" : p <= 25 ? "battery-low" : p <= 55 ? "battery-medium" : p <= 85 ? "battery-high" : "battery-full");
+  }
+  const BATT_LEVEL = { empty: "Almost empty", low: "Low", medium: "Half", full: "Full" };
+  function battWords(b) {
+    if (b.full) return "Charged";
+    const n = b.level ? BATT_LEVEL[b.level] : `${b.percent}%`;
+    return b.charging ? `${n}, charging` : n;
+  }
+  const battLow = (b) => !b.charging && !b.full && b.percent >= 0 && b.percent <= 20;
+  const battChip = (b, cls = "ctl-batt") => b ? `<span class="${cls}${battLow(b) ? " is-low" : ""}${b.charging ? " is-charging" : ""}" title="${esc(battWords(b) + (b.saver ? ", battery saver on" : ""))}">${battIcon(b)}<span class="ln-num">${esc(battWords(b))}</span>${b.saver ? `<span class="ctl-batt-saver">Saver</span>` : ""}</span>` : "";
+  const battLine = (b) => b ? `<p class="ctl-batt-line">${battChip(b)}</p>` : "";
   const padTitle = (p) => S.padNaming === p.id
     ? `<input class="ln-input ctl-name-in" id="ctl-name-in" type="text" maxlength="32" value="${esc(p.given || "")}" placeholder="Such as Mihai's" data-id="${esc(p.id)}" aria-label="A name for this controller">`
     : "";
   const BUS = { usb: "USB", bluetooth: "Bluetooth" };
+  const SAVER_MODES = [["", "Off"], ["low", "When a controller runs low"], ["on", "Always"]];
   const FAMILY = { xbox: "Xbox buttons", playstation: "PlayStation buttons", nintendo: "Nintendo buttons", generic: "Buttons by position" };
 
   function viewControllers() {
@@ -47,7 +68,8 @@
       p.virtual ? `Virtual, made by ${p.madeBy || "an app on this PC"}` : "",
       BUS[p.bus] || "",
       p.slot ? `Xbox-style (XInput) slot ${p.slot}` : p.xinput ? "Xbox-style (XInput)" : "",
-    ].filter(Boolean), "", ctlKeys(p), padTitle(p)));
+    ].filter(Boolean), "", ctlKeys(p), padTitle(p), battLine(battOf(p.id))));
+    for (const b of (S.batt || C.batteries || []).filter((b) => !C.pads.some((p) => p.id === b.id))) mine.push(ctlRow("xbox", b.name, [], "", "", "", battLine(b)));
     const slots = C.xinput.filter((x) => !C.pads.some((p) => p.slot === x.slot));
     if (slots.length) mine.push(setRow("Xbox-style (XInput) slots in use", slots.map((x) => `Slot ${x.slot}: ${x.wireless ? "wireless " : ""}${esc(x.kind)}`).join(", ")));
     // The name Windows gave the same pad, so the two columns agree.
@@ -78,8 +100,15 @@
       C.vigem ? "While a game runs, for games that only know Xbox controllers: each DualSense or DualShock 4 becomes an Xbox controller of its own. A game Steam says knows PlayStation controllers gets them as they are; a game's Launch options can say otherwise."
         : "Needs the ViGEmBus driver, which isn't on this PC. DS4Windows and Lootnest's TV streaming set-up install it.", on)
       + (on && C.bridge ? setRow("Now", esc(C.bridge.charAt(0).toUpperCase() + C.bridge.slice(1))) : "")));
+    // Batteries: reading them, and the battery saver (Settings.PadBatteryOff,
+    // PadSaver; core/padbattery.go).
+    const st = cfg().settings, reading = !st.padBatteryOff;
+    const saverSel = `<select id="s-pad-saver" class="ln-input set-input" data-setting="padSaver"${reading ? "" : " disabled"}>${SAVER_MODES.map(([v, l]) => `<option value="${v}"${(st.padSaver || "") === v ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+    const battery = setSub("Battery", "", card(sw("padBatteryOff", "Show how charged controllers are",
+      "Warns when one runs low and says when it's charged. A DualSense or DualShock 4 on Bluetooth is asked for its full reports to say it, as Steam does.", reading, true)
+      + setRow("Battery saver", "Turns off a PlayStation controller's light, and a DualSense's vibration, until it's switched off. Lootnest's Vibrate key waits too.", saverSel)));
     const det = cfg().settings.gameDetails ? "" : setSub("Games", "", card(setRow("Controller support on game pages", "", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="details-on">Turn on Game details</button>`)));
-    return `<div class="ctl-page">${pads + xbox + tools + det}</div>`;
+    return `<div class="ctl-page">${pads + battery + xbox + tools + det}</div>`;
   }
 
   // What a game expects, from its Steam details or the user's edit: one

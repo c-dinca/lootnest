@@ -617,6 +617,9 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	if s.Motion != "" && s.Motion != "full" && s.Motion != "less" && s.Motion != "off" {
 		s.Motion = ""
 	}
+	if s.PadSaver != "" && s.PadSaver != "low" && s.PadSaver != "on" {
+		s.PadSaver = ""
+	}
 	s.SteamAccountID = strings.TrimSpace(s.SteamAccountID)
 	s.GameDirs = cleanGameDirs(s.GameDirs)
 	key, err := protectSecret(s.GridDBKey)
@@ -673,6 +676,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	if s.AutoSteamHooks {
 		a.autoHooks()
 	}
+	batteryAsk() // a battery saver changed applies now
 	return nil
 }
 

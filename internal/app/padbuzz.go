@@ -73,6 +73,9 @@ func (a *App) padBuzz(id string) error {
 	if !pad.Buzz {
 		return errors.New("Lootnest can't make that controller vibrate.")
 	}
+	if saverHolds(id) {
+		return errors.New("Battery saver is on for that controller, so it doesn't vibrate.")
+	}
 	if pad.VID != core.SonyVendor {
 		if err := plat.XInputRumble(pad.Slot-1, 40000, 40000); err != nil {
 			return err

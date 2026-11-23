@@ -60,12 +60,18 @@ func PSRumble(dualsense, bluetooth bool, size int, seq, strong, weak uint8) ([]b
 		b[at], b[at+2], b[at+3], b[at+38] = 0x03, weak, strong, 0x04
 	}
 	if bluetooth {
-		h := crc32.NewIEEE()
-		h.Write([]byte{0xA2})
-		h.Write(b[:74])
-		binary.LittleEndian.PutUint32(b[74:78], h.Sum32())
+		psCRC(b)
 	}
 	return b, nil
+}
+
+// psCRC writes a Bluetooth output report's CRC at 74: CRC-32 over 0xA2
+// (the output report's header) and the report's first 74 bytes.
+func psCRC(b []byte) {
+	h := crc32.NewIEEE()
+	h.Write([]byte{0xA2})
+	h.Write(b[:74])
+	binary.LittleEndian.PutUint32(b[74:78], h.Sum32())
 }
 
 // PadNameMax is the longest name a controller takes, in characters.

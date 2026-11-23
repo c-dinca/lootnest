@@ -104,6 +104,15 @@
         if (BP.on && BP.settings) renderBP(false);
         else if (S.view === "settings" && !S.dialog) render();
         break;
+      case "padBattery": // controllers' batteries changed (app/padbattery.go)
+        S.batt = ev.pads || [];
+        if (S.ctl) S.ctl.batteries = S.batt;
+        if (S.view === "settings" && S.setTab === "controllers") render();
+        if (BP.on) bpBattery();
+        break;
+      case "padBatterySay": // low, almost empty or charged, while the window shows
+        toast(`${ev.title}. ${ev.line}`, ev.kind === "charged" ? "" : "error");
+        break;
       case "padBuzz": // a controller's vibration is done (app/padbuzz.go)
         if (S.padBuzz === ev.id) S.padBuzz = "";
         if (ev.error) toast(ev.error, "error");

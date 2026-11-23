@@ -1440,3 +1440,27 @@ ViGEmBus on the PC (section 34).
 6. With two named pads and a game shown them as Xbox controllers,
    Settings, Controllers, Now says "games see Ana's and Mihai's as Xbox
    controllers, one each".
+
+## 66. Controller batteries and the battery saver
+
+1. A DualSense on USB: Settings, Controllers shows its charge and
+   "charging" in green within a few seconds; unplugged and on Bluetooth,
+   the charge alone. The same with a DualShock 4.
+2. On Bluetooth, the first look asks the pad for its full reports
+   (the log says so if it didn't answer): the charge appears within 30
+   seconds. A game, Steam and Big Picture still read the pad afterwards.
+3. An Xbox controller on batteries: Low, Half or Full; on its cable,
+   nothing.
+4. Let a pad run down: at 20% a note says it's running low, at 10% that
+   it's almost empty; over a game, as a note over it. Plug it in: no
+   more notes; when full, "is charged".
+5. Big Picture's bar shows an icon per controller, with the charge when
+   it's low or charging, in red when low.
+6. Battery saver, Always: the light bar and player lights go out, and a
+   DualSense doesn't vibrate in a game (try one with rumble) or from
+   Vibrate (the key is gone from its row). Off: the light bar is blue
+   again and the game's vibration works.
+7. Battery saver, When a controller runs low: nothing changes at 25%;
+   at 20% it goes on (Saver beside the charge); plugged in, it goes off.
+8. Show how charged controllers are, off: no charge, no notes, and a
+   Bluetooth pad turned off and on stays on its short reports.

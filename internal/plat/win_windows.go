@@ -795,6 +795,10 @@ func WorkAreaOf(area [4]int) [4]int {
 	return win.WorkAreaOf(area)
 }
 
+func XInputBattery(slot int) (byte, byte, bool) {
+	return win.XInputBattery(slot)
+}
+
 func XInputGuideDown() bool {
 	return win.XInputGuideDown()
 }

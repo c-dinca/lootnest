@@ -23,6 +23,7 @@ var (
 	procHidDGetPreparsed   = hidDLL.NewProc("HidD_GetPreparsedData")
 	procHidDFreePreparsed  = hidDLL.NewProc("HidD_FreePreparsedData")
 	procHidPGetCaps        = hidDLL.NewProc("HidP_GetCaps")
+	procHidDGetFeature     = hidDLL.NewProc("HidD_GetFeature")
 	procCMGetInterfaceProp = cfgmgr32.NewProc("CM_Get_Device_Interface_PropertyW")
 
 	// DEVPKEY_Device_InstanceId.
@@ -55,8 +56,9 @@ func HIDInstance(path string) string {
 
 // PadWriter is a controller opened to send it output reports.
 type PadWriter struct {
-	h    windows.Handle
-	size int
+	h       windows.Handle
+	size    int
+	feature int
 }
 
 // OpenPadWrite opens a HID device by its path to write to it, shared with
@@ -82,7 +84,8 @@ func OpenPadWrite(path string) (*PadWriter, error) {
 		w.Close()
 		return nil, errNoOutput
 	}
-	w.size = int(caps[6]) | int(caps[7])<<8 // OutputReportByteLength
+	w.size = int(caps[6]) | int(caps[7])<<8    // OutputReportByteLength
+	w.feature = int(caps[8]) | int(caps[9])<<8 // FeatureReportByteLength
 	if w.size == 0 {
 		w.Close()
 		return nil, errNoOutput
@@ -98,6 +101,21 @@ func (w *PadWriter) Write(report []byte) error {
 	var n uint32
 	if err := windows.WriteFile(w.h, report, &n, nil); err != nil {
 		return fmt.Errorf("the controller didn't take it: %w", err)
+	}
+	return nil
+}
+
+// Feature asks the pad for one feature report by its id. A Bluetooth
+// DualSense or DualShock 4 asked for its calibration (0x05) starts sending
+// its full input reports, which carry the battery.
+func (w *PadWriter) Feature(id byte) error {
+	if w.feature == 0 {
+		return errNoOutput
+	}
+	b := make([]byte, w.feature)
+	b[0] = id
+	if r, _, err := procHidDGetFeature.Call(uintptr(w.h), uintptr(unsafe.Pointer(&b[0])), uintptr(len(b))); r == 0 {
+		return fmt.Errorf("the controller didn't answer: %w", err)
 	}
 	return nil
 }
@@ -123,4 +141,19 @@ func XInputRumble(slot int, strong, weak uint16) error {
 		return errXInputNotThere
 	}
 	return nil
+}
+
+// XInputBattery reads an XInput slot's battery: its type (0 disconnected,
+// 1 wired, 2 alkaline, 3 NiMH, 0xFF unknown) and level (0 empty to 3
+// full), as core.XInputBattery reads them. ok is false without a pad.
+func XInputBattery(slot int) (typ, level byte, ok bool) {
+	get := xinput().NewProc("XInputGetBatteryInformation")
+	if get.Find() != nil {
+		return 0, 0, false
+	}
+	var info [2]byte                                                                      // XINPUT_BATTERY_INFORMATION
+	if r, _, _ := get.Call(uintptr(slot), 0, uintptr(unsafe.Pointer(&info[0]))); r != 0 { // 0: BATTERY_DEVTYPE_GAMEPAD
+		return 0, 0, false
+	}
+	return info[0], info[1], true
 }

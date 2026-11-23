@@ -410,6 +410,11 @@ func (*PadWriter) Write(report []byte) (err error) {
 	return
 }
 
+func (*PadWriter) Feature(id byte) (err error) {
+	err = ErrUnsupported
+	return
+}
+
 func (*PadWriter) Close() {}
 
 func PerfFreq() (r0 int64) {
@@ -743,6 +748,10 @@ func WindowsName() (r0 string) {
 }
 
 func WorkAreaOf(area [4]int) (r0 [4]int) {
+	return
+}
+
+func XInputBattery(slot int) (r0 byte, r1 byte, r2 bool) {
 	return
 }
 

@@ -2519,6 +2519,27 @@ These shipped recently, newest last:
   `?pad=ds5,ds5b,xbox&padnames=1&buzz=hold|fail`, shots
   `settings-controllers-names`, `-naming`. docs/TESTING.md 65.
 
+- **Unreleased, controller batteries** (the owner, 23 Nov 2026: battery
+  level, a low warning, a battery saver with no vibration or other
+  drains, charging and charged). `core/padbattery.go`: `PSBattery`
+  (status byte at 53 DualSense USB 0x01, 54 BT 0x31, 30 DualShock 4 USB
+  0x01, 32 BT 0x11; a Bluetooth short 0x01 carries none), `XInputBattery`
+  (type and level), `BatteryWarn` (low 20, empty 10, again over 30 or
+  charging; "charged" once from charging to full), `SaverWanted` ("",
+  "low", "on"), `PSSaver` (light bar and player lights out, DualSense
+  power save 0x04 = haptics asleep; off sets haptics back and the light
+  bar blue). `app/padbattery.go`: `batteryLoop` every 30 s and on
+  `batteryAsk` (apiControllers, apiSaveSettings); `readPSBattery` reads
+  reports for 1.5 s; a Bluetooth pad sending short reports is asked for
+  feature 0x05 once (`PadWriter.Feature`); `batterySay` is the event
+  `padBatterySay` when the window shows, else `plat.ShowToast`; event
+  `padBattery`; `saverHolds` stops Vibrate. `Settings.PadBatteryOff`,
+  `PadSaver`. `win.XInputBattery`. UI: `battOf`, `battChip`, `battLine`
+  in 77-controllers.js, the Battery section, `bpBattery` in Big
+  Picture's bar (`.bp-batt`), Big Picture's Settings row `saver`. Harness
+  `?batt=1|saver`, shots `settings-controllers-battery`, `-saver`,
+  `tv-battery`. docs/TESTING.md 66.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section
