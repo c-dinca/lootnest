@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Runs belong to their game.** A run (Skip Prologue) is a save of its own in one game, so it now shows only in that game: Counter-Strike 2's Who's playing no longer offers Cristian's Skip Prologue made for Red Dead Redemption 2. Runs made before this version are tied to the one game they have saves in. Competitive games (Counter-Strike 2, Valorant, League of Legends, Dota 2 and the like, and any game with a kernel anti-cheat) get no runs at all; each person keeps their own profile there as before.
+- **Who's playing, with runs.** Each person is a column: their own profile on top, then their runs of this game as rows in their colour, and **New run** at the end of the list. A long list scrolls inside the column, so many runs never push the others away, and 1 to 9 pick the people first, then the runs. The seat menu lists people only: a run is picked on its game's page.
+- **Where a game is installed.** A game's page shows, beside its size, the folder it's in (a click opens it) and how much space is left on that drive, in amber when the drive is nearly full.
 - **A cleaner icon at small sizes.** In the taskbar, the tray and the window's corner, the red ring no longer sits in the arcs and the two arcs no longer run together; the sign is drawn the same on both sides, so it no longer leans left, and the icon has every size Windows uses at 125% and 150% scaling, so Windows no longer shrinks a bigger one.
 - **The TV apps carry the new sign too.** Lootnest for TV on LG TVs (1.6.4) and on Android TV (1.0.2) show the red ring over two arcs as their icon, and on LG TVs on the screen they open with and their home screen, instead of the gem in a nest. Lootnest brings an LG TV's app up to date by itself when the TV is on and the app isn't open; on Android TV, **Update to 1.0.2** in Settings, TV puts the new version on (with network debugging on, as when it was added).
 

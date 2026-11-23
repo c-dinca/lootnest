@@ -2487,6 +2487,27 @@ These shipped recently, newest last:
   both sides are the same pixels; the .ico has 16 to 256 with 30, 36, 60,
   72, 80 and 96. The TV apps keep their 1.6.4 and 1.0.2 icons.
 
+- **Unreleased, runs per game** (the owner, 23 Nov 2026: a run made in
+  RDR2 from a save brought as a mod showed in Counter-Strike 2's Who's
+  playing). `Player.Game` is the game a run is for; `ValidatePlayers`
+  clears it for people, keeps names apart per person and game
+  (`runNameKey`), and limits `MaxPeople` 16, `MaxRunsPerGame` 16.
+  `core.AssignRunGames` (at start, app.go) ties an older run to the one
+  game it has files in; `core.RunFor` says whether a profile shows in a
+  game. `core.CompetitiveGame` (core/runs.go: app ids, name words, a
+  kernel anti-cheat by `AntiCheat`) gives no runs; `app/runs.go`
+  `runsBlocked` (cached 10 min), `AppState.NoRuns`, `errRunHere` in
+  `startSwap`, `errNewRun` in branch, Try a save and `apiSavePlayers`.
+  Page: `runFor`, `runsOk`, `runsIn`, `runsOf`, `canNewRun`,
+  `playersFor`, `pickOrder` (10-state.js); the seat is a person
+  (`seated()` returns `personOf`); Who's playing is a column per person
+  (`pickCol`, `.pk-col`, `.pk-runs-list` scrolls past `--pk-runs-shown`
+  5 and fades), New run there (`np-run`, `newRunRow`). A game's page
+  shows its folder and the drive's free space (`installWhere`,
+  `shortDir` in 72-storage.js, `.gpage-where`); the hero card is now a
+  flex item beside the title, not absolute. Harness `?runs=1|many`
+  (runs in bg3; cs2 has `noRuns`). docs/TESTING.md 64.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

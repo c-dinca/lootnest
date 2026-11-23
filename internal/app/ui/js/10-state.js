@@ -134,7 +134,6 @@
   const pname = (id) => (player(id) || {}).name || "Someone";
   // Runs: a profile can be a run of a person ("Cristian hardcore" of
   // Cristian). It shows under them, with their colour and picture.
-  const MAX_PROFILES = 16;
   const parentOf = (p) => (p && p.of && p.of !== p.id && player(p.of)) || null;
   // Just you: one person on this PC (with or without runs of their own).
   // The words about who's at the PC and playing as someone else go away.
@@ -160,6 +159,23 @@
   }
   const session = (gid) => (S.d.sessions || []).find((s) => s.gameId === gid);
   const hasProfile = (gid, pid) => ((S.d.profiles || {})[gid] || []).includes(pid);
+  // Runs are per game (p.game): a run shows only in its game. An older run
+  // without one shows where it has files (core.RunFor). Competitive games
+  // get no runs (S.d.noRuns, core.CompetitiveGame).
+  const MAX_PEOPLE = 16, MAX_RUNS = 16;
+  const runFor = (p, gid) => !parentOf(p) || (p.game ? p.game === gid : hasProfile(gid, p.id) || S.d.active[gid] === p.id);
+  const runsOk = (gid) => !(S.d.noRuns || {})[gid];
+  const runsIn = (gid) => cfg().players.filter((p) => parentOf(p) && runFor(p, gid));
+  const runsOf = (per, gid) => runsIn(gid).filter((r) => r.of === per.id);
+  const canNewRun = (gid) => runsOk(gid) && runsIn(gid).length < MAX_RUNS;
+  const canNewPerson = () => people().length < MAX_PEOPLE;
+  // Everyone who can play a game: people, each followed by their runs of it.
+  const playersFor = (gid) => grouped(cfg().players.filter((p) => runFor(p, gid)));
+  // The order 1 to 9 picks in Who's playing: the people first, so each has
+  // a number however many runs come before, then their runs, column by column.
+  const pickOrder = (gid) => { const all = playersFor(gid); return [...all.filter((p) => !parentOf(p)), ...all.filter((p) => parentOf(p))]; };
+  // The game a run is for, for words such as "Skip Prologue in RDR2".
+  const runGame = (p) => (p && p.game && game(p.game)) || null;
   const possessive = (n) => (/s$/i.test(n) ? n + "’" : n + "’s");
   // A run is its person's save of its own, so it's said as theirs: Cristian
   // plays, and the files are "Cristian’s Skip Prologue" ones. pperson is

@@ -42,6 +42,9 @@ func (a *App) apiTrySave(gameID, from, locID, src, name string) (string, error) 
 			person = up
 		}
 	}
+	if err := a.errNewRun(g); err != nil {
+		return "", err
+	}
 	src = strings.TrimSpace(src)
 	if src == "" {
 		return "", errors.New("Choose the save to try first.")
@@ -71,7 +74,7 @@ func (a *App) apiTrySave(gameID, from, locID, src, name string) (string, error) 
 			return "", fmt.Errorf("There's already a profile called %s.", name)
 		}
 	}
-	run := core.Player{ID: core.NewID("p"), Name: name, Color: person.Color, Of: person.ID}
+	run := core.Player{ID: core.NewID("p"), Name: name, Color: person.Color, Of: person.ID, Game: g.ID}
 	players := append(append([]core.Player{}, cfg.Players...), run)
 	if err := core.ValidatePlayers(players); err != nil {
 		return "", err

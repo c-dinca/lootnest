@@ -315,6 +315,9 @@ type AppState struct {
 	// LibraryTime: how long each game without profiles was played (Library
 	// key -> seconds), from the session log.
 	LibraryTime map[string]int64 `json:"libraryTime"`
+	// NoRuns: games with profiles that get no runs (game id -> why), the
+	// competitive ones (core.CompetitiveGame).
+	NoRuns map[string]string `json:"noRuns"`
 }
 
 func (a *App) apiState() AppState {
@@ -337,6 +340,7 @@ func (a *App) apiState() AppState {
 	st.PluginPages = a.pluginPages()
 	st.Playtime = core.WithOffsets(a.store.LoadPlaytime(), st.Shelf)
 	st.LibraryTime = a.store.LibraryTime()
+	st.NoRuns = a.noRuns(cfg)
 	st.Avatars, st.Banners = map[string]string{}, map[string]string{}
 	for _, p := range cfg.Players {
 		if p.Avatar {
@@ -442,6 +446,22 @@ func (a *App) apiSavePlayers(players []core.Player) error {
 		}
 	}
 	a.mu.Unlock()
+	// A new run, or one moved to another game, only in a game that has runs.
+	for _, p := range players {
+		if p.Of == "" || p.Game == "" {
+			continue
+		}
+		if was := cfg.Player(p.ID); was != nil && was.Game == p.Game {
+			continue
+		}
+		g := cfg.Game(p.Game)
+		if g == nil {
+			return errors.New("That run's game no longer has profiles.")
+		}
+		if err := a.errNewRun(g); err != nil {
+			return err
+		}
+	}
 
 	cfg.Players = players
 	for i := range cfg.Games {

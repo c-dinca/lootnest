@@ -285,7 +285,7 @@
     const s = g && session(g.id);
     const items = [];
     if (!s) {
-      if (g) cfg().players.forEach((p) => items.push(`<button data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>Play as ${esc(runName(p))}</button>`));
+      if (g) playersFor(g.id).forEach((p) => items.push(`<button data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>Play as ${esc(runName(p))}</button>`));
       else items.push(`<button data-action="play-found" ${attr}>${icon.play}Play</button>`);
     }
     items.push(`<button data-action="open-sheet" ${attr}>Open the game's page</button>`, ...collectionItems(it, host), "<hr>");
@@ -342,7 +342,8 @@
 
   // The seat: who's at the PC, until someone switches or Lootnest quits.
   // Every Play is theirs; "or play as…" and the picker are for anyone else.
-  const seated = () => (S.seat && player(S.seat)) || null;
+  // Who's at the PC is a person: a run is a save of one game, picked there.
+  const seated = () => { const p = S.seat && player(S.seat); return p ? personOf(p) : null; };
   let seatShown = null; // who the seat showed last: a new face pops in
   // The sidebar's speaker shows whether Lootnest makes sounds.
   function renderSound() {
@@ -398,23 +399,22 @@
     const first = m.querySelector('[aria-checked="true"], [aria-current="page"]') || m.querySelector("button:not(:disabled)");
     if (first) first.focus({ preventScroll: true });
   }
-  // The seat's menu: who's here (1 to 9 seat someone), a run and Profiles.
-  // Just you: your profile and its runs, and a run.
+  // The seat's menu: who's here (1 to 9 seat someone) and Profiles. Runs
+  // are per game, so they're picked on the game's page, not here.
   function meMenu(el) {
     const seat = seated(), alone = solo();
     const playing = {};
     (S.d.sessions || []).forEach((s) => { if (s.phase === "playing") playing[s.playerId] = game(s.gameId); });
-    const rows = grouped().map((p, i) => {
-      const on = !!(seat && seat.id === p.id), g = playing[p.id];
-      return `<button class="me-who${parentOf(p) ? " me-run" : ""}${g ? " playing" : ""}" data-action="seat-set" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${on}">${lnAvatar(p)}<span class="grow">${esc(p.name)}${g ? `<small>Playing ${esc(g.name)}</small>` : ""}</span>${on ? GI.tick : i < 9 ? `<kbd>${i + 1}</kbd>` : ""}</button>`;
+    const rows = people().map((p, i) => {
+      const on = !!(seat && seat.id === p.id), g = playing[p.id] || cfg().players.filter((r) => r.of === p.id).map((r) => playing[r.id]).find(Boolean);
+      return `<button class="me-who${g ? " playing" : ""}" data-action="seat-set" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${on}">${lnAvatar(p)}<span class="grow">${esc(p.name)}${g ? `<small>Playing ${esc(g.name)}</small>` : ""}</span>${on ? GI.tick : i < 9 ? `<kbd>${i + 1}</kbd>` : ""}</button>`;
     }).join("");
-    const run = seat && cfg().players.length < MAX_PROFILES ? `<button data-action="add-run" data-player="${esc(personOf(seat).id)}" role="menuitem">${GI.plus}Add a run</button>` : "";
-    const more = run + (alone ? "" : `<button data-action="nav" data-view="players" role="menuitem">${GI.profiles}Profiles</button>`);
+    const more = alone ? "" : `<button data-action="nav" data-view="players" role="menuitem">${GI.profiles}Profiles</button>`;
     toggleMenu(el, `<div class="ctx-title">${alone ? "Playing as" : "Who's at the PC?"}</div><div role="group">${rows}
       ${alone ? "" : `<button data-action="seat-set" data-player="" role="menuitemradio" aria-checked="${!seat}"><span class="grow">Nobody: ask who's playing</span>${!seat ? GI.tick : ""}</button>`}</div>${more ? "<hr>" + more : ""}`);
   }
   function setSeat(pid) {
-    S.seat = pid && player(pid) ? pid : "";
+    S.seat = pid && player(pid) ? personOf(player(pid)).id : "";
     api.setSeat(S.seat).catch(() => {});
     render();
     toast(S.seat ? `${solo() ? "" : `${pname(S.seat)} is at the PC. `}Play starts as ${pname(S.seat)}.` : "Nobody's at the PC. Play asks who's playing.");

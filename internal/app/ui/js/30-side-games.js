@@ -34,7 +34,7 @@
   function sideShowMenu() {
     const sel = $("#side-show");
     if (!sel) return;
-    const ps = cfg().players;
+    const ps = people();
     if (S.sideShow.startsWith("p:") && !player(S.sideShow.slice(2))) S.sideShow = "all";
     const opts = `<option value="all">All games</option><option value="installed">Installed</option><option value="fav">Favourites</option><option value="owned">Not installed</option>`
       + (ps.length ? `<optgroup label="Played by">${ps.map((p) => `<option value="p:${esc(p.id)}">${esc(p.name)}</option>`).join("")}</optgroup>` : "");

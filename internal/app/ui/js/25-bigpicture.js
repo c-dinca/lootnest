@@ -49,7 +49,7 @@
     document.documentElement.classList.add("is-tv");
     if (BP.on) { if (!was) { const el = $("#bp"); if (el) el.innerHTML = ""; } }
     else bpOpen();
-    if (!was && !solo() && cfg().players.length > 1) { BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.choose = null; BP.focus = ""; }
+    if (!was && !solo()) { BP.tab = "profiles"; BP.who = true; BP.detail = null; BP.choose = null; BP.focus = ""; }
     renderBP(true);
   }
   function tvClose() {
