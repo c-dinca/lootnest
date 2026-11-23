@@ -1396,7 +1396,27 @@ Two monitors on the PC, the TV app connected.
 3. Play: the swap screen shows Cristian with the run's label, and
    "Loading Cristian's Skip Prologue files".
 
-## 64. Several PlayStation controllers, and games that know them
+## 64. Runs per game, and where a game is installed
+
+1. With an older run (Skip Prologue, made from a save brought as a mod in
+   Red Dead Redemption 2): after the update, the log says "Runs are per
+   game now", and the run shows only in RDR2's Who's playing, under
+   Cristian, never in Counter-Strike 2's or another game's.
+2. Counter-Strike 2 (or Valorant, League of Legends): Who's playing shows
+   only people, with no Runs list or New run; the game page has no New
+   run, and Manage has no Try a save.
+3. RDR2's Who's playing: each person is a column, their runs as rows
+   under them; 1 to 9 pick the people first, then the runs. With more
+   than five runs the list fades at its foot and scrolls.
+4. New run in a person's column: a name, Make it and play; it asks to
+   start fresh or from a copy, and the run shows only in that game.
+5. The seat menu lists people only; a run picked on a game's page doesn't
+   become who's at the PC.
+6. A game's page: beside the size, the folder it's installed in (a click
+   opens it), and how much is free on that drive; a nearly full drive
+   says so in amber.
+
+## 65. Several PlayStation controllers, and games that know them
 
 With **Show a PlayStation controller to games as an Xbox one** on and
 ViGEmBus on the PC (section 34).
@@ -1423,7 +1443,7 @@ ViGEmBus on the PC (section 34).
 7. The log has no "The requested resource is in use" after a pad is
    plugged in (Lootnest waits for ViGEmBus to have the pad ready).
 
-## 65. Naming controllers, and Vibrate
+## 66. Naming controllers, and Vibrate
 
 1. Settings, Controllers with a DualSense on Bluetooth: **Vibrate**
    makes it buzz for about half a second, and the key says Vibrating
@@ -1441,7 +1461,7 @@ ViGEmBus on the PC (section 34).
    Settings, Controllers, Now says "games see Ana's and Mihai's as Xbox
    controllers, one each".
 
-## 66. Controller batteries and the battery saver
+## 67. Controller batteries and the battery saver
 
 1. A DualSense on USB: Settings, Controllers shows its charge and
    "charging" in green within a few seconds; unplugged and on Bluetooth,

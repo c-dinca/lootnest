@@ -1399,13 +1399,51 @@ option { background: var(--bg-surface); color: var(--fg-1); }
 .ach-ms-grid li.done .ach-ms-icon { color: var(--lamp); }
 .ach-ms-grid li:not(.done) b { color: var(--fg-2); }
 
-/* Runs: a profile that's a run of a person shows under them. */
-.slot.slot-run { width: var(--slot-run-w); padding-top: var(--space-8); }
-.slot.slot-run .name { font-size: var(--text-section); }
-.slot-of { font-size: var(--fs-12); color: var(--fg-2); }
+/* Runs: a run is a save of its own in one game, under its person. In Who's
+   playing, each person is a column: their key, then their runs of this
+   game as rows in their colour, a list that scrolls past five. */
+.slots.pk-people { align-items: flex-start; align-content: safe center; padding-bottom: var(--space-6); }
+.pk-col { display: grid; gap: var(--space-3); width: var(--slot-w); }
+.pk-col > .slot { animation-delay: calc(var(--i) * 30ms); }
+.pk-runs { display: grid; gap: var(--space-2); animation: slot-in var(--dur-3) var(--ease-emph) calc(var(--i) * 30ms + var(--stagger)) both; }
+.pk-runs-head { padding: 0 var(--space-2); font-size: var(--text-meta); font-weight: 650; color: var(--fg-2); }
+.pk-runs-list { display: grid; gap: var(--space-2); max-height: calc(var(--pk-runs-shown) * var(--pk-run-h) + (var(--pk-runs-shown) - 1) * var(--space-2)); overflow-y: auto; overscroll-behavior: contain; padding: var(--focus-width); margin: calc(-1 * var(--focus-width)); scrollbar-width: thin; }
+.pk-run {
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
+  min-height: var(--pk-run-h); padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-key);
+  background: var(--glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  box-shadow: inset 0 0 0 var(--hairline) var(--glass-edge), var(--key-light);
+  color: var(--fg-1); font: inherit; text-align: left; cursor: pointer;
+  transition: transform var(--dur-2) var(--ease-spring), background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.pk-run:hover, .pk-run:focus-visible { background: var(--glass-strong); box-shadow: inset 0 0 0 var(--focus-width) var(--player-fill), var(--key-light); outline: none; }
+.pk-run:focus-visible { box-shadow: inset 0 0 0 var(--focus-width) var(--player-fill), var(--key-light), 0 0 0 var(--focus-width) var(--focus-ring); }
+.pk-run.in { box-shadow: inset 0 0 0 var(--focus-width) var(--player-fill), var(--key-light); }
+.pk-run:not(.pk-run--edit):active, .pk-run.picked { transform: translateY(var(--press)); background: var(--player-fill); color: var(--player-on); box-shadow: var(--key-down); transition-duration: var(--dur-press); }
+.pk-run:not(.pk-run--edit):active :is(.pk-run-text span, .pk-kbd), .pk-run.picked :is(.pk-run-text span, .pk-kbd) { color: var(--player-on); }
+.pk-run-mark { width: var(--space-3); height: var(--space-3); border-radius: var(--radius-round); background: var(--player-fill); box-shadow: 0 0 0 var(--hairline) var(--glass-edge); }
+.pk-run-text { display: grid; min-width: 0; }
+.pk-run-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-body); font-weight: 700; }
+.pk-run-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-meta); color: var(--fg-2); }
+.pk-kbd { display: grid; place-items: center; min-width: var(--patch); height: var(--patch); padding: 0 var(--space-1); border-radius: var(--radius-tag); background: var(--glass-ctl-active); font: 700 var(--fs-12)/1 var(--font-ui); color: var(--fg-2); }
+.pk-run--new { grid-template-columns: auto minmax(0, 1fr); background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 var(--hairline) var(--edge-2); color: var(--fg-2); }
+.pk-run--new:hover, .pk-run--new:focus-visible { color: var(--fg-1); background: var(--glass); }
+.pk-run--new .ln-icon { width: var(--fs-15); height: var(--fs-15); }
+.pk-run--edit { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); cursor: default; background: var(--glass-strong); }
+.pk-run--edit .ln-input { width: 100%; }
+.pk-run--edit .slot-new-actions { display: grid; grid-template-columns: minmax(0, 1fr); margin: 0; }
+.pk-run--edit .slot-new-actions .ln-button--primary { order: -1; }
+/* A list longer than it shows fades at its foot, so it reads as one that scrolls. */
+.pk-runs-list.is-long { -webkit-mask-image: var(--mask-foot); mask-image: var(--mask-foot); padding-bottom: var(--space-8); }
+.pk-run--edit .error-text:empty { display: none; }
+#overlay.still .pk-runs { animation: none; }
+@media (prefers-reduced-motion: reduce) { :root:not(.motion-full) .pk-runs, :root:not(.motion-full) .pk-run { animation: none; transform: none; } }
 .player.player-run { padding-left: var(--space-8); }
 .player-of { width: auto; min-width: 170px; }
 .player-same { font-size: var(--fs-13); color: var(--fg-2); }
+.prun-name { display: grid; min-width: 0; }
+.prun-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prun-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-meta); color: var(--fg-2); }
 
 /* Status and collections on a game's page. */
 .gp-status { flex-wrap: wrap; }
@@ -1565,6 +1603,18 @@ span.stars { display: inline-flex; gap: var(--hairline); margin-left: var(--spac
 .src-dir { display: flex; align-items: center; gap: var(--space-3); justify-content: space-between; }
 .src-n { flex: none; font: 650 var(--fs-18)/var(--lh-tight) var(--font-ui); color: var(--fg-1); }
 .gpage-meta svg { width: var(--fs-14); height: var(--fs-14); margin-right: var(--space-1); vertical-align: -2px; }
+/* Where the game is installed: its folder, which opens on a click. */
+.gpage-meta-link { display: inline-flex; align-items: center; max-width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.gpage-meta-link b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: inherit; }
+.gpage-meta-link:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.gpage-meta-link:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-tag); }
+.gpage-meta-low { color: var(--warning); }
+/* Its separators sit before every item, the first of each line's clipped
+   off the left edge, so a wrapped line doesn't start with one. */
+.gpage-meta.gpage-where { --sep: calc(2 * var(--space-3) + var(--hairline)); margin: var(--space-1) 0 0 calc(-1 * var(--sep)); overflow: hidden; font-weight: 500; color: var(--fg-2); }
+.gpage-where > span::before { content: ""; display: inline-block; width: var(--hairline); height: var(--fs-12); margin: 0 var(--space-3); background: var(--edge-2); vertical-align: -1px; }
+.gpage-where b { font-weight: 650; color: var(--fg-1); }
+.gpage-where .gpage-meta-low { color: var(--warning); }
 
 /* Save points: a timeline, newest first, a dot per point on a line. */
 .pt-make { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin: var(--space-3) 0; }
@@ -3322,10 +3372,12 @@ body:has(> #bp) #overlay .scrim { -webkit-backdrop-filter: var(--blur-scrim); ba
 /* On the art, at its lower right (heroCard in 40-game-page.js): Home's
    glass card laid out as one row, with the time played (Steam's when it
    counts the game), achievements and save points of the page's profile. */
-.gpage-hero > .gp-hero-card { position: absolute; z-index: 1; right: var(--page-gutter); bottom: var(--space-6); display: flex; align-items: stretch; max-width: 58%; padding: 0 var(--space-1); }
+/* The card sits beside the title in the hero's row, so the title's lines
+   (the folder and free space among them) wrap before they reach it. */
+.gpage-hero > .gp-hero-card { position: relative; z-index: 1; order: 2; flex: none; margin: 0 var(--page-gutter) var(--space-6) 0; display: flex; align-items: stretch; max-width: 58%; padding: 0 var(--space-1); }
 .gp-hero-card .home-card-row { padding: var(--space-3) var(--space-4); }
 .gp-hero-card .home-card-row + .home-card-row { border-top: 0; border-left: var(--hairline) solid var(--edge-1); }
-.gpage-hero.has-card .gpage-title { padding-right: 44%; }
+.gpage-hero.has-card .gpage-title { flex: 1; min-width: 0; padding-right: var(--space-6); }
 @media (max-width: 1100px) { .gpage-hero > .gp-hero-card { display: none; } .gpage-hero.has-card .gpage-title { padding-right: var(--page-gutter); } }
 
 /* Whose the page is, beside Play (whoSwitch): a key that opens the list

@@ -253,6 +253,7 @@ func (s *Store) ImportPlayer(ob *OpenedBackup, current *Config) (*Config, Import
 		return k
 	}
 	p.Banner, p.AvatarGame, p.Now = remapKey(p.Banner, remap), remapKey(p.AvatarGame, remap), remapKey(p.Now, remap)
+	p.Game = gameMap[p.Game] // a run's game here, else none
 	for i := range p.Favorites {
 		p.Favorites[i] = remap(p.Favorites[i])
 	}

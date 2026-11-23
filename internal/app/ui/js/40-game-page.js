@@ -334,12 +334,14 @@
   // Whose a game's page is (a game with profiles): the profile picked on
   // the page (S.gameWho), else whoever's at the PC, whose files are in, or
   // who played last. Its Play, achievements, save points and time follow.
+  // A run of another game never stands for this one.
   function pageWho(it) {
-    const g = it.g, ps = cfg().players, rec = (S.d.recent || {})[recentKey(it)];
+    const g = it.g, rec = (S.d.recent || {})[recentKey(it)];
     const s = session(g.id);
     if (s && player(s.playerId)) return player(s.playerId);
-    return player(S.gameWho[g.id]) || seated() || player(S.d.active[g.id]) || (rec && player(rec.player))
-      || ps.find((p) => hasProfile(g.id, p.id)) || ps[0];
+    const here = (id) => { const p = player(id); return p && runFor(p, g.id) ? p : null; };
+    return here(S.gameWho[g.id]) || seated() || here(S.d.active[g.id]) || (rec && here(rec.player))
+      || people().find((p) => hasProfile(g.id, p.id)) || people()[0];
   }
   const whoName = runName;
   // Beside Play: whose the page is, and whether their files are in. It
@@ -348,18 +350,21 @@
   function whoSwitch(it, p, page) {
     const g = it.g, owner = S.d.active[g.id], pt = playtimeOf(it);
     const sub = owner === p.id ? "Files loaded" : owner && player(owner) ? `${whoseOf(owner)} files are in` : lastBy(it, p.id) ? `Played ${ago(lastBy(it, p.id))}` : pt[p.id] ? `${hours(pt[p.id])} played` : "Not played yet";
-    const many = cfg().players.length > 1;
+    const many = playersFor(g.id).length > 1;
     const inner = `${lnAvatar(p, "32")}<span class="gpage-state"><b>${esc(personOf(p).name)}${runTag(p)}</b><span>${esc(sub)}</span></span>`;
     if (!many) return `<div class="gp-who">${inner}</div>`;
     return `<button class="gp-who ln-player" style="--player:${esc(p.color)}" data-action="who-menu" data-game="${esc(g.id)}" aria-haspopup="menu" aria-label="${esc(whoName(p))}, ${esc(sub)}. Change profile" title="Change profile">${inner}<span class="gp-who-caret" aria-hidden="true">${ph("caret-up-down")}</span></button>`;
   }
-  // The list under whoSwitch: every profile, runs under their person.
+  // The list under whoSwitch: every profile, with their runs of this game
+  // under them, and New run for whose the page is.
   function whoMenu(gid) {
     const it = { kind: "game", id: gid, g: game(gid) }, cur = pageWho(it), owner = S.d.active[gid], pt = playtimeOf(it);
-    return `<div class="ctx-title">Whose ${esc(it.g.name)}</div>${grouped(cfg().players).map((p) => {
+    const per = personOf(cur);
+    const add = canNewRun(gid) ? `<hr><button data-action="new-run" data-game="${esc(gid)}" data-person="${esc(per.id)}" role="menuitem">${GI.plus}New run for ${esc(per.name)}</button>` : "";
+    return `<div class="ctx-title">Whose ${esc(it.g.name)}</div>${playersFor(gid).map((p) => {
       const sub = owner === p.id ? "Files loaded" : pt[p.id] ? `${hours(pt[p.id])} played` : hasProfile(gid, p.id) ? "Has saves here" : "First time";
       return `<button class="gp-who-item ln-player${parentOf(p) ? " is-run" : ""}" style="--player:${esc(p.color)}" data-action="who-pick" data-game="${esc(gid)}" data-player="${esc(p.id)}" role="menuitemradio" aria-checked="${p.id === cur.id}">${lnAvatar(p, "24")}<span class="grow"><b>${esc(parentOf(p) ? runLabel(p) + " run" : p.name)}</b><span>${esc(sub)}</span></span>${p.id === cur.id ? GI.tick : ""}</button>`;
-    }).join("")}`;
+    }).join("")}${add}`;
   }
   // On the art, at the right: the time played (Steam's when it counts the
   // game), achievements and save points, as Home's card shows them. For a
@@ -394,7 +399,15 @@
     const rec = (S.d.recent || {})[recentKey(it)];
     const meta = [esc(sourceLabel(it.source, it.f))];
     const installed = page && installOf(groupOf(it) || it); // every copy, as in the Library
-    if (installed) meta.push(`<span class="ln-num">${esc(about(installed))}</span> on this PC`);
+    // A line of its own: the folder it's installed in (this copy), what it
+    // takes, and what's left on that drive.
+    const where = page && installWhere(it), place = [];
+    if (where) place.push(`<button class="gpage-meta-link" data-action="open-game-folder" ${itemAttr(it)} title="Open ${esc(where.dir)}">${GI.folder}<b class="selectable">${esc(shortDir(where.dir))}</b></button>`);
+    if (installed) place.push(`<b class="ln-num">${esc(about(installed))}</b>${where ? "" : " on this PC"}`);
+    if (where && where.free >= 0) {
+      const low = where.size > 0 && where.free / where.size < NEAR_FULL;
+      place.push(`<b class="ln-num${low ? " gpage-meta-low" : ""}">${esc(fmtBytes(where.free))}</b> free on ${esc(where.drive)}${low ? ", almost full" : ""}`);
+    }
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
     const st = steamTime(it);
     let bar, note = "", side, news, head;
@@ -426,9 +439,10 @@
       news = page ? newsHTML(it) : "";
     } else {
       const g = it.g, s = session(g.id), owner = S.d.active[g.id];
-      const ps = cfg().players;
+      const ps = playersFor(g.id);
       const withProfile = ps.filter((p) => hasProfile(g.id, p.id));
-      meta.push(!withProfile.length ? "Profiles on" : withProfile.length === 1 ? "1 profile" : withProfile.length + " profiles");
+      const nRuns = withProfile.filter((p) => parentOf(p)).length, nPeople = withProfile.length - nRuns;
+      meta.push(!withProfile.length ? "Profiles on" : (nPeople === 1 ? "1 profile" : nPeople + " profiles") + (nRuns ? `, ${nRuns === 1 ? "1 run" : nRuns + " runs"}` : ""));
       if (rec && !page) meta.push(esc(lastPlayed(it)));
       // The one Play: the profile picked on the page, else whoever's at the PC,
       // whose files are loaded or who played last (pageWho).
@@ -445,7 +459,8 @@
       }
       const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--secondary" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog">${solo() ? "Play another run" : "Play as someone else"}</button>` : "";
       // A run of whoever's playing: its own saves, from the start or a copy.
-      const newRun = !s && lead && ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
+      // Not in competitive games (S.d.noRuns).
+      const newRun = !s && lead && canNewRun(g.id) ? `<button class="ln-button ln-button--secondary" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
       const pill = page && !s ? profPill(true, `data-action="remove-game" data-game="${esc(g.id)}"`) : "";
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${storyChip(it, page)}${other || newRun || pill ? `<div class="gpage-others">${other}${newRun}${pill}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
@@ -463,7 +478,8 @@
     const card = page ? heroCard(it) : "";
     const top = `<section class="gpage-hero${card ? " has-card" : ""}">${art}${back}${manage}${card}
         <div class="gpage-title"><h1 class="${it.name.length > 22 && !logo ? "long" : ""}">${page ? title : `<button class="gpage-title-link" data-action="open-sheet" ${itemAttr(it)}>${title}</button>`}</h1>
-          <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p></div>
+          <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p>
+          ${place.length ? `<p class="gpage-meta gpage-where">${place.map((m) => `<span>${m}</span>`).join("")}</p>` : ""}</div>
       </section>`;
     if (!page) return { top, bar, note, real };
     const T = gameTabs(it, side, news), tabs = T.list.length > 1;
@@ -595,7 +611,7 @@
       gpRow(`data-action="load-only" data-game="${esc(g.id)}"`, GI.load, "Load someone's files", "", { disabled: s }),
       g.launch.type === "steam" && !g.steamDirect ? gpRow(`data-action="steam-setup" data-game="${esc(g.id)}"`, GI.ask, "Ask who's playing in Steam", "") : "",
       gpRow(`data-action="edit-game" data-game="${esc(g.id)}"`, GI.edit, "Edit game", "", { disabled: s }),
-      gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "", { disabled: s || cfg().players.length >= MAX_PROFILES }),
+      runsOk(g.id) ? gpRow(`data-action="try-save" data-game="${esc(g.id)}"`, GI.flask, "Try a save", "", { disabled: s || !canNewRun(g.id) }) : "",
     ]) + gpGroup("Game", [launchRow(it), detailsRow(it)]) + gpGroup("Cover and art", artRows(it)) + gpGroup("Game files", [
       gpRow(`data-action="open-game-folder" data-game="${esc(g.id)}"`, GI.folder, "Open the game's folder", ""),
       gpRow(`data-action="open-path" data-path="${esc((g.paths[0] || {}).path || "")}"`, GI.save, "Open the save folder", ""),

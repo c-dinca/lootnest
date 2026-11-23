@@ -24,16 +24,6 @@
     "hist-fwd"() { goHist(false); },
     "tabs-more"(el) { moreMenu(el); },
     "me-menu"(el) { meMenu(el); },
-    "add-run"(el) {
-      const per = player(el.dataset.player);
-      if (!per) return;
-      if (!S.players) S.players = JSON.parse(JSON.stringify(cfg().players));
-      const i = S.players.push({ id: "", name: "", color: per.color, of: per.id }) - 1;
-      S.dialog = { kind: "profiles" };
-      render();
-      const inp = $(`[data-field="pname"][data-i="${i}"]`);
-      if (inp) inp.focus();
-    },
     "side-toggle"() { setFold(!S.folded); },
     "bp-open"() { bpOpen(); },
     // The sidebar's speaker: every Lootnest sound on or off, at once.
@@ -153,7 +143,7 @@
       const it = itemFor(el);
       if (!it) return;
       const key = recentKey(it);
-      const who = el.dataset.player && player(el.dataset.player) ? pname(el.dataset.player) : "this profile";
+      const who = el.dataset.player && player(el.dataset.player) ? pperson(el.dataset.player) : "this profile";
       const ok = await confirmDialog({ title: `Start a new run from ${el.dataset.name}?`, body: `A new run of ${who} starts with the saves of that moment: a profile of its own, with its own saves from then on. Everyone else's stay as they are.`, ok: "Start the run" });
       if (!ok) return;
       try { const id = await api.branchSavePoint(key, el.dataset.id, ""); await refresh(); toast(`New run: ${pname(id)}. Choose it when you play.`); } catch (e) { toast(errText(e), "error"); }
@@ -935,24 +925,27 @@
         render();
       } catch (e) { toast(errText(e), "error"); }
     },
-    "np-open"() { S.picker.creating = true; S.picker.newError = ""; renderOverlay(); setTimeout(() => { const i = $("#np-name"); if (i) i.focus(); }, 20); },
+    "np-open"() { S.picker.creating = "person"; S.picker.newName = ""; S.picker.newError = ""; renderOverlay(); setTimeout(() => { const i = $("#np-name"); if (i) i.focus(); }, 20); },
+    "np-run"(el) { S.picker.creating = el.dataset.person; S.picker.newName = ""; S.picker.newError = ""; renderOverlay(); setTimeout(() => { const i = $("#np-name"); if (i) i.focus(); }, 20); },
     "np-cancel"() { S.picker.creating = false; S.picker.newName = ""; S.picker.newError = ""; renderOverlay(); },
     async "np-create"() {
-      const P = S.picker, i = $("#np-name"), name = ((i && i.value) || "").trim(), ofSel = $("#np-of");
+      const P = S.picker, i = $("#np-name"), name = ((i && i.value) || "").trim();
       if (!P) return;
       P.newName = name;
-      P.newOf = (ofSel && ofSel.value) || "";
-      const of = player(P.newOf);
+      // A run of the column's person, for this game; else someone new.
+      const of = P.creating !== "person" ? player(P.creating) : null, gid = P.gameId;
       const fail = (t) => { P.newError = t; renderOverlay(); setTimeout(() => { const x = $("#np-name"); if (x) x.focus(); }, 20); };
       if (!name) return fail("Give it a name.");
-      if (cfg().players.some((p) => p.name.trim().toLowerCase() === name.toLowerCase())) return fail(`There's already a profile called ${name}.`);
+      if (of ? runsOf(of, gid).some((r) => r.name.trim().toLowerCase() === name.toLowerCase()) : people().some((p) => p.name.trim().toLowerCase() === name.toLowerCase()))
+        return fail(of ? `${of.name} has a run called ${name} already.` : `There's already a profile called ${name}.`);
       const used = new Set(cfg().players.map((p) => p.color.toLowerCase()));
-      const list = cfg().players.map((p) => ({ ...p })).concat([{ id: "", name, of: of ? of.id : "", color: of ? of.color : S.d.colors.find((c) => !used.has(c.toLowerCase())) || S.d.colors[cfg().players.length % S.d.colors.length] }]);
+      const list = cfg().players.map((p) => ({ ...p })).concat([of ? { id: "", name, of: of.id, game: gid, color: of.color }
+        : { id: "", name, color: S.d.colors.find((c) => !used.has(c.toLowerCase())) || S.d.colors[cfg().players.length % S.d.colors.length] }]);
       try { await api.savePlayers(list); } catch (e) { return fail(errText(e)); }
       await refresh();
-      const np = cfg().players.find((p) => p.name === name);
+      const np = cfg().players.find((p) => p.name === name && (of ? p.of === of.id && p.game === gid : !p.of));
       if (!S.picker || !np) return;
-      S.picker.creating = false; S.picker.newName = ""; S.picker.newError = ""; S.picker.newOf = "";
+      S.picker.creating = false; S.picker.newName = ""; S.picker.newError = "";
       S.picker.playerId = np.id; S.picker.owner = ""; S.picker.newMode = ""; S.picker.copyFrom = ""; S.picker.from = S.d.active[S.picker.gameId] || "";
       runPick();
     },
@@ -1364,15 +1357,15 @@
       const D = S.dialog;
       if (!D || D.kind !== "newrun" || D.busy) return;
       const per = player(D.person), inp = $("#newrun-name");
-      const name = ((inp && inp.value) || "").trim() || per.name + " hardcore";
-      if (cfg().players.some((p) => p.name.toLowerCase() === name.toLowerCase())) { D.error = "There's a profile with that name already."; D.name = name; renderOverlay(); return; }
+      const name = ((inp && inp.value) || "").trim() || "Hardcore";
+      if (runsOf(per, D.gameId).some((p) => p.name.toLowerCase() === name.toLowerCase())) { D.error = `${per.name} has a run called ${name} already.`; D.name = name; renderOverlay(); return; }
       D.name = (inp && inp.value) || "";
       D.busy = true; renderOverlay();
       try {
-        await api.savePlayers([...cfg().players, { id: "", name, color: per.color, of: per.id }]);
+        await api.savePlayers([...cfg().players, { id: "", name, color: per.color, of: per.id, game: D.gameId }]);
         await refresh();
         if (S.dialog !== D) return;
-        const run = cfg().players.find((p) => p.name === name && p.of === per.id), box = $("#newrun-mods");
+        const run = cfg().players.find((p) => p.name === name && p.of === per.id && p.game === D.gameId), box = $("#newrun-mods");
         if (run && box) await api.modSetOwn("game:" + D.gameId, run.id, box.checked).then(() => loadMods("game:" + D.gameId), (e) => toast(errText(e), "error"));
         S.dialog = null; renderOverlay();
         if (run) actions["play-as"]({ dataset: { game: D.gameId, player: run.id } });
@@ -1595,14 +1588,6 @@
     }
     const f = el.dataset.field;
     if (!f) return;
-    if (f === "pof") {
-      // A run of a person takes their colour; back to "a person" keeps it.
-      const p = S.players[+el.dataset.i], par = S.players.find((x) => x.id === el.value);
-      p.of = par ? par.id : "";
-      if (par) p.color = par.color;
-      render();
-      return;
-    }
     if (f === "pname") { S.players[+el.dataset.i].name = el.value; if (S.dialog && S.dialog.kind === "welcome") welcomeLive(); if (S.dialog && S.dialog.kind === "profiles") { const b = $('[data-action="save-players"]'); if (b) b.disabled = false; } return; }
     const E = S.edit;
     if (!E) return;
@@ -1738,7 +1723,7 @@
         if (b.length) b[(i + (down ? 1 : b.length - 1)) % b.length].focus();
         return;
       }
-      const seat = inMenu && /^[1-9]$/.test(ev.key) && $('#ctx [data-action="seat-set"]') && grouped()[+ev.key - 1];
+      const seat = inMenu && /^[1-9]$/.test(ev.key) && $('#ctx [data-action="seat-set"]') && people()[+ev.key - 1];
       if (seat) { ev.preventDefault(); closeContext(true); setSeat(seat.id); return; }
     }
     // Picking games in the Library: Space picks the focused one, Ctrl+A
@@ -1783,7 +1768,7 @@
       }
       if (ev.key === "Escape") { ev.preventDefault(); if (S.picker.ask) actions["picker-back"](); else { closePicker(); uiSound("close"); } return; }
       if (!S.picker.ask && /^[1-9]$/.test(ev.key)) {
-        const p = grouped()[+ev.key - 1];
+        const p = pickOrder(S.picker.gameId)[+ev.key - 1];
         if (p) { ev.preventDefault(); S.picker.playerId = p.id; S.picker.from = S.d.active[S.picker.gameId] || ""; runPick(); }
       }
       return;

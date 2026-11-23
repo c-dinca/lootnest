@@ -80,7 +80,7 @@
     const btn = (a, label, cls = "ln-button--secondary", off) => `<button class="ln-button ${cls} ln-button--sm" ${a} data-mods="${esc(key)}" data-owner="${esc(o)}" data-name="${esc(it.name)}" ${busy || off ? "disabled" : ""}>${label}</button>`;
     const D = M.deployed, pick = sets ? `<div class="mods-for"><label class="try-field"><span>Mods for</span>
         <select id="mods-for" class="ln-input" data-mods="${esc(key)}" ${busy ? "disabled" : ""}><option value="">The game, for everyone</option>
-          ${grouped().map((p) => `<option value="${esc(p.id)}" ${p.id === o ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
+          ${(key.startsWith("game:") ? playersFor(key.slice(5)) : people()).map((p) => `<option value="${esc(p.id)}" ${p.id === o ? "selected" : ""}>${esc(runName(p))}</option>`).join("")}</select></label>
         ${D ? `<p class="gpage-hint">In the game's folder: ${esc(setName(D.owner))}</p>` : ""}</div>` : "";
     const inherit = ro ? `<p class="gpage-note mods-uses">${GI.copy}<span>Uses ${esc(setName(uses))}</span>${btn('data-action="mods-own"', "Make its own")}</p>` : "";
     const run = R ? `<div class="mover"><div class="meter"><i style="width:${R.total ? Math.round((R.done / R.total) * 100) : 0}%"></i></div>
@@ -122,7 +122,7 @@
   // A saved game brought as a mod goes to Try a save, which puts it in a new
   // run; only games with profiles have runs.
   function saveKey(key, from, owner, name, off) {
-    if (!key.startsWith("game:")) return "";
+    if (!key.startsWith("game:") || !runsOk(key.slice(5))) return "";
     return `<button class="ln-button ln-button--secondary ln-button--sm" data-action="mod-try-save" data-mods="${esc(key)}" data-from="${esc(from)}" data-owner="${esc(owner)}" data-name="${esc(name)}" ${off ? "disabled" : ""}>Try it as a save</button>`;
   }
   function trySaveFrom(key, src, owner, name) {
@@ -145,10 +145,10 @@
     if (D.error) return shell(`${lnInline("error", esc(D.error))}${choose}`);
     if (D.refused) return shell(`${lnInline("error", "Lootnest won't put this mod in", esc(D.refused))}${choose}`);
     if (D.save) {
-      const runs = D.key.startsWith("game:");
+      const runs = D.key.startsWith("game:") && runsOk(D.key.slice(5));
       const said = `<div class="gpage-sub">${gpHead("This is a saved game, not a mod")}
         <p class="gpage-hint">${esc((D.mod && D.mod.name) || "It")} is someone's save. The game reads saves from its save folder, never from its own folder, so as a mod it would do nothing.</p>
-        <p class="gpage-hint">${runs ? "Try it as a save: Lootnest makes a new run with it, and nobody's saves change." : "Turn on profiles for this game to try it in a run of its own, without touching your saves."}</p></div>`;
+        <p class="gpage-hint">${runs ? "Try it as a save: Lootnest makes a new run of this game with it, and nobody's saves change." : D.key.startsWith("game:") ? "This game has no runs, so Lootnest can't try a save in it." : "Turn on profiles for this game to try it in a run of its own, without touching your saves."}</p></div>`;
       return shell(said, `${D.nexus ? "" : btn('data-action="mod-pick" data-kind="mod"', "Choose another", "ln-button--ghost")}<span class="grow"></span>
         ${btn('data-action="mod-cancel"', "Cancel", "ln-button--ghost")}${runs ? btn(`data-action="mod-try-save" data-mods="${esc(D.key)}" data-from="${esc(D.path)}" data-owner="${esc(D.owner)}" data-name="${esc((D.mod && D.mod.name) || "")}"`, "Try it as a save", "ln-button--primary") : ""}`);
     }

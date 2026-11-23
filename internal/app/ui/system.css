@@ -127,6 +127,7 @@
     linear-gradient(0deg, rgb(17 18 23 / 0.9) 0%, rgb(17 18 23 / 0.3) 40%, transparent 62%),
     linear-gradient(180deg, rgb(11 12 16 / 0.45) 0%, transparent 18%);
   --mask-fade: linear-gradient(180deg, #000 50%, transparent 100%);
+  --mask-foot: linear-gradient(to bottom, #000 calc(100% - var(--space-8)), transparent); /* a list that scrolls on */
   --scrim-modal: rgb(8 9 12 / 0.66);   /* behind a dialog */
   --scrim-drawer: rgb(8 9 12 / 0.44);  /* behind a drawer */
   --shadow-overlay: 0 24px 60px -20px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.09);  /* floating layers only */
@@ -233,7 +234,8 @@
   --nx-hero-w: 340px;     /* a mod's picture on its page */
   --nx-search-w: 420px;   /* the search box over Nexus Mods, at most */
   --slot-w: clamp(184px, 14vw, 232px);      /* a profile's key in Who's playing */
-  --slot-run-w: clamp(152px, 11vw, 184px);  /* a run's, beside its person's */
+  --pk-run-h: 48px;       /* a run under its person in Who's playing */
+  --pk-runs-shown: 5;     /* runs shown before that list scrolls */
   --prun-h: 44px;         /* a run in its person's card on Profiles */
   --welcome-w: 440px;     /* the first start's column */
   --switch-w: 44px; --switch-h: 24px; --knob: 16px;

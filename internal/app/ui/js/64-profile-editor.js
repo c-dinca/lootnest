@@ -21,7 +21,7 @@
     const pt = playtimeOf(it), key = recentKey(it);
     const editing = (p) => !!S.hoursEdit && S.hoursEdit.key === key && S.hoursEdit.player === p.id;
     const g = it.g, owner = g && S.d.active[g.id];
-    const ps = cfg().players;
+    const ps = g ? playersFor(g.id) : people();
     if (!ps.length) return "";
     const total = ps.reduce((a, p) => a + (pt[p.id] || 0), 0), st = g && steamTime(it);
     const split = total ? `<div class="gp-split" aria-hidden="true">${ps.filter((p) => pt[p.id]).map((p) => `<span class="ln-player" style="--player:${esc(p.color)};flex:${pt[p.id]}"></span>`).join("")}</div>` : "";
@@ -112,16 +112,18 @@
     };
     const people = cfg().players.filter((p) => !parentOf(p));
     const cards = people.map((p) => {
-      const runs = cfg().players.filter((r) => parentOf(r) === p);
-      return `<div class="pgroup ln-player" style="--player:${esc(p.color)}">${card(p)}${runs.length ? `<ul class="pruns" aria-label="${esc(possessive(p.name))} runs">${runs.map((r) => { const st = playerStats(r); return `<li><button class="prun" data-action="open-player" data-player="${esc(r.id)}">${lnAvatar(r, "32")}<b>${esc(runLabel(r))}</b><span class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</span></button></li>`; }).join("")}</ul>` : ""}</div>`;
+      // Their runs, by game: a run is a save of one game.
+      const gname = (r) => (runGame(r) || {}).name || "";
+      const runs = cfg().players.filter((r) => parentOf(r) === p).sort((a, b) => byName(gname(a), gname(b)) || byName(runLabel(a), runLabel(b)));
+      return `<div class="pgroup ln-player" style="--player:${esc(p.color)}">${card(p)}${runs.length ? `<ul class="pruns" aria-label="${esc(possessive(p.name))} runs">${runs.map((r) => { const st = playerStats(r); return `<li><button class="prun" data-action="open-player" data-player="${esc(r.id)}">${lnAvatar(r, "32")}<span class="prun-name"><b>${esc(runLabel(r))}</b><small>${esc(gname(r) || "Older run, in the games it has saves in")}</small></span><span class="ln-num">${st.total ? esc(hours(st.total)) : "0 h"}</span></button></li>`; }).join("")}</ul>` : ""}</div>`;
     }).join("");
     const n = cfg().players.length, side = n >= 2 && S.playersTab === "compare";
     const tabs = n >= 2 ? `<div class="ln-segmented players-tabs" role="group" aria-label="Show">${[["cards", "Profiles"], ["compare", "Side by side"]].map(([k, l]) => `<button data-action="players-tab" data-k="${k}" aria-pressed="${(side ? "compare" : "cards") === k}">${l}</button>`).join("")}</div>` : "";
     return `<div class="players-page ln-root">
-      <header class="lib-head"><div class="lib-title"><h1>Profiles</h1><span class="lib-meta ln-num">${n} of ${MAX_PROFILES}</span>${tabs}</div>
+      <header class="lib-head"><div class="lib-title"><h1>Profiles</h1><span class="lib-meta ln-num">${people.length} of ${MAX_PEOPLE}</span>${tabs}</div>
         <div class="lib-actions"><button class="ln-button ln-button--ghost" data-action="restore-pick" data-mode="import" title="A profile exported from Lootnest on another PC">Import a profile</button>
           <button class="ln-button ln-button--ghost" data-action="edit-profiles" aria-haspopup="dialog">${GI.edit}Names and colours${dirty ? '<span class="ln-tag">Not saved</span>' : ""}</button>
-          ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="new-profile" aria-haspopup="dialog">${GI.plus}New profile</button>` : ""}</div></header>
+          ${canNewPerson() ? `<button class="ln-button ln-button--secondary" data-action="new-profile" aria-haspopup="dialog">${GI.plus}New profile</button>` : ""}</div></header>
       ${side ? viewCompare() : `<div class="pcards">${cards}</div>`}</div>`;
   }
   // Names and colours, in a panel: every profile at once, saved together.
@@ -129,9 +131,9 @@
     const ps = S.players || (S.players = JSON.parse(JSON.stringify(cfg().players)));
     const dirty = JSON.stringify(ps) !== JSON.stringify(cfg().players);
     return drawer({ label: "Names and colours", title: "Names and colours", wide: true,
-      sub: "A run takes its person's colour.",
+      sub: "A run takes its person's colour, and belongs to one game.",
       body: `<div class="players">${grouped(ps).map((p) => playerRow(p, ps.indexOf(p), ps.length)).join("")}</div>
-        ${ps.length < MAX_PROFILES ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add profile</button>` : `<p class="gpage-hint">Lootnest keeps up to ${MAX_PROFILES} profiles.</p>`}`,
+        ${ps.filter((p) => !p.of).length < MAX_PEOPLE ? `<button class="ln-button ln-button--secondary" data-action="add-player">${GI.plus}Add profile</button>` : `<p class="gpage-hint">Lootnest keeps up to ${MAX_PEOPLE} people.</p>`}`,
       foot: `<span class="error-text players-grow" id="players-error"></span>
         ${dirty ? `<button class="ln-button ln-button--ghost" data-action="reset-players">Discard changes</button>` : ""}
         <button class="ln-button ln-button--primary" data-action="save-players" ${dirty ? "" : "disabled"}>Save profiles</button>` });

@@ -74,8 +74,14 @@
   // (the website), with nobody's name in them.
   const ANON = q.get("anon") === "1";
   if (ANON) PLAYERS.forEach((p, i) => { p.name = "Player " + (i + 1); });
-  // ?runs=1: two runs of the first profile ("Alex hardcore", "Alex 100%").
-  if (q.get("runs") === "1") PLAYERS.push({ id: "r1", name: PLAYERS[0].name + " hardcore", color: "#6C9BD2", of: "p1" }, { id: "r2", name: PLAYERS[0].name + " 100%", color: "#6C9BD2", of: "p1" });
+  // ?runs=1: two runs of the first profile in Baldur's Gate 3 ("Hardcore",
+  // "100%"); ?runs=many: eight there, and two of the second profile's.
+  // Runs are per game (Player.Game): Counter-Strike 2 gets none (noRuns).
+  if (q.get("runs") === "1" || q.get("runs") === "many") PLAYERS.push({ id: "r1", name: "Hardcore", color: "#6C9BD2", of: "p1", game: "bg3" }, { id: "r2", name: "100%", color: "#6C9BD2", of: "p1", game: "bg3" });
+  if (q.get("runs") === "many") {
+    ["Honour mode", "Dark Urge", "Durge evil", "Speedrun", "Co-op with Sam", "Tav bard"].forEach((n, i) => PLAYERS.push({ id: "r" + (i + 3), name: n, color: "#6C9BD2", of: "p1", game: "bg3" }));
+    if (PLAYERS[1] && !PLAYERS[1].of) PLAYERS.push({ id: "rs1", name: "Tactician", color: PLAYERS[1].color, of: PLAYERS[1].id, game: "bg3" }, { id: "rs2", name: "Karlach only", color: PLAYERS[1].color, of: PLAYERS[1].id, game: "bg3" });
+  }
   // ?plugins=1: one plugin of each kind (core/plugins.go), with an older
   // version of the theme kept for Roll back; RetroArch playlists is signed.
   // Install from file then offers its 1.3.0 signed with another key.
@@ -319,6 +325,7 @@
     autostart: true, dataDir: "C:\\Users\\cris\\AppData\\Local\\Lootnest", colors: ["#6C9BD2", "#D9738E", "#5FB49C", "#C9A35F", "#9C88D0", "#D98A5F"],
     sources: { cs2: "steam", ittakestwo: "steam", bg3: "steam" }, recent, playtime: withOffsets(), steamTime, libraryTime, avatars: {}, banners: {}, shelf,
     customArt: customIndex(), themes: THEMES, pluginPages: PLUGIN_PAGES(), pluginMeta: PLUGIN_LIST.some((x) => x.on && x.provides.includes("metadata")),
+    noRuns: { cs2: "a competitive game" },
     activity: { days: { p1: days }, longest: { p1: { key: "game:cs2", seconds: 6 * 3600, at: iso(30 * d) } }, sessions: { p1: 142 } },
   });
 
@@ -1207,7 +1214,7 @@
       const base = PLAYERS.find((p) => p.id === from) || PLAYERS[0];
       const per = PLAYERS.find((p) => p.id === base.of) || base;
       const id = "p" + (Date.now() % 100000);
-      PLAYERS.push({ id, name: name || [...per.name].slice(0, 17).join("").trim() + " trying", color: per.color, of: per.id });
+      PLAYERS.push({ id, name: name || [...per.name].slice(0, 17).join("").trim() + " trying", color: per.color, of: per.id, game: gid });
       (profiles[gid] = profiles[gid] || []).push(id);
       return ok(id);
     },

@@ -20,6 +20,22 @@
   // What a Library entry's install takes, every copy of it together.
   const installOf = (it) => copiesOf(it).reduce((n, c) => n + ((sizeOf(c) || {}).install || 0), 0);
   const about = (n) => "About " + fmtBytes(n);
+  // A folder said short: its drive, then its last two folders
+  // (C:\…\common\Counter-Strike 2); the whole path is in its title.
+  function shortDir(dir) {
+    const sep = dir.includes("\\") ? "\\" : "/", parts = dir.split(/[\\/]+/).filter(Boolean);
+    const lead = dir.startsWith("/") ? "/" : "";
+    return midTrunc(parts.length > 3 ? lead + [parts[0], "…", ...parts.slice(-2)].join(sep) : dir, 48);
+  }
+  // Where a game is installed, and the drive it's on with that drive's free
+  // space, or null while its sizes aren't counted.
+  function installWhere(it) {
+    const z = sizeOf(it), dir = (z && z.dir) || (it.f && it.f.dir) || "";
+    if (!dir) return null;
+    const up = dir.toUpperCase();
+    const d = ((S.sizes || {}).drives || []).filter((x) => x.root && up.startsWith(x.root.toUpperCase())).sort((a, b) => b.root.length - a.root.length)[0];
+    return { dir, drive: d ? d.root.replace(/[\\/]+$/, "") || d.root : "", free: d ? d.free : -1, size: d ? d.size : 0 };
+  }
   const NEAR_FULL = 0.1; // a drive with less than this share free
   const MOVE_ROOM = 1.1; // a move needs the game's size and a tenth more
   // A game in a folder of its own that Lootnest moves itself. Hydra can't

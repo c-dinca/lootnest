@@ -139,6 +139,9 @@ func (a *App) startSwap(req swapRequest) (Need, error) {
 		return Need{}, fmt.Errorf("%s is busy right now; try again in a moment.", g.Name)
 	}
 	a.mu.Unlock()
+	if err := a.errRunHere(cfg, g, req.PlayerID); err != nil {
+		return Need{}, err
+	}
 
 	if g.Launch.Type != "steam" {
 		if err := a.errMoving(g.Launch.Exe); err != nil {
