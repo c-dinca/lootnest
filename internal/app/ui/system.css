@@ -246,10 +246,20 @@
   --mv-dialog-w: 560px;   /* the dialog while a game moves */
   --mv-dot: 4px;          /* the dots flowing from one drive to the other */
   --mv-sheen: rgb(255 255 255 / 0.5);  /* the light sweeping a progress bar */
+  /* On a key in the profile's colour (the play bar's Play): the profile's
+     half a shade darker, its line, and a light on hover. */
+  --on-player-wash:  rgb(0 0 0 / 0.1);
+  --on-player-hover: rgb(0 0 0 / 0.16);
+  --on-player-press: rgb(0 0 0 / 0.22);
+  --on-player-line:  rgb(0 0 0 / 0.16);
+  --on-player-lift:  rgb(255 255 255 / 0.1);
 
   /* Sizes */
   --ctl-sm: 32px; --ctl-md: 40px; --ctl-lg: 48px;
   --ctl-play: 56px; --play-w: 172px;  /* Play in the play bar */
+  --ctl-bar: 52px;       /* every key in a game's play bar */
+  --bar-avatar: 28px;    /* the profile on Play */
+  --meter-w: 64px; --meter-h: 5px;  /* a drive's fill, in a chip */
   --icon-xs: 14px; --icon-sm: 16px; --icon-md: 18px; --icon-lg: 24px; --icon-empty: 40px;
   --ctl-key: 38px;       /* a key */
   --text-play: 17px;     /* the Play key's word */

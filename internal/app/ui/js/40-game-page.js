@@ -344,18 +344,29 @@
       || people().find((p) => hasProfile(g.id, p.id)) || people()[0];
   }
   const whoName = runName;
-  // Beside Play: whose the page is, and whether their files are in. It
-  // opens the list of profiles; picking one loads their files without
-  // starting the game.
-  function whoSwitch(it, p, page) {
-    const g = it.g, owner = S.d.active[g.id], pt = playtimeOf(it);
-    const sub = owner === p.id ? "Files loaded" : owner && player(owner) ? `${whoseOf(owner)} files are in` : lastBy(it, p.id) ? `Played ${ago(lastBy(it, p.id))}` : pt[p.id] ? `${hours(pt[p.id])} played` : "Not played yet";
-    const many = playersFor(g.id).length > 1;
-    const inner = `${lnAvatar(p, "32")}<span class="gpage-state"><b>${esc(personOf(p).name)}${runTag(p)}</b><span>${esc(sub)}</span></span>`;
-    if (!many) return `<div class="gp-who">${inner}</div>`;
-    return `<button class="gp-who ln-player" style="--player:${esc(p.color)}" data-action="who-menu" data-game="${esc(g.id)}" aria-haspopup="menu" aria-label="${esc(whoName(p))}, ${esc(sub)}. Change profile" title="Change profile">${inner}<span class="gp-who-caret" aria-hidden="true">${ph("caret-up-down")}</span></button>`;
+  // The play bar's Play (the owner, 23 Nov 2026: one height for every key):
+  // Play and whose the page is in one key of their colour. Play on the
+  // left; the profile on the right opens whoMenu when there's a choice.
+  function playSplit(it, p) {
+    const g = it.g, per = personOf(p), many = playersFor(g.id).length > 1;
+    const name = `<span class="gp-play-name"><b>${esc(per.name)}</b>${parentOf(p) ? `<small>${esc(runLabel(p))} run</small>` : ""}</span>`;
+    const who = many
+      ? `<button class="gp-play-who" data-action="who-menu" data-game="${esc(g.id)}" aria-haspopup="menu" aria-label="Playing as ${esc(whoName(p))}. Change profile" title="Change profile">${lnAvatar(p, "32")}${name}${ph("caret-down")}</button>`
+      : `<span class="gp-play-who">${lnAvatar(p, "32")}${name}</span>`;
+    return `<div class="gp-play ln-player" style="--player:${esc(p.color)}"><button class="gp-play-go" data-action="play-as" data-game="${esc(g.id)}" data-player="${esc(p.id)}" title="Play as ${esc(runName(p))}">${GI.play}Play</button>${who}</div>`;
   }
-  // The list under whoSwitch: every profile, with their runs of this game
+  // The last part of a folder's path: the game's own folder.
+  const folderName = (dir) => String(dir).replace(/[\\/]+$/, "").split(/[\\/]/).pop() || dir;
+  // Beside it: whether those files are in, with a lamp when they are.
+  function whoState(it, p) {
+    const g = it.g, owner = S.d.active[g.id], pt = playtimeOf(it), last = lastBy(it, p.id);
+    let b, s = "", on = false;
+    if (owner === p.id) { b = `${whoseOf(p.id)} files are loaded`; s = "Ready to play"; on = true; }
+    else if (owner && player(owner)) { b = `${whoseOf(owner)} files are in`; s = `Play loads ${whoseOf(p.id)} files`; }
+    else { b = last ? `Played ${ago(last)}` : "Not played yet"; s = pt[p.id] ? `${hours(pt[p.id])} played` : ""; }
+    return `<div class="gpage-state gp-ready"><b>${esc(b)}</b>${s ? `<span class="gp-lamp${on ? " is-on" : ""}">${esc(s)}</span>` : ""}</div>`;
+  }
+  // The list under Play's profile (playSplit): every profile, with their runs of this game
   // under them, and New run for whose the page is.
   function whoMenu(gid) {
     const it = { kind: "game", id: gid, g: game(gid) }, cur = pageWho(it), owner = S.d.active[gid], pt = playtimeOf(it);
@@ -401,12 +412,19 @@
     const installed = page && installOf(groupOf(it) || it); // every copy, as in the Library
     // A line of its own: the folder it's installed in (this copy), what it
     // takes, and what's left on that drive.
+    // As chips (the owner, 23 Nov 2026: not the whole path): the folder's
+    // name, which opens it and shows the path on hover, then the size, the
+    // drive and how full it is.
     const where = page && installWhere(it), place = [];
-    if (where) place.push(`<button class="gpage-meta-link" data-action="open-game-folder" ${itemAttr(it)} title="Open ${esc(where.dir)}">${GI.folder}<b class="selectable">${esc(shortDir(where.dir))}</b></button>`);
-    if (installed) place.push(`<b class="ln-num">${esc(about(installed))}</b>${where ? "" : " on this PC"}`);
-    if (where && where.free >= 0) {
-      const low = where.size > 0 && where.free / where.size < NEAR_FULL;
-      place.push(`<b class="ln-num${low ? " gpage-meta-low" : ""}">${esc(fmtBytes(where.free))}</b> free on ${esc(where.drive)}${low ? ", almost full" : ""}`);
+    if (where) place.push(`<button class="gp-chip" data-action="open-game-folder" ${itemAttr(it)} title="Open ${esc(where.dir)}">${GI.folder}<b>${esc(folderName(where.dir))}</b></button>`);
+    const known = where && where.free >= 0;
+    if (installed || known) {
+      const low = known && where.size > 0 && where.free / where.size < NEAR_FULL;
+      const used = known && where.size > 0 ? Math.min(1, Math.max(0, 1 - where.free / where.size)) : -1;
+      place.push(`<span class="gp-chip${low ? " is-low" : ""}">${GI.drive}${installed ? `<b class="ln-num">${esc(about(installed))}</b>` : ""}`
+        + `<span>${where && where.drive ? "on " + esc(where.drive) : "on this PC"}</span>`
+        + (used >= 0 ? `<span class="gp-meter" role="img" aria-label="${esc(where.drive)} is ${Math.round(used * 100)}% full"><i style="--used:${used.toFixed(3)}"></i></span>` : "")
+        + (known ? `<span class="gp-free"><b class="ln-num">${esc(fmtBytes(where.free))}</b> free${low ? ", almost full" : ""}</span>` : "") + "</span>");
     }
     if (isOffline(it)) meta.push(`${GI.globe}Kept offline`);
     const st = steamTime(it);
@@ -422,7 +440,7 @@
       const t = totalPlayed(it) || st;
       // A game from more than one store: which copy starts, and the others.
       const grp = page && groupOf(it);
-      const startWith = grp ? `<button class="ln-button ln-button--secondary" data-action="start-with" data-key="${esc(f.key)}" aria-haspopup="menu">${GI.swap}Start with</button>` : "";
+      const startWith = grp ? `<button class="ln-button ln-button--secondary gp-key" data-action="start-with" data-key="${esc(f.key)}" aria-haspopup="menu">${GI.swap}Start with</button>` : "";
       const also = grp ? `<p class="gpage-note">${GI.copy}<span>Also in ${andList(grp.copies.filter((c) => c.id !== it.id).map((c) => `<button class="gpage-link" data-action="open-sheet" data-key="${esc(c.id)}" title="${esc(c.f.dir || "")}">${esc(sourceLabel(c.source, c.f))}</button>`))}.</span></p>` : "";
       // Home: Play, when it was played, and the way to turn profiles on.
       if (!page) bar = `<section class="gpage-bar" aria-label="Play">
@@ -452,15 +470,15 @@
       if (s) {
         play = `<span class="gpage-session ln-player" style="--player:${esc(color(s.playerId))}" role="status">${s.phase === "playing" ? '<span class="ln-mark ln-player" style="--player:' + esc(color(s.playerId)) + '"></span>' : '<span class="ln-spinner" aria-hidden="true"></span>'}${esc(sessionText(s))}</span>`;
         state = `<div class="gpage-state"><b>${esc(whoseOf(s.playerId))} files are loaded</b></div>`
-          + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
+          + (s.phase === "playing" ? `<div class="gpage-others"><button class="ln-button ln-button--secondary gp-key" data-action="close-game" data-game="${esc(g.id)}">${GI.x}Close the game</button></div>` : "");
       } else {
-        play = lead ? playAs(" ln-button--lg") : "";
-        state = lead ? whoSwitch(it, lead, page) : `<div class="gpage-state"><b>Nobody's files yet</b></div>`;
+        play = lead ? playSplit(it, lead) : "";
+        state = lead ? whoState(it, lead) : `<div class="gpage-state"><b>Nobody's files yet</b></div>`;
       }
-      const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--secondary" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog">${solo() ? "Play another run" : "Play as someone else"}</button>` : "";
+      const other = !s && ps.length > 1 ? `<button class="ln-button ln-button--secondary gp-key" data-action="play-pick" data-game="${esc(g.id)}" aria-haspopup="dialog" title="${solo() ? "Play another run" : "Play as someone else"}">${GI.swap}${solo() ? "Another run" : "Someone else"}</button>` : "";
       // A run of whoever's playing: its own saves, from the start or a copy.
       // Not in competitive games (S.d.noRuns).
-      const newRun = !s && lead && canNewRun(g.id) ? `<button class="ln-button ln-button--secondary" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
+      const newRun = !s && lead && canNewRun(g.id) ? `<button class="ln-button ln-button--secondary gp-key" data-action="new-run" data-game="${esc(g.id)}" data-person="${esc(personOf(lead).id)}">${GI.plus}New run</button>` : "";
       const pill = page && !s ? profPill(true, `data-action="remove-game" data-game="${esc(g.id)}"`) : "";
       bar = `<section class="gpage-bar" aria-label="Play">${play}${state}${storyChip(it, page)}${other || newRun || pill ? `<div class="gpage-others">${other}${newRun}${pill}</div>` : ""}${details}</section>`;
       const loaded = s ? s.playerId : player(owner) && owner;
@@ -479,7 +497,7 @@
     const top = `<section class="gpage-hero${card ? " has-card" : ""}">${art}${back}${manage}${card}
         <div class="gpage-title"><h1 class="${it.name.length > 22 && !logo ? "long" : ""}">${page ? title : `<button class="gpage-title-link" data-action="open-sheet" ${itemAttr(it)}>${title}</button>`}</h1>
           <p class="gpage-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p>
-          ${place.length ? `<p class="gpage-meta gpage-where">${place.map((m) => `<span>${m}</span>`).join("")}</p>` : ""}</div>
+          ${place.length ? `<div class="gp-where">${place.join("")}</div>` : ""}</div>
       </section>`;
     if (!page) return { top, bar, note, real };
     const T = gameTabs(it, side, news), tabs = T.list.length > 1;

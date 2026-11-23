@@ -2579,6 +2579,20 @@ These shipped recently, newest last:
   0.5 MB; `page_test.go` fails above `maxPageHTML` (1.2 MB). The harness
   still inlines the script; Linux's window loads it the same way.
   Released as 2.23.1 without asking, since 2.23.0 showed nothing.
+- **Unreleased, the play bar in one height** (the owner, 23 Nov 2026:
+  the full path and keys of different sizes looked bad; of two mocks
+  they chose A). `playSplit(it, p)` (40-game-page.js) is Play and the
+  profile as one split key in `--player` (`.gp-play`, `.gp-play-go`
+  plays as, `.gp-play-who` opens `whoMenu` when the game has more than
+  one profile; `whoSwitch` is gone); `whoState` is the line beside it
+  with a lamp (`.gp-ready`, `.gp-lamp.is-on`). Every key in the bar is
+  `--ctl-bar` 52px (`.gp-key`, `.prof-pill`); "Play as someone else" is
+  **Someone else** (Another run when solo). Under the title, chips
+  (`.gp-where`, `.gp-chip`): the folder's name (`folderName`, the path
+  as its title, opens it) and the size with a drive meter (`.gp-meter`,
+  `--used`, `--meter-w`/`--meter-h`) and the space free, amber when
+  low (`.is-low`). `shortDir` is gone. Tokens `--on-player-*`,
+  `--bar-avatar`.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
