@@ -268,7 +268,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
   (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
-## Where things stand (2.22.0, beta)
+## Where things stand (2.23.0, beta)
 
 These shipped recently, newest last:
 
@@ -2479,7 +2479,7 @@ These shipped recently, newest last:
   (lootnest-tv-webos 1.6.4, lootnest-tv-android 1.0.2, pinned in
   `TVAppPinned`/`AndroidAppPinned` after 2.22.0). Released as 2.22.0 with the run line above, at the
   owner's ask (22 Nov).
-- **Unreleased, the icon at small sizes** (the owner, 23 Nov 2026: the
+- **2.23.0, the icon at small sizes** (the owner, 23 Nov 2026: the
   ring sat in the lines and leaned left in some icons). `mkicon.geometry(up)`
   keeps strokes 1.5 px, 1.1 px between the arcs and 1.8 px between the
   ring and the inner arc's ends (the inner arc narrows, the ring rises);
@@ -2487,7 +2487,7 @@ These shipped recently, newest last:
   both sides are the same pixels; the .ico has 16 to 256 with 30, 36, 60,
   72, 80 and 96. The TV apps keep their 1.6.4 and 1.0.2 icons.
 
-- **Unreleased, runs per game** (the owner, 23 Nov 2026: a run made in
+- **2.23.0, runs per game** (the owner, 23 Nov 2026: a run made in
   RDR2 from a save brought as a mod showed in Counter-Strike 2's Who's
   playing). `Player.Game` is the game a run is for; `ValidatePlayers`
   clears it for people, keeps names apart per person and game
@@ -2508,7 +2508,7 @@ These shipped recently, newest last:
   flex item beside the title, not absolute. Harness `?runs=1|many`
   (runs in bg3; cs2 has `noRuns`). docs/TESTING.md 64.
 
-- **Unreleased, PlayStation pads per player and per game** (the owner,
+- **2.23.0, PlayStation pads per player and per game** (the owner,
   23 Nov 2026: "Controller connected" over and over on Bluetooth; two
   DualSenses in TEKKEN 8 played as one; a game that knows the DualSense
   needs no Xbox translation). `app/padbridge.go`: `runPad` scans every
@@ -2529,7 +2529,7 @@ These shipped recently, newest last:
   Xbox pad while a PlayStation one is there. Harness `?padx=1|2`, shots
   `game-launch-pad`, `settings-controllers-padx`. docs/TESTING.md 65.
 
-- **Unreleased, naming controllers** (the owner, 23 Nov 2026: names for
+- **2.23.0, naming controllers** (the owner, 23 Nov 2026: names for
   pads, and a buzz to tell which is which; of light, rumble and the
   DualSense's speaker they chose rumble, and names only, not tied to
   profiles). `core.Pad.ID` is `PadID(chain)` (padKey lower case: the
@@ -2547,7 +2547,7 @@ These shipped recently, newest last:
   `?pad=ds5,ds5b,xbox&padnames=1&buzz=hold|fail`, shots
   `settings-controllers-names`, `-naming`. docs/TESTING.md 66.
 
-- **Unreleased, controller batteries** (the owner, 23 Nov 2026: battery
+- **2.23.0, controller batteries** (the owner, 23 Nov 2026: battery
   level, a low warning, a battery saver with no vibration or other
   drains, charging and charged). `core/padbattery.go`: `PSBattery`
   (status byte at 53 DualSense USB 0x01, 54 BT 0x31, 30 DualShock 4 USB
@@ -2567,6 +2567,7 @@ These shipped recently, newest last:
   Picture's bar (`.bp-batt`), Big Picture's Settings row `saver`. Harness
   `?batt=1|saver`, shots `settings-controllers-battery`, `-saver`,
   `tv-battery`. docs/TESTING.md 67.
+  The owner asked for 2.23.0 with these five (23 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

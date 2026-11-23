@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.23.0
 
 - **Runs belong to their game.** A run (Skip Prologue) is a save of its own in one game, so it now shows only in that game: Counter-Strike 2's Who's playing no longer offers Cristian's Skip Prologue made for Red Dead Redemption 2. Runs made before this version are tied to the one game they have saves in. Competitive games (Counter-Strike 2, Valorant, League of Legends, Dota 2 and the like, and any game with a kernel anti-cheat) get no runs at all; each person keeps their own profile there as before.
 - **Who's playing, with runs.** Each person is a column: their own profile on top, then their runs of this game as rows in their colour, and **New run** at the end of the list. A long list scrolls inside the column, so many runs never push the others away, and 1 to 9 pick the people first, then the runs. The seat menu lists people only: a run is picked on its game's page.
