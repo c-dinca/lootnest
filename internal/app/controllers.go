@@ -49,6 +49,10 @@ func (a *App) apiControllers() Controllers {
 		devs = append(devs, core.PadDevice(d))
 	}
 	_, vigem := services["ViGEmBus"]
-	return Controllers{Pads: core.Pads(devs, slots, tools, vigem), XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools),
+	pads, names := core.Pads(devs, slots, tools, vigem), a.padNames()
+	for i := range pads {
+		pads[i].Given = names[pads[i].ID]
+	}
+	return Controllers{Pads: pads, XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools),
 		ViGEm: plat.ViGEmPresent(), Bridge: a.padState()}
 }

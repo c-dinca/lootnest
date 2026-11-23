@@ -262,6 +262,10 @@ func GameWindow(proc string) uintptr {
 	return win.GameWindow(proc)
 }
 
+func HIDInstance(path string) string {
+	return win.HIDInstance(path)
+}
+
 func HIDPaths() []string {
 	return win.HIDPaths()
 }
@@ -386,6 +390,10 @@ func OpenPad(path string) (*PadReader, error) {
 	return win.OpenPad(path)
 }
 
+func OpenPadWrite(path string) (*PadWriter, error) {
+	return win.OpenPadWrite(path)
+}
+
 type OverlayShare = win.OverlayShare
 
 func PSButtonIn(product uint16, report []byte) bool {
@@ -401,6 +409,8 @@ func PadDevices() []PadDevice {
 }
 
 type PadReader = win.PadReader
+
+type PadWriter = win.PadWriter
 
 func PerfFreq() int64 {
 	return win.PerfFreq()
@@ -797,6 +807,10 @@ func XInputPads() []XInputPad {
 
 func XInputRead() (XPad, bool) {
 	return win.XInputRead()
+}
+
+func XInputRumble(slot int, strong uint16, weak uint16) error {
+	return win.XInputRumble(slot, strong, weak)
 }
 
 type XPad = win.XPad

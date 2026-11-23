@@ -1422,3 +1422,21 @@ ViGEmBus on the PC (section 34).
    second pad shows it once more.
 7. The log has no "The requested resource is in use" after a pad is
    plugged in (Lootnest waits for ViGEmBus to have the pad ready).
+
+## 65. Naming controllers, and Vibrate
+
+1. Settings, Controllers with a DualSense on Bluetooth: **Vibrate**
+   makes it buzz for about half a second, and the key says Vibrating
+   meanwhile. The same on USB, and with a DualShock 4 on both.
+2. One Xbox controller: Vibrate buzzes it. With two, neither row has the
+   key (Windows doesn't say whose slot is whose).
+3. The pencil: type "Mihai's", Enter. The row shows Mihai's, with
+   DualSense, Bluetooth under it. Escape leaves without saving; an empty
+   name takes it away.
+4. Turn the Bluetooth pad off and on: still Mihai's. Plug a USB pad into
+   another port: its name doesn't follow (shown as a new pad).
+5. After Vibrate over Bluetooth: Big Picture, the Xbox bridge
+   (section 34) and a game started from Lootnest still read the pad.
+6. With two named pads and a game shown them as Xbox controllers,
+   Settings, Controllers, Now says "games see Ana's and Mihai's as Xbox
+   controllers, one each".

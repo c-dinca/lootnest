@@ -11,8 +11,9 @@ import (
 
 // Game controllers as Windows lists them. Only SetupAPI, the device tree
 // and XInput's state: no device is opened, and no HID report is read or
-// written, since that can switch a Bluetooth DualSense into another mode
-// and break games that expect the simple one.
+// written, since that can switch a Bluetooth DualSense into another mode.
+// The one exception is Settings, Controllers' Vibrate key (padbuzz.go),
+// only when it's pressed.
 
 var (
 	cfgmgr32                 = windows.NewLazySystemDLL("cfgmgr32.dll")

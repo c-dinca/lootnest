@@ -326,6 +326,8 @@
   let FPS_ACCESS = ({ ask: "ask", update: "update" })[q.get("fps")] || "ok";
   let FPS_READER = ["reader", "update"].includes(q.get("fps"));
   if (q.get("fps") === "on") settings.fpsCounter = true;
+  // ?padnames=1: the first pad is named.
+  const PAD_NAMES = q.get("padnames") ? { "bthenum\\vid_054c&pid_0ce6\\0": "Mihai's" } : {};
   if (["1", "2"].includes(q.get("padx"))) settings.padAsXbox = true; // ?padx=1|2: PlayStation pads as Xbox ones (2: two DualSenses)
   const fpsStub = () => ({ on: !!settings.fpsCounter, corner: settings.fpsCorner || "tl", access: FPS_ACCESS, reader: FPS_READER, exclusive: q.get("fps") === "exclusive" ? "Elden Ring" : "" });
 
@@ -1283,6 +1285,8 @@
     // ?translators=1, DS4Windows and Steam run, HidHide and ViGEmBus are
     // installed, and DS4Windows has made a virtual Xbox 360 pad. With
     // ?hidhide=0 as well, HidHide isn't there, so games see the copy too.
+    ps_padBuzz: (id) => { setTimeout(() => emit({ type: "padBuzz", id, error: q.get("buzz") === "fail" ? "Windows wouldn't open the controller (another program may hold it for itself)." : undefined }), q.get("buzz") === "hold" ? 1e9 : 600); return ok(null); },
+    ps_padName: (id, name) => { name = String(name || "").trim(); if (name) PAD_NAMES[id] = name; else delete PAD_NAMES[id]; return ok(null); },
     ps_controllers: () => {
       const W = {
         ds5: { name: "DualSense", family: "playstation", vid: 0x054c, pid: 0x0ce6, bus: "bluetooth" },
@@ -1291,10 +1295,14 @@
         switch: { name: "Switch Pro Controller", family: "nintendo", vid: 0x057e, pid: 0x2009, bus: "bluetooth" },
         generic: { name: "USB Gamepad", family: "generic", vid: 0x0079, pid: 0x0006, bus: "usb" },
       };
-      const pads = (q.get("pad") || "").split(",").filter((k) => W[k]).map((k) => ({ xinput: false, slot: 0, virtual: "", madeBy: "", ...W[k] }));
+      // ?pad=ds5,ds5b: two DualSenses; PAD_NAMES are the names given (ps_padName).
+      W.ds5b = { ...W.ds5, bus: "usb" };
+      const pads = (q.get("pad") || "").split(",").filter((k) => W[k]).map((k, i) => ({ xinput: false, slot: 0, virtual: "", madeBy: "", ...W[k],
+        id: `${W[k].bus === "usb" ? "usb" : "bthenum"}\\vid_${W[k].vid.toString(16).padStart(4, "0")}&pid_${W[k].pid.toString(16).padStart(4, "0")}\\${i}`, buzz: W[k].family === "playstation" }));
+      pads.forEach((p) => { p.given = PAD_NAMES[p.id] || ""; });
       if (TRANSLATORS) pads.push({ name: "Xbox 360 controller", family: "xbox", vid: 0x045e, pid: 0x028e, bus: "", xinput: true, slot: 0, virtual: "vigem", madeBy: "DS4Windows" });
       const xinput = pads.filter((p) => p.xinput).map((p, i) => ({ slot: i + 1, kind: "gamepad", wireless: false }));
-      if (xinput.length === 1) pads.find((p) => p.xinput).slot = 1;
+      if (xinput.length === 1) { const x = pads.find((p) => p.xinput); x.slot = 1; x.buzz = true; }
       return ok({ pads, xinput, translators: TRANSLATORS ? [
         { name: "Steam Input", does: "Can translate your pad for the games Steam starts, shortcuts included, so they see an Xbox pad.", running: true, installed: true },
         { name: "DS4Windows", does: "Makes your PlayStation pad look like an Xbox pad to games.", running: true, installed: true },

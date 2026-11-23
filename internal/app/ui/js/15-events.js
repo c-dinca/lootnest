@@ -104,6 +104,11 @@
         if (BP.on && BP.settings) renderBP(false);
         else if (S.view === "settings" && !S.dialog) render();
         break;
+      case "padBuzz": // a controller's vibration is done (app/padbuzz.go)
+        if (S.padBuzz === ev.id) S.padBuzz = "";
+        if (ev.error) toast(ev.error, "error");
+        if (S.view === "settings" && S.setTab === "controllers") render();
+        break;
       case "padFeed": // the controller as Go reads it, while the page may not (app/padfeed.go)
         padFeed(ev);
         break;

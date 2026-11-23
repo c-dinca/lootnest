@@ -19,7 +19,21 @@
     const v = PADS[fam][b];
     return `<span class="ctl-g ctl-g--${b.toLowerCase()}">${PAD_SHAPES[v] ? gsvg(PAD_SHAPES[v]) : esc(v)}</span>`;
   }).join("")}</span>`;
-  const ctlRow = (fam, name, meta, note) => `<div class="bk-row ctl-pad">${padFaces(fam)}<div><b>${esc(name)}</b>${meta.length ? `<p>${meta.map(esc).join(", ")}</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}</div></div>`;
+  const ctlRow = (fam, name, meta, note, keys = "", title = "") => `<div class="bk-row ctl-pad">${padFaces(fam)}<div>${title || `<b>${esc(name)}</b>`}${meta.length ? `<p>${meta.map(esc).join(", ")}</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}</div>${keys ? `<span class="ctl-keys">${keys}</span>` : ""}</div>`;
+  // A real pad's own name (Config.PadNames by Pad.ID), and a key that makes
+  // it vibrate so it's clear which one is being named (app/padbuzz.go).
+  // S.padNaming is the pad whose name is being typed, S.padBuzz the one
+  // buzzing now.
+  function ctlKeys(p) {
+    if (p.virtual || !p.id) return "";
+    const id = esc(p.id), buzzing = S.padBuzz === p.id;
+    const buzz = p.buzz ? `<button class="ln-button ln-button--secondary ln-button--sm" data-action="pad-buzz" data-id="${id}"${buzzing ? " disabled" : ""}>${ph("vibrate")}<span>${buzzing ? "Vibrating" : "Vibrate"}</span></button>` : "";
+    if (S.padNaming === p.id) return `${buzz}<button class="ln-button ln-button--primary ln-button--sm" data-action="pad-name-save" data-id="${id}">Save</button>`;
+    return `${buzz}<button class="ln-button ln-button--ghost ln-button--sm ln-button--icon" data-action="pad-name" data-id="${id}" aria-label="Name this controller" title="Name this controller">${ph("pencil-simple")}</button>`;
+  }
+  const padTitle = (p) => S.padNaming === p.id
+    ? `<input class="ln-input ctl-name-in" id="ctl-name-in" type="text" maxlength="32" value="${esc(p.given || "")}" placeholder="Such as Mihai's" data-id="${esc(p.id)}" aria-label="A name for this controller">`
+    : "";
   const BUS = { usb: "USB", bluetooth: "Bluetooth" };
   const FAMILY = { xbox: "Xbox buttons", playstation: "PlayStation buttons", nintendo: "Nintendo buttons", generic: "Buttons by position" };
 
@@ -28,11 +42,12 @@
     const C = S.ctl;
     if (!C) return lnInline("", "Asking Windows about your controllers");
     const web = padsNow(), copies = C.pads.some((p) => p.virtual);
-    const mine = C.pads.map((p) => ctlRow(p.family, p.name, [
+    const mine = C.pads.map((p) => ctlRow(p.family, p.given || p.name, [
+      p.given || S.padNaming === p.id ? p.name : "",
       p.virtual ? `Virtual, made by ${p.madeBy || "an app on this PC"}` : "",
       BUS[p.bus] || "",
       p.slot ? `Xbox-style (XInput) slot ${p.slot}` : p.xinput ? "Xbox-style (XInput)" : "",
-    ].filter(Boolean)));
+    ].filter(Boolean), "", ctlKeys(p), padTitle(p)));
     const slots = C.xinput.filter((x) => !C.pads.some((p) => p.slot === x.slot));
     if (slots.length) mine.push(setRow("Xbox-style (XInput) slots in use", slots.map((x) => `Slot ${x.slot}: ${x.wireless ? "wireless " : ""}${esc(x.kind)}`).join(", ")));
     // The name Windows gave the same pad, so the two columns agree.

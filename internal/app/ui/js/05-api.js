@@ -228,6 +228,8 @@
     saveLaunchOptions: (key, args, o) => call("ps_saveLaunchOptions", key, args, o),
     runningApps: () => call("ps_runningApps"),
     controllers: () => call("ps_controllers"),
+    padBuzz: (id) => call("ps_padBuzz", id),
+    padName: (id, name) => call("ps_padName", id, name),
     steamProperties: (appId) => call("ps_steamProperties", appId),
     playniteFind: () => call("ps_playniteFind"),
     playnitePreview: (dir, player) => call("ps_playnitePreview", dir, player),

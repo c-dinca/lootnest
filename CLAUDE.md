@@ -2501,6 +2501,24 @@ These shipped recently, newest last:
   Xbox pad while a PlayStation one is there. Harness `?padx=1|2`, shots
   `game-launch-pad`, `settings-controllers-padx`. docs/TESTING.md 64.
 
+- **Unreleased, naming controllers** (the owner, 23 Nov 2026: names for
+  pads, and a buzz to tell which is which; of light, rumble and the
+  DualSense's speaker they chose rumble, and names only, not tied to
+  profiles). `core.Pad.ID` is `PadID(chain)` (padKey lower case: the
+  BTHENUM or USB device), `Given`, `Buzz` (a real Sony pad, or the one
+  XInput pad whose slot is known). `Config.PadNames` (`SetPadName`,
+  `CleanPadName`, 32 runes, 64 pads); `ps_padName`, `ps_padBuzz` (event
+  `padBuzz`). `core.PSRumble` builds the motor report (DualSense USB
+  0x02 / BT 0x31 with seq and CRC, DualShock 4 USB 0x05 / BT 0x11; only
+  the motor flags; buffer as long as `HidP_GetCaps` says, CRC at 74).
+  `win/padbuzz.go`: `HIDInstance` (interface path to instance id),
+  `OpenPadWrite`/`PadWriter`, `XInputRumble`. Settings, Controllers rows
+  (`ctlKeys`, `padTitle`, `S.padNaming`, `S.padBuzz`, actions `pad-buzz`,
+  `pad-name`, `pad-name-save`); the bridge's note names fed pads
+  (`fedNames`, `padNameOfPath`, `andList`). Icon `vibrate`. Harness
+  `?pad=ds5,ds5b,xbox&padnames=1&buzz=hold|fail`, shots
+  `settings-controllers-names`, `-naming`. docs/TESTING.md 65.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

@@ -322,7 +322,7 @@ func (a *App) runPad(b *padBridge) {
 			feeding[p.path] = f
 			go a.feedPad(f, x, back)
 		}
-		a.padSay(padNoteOf(feeding, present, b, a))
+		a.padSay(padNoteOf(feeding, present, b, a, a.fedNames(feeding)))
 	}
 	scan()
 	tick := time.NewTicker(padScan)
@@ -353,12 +353,17 @@ func (a *App) runPad(b *padBridge) {
 }
 
 // padNoteOf says what the pads are doing, for the log and Settings.
-func padNoteOf(feeding map[string]*padFeeder, present []psPad, b *padBridge, a *App) string {
+func padNoteOf(feeding map[string]*padFeeder, present []psPad, b *padBridge, a *App, named map[string]string) string {
 	if len(present) == 0 {
 		return "no PlayStation controller is connected"
 	}
 	ds, ds4 := 0, 0
-	for _, f := range feeding {
+	var given []string
+	for path, f := range feeding {
+		if n := named[path]; n != "" {
+			given = append(given, n)
+			continue
+		}
 		if f.pad.dualsense {
 			ds++
 		} else {
@@ -368,13 +373,14 @@ func padNoteOf(feeding map[string]*padFeeder, present []psPad, b *padBridge, a *
 	a.mu.Lock()
 	kept := b.kept
 	a.mu.Unlock()
-	if ds+ds4 == 0 {
+	sort.Strings(given)
+	if ds+ds4+len(given) == 0 {
 		if kept != "" {
 			return kept + " knows PlayStation controllers itself, so they're left as they are"
 		}
 		return "your PlayStation controllers are left as they are"
 	}
-	var parts []string
+	parts := given
 	for _, c := range []struct {
 		n    int
 		name string
@@ -386,10 +392,35 @@ func padNoteOf(feeding map[string]*padFeeder, present []psPad, b *padBridge, a *
 			parts = append(parts, fmt.Sprintf("your %d %ss", c.n, c.name))
 		}
 	}
-	if ds+ds4 == 1 {
+	if ds+ds4+len(given) == 1 {
 		return "games see " + strings.Join(parts, " and ") + " as an Xbox controller"
 	}
-	return "games see " + strings.Join(parts, " and ") + " as Xbox controllers, one each"
+	return "games see " + andList(parts) + " as Xbox controllers, one each"
+}
+
+// andList joins names as a sentence does: "a", "a and b", "a, b and c".
+func andList(parts []string) string {
+	if len(parts) < 2 {
+		return strings.Join(parts, "")
+	}
+	return strings.Join(parts[:len(parts)-1], ", ") + " and " + parts[len(parts)-1]
+}
+
+// fedNames are the names given to the pads being fed, by HID path; asked
+// only when some pad has a name.
+func (a *App) fedNames(feeding map[string]*padFeeder) map[string]string {
+	names := a.padNames()
+	if len(names) == 0 || len(feeding) == 0 {
+		return nil
+	}
+	devs := plat.PadDevices()
+	out := map[string]string{}
+	for path := range feeding {
+		if n := padNameOfPath(names, devs, path); n != "" {
+			out[path] = n
+		}
+	}
+	return out
 }
 
 // feedPad reads one PlayStation pad and feeds its virtual pad until the pad

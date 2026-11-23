@@ -280,6 +280,9 @@ type Config struct {
 	// TagOrder: the collections in the user's order, those with no games
 	// yet included. Favourites is always first and isn't listed (tags.go).
 	TagOrder []string `json:"tagOrder,omitempty"`
+	// PadNames are the names the user gave controllers, by Pad.ID
+	// (core/padbuzz.go).
+	PadNames map[string]string `json:"padNames,omitempty"`
 	// AddedGames: games the user added to the Library by hand ("Add game"),
 	// kept even when a scan doesn't find them.
 	AddedGames []FoundGame `json:"addedGames,omitempty"`
