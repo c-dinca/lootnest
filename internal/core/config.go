@@ -247,6 +247,12 @@ type Settings struct {
 	// pad and feeds a virtual Xbox 360 pad through ViGEmBus, when that
 	// driver is already on the PC (app/padbridge.go). Off unless turned on.
 	PadAsXbox bool `json:"padAsXbox,omitempty"`
+	// PadBatteryOff stops Lootnest reading controllers' batteries (and
+	// asking a Bluetooth PlayStation pad for the full reports that carry
+	// it). PadSaver is the battery saver: "" off, "low" for a pad while it
+	// runs low, "on" always (core/padbattery.go).
+	PadBatteryOff bool   `json:"padBatteryOff,omitempty"`
+	PadSaver      string `json:"padSaver,omitempty"`
 	// TVQuick has the streaming engine make the TV's display at twice the
 	// stream's frame rate (Apollo's double_refreshrate), so a game waits
 	// half as long for the display before a frame is sent. Off unless
@@ -285,6 +291,9 @@ type Config struct {
 	// TagOrder: the collections in the user's order, those with no games
 	// yet included. Favourites is always first and isn't listed (tags.go).
 	TagOrder []string `json:"tagOrder,omitempty"`
+	// PadNames are the names the user gave controllers, by Pad.ID
+	// (core/padbuzz.go).
+	PadNames map[string]string `json:"padNames,omitempty"`
 	// AddedGames: games the user added to the Library by hand ("Add game"),
 	// kept even when a scan doesn't find them.
 	AddedGames []FoundGame `json:"addedGames,omitempty"`

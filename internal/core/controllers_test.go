@@ -78,6 +78,12 @@ func TestPads(t *testing.T) {
 	}
 	tools := FindControllerTools(map[string]bool{"ds4windows": true}, nil, map[string]bool{"ViGEmBus": true})
 	got := Pads(devs, []XInputSlot{{Slot: 2, Kind: "gamepad"}}, tools, true)
+	if !got[0].Buzz || got[2].Buzz || got[0].ID == "" {
+		t.Fatalf("Buzz and ID: %+v", got)
+	}
+	for i := range got { // ID and Buzz: TestPadsIDAndBuzz
+		got[i].ID, got[i].Buzz = "", false
+	}
 	want := []Pad{
 		{Name: "DualSense", Family: "playstation", VID: 0x054C, PID: 0x0CE6, Bus: "bluetooth"},
 		{Name: "Steam Deck controls", Family: "xbox", VID: 0x28DE, PID: 0x1205, Bus: "usb"},

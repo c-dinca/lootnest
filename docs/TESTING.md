@@ -804,8 +804,8 @@ On the LG TV, with section 27 done on the PC.
    within a few seconds.
 5. Close the game: Settings, Controllers no longer lists Lootnest's Xbox
    360 controller under On this PC.
-6. A game that knows the DualSense itself, with **Leave a PlayStation
-   controller as it is** on in its Launch options: only its own pad.
+6. A game that knows the DualSense itself, with Launch options,
+   PlayStation controllers, **Leave them as they are**: only its own pad.
 7. Without ViGEmBus: the switch says the driver isn't on this PC, and
    nothing else changes.
 8. The PS button in Big Picture still opens Lootnest's menu over the
@@ -1415,3 +1415,72 @@ Two monitors on the PC, the TV app connected.
 6. A game's page: beside the size, the folder it's installed in (a click
    opens it), and how much is free on that drive; a nearly full drive
    says so in amber.
+
+## 65. Several PlayStation controllers, and games that know them
+
+With **Show a PlayStation controller to games as an Xbox one** on and
+ViGEmBus on the PC (section 34).
+
+1. Two DualSenses (USB or Bluetooth) and a game outside Steam that only
+   knows Xbox controllers, started from Lootnest: Settings, Controllers,
+   Now says "games see your 2 DualSenses as Xbox controllers, one each";
+   in the game each pad moves its own player. Windows' Game Controllers
+   (joy.cpl) lists two Xbox 360 controllers.
+2. TEKKEN 8 (Steam lists DualSense support) started from Lootnest with
+   two DualSenses: no Xbox 360 controller appears in joy.cpl, Show recent
+   activity says "TEKKEN 8 knows PlayStation controllers itself (Steam
+   says so)", and each pad is its own player with PlayStation signs.
+3. The same game with Launch options, PlayStation controllers, **Show
+   them as Xbox controllers**: two Xbox 360 controllers again.
+4. A Bluetooth pad turned off and on while a game runs: it gets the same
+   player back (its Xbox controller stays 30 seconds for it).
+5. A game closed and another started within 20 seconds: the Xbox
+   controllers aren't unplugged and plugged in between.
+6. A DualSense on Bluetooth with Lootnest's window open: "Controller
+   connected" shows once. Turning the pad off and on, hiding and showing
+   the window, or starting and closing a game doesn't show it again. A
+   second pad shows it once more.
+7. The log has no "The requested resource is in use" after a pad is
+   plugged in (Lootnest waits for ViGEmBus to have the pad ready).
+
+## 66. Naming controllers, and Vibrate
+
+1. Settings, Controllers with a DualSense on Bluetooth: **Vibrate**
+   makes it buzz for about half a second, and the key says Vibrating
+   meanwhile. The same on USB, and with a DualShock 4 on both.
+2. One Xbox controller: Vibrate buzzes it. With two, neither row has the
+   key (Windows doesn't say whose slot is whose).
+3. The pencil: type "Mihai's", Enter. The row shows Mihai's, with
+   DualSense, Bluetooth under it. Escape leaves without saving; an empty
+   name takes it away.
+4. Turn the Bluetooth pad off and on: still Mihai's. Plug a USB pad into
+   another port: its name doesn't follow (shown as a new pad).
+5. After Vibrate over Bluetooth: Big Picture, the Xbox bridge
+   (section 34) and a game started from Lootnest still read the pad.
+6. With two named pads and a game shown them as Xbox controllers,
+   Settings, Controllers, Now says "games see Ana's and Mihai's as Xbox
+   controllers, one each".
+
+## 67. Controller batteries and the battery saver
+
+1. A DualSense on USB: Settings, Controllers shows its charge and
+   "charging" in green within a few seconds; unplugged and on Bluetooth,
+   the charge alone. The same with a DualShock 4.
+2. On Bluetooth, the first look asks the pad for its full reports
+   (the log says so if it didn't answer): the charge appears within 30
+   seconds. A game, Steam and Big Picture still read the pad afterwards.
+3. An Xbox controller on batteries: Low, Half or Full; on its cable,
+   nothing.
+4. Let a pad run down: at 20% a note says it's running low, at 10% that
+   it's almost empty; over a game, as a note over it. Plug it in: no
+   more notes; when full, "is charged".
+5. Big Picture's bar shows an icon per controller, with the charge when
+   it's low or charging, in red when low.
+6. Battery saver, Always: the light bar and player lights go out, and a
+   DualSense doesn't vibrate in a game (try one with rumble) or from
+   Vibrate (the key is gone from its row). Off: the light bar is blue
+   again and the game's vibration works.
+7. Battery saver, When a controller runs low: nothing changes at 25%;
+   at 20% it goes on (Saver beside the charge); plugged in, it goes off.
+8. Show how charged controllers are, off: no charge, no notes, and a
+   Bluetooth pad turned off and on stays on its short reports.

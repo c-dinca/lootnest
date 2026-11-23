@@ -30,6 +30,9 @@ type Pad struct {
 	Slot    int    `json:"slot"`    // its XInput slot, 1 to 4, when it can be told
 	Virtual string `json:"virtual"` // vigem, vjoy, steam or root; "" for a real pad
 	MadeBy  string `json:"madeBy"`  // the app that made a virtual pad, when known
+	ID      string `json:"id"`      // the pad's device as Windows knows it (PadID), for its name
+	Given   string `json:"given"`   // the name the user gave it (Config.PadNames)
+	Buzz    bool   `json:"buzz"`    // Lootnest can make it vibrate (a PlayStation pad, or the one Xbox-style pad)
 }
 
 // XInputSlot is one of Windows' four Xbox-style slots that has a pad in it.
@@ -186,6 +189,10 @@ func padKey(chain []string) string {
 	return ""
 }
 
+// PadID is a pad's id for its name: its USB or Bluetooth device's
+// instance id (padKey), lower case.
+func PadID(chain []string) string { return strings.ToLower(padKey(chain)) }
+
 // Pads turns the devices Windows lists into the controllers Settings shows:
 // joysticks, gamepads and known pads whatever their usage, one row per
 // physical pad. vigem says the ViGEmBus driver is installed.
@@ -226,7 +233,9 @@ func Pads(devs []PadDevice, slots []XInputSlot, tools []ControllerTool, vigem bo
 			bus = padBus(d.Chain)
 		}
 		at[key] = len(out)
-		out = append(out, Pad{Name: name, Family: fam, VID: vid, PID: pid, Bus: bus, XInput: xin, Virtual: kind, MadeBy: padMaker(kind, tools)})
+		_, ps := PSPad(pid)
+		out = append(out, Pad{Name: name, Family: fam, VID: vid, PID: pid, Bus: bus, XInput: xin, Virtual: kind, MadeBy: padMaker(kind, tools),
+			ID: strings.ToLower(key), Buzz: kind == "" && vid == SonyVendor && ps})
 	}
 	// Windows doesn't say which slot is whose; with one of each, it's that one.
 	xi := -1
@@ -241,6 +250,7 @@ func Pads(devs []PadDevice, slots []XInputSlot, tools []ControllerTool, vigem bo
 	}
 	if xi >= 0 && len(slots) == 1 {
 		out[xi].Slot = slots[0].Slot
+		out[xi].Buzz = out[xi].Buzz || out[xi].Virtual == ""
 	}
 	return out
 }

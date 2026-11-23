@@ -230,6 +230,10 @@ func GameWindow(proc string) (r0 uintptr) {
 	return
 }
 
+func HIDInstance(path string) (r0 string) {
+	return
+}
+
 func HIDPaths() (r0 []string) {
 	return
 }
@@ -340,6 +344,11 @@ func OpenPad(path string) (r0 *PadReader, err error) {
 	return
 }
 
+func OpenPadWrite(path string) (r0 *PadWriter, err error) {
+	err = ErrUnsupported
+	return
+}
+
 type OverlayShare struct {
 }
 
@@ -388,6 +397,25 @@ func (*PadReader) Read(buf []byte) (r0 int, err error) {
 }
 
 func (*PadReader) Close() {}
+
+type PadWriter struct {
+}
+
+func (*PadWriter) Size() (r0 int) {
+	return
+}
+
+func (*PadWriter) Write(report []byte) (err error) {
+	err = ErrUnsupported
+	return
+}
+
+func (*PadWriter) Feature(id byte) (err error) {
+	err = ErrUnsupported
+	return
+}
+
+func (*PadWriter) Close() {}
 
 func PerfFreq() (r0 int64) {
 	return
@@ -723,6 +751,10 @@ func WorkAreaOf(area [4]int) (r0 [4]int) {
 	return
 }
 
+func XInputBattery(slot int) (r0 byte, r1 byte, r2 bool) {
+	return
+}
+
 func XInputGuideDown() (r0 bool) {
 	return
 }
@@ -738,6 +770,11 @@ func XInputPads() (r0 []XInputPad) {
 }
 
 func XInputRead() (r0 XPad, r1 bool) {
+	return
+}
+
+func XInputRumble(slot int, strong uint16, weak uint16) (err error) {
+	err = ErrUnsupported
 	return
 }
 

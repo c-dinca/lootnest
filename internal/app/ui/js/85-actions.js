@@ -835,6 +835,20 @@
       catch (e) { toast(errText(e), "error"); }
       render();
     },
+    async "pad-buzz"(el) {
+      S.padBuzz = el.dataset.id; render();
+      try { await api.padBuzz(el.dataset.id); } catch (e) { S.padBuzz = ""; toast(errText(e), "error"); render(); }
+    },
+    "pad-name"(el) { S.padNaming = el.dataset.id; render(); setTimeout(() => { const i = $("#ctl-name-in"); if (i) { i.focus(); i.select(); } }, 30); },
+    async "pad-name-save"(el) {
+      const id = el.dataset.id, i = $("#ctl-name-in");
+      try {
+        await api.padName(id, i ? i.value : "");
+        S.padNaming = "";
+        S.ctl = await api.controllers();
+      } catch (e) { toast(errText(e), "error"); }
+      render();
+    },
     "sv-sort"(el) { S.svSort = el.dataset.col; render(); },
     "set-open"(el) { if (S.view === "settings") actions["set-tab"](el); else { S.setTab = el.dataset.tab; setPref("setTab", S.setTab); actions.nav({ dataset: { view: "settings" } }); } },
     async "updates-yes"() {
@@ -1527,7 +1541,7 @@
       else if (l === "force") O.closeApps[+el.dataset.i].force = el.checked;
       else if (l === "admin") O.runAsAdmin = el.checked;
       else if (l === "reopen") O.reopenClosed = el.checked;
-      else if (l === "keepPad") O.keepPad = el.checked;
+      else if (l === "padMode") { O.keepPad = el.value === "keep"; O.xboxPad = el.value === "xbox"; }
       return;
     }
     if (S.dialog && S.dialog.kind === "details-edit" && el.id.startsWith("de-")) { (S.dialog.vals ||= {})[el.id] = el.value; return; }
@@ -1650,6 +1664,8 @@
     }
     if (ev.key === "Escape" && ev.target.id === "side-q" && ev.target.value) { ev.preventDefault(); ev.target.value = ""; S.sideQ = ""; renderSideGames(); return; }
     if (ev.key === "Enter" && ev.target.id === "newrun-name") { ev.preventDefault(); actions["new-run-go"](); return; }
+    if (ev.target.id === "ctl-name-in" && ev.key === "Enter") { ev.preventDefault(); actions["pad-name-save"](ev.target); return; }
+    if (ev.target.id === "ctl-name-in" && ev.key === "Escape") { ev.preventDefault(); S.padNaming = ""; render(); return; }
     if (ev.target.id === "sv-name-in" && ev.key === "Enter") { ev.preventDefault(); actions["sv-name-save"](ev.target); return; }
     if (ev.target.id === "sv-name-in" && ev.key === "Escape") { ev.preventDefault(); S.svNaming = ""; render(); return; }
     // Enter in a save point's name: make it, or save the new name.

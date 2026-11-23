@@ -28,7 +28,8 @@ speaker-high speaker-slash thumbs-up thumbs-down chat-circle gauge cpu graphics-
 arrow-square-out steam-logo github-logo cube lightning seal-check calendar-blank
 arrows-out share-network export clipboard-text image-square x-circle
 spotify-logo youtube-logo popcorn discord-logo
-caret-up-down quotes crown-simple ranking
+caret-up-down quotes crown-simple ranking vibrate
+battery-full battery-high battery-medium battery-low battery-empty battery-charging battery-warning
 """.split()
 # Weights besides regular: fill for whatever can be current or on, duotone
 # for the big icon of an empty page.

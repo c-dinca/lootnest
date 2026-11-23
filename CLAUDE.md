@@ -2508,6 +2508,66 @@ These shipped recently, newest last:
   flex item beside the title, not absolute. Harness `?runs=1|many`
   (runs in bg3; cs2 has `noRuns`). docs/TESTING.md 64.
 
+- **Unreleased, PlayStation pads per player and per game** (the owner,
+  23 Nov 2026: "Controller connected" over and over on Bluetooth; two
+  DualSenses in TEKKEN 8 played as one; a game that knows the DualSense
+  needs no Xbox translation). `app/padbridge.go`: `runPad` scans every
+  2 s (`psPadsPresent`, sorted, deduped paths) and gives each PlayStation
+  pad its own virtual pad (`feedPad`, `padFeeder`, back over a channel);
+  a pad that goes leaves its virtual pad `padResting` 30 s for the same
+  path; the bridge stays `padHold` 20 s after the last game. Which pads
+  games want: `padTick` per running game, `LaunchOptions.KeepPad`, new
+  `XboxPad` (one or the other, `CleanLaunchOptions`), else `psKnows`
+  (`readPSKnows` once per play: `core.SteamPSPads` from appinfo.vdf
+  categories 55/56 DualShock and 57/58 DualSense, `core.DetailsPS` from
+  kept details' `Pads`, `core.FolderPS` for libScePad*.dll four levels
+  down; core/padknows.go), per family. `win.NewViGEmPad` calls
+  VIGEM_WAIT_DEVICE_READY and `Submit` retries ERROR_BUSY (the 2.10.3
+  "resource is in use"). Page: Launch options' PlayStation controllers
+  select (`LO_PAD`, `padMode`), the "Controller connected" toast once per
+  `id#n` within 30 min (`pad.met`, `gamepaddisconnected`), never for an
+  Xbox pad while a PlayStation one is there. Harness `?padx=1|2`, shots
+  `game-launch-pad`, `settings-controllers-padx`. docs/TESTING.md 65.
+
+- **Unreleased, naming controllers** (the owner, 23 Nov 2026: names for
+  pads, and a buzz to tell which is which; of light, rumble and the
+  DualSense's speaker they chose rumble, and names only, not tied to
+  profiles). `core.Pad.ID` is `PadID(chain)` (padKey lower case: the
+  BTHENUM or USB device), `Given`, `Buzz` (a real Sony pad, or the one
+  XInput pad whose slot is known). `Config.PadNames` (`SetPadName`,
+  `CleanPadName`, 32 runes, 64 pads); `ps_padName`, `ps_padBuzz` (event
+  `padBuzz`). `core.PSRumble` builds the motor report (DualSense USB
+  0x02 / BT 0x31 with seq and CRC, DualShock 4 USB 0x05 / BT 0x11; only
+  the motor flags; buffer as long as `HidP_GetCaps` says, CRC at 74).
+  `win/padbuzz.go`: `HIDInstance` (interface path to instance id),
+  `OpenPadWrite`/`PadWriter`, `XInputRumble`. Settings, Controllers rows
+  (`ctlKeys`, `padTitle`, `S.padNaming`, `S.padBuzz`, actions `pad-buzz`,
+  `pad-name`, `pad-name-save`); the bridge's note names fed pads
+  (`fedNames`, `padNameOfPath`, `andList`). Icon `vibrate`. Harness
+  `?pad=ds5,ds5b,xbox&padnames=1&buzz=hold|fail`, shots
+  `settings-controllers-names`, `-naming`. docs/TESTING.md 66.
+
+- **Unreleased, controller batteries** (the owner, 23 Nov 2026: battery
+  level, a low warning, a battery saver with no vibration or other
+  drains, charging and charged). `core/padbattery.go`: `PSBattery`
+  (status byte at 53 DualSense USB 0x01, 54 BT 0x31, 30 DualShock 4 USB
+  0x01, 32 BT 0x11; a Bluetooth short 0x01 carries none), `XInputBattery`
+  (type and level), `BatteryWarn` (low 20, empty 10, again over 30 or
+  charging; "charged" once from charging to full), `SaverWanted` ("",
+  "low", "on"), `PSSaver` (light bar and player lights out, DualSense
+  power save 0x04 = haptics asleep; off sets haptics back and the light
+  bar blue). `app/padbattery.go`: `batteryLoop` every 30 s and on
+  `batteryAsk` (apiControllers, apiSaveSettings); `readPSBattery` reads
+  reports for 1.5 s; a Bluetooth pad sending short reports is asked for
+  feature 0x05 once (`PadWriter.Feature`); `batterySay` is the event
+  `padBatterySay` when the window shows, else `plat.ShowToast`; event
+  `padBattery`; `saverHolds` stops Vibrate. `Settings.PadBatteryOff`,
+  `PadSaver`. `win.XInputBattery`. UI: `battOf`, `battChip`, `battLine`
+  in 77-controllers.js, the Battery section, `bpBattery` in Big
+  Picture's bar (`.bp-batt`), Big Picture's Settings row `saver`. Harness
+  `?batt=1|saver`, shots `settings-controllers-battery`, `-saver`,
+  `tv-battery`. docs/TESTING.md 67.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

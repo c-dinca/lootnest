@@ -250,6 +250,8 @@ func (a *App) bind() {
 	must(a.w.Bind("ps_saveLaunchOptions", a.apiSaveLaunchOptions))
 	must(a.w.Bind("ps_runningApps", a.apiRunningApps))
 	must(a.w.Bind("ps_controllers", a.apiControllers))
+	must(a.w.Bind("ps_padBuzz", a.apiPadBuzz))
+	must(a.w.Bind("ps_padName", a.apiPadName))
 	must(a.w.Bind("ps_steamProperties", a.apiSteamProperties))
 	must(a.w.Bind("ps_playniteFind", a.apiPlayniteFind))
 	must(a.w.Bind("ps_playnitePreview", a.apiPlaynitePreview))
@@ -635,6 +637,9 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	if s.Motion != "" && s.Motion != "full" && s.Motion != "less" && s.Motion != "off" {
 		s.Motion = ""
 	}
+	if s.PadSaver != "" && s.PadSaver != "low" && s.PadSaver != "on" {
+		s.PadSaver = ""
+	}
 	s.SteamAccountID = strings.TrimSpace(s.SteamAccountID)
 	s.GameDirs = cleanGameDirs(s.GameDirs)
 	key, err := protectSecret(s.GridDBKey)
@@ -691,6 +696,7 @@ func (a *App) apiSaveSettings(p SettingsPayload) error {
 	if s.AutoSteamHooks {
 		a.autoHooks()
 	}
+	batteryAsk() // a battery saver changed applies now
 	return nil
 }
 
