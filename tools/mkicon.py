@@ -10,17 +10,56 @@ with round caps, then scaled down.
 """
 import math
 import sys
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 S = 1024
 TILE = (0x11, 0x12, 0x17, 255)       # Obsidian Black
 NEST = (0xDF, 0xE5, 0xEB, 255)       # Ice Grey
 GEM = (0xEF, 0x23, 0x3C, 255)        # Racing Red
 
-# The SVG's 20-unit box, placed on the tile: the mark spans x 2.75..17.25
-# and y 3.75..16.5, so its middle is (10, 10.1).
-UNIT = 46          # pixels per SVG unit at 1024
-CX, CY = S / 2, S / 2 + 10
+# The SVG's 20-unit box: arcs around (10, 10.25), the outer one 7.25 by
+# 6.25, the inner 4.25 by 3.5, the ring r 2.5 around (10, 6.25), strokes
+# 1.6. Large icons keep those shapes with a slightly heavier stroke. Small
+# ones need room the SVG doesn't have at 16 to 48 px: a stroke at least
+# 1.5 px, a gap of at least 1.1 px between the arcs and 1.8 px between
+# the ring and the arcs' ends, so the inner arc narrows and the ring rises (the
+# owner, 23 Nov 2026: the ring sat in the lines).
+TILE_FILL = 0.94   # the rounded tile, of the square
+
+
+def geometry(up):
+    """The mark's shapes in SVG units for up pixels per unit."""
+    w = max(1.9, 1.5 / up)
+    g = max(1.4, 1.1 / up)
+    ro, ryo = 7.25, 6.25
+    ri = min(4.25, ro - w - g)
+    ryi = ri * 3.5 / 4.25
+    r = max(2.5, w / 2 + 0.7 / up)       # the ring's hole stays open
+    # The ring as low as the SVG's, unless that brings it near the inner
+    # arc's ends: red against grey blurs together sooner than grey against
+    # grey, so it keeps more room (1.8 px at least).
+    near = r + w + max(g, 1.8 / up)
+    cy = min(6.25, 10.25 - math.sqrt(max(0.0, near * near - ri * ri)))
+    return dict(w=w, ro=ro, ryo=ryo, ri=ri, ryi=ryi, r=r, cy=cy)
+
+
+def extent(geo):
+    """Width and height of the mark, strokes included, and its middle."""
+    h = geo["w"] / 2
+    x0, x1 = 10 - geo["ro"] - h, 10 + geo["ro"] + h
+    y0 = geo["cy"] - geo["r"] - h
+    y1 = 10.25 + geo["ryo"] + h
+    return x1 - x0, y1 - y0, (x0 + x1) / 2, (y0 + y1) / 2
+
+
+def fit(size, fill):
+    """The shapes and pixels per unit so the mark fills fill of size."""
+    up = size * fill / 17
+    for _ in range(4):
+        geo = geometry(up)
+        w, h, _, _ = extent(geo)
+        up = size * fill / max(w, h)
+    return geometry(up), up
 
 
 def stroke(d, pts, width, fill):
@@ -34,51 +73,60 @@ def stroke(d, pts, width, fill):
             d.ellipse((x - r, y - r, x + r, y + r), fill=fill)
 
 
-def paint(d, size, unit, cx, cy):
-    """The mark at unit pixels per SVG unit around (cx, cy), its strokes
-    heavier when it will be shown small (size, the final pixels across)."""
-    def at(x, y):
-        return cx + (x - 10) * unit, cy + (y - 10.1) * unit
+def paint(d, geo, unit):
+    """The mark at unit pixels per SVG unit, centred on the S square."""
+    _, _, mx, my = extent(geo)
 
-    def lower_arc(rx, ry, n=200):
+    def at(x, y):
+        return S / 2 + (x - mx) * unit, S / 2 + (y - my) * unit
+
+    def lower_arc(rx, ry, n=240):
         return [at(10 - rx * math.cos(math.pi * i / n), 10.25 + ry * math.sin(math.pi * i / n)) for i in range(n + 1)]
 
-    w = (2.6 if size <= 24 else 2.2 if size <= 48 else 1.9) * unit
-    stroke(d, lower_arc(7.25, 6.25), w, NEST)   # the outer arc
-    stroke(d, lower_arc(4.25, 3.5), w, NEST)    # the inner arc
-    gx, gy = at(10, 6.25)                       # the ring: r 2.5 around (10, 6.25)
-    r = 2.5 * unit
-    d.ellipse((gx - r - w / 2, gy - r - w / 2, gx + r + w / 2, gy + r + w / 2), outline=GEM, width=round(w))
+    w = geo["w"] * unit
+    stroke(d, lower_arc(geo["ro"], geo["ryo"]), w, NEST)
+    stroke(d, lower_arc(geo["ri"], geo["ryi"]), w, NEST)
+    gx, gy = at(10, geo["cy"])
+    ro = geo["r"] * unit + w / 2
+    ri = geo["r"] * unit - w / 2
+    d.ellipse((gx - ro, gy - ro, gx + ro, gy + ro), fill=GEM)
+    d.ellipse((gx - ri, gy - ri, gx + ri, gy + ri), fill=(0, 0, 0, 0))
+
+
+def render(size, fill, tile):
+    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(out)
+    if tile:
+        m = S * (1 - TILE_FILL) / 2
+        d.rounded_rectangle((m, m, S - m, S - m), radius=232, fill=TILE)
+    geo, up = fit(size, fill)
+    mark_layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    paint(ImageDraw.Draw(mark_layer), geo, up * S / size)
+    out.alpha_composite(mark_layer)
+    # The drawing calls round half pixels one way, which left the mark a
+    # touch off centre once scaled down: keep the left half and mirror it.
+    left = out.crop((0, 0, S // 2, S))
+    out.paste(ImageOps.mirror(left), (S // 2, 0))
+    return out.resize((size, size), Image.LANCZOS)
 
 
 def draw(size):
-    """The app icon: the mark on the obsidian tile."""
-    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(out)
-    d.rounded_rectangle((32, 32, S - 32, S - 32), radius=232, fill=TILE)
-    paint(d, size, UNIT, CX, CY)
-    return out.resize((size, size), Image.LANCZOS)
+    """The app icon: the mark on the obsidian tile, a little larger on
+    small icons."""
+    return render(size, 0.80 if size <= 24 else 0.76 if size <= 48 else 0.72, True)
 
 
 def mark(size, fill=1.0):
     """The mark alone on a clear ground, filling fill of the square (for
     places that draw their own ground: the TV apps' screens, Android's
     adaptive icon)."""
-    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(out)
-    unit = S * fill / 17.2   # the mark is about 17.2 units across with its strokes
-    paint(d, size, unit, S / 2, S / 2)
-    box = out.getbbox()
-    if box:  # centre what was drawn
-        dx = (S - (box[0] + box[2])) / 2
-        dy = (S - (box[1] + box[3])) / 2
-        out = out.transform(out.size, Image.AFFINE, (1, 0, -dx, 0, 1, -dy), resample=Image.BICUBIC)
-    return out.resize((size, size), Image.LANCZOS)
+    return render(size, fill * 0.96, False)
 
 
 if __name__ == "__main__":
     out = sys.argv[1]
-    sizes = [16, 20, 24, 32, 40, 48, 64, 128, 256]
+    # Every size Windows asks for at 100% to 200%, so none is scaled.
+    sizes = [16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 128, 256]
     imgs = [draw(s) for s in sizes]
     imgs[-1].save(out, format="ICO", sizes=[(s, s) for s in sizes], append_images=imgs[:-1])
     draw(512).save(out.replace(".ico", ".png"))

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A cleaner icon at small sizes.** In the taskbar, the tray and the window's corner, the red ring no longer sits in the arcs and the two arcs no longer run together; the sign is drawn the same on both sides, so it no longer leans left, and the icon has every size Windows uses at 125% and 150% scaling, so Windows no longer shrinks a bigger one.
 - **The TV apps carry the new sign too.** Lootnest for TV on LG TVs (1.6.4) and on Android TV (1.0.2) show the red ring over two arcs as their icon, and on LG TVs on the screen they open with and their home screen, instead of the gem in a nest. Lootnest brings an LG TV's app up to date by itself when the TV is on and the app isn't open; on Android TV, **Update to 1.0.2** in Settings, TV puts the new version on (with network debugging on, as when it was added).
 
 ## 2.22.0
