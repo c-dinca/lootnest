@@ -20,6 +20,10 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	env := a.env
 	var all []core.FoundGame
 	all = append(all, env.ScanSteam()...)
+	if env.OS == "linux" {
+		// Heroic, Lutris, Bottles and the itch app (core/linuxlaunchers.go).
+		all = append(all, env.ScanLinuxLaunchers()...)
+	}
 
 	// The other launchers: from Windows' installed programs, the Xbox app's
 	// folders, the itch app's and Hydra's library.
@@ -36,6 +40,11 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 	}
 	if env.SteamPath != "" {
 		installed["steam"] = env.SteamPath
+	}
+	if env.OS == "linux" {
+		for src, dir := range env.LinuxLauncherDirs() {
+			installed[src] = dir
+		}
 	}
 	if pd := plat.ProgramData(); pd != "" {
 		manifests := filepath.Join(pd, "Epic", "EpicGamesLauncher", "Data", "Manifests")
@@ -105,6 +114,9 @@ func (a *App) scanPC() ([]core.FoundGame, []core.SourceCheck) {
 		all = append(all, core.FoundGame{Key: "dir:" + strings.ToLower(filepath.Clean(root)), Name: name, Source: "shortcut", Exe: target, Dir: root})
 	}
 	list := env.FinishFound(all)
+	if env.OS == "linux" {
+		return list, core.SourceChecksIn(core.LinuxScanSources, list, installed, errs)
+	}
 	return list, core.SourceChecks(list, installed, errs)
 }
 
@@ -153,7 +165,14 @@ func gameFolders(env *core.Env) (roots, containers []string) {
 	}
 	userDirsMu.Unlock()
 	home := os.Getenv("USERPROFILE")
-	containers = append(containers, home, plat.Desktop(), plat.Documents(), plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir())
+	if env.OS == "linux" {
+		home = env.Home
+	}
+	for _, c := range []string{home, plat.Desktop(), plat.Documents(), plat.ProgramFiles(), plat.ProgramFilesX86(), plat.WindowsDir()} {
+		if c != "" {
+			containers = append(containers, c)
+		}
+	}
 	gameDirNames := []string{"Games", "Game", "Jocuri", "Gaming", "Juegos", "Jeux", "Spiele", "Epic Games", "GOG Games",
 		`GOG Galaxy\Games`, "PC Games"}
 	for _, d := range plat.FixedDrives() {
@@ -456,6 +475,56 @@ func (a *App) envFor(prefix string) *core.Env {
 	return a.env
 }
 
+// storedPrefix is the game key's Wine prefix as stored (Game.Prefix or
+// FoundGame.Prefix), or "" (always on Windows). It takes a.mu: never call
+// it holding it.
+func (a *App) storedPrefix(key string) string {
+	if a.env.OS != "linux" {
+		return ""
+	}
+	if id, ok := strings.CutPrefix(key, "game:"); ok {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		if g := a.cfg.Game(id); g != nil {
+			return g.Prefix
+		}
+		return ""
+	}
+	if f, ok := a.foundByKey(key); ok {
+		return f.Prefix
+	}
+	return ""
+}
+
+// newPrefix is the Wine prefix a game added on Linux runs in, stored with
+// a.env's tokens: Proton's for a Steam game it ran, Wine's own for a
+// Windows program; "" for native games and on Windows.
+func (a *App) newPrefix(appID int, exe string) string {
+	if a.env.OS != "linux" {
+		return ""
+	}
+	if appID > 0 {
+		for _, sg := range core.InstalledSteamGames(a.env.SteamPath) {
+			if sg.AppID == appID {
+				if p := core.ProtonPrefix(sg.InstallDir, appID); p != "" {
+					return a.env.Tokenize(p)
+				}
+				return ""
+			}
+		}
+		return ""
+	}
+	if core.WindowsProgram(exe) {
+		if p := a.env.DefaultWinePrefix(); p != "" {
+			return a.env.Tokenize(p)
+		}
+	}
+	return ""
+}
+
+// envForKey is the Env the game key's paths are read in (envFor).
+func (a *App) envForKey(key string) *core.Env { return a.envFor(a.storedPrefix(key)) }
+
 // gameFromFound turns a scan result into a game definition.
 func gameFromFound(f core.FoundGame) core.Game {
 	g := core.Game{Name: f.Name, ProcessName: f.ProcessName, PlayerArgs: map[string]string{}, Prefix: f.Prefix}
@@ -551,6 +620,7 @@ func (a *App) apiAddLibraryGame(kind string, appID int, path string) (AddedGame,
 		if c := core.ProcessCandidates(sg.InstallDir); len(c) > 0 {
 			f.ProcessName = c[0].Name
 		}
+		f.Prefix = a.newPrefix(appID, "")
 	case "exe":
 		exe, err := a.env.ResolveExe(path)
 		if err != nil {
@@ -558,6 +628,7 @@ func (a *App) apiAddLibraryGame(kind string, appID int, path string) (AddedGame,
 		}
 		_, containers := gameFolders(a.env)
 		f = a.env.ExeGame(exe, containers)
+		f.Prefix = a.newPrefix(0, exe)
 		for i := range cfg.Games {
 			if a.isFoundGame(&cfg.Games[i], f) {
 				return AddedGame{GameID: cfg.Games[i].ID, Name: cfg.Games[i].Name}, nil

@@ -33,7 +33,8 @@ type pointTarget struct {
 	locs              []core.SaveLoc
 	running           bool
 	appID             int
-	dir               string // a Library game's folder
+	dir               string    // a Library game's folder
+	env               *core.Env // where the game's files are (its Wine prefix on Linux)
 }
 
 func (a *App) pointTarget(key string) (pointTarget, error) {
@@ -58,6 +59,7 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 			return t, errors.New("This game has no save locations yet. Edit the game to choose them.")
 		}
 		t.name, t.game, t.locs, t.appID, t.proc = c.Name, &c, locs, core.GameAppID(&c), procName(&c)
+		t.env = a.envFor(c.Prefix)
 		t.player = a.store.LoadState()[c.ID]
 		t.running = active || a.isRunning(&c)
 		if procs, err := plat.ProcessNames(); err == nil {
@@ -90,6 +92,7 @@ func (a *App) pointTarget(key string) (pointTarget, error) {
 		return t, errors.New("Lootnest doesn't know where this game keeps its saves yet. Choose them under Cloud save on its page.")
 	}
 	t.name, t.appID, t.proc, t.dir = f.Name, f.SteamID, strings.ToLower(strings.TrimSuffix(f.ProcessName, ".exe")), f.Dir
+	t.env = a.envFor(f.Prefix)
 	a.mu.Lock()
 	t.player = a.seat
 	a.mu.Unlock()
@@ -176,7 +179,7 @@ func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error)
 	}
 	p.Playtime += int64(a.playingFor(t.key, t.player) / time.Second)
 	if t.appID > 0 {
-		if u, _ := a.env.PCUnlocks(t.appID); u != nil {
+		if u, _ := t.env.PCUnlocks(t.appID); u != nil {
 			p.Unlocked = len(u)
 		}
 	}
@@ -281,7 +284,7 @@ func (a *App) apiRestoreSavePoint(key, id string, play bool) error {
 		}
 		for lid, path := range p.Paths {
 			if !have[lid] {
-				if r, err := a.env.Resolve(path); err == nil {
+				if r, err := t.env.Resolve(path); err == nil {
 					t.locs = append(t.locs, core.SaveLoc{ID: lid, Live: r, Path: path})
 				}
 			}

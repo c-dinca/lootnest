@@ -2593,6 +2593,58 @@ These shipped recently, newest last:
   `--used`, `--meter-w`/`--meter-h`) and the space free, amber when
   low (`.is-low`). `shortDir` is gone. Tokens `--on-player-*`,
   `--bar-avatar`.
+- **Unreleased, Linux L3a, games on Linux** (the owner, 23 Nov 2026:
+  "go ahead with L3"). The scan: `scanPC` adds `ScanLinuxLaunchers` and
+  `LinuxLauncherDirs` (core/linuxlaunchers.go, `linuxPlaces` shared),
+  and the Sources drawer lists `core.LinuxScanSources` through
+  `SourceChecksIn`; `gameFolders` takes `~/Games` (`env.Home`).
+  `FinishFound` gives a Windows folder game Wine's own prefix
+  (`Env.DefaultWinePrefix`: `$WINEPREFIX`, else `~/.wine`), and native
+  folder and Steam games their process (`MainLinuxExe`). Starting:
+  `steamPlay` and `runProgram` per system (launch_windows.go,
+  launch_linux.go, launch_other.go), used by `startFound`, `launchGame`,
+  `startExe` and `startProgram(key, ...)`. On Linux `core.SteamCommand`
+  (the Flatpak's, else `steam`) with `-applaunch`, else
+  `core.SteamRunURI`; a Windows program through `core.RunnerFor`
+  (`Settings.LinuxRunner`: "" takes umu-run when it's there, else Wine;
+  "wine", "umu"; `WINEPREFIX` the game's, `GAMEID` umu-<Steam id>;
+  `.msi` through msiexec, `.bat`/`.lnk` through `start /unix`), its
+  arguments by `core.SplitArgs`, in its own session (`startLinux`);
+  `prefixRootOf`, `steamIDOf`. `plat.ProcessNames` on Linux lists a
+  native name with and without .x86_64, .sh, .AppImage. Steam's launch
+  options are left alone on Linux (`steamHooksHere`, `errNoSteamHooks`):
+  `main_linux.go` has no `--steam` yet, so games with profiles start from
+  Lootnest. Prefixes: `storedPrefix`, `envForKey`, `newPrefix` (scan.go)
+  and `a.envFor` now read achievements (`achievements`, `achLive.env`,
+  the Doctor), save points (`pointTarget.env`), safety-net restores, new
+  copies, Storage's counts and moves in the game's prefix; a game saved
+  in the editor or added by hand gets its prefix (`apiSaveGameQuiet`,
+  `apiAddLibraryGame`); `apiInspectSteam` suggests inside Proton's.
+  Still on the host Env: the editor's own path checks and browse
+  (`apiCheckPath`, `apiBrowse`), which have no game. Settings, Games and
+  swaps on Linux: Windows games on Linux, Start them with (`#s-runner`),
+  and Steam's row says the launch options are left alone; harness
+  `?linux=1` (`AppState.Platform`), shot `settings-games-linux`. Tests:
+  core/linuxrun_test.go, app/launch_linux_test.go (a stand-in `wine` on
+  PATH). Not seen with real Wine, umu-launcher or Steam on Linux.
+- **Unreleased, Linux L3b, the first Linux download**. `./build.sh linux`
+  also packs `dist/lootnest-linux-x64.tar.gz` (a `lootnest/` folder: the
+  program, `packaging/linux/install.sh`, `lootnest.desktop`, `README.txt`,
+  the 512 px icon, LICENSE and THIRD_PARTY_NOTICES; tar sorted, owner 0,
+  mtime 0, so the same bytes for the same program). `install.sh` puts the
+  program in `~/.local/bin` (a copy, then a rename), the menu entry and
+  icon in `~/.local/share`, needs no root; `--remove` keeps
+  `~/.local/share/lootnest`. CI's Linux step builds with `./build.sh
+  linux` and smoke-runs `dist/lootnest`; both release steps attach the
+  archive, so the next release the owner asks for carries it (the
+  Windows updater picks `Lootnest-Setup.exe` by name, so the archive
+  doesn't confuse it). Built on ubuntu-latest: glibc 2.39 and WebKitGTK
+  4.1, so Ubuntu 24.04, Fedora 40, Debian 13 or newer; older systems wait
+  for an AppImage. README's Install points at Releases (no "latest" link
+  until a release has the file); GUIDE, Lootnest on Linux, lists what
+  works and what doesn't; docs/TESTING.md 68. Lootnest on Linux still
+  doesn't update itself. Next: L4 (Big Picture and controllers, full
+  screen, portal hotkeys), when the owner says.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

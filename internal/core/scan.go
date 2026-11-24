@@ -367,6 +367,8 @@ func (e *Env) ScanSteam() []FoundGame {
 			f.Note = p.Note
 		} else if c := ProcessCandidates(g.InstallDir); len(c) > 0 {
 			f.ProcessName = c[0].Name
+		} else if e.OS == "linux" && f.Prefix == "" {
+			_, f.ProcessName = MainLinuxExe(g.InstallDir) // a native Linux game
 		}
 		f.Suggestions = env.SuggestPaths(g.Name, g.InstallDir, g.AppID)
 		f.Paths = ProposePaths(f.Suggestions, preset)
@@ -637,8 +639,18 @@ func (e *Env) FinishFound(list []FoundGame) []FoundGame {
 		if f.Source != "steam" {
 			if f.ProcessName == "" {
 				_, f.ProcessName = MainExe(f.Dir)
+				if f.ProcessName == "" && e.OS == "linux" {
+					_, f.ProcessName = MainLinuxExe(f.Dir)
+				}
 				if f.ProcessName == "" && f.Exe != "" {
 					f.ProcessName = strings.TrimSuffix(filepath.Base(f.Exe), filepath.Ext(f.Exe))
+				}
+			}
+			// A Windows program in a folder of its own runs in Wine's own
+			// prefix on Linux, where its saves are.
+			if e.OS == "linux" && f.Prefix == "" && WindowsProgram(f.Exe) {
+				if p := e.DefaultWinePrefix(); p != "" {
+					f.Prefix = e.Tokenize(p)
 				}
 			}
 			env, err := e.For(f.Prefix)

@@ -46,12 +46,18 @@ func InstalledLaunchers(entries []UninstallEntry) map[string]string {
 // couldn't be read. installed holds the sources found on this PC (with the
 // folder Lootnest read, if any); errs the ones whose library failed.
 func SourceChecks(found []FoundGame, installed map[string]string, errs map[string]error) []SourceCheck {
+	return SourceChecksIn(ScanSources, found, installed, errs)
+}
+
+// SourceChecksIn is SourceChecks over another list of sources (a Linux
+// scan's, LinuxScanSources).
+func SourceChecksIn(sources []string, found []FoundGame, installed map[string]string, errs map[string]error) []SourceCheck {
 	n := map[string]int{}
 	for _, f := range found {
 		n[f.Source]++
 	}
-	out := make([]SourceCheck, 0, len(ScanSources))
-	for _, src := range ScanSources {
+	out := make([]SourceCheck, 0, len(sources))
+	for _, src := range sources {
 		path, ok := installed[src]
 		c := SourceCheck{Source: src, Found: n[src], Installed: ok || n[src] > 0 || src == "folder" || src == "shortcut", Path: path, State: "info"}
 		switch {

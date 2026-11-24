@@ -82,7 +82,7 @@ func (a *App) apiAchDoctor(key string, appID int, dir, name string) {
 
 		// 3. Its achievement file.
 		if appID > 0 {
-			looked, there := a.env.AchievementFiles(appID, dir)
+			looked, there := a.envForKey(key).AchievementFiles(appID, dir)
 			switch {
 			case len(there) == 0:
 				add("warn", "No achievement file yet", "Tools usually write it when the first achievement unlocks. Lootnest looked in "+strconv.Itoa(len(looked))+" places, such as "+firstOr(looked, "")+".", "")

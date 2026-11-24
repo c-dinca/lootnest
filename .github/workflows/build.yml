@@ -92,10 +92,10 @@ jobs:
           go test -count=1 ./internal/app/ ./internal/plat/
           xvfb-run -a go test -count=1 ./internal/webkit/
           xvfb-run -a dbus-run-session -- go test -count=1 ./internal/desk/
-          go build -o lootnest-linux ./cmd/lootnest
+          VERSION="$(tr -d '[:space:]' < VERSION)" ./build.sh linux
           # The real app once: its page must load and call back into Go.
           home="$(mktemp -d)"
-          HOME="$home" timeout 30 xvfb-run -a ./lootnest-linux || true
+          HOME="$home" timeout 30 xvfb-run -a ./dist/lootnest || true
           cat "$home/.local/share/lootnest/lootnest.log"
           grep -q "Interface loaded" "$home/.local/share/lootnest/lootnest.log" || { echo "::error::the Linux window didn't load its page"; exit 1; }
 
@@ -185,6 +185,7 @@ jobs:
           path: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
+            dist/lootnest-linux-x64.tar.gz
 
       - name: Publish the new version
         if: steps.newver.outputs.tag != ''
@@ -197,6 +198,7 @@ jobs:
           files: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
+            dist/lootnest-linux-x64.tar.gz
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -205,6 +207,7 @@ jobs:
           files: |
             dist/Lootnest-Setup.exe
             dist/Lootnest.exe
+            dist/lootnest-linux-x64.tar.gz
           generate_release_notes: true
 
   # Sends the new release to winget (a pull request to microsoft/winget-pkgs),

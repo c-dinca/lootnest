@@ -124,6 +124,7 @@ const shots = [
   ["cloud-error", "state=error", [nav("saves")]],
   ["settings", "", [nav("settings")]],
   ["settings-controllers-padx", "padx=2", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), `new Promise((r) => setTimeout(() => { document.querySelector('[data-setting="padAsXbox"]').closest(".toggle, .set-row, label").scrollIntoView({ block: "center" }); r(); }, 300))`]],
+  ["settings-games-linux", "linux=1", [nav("settings"), click('[data-action="set-tab"][data-tab="games"]'), "new Promise((r) => setTimeout(r, 300))", 'document.querySelector("#s-runner").scrollIntoView({ block: "center" })']],
   ["settings-controllers-names", "pad=ds5,ds5b,xbox&padnames=1", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]')]],
   ["settings-controllers-naming", "pad=ds5,ds5b&padnames=1&buzz=hold", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), "new Promise((r) => setTimeout(r, 300))", 'document.querySelectorAll(\'[data-action="pad-buzz"]\')[1].click()', 'document.querySelectorAll(\'[data-action="pad-name"]\')[1].click()', "new Promise((r) => setTimeout(r, 100))"]],
   ["settings-controllers-battery", "pad=ds5,ds5b&padnames=1&batt=1", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), "new Promise((r) => setTimeout(r, 500))"]],

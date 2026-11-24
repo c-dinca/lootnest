@@ -188,7 +188,7 @@ func (a *App) startFound(key string, f core.FoundGame) error {
 		}
 		a.logf("Starting %s through Steam", name)
 		plat.AllowAnyForeground()
-		if err := plat.StartDetached(a.env.SteamPath+`\steam.exe`, strings.TrimSpace(fmt.Sprintf("-applaunch %d %s", appID, args)), a.env.SteamPath); err != nil {
+		if err := a.steamPlay(appID, args); err != nil {
 			return err
 		}
 		a.followFound(key, f)

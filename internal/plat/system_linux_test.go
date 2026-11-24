@@ -19,12 +19,13 @@ func TestProcessNames(t *testing.T) {
 	// line names the Windows program.
 	add("200", "AshenRing-Win64", "C:\\Games\\Ashen Ring\\AshenRing-Win64-Shipping.exe\x00-dx12\x00")
 	add("300", "wine64-preload", "/usr/bin/wine64-preload\x00Z:\\home\\alex\\Games\\Quiet Isle\\QuietIsle.EXE\x00")
+	add("400", "TinyGame.x86_6", "/home/alex/Games/tiny/TinyGame.x86_64\x00")
 	add("self", "x", "x")
 	got, err := processNamesIn(proc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"tuxracer", "ashenring-win64-shipping", "quietisle", "wine64-preload"} {
+	for _, want := range []string{"tuxracer", "ashenring-win64-shipping", "quietisle", "wine64-preload", "tinygame", "tinygame.x86_64"} {
 		if !got[want] {
 			t.Errorf("%s isn't listed: %v", want, got)
 		}

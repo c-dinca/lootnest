@@ -152,7 +152,7 @@ func (a *App) sizeOf(it sizeItem, cache *core.SizeCache, now time.Time) GameSize
 	if g := it.game; g != nil {
 		name = g.Name
 		for _, pe := range g.Paths {
-			if r, err := a.env.Resolve(pe.Path); err == nil {
+			if r, err := a.envFor(g.Prefix).Resolve(pe.Path); err == nil {
 				gs.Saves += count(r)
 			}
 		}
@@ -426,7 +426,7 @@ func (a *App) retargetMoved(m core.GameMove, dst string) error {
 			continue
 		}
 		g.Launch.Exe = moved(g.Launch.Exe)
-		a.env.RetargetPaths(g, m.From, m.To)
+		a.envFor(g.Prefix).RetargetPaths(g, m.From, m.To)
 		if o, ok := cfg.LaunchOpts["game:"+g.ID]; ok {
 			cfg.LaunchOpts["game:"+g.ID] = o.Moved(m.From, m.To)
 		}

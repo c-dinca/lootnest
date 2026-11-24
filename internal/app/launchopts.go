@@ -96,9 +96,8 @@ func (a *App) startExe(key, exe, args string) error {
 	}
 	if o.RunAsAdmin {
 		a.logf("Starting %s as administrator, in %s", filepath.Base(exe), dir)
-		return plat.StartElevated(a.hwnd, exe, args, dir)
 	}
-	return plat.StartDetached(exe, args, dir)
+	return a.runProgram(key, exe, args, dir, o.RunAsAdmin)
 }
 
 // launcherWait is how long Lootnest waits for a game to show up after
@@ -256,7 +255,7 @@ func (a *App) stepsBefore(key, name string) {
 		a.logf("Ended %s before %s (Force is on for it)", w.app.Name, name)
 	}
 	for _, p := range o.StartBefore {
-		a.startProgram(p, "before "+name)
+		a.startProgram(key, p, "before "+name)
 	}
 	playRuns.Store(key, playRun{name, closed})
 }
@@ -276,11 +275,11 @@ func (a *App) stepsAfter(key string, played bool) {
 		o.StartAfter = nil
 	}
 	for _, p := range o.StartAfter {
-		a.startProgram(p, "after "+r.name)
+		a.startProgram(key, p, "after "+r.name)
 	}
 	if o.ReopenClosed {
 		for _, p := range r.closed {
-			a.startProgram(core.Program{Path: p}, "again after "+r.name)
+			a.startProgram(key, core.Program{Path: p}, "again after "+r.name)
 		}
 	}
 }
@@ -308,8 +307,8 @@ func (a *App) moveLaunchOpts(from string, g core.Game) {
 	}
 }
 
-func (a *App) startProgram(p core.Program, when string) {
-	if err := plat.StartDetached(p.Path, p.Args, dirOf(p.Path)); err != nil {
+func (a *App) startProgram(key string, p core.Program, when string) {
+	if err := a.runProgram(key, p.Path, p.Args, dirOf(p.Path), false); err != nil {
 		a.logf("Couldn't start %s %s: %v", p.Path, when, err)
 		return
 	}

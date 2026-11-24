@@ -278,11 +278,7 @@ func (a *App) launchGame(cfg *core.Config, g *core.Game, playerID string) error 
 		if a.env.SteamPath == "" {
 			return errors.New("Steam wasn't found on this PC")
 		}
-		line := fmt.Sprintf("-applaunch %d", g.Launch.AppID)
-		if args != "" {
-			line += " " + args
-		}
-		return plat.StartDetached(a.env.SteamPath+`\steam.exe`, line, a.env.SteamPath)
+		return a.steamPlay(g.Launch.AppID, args)
 	case "exe":
 		exe, err := a.env.ResolveExe(g.Launch.Exe)
 		if err != nil {

@@ -121,7 +121,7 @@ func (a *App) oldCopySaves(old core.SeenGame) map[string]string {
 		return out
 	}
 	for _, p := range vs[0].Paths {
-		if r, err := a.env.Resolve(p); err == nil {
+		if r, err := a.envFor(f.Prefix).Resolve(p); err == nil {
 			if rel, err := filepath.Rel(old.Dir, r); err == nil && !strings.HasPrefix(rel, "..") {
 				out[filepath.ToSlash(rel)] = "net:" + vs[0].ID
 			}
@@ -177,7 +177,7 @@ func (a *App) apiCarryOver(oldKey, newKey string) error {
 					gg.Launch.Exe = nf.Exe
 				}
 			}
-			a.env.RetargetPaths(gg, old.Dir, nw.Dir)
+			a.envFor(gg.Prefix).RetargetPaths(gg, old.Dir, nw.Dir)
 			err := a.store.SaveConfig(cfg)
 			snapshot := cfg.Clone()
 			keepN := cfg.Settings.BackupsToKeep
@@ -221,7 +221,7 @@ func (a *App) apiCarryOver(oldKey, newKey string) error {
 					}
 				}
 				resolve := func(p string) (string, error) {
-					r, err := a.env.Resolve(p)
+					r, err := a.envFor(of.Prefix).Resolve(p)
 					if err != nil {
 						return "", err
 					}
