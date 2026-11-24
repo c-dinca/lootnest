@@ -251,6 +251,16 @@ func OnMain(f func()) {
 	<-done
 }
 
+// Later runs f on the GTK thread without waiting for it: at once when the
+// caller is on that thread, else in the order such calls were made.
+func Later(f func()) {
+	if syscall.Gettid() == mainTid {
+		f()
+		return
+	}
+	C.desk_dispatch(C.uintptr_t(cgo.NewHandle(f)))
+}
+
 //export deskIdle
 func deskIdle(fn C.uintptr_t) C.gboolean {
 	h := cgo.Handle(fn)

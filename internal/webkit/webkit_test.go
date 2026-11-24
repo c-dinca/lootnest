@@ -18,6 +18,8 @@ var windowResult struct {
 	err   error
 	got   map[string]string
 	calls int
+
+	shown, hidden bool // Visible after Show, then after Hide
 }
 
 func TestMain(m *testing.M) {
@@ -50,7 +52,16 @@ func checkWindow() {
 	_ = v.Bind("ps_note", func(k, val string) {
 		got[k] = val
 		if len(got) == 3 {
-			v.Terminate()
+			// The window's state, kept for any goroutine: shown, then hidden.
+			v.Show()
+			go func() {
+				time.Sleep(300 * time.Millisecond)
+				windowResult.shown = v.Visible()
+				v.Dispatch(v.Hide)
+				time.Sleep(300 * time.Millisecond)
+				windowResult.hidden = !v.Visible()
+				v.Terminate()
+			}()
 		}
 	})
 	_ = v.Bind("ps_frame", func() { got["frame"] = "reached Go" })
@@ -95,5 +106,8 @@ func TestWindow(t *testing.T) {
 	}
 	if r.calls == 0 {
 		t.Error("AllowMessage is asked")
+	}
+	if !r.shown || !r.hidden {
+		t.Errorf("Visible: %v once shown, %v once hidden", r.shown, !r.hidden)
 	}
 }

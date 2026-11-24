@@ -1,6 +1,7 @@
 package app
 
 import (
+	"runtime"
 	"sync"
 	"time"
 
@@ -76,6 +77,11 @@ func padsNow() (st core.PadState, ps, any bool) {
 func (a *App) padOwned() bool {
 	if a.hwnd == 0 || !plat.IsVisible(a.hwnd) {
 		return false
+	}
+	if runtime.GOOS != "windows" {
+		// GTK can't see the stacking order on every desktop: the pads are
+		// Lootnest's while its window has the keyboard.
+		return plat.Foreground() == a.hwnd
 	}
 	screen, _, _ := plat.ScreenOf(a.hwnd)
 	for _, w := range plat.TopWindows() {

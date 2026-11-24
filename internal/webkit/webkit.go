@@ -29,6 +29,7 @@ package webkit
 extern void lnMessage(uintptr_t view, char *msg, char *uri);
 extern gboolean lnClose(uintptr_t view);
 extern gboolean lnIdle(uintptr_t fn);
+extern void lnState(uintptr_t view, int visible, int active, int full, int max);
 
 static void ln_on_message(WebKitUserContentManager *m, WebKitJavascriptResult *r, gpointer data) {
 	JSCValue *v = webkit_javascript_result_get_js_value(r);
@@ -92,6 +93,17 @@ static void ln_on_scheme(WebKitURISchemeRequest *r, gpointer data) {
 	g_error_free(err);
 }
 
+// The window's state, kept in Go so any goroutine can read it.
+static void ln_note(GtkWidget *w, uintptr_t id) {
+	GdkWindow *gw = gtk_widget_get_window(w);
+	GdkWindowState st = gw ? gdk_window_get_state(gw) : 0;
+	lnState(id, gtk_widget_get_visible(w), gtk_window_is_active(GTK_WINDOW(w)),
+		(st & GDK_WINDOW_STATE_FULLSCREEN) != 0, (st & GDK_WINDOW_STATE_MAXIMIZED) != 0);
+}
+static gboolean ln_on_state(GtkWidget *w, GdkEventWindowState *e, gpointer id) { ln_note(w, (uintptr_t)id); return FALSE; }
+static void ln_on_shown(GtkWidget *w, gpointer id) { ln_note(w, (uintptr_t)id); }
+static void ln_on_active(GObject *o, GParamSpec *p, gpointer id) { ln_note(GTK_WIDGET(o), (uintptr_t)id); }
+
 static gboolean ln_idle(gpointer fn) { return lnIdle((uintptr_t)fn); }
 static void ln_dispatch(uintptr_t fn) { g_idle_add(ln_idle, (gpointer)fn); }
 
@@ -147,6 +159,10 @@ static ln_window *ln_new(uintptr_t id, const char *title, int w, int h, int minw
 	}
 	gtk_container_add(GTK_CONTAINER(lw->window), GTK_WIDGET(lw->view));
 	g_signal_connect(lw->window, "delete-event", G_CALLBACK(ln_on_delete), (gpointer)id);
+	g_signal_connect(lw->window, "window-state-event", G_CALLBACK(ln_on_state), (gpointer)id);
+	g_signal_connect(lw->window, "show", G_CALLBACK(ln_on_shown), (gpointer)id);
+	g_signal_connect(lw->window, "hide", G_CALLBACK(ln_on_shown), (gpointer)id);
+	g_signal_connect(lw->window, "notify::is-active", G_CALLBACK(ln_on_active), (gpointer)id);
 	gtk_widget_grab_focus(GTK_WIDGET(lw->view));
 	return lw;
 }
@@ -165,11 +181,18 @@ static void ln_load_html(ln_window *lw, const char *html, const char *base) { we
 static void ln_show(ln_window *lw) { gtk_widget_show_all(lw->window); }
 static void ln_present(ln_window *lw) { gtk_widget_show_all(lw->window); gtk_window_present(GTK_WINDOW(lw->window)); }
 static void ln_hide(ln_window *lw) { gtk_widget_hide(lw->window); }
-static int ln_visible(ln_window *lw) { return gtk_widget_get_visible(lw->window); }
 static void ln_set_title(ln_window *lw, const char *t) { gtk_window_set_title(GTK_WINDOW(lw->window), t); }
 static void ln_resize(ln_window *lw, int w, int h) { gtk_window_resize(GTK_WINDOW(lw->window), w, h); }
 static void ln_fullscreen(ln_window *lw, int on) {
 	if (on) gtk_window_fullscreen(GTK_WINDOW(lw->window)); else gtk_window_unfullscreen(GTK_WINDOW(lw->window));
+}
+// Full screen on the display's primary monitor (the first when none is).
+static void ln_fullscreen_primary(ln_window *lw) {
+	GdkDisplay *d = gtk_widget_get_display(lw->window);
+	GdkMonitor *p = gdk_display_get_primary_monitor(d);
+	int n = gdk_display_get_n_monitors(d), at = 0;
+	for (int i = 0; i < n; i++) if (gdk_display_get_monitor(d, i) == p) at = i;
+	gtk_window_fullscreen_on_monitor(GTK_WINDOW(lw->window), gtk_widget_get_screen(lw->window), at);
 }
 static void ln_destroy(ln_window *lw) { gtk_widget_destroy(lw->window); }
 static void ln_quit(void) { gtk_main_quit(); }
@@ -187,6 +210,7 @@ import (
 	"runtime/cgo"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 )
 
@@ -218,6 +242,8 @@ type WebView struct {
 	opt      Options
 	mu       sync.Mutex
 	bindings map[string]any
+
+	visible, active, full, max atomic.Bool
 }
 
 // New makes the window, hidden until Show or when Options.Hidden is false,
@@ -316,9 +342,6 @@ func (v *WebView) Show()    { C.ln_show(v.w) }
 func (v *WebView) Present() { C.ln_present(v.w) }
 func (v *WebView) Hide()    { C.ln_hide(v.w) }
 
-// Visible tells whether the window is shown.
-func (v *WebView) Visible() bool { return C.ln_visible(v.w) != 0 }
-
 // SetTitle and SetSize change the window.
 func (v *WebView) SetTitle(t string) {
 	c := C.CString(t)
@@ -335,6 +358,17 @@ func (v *WebView) SetFullscreen(on bool) {
 	}
 	C.ln_fullscreen(v.w, n)
 }
+
+// FullscreenPrimary fills the primary monitor, as TV mode and Big Picture
+// on a TV want.
+func (v *WebView) FullscreenPrimary() { C.ln_fullscreen_primary(v.w) }
+
+// Visible, Active (it has the keyboard), Fullscreen and Maximized are the
+// window's state as GTK last told it; any goroutine may read them.
+func (v *WebView) Visible() bool    { return v.visible.Load() }
+func (v *WebView) Active() bool     { return v.active.Load() }
+func (v *WebView) Fullscreen() bool { return v.full.Load() }
+func (v *WebView) Maximized() bool  { return v.max.Load() }
 
 // Window is the GtkWindow.
 func (v *WebView) Window() unsafe.Pointer { return unsafe.Pointer(v.w.window) }
@@ -358,6 +392,15 @@ func lnIdle(fn C.uintptr_t) C.gboolean {
 	h.Delete()
 	f()
 	return C.FALSE
+}
+
+//export lnState
+func lnState(id C.uintptr_t, visible, active, full, max C.int) {
+	v := cgo.Handle(id).Value().(*WebView)
+	v.visible.Store(visible != 0)
+	v.active.Store(active != 0)
+	v.full.Store(full != 0)
+	v.max.Store(max != 0)
 }
 
 //export lnClose

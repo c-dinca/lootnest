@@ -2643,8 +2643,37 @@ These shipped recently, newest last:
   for an AppImage. README's Install points at Releases (no "latest" link
   until a release has the file); GUIDE, Lootnest on Linux, lists what
   works and what doesn't; docs/TESTING.md 68. Lootnest on Linux still
-  doesn't update itself. Next: L4 (Big Picture and controllers, full
-  screen, portal hotkeys), when the owner says.
+  doesn't update itself.
+- **Unreleased, Linux L4a, Big Picture and controllers** (the owner,
+  24 Nov 2026: "go ahead with L4"). plat's window calls reach the GTK
+  window on Linux (`plat/window_linux.go`): `openWindow` sets
+  `a.hwnd = plat.SetMainWindow(w)` (`plat.MainWindow`, 1), and
+  `Present`, `ShowWindow`, `IsVisible`, `IsZoomed`, `SetFullscreen`,
+  `FullscreenPrimary`, `ForceForeground` and `Foreground` (Lootnest's
+  window while it has the keyboard, else 0) act on it; changes go to the
+  GTK thread through `desk.Later` (at once on it, else queued without
+  waiting). The WebView keeps its state from GTK's signals
+  (`window-state-event`, show/hide, `notify::is-active`) in atomics
+  (`Visible`, `Active`, `Fullscreen`, `Maximized`), and has
+  `FullscreenPrimary`. So Big Picture fills the screen, the window hides
+  for games, and the Home menu raises it. Controllers
+  (`plat/pads_linux.go`): event devices under /dev/input with BTN_SOUTH
+  and a stick or D-pad (`isPad`), opened read-only and never grabbed,
+  read in a goroutine each (`withFd` keeps them in Go's poller;
+  SYN_DROPPED resyncs with EVIOCGKEY/EVIOCGABS), a scan every 2 s
+  (`padsTried` keeps only devices that opened and aren't pads). Sony and
+  Nintendo follow the kernel's layout (north is the top button); xpad and
+  the rest send BTN_X for the left one. `XInputRead` merges every pad,
+  `XInputGuideDown` is BTN_MODE, `PadDevices` gives Windows-shaped ids
+  (USB, BTHENUM or ROOT with VID/PID, then HID) so `core.Pads` names them.
+  `padOwned` on Linux is "the window has the keyboard"; WebKitGTK reads
+  pads itself through libmanette while it does. Settings, Controllers on
+  Linux: no Vibrate (`Buzz` false), no Battery or Xbox sections, "Linux"
+  in the words; harness `?linux=1&pad=...`, shot
+  `settings-controllers-linux`. Checked under Xvfb with openbox (F11 sets
+  `_NET_WM_STATE_FULLSCREEN` and back); pads only by tests (a pipe for the
+  device): docs/TESTING.md 68, items 9 to 12. Next: L4b, hotkeys and
+  screenshots through the desktop portal.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
