@@ -104,6 +104,18 @@ For scripts and package managers, run `start /wait Lootnest-Setup.exe --silent` 
 
 To update, use **Settings > Check for updates**. Your profiles, games and saves are kept. To uninstall, use Windows **Settings > Apps > Installed apps**.
 
+## Lootnest on Linux
+
+The Linux version is new. It finds the games of Steam (native, Flatpak or Snap), Heroic (Epic, GOG, Amazon and games added to it), Lutris, Bottles and the itch app, and games in folders, `~/Games` included. Profiles, runs, save points, the safety net, cloud saves and achievements work as on Windows.
+
+- **Windows games** run through Proton or Wine, and keep their saves inside a Wine prefix, a folder that stands in for `C:\`. Lootnest reads each game's saves in its own prefix: Steam's for a Proton game, the one Heroic, Lutris or Bottles made, or Wine's own (`~/.wine`) for a game in a folder.
+- **Starting a Windows game** from Lootnest uses umu-launcher when it's installed, else Wine. Choose in **Settings > Games and swaps > Windows games on Linux**. Steam, Heroic and Lutris games start through their launcher.
+- **Steam's launch options** are left alone on Linux, so start a game with profiles from Lootnest, not from Steam, for its profile's files to be swapped in.
+- **Install and remove:** `./install.sh` puts Lootnest in `~/.local/bin` and in your applications menu; `./install.sh --remove` takes it away. Your profiles and saves stay in `~/.local/share/lootnest`. To update, install the newer download over it.
+- **The tray** needs AppIndicator support on the desktop (on GNOME, the AppIndicator extension). Keys you give Lootnest are kept encrypted with a key in your desktop's keyring.
+
+Not on Linux yet: Big Picture's full screen and controllers, TV mode, the FPS counter, unlock notes over a game (they come as notifications), Keep a game offline, mods from Nexus, and updating Lootnest from inside it.
+
 ## PlaySwap
 
 Lootnest was called PlaySwap until version 1.3. Installing Lootnest over PlaySwap carries over players, games, profiles, backups and the Steam set-up.

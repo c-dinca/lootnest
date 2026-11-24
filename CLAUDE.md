@@ -2627,6 +2627,24 @@ These shipped recently, newest last:
   `?linux=1` (`AppState.Platform`), shot `settings-games-linux`. Tests:
   core/linuxrun_test.go, app/launch_linux_test.go (a stand-in `wine` on
   PATH). Not seen with real Wine, umu-launcher or Steam on Linux.
+- **Unreleased, Linux L3b, the first Linux download**. `./build.sh linux`
+  also packs `dist/lootnest-linux-x64.tar.gz` (a `lootnest/` folder: the
+  program, `packaging/linux/install.sh`, `lootnest.desktop`, `README.txt`,
+  the 512 px icon, LICENSE and THIRD_PARTY_NOTICES; tar sorted, owner 0,
+  mtime 0, so the same bytes for the same program). `install.sh` puts the
+  program in `~/.local/bin` (a copy, then a rename), the menu entry and
+  icon in `~/.local/share`, needs no root; `--remove` keeps
+  `~/.local/share/lootnest`. CI's Linux step builds with `./build.sh
+  linux` and smoke-runs `dist/lootnest`; both release steps attach the
+  archive, so the next release the owner asks for carries it (the
+  Windows updater picks `Lootnest-Setup.exe` by name, so the archive
+  doesn't confuse it). Built on ubuntu-latest: glibc 2.39 and WebKitGTK
+  4.1, so Ubuntu 24.04, Fedora 40, Debian 13 or newer; older systems wait
+  for an AppImage. README's Install points at Releases (no "latest" link
+  until a release has the file); GUIDE, Lootnest on Linux, lists what
+  works and what doesn't; docs/TESTING.md 68. Lootnest on Linux still
+  doesn't update itself. Next: L4 (Big Picture and controllers, full
+  screen, portal hotkeys), when the owner says.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

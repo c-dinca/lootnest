@@ -1484,3 +1484,29 @@ ViGEmBus on the PC (section 34).
    at 20% it goes on (Saver beside the charge); plugged in, it goes off.
 8. Show how charged controllers are, off: no charge, no notes, and a
    Bluetooth pad turned off and on stays on its short reports.
+
+## 68. Lootnest on Linux
+
+On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
+
+1. Unpack `lootnest-linux-x64.tar.gz` and run `./install.sh`: Lootnest
+   shows in the applications menu with its icon and opens its window.
+   A second start brings the first one to the front.
+2. The Library has the games of Steam (a native one and a Proton one),
+   Heroic, Lutris and Bottles, each with its source; Library, Sources
+   lists those launchers.
+3. A Proton game's page suggests saves inside
+   `steamapps/compatdata/<id>/pfx`; with profiles on, a swap moves them
+   and Play starts it through Steam.
+4. A Windows game in a folder starts with umu-launcher, then (Settings,
+   Start them with Wine) with Wine, in `~/.wine`; the log says which and
+   where. A native game in a folder starts and is seen running and
+   closing (Timeline).
+5. Heroic and Lutris games start through their launcher and are seen
+   running.
+6. Close to tray: with AppIndicator, closing leaves the icon and its
+   menu works (Open, Play, Quit). Without it, closing quits.
+7. A Steam Web API key saved in Settings opens again after a restart
+   (the keyring has "Lootnest").
+8. `./install.sh --remove` takes the program and menu entry away and
+   leaves `~/.local/share/lootnest`.

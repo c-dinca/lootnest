@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Lootnest
+GenericName=Game manager
+Comment=Every game on this PC, with a profile for everyone
+Exec=lootnest
+Icon=lootnest
+Terminal=false
+Categories=Game;
+Keywords=games;saves;profiles;steam;heroic;lutris;
+StartupWMClass=lootnest

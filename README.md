@@ -52,6 +52,8 @@ One profile to start with: yours. Add a run when you want a second playthrough, 
 
 Needs Windows 10 or 11 (64-bit) with the WebView2 Runtime, which Windows already has. No administrator rights.
 
+On Linux, download `lootnest-linux-x64.tar.gz` from [Releases](../../releases) (the releases after 2.23.1 have it), unpack it and run `./install.sh`. It needs WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40, Debian 13 or newer) and no root. The Linux version is new: see [Lootnest on Linux](docs/GUIDE.md#lootnest-on-linux) for what it does and doesn't do yet.
+
 ## What it won't do
 
 - No account, ads or telemetry. It works offline.

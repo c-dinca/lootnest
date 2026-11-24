@@ -7,7 +7,8 @@
 #   ./build.sh app      dist/Lootnest.exe only
 #   ./build.sh setup    dist/Lootnest-Setup.exe from the dist/Lootnest.exe already
 #                       there, so CI can sign the app before it goes into the setup
-#   ./build.sh linux    dist/lootnest for Linux x64, on Linux, with cgo,
+#   ./build.sh linux    dist/lootnest and dist/lootnest-linux-x64.tar.gz (the
+#                       download) for Linux x64, on Linux, with cgo,
 #                       WebKitGTK 4.1 and libsecret (libwebkit2gtk-4.1-dev,
 #                       libsecret-1-dev) installed
 set -euo pipefail
@@ -20,7 +21,18 @@ case "$STAGE" in
   linux)
     mkdir -p dist
     CGO_ENABLED=1 go build -trimpath -ldflags "-s -w -X lootnest/internal/app.Version=$VERSION" -o dist/lootnest ./cmd/lootnest
-    ls -la dist/lootnest
+    # The download: the program, its menu entry, icon, install script and
+    # notices in one folder, packed the same way every time.
+    pack="$(mktemp -d)/lootnest"
+    mkdir -p "$pack"
+    cp dist/lootnest "$pack/lootnest"
+    cp packaging/linux/install.sh packaging/linux/lootnest.desktop packaging/linux/README.txt "$pack/"
+    cp assets/lootnest.png "$pack/lootnest.png"
+    cp LICENSE assets/THIRD_PARTY_NOTICES.txt "$pack/"
+    chmod 755 "$pack/lootnest" "$pack/install.sh"
+    tar --sort=name --owner=0 --group=0 --numeric-owner --mtime="@0" -C "$(dirname "$pack")" -czf dist/lootnest-linux-x64.tar.gz lootnest
+    rm -rf "$(dirname "$pack")"
+    ls -la dist/lootnest dist/lootnest-linux-x64.tar.gz
     exit 0
     ;;
   *) echo "usage: $0 [app|setup|linux]" >&2; exit 2 ;;
