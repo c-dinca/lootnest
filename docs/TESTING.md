@@ -1510,3 +1510,16 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
    (the keyring has "Lootnest").
 8. `./install.sh --remove` takes the program and menu entry away and
    leaves `~/.local/share/lootnest`.
+9. Big Picture (F11) fills the screen, on X11 and on Wayland; F11 again
+   puts the window back as it was. Leave it from its menu too.
+10. A controller in Big Picture: the stick, the D-pad, A and B move and
+   choose. Click another window so Lootnest loses the keyboard: the
+   controller still moves Big Picture while its window is the one in
+   front (the log says "Controller for Lootnest's page from Go: true"
+   only while it has the keyboard).
+11. Start a game from Big Picture, press the Xbox or PS button: the Home
+   menu opens over the game; Resume brings the game back, and closing the
+   game brings Big Picture back.
+12. Settings, Controllers lists a DualSense (USB and Bluetooth) and an
+   Xbox controller with the right buttons and how each is connected, and
+   no Vibrate key.

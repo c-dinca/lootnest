@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"lootnest/internal/core"
 	"lootnest/internal/plat"
@@ -54,6 +55,9 @@ func (a *App) apiControllers() Controllers {
 	pads, names := core.Pads(devs, slots, tools, vigem), a.padNames()
 	for i := range pads {
 		pads[i].Given = names[pads[i].ID]
+		if runtime.GOOS != "windows" {
+			pads[i].Buzz = false // the pads are only read on Linux (plat/pads_linux.go)
+		}
 	}
 	return Controllers{Pads: pads, XInput: slots, Translators: tools, Notes: core.ControllerNotes(tools), Copiers: core.PadCopiers(tools),
 		ViGEm: plat.ViGEmPresent(), Bridge: a.padState(), Batteries: batteries()}

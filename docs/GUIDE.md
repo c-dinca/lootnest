@@ -112,9 +112,10 @@ The Linux version is new. It finds the games of Steam (native, Flatpak or Snap),
 - **Starting a Windows game** from Lootnest uses umu-launcher when it's installed, else Wine. Choose in **Settings > Games and swaps > Windows games on Linux**. Steam, Heroic and Lutris games start through their launcher.
 - **Steam's launch options** are left alone on Linux, so start a game with profiles from Lootnest, not from Steam, for its profile's files to be swapped in.
 - **Install and remove:** `./install.sh` puts Lootnest in `~/.local/bin` and in your applications menu; `./install.sh --remove` takes it away. Your profiles and saves stay in `~/.local/share/lootnest`. To update, install the newer download over it.
+- **Big Picture** fills the screen (F11, or from the sidebar) and works with a controller. Lootnest reads controllers itself only for their Home button (the Xbox or PS button) over a game, and for Big Picture when the window doesn't have the keyboard. Settings > Controllers lists them. Your desktop gives you the right to read them; a controller Lootnest can't open is left out.
 - **The tray** needs AppIndicator support on the desktop (on GNOME, the AppIndicator extension). Keys you give Lootnest are kept encrypted with a key in your desktop's keyring.
 
-Not on Linux yet: Big Picture's full screen and controllers, TV mode, the FPS counter, unlock notes over a game (they come as notifications), Keep a game offline, mods from Nexus, and updating Lootnest from inside it.
+Not on Linux yet: hotkeys (save point, screenshot, FPS counter) while a game runs, controller batteries, Vibrate and the PlayStation controller as an Xbox one, TV mode, the FPS counter, unlock notes over a game (they come as notifications), Keep a game offline, mods from Nexus, and updating Lootnest from inside it.
 
 ## PlaySwap
 

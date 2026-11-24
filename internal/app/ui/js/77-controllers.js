@@ -61,7 +61,8 @@
   function viewControllers() {
     askControllers();
     const C = S.ctl;
-    if (!C) return lnInline("", "Asking Windows about your controllers");
+    const linux = S.d.platform === "linux", os = linux ? "Linux" : "Windows";
+    if (!C) return lnInline("", `Asking ${os} about your controllers`);
     const web = padsNow(), copies = C.pads.some((p) => p.virtual);
     const mine = C.pads.map((p) => ctlRow(p.family, p.given || p.name, [
       p.given || S.padNaming === p.id ? p.name : "",
@@ -72,7 +73,7 @@
     for (const b of (S.batt || C.batteries || []).filter((b) => !C.pads.some((p) => p.id === b.id))) mine.push(ctlRow("xbox", b.name, [], "", "", "", battLine(b)));
     const slots = C.xinput.filter((x) => !C.pads.some((p) => p.slot === x.slot));
     if (slots.length) mine.push(setRow("Xbox-style (XInput) slots in use", slots.map((x) => `Slot ${x.slot}: ${x.wireless ? "wireless " : ""}${esc(x.kind)}`).join(", ")));
-    // The name Windows gave the same pad, so the two columns agree.
+    // The name the system gave the same pad, so the two columns agree.
     const xpads = C.pads.filter((p) => p.xinput);
     const nameOf = (id) => {
       const m = /vendor: ?([0-9a-f]{4}) product: ?([0-9a-f]{4})/i.exec(id);
@@ -88,8 +89,8 @@
     });
     const card = (rows) => `<div class="bk-card">${rows}</div>`;
     const col = (title, rows, none) => setSub(title, "", card(rows.length ? rows.join("") : setRow(none, "")));
-    const pads = !mine.length && !seen.length ? setSub("On this PC", "", card(C.failed ? setRow("Windows didn't answer", "Open this page again to ask once more.") : setRow("No controller connected", "")))
-      : `<div class="ctl-cols">${col("On this PC", mine, C.failed ? "Windows didn't answer" : "Windows lists none")}${col("What Lootnest sees", seen, "Press a button on your controller")}</div>`;
+    const pads = !mine.length && !seen.length ? setSub("On this PC", "", card(C.failed ? setRow(`${os} didn't answer`, "Open this page again to ask once more.") : setRow("No controller connected", "")))
+      : `<div class="ctl-cols">${col("On this PC", mine, C.failed ? `${os} didn't answer` : `${os} lists none`)}${col("What Lootnest sees", seen, "Press a button on your controller")}</div>`;
     const tools = C.translators.length ? setSub("Apps that change your controllers", "", card(C.translators.map((t) =>
       setRow(esc(t.name), esc(t.does), `<span class="ctl-lamp${t.running ? " is-on" : ""}">${t.running ? "Running now" : "Installed"}</span>`)).join(""))
       + C.notes.map((n) => `<p class="ctl-note">${GI.alert}<span>${esc(n)}</span></p>`).join("")) : "";
@@ -108,6 +109,9 @@
       "Warns when one runs low and says when it's charged. A DualSense or DualShock 4 on Bluetooth is asked for its full reports to say it, as Steam does.", reading, true)
       + setRow("Battery saver", "Turns off a PlayStation controller's light, and a DualSense's vibration, until it's switched off. Lootnest's Vibrate key waits too.", saverSel)));
     const det = cfg().settings.gameDetails ? "" : setSub("Games", "", card(setRow("Controller support on game pages", "", `<button class="ln-button ln-button--secondary ln-button--sm" data-action="details-on">Turn on Game details</button>`)));
+    // On Linux the pads are read from the kernel (plat/pads_linux.go): no
+    // ViGEmBus there, and batteries aren't read yet.
+    if (linux) return `<div class="ctl-page">${pads + tools + det}</div>`;
     return `<div class="ctl-page">${pads + battery + xbox + tools + det}</div>`;
   }
 

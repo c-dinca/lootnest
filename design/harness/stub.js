@@ -1317,6 +1317,8 @@
       if (TRANSLATORS) pads.push({ name: "Xbox 360 controller", family: "xbox", vid: 0x045e, pid: 0x028e, bus: "", xinput: true, slot: 0, virtual: "vigem", madeBy: "DS4Windows" });
       const xinput = pads.filter((p) => p.xinput).map((p, i) => ({ slot: i + 1, kind: "gamepad", wireless: false }));
       if (xinput.length === 1) { const x = pads.find((p) => p.xinput); x.slot = 1; x.buzz = true; }
+      // ?linux=1: read from the kernel, so no XInput slots and no Vibrate (app/controllers.go).
+      if (q.get("linux") === "1") { pads.forEach((p) => { p.xinput = false; p.slot = 0; p.buzz = false; }); xinput.length = 0; }
       return ok({ pads, xinput, batteries: BATT, translators: TRANSLATORS ? [
         { name: "Steam Input", does: "Can translate your pad for the games Steam starts, shortcuts included, so they see an Xbox pad.", running: true, installed: true },
         { name: "DS4Windows", does: "Makes your PlayStation pad look like an Xbox pad to games.", running: true, installed: true },

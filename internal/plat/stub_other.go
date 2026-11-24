@@ -176,12 +176,6 @@ func FixedDrives() (r0 []string) {
 	return
 }
 
-func ForceForeground(hwnd uintptr) {}
-
-func Foreground() (r0 uintptr) {
-	return
-}
-
 func ForegroundIs(name string) (r0 bool) {
 	return
 }
@@ -204,8 +198,6 @@ func FramesAllowed() (r0 bool) {
 }
 
 func FullscreenLike(hwnd uintptr, other uintptr) {}
-
-func FullscreenPrimary(hwnd uintptr) {}
 
 type GOGGame struct {
 	ID   string
@@ -276,15 +268,7 @@ func Is64BitProcess(pid uint32) (r0 bool) {
 	return
 }
 
-func IsVisible(hwnd uintptr) (r0 bool) {
-	return
-}
-
 func IsWindow(hwnd uintptr) (r0 bool) {
-	return
-}
-
-func IsZoomed(hwnd uintptr) (r0 bool) {
 	return
 }
 
@@ -384,10 +368,6 @@ type PadDevice struct {
 	XUSB        bool
 }
 
-func PadDevices() (r0 []PadDevice) {
-	return
-}
-
 type PadReader struct {
 }
 
@@ -430,8 +410,6 @@ func PlaceBehind(hwnd uintptr, front uintptr) {}
 func PlaySound(b []byte) {}
 
 func PostMessage(hwnd uintptr, msg uint32, wp uintptr, lp uintptr) {}
-
-func Present(hwnd uintptr) {}
 
 func PrimaryDisplay() (r0 [4]int) {
 	return
@@ -540,10 +518,6 @@ func ServiceState(name string) (r0 bool, r1 bool) {
 	return
 }
 
-func SetForeground(hwnd uintptr) {}
-
-func SetFullscreen(hwnd uintptr, on bool) {}
-
 func SetTaskbarSettings(all int, mode int) (err error) {
 	err = ErrUnsupported
 	return
@@ -583,8 +557,6 @@ func ShowMenu(hwnd uintptr, items []MenuItem) (r0 int) {
 func ShowTVBar(areas [][4]int, b TVBar, leave func()) {}
 
 func ShowTaskbar(show bool) {}
-
-func ShowWindow(hwnd uintptr, cmd int) {}
 
 func SmallIconSize(dpi int) (r0 int) {
 	return
@@ -755,10 +727,6 @@ func XInputBattery(slot int) (r0 byte, r1 byte, r2 bool) {
 	return
 }
 
-func XInputGuideDown() (r0 bool) {
-	return
-}
-
 type XInputPad struct {
 	Index    int
 	SubType  uint8
@@ -766,10 +734,6 @@ type XInputPad struct {
 }
 
 func XInputPads() (r0 []XInputPad) {
-	return
-}
-
-func XInputRead() (r0 XPad, r1 bool) {
 	return
 }
 

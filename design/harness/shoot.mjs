@@ -128,6 +128,7 @@ const shots = [
   ["settings-controllers-names", "pad=ds5,ds5b,xbox&padnames=1", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]')]],
   ["settings-controllers-naming", "pad=ds5,ds5b&padnames=1&buzz=hold", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), "new Promise((r) => setTimeout(r, 300))", 'document.querySelectorAll(\'[data-action="pad-buzz"]\')[1].click()', 'document.querySelectorAll(\'[data-action="pad-name"]\')[1].click()', "new Promise((r) => setTimeout(r, 100))"]],
   ["settings-controllers-battery", "pad=ds5,ds5b&padnames=1&batt=1", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), "new Promise((r) => setTimeout(r, 500))"]],
+  ["settings-controllers-linux", "linux=1&pad=ds5,xbox", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), "new Promise((r) => setTimeout(r, 300))"]],
   ["settings-controllers-saver", "pad=ds5,ds5b&padnames=1&batt=saver", [nav("settings"), click('[data-action="set-tab"][data-tab="controllers"]'), "new Promise((r) => setTimeout(r, 500))", 'document.querySelector("#s-pad-saver").scrollIntoView({ block: "center" })']],
   ["tv-battery", "tv=1&players=1&batt=1", ["new Promise((r) => setTimeout(r, 600))"]],
   ["settings-online", "", [nav("settings"), click('[data-action="set-tab"][data-tab="online"]')]],

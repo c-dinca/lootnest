@@ -35,6 +35,7 @@ func (a *App) openWindow(opt Options, dpi int, scale func(int) int) error {
 	}
 	a.w = w
 	a.lw = w
+	a.hwnd = plat.SetMainWindow(w) // plat's window calls reach it through this handle (plat/window_linux.go)
 	desk.SetParent(w.Window(), plat.IconPath())
 	serveInstance(a)
 	return nil
