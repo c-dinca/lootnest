@@ -685,6 +685,10 @@ func WindowDPI(hwnd uintptr) (r0 int) {
 	return
 }
 
+func WindowHung(hwnd uintptr) (r0 bool) {
+	return
+}
+
 func WindowKey(hwnd uintptr, key string) {}
 
 func WindowOfPID(pid uint32) (r0 uintptr) {

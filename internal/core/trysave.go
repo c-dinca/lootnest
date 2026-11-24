@@ -49,7 +49,17 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 	if lst, err := os.Stat(target.live); err == nil {
 		liveIsFile = !lst.IsDir()
 	}
-	if st.IsDir() {
+	// Loose save files (an archive of SRDR30000 and SRDR30001) for a folder
+	// that keeps saves like them deeper (Profiles\<id>) join that folder,
+	// as one file does.
+	var loose []string
+	if st.IsDir() && !liveIsFile {
+		loose = looseSaves(src, fromSaves(e, g, from, target))
+	}
+	if len(loose) == 1 {
+		src, loose = loose[0], nil
+	}
+	if st.IsDir() && loose == nil {
 		if one := onlyFile(src); one != "" && (liveIsFile || filepath.Dir(one) == importRoot(src, target.live)) {
 			src = one
 		} else if liveIsFile {
@@ -92,13 +102,20 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 			continue
 		}
 		switch {
-		case st.IsDir() || liveIsFile:
+		case (st.IsDir() && loose == nil) || liveIsFile:
 			if err := Mirror(src, out); err != nil {
 				return fail(err)
 			}
 		default:
-			// One file into a folder: the person's folder, with that file
-			// added or replaced.
+			// Save files into a folder: the person's folder, with the
+			// brought saves beside the saves like them. The person's other
+			// saves of that kind (slots, autosaves) stay out of the run, so
+			// the game's Continue can only pick the brought one; the
+			// person's own profile keeps all of them.
+			files := loose
+			if files == nil {
+				files = []string{src}
+			}
 			if c := fromCopy(r); c != "" {
 				if err := Mirror(c, out); err != nil {
 					return fail(err)
@@ -107,8 +124,12 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 			if err := os.MkdirAll(out, 0o755); err != nil {
 				return fail(err)
 			}
-			if err := Mirror(src, filepath.Join(saveHome(out, filepath.Base(src)), filepath.Base(src))); err != nil {
-				return fail(err)
+			home := saveHome(out, filepath.Base(files[0]))
+			dropLikeSaves(home, files)
+			for _, f := range files {
+				if err := Mirror(f, filepath.Join(home, filepath.Base(f))); err != nil {
+					return fail(err)
+				}
 			}
 		}
 	}
@@ -152,6 +173,81 @@ func saveHome(dir, name string) string {
 		return nil
 	})
 	return best
+}
+
+// fromSaves is the folder holding from's copy of the save location: their
+// profile's, or the live one when theirs are the files in place.
+func fromSaves(e *Engine, g *Game, from string, target *resolved) string {
+	if from != "" && e.Store.LoadState()[g.ID] == from {
+		return target.live
+	}
+	if from != "" && e.HasProfile(from, g.ID) {
+		return filepath.Join(e.Store.ProfileDir(from, g.ID), target.entry.ID)
+	}
+	return target.live
+}
+
+// looseSaves lists the files at the top of src when it holds only files
+// (no folders) and the person's save folder keeps files shaped like the
+// first one in a folder below its top, as Red Dead Redemption 2 keeps
+// SRDR30000 in Profiles\<id>. Otherwise nil: the folder is taken as it is.
+func looseSaves(src, person string) []string {
+	src = throughWrappers(src)
+	es, err := os.ReadDir(src)
+	if err != nil || len(es) == 0 {
+		return nil
+	}
+	var files []string
+	for _, en := range es {
+		if !en.Type().IsRegular() {
+			return nil
+		}
+		files = append(files, filepath.Join(src, en.Name()))
+	}
+	if person == "" {
+		return nil
+	}
+	if home := saveHome(person, filepath.Base(files[0])); filepath.Clean(home) == filepath.Clean(person) {
+		return nil
+	}
+	return files
+}
+
+// throughWrappers goes down through folders that hold nothing but one
+// folder ("Prologue Skip/Saves/SRDR30000" becomes ".../Saves").
+func throughWrappers(dir string) string {
+	for i := 0; i < 8; i++ {
+		es, err := os.ReadDir(dir)
+		if err != nil || len(es) != 1 || !es[0].IsDir() {
+			return dir
+		}
+		dir = filepath.Join(dir, es[0].Name())
+	}
+	return dir
+}
+
+// dropLikeSaves takes out of a run's folder the saves shaped like the
+// brought ones (SRDR30003 beside a brought SRDR30000) that aren't brought
+// themselves. Only names with digits count, so settings files stay.
+func dropLikeSaves(home string, brought []string) {
+	shapes, names := map[string]bool{}, map[string]bool{}
+	for _, f := range brought {
+		n := strings.ToLower(filepath.Base(f))
+		names[n] = true
+		if s := saveShape(n); strings.Contains(s, "#") {
+			shapes[s] = true
+		}
+	}
+	es, err := os.ReadDir(home)
+	if err != nil {
+		return
+	}
+	for _, en := range es {
+		n := strings.ToLower(en.Name())
+		if en.Type().IsRegular() && !names[n] && shapes[saveShape(n)] {
+			_ = os.Remove(filepath.Join(home, en.Name()))
+		}
+	}
 }
 
 // looksLikeFile says whether a save path names a file (a name with an

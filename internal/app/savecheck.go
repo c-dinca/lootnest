@@ -136,6 +136,9 @@ const issuesURL = "https://github.com/c-dinca/lootnest/issues/new"
 // Nothing is sent by Lootnest itself.
 func (a *App) apiReportProblem() error {
 	text := "Lootnest " + Version + " " + Stage + "\n\nRecent activity:\n" + a.apiLog()
+	if h := lastHang(); h != "" {
+		text += "\n\nThe last time the window stopped answering:\n" + h
+	}
 	if err := plat.SetClipboardText(a.hwnd, text); err != nil {
 		return err
 	}

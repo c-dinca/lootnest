@@ -1547,3 +1547,18 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
 3. Stop the move while it copies small files: it stops within a second or
    two, and the new drive has no folder of it (no .lootnest-part).
 4. Game Mover (a Steam game): the same speed line and time left.
+
+## 70. Trying a save, and a window that stops answering
+
+1. Red Dead Redemption 2 with profiles: add a Skip Prologue save as a mod
+   (or Manage, Try a save) and choose Try it as a save. Play the new run:
+   Story Mode continues from the brought save, not from your latest one.
+   The run's Profiles\<id> holds the brought SRDR3 file(s) and no other
+   SRDR3 slots; your own profile still has all of yours.
+2. An archive holding two or more save files (maybe in a folder): they
+   land in Profiles\<id> beside the game's saves, not at the top.
+3. If Lootnest's window shows "Not Responding" for more than about 8 s,
+   the log has "The window stopped answering" with the window thread's
+   stack, and `%LOCALAPPDATA%\Lootnest\hangs` a file with every thread;
+   Report a problem copies the newest. Dragging the window or holding a
+   menu open writes nothing.

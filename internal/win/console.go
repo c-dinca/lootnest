@@ -10,6 +10,7 @@ import (
 
 var (
 	procIsWindow              = user32.NewProc("IsWindow")
+	procIsHungAppWindow       = user32.NewProc("IsHungAppWindow")
 	procDwmGetWindowAttribute = dwmapi.NewProc("DwmGetWindowAttribute")
 )
 
@@ -93,6 +94,18 @@ func IsWindow(hwnd uintptr) bool {
 	}
 	ok, _, _ := procIsWindow.Call(hwnd)
 	return ok != 0
+}
+
+// WindowHung says whether Windows takes a window for not responding (its
+// thread hasn't looked at its messages for about five seconds), as the
+// "(Not Responding)" in its title does. A modal loop, such as a menu or a
+// window being dragged, still answers.
+func WindowHung(hwnd uintptr) bool {
+	if hwnd == 0 {
+		return false
+	}
+	r, _, _ := procIsHungAppWindow.Call(hwnd)
+	return r != 0
 }
 
 // Foreground is the window that has the keyboard.
