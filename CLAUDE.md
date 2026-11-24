@@ -268,7 +268,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
   (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
-## Where things stand (2.23.1, beta)
+## Where things stand (2.24.0, beta)
 
 These shipped recently, newest last:
 
@@ -1766,7 +1766,7 @@ These shipped recently, newest last:
   plugin; rewriting it is the owner's call (GitHub keeps pull request
   refs, so only GitHub Support can purge them).
 
-- **Unreleased, Linux L0** (the owner, 19 Nov 2026: Lootnest for the
+- **2.24.0, Linux L0** (the owner, 19 Nov 2026: Lootnest for the
   Linux desktop in general, a WebKitGTK window through cgo; the plan is
   docs/ROADMAP.md, section 9, L0 to L5). `internal/plat` sits between
   the app and the system (`tools/platgen` writes `win_windows.go`, the
@@ -1778,7 +1778,7 @@ These shipped recently, newest last:
   build job regenerates plat, vets the app for Linux and runs its tests.
   Nothing changes on Windows. Next: L1, the Linux path model in core
   (prefixes), when the owner says.
-- **Unreleased, Linux L1a, Wine prefixes and Steam on Linux** (the
+- **2.24.0, Linux L1a, Wine prefixes and Steam on Linux** (the
   owner, 19 Nov 2026: "go ahead with L1"). `core/prefix.go`: `Prefix`
   (Root holds drive_c, User is `steamuser` for Proton), `IsPrefix`,
   `OpenPrefix` (the one user folder besides Public), `ProtonPrefix`
@@ -1799,7 +1799,7 @@ These shipped recently, newest last:
   folders for native games; the manifest keeps Linux locations apart
   (`DBGame.Linux`, `<xdgData>`, `<xdgConfig>`), used when `OS` is
   "linux". Tests in `core/prefix_test.go` (not run on Windows).
-- **Unreleased, Linux L1b, the other Linux launchers**
+- **2.24.0, Linux L1b, the other Linux launchers**
   (`core/linuxlaunchers.go`, `Env.ScanLinuxLaunchers`, native and
   Flatpak folders, prefixes stored with tokens). Formats read in each
   launcher's source. Heroic (`HeroicGames`, ~/.config/heroic):
@@ -1822,7 +1822,7 @@ These shipped recently, newest last:
   `heroic`, `lutris`, `bottles` (labels and filters in 35-library-home.js).
   Fixture `testdata/lutris/pga.db` comes from Python's SQLite
   (`make.py` there); `FuzzSQLite`.
-- **Unreleased, Linux L2a, the window** (the owner, 19 Nov 2026: "go
+- **2.24.0, Linux L2a, the window** (the owner, 19 Nov 2026: "go
   ahead with L2"). `internal/webkit` (cgo, GTK 3 and WebKitGTK 4.1): the
   page is loaded from a string under `lootnest://app/` (`BaseURI`, a
   scheme registered to answer nothing and marked secure); `decide-policy`
@@ -1849,7 +1849,7 @@ These shipped recently, newest last:
   `C:\...\x.exe` command lines too). CI builds `lootnest-linux`, runs
   the webkit test under xvfb-run and starts the app once, failing when
   its log lacks "Interface loaded".
-- **Unreleased, Linux L2b, the desktop** (`internal/desk`, cgo over GTK
+- **2.24.0, Linux L2b, the desktop** (`internal/desk`, cgo over GTK
   and libsecret, called from plat's Linux files). `OnMain` runs GTK work
   on the main thread from any goroutine (the main goroutine's thread id
   is noted at package init; others go through `g_idle_add` and wait).
@@ -2579,7 +2579,7 @@ These shipped recently, newest last:
   0.5 MB; `page_test.go` fails above `maxPageHTML` (1.2 MB). The harness
   still inlines the script; Linux's window loads it the same way.
   Released as 2.23.1 without asking, since 2.23.0 showed nothing.
-- **Unreleased, the play bar in one height** (the owner, 23 Nov 2026:
+- **2.24.0, the play bar in one height** (the owner, 23 Nov 2026:
   the full path and keys of different sizes looked bad; of two mocks
   they chose A). `playSplit(it, p)` (40-game-page.js) is Play and the
   profile as one split key in `--player` (`.gp-play`, `.gp-play-go`
@@ -2593,7 +2593,7 @@ These shipped recently, newest last:
   `--used`, `--meter-w`/`--meter-h`) and the space free, amber when
   low (`.is-low`). `shortDir` is gone. Tokens `--on-player-*`,
   `--bar-avatar`.
-- **Unreleased, Linux L3a, games on Linux** (the owner, 23 Nov 2026:
+- **2.24.0, Linux L3a, games on Linux** (the owner, 23 Nov 2026:
   "go ahead with L3"). The scan: `scanPC` adds `ScanLinuxLaunchers` and
   `LinuxLauncherDirs` (core/linuxlaunchers.go, `linuxPlaces` shared),
   and the Sources drawer lists `core.LinuxScanSources` through
@@ -2627,7 +2627,7 @@ These shipped recently, newest last:
   `?linux=1` (`AppState.Platform`), shot `settings-games-linux`. Tests:
   core/linuxrun_test.go, app/launch_linux_test.go (a stand-in `wine` on
   PATH). Not seen with real Wine, umu-launcher or Steam on Linux.
-- **Unreleased, Linux L3b, the first Linux download**. `./build.sh linux`
+- **2.24.0, Linux L3b, the first Linux download**. `./build.sh linux`
   also packs `dist/lootnest-linux-x64.tar.gz` (a `lootnest/` folder: the
   program, `packaging/linux/install.sh`, `lootnest.desktop`, `README.txt`,
   the 512 px icon, LICENSE and THIRD_PARTY_NOTICES; tar sorted, owner 0,
@@ -2644,7 +2644,7 @@ These shipped recently, newest last:
   until a release has the file); GUIDE, Lootnest on Linux, lists what
   works and what doesn't; docs/TESTING.md 68. Lootnest on Linux still
   doesn't update itself.
-- **Unreleased, Linux L4a, Big Picture and controllers** (the owner,
+- **2.24.0, Linux L4a, Big Picture and controllers** (the owner,
   24 Nov 2026: "go ahead with L4"). plat's window calls reach the GTK
   window on Linux (`plat/window_linux.go`): `openWindow` sets
   `a.hwnd = plat.SetMainWindow(w)` (`plat.MainWindow`, 1), and
@@ -2673,7 +2673,7 @@ These shipped recently, newest last:
   `settings-controllers-linux`. Checked under Xvfb with openbox (F11 sets
   `_NET_WM_STATE_FULLSCREEN` and back); pads only by tests (a pipe for the
   device): docs/TESTING.md 68, items 9 to 12.
-- **Unreleased, Linux L4b, keys and screenshots while you play**.
+- **2.24.0, Linux L4b, keys and screenshots while you play**.
   `internal/desk/keys.go`: on X11 (`desk.X11`) `GrabKey`/`UngrabKey`
   (XGrabKey on the root window, with Caps and Num Lock either way, an
   error trap telling a key another program holds, a GDK filter calling
@@ -2703,7 +2703,7 @@ These shipped recently, newest last:
   BindShortcuts answers (an error without a portal). Not seen on a real
   GNOME or KDE: docs/TESTING.md 68, items 13 to 15. L4 is done; L5 only
   if the owner asks.
-- **Unreleased, moves: small files together, and the time left** (the
+- **2.24.0, moves: small files together, and the time left** (the
   owner, 24 Nov 2026: It Takes Two went to 99% in 6 minutes, then said
   "About 25 min left" at 146 KB/s). Each file is flushed and read back,
   so a game's thousands of small files copy at a few KB/s. `moveCopyTree`
@@ -2718,7 +2718,7 @@ These shipped recently, newest last:
   "N files to go" past 90%. Harness `?move=tail`, shots
   `game-move-progress`, `game-move-tail`. docs/TESTING.md 69.
 
-- **Unreleased, Try a save starts from that save, and the window's
+- **2.24.0, Try a save starts from that save, and the window's
   watchdog** (the owner, 24 Nov 2026: a Skip Prologue run of RDR2 "didn't
   skip anything", and "Not Responding" as a game closed). `ProfileFromImport`:
   save files into a folder (one, or `looseSaves`: a download of only files,
@@ -2730,7 +2730,8 @@ These shipped recently, newest last:
   writes every stack to `hangs\hang-<time>.txt` (5 kept) and the window
   thread's to the log; `lastHang` goes into Report a problem. The cause
   of the owner's hang isn't known yet: read the next report.
-  docs/TESTING.md 70.
+  docs/TESTING.md 70. The owner asked for 2.24.0 with all of the above
+  (24 Nov); its release carries the first Linux download.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
