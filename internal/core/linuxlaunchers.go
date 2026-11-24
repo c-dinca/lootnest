@@ -17,26 +17,72 @@ import (
 // game gets its Wine prefix (FoundGame.Prefix), where its saves are.
 // Everything is only read.
 
-// ScanLinuxLaunchers finds the games every Linux launcher knows, with
-// their prefixes and paths stored with this Env's tokens.
-func (e *Env) ScanLinuxLaunchers() []FoundGame {
+// linuxPlaces are where each Linux launcher keeps its library, native
+// first, then the Flatpak.
+type linuxPlaces struct {
+	heroic, bottles, itch []string
+	lutris                [][2]string // data folder, config folder
+}
+
+func (e *Env) linuxPlaces() linuxPlaces {
 	home := e.Home
 	data, conf := XDGDataHome(home, e.Getenv), XDGConfigHome(home, e.Getenv)
 	flat := func(app, kind string) string { return filepath.Join(home, ".var", "app", app, kind) }
-	var out []FoundGame
-	for _, dir := range []string{filepath.Join(conf, "heroic"), filepath.Join(flat("com.heroicgameslauncher.hgl", "config"), "heroic")} {
-		out = append(out, HeroicGames(dir, home)...)
+	return linuxPlaces{
+		heroic: []string{filepath.Join(conf, "heroic"), filepath.Join(flat("com.heroicgameslauncher.hgl", "config"), "heroic")},
+		lutris: [][2]string{
+			{filepath.Join(data, "lutris"), filepath.Join(conf, "lutris")},
+			{filepath.Join(flat("net.lutris.Lutris", "data"), "lutris"), filepath.Join(flat("net.lutris.Lutris", "config"), "lutris")},
+		},
+		bottles: []string{filepath.Join(data, "bottles", "bottles"), filepath.Join(flat("com.usebottles.bottles", "data"), "bottles", "bottles")},
+		itch:    []string{filepath.Join(conf, "itch", "apps"), filepath.Join(flat("io.itch.itch", "config"), "itch", "apps")},
 	}
-	for _, l := range [][2]string{
-		{filepath.Join(data, "lutris"), filepath.Join(conf, "lutris")},
-		{filepath.Join(flat("net.lutris.Lutris", "data"), "lutris"), filepath.Join(flat("net.lutris.Lutris", "config"), "lutris")},
-	} {
+}
+
+// LinuxScanSources are what a Linux scan looks at, for the Library's
+// Sources drawer (SourceChecksIn), in the order shown.
+var LinuxScanSources = []string{"steam", "heroic", "lutris", "bottles", "itch", "folder"}
+
+// LinuxLauncherDirs are the Linux launchers this PC has, by source: the
+// folder each keeps its library in.
+func (e *Env) LinuxLauncherDirs() map[string]string {
+	pl := e.linuxPlaces()
+	out := map[string]string{}
+	first := func(src string, dirs []string) {
+		for _, d := range dirs {
+			if isDir(d) {
+				out[src] = d
+				return
+			}
+		}
+	}
+	first("heroic", pl.heroic)
+	first("bottles", pl.bottles)
+	first("itch", pl.itch)
+	for _, l := range pl.lutris {
+		if isFile(filepath.Join(l[0], "pga.db")) {
+			out["lutris"] = l[0]
+			break
+		}
+	}
+	return out
+}
+
+// ScanLinuxLaunchers finds the games every Linux launcher knows, with
+// their prefixes and paths stored with this Env's tokens.
+func (e *Env) ScanLinuxLaunchers() []FoundGame {
+	pl := e.linuxPlaces()
+	var out []FoundGame
+	for _, dir := range pl.heroic {
+		out = append(out, HeroicGames(dir, e.Home)...)
+	}
+	for _, l := range pl.lutris {
 		out = append(out, LutrisGames(l[0], l[1])...)
 	}
-	for _, dir := range []string{filepath.Join(data, "bottles", "bottles"), filepath.Join(flat("com.usebottles.bottles", "data"), "bottles", "bottles")} {
+	for _, dir := range pl.bottles {
 		out = append(out, BottlesGames(dir)...)
 	}
-	for _, dir := range []string{filepath.Join(conf, "itch", "apps"), filepath.Join(flat("io.itch.itch", "config"), "itch", "apps")} {
+	for _, dir := range pl.itch {
 		out = append(out, itchGames(dir, mainAnyExe)...)
 	}
 	for i := range out {

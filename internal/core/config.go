@@ -118,6 +118,9 @@ type Settings struct {
 	StartTimeoutSeconds  int    `json:"startTimeoutSeconds"`
 	SteamAccountID       string `json:"steamAccountId"`
 	AutoSteamHooks       bool   `json:"autoSteamHooks"`
+	// LinuxRunner is what starts a Windows game on Linux: "" (umu-launcher
+	// when it's there, else Wine), "wine" or "umu" (core/linuxrun.go).
+	LinuxRunner string `json:"linuxRunner,omitempty"`
 	// DownloadCovers lets Lootnest look games outside Steam up on the Steam
 	// store by name and save their cover. Off by default: the only network
 	// access Lootnest has, and only when the user turns it on.

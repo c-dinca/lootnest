@@ -260,7 +260,7 @@ func (a *App) restoreVersion(c *core.Cloud, f core.FoundGame, id string, locs []
 		return err
 	}
 	tmp := filepath.Join(DataDir(), "saves-tmp-"+time.Now().Format("150405.000"))
-	if _, err := c.RestoreGameVersion(gameSavesKey(f), id, locs, a.env.Resolve, tmp); err != nil {
+	if _, err := c.RestoreGameVersion(gameSavesKey(f), id, locs, a.envFor(f.Prefix).Resolve, tmp); err != nil {
 		return err
 	}
 	a.logf("Restored %s's saves from version %s (the saves before are in %s)", f.Name, id, keep)
@@ -270,7 +270,7 @@ func (a *App) restoreVersion(c *core.Cloud, f core.FoundGame, id string, locs []
 // keepBeforeRestore copies every location restoring version id would write
 // to into backups\saves-<game>\<time>-before-restore, and returns that folder.
 func (a *App) keepBeforeRestore(c *core.Cloud, f core.FoundGame, id string, locs []core.SaveLocation) (string, error) {
-	targets, err := c.VersionTargets(gameSavesKey(f), id, locs, a.env.Resolve)
+	targets, err := c.VersionTargets(gameSavesKey(f), id, locs, a.envFor(f.Prefix).Resolve)
 	if err != nil {
 		return "", err
 	}

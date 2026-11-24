@@ -28,7 +28,8 @@ type achLive struct {
 	list   []core.Achievement
 	name   string
 	player string
-	off    bool // no app id, or the game ships with an anti-cheat
+	off    bool      // no app id, or the game ships with an anti-cheat
+	env    *core.Env // where the game's files are (its Wine prefix on Linux)
 }
 
 // achRun is a game running now.
@@ -139,7 +140,7 @@ func (a *App) achTick(procs map[string]bool) {
 		if l.off {
 			continue
 		}
-		now, _ := a.env.PCUnlocksIn(l.appID, l.dir)
+		now, _ := l.env.PCUnlocksIn(l.appID, l.dir)
 		if now == nil {
 			continue
 		}
@@ -177,8 +178,8 @@ func (a *App) achStart(r achRun) *achLive {
 		l.off = true
 		return l
 	}
-	l.appID, l.dir = appID, r.dir
-	if u, _ := a.env.PCUnlocksIn(appID, r.dir); u != nil {
+	l.appID, l.dir, l.env = appID, r.dir, a.envForKey(r.key)
+	if u, _ := l.env.PCUnlocksIn(appID, r.dir); u != nil {
 		l.known = u
 	}
 	if set := a.achievements(r.key, appID, r.dir, r.name, false); set != nil {

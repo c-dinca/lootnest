@@ -551,6 +551,18 @@ func (a *App) apiSaveGameQuiet(g core.Game) (core.Game, error) {
 	} else if cfg.Game(g.ID) == nil {
 		return g, errors.New("That game no longer exists.")
 	}
+	if g.Prefix == "" && a.env.OS == "linux" {
+		// The page may not send it back; a new game gets the one it runs in.
+		if old := cfg.Game(g.ID); old != nil && !isNew {
+			g.Prefix = old.Prefix
+		} else if g.Launch.Type == "steam" {
+			g.Prefix = a.newPrefix(g.Launch.AppID, "")
+		} else if g.Launch.Type == "exe" {
+			if exe, err := a.env.ResolveExe(g.Launch.Exe); err == nil {
+				g.Prefix = a.newPrefix(0, exe)
+			}
+		}
+	}
 	if err := core.ValidateGame(&g); err != nil {
 		return g, err
 	}
@@ -744,7 +756,13 @@ func (a *App) apiInspectSteam(appID int) (Inspect, error) {
 	} else if len(out.Candidates) > 0 {
 		out.ProcessName = out.Candidates[0].Name
 	}
-	out.Suggestions = a.env.SuggestPaths(game.Name, game.InstallDir, appID)
+	env := a.env
+	if a.env.OS == "linux" {
+		if pfx := core.ProtonPrefix(game.InstallDir, appID); pfx != "" {
+			env = a.env.InPrefix(core.OpenPrefix(pfx, core.ProtonUser)) // a Proton game's saves
+		}
+	}
+	out.Suggestions = env.SuggestPaths(game.Name, game.InstallDir, appID)
 	if out.Candidates == nil {
 		out.Candidates = []core.ExeCandidate{}
 	}

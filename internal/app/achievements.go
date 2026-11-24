@@ -64,7 +64,7 @@ func (a *App) achievements(key string, appID int, dir, name string, online bool)
 	if len(list) == 0 {
 		list = core.LocalSchema(dir)
 	}
-	unlocks, file := a.env.PCUnlocksIn(appID, dir)
+	unlocks, file := a.envForKey(key).PCUnlocksIn(appID, dir)
 	// Nothing on this PC has them: the user's own Steam account, for a
 	// game they also own there (Settings, Online; off by default).
 	if len(list) == 0 && total == 0 && unlocks == nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,13 @@ import (
 // ErrSteamRunning means Steam must close before its launch options can be
 // written (Steam rewrites localconfig.vdf while it runs and when it exits).
 var ErrSteamRunning = errors.New("steam-running")
+
+// steamHooksHere: Lootnest puts itself in Steam's launch options only on
+// Windows. On Linux nothing answers Steam's call yet (main_linux.go has no
+// --steam), so a game started from Steam would never start.
+const steamHooksHere = runtime.GOOS == "windows"
+
+var errNoSteamHooks = errors.New("On Linux, Lootnest doesn't go into Steam's launch options yet: start games with profiles from Lootnest")
 
 func steamRunning() bool {
 	procs, err := plat.ProcessNames()
@@ -204,6 +212,9 @@ func syncSteamHooks(cfg *core.Config, env *core.Env, exe string, install, allowR
 // restoresOnly skips adding Lootnest to games (used when the automatic
 // setting is off but a removed game's options still need putting back).
 func (a *App) applyHooks(allowRestart, restoresOnly bool) (hookResult, error) {
+	if !steamHooksHere {
+		return hookResult{}, errNoSteamHooks
+	}
 	a.hookMu.Lock()
 	defer a.hookMu.Unlock()
 	a.mu.Lock()
@@ -249,6 +260,9 @@ func (a *App) applyHooks(allowRestart, restoresOnly bool) (hookResult, error) {
 // autoHooks applies silently if Steam is closed; otherwise it remembers to
 // try again (the watcher retries) and tells the UI.
 func (a *App) autoHooks() {
+	if !steamHooksHere {
+		return
+	}
 	a.mu.Lock()
 	on := a.cfg.Settings.AutoSteamHooks
 	a.mu.Unlock()

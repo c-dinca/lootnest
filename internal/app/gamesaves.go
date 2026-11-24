@@ -406,7 +406,7 @@ func (a *App) apiGameSaveRestore(key, id string) error {
 			return
 		}
 		tmp := filepath.Join(DataDir(), "saves-tmp-"+time.Now().Format("150405.000"))
-		skipped, err := c.RestoreGameVersion(gameSavesKey(f), id, gl.Locs, a.env.Resolve, tmp)
+		skipped, err := c.RestoreGameVersion(gameSavesKey(f), id, gl.Locs, a.envFor(f.Prefix).Resolve, tmp)
 		if err != nil {
 			out["error"] = err.Error()
 			return

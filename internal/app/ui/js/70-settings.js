@@ -101,8 +101,11 @@
         + sub("Updates for your games", "", `
           ${sw("updatePointOff", "Make a save point before a game updates", "", !s.updatePointOff, true)}
           ${sw("downloadsOff", "Look in Downloads for updates", "", !s.downloadsOff, true)}`)
+        + (S.d.platform === "linux" ? sub("Windows games on Linux", "", `
+          ${setRow("Start them with", "Each runs in its own Wine prefix, where its saves are.", `<select id="s-runner" class="ln-input set-input" data-setting="linuxRunner">
+            ${[["", "Automatic"], ["umu", "umu-launcher"], ["wine", "Wine"]].map(([v, l]) => `<option value="${v}" ${(s.linuxRunner || "") === v ? "selected" : ""}>${l}</option>`).join("")}</select>`, "s-runner")}`) : "")
         + sub("Steam", "", `
-          ${sw("autoSteamHooks", "Set up Steam automatically", "Changes each game's launch options in Steam.", s.autoSteamHooks)}
+          ${S.d.platform === "linux" ? setRow("Steam's launch options", "Left alone on Linux: start games with profiles from Lootnest.", "") : sw("autoSteamHooks", "Set up Steam automatically", "Changes each game's launch options in Steam.", s.autoSteamHooks)}
           ${st.found ? setRow("Steam account", st.accountError ? `<p class="error-text">${esc(st.accountError)}</p>` : "", `<select id="s-steam" class="ln-input set-input" data-setting="steamAccountId">
             <option value="">Automatic${st.accountInUse && !s.steamAccountId ? " (" + esc(st.accountInUse) + ")" : ""}</option>
             ${(st.accounts || []).map((a) => `<option value="${esc(a)}" ${a === s.steamAccountId ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>`, "s-steam") : setRow("Steam isn't on this PC", "")}`)
