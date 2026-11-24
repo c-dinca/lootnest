@@ -176,7 +176,7 @@ func (a *App) apiMoveGame(appID int, lib string) error {
 }
 
 func (a *App) moveGame(in core.SteamInstall, lib string) (core.MoveResult, error) {
-	size, err := in.Size()
+	count, size, err := in.Tree()
 	if err != nil {
 		return core.MoveResult{}, fmt.Errorf("Lootnest can't move this game: %w", err)
 	}
@@ -198,12 +198,12 @@ func (a *App) moveGame(in core.SteamInstall, lib string) (core.MoveResult, error
 
 	a.logf("Moving %s (%s) from %s to %s", in.Name, gb(size), in.Dir(), lib)
 	last := time.Time{}
-	progress := func(n int64) {
+	progress := func(n int64, files int) {
 		if time.Since(last) < 250*time.Millisecond && n < size {
 			return
 		}
 		last = time.Now()
-		a.emit("moveProgress", map[string]any{"appId": in.AppID, "name": in.Name, "step": "copy", "done": min(n, size), "total": size, "from": in.Library, "lib": lib})
+		a.emit("moveProgress", map[string]any{"appId": in.AppID, "name": in.Name, "step": "copy", "done": min(n, size), "total": size, "files": min(files, count), "filesTotal": count, "from": in.Library, "lib": lib})
 	}
 	check := func() error {
 		if steamRunning() {

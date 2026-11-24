@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // ---------------------------------------------------------------------------
@@ -38,19 +39,25 @@ func (in SteamInstall) Dir() string {
 
 // Size is the bytes the game and its workshop items take up.
 func (in SteamInstall) Size() (int64, error) {
-	_, n, err := TreeSize(in.Dir())
+	_, n, err := in.Tree()
+	return n, err
+}
+
+// Tree counts the files and bytes of the game and its workshop items.
+func (in SteamInstall) Tree() (int, int64, error) {
+	files, n, err := TreeSize(in.Dir())
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	ws := filepath.Join(in.Library, "steamapps", "workshop", "content", strconv.Itoa(in.AppID))
 	if st, err := os.Stat(ws); err == nil && st.IsDir() {
-		_, w, err := TreeSize(ws)
+		f, w, err := TreeSize(ws)
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
-		n += w
+		files, n = files+f, n+w
 	}
-	return n, nil
+	return files, n, nil
 }
 
 const partSuffix = ".lootnest-part"
@@ -105,13 +112,88 @@ func TreeSize(dir string) (files int, bytes int64, err error) {
 	return files, bytes, err
 }
 
+// MoveProgress is how far a copy is: bytes and whole files copied so far.
+// Files lets the page tell a slow drive from a stretch of small files, which
+// copy few bytes a second but many files.
+type MoveProgress func(bytes int64, files int)
+
+// Small files are copied a few at a time: each one is flushed to disk and
+// read back, and that fixed cost per file, not its size, is what takes the
+// time. Files of moveAloneFrom and up are copied one at a time with nothing
+// beside them, so a hard drive reads and writes them in one sweep.
+const (
+	moveWorkers   = 6
+	moveAloneFrom = 16 << 20
+)
+
 // moveCopyTree copies src into dst (which must not exist yet), flushing every
-// file to disk and reading it back. done is called with the bytes copied so
-// far; stop, if set, cancels the copy when it says so.
-func moveCopyTree(src, dst string, done func(int64), stop func() bool) error {
-	var total int64
-	return filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
+// file to disk and reading it back. done is called with the bytes and files
+// copied so far, never from two goroutines at once; stop, if set, cancels the
+// copy when it says so.
+func moveCopyTree(src, dst string, done MoveProgress, stop func() bool) error {
+	var (
+		mu    sync.Mutex
+		bytes int64
+		files int
+		first error
+	)
+	fail := func(err error) {
+		mu.Lock()
+		if first == nil {
+			first = err
+		}
+		mu.Unlock()
+	}
+	failed := func() error {
+		mu.Lock()
+		defer mu.Unlock()
+		return first
+	}
+	report := func(add int64, file bool) {
+		mu.Lock()
+		defer mu.Unlock()
+		bytes += add
+		if file {
+			files++
+		}
+		if done != nil {
+			done(bytes, files)
+		}
+	}
+	// Slots: a small file takes one, a big one all of them. Only this
+	// goroutine takes slots, so a big file waits for the small ones before
+	// it and nothing can deadlock.
+	slots := make(chan struct{}, moveWorkers)
+	take := func(n int) {
+		for range n {
+			slots <- struct{}{}
+		}
+	}
+	give := func(n int) {
+		for range n {
+			<-slots
+		}
+	}
+	copyOne := func(p, to string, info fs.FileInfo) error {
+		var had int64
+		n, err := copyFileSynced(p, to, info, func(n int64) {
+			report(n-had, false)
+			had = n
+		}, stop)
 		if err != nil {
+			return err
+		}
+		if n != info.Size() {
+			return fmt.Errorf("%s changed while it was being copied", p)
+		}
+		report(0, true)
+		return nil
+	}
+	walkErr := filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if err := failed(); err != nil {
 			return err
 		}
 		rel, err := filepath.Rel(src, p)
@@ -129,20 +211,25 @@ func moveCopyTree(src, dst string, done func(int64), stop func() bool) error {
 		if err != nil {
 			return err
 		}
-		n, err := copyFileSynced(p, to, info, func(n int64) {
-			if done != nil {
-				done(total + n)
+		if info.Size() >= moveAloneFrom {
+			take(moveWorkers)
+			defer give(moveWorkers)
+			return copyOne(p, to, info)
+		}
+		take(1)
+		go func() {
+			defer give(1)
+			if err := copyOne(p, to, info); err != nil {
+				fail(err)
 			}
-		}, stop)
-		total += n
-		if err != nil {
-			return err
-		}
-		if n != info.Size() {
-			return fmt.Errorf("%s changed while it was being copied", p)
-		}
+		}()
 		return nil
 	})
+	take(moveWorkers) // every copy has finished
+	if walkErr != nil {
+		return walkErr
+	}
+	return failed()
 }
 
 func copyFileSynced(from, to string, info fs.FileInfo, progress func(int64), stop func() bool) (int64, error) {
@@ -240,7 +327,7 @@ func sameTree(a, b string) error {
 
 // copyChecked copies src to dst through dst+".lootnest-part" and checks the
 // copy before giving it its real name.
-func copyChecked(src, dst string, done func(int64), stop func() bool) error {
+func copyChecked(src, dst string, done MoveProgress, stop func() bool) error {
 	part := dst + partSuffix
 	_ = os.RemoveAll(part) // left over from a move that was interrupted
 	if err := os.MkdirAll(filepath.Dir(part), 0o755); err != nil {
@@ -270,11 +357,11 @@ type MoveResult struct {
 }
 
 // MoveSteamGame moves an installed Steam game into another Steam library.
-// Steam must be closed. done reports bytes copied so far. check, if set,
+// Steam must be closed. done reports bytes and files copied so far. check, if set,
 // runs once the copy is done and before anything in the old library is
 // touched; an error from it (Steam or the game was started meanwhile)
 // cancels the move.
-func MoveSteamGame(in SteamInstall, toLib string, done func(int64), check func() error) (MoveResult, error) {
+func MoveSteamGame(in SteamInstall, toLib string, done MoveProgress, check func() error) (MoveResult, error) {
 	res := MoveResult{From: in.Dir()}
 	if samePath(in.Library, toLib) {
 		return res, errors.New("the game is already in that library")
@@ -315,10 +402,11 @@ func MoveSteamGame(in SteamInstall, toLib string, done func(int64), check func()
 
 	// 1. Copy and check. Nothing is changed in the old library yet.
 	var gameBytes int64
-	if err := copyChecked(in.Dir(), dst, func(n int64) {
-		gameBytes = n
+	var gameFiles int
+	if err := copyChecked(in.Dir(), dst, func(n int64, f int) {
+		gameBytes, gameFiles = n, f
 		if done != nil {
-			done(n)
+			done(n, f)
 		}
 	}, nil); err != nil {
 		return res, fmt.Errorf("copying the game failed (%v). It stays where it was", err)
@@ -332,9 +420,9 @@ func MoveSteamGame(in SteamInstall, toLib string, done func(int64), check func()
 		_ = os.Remove(wsACFDst)
 	}
 	if hasWS {
-		if err := copyChecked(wsDir, wsDst, func(n int64) {
+		if err := copyChecked(wsDir, wsDst, func(n int64, f int) {
 			if done != nil {
-				done(gameBytes + n)
+				done(gameBytes+n, gameFiles+f)
 			}
 		}, nil); err != nil {
 			undo()

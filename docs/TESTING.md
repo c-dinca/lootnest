@@ -1533,3 +1533,17 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
    screen, and no screenshot file is left in Pictures/Screenshots.
 15. On KDE Plasma (Wayland), the same; the keys show in System Settings,
    Shortcuts, where they can be changed.
+
+## 69. Moving a game: small files and the time left
+
+1. Move a large Unreal game (It Takes Two, 45 GB, from one drive to
+   another; a hard drive as the target shows it best). Past 90%, the size
+   line also says how many files are left; while small files copy, the
+   speed is "N files/s", not a few KB/s, and the time left stays a few
+   minutes at most, never "About 25 min" at 99%.
+2. Time the whole move against 2.23.1 on the same two drives: it should be
+   as fast or faster. The log has "Moved ..." and the game plays from the
+   new folder with its saves.
+3. Stop the move while it copies small files: it stops within a second or
+   two, and the new drive has no folder of it (no .lootnest-part).
+4. Game Mover (a Steam game): the same speed line and time left.

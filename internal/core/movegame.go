@@ -86,9 +86,9 @@ func (e *Env) MoveGamePlan(name, source, src, dst string, running bool, free int
 }
 
 // MoveGame copies the game into m.To and checks the copy. done reports the
-// bytes copied so far; stop, when it says so, cancels the move. On an error
+// bytes and files copied so far; stop, when it says so, cancels the move. On an error
 // nothing is left at m.To, and the original is never touched.
-func MoveGame(m GameMove, done func(int64), stop func() bool) error {
+func MoveGame(m GameMove, done MoveProgress, stop func() bool) error {
 	if err := copyChecked(m.From, m.To, done, stop); err != nil {
 		return err
 	}
