@@ -43,41 +43,69 @@
   // Mover, draw the same way: how far, how fast, the time left, from where
   // to where. Minimise (or Escape) shrinks the dialog to a card in the
   // corner that keeps counting; a click on it brings the dialog back.
-  const MV = { key: "", t0: 0, last: 0, at: 0, rate: 0 };
-  // The speed, as an average that settles over about the last 20 updates.
-  function moveTick(key, done) {
+  const MV = { key: "", t0: 0, last: 0, lastF: 0, at: 0, rate: 0, frate: 0, fit: null };
+  // A move's time goes on two things: bytes, and a fixed cost per file (each
+  // is flushed to disk and read back). A game's big files copy at the drive's
+  // speed and its thousands of small ones at a few KB/s, so the bytes alone
+  // can't say the time left. moveTick learns seconds per MB and per file
+  // together (least squares over every update, the per-file cost held near
+  // MV_FILE_COST until there are small files to learn it from).
+  const MV_FILE_COST = 0.01; // seconds per file, before anything is known
+  function moveTick(key, done, files) {
     const now = performance.now();
-    if (MV.key !== key || done < MV.last) Object.assign(MV, { key, t0: now, last: done, at: now, rate: 0 });
+    files = files || 0;
+    if (MV.key !== key || done < MV.last || files < MV.lastF) Object.assign(MV, { key, t0: now, last: done, lastF: files, at: now, rate: 0, frate: 0, fit: { bb: 1e-6, bf: 0, ff: 1, bt: 0, ft: MV_FILE_COST } });
     const dt = (now - MV.at) / 1000;
-    if (dt < 0.2 || done <= MV.last) return;
-    const r = (done - MV.last) / dt;
+    if (dt < 0.2 || (done <= MV.last && files <= MV.lastF)) return;
+    const db = (done - MV.last) / 1048576, df = files - MV.lastF, F = MV.fit;
+    F.bb += db * db; F.bf += db * df; F.ff += df * df; F.bt += db * dt; F.ft += df * dt;
+    const r = (done - MV.last) / dt, rf = df / dt;
     MV.rate = MV.rate ? MV.rate * 0.9 + r * 0.1 : r;
-    MV.last = done; MV.at = now;
+    MV.frate = MV.frate ? MV.frate * 0.9 + rf * 0.1 : rf;
+    MV.last = done; MV.lastF = files; MV.at = now;
+  }
+  // Seconds left for so many MB and files, from what moveTick learnt.
+  function moveLeft(mb, files) {
+    const F = MV.fit;
+    if (!F) return 0;
+    const det = F.bb * F.ff - F.bf * F.bf;
+    let a = det > 0 ? (F.bt * F.ff - F.ft * F.bf) / det : -1, b = det > 0 ? (F.ft * F.bb - F.bt * F.bf) / det : -1;
+    if (a < 0 && b < 0) a = b = 0;
+    else if (a < 0) { a = 0; b = F.ft / F.ff; } else if (b < 0) { b = 0; a = F.bt / F.bb; }
+    if (!(a > 0) && MV.rate > 0) a = 1048576 / MV.rate;
+    return a * mb + b * files;
   }
   const leftText = (s) => s < 60 ? "Less than a minute left" : s < 3600 ? `About ${Math.round(s / 60)} min left`
     : `About ${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min left`;
   // What's moving now, whichever kind, or null.
   function moveNow() {
     const F = S.folderMove, G = S.moving;
-    const m = F ? { kind: "folder", key: F.key, name: F.name || "The game", done: F.done || 0, total: F.total || 0, step: F.step || "", from: F.from || "", to: F.to || "" }
-      : G ? { kind: "steam", key: "app:" + G.appId, appId: G.appId, name: G.name || "The game", done: G.done || 0, total: G.total || 0, step: G.step || "", from: G.from || "", to: G.lib || "" } : null;
+    const m = F ? { kind: "folder", key: F.key, name: F.name || "The game", done: F.done || 0, total: F.total || 0, files: F.files || 0, filesTotal: F.filesTotal || 0, step: F.step || "", from: F.from || "", to: F.to || "" }
+      : G ? { kind: "steam", key: "app:" + G.appId, appId: G.appId, name: G.name || "The game", done: G.done || 0, total: G.total || 0, files: G.files || 0, filesTotal: G.filesTotal || 0, step: G.step || "", from: G.from || "", to: G.lib || "" } : null;
     if (!m) return null;
     m.pct = m.total ? Math.min(100, Math.floor((m.done / m.total) * 100)) : 0;
     m.ending = m.step === "check" || m.step === "firewall";
     const steady = MV.key === m.key && MV.rate > 0 && performance.now() - MV.t0 > 3000;
-    m.speed = steady && !m.ending ? fmtBytes(MV.rate) + "/s" : "";
-    m.left = m.ending ? "Almost done" : m.step === "steam" ? "Closing Steam first" : !m.total ? "Counting its files" : steady ? leftText((m.total - m.done) / MV.rate) : "Working out the time left";
+    // Small files show as files a second: their few KB/s would look stuck.
+    const small = MV.frate > 0 && MV.rate / MV.frate < 1048576;
+    m.speed = !steady || m.ending ? "" : small ? `${Math.round(MV.frate).toLocaleString()} files/s` : fmtBytes(MV.rate) + "/s";
+    const left = m.filesTotal ? moveLeft((m.total - m.done) / 1048576, Math.max(0, m.filesTotal - m.files)) : (m.total - m.done) / MV.rate;
+    m.left = m.ending ? "Almost done" : m.step === "steam" ? "Closing Steam first" : !m.total ? "Counting its files" : steady ? leftText(left) : "Working out the time left";
     m.say = m.step === "firewall" ? "Keeping it offline in its new folder. Allow it in Windows' prompt."
       : m.step === "check" ? "Checking the copy, then pointing the Library at it" : m.step === "steam" ? "Steam closes while the game moves" : "";
     return m;
   }
+  // "44.6 GB of 44.8 GB", and the files still to go near the end, where
+  // they're what the time goes on.
+  const moveSize = (m) => !m.total ? "" : `${fmtBytes(m.done)} of ${fmtBytes(m.total)}`
+    + (m.filesTotal && m.pct >= 90 && m.files < m.filesTotal && !m.ending ? `, ${(m.filesTotal - m.files).toLocaleString()} files to go` : "");
   // The dialog's view of a move. The numbers carry data-mv names so a
   // progress event changes only them (paintMove), and the bar glides.
   function moveBody(m) {
     const end = (k, p) => p ? `<div class="mv-end"><span class="mv-k">${k}</span><span class="mv-p selectable" title="${esc(p)}">${esc(p)}</span></div>` : "";
     return `<div class="mv${m.ending ? " is-ending" : ""}" data-mv="${esc(m.key)}">
       <div class="mv-head"><span class="mv-pct ln-num"><b data-mv="pct">${m.pct}</b><small>%</small></span>
-        <span class="mv-size ln-num" data-mv="size">${m.total ? `${fmtBytes(m.done)} of ${fmtBytes(m.total)}` : ""}</span></div>
+        <span class="mv-size ln-num" data-mv="size">${moveSize(m)}</span></div>
       <div class="mv-bar" role="progressbar" aria-label="Moved" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${m.pct}"><i data-mv="fill" style="width:${m.pct}%"></i></div>
       <div class="mv-facts"><span data-mv="left">${esc(m.left)}</span><span class="ln-num" data-mv="speed">${esc(m.speed)}</span></div>
       ${m.say ? `<p class="mv-say" role="status">${esc(m.say)}</p>` : ""}
@@ -94,7 +122,7 @@
       if (!box || box.classList.contains("is-ending") !== m.ending) renderOverlay();
       else {
         const set = (n, v) => { const e = box.querySelector(`[data-mv="${n}"]`); if (e && e.textContent !== v) e.textContent = v; };
-        set("pct", String(m.pct)); set("size", m.total ? `${fmtBytes(m.done)} of ${fmtBytes(m.total)}` : ""); set("left", m.left); set("speed", m.speed);
+        set("pct", String(m.pct)); set("size", moveSize(m)); set("left", m.left); set("speed", m.speed);
         const f = box.querySelector('[data-mv="fill"]'); if (f) f.style.width = m.pct + "%";
         const b = box.querySelector(".mv-bar"); if (b) b.setAttribute("aria-valuenow", m.pct);
       }

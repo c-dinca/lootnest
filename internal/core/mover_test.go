@@ -54,7 +54,7 @@ func TestMoveSteamGame(t *testing.T) {
 		t.Fatalf("Size should count the workshop items too: %d, %v", n, err)
 	}
 	var last int64
-	res, err := MoveSteamGame(in, lib2, func(n int64) { last = n }, nil)
+	res, err := MoveSteamGame(in, lib2, func(n int64, _ int) { last = n }, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

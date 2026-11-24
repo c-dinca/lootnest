@@ -2703,6 +2703,20 @@ These shipped recently, newest last:
   BindShortcuts answers (an error without a portal). Not seen on a real
   GNOME or KDE: docs/TESTING.md 68, items 13 to 15. L4 is done; L5 only
   if the owner asks.
+- **Unreleased, moves: small files together, and the time left** (the
+  owner, 24 Nov 2026: It Takes Two went to 99% in 6 minutes, then said
+  "About 25 min left" at 146 KB/s). Each file is flushed and read back,
+  so a game's thousands of small files copy at a few KB/s. `moveCopyTree`
+  (core/mover.go) copies files under `moveAloneFrom` (16 MB) up to
+  `moveWorkers` (6) at a time and a bigger one with nothing beside it
+  (slots taken only by the walker, so no deadlock); `MoveProgress` reports
+  bytes and files, serialized. `SteamInstall.Tree`; events carry `files`
+  and `filesTotal`. Page (72-storage.js): `moveTick` learns seconds per MB
+  and per file together (least squares, the per-file cost held near
+  `MV_FILE_COST` until there are small files), `moveLeft`; the speed
+  shows as files/s when the average file is under 1 MB; `moveSize` adds
+  "N files to go" past 90%. Harness `?move=tail`, shots
+  `game-move-progress`, `game-move-tail`. docs/TESTING.md 69.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

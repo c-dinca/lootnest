@@ -261,7 +261,7 @@
       }
       case "moveProgress":
         S.moving = Object.assign(S.moving || {}, ev);
-        moveTick("app:" + ev.appId, ev.done || 0);
+        moveTick("app:" + ev.appId, ev.done || 0, ev.files || 0);
         paintMove();
         break;
       case "moveDone": {
@@ -280,7 +280,7 @@
         break;
       case "folderMoveProgress":
         S.folderMove = ev;
-        moveTick(ev.key, ev.done || 0);
+        moveTick(ev.key, ev.done || 0, ev.files || 0);
         paintMove();
         break;
       case "folderMoveDone": {

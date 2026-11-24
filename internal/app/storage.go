@@ -326,20 +326,20 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, stri
 	}
 	a.logf("Moving %s (%s) from %s to %s", m.Name, gb(m.Size), m.From, m.To)
 	var last time.Time
-	progress := func(n int64) {
+	progress := func(n int64, files int) {
 		if time.Since(last) > 250*time.Millisecond {
 			last = time.Now()
-			a.emit("folderMoveProgress", moveSays(key, m, n, ""))
+			a.emit("folderMoveProgress", moveSays(key, m, n, files, ""))
 		}
 	}
-	a.emit("folderMoveProgress", moveSays(key, m, 0, ""))
+	a.emit("folderMoveProgress", moveSays(key, m, 0, 0, ""))
 	if err := core.MoveGame(m, progress, moveStop.Load); err != nil {
 		if errors.Is(err, core.ErrMoveCancelled) {
 			return "", "", "", err
 		}
 		return "", "", "", fmt.Errorf("copying it failed (%v). It stays where it was.", err)
 	}
-	a.emit("folderMoveProgress", moveSays(key, m, m.Size, "check"))
+	a.emit("folderMoveProgress", moveSays(key, m, m.Size, m.Files, "check"))
 	undo := func(why error) (string, string, string, error) {
 		if err := os.RemoveAll(m.To); err != nil {
 			a.logf("ERROR removing the copy in %s: %v", m.To, err)
@@ -363,7 +363,7 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, stri
 		if !strings.HasPrefix(key, "game:") {
 			newKey = movedKey(m.To)
 		}
-		a.emit("folderMoveProgress", moveSays(key, m, m.Size, "firewall"))
+		a.emit("folderMoveProgress", moveSays(key, m, m.Size, m.Files, "firewall"))
 		note = a.offlineMoved(key, newKey)
 	}
 	if err := plat.Recycle(a.hwnd, m.From); err != nil {
@@ -373,11 +373,11 @@ func (a *App) moveFolderGame(t updTarget, key, dst string) (string, string, stri
 	return m.To, "", note, nil
 }
 
-// moveSays is a "folderMoveProgress" event: how far the copy is, with the
-// game's name and both folders, so the page can draw the move (and its
-// small view) without looking anything up.
-func moveSays(key string, m core.GameMove, done int64, step string) map[string]any {
-	return map[string]any{"key": key, "name": m.Name, "from": m.From, "to": m.To, "done": done, "total": m.Size, "step": step}
+// moveSays is a "folderMoveProgress" event: how far the copy is in bytes
+// and files, with the game's name and both folders, so the page can draw the
+// move (and its small view) without looking anything up.
+func moveSays(key string, m core.GameMove, done int64, files int, step string) map[string]any {
+	return map[string]any{"key": key, "name": m.Name, "from": m.From, "to": m.To, "done": done, "total": m.Size, "files": files, "filesTotal": m.Files, "step": step}
 }
 
 // movedKey is a moved folder game's Library key.

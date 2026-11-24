@@ -699,15 +699,21 @@
         { root: "E:\\", free: 812 * GB, size: 931 * GB, games: "E:\\Games" }] });
     },
     // ?move=hold: the move keeps going from 35% at about 160 MB/s, for its
-    // screenshots (the time left shows after 3 s); else it ends in 1.5 s.
+    // screenshots (the time left shows after 3 s); ?move=tail: the end of a
+    // move, 2,400 small files at about 40 a second. Else it ends in 1.5 s.
     ps_moveFolderGame: (key, dst) => {
-      const f = found.find((x) => x.key === key) || {}, total = 38.2 * 2 ** 30;
+      const f = found.find((x) => x.key === key) || {}, total = 38.2 * 2 ** 30, filesTotal = 9120;
       const to = dst + "\\" + (f.name || "Game"), newKey = "dir:" + to.toLowerCase();
-      const say = (done) => window.__ps({ type: "folderMoveProgress", key, name: f.name || "The game", from: f.dir || "", to, done, total, step: "" });
-      let done = 0.35 * total;
-      setTimeout(() => say(done), 100);
-      const tick = setInterval(() => { done = Math.min(total, done + 40 * 2 ** 20 * (0.9 + Math.random() * 0.2)); say(done); }, 250);
-      if (q.get("move") !== "hold") setTimeout(() => { clearInterval(tick); if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey, hydra: f.source === "hydra" }); }, 1500);
+      const tail = q.get("move") === "tail";
+      const say = (done, files) => window.__ps({ type: "folderMoveProgress", key, name: f.name || "The game", from: f.dir || "", to, done, total, files, filesTotal, step: "" });
+      let done = tail ? total - 2400 * 60e3 : 0.35 * total, files = tail ? filesTotal - 2400 : 2100;
+      setTimeout(() => say(done, files), 100);
+      const tick = setInterval(() => {
+        const r = 0.9 + Math.random() * 0.2;
+        if (tail) { const n = Math.round(10 * r); files = Math.min(filesTotal, files + n); done = Math.min(total, done + n * 60e3); } else { done = Math.min(total, done + 40 * 2 ** 20 * r); if (Math.random() < 0.3) files++; }
+        say(done, files);
+      }, 250);
+      if (!["hold", "tail"].includes(q.get("move"))) setTimeout(() => { clearInterval(tick); if (f.key) { f.key = newKey; f.dir = to; } window.__ps({ type: "folderMoveDone", key, name: f.name || "The game", to, newKey, hydra: f.source === "hydra" }); }, 1500);
       return ok();
     },
     ps_moveFolderCancel: () => ok(),

@@ -1,9 +1,11 @@
 package core
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -73,7 +75,7 @@ func TestMoveGameCopiesAndChecks(t *testing.T) {
 		t.Fatal(err)
 	}
 	var last int64
-	if err := MoveGame(p, func(n int64) { last = n }, nil); err != nil {
+	if err := MoveGame(p, func(n int64, _ int) { last = n }, nil); err != nil {
 		t.Fatal(err)
 	}
 	if last != p.Size {
@@ -97,7 +99,7 @@ func TestMoveGameCopiesAndChecks(t *testing.T) {
 	_ = os.RemoveAll(p.To)
 	orig := filepath.Join(game, "saves", "slot1.sav")
 	n := 0
-	if err := MoveGame(p, func(int64) {
+	if err := MoveGame(p, func(int64, int) {
 		if n++; n == 1 {
 			_ = os.WriteFile(orig, []byte("slot two, longer"), 0o644) // the game wrote while it was copied
 		}
@@ -121,5 +123,52 @@ func TestMoveGameCopiesAndChecks(t *testing.T) {
 	}
 	if !isFile(filepath.Join(game, "saves", "slot1.sav")) {
 		t.Fatal("cancelling touched the game")
+	}
+}
+
+// Many small files go a few at a time and a big one alone; progress only
+// grows and ends with every byte and every file.
+func TestMoveCopyTreeSmallFilesTogether(t *testing.T) {
+	root := t.TempDir()
+	src := filepath.Join(root, "Game")
+	for i := range 300 {
+		write(t, filepath.Join(src, "Engine", fmt.Sprintf("d%02d", i%7), fmt.Sprintf("f%03d.ini", i)), strings.Repeat("x", i))
+	}
+	write(t, filepath.Join(src, "Content", "big.pak"), strings.Repeat("b", moveAloneFrom+5))
+	write(t, filepath.Join(src, "empty.txt"), "")
+	wantFiles, wantBytes, err := TreeSize(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lastB int64
+	lastF := 0
+	dst := filepath.Join(root, "E", "Game")
+	if err := copyChecked(src, dst, func(b int64, f int) {
+		if b < lastB || f < lastF {
+			t.Errorf("progress went back: %d/%d after %d/%d", b, f, lastB, lastF)
+		}
+		lastB, lastF = b, f
+	}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if lastB != wantBytes || lastF != wantFiles {
+		t.Fatalf("progress ended at %d bytes, %d files; want %d, %d", lastB, lastF, wantBytes, wantFiles)
+	}
+	if err := sameTree(src, dst); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dst, "Engine", "d03", "f010.ini")); string(b) != strings.Repeat("x", 10) {
+		t.Fatalf("copied file %q", b)
+	}
+
+	// Cancelled halfway through the small files: nothing is left.
+	_ = os.RemoveAll(dst)
+	var n atomic.Int32
+	err = copyChecked(src, dst, func(int64, int) { n.Add(1) }, func() bool { return n.Load() > 40 })
+	if err != ErrMoveCancelled {
+		t.Fatalf("cancel: %v", err)
+	}
+	if _, err := os.Stat(dst + partSuffix); !os.IsNotExist(err) {
+		t.Fatal("a cancelled part folder is left")
 	}
 }
