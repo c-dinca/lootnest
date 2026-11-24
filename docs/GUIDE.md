@@ -113,9 +113,11 @@ The Linux version is new. It finds the games of Steam (native, Flatpak or Snap),
 - **Steam's launch options** are left alone on Linux, so start a game with profiles from Lootnest, not from Steam, for its profile's files to be swapped in.
 - **Install and remove:** `./install.sh` puts Lootnest in `~/.local/bin` and in your applications menu; `./install.sh --remove` takes it away. Your profiles and saves stay in `~/.local/share/lootnest`. To update, install the newer download over it.
 - **Big Picture** fills the screen (F11, or from the sidebar) and works with a controller. Lootnest reads controllers itself only for their Home button (the Xbox or PS button) over a game, and for Big Picture when the window doesn't have the keyboard. Settings > Controllers lists them. Your desktop gives you the right to read them; a controller Lootnest can't open is left out.
+- **Keys while you play:** Ctrl+Shift+F5 makes a save point and Ctrl+Shift+F12 takes a screenshot while a game runs. On X11 Lootnest holds them itself, as on Windows. On Wayland it asks the desktop for them (GNOME 48, KDE Plasma 5.27 or newer): the desktop may ask you once, and may give other keys, which Lootnest's log names. A desktop without it gives no keys; save points still work from the game's page.
+- **Screenshots** on X11 are of the game's window. On Wayland they're of the whole screen, through the desktop, which may ask you the first time; a save point's picture is left out there.
 - **The tray** needs AppIndicator support on the desktop (on GNOME, the AppIndicator extension). Keys you give Lootnest are kept encrypted with a key in your desktop's keyring.
 
-Not on Linux yet: hotkeys (save point, screenshot, FPS counter) while a game runs, controller batteries, Vibrate and the PlayStation controller as an Xbox one, TV mode, the FPS counter, unlock notes over a game (they come as notifications), Keep a game offline, mods from Nexus, and updating Lootnest from inside it.
+Not on Linux yet: the FPS counter, controller batteries, Vibrate and the PlayStation controller as an Xbox one, TV mode, the FPS counter, unlock notes over a game (they come as notifications), Keep a game offline, mods from Nexus, and updating Lootnest from inside it.
 
 ## PlaySwap
 

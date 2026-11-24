@@ -36,6 +36,13 @@ func (a *App) openWindow(opt Options, dpi int, scale func(int) int) error {
 	a.w = w
 	a.lw = w
 	a.hwnd = plat.SetMainWindow(w) // plat's window calls reach it through this handle (plat/window_linux.go)
+	// The keys held while a game runs (hotkeyTick): grabbed on X11, asked of
+	// the desktop portal on Wayland (plat/keys_linux.go). A press reaches
+	// hook as WM_HOTKEY does on Windows.
+	plat.SetHotKeys([]plat.HotKey{
+		{ID: hotkeyPoint, Mods: plat.ModControl | plat.ModShift, VK: plat.VK_F5, Says: "Make a save point of the game you're playing"},
+		{ID: hotkeyShot, Mods: plat.ModControl | plat.ModShift, VK: plat.VK_F12, Says: "Take a screenshot of the game you're playing"},
+	}, func(id int) { a.hook(a.hwnd, plat.WM_HOTKEY, uintptr(id), 0) }, func(msg string) { a.logf("%s", msg) })
 	desk.SetParent(w.Window(), plat.IconPath())
 	serveInstance(a)
 	return nil

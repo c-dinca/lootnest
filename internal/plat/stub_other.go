@@ -103,16 +103,6 @@ type BrowseOptions struct {
 	Start   string
 }
 
-func CaptureScreen(hwnd uintptr) (r0 *image.RGBA, err error) {
-	err = ErrUnsupported
-	return
-}
-
-func CaptureWindow(hwnd uintptr) (r0 *image.RGBA, err error) {
-	err = ErrUnsupported
-	return
-}
-
 func Center(hwnd uintptr, w int, h int) {}
 
 func ClipCursor(b *[4]int) {}
@@ -215,10 +205,6 @@ func GPU() (r0 string, r1 int64) {
 }
 
 func GameBarCaptures() (r0 string, r1 bool) {
-	return
-}
-
-func GameWindow(proc string) (r0 uintptr) {
 	return
 }
 
@@ -458,10 +444,6 @@ func ReadRegKey(key string) (r0 []string, r1 map[string]string, err error) {
 
 func RefreshFrame(hwnd uintptr) {}
 
-func RegisterHotKey(hwnd uintptr, id int, mods uint32, vk uint32) (r0 bool) {
-	return
-}
-
 func RegisterUninstall(id string, e UninstallEntry) (err error) {
 	err = ErrUnsupported
 	return
@@ -649,8 +631,6 @@ type UninstallEntry struct {
 	QuietUninstallString string
 	EstimatedSizeKB      uint32
 }
-
-func UnregisterHotKey(hwnd uintptr, id int) {}
 
 func UnregisterUninstall(id string) {}
 
