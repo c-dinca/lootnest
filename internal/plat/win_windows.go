@@ -775,6 +775,10 @@ func WindowDPI(hwnd uintptr) int {
 	return win.WindowDPI(hwnd)
 }
 
+func WindowHung(hwnd uintptr) bool {
+	return win.WindowHung(hwnd)
+}
+
 func WindowKey(hwnd uintptr, key string) {
 	win.WindowKey(hwnd, key)
 }

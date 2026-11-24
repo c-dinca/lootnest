@@ -204,3 +204,58 @@ func TestStageMax(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// A save brought for Red Dead Redemption 2 (SRDR30000, in Profiles\<id>):
+// the run holds it and none of the person's other slots, so the game's
+// Continue can only load it; the person's own files keep every slot.
+func TestTrySaveSlotsLikeRDR2(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		files map[string]string // brought, relative to the download
+	}{
+		{"one file", map[string]string{"SRDR30000": "skip prologue"}},
+		{"wrapped files", map[string]string{"Prologue Skip/SRDR30000": "skip prologue", "Prologue Skip/SRDR30001": "skip prologue b"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := trySaveFixture(t)
+			live := filepath.Dir(f.cfgFile())
+			prof := filepath.Join(live, "A1B2C3D4")
+			write(t, filepath.Join(prof, "SRDR30000"), "p1 chapter 2")
+			write(t, filepath.Join(prof, "SRDR30003"), "p1 chapter 4")
+			write(t, filepath.Join(prof, "SRDR30014"), "p1 autosave")
+			dl := filepath.Join(f.root, "Downloads", "mod")
+			for rel, body := range tc.files {
+				write(t, filepath.Join(dl, filepath.FromSlash(rel)), body)
+			}
+			src := dl
+			if len(tc.files) == 1 {
+				src = filepath.Join(dl, "SRDR30000")
+			}
+			if err := f.eng.ProfileFromImport(f.cfg.Game("cs2"), "r1", "p1", "cfg", src); err != nil {
+				t.Fatal(err)
+			}
+			run := filepath.Join(f.eng.Store.ProfileDir("r1", "cs2"), "cfg", "A1B2C3D4")
+			if read(t, filepath.Join(run, "SRDR30000")) != "skip prologue" {
+				t.Fatal("the run doesn't hold the brought save")
+			}
+			for _, n := range []string{"SRDR30003", "SRDR30014"} {
+				if _, err := os.Stat(filepath.Join(run, n)); err == nil {
+					t.Errorf("the run kept p1's %s, which the game would continue from", n)
+				}
+			}
+			if len(tc.files) == 2 && read(t, filepath.Join(run, "SRDR30001")) != "skip prologue b" {
+				t.Error("the second brought save isn't beside the first")
+			}
+			if _, err := os.Stat(filepath.Join(f.eng.Store.ProfileDir("r1", "cs2"), "cfg", "SRDR30000")); err == nil {
+				t.Error("a brought save landed at the folder's top, where the game doesn't look")
+			}
+			if read(t, filepath.Join(run, "..", "video.txt")) != "p1 video" {
+				t.Error("the run lost p1's other files")
+			}
+			// p1's own files keep every slot.
+			if read(t, filepath.Join(prof, "SRDR30003")) != "p1 chapter 4" || read(t, filepath.Join(prof, "SRDR30000")) != "p1 chapter 2" {
+				t.Error("p1's saves changed")
+			}
+		})
+	}
+}

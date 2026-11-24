@@ -2718,6 +2718,20 @@ These shipped recently, newest last:
   "N files to go" past 90%. Harness `?move=tail`, shots
   `game-move-progress`, `game-move-tail`. docs/TESTING.md 69.
 
+- **Unreleased, Try a save starts from that save, and the window's
+  watchdog** (the owner, 24 Nov 2026: a Skip Prologue run of RDR2 "didn't
+  skip anything", and "Not Responding" as a game closed). `ProfileFromImport`:
+  save files into a folder (one, or `looseSaves`: a download of only files,
+  through `throughWrappers`, whose shape the person keeps deeper) go to
+  `saveHome`, and `dropLikeSaves` takes the person's other saves of that
+  shape out of the run's copy (RDR2's Continue picks the newest save).
+  `app/watchdog.go` `watchUI`: a dispatch every 3 s; unanswered for 8 s
+  while `win.WindowHung` (IsHungAppWindow; menus and drags still answer)
+  writes every stack to `hangs\hang-<time>.txt` (5 kept) and the window
+  thread's to the log; `lastHang` goes into Report a problem. The cause
+  of the owner's hang isn't known yet: read the next report.
+  docs/TESTING.md 70.
+
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
 fills the window, glass only over art, the website's colours, no section

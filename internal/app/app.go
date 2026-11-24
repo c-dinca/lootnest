@@ -389,6 +389,7 @@ func Run(opt Options) error {
 		a.show()
 	}
 	go a.watch()
+	go a.watchUI()
 	go a.batteryLoop()
 	a.watchEmergency()
 	go func() {
