@@ -159,7 +159,7 @@ func (a *App) playingFor(key, player string) time.Duration {
 func (a *App) makePoint(t pointTarget, p core.SavePoint) (core.SavePoint, error) {
 	var shot image.Image
 	if t.running && t.proc != "" {
-		img, err := captureGame(t.proc)
+		img, err := captureGame(t.proc, false)
 		if err != nil {
 			a.logf("No picture for the save point of %s: %v", t.name, err)
 		} else {

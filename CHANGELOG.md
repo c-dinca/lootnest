@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Lootnest for Linux, a first version.** A download for Linux (`lootnest-linux-x64.tar.gz`) with an install script for your home folder. It finds games from Steam, Heroic, Lutris, Bottles, the itch app and game folders, starts Windows games with umu-launcher or Wine in their own prefix, and keeps profiles, save points and saves as on Windows. Big Picture fills the screen and works with a controller, its Home button included over a game. TV mode and a few Windows-only features aren't there yet (the guide lists them).
+- **Lootnest for Linux, a first version.** A download for Linux (`lootnest-linux-x64.tar.gz`) with an install script for your home folder. It finds games from Steam, Heroic, Lutris, Bottles, the itch app and game folders, starts Windows games with umu-launcher or Wine in their own prefix, and keeps profiles, save points and saves as on Windows. Big Picture fills the screen and works with a controller, its Home button included over a game. Ctrl+Shift+F5 (save point) and Ctrl+Shift+F12 (screenshot) work while you play, through the desktop on Wayland. TV mode and a few Windows-only features aren't there yet (the guide lists them).
 - **A tidier play bar on a game's page.** Play and the profile it plays as are one key in that profile's colour: the left part starts the game, the right part changes the profile. Beside it, one line says whose files are in and whether the game is ready to play. Someone else, New run, Profiles and the other keys beside Play are all the same height. The long folder path under the title is now two small chips: the folder's name (hover for the whole path, click to open it) and the game's size, with a small meter of how full that drive is and the space left.
 
 ## 2.23.1

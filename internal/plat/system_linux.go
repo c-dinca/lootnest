@@ -73,6 +73,18 @@ func processNamesIn(proc string) (map[string]bool, error) {
 		return nil, err
 	}
 	out := map[string]bool{}
+	for _, e := range ents {
+		if _, err := strconv.Atoi(e.Name()); err != nil {
+			continue
+		}
+		addProcess(out, filepath.Join(proc, e.Name()))
+	}
+	return out, nil
+}
+
+// addProcess adds one process's names (its /proc folder is dir) to out:
+// its comm, its program's file name, and the .exe a Wine command line runs.
+func addProcess(out map[string]bool, dir string) {
 	// A native game's file may end in .x86_64, .sh...; Lootnest keeps its
 	// name without them (core.MainLinuxExe), so both are listed.
 	add := func(n string) {
@@ -87,26 +99,19 @@ func processNamesIn(proc string) (map[string]bool, error) {
 			}
 		}
 	}
-	for _, e := range ents {
-		if _, err := strconv.Atoi(e.Name()); err != nil {
-			continue
-		}
-		dir := filepath.Join(proc, e.Name())
-		if b, err := os.ReadFile(filepath.Join(dir, "comm")); err == nil {
-			add(string(b))
-		}
-		b, err := os.ReadFile(filepath.Join(dir, "cmdline"))
-		if err != nil || len(b) == 0 {
-			continue
-		}
-		args := strings.Split(strings.TrimRight(string(b), "\x00"), "\x00")
-		for _, a := range args[:min(len(args), 3)] {
-			// Wine's own command line names the Windows program (C:\...\x.exe).
-			if base := a[strings.LastIndexAny(a, `/\`)+1:]; strings.HasSuffix(strings.ToLower(base), ".exe") {
-				add(base)
-			}
-		}
-		add(filepath.Base(args[0]))
+	if b, err := os.ReadFile(filepath.Join(dir, "comm")); err == nil {
+		add(string(b))
 	}
-	return out, nil
+	b, err := os.ReadFile(filepath.Join(dir, "cmdline"))
+	if err != nil || len(b) == 0 {
+		return
+	}
+	args := strings.Split(strings.TrimRight(string(b), "\x00"), "\x00")
+	for _, a := range args[:min(len(args), 3)] {
+		// Wine's own command line names the Windows program (C:\...\x.exe).
+		if base := a[strings.LastIndexAny(a, `/\`)+1:]; strings.HasSuffix(strings.ToLower(base), ".exe") {
+			add(base)
+		}
+	}
+	add(filepath.Base(args[0]))
 }

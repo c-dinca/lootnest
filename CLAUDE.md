@@ -2672,8 +2672,37 @@ These shipped recently, newest last:
   in the words; harness `?linux=1&pad=...`, shot
   `settings-controllers-linux`. Checked under Xvfb with openbox (F11 sets
   `_NET_WM_STATE_FULLSCREEN` and back); pads only by tests (a pipe for the
-  device): docs/TESTING.md 68, items 9 to 12. Next: L4b, hotkeys and
-  screenshots through the desktop portal.
+  device): docs/TESTING.md 68, items 9 to 12.
+- **Unreleased, Linux L4b, keys and screenshots while you play**.
+  `internal/desk/keys.go`: on X11 (`desk.X11`) `GrabKey`/`UngrabKey`
+  (XGrabKey on the root window, with Caps and Num Lock either way, an
+  error trap telling a key another program holds, a GDK filter calling
+  `deskKey`); `X11Windows` (_NET_CLIENT_LIST_STACKING, _NET_WM_PID,
+  viewable ones) and `X11Capture` (a foreign GdkWindow, or the root
+  window where it is). The desktop portal over GDBus (`desk_portal_call`
+  adds `handle_token`, subscribes to the Request's Response first;
+  `desk_bus` registers the app id "lootnest" with
+  org.freedesktop.host.portal.Registry, errors ignored): `Screenshot`
+  (interactive false, answers the file) and `BindShortcuts`
+  (CreateSession, BindShortcuts with preferred triggers, Activated by
+  session; `done` gets the desktop's trigger names). plat
+  (`keys_linux.go`): the app declares its keys with `SetHotKeys`
+  (window_linux.go: hotkeyPoint F5 and hotkeyShot F12, both Ctrl+Shift;
+  a press calls `hook` with WM_HOTKEY); `RegisterHotKey` grabs on X11
+  (false when taken) or, on Wayland, binds every declared key once
+  (`bindPortalKeys`, the session kept until quit; presses count only
+  while held); `GameWindow` is the front-most shown window at least
+  200x150 whose process has the name (`pidNames`, `addProcess` shared
+  with ProcessNames); `CaptureWindow`, and `CaptureScreen(0)` for the
+  whole screen through the portal (its file removed once read).
+  `captureGame(proc, whole)`: only the screenshot key takes the whole
+  screen when the window can't be seen, never a save point. Tried with
+  xdotool under Xvfb and openbox (fired twice, not after Ungrab; a
+  clock's window found and copied) and against a stand-in portal on a
+  private bus (dbus-next); the desk test checks the grab and that
+  BindShortcuts answers (an error without a portal). Not seen on a real
+  GNOME or KDE: docs/TESTING.md 68, items 13 to 15. L4 is done; L5 only
+  if the owner asks.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

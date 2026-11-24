@@ -1523,3 +1523,13 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
 12. Settings, Controllers lists a DualSense (USB and Bluetooth) and an
    Xbox controller with the right buttons and how each is connected, and
    no Vibrate key.
+13. On X11 (an Xorg session), while a game runs: Ctrl+Shift+F5 makes a
+   save point with the game's picture, Ctrl+Shift+F12 saves a screenshot
+   of the game's window in Pictures/Lootnest/Screenshots/<game>. Once the
+   game closes, the keys do nothing (other programs get them again).
+14. On GNOME 48 or newer (Wayland), the first game run asks once to allow
+   Lootnest's keys; the log has "Keys while you play, from the desktop:"
+   with the keys given. Ctrl+Shift+F12 saves a picture of the whole
+   screen, and no screenshot file is left in Pictures/Screenshots.
+15. On KDE Plasma (Wayland), the same; the keys show in System Settings,
+   Shortcuts, where they can be changed.

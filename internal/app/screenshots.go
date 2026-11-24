@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -34,9 +35,18 @@ var errBlack = errors.New("the picture came out black")
 
 // captureGame takes a picture of the window of the game whose process is
 // proc. A window that can't draw itself is copied from the screen when it's
-// in front.
-func captureGame(proc string) (*image.RGBA, error) {
+// in front. whole: on Linux, when the window can't be seen (Wayland), the
+// whole screen through the desktop portal; only for a screenshot asked
+// for, never for a save point's picture.
+func captureGame(proc string, whole bool) (*image.RGBA, error) {
 	hwnd := plat.GameWindow(proc)
+	if hwnd == 0 && whole && runtime.GOOS == "linux" {
+		img, err := plat.CaptureScreen(0)
+		if err == nil && core.IsNearBlack(img) {
+			return nil, errBlack
+		}
+		return img, err
+	}
 	if hwnd == 0 {
 		return nil, errors.New("Lootnest couldn't find the game's window")
 	}
@@ -117,7 +127,7 @@ func (a *App) quickShot() {
 		return
 	}
 	go func() {
-		img, err := captureGame(r.proc)
+		img, err := captureGame(r.proc, true)
 		if errors.Is(err, errBlack) {
 			plat.ShowToast(plat.Toast{Kicker: "No screenshot", Title: "The picture came out black", Line: "Switch the game to borderless windowed.", Accent: color})
 			a.logf("Screenshot of %s came out black (exclusive fullscreen?)", r.name)
