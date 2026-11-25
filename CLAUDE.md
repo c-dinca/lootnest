@@ -268,7 +268,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
   (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
-## Where things stand (2.24.0, beta)
+## Where things stand (2.24.1, beta)
 
 These shipped recently, newest last:
 
@@ -2746,6 +2746,7 @@ These shipped recently, newest last:
   method that takes it (directly or through others); it needs GTK on
   Linux like the other app tests, so it runs in CI's build job. Keep
   `a.mu` regions to plain reads and writes of fields. docs/TESTING.md 71.
+  Released as 2.24.1 at the owner's ask (25 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
