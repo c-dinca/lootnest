@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Starting a game with profiles no longer freezes Lootnest.** Since 2.19.0, Lootnest locked itself up as it started a game with profiles: the game started, but Lootnest stayed on "Launching", its window stopped answering, and the session never ended, so the time played, save points and saving the profile's files back didn't happen. It now follows the game as before, and a check in the code keeps this kind of lock-up from coming back.
+
 ## 2.24.0
 
 - **Trying a save starts from that save.** A save brought from a mod or a friend (a Skip Prologue for Red Dead Redemption 2) went into the new run beside your own saves, so the game continued from your latest one instead. The run now holds the brought save without your other slots of that kind, so Continue loads it; your own profile keeps all of them. Several save files in one archive go to the right folder too, beside the game's own saves. A run made before this keeps your slots: load the brought save from the game's own Load menu, or try the save again.

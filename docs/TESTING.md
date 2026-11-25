@@ -1562,3 +1562,13 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
    stack, and `%LOCALAPPDATA%\Lootnest\hangs` a file with every thread;
    Report a problem copies the newest. Dragging the window or holding a
    menu open writes nothing.
+
+## 71. Starting a game with profiles
+
+1. Any game with profiles (Red Dead Redemption 2 with Start with
+   Launcher.exe, and one without launch options): press Play. Within a
+   few seconds of the game's window the picker says it's playing, the
+   window stays responsive, and the log has no "The window stopped
+   answering".
+2. Close the game: the log says its files were saved back to the
+   profile, the time played goes up, and the Timeline has the session.

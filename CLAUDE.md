@@ -2732,6 +2732,20 @@ These shipped recently, newest last:
   of the owner's hang isn't known yet: read the next report.
   docs/TESTING.md 70. The owner asked for 2.24.0 with all of the above
   (24 Nov); its release carries the first Linux download.
+- **The lock-up at every start of a game with profiles** (the owner,
+  25 Nov 2026, on 2.24.0: Skip Prologue stayed on "launching" and the
+  window froze; the watchdog's stack had the window thread waiting for
+  `a.mu` in `hook`'s WM_CLOSE). From 2.19.0 (#320) `runSwap` called
+  `launcherWait` (which asks `launchOpts`, which takes `a.mu`) while
+  holding `a.mu`; Go's mutex isn't re-entrant, so the goroutine stopped
+  for good with the lock held, and with it `tick`, sessions, saving back
+  and the window. The wait is now asked before the lock. This, not a
+  game under another name, is why the 2.21.0 log showed nothing after
+  "Launched". `app/lock_test.go` `TestNoLockInsideLock` reads the
+  package's source and fails when code holding `a.mu` calls an App
+  method that takes it (directly or through others); it needs GTK on
+  Linux like the other app tests, so it runs in CI's build job. Keep
+  `a.mu` regions to plain reads and writes of fields. docs/TESTING.md 71.
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus

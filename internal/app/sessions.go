@@ -262,10 +262,13 @@ func (a *App) runSwap(cfg *core.Config, g *core.Game, req swapRequest, plan *syn
 	}
 	a.logf("Launched %s for %s", g.Name, who)
 	a.tvGameStarting("game:"+g.ID, g.Name)
+	// launcherWait takes a.mu itself, so it's asked before the lock: asked
+	// under it, every start of a game with profiles froze Lootnest.
+	wait := a.launcherWait("game:"+g.ID, time.Duration(cfg.Settings.StartTimeoutSeconds)*time.Second)
 	a.mu.Lock()
 	if s := a.sessions[g.ID]; s != nil {
 		s.Phase = "launching"
-		s.deadline = time.Now().Add(a.launcherWait("game:"+g.ID, time.Duration(cfg.Settings.StartTimeoutSeconds)*time.Second))
+		s.deadline = time.Now().Add(wait)
 	}
 	a.mu.Unlock()
 	a.emitSessions()
