@@ -32,6 +32,11 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 	if err != nil {
 		return err
 	}
+	if locID == "" {
+		if locID, err = e.saveLocFor(g, from, rs, src); err != nil {
+			return err
+		}
+	}
 	var target *resolved
 	for i := range rs {
 		if rs[i].entry.ID == locID {
@@ -140,11 +145,97 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 	return nil
 }
 
+// ErrWhichSaveFolder: the game has several folders and none holds a save
+// like the brought one, so where it goes is the person's choice.
+var ErrWhichSaveFolder = errors.New("no folder holds a save like it")
+
+// saveLocFor is the save location a brought save goes to when the person
+// didn't choose one: the folder that already holds saves like it (same
+// name, then shape, then extension), wherever it is in the game's list.
+// Red Dead Redemption 2's Settings folder may be listed before the folder
+// its saves are in, and a save put there is never read. With no folder
+// like it, the game's only folder, else ErrWhichSaveFolder.
+func (e *Engine) saveLocFor(g *Game, from string, rs []resolved, src string) (string, error) {
+	name := broughtName(src)
+	var folders []*resolved
+	best, rank := "", 0
+	for i := range rs {
+		r := &rs[i]
+		if strings.HasPrefix(r.entry.ID, AchEntryPrefix) {
+			continue
+		}
+		isFile := looksLikeFile(r.entry.Path)
+		if st, err := os.Stat(r.live); err == nil {
+			isFile = !st.IsDir()
+		}
+		if isFile {
+			if name != "" && strings.EqualFold(filepath.Base(r.live), name) && rank < 3 {
+				best, rank = r.entry.ID, 3
+			}
+			continue
+		}
+		folders = append(folders, r)
+		if name == "" {
+			continue
+		}
+		if _, n := saveHomeRank(fromSaves(e, g, from, r), name); n > rank {
+			best, rank = r.entry.ID, n
+		}
+	}
+	switch {
+	case best != "":
+		return best, nil
+	case len(folders) == 1:
+		return folders[0].entry.ID, nil
+	case len(folders) == 0:
+		return "", errors.New("choose where the game keeps its saves")
+	}
+	what := "a save like " + name
+	if name == "" {
+		what = "a save like it"
+	}
+	return "", whichFolder(fmt.Sprintf("None of %s's folders has %s yet, so Lootnest can't tell where it goes. Choose the folder under Where the save goes.", g.Name, what))
+}
+
+// whichFolder is ErrWhichSaveFolder said for one game and save.
+type whichFolder string
+
+func (w whichFolder) Error() string        { return string(w) }
+func (w whichFolder) Is(target error) bool { return target == ErrWhichSaveFolder }
+
+// broughtName is the name of the brought save's first file: the file
+// itself, or the first one in the folder, through wrapping folders.
+func broughtName(src string) string {
+	st, err := os.Stat(src)
+	if err != nil {
+		return ""
+	}
+	if !st.IsDir() {
+		return filepath.Base(src)
+	}
+	name := ""
+	_ = filepath.WalkDir(throughWrappers(src), func(p string, d fs.DirEntry, err error) error {
+		if err == nil && d.Type().IsRegular() {
+			name = d.Name()
+			return fs.SkipAll
+		}
+		return nil
+	})
+	return name
+}
+
 // saveHome is the folder in dir, at most three folders down, that holds
 // saves like name: one with the same name, else the same shape
 // (SRDR30005 beside SRDR30000 in Red Dead Redemption 2's Profiles\<id>),
 // else the same extension. With none, dir itself.
 func saveHome(dir, name string) string {
+	home, _ := saveHomeRank(dir, name)
+	return home
+}
+
+// saveHomeRank is saveHome with how alike its saves are: 3 the same name,
+// 2 the same shape, 1 the same extension, 0 none (dir itself).
+func saveHomeRank(dir, name string) (string, int) {
 	want, shape, ext := strings.ToLower(name), saveShape(name), strings.ToLower(filepath.Ext(name))
 	best, rank := dir, 0
 	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
@@ -172,7 +263,7 @@ func saveHome(dir, name string) string {
 		}
 		return nil
 	})
-	return best
+	return best, rank
 }
 
 // fromSaves is the folder holding from's copy of the save location: their
@@ -228,7 +319,9 @@ func throughWrappers(dir string) string {
 
 // dropLikeSaves takes out of a run's folder the saves shaped like the
 // brought ones (SRDR30003 beside a brought SRDR30000) that aren't brought
-// themselves. Only names with digits count, so settings files stay.
+// themselves, with their copies the game keeps beside them (SRDR30003.bak),
+// which it could load instead. Only names with digits count, so settings
+// files stay.
 func dropLikeSaves(home string, brought []string) {
 	shapes, names := map[string]bool{}, map[string]bool{}
 	for _, f := range brought {
@@ -244,7 +337,11 @@ func dropLikeSaves(home string, brought []string) {
 	}
 	for _, en := range es {
 		n := strings.ToLower(en.Name())
-		if en.Type().IsRegular() && !names[n] && shapes[saveShape(n)] {
+		if !en.Type().IsRegular() || names[n] {
+			continue
+		}
+		bare := strings.TrimSuffix(n, filepath.Ext(n))
+		if shapes[saveShape(n)] || (bare != n && shapes[saveShape(bare)]) {
 			_ = os.Remove(filepath.Join(home, en.Name()))
 		}
 	}

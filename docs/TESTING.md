@@ -1572,3 +1572,15 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
    answering".
 2. Close the game: the log says its files were saved back to the
    profile, the time played goes up, and the Timeline has the session.
+
+## 72. Trying a save finds the save folder
+
+1. Red Dead Redemption 2 with profiles, whose list of folders starts with
+   Settings and has the folder with the game's SRDR3 files further down:
+   Try it as a save (from the Mods tab, or Manage, Try a save) with Where
+   the save goes left at "Beside the saves like it". The run's copy of the
+   folder with the SRDR3 files holds the brought SRDR30000 and none of the
+   person's other SRDR3 files or their .bak copies; Settings has no
+   SRDR30000. Playing the run shows Continue and loads the brought save.
+2. A game where no folder has a save like the brought one: Start the run
+   says to choose the folder; choosing one puts it there.

@@ -259,3 +259,61 @@ func TestTrySaveSlotsLikeRDR2(t *testing.T) {
 		})
 	}
 }
+
+// A save brought without a folder chosen goes to the folder that holds
+// saves like it, not the first in the game's list (Red Dead Redemption 2
+// may list its Settings folder before the one its saves are in).
+func TestTrySaveFindsTheSaveFolder(t *testing.T) {
+	f := trySaveFixture(t)
+	g := f.cfg.Game("cs2")
+	g.Paths = append(g.Paths, PathEntry{ID: "saves", Path: "%APPDATA%/Rdr/Saves"})
+	saves := filepath.Join(f.appdata, "Rdr", "Saves")
+	write(t, filepath.Join(saves, "A1B2C3D4", "SRDR30002"), "p1 chapter 3")
+	write(t, filepath.Join(saves, "A1B2C3D4", "SRDR30002.bak"), "p1 chapter 3")
+	write(t, filepath.Join(saves, "A1B2C3D4", "ProfileSettings"), "p1 settings")
+	src := filepath.Join(f.root, "Downloads", "SRDR30000")
+	write(t, src, "skip prologue")
+
+	if err := f.eng.ProfileFromImport(g, "r1", "p1", "", src); err != nil {
+		t.Fatal(err)
+	}
+	run := f.eng.Store.ProfileDir("r1", "cs2")
+	if read(t, filepath.Join(run, "saves", "A1B2C3D4", "SRDR30000")) != "skip prologue" {
+		t.Fatal("the brought save isn't beside the saves like it")
+	}
+	if _, err := os.Stat(filepath.Join(run, "cfg", "SRDR30000")); err == nil {
+		t.Fatal("the brought save went into the first folder listed")
+	}
+	for _, n := range []string{"SRDR30002", "SRDR30002.bak"} {
+		if _, err := os.Stat(filepath.Join(run, "saves", "A1B2C3D4", n)); err == nil {
+			t.Errorf("the run kept p1's %s, which the game could continue from", n)
+		}
+	}
+	if read(t, filepath.Join(run, "saves", "A1B2C3D4", "ProfileSettings")) != "p1 settings" {
+		t.Error("the run lost p1's profile settings beside the saves")
+	}
+	if read(t, filepath.Join(saves, "A1B2C3D4", "SRDR30002.bak")) != "p1 chapter 3" {
+		t.Error("p1's own files changed")
+	}
+	if read(t, filepath.Join(run, "cfg", "video.txt")) != "p1 video" {
+		t.Error("the run lost p1's settings")
+	}
+
+	// With no folder holding a save like it, the person chooses.
+	src2 := filepath.Join(f.root, "Downloads", "quick.sav")
+	write(t, src2, "friend")
+	err := f.eng.ProfileFromImport(g, "r2", "p2", "", src2)
+	if !errors.Is(err, ErrWhichSaveFolder) {
+		t.Fatalf("no folder like it: %v", err)
+	}
+	if _, err := os.Stat(f.eng.Store.ProfileDir("r2", "cs2")); err == nil {
+		t.Error("a refused run left files")
+	}
+	// A folder chosen is used as it is.
+	if err := f.eng.ProfileFromImport(g, "r2", "p2", "saves", src2); err != nil {
+		t.Fatal(err)
+	}
+	if read(t, filepath.Join(f.eng.Store.ProfileDir("r2", "cs2"), "saves", "quick.sav")) != "friend" {
+		t.Error("the chosen folder wasn't used")
+	}
+}

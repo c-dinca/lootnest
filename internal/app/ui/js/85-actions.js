@@ -1341,11 +1341,13 @@
       const g = game(D.gameId);
       const froms = cfg().players.filter((p) => hasProfile(D.gameId, p.id));
       const from = player(D.from) || froms[0];
-      const loc = ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-")).find((l) => l.id === D.loc) || ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-"))[0];
-      if (!g || !from || !loc) return;
+      // No folder chosen: Lootnest puts it beside the saves like it.
+      const locs = ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-"));
+      const loc = locs.find((l) => l.id === D.loc);
+      if (!g || !from || !locs.length) return;
       D.busy = true; D.error = ""; renderOverlay();
       try {
-        const id = await api.trySave(g.id, from.id, loc.id, D.src, (D.name || "").trim());
+        const id = await api.trySave(g.id, from.id, loc ? loc.id : "", D.src, (D.name || "").trim());
         await refresh();
         S.dialog = null; renderOverlay();
         const run = player(id);

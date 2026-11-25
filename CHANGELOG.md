@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Trying a save puts it where the game reads saves.** A save brought for Red Dead Redemption 2 went into the first folder Lootnest swaps for the game, which can be its Settings folder, where the game never looks for saves, so the run started at the prologue. The save now goes beside the saves like it, in whichever of the game's folders they are, and the run leaves out your other saves of that kind along with their .bak copies. When no folder has a save like it yet, Lootnest asks which folder it goes in. You can still choose the folder yourself.
+
 ## 2.24.1
 
 - **Starting a game with profiles no longer freezes Lootnest.** Since 2.19.0, Lootnest locked itself up as it started a game with profiles: the game started, but Lootnest stayed on "Launching", its window stopped answering, and the session never ended, so the time played, save points and saving the profile's files back didn't happen. It now follows the game as before, and a check in the code keeps this kind of lock-up from coming back.

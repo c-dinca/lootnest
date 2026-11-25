@@ -654,8 +654,7 @@
     const from = player(D.from) || froms[0];
     const per = from ? personOf(from) : null;
     const locs = (g.paths || []).filter((p) => !String(p.id || "").startsWith("ach-"));
-    const loc = locs.find((l) => l.id === D.loc) || locs[0];
-    if (!per || !loc) return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
+    if (!per || !locs.length) return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
       <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Play it once with profiles first.</p></div>
       <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">OK</button></div></div></div>`;
     const sel = (id, list, cur, label) => list.length > 1 ? `<label class="try-field"><span>${label}</span><select class="ln-input" id="${id}">${list.map((x) => `<option value="${esc(x.id)}"${x.id === cur ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>` : "";
@@ -663,7 +662,7 @@
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
       <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Goes into a new run. ${esc(possessive(from.name))} own saves stay as they are.</p></div>
       ${sel("try-from", froms.map((p) => ({ id: p.id, label: p.name })), from.id, "Start from")}
-      ${sel("try-loc", locs.map((l) => ({ id: l.id, label: l.path })), loc.id, "Where the save goes")}
+      ${sel("try-loc", [{ id: "", label: "Beside the saves like it" }, ...locs.map((l) => ({ id: l.id, label: l.path }))], locs.some((l) => l.id === D.loc) ? D.loc : "", "Where the save goes")}
       <div class="try-pick"><button class="ln-button ln-button--secondary ln-button--sm" data-action="try-browse" data-kind="trySaveDir">Choose a folder</button>
         <button class="ln-button ln-button--ghost ln-button--sm" data-action="try-browse" data-kind="trySaveFile">Choose a file or archive</button></div>
       ${chosen}
