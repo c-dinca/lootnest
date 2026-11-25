@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 2.24.2
 
 - **Trying a save puts it where the game reads saves.** A save brought for Red Dead Redemption 2 went into the first folder Lootnest swaps for the game, which can be its Settings folder, where the game never looks for saves, so the run started at the prologue. The save now goes beside the saves like it, in whichever of the game's folders they are, and the run leaves out your other saves of that kind along with their .bak copies. When no folder has a save like it yet, Lootnest asks which folder it goes in. You can still choose the folder yourself.
+- **Trying a save says what to do next.** The dialog says in plain words that a new run starts from the save and your own saves don't change. Once the run is made, Lootnest shows which folder the save went into, which of your saves it left out of the run, and the steps: press Play as the run, then Continue or Load Game in the game. A Play key is right there.
 
 ## 2.24.1
 

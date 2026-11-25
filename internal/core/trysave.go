@@ -22,6 +22,29 @@ import (
 // (already extracted from an archive), or a single file, which replaces or
 // joins the files of from's copy of that folder. Nothing of from's changes.
 func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) error {
+	_, err := e.ProfileFromImportTo(g, playerID, from, locID, src)
+	return err
+}
+
+// TriedSave says where a brought save went, for the person: Where is the
+// folder on this PC the game will find it in while the run plays, Files
+// the brought files put there (none when a whole folder was), and Left the
+// person's saves of that kind left out of the run so the game can't
+// continue from them.
+type TriedSave struct {
+	Where string   `json:"where"`
+	Files []string `json:"files,omitempty"`
+	Left  []string `json:"left,omitempty"`
+}
+
+// ProfileFromImportTo is ProfileFromImport, saying where the save went.
+func (e *Engine) ProfileFromImportTo(g *Game, playerID, from, locID, src string) (TriedSave, error) {
+	var told TriedSave
+	err := e.profileFromImport(g, playerID, from, locID, src, &told)
+	return told, err
+}
+
+func (e *Engine) profileFromImport(g *Game, playerID, from, locID, src string, told *TriedSave) error {
 	if e.HasProfile(playerID, g.ID) {
 		return errors.New("that profile already has files for this game")
 	}
@@ -111,6 +134,7 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 			if err := Mirror(src, out); err != nil {
 				return fail(err)
 			}
+			told.Where = target.live
 		default:
 			// Save files into a folder: the person's folder, with the
 			// brought saves beside the saves like them. The person's other
@@ -130,18 +154,23 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 				return fail(err)
 			}
 			home := saveHome(out, filepath.Base(files[0]))
-			dropLikeSaves(home, files)
+			told.Left = dropLikeSaves(home, files)
 			for _, f := range files {
 				if err := Mirror(f, filepath.Join(home, filepath.Base(f))); err != nil {
 					return fail(err)
 				}
+				told.Files = append(told.Files, filepath.Base(f))
+			}
+			told.Where = target.live
+			if rel, err := filepath.Rel(out, home); err == nil && rel != "." {
+				told.Where = filepath.Join(target.live, rel)
 			}
 		}
 	}
 	if err := os.WriteFile(filepath.Join(dst, initMarker), []byte(e.now().Format(time.RFC3339)), 0o644); err != nil {
 		return fail(err)
 	}
-	e.logf("Started %s's files for %s from %s, with %s in %s", e.name(playerID), g.Name, e.name(from), filepath.Base(src), target.entry.Path)
+	e.logf("Started %s's files for %s from %s, with %s in %s (left out of the run: %s)", e.name(playerID), g.Name, e.name(from), filepath.Base(src), told.Where, orNoneList(told.Left))
 	return nil
 }
 
@@ -195,6 +224,13 @@ func (e *Engine) saveLocFor(g *Game, from string, rs []resolved, src string) (st
 		what = "a save like it"
 	}
 	return "", whichFolder(fmt.Sprintf("None of %s's folders has %s yet, so Lootnest can't tell where it goes. Choose the folder under Where the save goes.", g.Name, what))
+}
+
+func orNoneList(v []string) string {
+	if len(v) == 0 {
+		return "none"
+	}
+	return strings.Join(v, ", ")
 }
 
 // whichFolder is ErrWhichSaveFolder said for one game and save.
@@ -322,7 +358,7 @@ func throughWrappers(dir string) string {
 // themselves, with their copies the game keeps beside them (SRDR30003.bak),
 // which it could load instead. Only names with digits count, so settings
 // files stay.
-func dropLikeSaves(home string, brought []string) {
+func dropLikeSaves(home string, brought []string) (left []string) {
 	shapes, names := map[string]bool{}, map[string]bool{}
 	for _, f := range brought {
 		n := strings.ToLower(filepath.Base(f))
@@ -333,7 +369,7 @@ func dropLikeSaves(home string, brought []string) {
 	}
 	es, err := os.ReadDir(home)
 	if err != nil {
-		return
+		return nil
 	}
 	for _, en := range es {
 		n := strings.ToLower(en.Name())
@@ -342,9 +378,12 @@ func dropLikeSaves(home string, brought []string) {
 		}
 		bare := strings.TrimSuffix(n, filepath.Ext(n))
 		if shapes[saveShape(n)] || (bare != n && shapes[saveShape(bare)]) {
-			_ = os.Remove(filepath.Join(home, en.Name()))
+			if os.Remove(filepath.Join(home, en.Name())) == nil {
+				left = append(left, en.Name())
+			}
 		}
 	}
+	return left
 }
 
 // looksLikeFile says whether a save path names a file (a name with an

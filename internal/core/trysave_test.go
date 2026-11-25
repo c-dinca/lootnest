@@ -274,8 +274,12 @@ func TestTrySaveFindsTheSaveFolder(t *testing.T) {
 	src := filepath.Join(f.root, "Downloads", "SRDR30000")
 	write(t, src, "skip prologue")
 
-	if err := f.eng.ProfileFromImport(g, "r1", "p1", "", src); err != nil {
+	told, err := f.eng.ProfileFromImportTo(g, "r1", "p1", "", src)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if told.Where != filepath.Join(saves, "A1B2C3D4") || len(told.Files) != 1 || told.Files[0] != "SRDR30000" || len(told.Left) != 2 {
+		t.Errorf("what the person is told: %+v", told)
 	}
 	run := f.eng.Store.ProfileDir("r1", "cs2")
 	if read(t, filepath.Join(run, "saves", "A1B2C3D4", "SRDR30000")) != "skip prologue" {
@@ -302,7 +306,7 @@ func TestTrySaveFindsTheSaveFolder(t *testing.T) {
 	// With no folder holding a save like it, the person chooses.
 	src2 := filepath.Join(f.root, "Downloads", "quick.sav")
 	write(t, src2, "friend")
-	err := f.eng.ProfileFromImport(g, "r2", "p2", "", src2)
+	err = f.eng.ProfileFromImport(g, "r2", "p2", "", src2)
 	if !errors.Is(err, ErrWhichSaveFolder) {
 		t.Fatalf("no folder like it: %v", err)
 	}

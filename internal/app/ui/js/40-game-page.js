@@ -660,7 +660,7 @@
     const sel = (id, list, cur, label) => list.length > 1 ? `<label class="try-field"><span>${label}</span><select class="ln-input" id="${id}">${list.map((x) => `<option value="${esc(x.id)}"${x.id === cur ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>` : "";
     const chosen = D.src ? `<p class="try-src"><span class="selectable" title="${esc(D.src)}">${esc(D.src.split(/[\\/]/).pop())}</span><span class="gpage-hint">${esc(D.src)}</span></p>` : "";
     return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="Try a save">
-      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Goes into a new run. ${esc(possessive(from.name))} own saves stay as they are.</p></div>
+      <div><h2>Try a save in ${esc(g.name)}</h2><p class="sub">Lootnest makes a new run that starts from this save. ${esc(possessive(from.name))} own saves don't change, and playing as ${esc(from.name)} brings them back.</p></div>
       ${sel("try-from", froms.map((p) => ({ id: p.id, label: p.name })), from.id, "Start from")}
       ${sel("try-loc", [{ id: "", label: "Beside the saves like it" }, ...locs.map((l) => ({ id: l.id, label: l.path }))], locs.some((l) => l.id === D.loc) ? D.loc : "", "Where the save goes")}
       <div class="try-pick"><button class="ln-button ln-button--secondary ln-button--sm" data-action="try-browse" data-kind="trySaveDir">Choose a folder</button>
@@ -669,6 +669,26 @@
       <label class="try-field"><span>The run's name</span><input type="text" class="ln-input" id="try-name" maxlength="24" placeholder="${esc(per.name)} trying" value="${esc(D.name || "")}"></label>
       <div class="dialog-foot"><span class="error-text grow">${esc(D.error || "")}</span><button class="btn quiet" data-action="dialog-cancel">Cancel</button>
       <button class="btn primary" data-action="try-go" ${D.busy || !D.src ? "disabled" : ""}>${D.busy ? "Starting the run" : "Start the run"}</button></div></div></div>`;
+  }
+  // After Try a save: where the save went, and how to play it.
+  function viewTryReady(D) {
+    const g = game(D.gameId), run = player(D.runId), from = player(D.from);
+    if (!g || !run) return "";
+    const file = D.files.length === 1 ? D.files[0] : D.files.length ? `${D.files.length} save files` : "The save";
+    const left = D.left.filter((n) => !/\.bak$/i.test(n));
+    const steps = [
+      `Press <b>Play</b> as ${esc(runName(run))}.`,
+      `In the game, choose <b>Continue</b>, or <b>Load Game</b> and pick it there.`,
+      from ? `To get ${esc(possessive(from.name))} own game back, play as ${esc(from.name)}. Nothing of theirs changed.` : "",
+    ].filter(Boolean);
+    return `<div class="scrim" data-action="scrim"><div class="dialog narrow" role="dialog" aria-modal="true" aria-label="The run is ready">
+      <div><h2>${esc(run.name)} is ready</h2>
+        <p class="sub">${esc(file)} is in the folder ${esc(g.name)} reads saves from${D.where ? ":" : "."}</p>
+        ${D.where ? `<p class="try-src"><span class="gpage-hint selectable">${esc(D.where)}</span></p>` : ""}
+        ${left.length ? `<p class="gpage-hint">${left.length === 1 ? `${esc(left[0])}, a save of ${esc(possessive(from ? from.name : "yours"))},` : `${left.length} saves of ${esc(from ? possessive(from.name) : "yours")}`} ${left.length === 1 ? "isn't" : "aren't"} in this run, so the game can't continue from ${left.length === 1 ? "it" : "them"} by mistake.</p>` : ""}
+        <ol class="try-steps">${steps.map((x) => `<li>${x}</li>`).join("")}</ol></div>
+      <div class="dialog-foot"><span class="grow"></span><button class="btn quiet" data-action="dialog-cancel">Later</button>
+      <button class="btn primary" data-action="try-play" data-game="${esc(g.id)}" data-player="${esc(run.id)}">Play as ${esc(run.name)}</button></div></div></div>`;
   }
   // The dialog's choices, kept across a re-render.
   function tryKeep(D) {

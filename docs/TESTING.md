@@ -1584,3 +1584,7 @@ On a Linux PC with WebKitGTK 4.1 (Ubuntu 24.04, Fedora 40 or newer):
    SRDR30000. Playing the run shows Continue and loads the brought save.
 2. A game where no folder has a save like the brought one: Start the run
    says to choose the folder; choosing one puts it there.
+3. After Start the run: the "<run> is ready" dialog names the folder the
+   save is in (the one the game reads), the saves left out of the run,
+   and the steps; Play as <run> starts the game as the run, Later closes
+   it.

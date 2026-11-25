@@ -268,7 +268,7 @@ website's: obsidian, glass over the game's art, premium and quiet.
   two Ice Grey arcs) on an obsidian tile, the same sign as the sidebar's
   (the owner, 22 Nov 2026; the red gem in a nest is gone).
 
-## Where things stand (2.24.1, beta)
+## Where things stand (2.24.2, beta)
 
 These shipped recently, newest last:
 
@@ -2758,7 +2758,12 @@ These shipped recently, newest last:
   `ErrWhichSaveFolder` (`whichFolder`, says to choose). `dropLikeSaves` also
   drops `<slot>.bak` copies. Dialog: Where the save goes starts at "Beside
   the saves like it" (`""`), shown when the game has several folders.
-  docs/TESTING.md 72.
+  The owner asked for it to be explained for an average user:
+  `ProfileFromImportTo` returns `TriedSave` (`Where` the live folder, `Files`,
+  `Left`), `apiTrySave` returns `TrySaveResult`, and the page shows dialog
+  `tryready` (`viewTryReady`: where, what was left out, three steps,
+  `try-play`). Harness shot `mods-save-ready`. docs/TESTING.md 72.
+  Released as 2.24.2 at the owner's ask (25 Nov).
 
 **The rework (owner, 13 Nov 2026):** every screen of the launcher in one
 new look, direction A of three mockups with a sidebar: the game in focus
