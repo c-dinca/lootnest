@@ -1323,6 +1323,7 @@
     },
     "new-run"(el) { S.dialog = { kind: "newrun", gameId: el.dataset.game, person: el.dataset.person }; renderOverlay(); focusOverlay(); },
     "mod-try-save"(el) { trySaveFrom(el.dataset.mods, el.dataset.from, el.dataset.owner, el.dataset.name); },
+    "try-play"(el) { S.dialog = null; renderOverlay(); actions["play-as"](el); },
     "try-save"(el) { const sp = seated(); S.dialog = { kind: "trysave", gameId: el.dataset.game, from: sp && hasProfile(el.dataset.game, sp.id) ? sp.id : "" }; renderOverlay(); focusOverlay(); },
     async "try-browse"(el) {
       const D = S.dialog;
@@ -1341,15 +1342,17 @@
       const g = game(D.gameId);
       const froms = cfg().players.filter((p) => hasProfile(D.gameId, p.id));
       const from = player(D.from) || froms[0];
-      const loc = ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-")).find((l) => l.id === D.loc) || ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-"))[0];
-      if (!g || !from || !loc) return;
+      // No folder chosen: Lootnest puts it beside the saves like it.
+      const locs = ((g && g.paths) || []).filter((p) => !String(p.id || "").startsWith("ach-"));
+      const loc = locs.find((l) => l.id === D.loc);
+      if (!g || !from || !locs.length) return;
       D.busy = true; D.error = ""; renderOverlay();
       try {
-        const id = await api.trySave(g.id, from.id, loc.id, D.src, (D.name || "").trim());
+        const r = await api.trySave(g.id, from.id, loc ? loc.id : "", D.src, (D.name || "").trim());
         await refresh();
-        S.dialog = null; renderOverlay();
-        const run = player(id);
-        toast(run ? `${run.name} is ready, with the save you brought. ${possessive(from.name)} own saves are as they were.` : "The run is ready.");
+        // What happened and what to press next, in words.
+        S.dialog = { kind: "tryready", gameId: g.id, runId: r.id, from: from.id, where: r.where || "", files: r.files || [], left: r.left || [] };
+        renderOverlay(); focusOverlay();
         render();
       } catch (e) { D.busy = false; D.error = errText(e); renderOverlay(); }
     },

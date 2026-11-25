@@ -22,6 +22,29 @@ import (
 // (already extracted from an archive), or a single file, which replaces or
 // joins the files of from's copy of that folder. Nothing of from's changes.
 func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) error {
+	_, err := e.ProfileFromImportTo(g, playerID, from, locID, src)
+	return err
+}
+
+// TriedSave says where a brought save went, for the person: Where is the
+// folder on this PC the game will find it in while the run plays, Files
+// the brought files put there (none when a whole folder was), and Left the
+// person's saves of that kind left out of the run so the game can't
+// continue from them.
+type TriedSave struct {
+	Where string   `json:"where"`
+	Files []string `json:"files,omitempty"`
+	Left  []string `json:"left,omitempty"`
+}
+
+// ProfileFromImportTo is ProfileFromImport, saying where the save went.
+func (e *Engine) ProfileFromImportTo(g *Game, playerID, from, locID, src string) (TriedSave, error) {
+	var told TriedSave
+	err := e.profileFromImport(g, playerID, from, locID, src, &told)
+	return told, err
+}
+
+func (e *Engine) profileFromImport(g *Game, playerID, from, locID, src string, told *TriedSave) error {
 	if e.HasProfile(playerID, g.ID) {
 		return errors.New("that profile already has files for this game")
 	}
@@ -31,6 +54,11 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 	rs, err := e.resolveAll(g)
 	if err != nil {
 		return err
+	}
+	if locID == "" {
+		if locID, err = e.saveLocFor(g, from, rs, src); err != nil {
+			return err
+		}
 	}
 	var target *resolved
 	for i := range rs {
@@ -106,6 +134,7 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 			if err := Mirror(src, out); err != nil {
 				return fail(err)
 			}
+			told.Where = target.live
 		default:
 			// Save files into a folder: the person's folder, with the
 			// brought saves beside the saves like them. The person's other
@@ -125,19 +154,110 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 				return fail(err)
 			}
 			home := saveHome(out, filepath.Base(files[0]))
-			dropLikeSaves(home, files)
+			told.Left = dropLikeSaves(home, files)
 			for _, f := range files {
 				if err := Mirror(f, filepath.Join(home, filepath.Base(f))); err != nil {
 					return fail(err)
 				}
+				told.Files = append(told.Files, filepath.Base(f))
+			}
+			told.Where = target.live
+			if rel, err := filepath.Rel(out, home); err == nil && rel != "." {
+				told.Where = filepath.Join(target.live, rel)
 			}
 		}
 	}
 	if err := os.WriteFile(filepath.Join(dst, initMarker), []byte(e.now().Format(time.RFC3339)), 0o644); err != nil {
 		return fail(err)
 	}
-	e.logf("Started %s's files for %s from %s, with %s in %s", e.name(playerID), g.Name, e.name(from), filepath.Base(src), target.entry.Path)
+	e.logf("Started %s's files for %s from %s, with %s in %s (left out of the run: %s)", e.name(playerID), g.Name, e.name(from), filepath.Base(src), told.Where, orNoneList(told.Left))
 	return nil
+}
+
+// ErrWhichSaveFolder: the game has several folders and none holds a save
+// like the brought one, so where it goes is the person's choice.
+var ErrWhichSaveFolder = errors.New("no folder holds a save like it")
+
+// saveLocFor is the save location a brought save goes to when the person
+// didn't choose one: the folder that already holds saves like it (same
+// name, then shape, then extension), wherever it is in the game's list.
+// Red Dead Redemption 2's Settings folder may be listed before the folder
+// its saves are in, and a save put there is never read. With no folder
+// like it, the game's only folder, else ErrWhichSaveFolder.
+func (e *Engine) saveLocFor(g *Game, from string, rs []resolved, src string) (string, error) {
+	name := broughtName(src)
+	var folders []*resolved
+	best, rank := "", 0
+	for i := range rs {
+		r := &rs[i]
+		if strings.HasPrefix(r.entry.ID, AchEntryPrefix) {
+			continue
+		}
+		isFile := looksLikeFile(r.entry.Path)
+		if st, err := os.Stat(r.live); err == nil {
+			isFile = !st.IsDir()
+		}
+		if isFile {
+			if name != "" && strings.EqualFold(filepath.Base(r.live), name) && rank < 3 {
+				best, rank = r.entry.ID, 3
+			}
+			continue
+		}
+		folders = append(folders, r)
+		if name == "" {
+			continue
+		}
+		if _, n := saveHomeRank(fromSaves(e, g, from, r), name); n > rank {
+			best, rank = r.entry.ID, n
+		}
+	}
+	switch {
+	case best != "":
+		return best, nil
+	case len(folders) == 1:
+		return folders[0].entry.ID, nil
+	case len(folders) == 0:
+		return "", errors.New("choose where the game keeps its saves")
+	}
+	what := "a save like " + name
+	if name == "" {
+		what = "a save like it"
+	}
+	return "", whichFolder(fmt.Sprintf("None of %s's folders has %s yet, so Lootnest can't tell where it goes. Choose the folder under Where the save goes.", g.Name, what))
+}
+
+func orNoneList(v []string) string {
+	if len(v) == 0 {
+		return "none"
+	}
+	return strings.Join(v, ", ")
+}
+
+// whichFolder is ErrWhichSaveFolder said for one game and save.
+type whichFolder string
+
+func (w whichFolder) Error() string        { return string(w) }
+func (w whichFolder) Is(target error) bool { return target == ErrWhichSaveFolder }
+
+// broughtName is the name of the brought save's first file: the file
+// itself, or the first one in the folder, through wrapping folders.
+func broughtName(src string) string {
+	st, err := os.Stat(src)
+	if err != nil {
+		return ""
+	}
+	if !st.IsDir() {
+		return filepath.Base(src)
+	}
+	name := ""
+	_ = filepath.WalkDir(throughWrappers(src), func(p string, d fs.DirEntry, err error) error {
+		if err == nil && d.Type().IsRegular() {
+			name = d.Name()
+			return fs.SkipAll
+		}
+		return nil
+	})
+	return name
 }
 
 // saveHome is the folder in dir, at most three folders down, that holds
@@ -145,6 +265,13 @@ func (e *Engine) ProfileFromImport(g *Game, playerID, from, locID, src string) e
 // (SRDR30005 beside SRDR30000 in Red Dead Redemption 2's Profiles\<id>),
 // else the same extension. With none, dir itself.
 func saveHome(dir, name string) string {
+	home, _ := saveHomeRank(dir, name)
+	return home
+}
+
+// saveHomeRank is saveHome with how alike its saves are: 3 the same name,
+// 2 the same shape, 1 the same extension, 0 none (dir itself).
+func saveHomeRank(dir, name string) (string, int) {
 	want, shape, ext := strings.ToLower(name), saveShape(name), strings.ToLower(filepath.Ext(name))
 	best, rank := dir, 0
 	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
@@ -172,7 +299,7 @@ func saveHome(dir, name string) string {
 		}
 		return nil
 	})
-	return best
+	return best, rank
 }
 
 // fromSaves is the folder holding from's copy of the save location: their
@@ -228,8 +355,10 @@ func throughWrappers(dir string) string {
 
 // dropLikeSaves takes out of a run's folder the saves shaped like the
 // brought ones (SRDR30003 beside a brought SRDR30000) that aren't brought
-// themselves. Only names with digits count, so settings files stay.
-func dropLikeSaves(home string, brought []string) {
+// themselves, with their copies the game keeps beside them (SRDR30003.bak),
+// which it could load instead. Only names with digits count, so settings
+// files stay.
+func dropLikeSaves(home string, brought []string) (left []string) {
 	shapes, names := map[string]bool{}, map[string]bool{}
 	for _, f := range brought {
 		n := strings.ToLower(filepath.Base(f))
@@ -240,14 +369,21 @@ func dropLikeSaves(home string, brought []string) {
 	}
 	es, err := os.ReadDir(home)
 	if err != nil {
-		return
+		return nil
 	}
 	for _, en := range es {
 		n := strings.ToLower(en.Name())
-		if en.Type().IsRegular() && !names[n] && shapes[saveShape(n)] {
-			_ = os.Remove(filepath.Join(home, en.Name()))
+		if !en.Type().IsRegular() || names[n] {
+			continue
+		}
+		bare := strings.TrimSuffix(n, filepath.Ext(n))
+		if shapes[saveShape(n)] || (bare != n && shapes[saveShape(bare)]) {
+			if os.Remove(filepath.Join(home, en.Name())) == nil {
+				left = append(left, en.Name())
+			}
 		}
 	}
+	return left
 }
 
 // looksLikeFile says whether a save path names a file (a name with an

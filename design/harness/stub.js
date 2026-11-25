@@ -1222,7 +1222,7 @@
       const id = "p" + (Date.now() % 100000);
       PLAYERS.push({ id, name: name || [...per.name].slice(0, 17).join("").trim() + " trying", color: per.color, of: per.id, game: gid });
       (profiles[gid] = profiles[gid] || []).push(id);
-      return ok(id);
+      return ok({ id, where: "C:\\Users\\you\\AppData\\Roaming\\Larian Studios\\Baldur's Gate 3\\PlayerProfiles\\Public\\Savegames\\Story", files: ["SRDR30000"], left: ["SRDR30015", "SRDR30015.bak"] });
     },
     ps_browse: (id, kind) => {
       if (kind === "installer") emit({ type: "browse", reqId: id, path: "C:\\Users\\cris\\Downloads\\setup-pbz-update-1.0.3.exe" });

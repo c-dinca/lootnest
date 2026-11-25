@@ -59,6 +59,8 @@
       o.innerHTML = viewMoveFolder(D);
     } else if (D.kind === "removepc") {
       o.innerHTML = viewRemovePC(D);
+    } else if (D.kind === "tryready") {
+      o.innerHTML = viewTryReady(D);
     } else if (D.kind === "trysave") {
       o.innerHTML = viewTrySave(D);
       setTimeout(() => { const i = $("#try-name"); if (i && !D.src && document.activeElement === document.body) i.focus(); }, 20);
