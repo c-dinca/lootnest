@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.24.0
+## 2.24.1
 
 - **Starting a game with profiles no longer freezes Lootnest.** Since 2.19.0, Lootnest locked itself up as it started a game with profiles: the game started, but Lootnest stayed on "Launching", its window stopped answering, and the session never ended, so the time played, save points and saving the profile's files back didn't happen. It now follows the game as before, and a check in the code keeps this kind of lock-up from coming back.
 
